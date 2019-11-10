@@ -3,6 +3,7 @@ A clean, responsive template / theme for JSDoc 3. This is created for those who 
 
 ## Install
 > Note you must have `npm` installed on your machine.
+
 On your command line type
 ```bash
 npm install clean-jsdoc-theme
@@ -34,28 +35,23 @@ In your `jsdoc.json` file, add a template option.
 ## Example JSDoc Config
 ```json
 {
-    "tags": {
-        "allowUnknownTags": true,
-        "dictionaries": ["jsdoc"]
-    },
     "source": {
         "include": ["lib", "package.json", "README.md"],
         "includePattern": ".js$",
         "excludePattern": "(node_modules/|docs)"
     },
+
     "plugins": [
         "plugins/markdown"
     ],
-    "templates": {
-        "cleverLinks": true,
-        "monospaceLinks": true
-    },
+
     "opts": {
-        "destination": "./docs/",
         "encoding": "utf8",
-        "private": true,
+        "readme": "./README.md",
+        "destination": "docs/",
         "recurse": true,
-        "template": "./node_modules/postman-jsdoc-theme"
+        "verbose": true,
+        "template": "./node_modules/clean-jsdoc-theme"
     }
 }
 ```
