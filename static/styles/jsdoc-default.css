@@ -156,9 +156,14 @@ section {
   padding: 0 30px;
 }
 
+article{
+  overflow: auto;
+}
+
 section article h2{
   position: relative;
   z-index: 10;
+  display: inline-block;
 }
 
 section article h2::after{
@@ -327,7 +332,7 @@ footer {
 }
 
 .type-signature {
-  color: #aaa;
+  color: #00918e;
 }
 
 .signature {
@@ -404,6 +409,7 @@ h4.name::before{
   overflow: auto;
   border-radius: 8px;
   margin: 30px 0;
+  padding-bottom: 20px;
 }
 
 .prettyprint.source {
@@ -464,12 +470,12 @@ h4.name::before{
 
 .params, .props {
   border-spacing: 0;
-  border: 1px solid #ddd;
+  border-radius: 8px;
   border-collapse: collapse;
-  border-radius: 3px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 0 15px rgba(0,0,0,0.1);
   width: 100%;
   font-size: 14px;
+  margin: 30px 0;
 }
 
 .params .name, .props .name, .name code {
@@ -482,7 +488,7 @@ h4.name::before{
    margin: 0px;
    text-align: left;
    vertical-align: top;
-   padding: 10px;
+   padding: 15px;
    display: table-cell;
 }
 
@@ -491,13 +497,16 @@ h4.name::before{
 }
 
 .params thead tr, .props thead tr {
-   background-color: #fff;
-   font-weight: bold;
+  background-color: #001628;
+  color: #fff;
+  font-weight: bold;
+
 }
 
 .params .params thead tr, .props .props thead tr {
-   background-color: #fff;
-   font-weight: bold;
+  background-color: #001628;
+  color: #fff;
+  font-weight: bold;
 }
 
 .params td.description > p:first-child, .props td.description > p:first-child {
@@ -533,11 +542,10 @@ dl.param-type {
 .navicon-button {
   display: none;
   position: relative;
-  padding: 2.0625rem 1.5rem;
+  padding: 30px 15px;
   transition: 0.25s;
   cursor: pointer;
   user-select: none;
-  opacity: .8;
 }
 .navicon-button .navicon:before, .navicon-button .navicon:after {
   transition: 0.25s;
@@ -608,13 +616,13 @@ dl.param-type {
 .nav-trigger:checked + label.plus .navicon:before,
 .nav-trigger:checked + label.x .navicon:before {
   transform: rotate(-45deg);
-  background: #FFF;
+  background: #000;
 }
 
 .nav-trigger:checked + label.plus .navicon:after,
 .nav-trigger:checked + label.x .navicon:after {
   transform: rotate(45deg);
-  background: #FFF;
+  background: #000;
 }
 
 .nav-trigger:checked + label.plus {
@@ -658,16 +666,18 @@ dl.param-type {
     right: 0;
     bottom: 0;
     left: -250px;
-    z-index: 3;
+    z-index: 1000;
     transition: left 0.2s;
   }
 
   .navicon-button {
     display: inline-block;
     position: fixed;
-    top: 1.5em;
-    right: 0;
-    z-index: 2;
+    top: 30px;
+    right: 30px;
+    z-index: 1000;
+    background: #f1f1f1;
+    border-radius: 10px;
   }
 
   #main {
