@@ -1,6 +1,6 @@
 {
   "name": "clean-jsdoc-theme",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Clean and minimal JSDoc 3 Template / Theme",
   "main": "publish.js",
   "scripts": {
@@ -18,5 +18,14 @@
   "homepage": "https://github.com/ankitskvmdam/clean-jsdoc-theme#readme",
   "dependencies": {
     "jsdoc": "^3.6.3"
-  }
+  },
+  "keywords": [
+    "jsdoc",
+    "template",
+    "theme",
+    "jsdoc template",
+    "jsdoc theme",
+    "jsdoc-template",
+    "jsdoc-theme"
+  ]
 }
