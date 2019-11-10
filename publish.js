@@ -348,8 +348,8 @@ function linktoExternal(longName, name) {
  * @return {string} The HTML for the navigation sidebar.
  */
 function buildNav(members) {
-    var navbar_title = env.opts.theme_opts.navbar_title || "Home"
-    var nav = '<h2><a href="index.html">'+navbar_title+'</a></h2>'
+    var title = env.opts.theme_opts.title || "Home"
+    var nav = '<h2><a href="index.html">'+title+'</a></h2>'
     var seen = {};
     var seenTutorials = {};
 
