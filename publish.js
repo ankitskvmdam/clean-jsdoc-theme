@@ -348,7 +348,7 @@ function linktoExternal(longName, name) {
  * @return {string} The HTML for the navigation sidebar.
  */
 function buildNav(members) {
-    var title = env.opts.theme_opts.title || "Home"
+    var title = env && env.opts && env.opts.theme_opts && env.opts.theme_opts.title || "Home"
     var nav = '<h2><a href="index.html">'+title+'</a></h2>'
     var seen = {};
     var seenTutorials = {};
@@ -385,7 +385,7 @@ function buildNav(members) {
 }
 
 function buildFooter(){
-    var footer = env.opts.theme_opts.footer || ""
+    var footer = env && env.opts && env.opts.theme_opts && env.opts.theme_opts.footer || ""
     return footer
 }
 
