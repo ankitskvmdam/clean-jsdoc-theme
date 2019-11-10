@@ -59,15 +59,19 @@ In your `jsdoc.json` file, add a template option.
 
 ## Features
 You can pass an object called `theme_opts` under `opts` for more options like:
-```json
+```javascript
 "opts":{
-  ...
+  /*
     Default options
-  ...
+  */
   "theme_opts":{
-    "navbar_title": "Navbar Title", // Instead of only string you can pass html element like <img src="src to your img" style=""/>
-                                    // Path must be absolute not relative to this config file.
-    "footer": "This is footer", // Here again you can pass html element 
+    "navbar_title": "Navbar Title", 
+    /* 
+      Instead of only string you can pass html element like <img src="src to your img" style=""/>
+      Path must be absolute not relative to this config file.
+    */
+
+    "footer": "This is footer",   // Here again you can pass html element 
   }
 }
 ```
