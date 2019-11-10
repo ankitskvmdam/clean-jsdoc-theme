@@ -1,15 +1,22 @@
 @font-face {
-  font-family: 'Lato';
-  src: url('../fonts/Lato-Regular.ttf') format('truetype');
+  font-family: 'heading';
+  src: url('../fonts/Muli-Black.ttf') format('truetype');
 }
 
 @font-face {
-  font-family: 'Source Code Pro';
-  src: url('../fonts/SourceCodePro-Regular.ttf') format('truetype');
+  font-family: 'body';
+  src: url('../fonts/Montserrat-Regular.ttf') format('truetype');
+}
+
+@font-face{
+  font-family: 'code';
+  src: url('../fonts/MavenPro-Regular.ttf') format('truetype');
 }
 
 * {
-  box-sizing: border-box
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 html, body {
@@ -23,14 +30,13 @@ body {
   margin: 0 auto;
   padding: 0 0;
 
-  font-family: 'Lato';
+  font-family: 'body';
   font-size: 16px;
-  line-height: 160%;
 }
 
 a,
 a:active {
-  color: #7F3416;
+  color: #007bff;
   text-decoration: none;
 }
 
@@ -41,9 +47,12 @@ a:hover {
 p, ul, ol, blockquote {
   margin-bottom: 1em;
 }
+hr{
+  border: 1px solid #eee
+}
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Lato';
+  font-family: 'heading';
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -56,11 +65,26 @@ h1 {
   font-weight: 300;
   font-size: 48px;
   margin: 1em 0 .5em;
+  position: relative;
+  z-index: 1;
 }
 
 h1.page-title {
   font-size: 48px;
   margin: 1em 30px;
+  position: relative;
+  z-index: 10;
+}
+
+h1.page-title::after, article h1::after{
+  content: '';
+  position: absolute;
+  display: block;
+  z-index: -1;
+  width: 100%;
+  height: 15px;
+  background: #fbe555;
+  bottom: 5px;
 }
 
 h2 {
@@ -69,7 +93,7 @@ h2 {
 }
 
 h3 {
-  font-size: 24px;
+  font-size: 20px;
   margin: 1.2em 0 .3em;
 }
 
@@ -85,6 +109,11 @@ h5, .container-overview .subsection-title {
   margin: 8px 0 3px 0;
 }
 
+.subsection-title{
+  text-transform: uppercase;
+  border-bottom: 1px solid #eee;
+}
+
 h6 {
   font-size: 100%;
   letter-spacing: -0.01em;
@@ -93,7 +122,7 @@ h6 {
 }
 
 tt, code, kbd, samp {
-  font-family: 'Source Code Pro';
+  font-family: 'code';
   font-size: 80%;
   background: #f4f4f4;
   padding: 1px 5px;
@@ -127,6 +156,27 @@ section {
   padding: 0 30px;
 }
 
+section article h2{
+  position: relative;
+  z-index: 10;
+}
+
+section article h2::after{
+  content: '';
+  display: block;
+  position: absolute;
+  z-index: -1;
+  bottom: 0;
+  width: 100%;
+  height: 10px;
+  background: #eee;
+}
+
+section ul {
+  padding-left: 10px;
+  list-style: none;
+}
+
 .variation {
   display: none
 }
@@ -144,51 +194,68 @@ nav {
   display: block;
   width: 250px;
   height: 100%;
-  background: rgb(51,51,51);
+  background: #001628;
   overflow-y: auto;
 }
 
 nav h2 {
   margin: 0;
   padding: 0;
-  background: #ff6429;
 }
 
 nav > h2 > a {
+  text-transform: uppercase;
   display: block;
+  text-align: center;
   width: 100%;
   height: 100%;
   color: #fff !important;
   font-weight: 700;
   margin: 0;
-  padding: 10px 10px 6px 10px;
+  text-decoration: none !important;
+  font-size: 30px;
+  line-height: 30px !important;
+  word-break: break-word;
+  position: relative;
+  z-index: 1;
+}
+
+nav > h2 > a::after{
+  content: '';
+  position: absolute;
+  display: block;
+  width: 100%;
+  height: 20px;
+  background: #1089ff;
+  bottom: -5px;
+  z-index: -1;
+}
+
+nav > h2 {
+  padding: 40px 10px;
 }
 
 nav h2,
-nav h3 {
+nav h3,
+nav h3 a{
   margin: 0;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  font-weight: 700;
-  line-height: 24px;
+  font-size: 18px;
   color: #fff !important;
 }
 
 nav h3 {
   padding: 10px 10px 6px 10px;
 }
+
 nav ul {
-  font-family: 'Lato';
-  font-size: 100%;
-  line-height: 17px;
+  font-family: 'body';
+  list-style-type: none;
   padding: 0;
   margin: 0;
-  list-style-type: none;
 }
 
 nav ul a {
-  font-family: 'Lato';
+  font-family: 'body';
   line-height: 18px;
   padding: 0;
   display: block;
@@ -197,20 +264,20 @@ nav ul a {
 }
 
 nav ul a:hover {
-  color: #fff;
-  text-decoration: none;
-  font-weight: bold;
+  color: #00909e;
+  text-decoration: underline;
 }
 
 nav > ul {
-  padding: 0;
+  padding-left: 10px;
 }
 
 nav > ul > li > a {
   margin: 0;
-  color: #999;
+  color: #c9d1d3;
   padding: 4px 10px 4px 10px;
   font-weight: 500;
+  word-break: break-all;
 }
 
 nav ul ul {
@@ -218,8 +285,8 @@ nav ul ul {
 }
 
 nav ul ul a {
-  color: hsl(207, 1%, 60%);
-  border-left: 1px solid hsl(207, 10%, 86%);
+  color: #c9d1d3;
+  border-left: 1px solid #c9d1d3;
 }
 
 nav ul ul a,
@@ -228,13 +295,12 @@ nav ul ul a:active {
 }
 
 footer {
-  color: hsl(0, 0%, 28%);
+  color: #222;
   margin-left: 250px;
   display: block;
   padding: 30px;
   font-size: 80%;
   color: #999;
-  text-transform: lowercase;
   font-style: italic;
 }
 
@@ -265,16 +331,22 @@ footer {
 }
 
 .signature {
-  font-family: 'Source Code Pro';
+  font-family: 'code';
   font-size: 80%;
 }
 
 .name {
-  font-family: 'Source Code Pro';
+  font-family: 'code';
   font-size: 110%;
   font-weight: bold;
-  color: #ff6429;
+  color: #293a80;
   padding-top: 30px;
+}
+
+h4.name::before{
+  content: '# ';
+  font-size: 28px;
+  
 }
 
 .details {
@@ -327,11 +399,11 @@ footer {
 }
 
 .prettyprint {
-  font-size: 13px;
-  border: 1px solid #ddd;
-  border-radius: 3px;
-  box-shadow: 0 1px 3px hsla(0, 0%, 0%, 0.05);
+  font-size: 14px;
+  background: #001628;
   overflow: auto;
+  border-radius: 8px;
+  margin: 30px 0;
 }
 
 .prettyprint.source {
@@ -339,16 +411,15 @@ footer {
 }
 
 .prettyprint code {
-  font-size: 100%;
-  line-height: 18px;
+  font-size: 14px;
+  line-height: 16px;
+  padding: 30px;
   display: block;
-  margin: 0 30px;
-  background-color: #fff;
-  color: #4D4E53;
+  background-color: #001628;
 }
 
 .prettyprint > code {
-  padding: 15px
+  padding: 30px
 }
 
 .prettyprint .linenums code {
@@ -376,11 +447,12 @@ footer {
 }
 
 .prettyprint.linenums li {
-   border-left: 3px #ddd solid
+   border-left: 3px #222831 solid;
+   min-height: 18px;
 }
 
 .prettyprint.linenums li.selected, .prettyprint.linenums li.selected * {
-   background-color: lightyellow
+   background-color: #222831
 }
 
 .prettyprint.linenums li * {
@@ -402,7 +474,7 @@ footer {
 
 .params .name, .props .name, .name code {
    color: #4D4E53;
-   font-family: 'Source Code Pro';
+   font-family: 'code';
    font-size: 100%;
 }
 
@@ -449,7 +521,7 @@ dl.param-type {
 }
 
 .param-type dd {
-  font-family: 'Source Code Pro';
+  font-family: 'code';
   font-size: 80%;
 }
 

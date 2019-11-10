@@ -4,48 +4,48 @@
 /* SPAN elements with the classes below are added by prettyprint. */
 /* plain text */
 .pln {
-  color: #4d4d4c; }
+  color: #f5d67b; }
 
 @media screen {
   /* string content */
   .str {
-    color: hsl(104, 100%, 24%); }
+    color: #55ae95; }
 
   /* a keyword */
   .kwd {
-    color: hsl(240, 100%, 50%); }
+    color: #007bff; }
 
   /* a comment */
   .com {
-    color: hsl(0, 0%, 60%); }
+    color: #5e7671; }
 
   /* a type name */
   .typ {
-    color: hsl(240, 100%, 32%); }
+    color: #f5d67b }
 
   /* a literal value */
   .lit {
-    color: hsl(240, 100%, 40%); }
+    color: #f5d67b }
 
   /* punctuation */
   .pun {
-    color: #000000; }
+    color: #72e0d1 }
 
   /* lisp open bracket */
   .opn {
-    color: #000000; }
+    color: #72e0d1 }
 
   /* lisp close bracket */
   .clo {
-    color: #000000; }
+    color: #72e0d1 }
 
   /* a markup tag name */
   .tag {
-    color: #c82829; }
+    color: #007bff; }
 
   /* a markup attribute name */
   .atn {
-    color: #f5871f; }
+    color: #f5d67b; }
 
   /* a markup attribute value */
   .atv {
@@ -57,15 +57,16 @@
 
   /* a variable name */
   .var {
-    color: #c82829; }
+    color: #f5d67b; }
 
   /* a function name */
   .fun {
     color: #4271ae; } }
+
 /* Use higher contrast and text-weight for printable form. */
-@media print, projection {
+/* @media print, projection {
   .str {
-    color: #060; }
+    color: #55ae95; }
 
   .kwd {
     color: #006;
@@ -93,7 +94,7 @@
     color: #404; }
 
   .atv {
-    color: #060; } }
+    color: #060; } } */
 /* Style */
 /*
 pre.prettyprint {

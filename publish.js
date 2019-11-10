@@ -348,8 +348,8 @@ function linktoExternal(longName, name) {
  * @return {string} The HTML for the navigation sidebar.
  */
 function buildNav(members) {
-    var pkgVersion = env.opts && env.opts.query && env.opts.query.pkgVersion;
-    var nav = '<h2><a href="index.html">Home' + (pkgVersion ? (' ' + pkgVersion) : '') + '</a></h2>';
+    var navbar_title = env.opts.theme_opts.navbar_title || "Home"
+    var nav = '<h2><a href="index.html">'+navbar_title+'</a></h2>'
     var seen = {};
     var seenTutorials = {};
 
@@ -377,11 +377,16 @@ function buildNav(members) {
             nav += '<h3>' + linkto('global', 'Global') + '</h3>';
         }
         else {
-            nav += '<h3>Global</h3><ul>' + globalNav + '</ul>';
+            nav += '<h3>'+ linkto('global', 'Global') +'</h3><ul>' + globalNav + '</ul>';
         }
     }
 
     return nav;
+}
+
+function buildFooter(){
+    var footer = env.opts.theme_opts.footer || ""
+    return footer
 }
 
 /**
@@ -567,6 +572,7 @@ exports.publish = function(taffyData, opts, tutorials) {
     view.tutoriallink = tutoriallink;
     view.htmlsafe = htmlsafe;
     view.outputSourceFiles = outputSourceFiles;
+    view.footer = buildFooter();
 
     // once for all
     view.nav = buildNav(members);
