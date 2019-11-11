@@ -68,16 +68,38 @@ You can pass an object called `theme_opts` under `opts` for more options like:
     Default options
   */
   "theme_opts":{
-    "title": "Navbar Title", 
+    "title": "Ankdev", 
     /* 
-      Instead of only string you can pass html element like <img src="src to your img" style=""/>
-      Path must be absolute not relative to this config file.
+      Instead of only string you can pass html element like <img src="src to your img relative to the output path" class="my-custom-class"/>
+      Path must be relative to the output path of the generated file or you can use the absolute path.
+      Note: If you use html the default overwrite. Also for custom class you have to create a class using create_style. This is shown below.
     */
 
-    "footer": "This is footer",   // Here again you can pass html element 
+   "filter": false, /*  The default value is true. This will turn the color of image white. If you did not want any
+     filter set it to false.
+   */
+  
+  /*
+    You can create custom style which will overwrite the exisiting class property.
+  */ 
+  "create_style": "nav{background: yellow}" +     // This will change the background color of sidebar.
+                  ".my-custom-class{ filter: brightness(10) grayscale(100%)}", // This will apply filter to my-custom-class
+  
+  "footer": "This is footer",   // Here again you can pass html element 
   }
 }
 ```
+If this documentation is not enough feel free to create an issue.
+
+## Developing
+```bash 
+git clone https://github.com/ankitskvmdam/clean-jsdoc-theme.git
+cd clean-jsdoc-theme.git
+npm install
+npm run test
+```
+`npm run test` will generate files in output folder.
+You can change the code and then run `npm run test` to see the output.
 
 ## Contact
 Mail me at: hello@ankdev.me <br>

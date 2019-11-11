@@ -15,12 +15,14 @@ var self = this;
 <?js } ?>
 
 <?js if (data.type && data.type.names) {?>
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            <?js= self.partial('type.tmpl', data.type.names) ?>
-        </li>
-    </ul>
+    <div class="member-item-container flex">
+        <strong>Type: </strong>
+        <ul>
+            <li>
+                <?js= self.partial('type.tmpl', data.type.names) ?>
+            </li>
+        </ul>
+    </div>
 <?js } ?>
 
 <?js= this.partial('details.tmpl', data) ?>

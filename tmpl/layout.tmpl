@@ -12,6 +12,11 @@
     <link type="text/css" rel="stylesheet" href="styles/ionicons.min.css">
     <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
     <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+    <?js if(this.dynamicStyle != undefined ) { ?>
+      <style>
+        <?js= this.dynamicStyle ?>
+      </style>
+    <?js } ?>
 </head>
 <body>
 

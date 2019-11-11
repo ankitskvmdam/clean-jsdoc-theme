@@ -1,0 +1,33 @@
+{
+	"tags": {
+		"allowUnknownTags": true
+	},
+	"source": {
+		"include": [
+            "./demo/src",
+            "./README.md"
+		]
+	},
+	"plugins": ["plugins/markdown"],
+	"templates": {
+		"cleverLinks": false,
+		"monospaceLinks": false,
+		"default": {
+			"outputSourceFiles": true
+		}
+	},
+	"opts": {
+		"encoding": "utf8",
+		"destination": "output",
+		"recurse": true,
+		"template": "../../Personal/clean-jsdoc-theme",
+		"theme_opts": {
+			"title": "clean-jsdoc-theme",
+			"footer": "Fork: <a href='https://github.com/ankitskvmdam/clean-jsdoc-theme'>https://github.com/ankitskvmdam/clean-jsdoc-theme</a>"
+		}
+	},
+	"markdown.hardwrap": true,
+	"markdown": {
+		"hardwrap": true
+	}
+}

@@ -349,7 +349,16 @@ function linktoExternal(longName, name) {
  */
 function buildNav(members) {
     var title = env && env.opts && env.opts.theme_opts && env.opts.theme_opts.title || "Home"
-    var nav = '<h2><a href="index.html">'+title+'</a></h2>'
+    var isHTML = RegExp.prototype.test.bind(/(<([^>]+)>)/i);
+    var nav 
+    if(!isHTML(title)) nav = '<h2><a href="index.html"><div class="text">'+title+'</div></a></h2>'
+    else {
+        var filter = env && env.opts && env.opts.theme_opts
+        if(filter.filter === undefined) filter.filter = true
+        if(JSON.parse(filter.filter)) nav = '<h2><a href="index.html" class="filter">'+title+'</a></h2>'
+        else nav = '<h2><a href="index.html">'+title+'</a></h2>'
+    }
+
     var seen = {};
     var seenTutorials = {};
 
@@ -389,6 +398,10 @@ function buildFooter(){
     return footer
 }
 
+function createDynamicStyleSheet(){
+    var style_classes = env && env.opts && env.opts.theme_opts && env.opts.theme_opts.create_style || undefined
+    return style_classes
+}
 /**
     @param {TAFFY} taffyData See <http://taffydb.com/>.
     @param {object} opts
@@ -573,6 +586,7 @@ exports.publish = function(taffyData, opts, tutorials) {
     view.htmlsafe = htmlsafe;
     view.outputSourceFiles = outputSourceFiles;
     view.footer = buildFooter();
+    view.dynamicStyle = createDynamicStyleSheet();
 
     // once for all
     view.nav = buildNav(members);
