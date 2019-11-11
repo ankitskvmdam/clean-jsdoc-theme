@@ -19,26 +19,34 @@
 
 <section>
 
+<?js if (((doc.ancestors && doc.ancestors.length) || doc.name || doc.variation) || (doc.kind === 'module' && doc.modules)) { ?>
 <header>
     <?js if (!doc.longname || doc.kind !== 'module') { ?>
-        <h2><?js if (doc.ancestors && doc.ancestors.length) { ?>
+        <?js if ((doc.ancestors && doc.ancestors.length) || doc.name || doc.variation) { ?>
+        <h2>
+        <?js if (doc.ancestors && doc.ancestors.length) { ?>
             <span class="ancestors"><?js= doc.ancestors.join('') ?></span>
         <?js } ?>
         <?js= doc.name ?>
         <?js if (doc.variation) { ?>
             <sup class="variation"><?js= doc.variation ?></sup>
-        <?js } ?></h2>
+        <?js } ?>
+        </h2>
+        <?js } ?>
         <?js if (doc.classdesc) { ?>
             <div class="class-description"><?js= doc.classdesc ?></div>
+            <hr/>
         <?js } ?>
     <?js } else if (doc.kind === 'module' && doc.modules) { ?>
         <?js doc.modules.forEach(function(module) { ?>
             <?js if (module.classdesc) { ?>
                 <div class="class-description"><?js= module.classdesc ?></div>
+                <hr/>
             <?js } ?>
         <?js }) ?>
     <?js } ?>
 </header>
+<?js } ?>
 
 <article>
     <div class="container-overview">
@@ -57,8 +65,9 @@
             <div class="description"><?js= doc.description ?></div>
         <?js } ?>
 
-        <?js= self.partial('details.tmpl', doc) ?>
-
+        <?js if(doc.source) { ?>
+            <?js= self.partial('details.tmpl', doc) ?>
+        <?js } ?>
         <?js if (doc.examples && doc.examples.length) { ?>
             <h3>Example<?js= doc.examples.length > 1? 's':'' ?></h3>
             <?js= self.partial('examples.tmpl', doc.examples) ?>

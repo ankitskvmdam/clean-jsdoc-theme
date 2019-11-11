@@ -71,7 +71,7 @@ h1 {
 
 h1.page-title {
   font-size: 48px;
-  margin: 1em 30px;
+  margin: 10px 30px 20px;
   position: relative;
   z-index: 10;
 }
@@ -89,7 +89,7 @@ h1.page-title::after, article h1::after{
 
 h2 {
   font-size: 24px;
-  margin: 1.5em 0 .3em;
+  margin: 10px 0;
 }
 
 h3 {
@@ -130,10 +130,8 @@ tt, code, kbd, samp {
 }
 
 .class-description {
-  font-size: 130%;
-  line-height: 140%;
-  margin-bottom: 1em;
-  margin-top: 1em;
+  font-size: 18px;
+  margin-bottom: 16px;
 }
 
 .class-description:empty {
@@ -156,17 +154,21 @@ section {
   padding: 0 30px;
 }
 
+section header{
+  padding-top: 20px;
+}
+
 article{
   overflow: auto;
 }
 
-section article h2{
+section h2{
   position: relative;
   z-index: 10;
   display: inline-block;
 }
 
-section article h2::after{
+section h2::after{
   content: '';
   display: block;
   position: absolute;
@@ -344,7 +346,6 @@ footer {
   font-size: 110%;
   font-weight: bold;
   color: #293a80;
-  padding-top: 30px;
 }
 
 h4.name::before{
@@ -355,21 +356,23 @@ h4.name::before{
 
 .details {
   margin: 0;
-  color: #999;
+  padding: 10px 10px;
+  background: #f7f7f7;
+  color: #001628;
+  border-left: 5px solid #001628;
 }
 
-.details .tag-source a {
-  color: #999;
+.details .details-item-container{
+  display: flex;
+  margin: 10px 0;
 }
+
 .details dt {
-   width: 120px;
    float: left;
-   padding-left: 10px;
+   padding: 0 10px;
+   min-width: 180px;
 }
 
-.details dd {
-   margin-left: 70px
-}
 
 .details ul {
    margin: 0
@@ -379,8 +382,9 @@ h4.name::before{
    list-style-type: none
 }
 
-.details li {
-   margin-left: 30px
+.details ul li{
+  display: inline-block;
+  margin-right: 10px;
 }
 
 .details pre.prettyprint {
@@ -392,8 +396,7 @@ h4.name::before{
 }
 
 .description {
-  margin-bottom: 1em;
-  margin-top: 1em;
+  margin-bottom: 32px;
 }
 
 .code-caption {
@@ -687,7 +690,7 @@ dl.param-type {
   }
 
   #main h1.page-title {
-    margin: 1em 0;
+    margin: 60px 0 10px;
   }
 
   #main section {
