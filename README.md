@@ -79,5 +79,10 @@ You can pass an object called `theme_opts` under `opts` for more options like:
 }
 ```
 
+## Contact
+Mail me at: hello@ankdev.me <br>
+If you find any bug or need any feature in the future build feel free to open an issue at github: https://github.com/ankitskvmdam/clean-jsdoc-theme/issues
+
+
 ## License
 Licensed under the MIT license.
