@@ -1,5 +1,6 @@
 # clean-jsdoc-theme
-A clean, responsive template / theme for JSDoc 3. This is created for those who love design.
+A clean, responsive template / theme for JSDoc 3. This is created for those who love design. <br>
+live demo: https://ankdev.me/clean-jsdoc-theme/index.html
 ### Demo screen
 ![Global](./example/global.png)
 ![code](./example/code.png)
