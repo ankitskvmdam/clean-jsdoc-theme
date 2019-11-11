@@ -164,10 +164,6 @@ section header{
   padding-top: 20px;
 }
 
-article{
-  overflow: auto;
-}
-
 section h2{
   position: relative;
   z-index: 10;

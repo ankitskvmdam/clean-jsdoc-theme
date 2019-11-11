@@ -110,7 +110,7 @@ var self = this;
 <?js } ?>
 
 <?js if (data.examples && examples.length) { ?>
-<div class="method-member-container flex w-100 overflow-auto mt-20">
+<div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
     <strong>Example<?js= examples.length > 1? 's':'' ?></strong>
     <?js= this.partial('examples.tmpl', examples) ?>
 </div>
