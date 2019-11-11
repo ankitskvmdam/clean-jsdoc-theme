@@ -398,6 +398,7 @@ h4.name::before{
 .details ul li{
   display: inline-block;
   margin-right: 10px;
+  word-break: break-all;
 }
 
 .details pre.prettyprint {
