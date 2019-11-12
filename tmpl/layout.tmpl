@@ -7,6 +7,9 @@
 
     <script src="scripts/prettify/prettify.js"></script>
     <script src="scripts/prettify/lang-css.js"></script>
+    <script src="scripts/search.js"></script>
+    <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/3.4.5/fuse.min.js"></script> -->
+    <script src="scripts/fuse.js"></script>
     <!--[if lt IE 9]>
       <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
@@ -48,5 +51,13 @@
 
 <script>prettyPrint();</script>
 <script src="scripts/linenumber.js"></script>
+<script>
+var input_box = document.getElementById("search-box");
+var list = [<?js= this.searchList ?>];
+input_box.addEventListener('keyup', function(){
+  console.log(input_box.value)
+  search(list, "title", input_box.value)
+})
+</script>
 </body>
 </html>

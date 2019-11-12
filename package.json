@@ -17,7 +17,6 @@
   },
   "homepage": "https://github.com/ankitskvmdam/clean-jsdoc-theme#readme",
   "dependencies": {
-    "fuse.js": "^3.4.5",
     "jsdoc": "^3.6.3"
   },
   "keywords": [

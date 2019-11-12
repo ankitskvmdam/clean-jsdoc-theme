@@ -17,6 +17,7 @@ var hasOwnProp = Object.prototype.hasOwnProperty;
 
 var data;
 var view;
+var searchListArray = []
 
 var outdir = path.normalize(env.opts.destination);
 
@@ -221,6 +222,13 @@ function generate(type, title, docs, filename, resolveLinks) {
     }
 
     fs.writeFileSync(outpath, html, 'utf8');
+
+    // Pushing data to search list array
+    // searchListArray.push({
+    //     type: docData.type,
+    //     title: docData.title,
+    //     path: outpath
+    // });
 }
 
 function generateSourceFiles(sourceFiles, encoding) {
@@ -294,17 +302,25 @@ function buildMemberNav(items, itemHeading, itemsSeen, linktoFn) {
 
         items.forEach(function(item) {
             var methods = find({kind:'function', memberof: item.longname});
-            var members = find({kind:'member', memberof: item.longname});
+            // var members = find({kind:'member', memberof: item.longname});
 
             if ( !hasOwnProp.call(item, 'longname') ) {
                 itemsNav += '<li>' + linktoFn('', item.name);
                 itemsNav += '</li>';
             } else if ( !hasOwnProp.call(itemsSeen, item.longname) ) {
                 itemsNav += '<li>' + linktoFn(item.longname, item.name.replace(/^module:/, ''));
+                searchListArray.push(JSON.stringify({
+                    title: item.name,
+                    link: linkto(item.longname, item.name)
+                }))
                 if (methods.length) {
                     itemsNav += "<ul class='methods'>";
 
                     methods.forEach(function (method) {
+                        searchListArray.push(JSON.stringify({
+                            title: method.name,
+                            link: linkto(method.longname, method.name)
+                        }))
                         itemsNav += "<li data-type='method'>";
                         itemsNav += linkto(method.longname, method.name);
                         itemsNav += "</li>";
@@ -359,6 +375,7 @@ function buildNav(members) {
         else nav = '<h2><a href="index.html">'+title+'</a></h2>'
     }
 
+    nav += buildSearch()
     var seen = {};
     var seenTutorials = {};
 
@@ -393,14 +410,24 @@ function buildNav(members) {
     return nav;
 }
 
+function buildSearch(){
+    var search = '<div class="search-box"><input type="text" placeholder="Search..." id="search-box" /></div>';
+    var searchItemContainer = '<div class="search-item-container" id="search-item-container"><ul class="search-item-ul" id="search-item-ul"></ul></div>'
+    search += searchItemContainer
+    return search;
+}
 function buildFooter(){
-    var footer = env && env.opts && env.opts.theme_opts && env.opts.theme_opts.footer || ""
-    return footer
+    var footer = env && env.opts && env.opts.theme_opts && env.opts.theme_opts.footer || "";
+    return footer;
 }
 
 function createDynamicStyleSheet(){
-    var style_classes = env && env.opts && env.opts.theme_opts && env.opts.theme_opts.create_style || undefined
-    return style_classes
+    var style_classes = env && env.opts && env.opts.theme_opts && env.opts.theme_opts.create_style || undefined;
+    return style_classes;
+}
+
+function searchList(){
+    return searchListArray;
 }
 /**
     @param {TAFFY} taffyData See <http://taffydb.com/>.
@@ -587,9 +614,9 @@ exports.publish = function(taffyData, opts, tutorials) {
     view.outputSourceFiles = outputSourceFiles;
     view.footer = buildFooter();
     view.dynamicStyle = createDynamicStyleSheet();
-
     // once for all
     view.nav = buildNav(members);
+    view.searchList = searchList()
     attachModuleSymbols( find({ longname: {left: 'module:'} }), members.modules );
 
     // generate the pretty-printed source files first so other pages can link to them

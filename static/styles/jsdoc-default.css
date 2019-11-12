@@ -251,6 +251,19 @@ nav > h2 > a > .text::after{
   z-index: -1;
 }
 
+nav .search-box{
+  padding: 0 10px 20px 10px;
+}
+
+nav .search-box input{
+  border: none;
+  border-radius: 5px;
+  padding: 5px 10px;
+  font-size: 14px;
+  font-family: 'body';
+  width: 100%;
+}
+
 nav > h2 {
   padding: 40px 10px;
 }
