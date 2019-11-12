@@ -253,6 +253,7 @@ nav > h2 > a > .text::after{
 
 nav .search-box{
   padding: 0 10px 20px 10px;
+  position: relative;
 }
 
 nav .search-box input{
@@ -262,6 +263,33 @@ nav .search-box input{
   font-size: 14px;
   font-family: 'body';
   width: 100%;
+}
+
+.search-box .search-item-container{
+  position: absolute;
+  width: 230px;
+  top: 35px;
+  background: #fff;
+  border-radius: 4px; 
+}
+
+.search-item-ul{
+  max-height: 150px;
+  overflow: auto
+}
+
+.search-item-ul li{
+  padding: 5px 10px;
+  transition: 0.3s;
+}
+
+.search-item-ul li:hover{
+  background: #f7f7f7;
+  border-radius: 4px;
+}
+.search-item-ul a:hover{
+  text-decoration: none;
+  color: #007bff;
 }
 
 nav > h2 {

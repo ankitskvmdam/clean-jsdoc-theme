@@ -222,13 +222,6 @@ function generate(type, title, docs, filename, resolveLinks) {
     }
 
     fs.writeFileSync(outpath, html, 'utf8');
-
-    // Pushing data to search list array
-    // searchListArray.push({
-    //     type: docData.type,
-    //     title: docData.title,
-    //     path: outpath
-    // });
 }
 
 function generateSourceFiles(sourceFiles, encoding) {
@@ -317,9 +310,14 @@ function buildMemberNav(items, itemHeading, itemsSeen, linktoFn) {
                     itemsNav += "<ul class='methods'>";
 
                     methods.forEach(function (method) {
+                        var name = method.longname.split('#')
+                        var first = name[0]
+                        var last = name[1]
+                        name = first + ' &rtrif; ' + last
+
                         searchListArray.push(JSON.stringify({
-                            title: method.name,
-                            link: linkto(method.longname, method.name)
+                            title: method.longname,
+                            link: linkto(method.longname, name)
                         }))
                         itemsNav += "<li data-type='method'>";
                         itemsNav += linkto(method.longname, method.name);
@@ -411,8 +409,8 @@ function buildNav(members) {
 }
 
 function buildSearch(){
-    var search = '<div class="search-box"><input type="text" placeholder="Search..." id="search-box" /></div>';
-    var searchItemContainer = '<div class="search-item-container" id="search-item-container"><ul class="search-item-ul" id="search-item-ul"></ul></div>'
+    var search = '<div class="search-box"><input type="text" placeholder="Search..." id="search-box" />';
+    var searchItemContainer = '<div class="search-item-container" id="search-item-container"><ul class="search-item-ul" id="search-item-ul"></ul></div></div>'
     search += searchItemContainer
     return search;
 }

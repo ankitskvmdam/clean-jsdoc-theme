@@ -1,17 +1,29 @@
 
-function search(list, key, search_key){
+
+function setupSearch(){
+  var input_box = document.getElementById("search-box");
+  var keys = ["title"]
+
+  input_box.addEventListener('keyup', function(){
+    search(list, keys, input_box.value)
+  })
+
+  input_box.addEventListener('focus', function(){
+    search(list, keys, input_box.value)
+  })
+}
+
+function search(list, keys, search_key){
     var options = {
         shouldSort: true,
-        threshold: 0.6,
+        threshold: 0.4,
         location: 0,
         distance: 100,
         maxPatternLength: 32,
         minMatchCharLength: 1,
-        keys: [
-          "title"
-        ]
+        keys: keys
       };
-      var fuse = new Fuse(list, options); // "list" is the item array
+      var fuse = new Fuse(list, options);
       var result = fuse.search(search_key);
       var search = document.getElementById("search-item-ul")
       search.innerHTML = ""
