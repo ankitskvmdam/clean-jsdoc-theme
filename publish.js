@@ -391,6 +391,10 @@ function buildNav(members) {
 
         members.globals.forEach(function(g) {
             if ( g.kind !== 'typedef' && !hasOwnProp.call(seen, g.longname) ) {
+                searchListArray.push(JSON.stringify({
+                    title: g.name,
+                    link: linkto(g.longname, "Global &rtrif; "+ g.name)
+                }))
                 globalNav += '<li>' + linkto(g.longname, g.name) + '</li>';
             }
             seen[g.longname] = true;
