@@ -1,4 +1,4 @@
-mkdir docs
-cp -rf example docs/example
-cp -rf output/* docs/
+mkdir demo/output
+cp -rf example demo/output/example
+cp -rf output/* demo/output
 rm -rf output
