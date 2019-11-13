@@ -181,6 +181,16 @@ section h2::after{
   background: #eee;
 }
 
+::selection{
+  background: #ffce76;
+  color: #1d1919;
+}
+
+::-moz-selection{
+  background: #ffce76;
+  color: #1d1919;
+}
+
 section ul {
   padding-left: 10px;
   list-style: none;
