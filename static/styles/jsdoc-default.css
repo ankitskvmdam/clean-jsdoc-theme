@@ -318,14 +318,23 @@ nav h3 {
   padding: 10px 10px 6px 10px;
 }
 
-nav ul {
+.sidebar-list-div{
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: 200px;
+  overflow: auto;
+}
+
+.sidebar-list-div ul, nav ul {
   font-family: 'body';
   list-style-type: none;
   padding: 0;
   margin: 0;
 }
 
-nav ul a {
+.sidebar-list-div ul a {
   font-family: 'body';
   line-height: 18px;
   padding: 0;
@@ -334,16 +343,16 @@ nav ul a {
   transition: padding 0.2s, color 0.2s, font-weight 0.2s;
 }
 
-nav ul a:hover {
-  color: #00909e;
+.sidebar-list-div ul a:hover {
+  color: #1089ff;
   text-decoration: underline;
 }
 
-nav > ul {
+.sidebar-list-div > ul {
   padding-left: 10px;
 }
 
-nav > ul > li > a {
+.sidebar-list-div > ul > li > a {
   margin: 0;
   color: #c9d1d3;
   padding: 4px 10px 4px 10px;
@@ -351,16 +360,16 @@ nav > ul > li > a {
   word-break: break-all;
 }
 
-nav ul ul {
+.sidebar-list-div ul ul {
   margin-bottom: 10px
 }
 
-nav ul ul a {
+.sidebar-list-div ul ul a {
   color: #c9d1d3;
 }
 
-nav ul ul a,
-nav ul ul a:active {
+.sidebar-list-div ul ul a,
+.sidebar-list-div ul ul a:active {
   padding-left: 20px
 }
 

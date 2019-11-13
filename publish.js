@@ -374,6 +374,7 @@ function buildNav(members) {
     }
 
     nav += buildSearch()
+    nav += '<div class="sidebar-list-div">'
     var seen = {};
     var seenTutorials = {};
 
@@ -409,6 +410,7 @@ function buildNav(members) {
         }
     }
 
+    nav +='</div>'
     return nav;
 }
 
