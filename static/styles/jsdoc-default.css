@@ -264,6 +264,7 @@ nav > h2 > a > .text::after{
 nav .search-box{
   padding: 0 10px 20px 10px;
   position: relative;
+  z-index: 10;
 }
 
 nav .search-box input{
@@ -334,7 +335,7 @@ nav h3 {
   margin: 0;
 }
 
-.sidebar-list-div ul a {
+nav ul a {
   font-family: 'body';
   line-height: 18px;
   padding: 0;
@@ -343,7 +344,7 @@ nav h3 {
   transition: padding 0.2s, color 0.2s, font-weight 0.2s;
 }
 
-.sidebar-list-div ul a:hover {
+nav a:hover {
   color: #1089ff;
   text-decoration: underline;
 }
