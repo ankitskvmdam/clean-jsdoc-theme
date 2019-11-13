@@ -96,12 +96,11 @@ If this documentation is not enough feel free to create an issue.
 ## Developing
 ```bash 
 git clone https://github.com/ankitskvmdam/clean-jsdoc-theme.git
-cd clean-jsdoc-theme.git
+cd clean-jsdoc-theme
 npm install
 npm run test
 ```
 `npm run test` will generate files in output folder.
-You can change the code and then run `npm run test` to see the output.
 
 ## Contact
 Mail me at: hello@ankdev.me <br>
