@@ -526,7 +526,7 @@ h4.name::before{
 }
 
 .prettyprint.linenums li.selected, .prettyprint.linenums li.selected * {
-   background-color: #222831
+   background-color: #404040
 }
 
 .prettyprint.linenums li * {
