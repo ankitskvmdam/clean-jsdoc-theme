@@ -20,7 +20,7 @@
 		"encoding": "utf8",
 		"destination": "output",
 		"recurse": true,
-		"template": "../../Personal/clean-jsdoc-theme",
+		"template": "./",
 		"theme_opts": {
 			"title": "clean-jsdoc-theme",
 			"footer": "Fork: <a href='https://github.com/ankitskvmdam/clean-jsdoc-theme'>https://github.com/ankitskvmdam/clean-jsdoc-theme</a>"

@@ -72,20 +72,32 @@ You can pass an object called `theme_opts` under `opts` for more options like:
   "theme_opts":{
     "title": "Ankdev", 
     /* 
-      Instead of only string you can pass html element like <img src="src to your img relative to the output path" class="my-custom-class"/>
-      Path must be relative to the output path of the generated file or you can use the absolute path.
-      Note: If you use html the default overwrite. Also for custom class you have to create a class using create_style. This is shown below.
+      Instead of only string you can pass html element like 
+      <img src="src to your img relative to the output path" class="my-custom-class"/>
+      Path must be relative to the output file (relative to generated html files.) you 
+      can use the absolute path.
+      Note: If you use html the default overwrite. Also for custom class you have to create 
+      a class using create_style.This is shown below.
     */
 
-   "filter": false, /*  The default value is true. This will turn the color of image white. If you did not want any
-     filter set it to false.
+   "filter": false, /*  The default value is true. This will turn the color of image white. 
+      If you did not want any
+      filter set it to false.
    */
   
-  /*
-    You can create custom style which will overwrite the exisiting class property.
-  */ 
+  
+  // You can create custom style which will overwrite the exisiting class property.
   "create_style": "nav{background: yellow}" +     // This will change the background color of sidebar.
                   ".my-custom-class{ filter: brightness(10) grayscale(100%)}", // This will apply filter to my-custom-class
+  
+  //You can add path of your style file. Note it must be relative to your output file. (relative to generated html files.)
+  "add_style_path": ["../custom.css"] // Pass array or path
+
+  // You can add custom script to html
+  "add_scripts": "function foo(){console.log('foo')}",
+
+  // You can add path of your script file. Note it must be relative to your output file. (relative to generated html files.)
+  "add_script_path": ["../custom.js"] // Pass array or path
   
   "footer": "This is footer",   // Here again you can pass html element 
   }

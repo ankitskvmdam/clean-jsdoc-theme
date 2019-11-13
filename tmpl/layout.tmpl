@@ -21,6 +21,16 @@
         <?js= this.dynamicStyle ?>
       </style>
     <?js } ?>
+    <?js if(this.dynamicScriptSrc != undefined ) { ?>
+      <?js this.dynamicScriptSrc.forEach(function(source){ ?>
+        <script src="<?js= source ?>"></script>
+      <?js }) ?>
+    <?js } ?>
+    <?js if(this.dynamicStyleSrc != undefined ) { ?>
+      <?js this.dynamicStyleSrc.forEach(function(source){ ?>
+        <link type="text/css" rel="stylesheet" href="<?js= source ?>">
+      <?js }) ?>
+    <?js } ?>
 </head>
 <body>
 
@@ -55,5 +65,12 @@
 var list = [<?js= this.searchList ?>];
 setupSearch(list)
 </script>
+
+ <?js if(this.dynamicScript != undefined ) { ?>
+  <script type="text/javascript">
+    <?js= this.dynamicScript ?>
+  </script>
+<?js } ?>
+
 </body>
 </html>

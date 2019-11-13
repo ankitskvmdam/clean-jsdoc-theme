@@ -430,6 +430,21 @@ function createDynamicStyleSheet(){
     return style_classes;
 }
 
+function createDynamicsScripts(){
+    var scripts = env && env.opts && env.opts.theme_opts && env.opts.theme_opts.add_scripts || undefined;
+    return scripts
+}
+
+function returnPathOfScriptScr(){
+    var script_path = env && env.opts && env.opts.theme_opts && env.opts.theme_opts.add_script_path || undefined;
+    return script_path
+}
+
+function returnPathOfStyleSrc(){
+    var style_path = env && env.opts && env.opts.theme_opts && env.opts.theme_opts.add_style_path || undefined;
+    return style_path
+}
+
 function searchList(){
     return searchListArray;
 }
@@ -618,6 +633,9 @@ exports.publish = function(taffyData, opts, tutorials) {
     view.outputSourceFiles = outputSourceFiles;
     view.footer = buildFooter();
     view.dynamicStyle = createDynamicStyleSheet();
+    view.dynamicStyleSrc = returnPathOfStyleSrc();
+    view.dynamicScript = createDynamicsScripts();
+    view.dynamicScriptSrc = returnPathOfScriptScr();
     // once for all
     view.nav = buildNav(members);
     view.searchList = searchList()
