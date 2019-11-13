@@ -5,6 +5,7 @@ live demo: https://ankdev.me/clean-jsdoc-theme/index.html
 ### Demo screen
 ![Screen-1](./example/screen-1.png)
 ![Screen-2](./example/screen-2.png)
+![Screen-3](./example/screen-.png)
 
 ## Install
 > Note you must have `npm` installed on your machine.
