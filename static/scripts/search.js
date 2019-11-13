@@ -1,5 +1,15 @@
 
 
+function checkClick(e){
+  if( e.target.id != "search-box"){
+    this.setTimeout(function(){
+      search("", [""], "");
+    }, 60);
+    
+    window.removeEventListener('click', checkClick)
+  }
+}
+
 function setupSearch(){
   var input_box = document.getElementById("search-box");
   var keys = ["title"]
@@ -10,6 +20,7 @@ function setupSearch(){
 
   input_box.addEventListener('focus', function(){
     search(list, keys, input_box.value)
+    window.addEventListener("click", checkClick)
   })
 }
 
