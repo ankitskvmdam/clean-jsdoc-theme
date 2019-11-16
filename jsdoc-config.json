@@ -27,8 +27,7 @@
 			"meta": [
 				"<meta name=\"author\" content=\"Ankit Kumar\">", 
 				"<meta name=\"description\" content=\"Best Clean and minimal JSDoc 3 Template / Theme\">"
-			],
-			"add_script_path": ["https://buttons.github.io/buttons.js"]
+			]
 		}
 	},
 	"markdown.hardwrap": true,
