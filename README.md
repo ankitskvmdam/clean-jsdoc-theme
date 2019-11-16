@@ -104,13 +104,13 @@ You can pass an object called `theme_opts` under `opts` for more options like:
                   ".my-custom-class{ filter: brightness(10) grayscale(100%)}", // This will apply filter to my-custom-class
   
   //You can add path of your style file. Note it must be relative to your output file. (relative to generated html files.)
-  "add_style_path": ["../custom.css"] // Pass array of path
+  "add_style_path": ["../custom.css"] // Pass array of path or url
 
   // You can add custom script to html
   "add_scripts": "function foo(){console.log('foo')}",
 
   // You can add path of your script file. Note it must be relative to your output file. (relative to generated html files.)
-  "add_script_path": ["../custom.js"] // Pass array of path
+  "add_script_path": ["../custom.js"] // Pass array of path or url
   
   "footer": "This is footer",   // Here again you can pass html element 
   }
