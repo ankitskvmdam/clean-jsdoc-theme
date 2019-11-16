@@ -3,6 +3,11 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <?js if(this.meta != undefined ) { ?>
+      <?js this.meta.forEach(function(data){ ?>
+        <?js= data ?>
+      <?js }) ?>
+    <?js } ?>
     <title><?js= title ?></title>
 
     <script src="scripts/prettify/prettify.js"></script>

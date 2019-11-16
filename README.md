@@ -72,7 +72,7 @@ You can pass an object called `theme_opts` under `opts` for more options like:
     Default options
   */
   "theme_opts":{
-    "title": "Ankdev", 
+    "title": "clean-jsdoc-theme", 
     /* 
       Instead of only string you can pass html element like 
       <img src="src to your img relative to the output path" class="my-custom-class"/>
@@ -87,7 +87,11 @@ You can pass an object called `theme_opts` under `opts` for more options like:
       filter set it to false.
    */
   
-  
+  // You can pass meta options also
+  "meta": [
+      "<meta name=\"author\" content=\"Ankit Kumar\">", 
+      "<meta name=\"description\" content=\"Best Clean and minimal JSDoc 3 Template / Theme\">"
+    ],
   // You can create custom style which will overwrite the exisiting class property.
   "create_style": "nav{background: yellow}" +     // This will change the background color of sidebar.
                   ".my-custom-class{ filter: brightness(10) grayscale(100%)}", // This will apply filter to my-custom-class

@@ -445,6 +445,11 @@ function returnPathOfStyleSrc(){
     return style_path
 }
 
+function getMetaTagData(){
+    var meta = env && env.opts && env.opts.theme_opts && env.opts.theme_opts.meta || undefined;
+    return meta
+}
+
 function searchList(){
     return searchListArray;
 }
@@ -636,6 +641,7 @@ exports.publish = function(taffyData, opts, tutorials) {
     view.dynamicStyleSrc = returnPathOfStyleSrc();
     view.dynamicScript = createDynamicsScripts();
     view.dynamicScriptSrc = returnPathOfScriptScr();
+    view.meta = getMetaTagData();
     // once for all
     view.nav = buildNav(members);
     view.searchList = searchList()
