@@ -1,4 +1,7 @@
 # clean-jsdoc-theme
+[![Build Status](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme.svg?branch=production)](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme.svg?branch=production)
+
+
 A clean, responsive template / theme for JSDoc 3. This is created for those who love design. <br>
 You can also search in your documenation. This theme / template includes search. It uses fuse.js for search.<br/>
 live demo: https://ankdev.me/clean-jsdoc-theme/index.html
@@ -6,7 +9,7 @@ live demo: https://ankdev.me/clean-jsdoc-theme/index.html
 ![Screen-1](./example/screen-1.png)
 ![Screen-2](./example/screen-2.png)
 ![Screen-3](./example/screen-3.png)
-![Screen-4](./example/screen-4.png)
+![Screen-4](./example/screen-4.jpg)
 
 ## Install
 > Note you must have `npm` installed on your machine.
