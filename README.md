@@ -1,5 +1,10 @@
 # clean-jsdoc-theme
-[![Build Status](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme.svg?branch=production)](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme.svg?branch=production) [![lisence](https://img.shields.io/github/license/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/LICENSE) [![Stars](https://img.shields.io/github/stars/ankitskvmdam/clean-jsdoc-theme?color=f6da63)](https://github.com/ankitskvmdam/clean-jsdoc-theme) [![Fork](https://img.shields.io/github/forks/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/fork)
+[![Build Status](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme.svg?branch=production)](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme.svg?branch=production) [![lisence](https://img.shields.io/github/license/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/LICENSE) [![Stars](https://img.shields.io/github/stars/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme) [![Fork](https://img.shields.io/github/forks/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/fork) ![Version](https://img.shields.io/badge/version-2.2.3-%23007bff)
+
+<!--
+[![Build Status](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme.svg?branch=production)](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme) 
+<a class="github-button" href="https://github.com/ankitskvmdam/clean-jsdoc-theme" data-icon="octicon-star" aria-label="Star ankitskvmdam/clean-jsdoc-theme on GitHub">Star</a> <a class="github-button" href="https://github.com/ankitskvmdam/clean-jsdoc-theme/fork" data-icon="octicon-repo-forked" aria-label="Fork ankitskvmdam/clean-jsdoc-theme on GitHub">Fork</a> <a class="github-button" href="https://github.com/ankitskvmdam" aria-label="Follow @ankitskvmdam on GitHub">Follow @ankitskvmdam</a> <a class="github-button" href="https://github.com/sponsors/ankitskvmdam" data-icon="octicon-heart" aria-label="Sponsor @ankitskvmdam on GitHub">Sponsor</a> <a class="github-button" href="https://github.com/ankitskvmdam/clean-jsdoc-theme/archive/master.zip" data-icon="octicon-cloud-download" aria-label="Download ankitskvmdam/clean-jsdoc-theme on GitHub">Download</a>
+-->
 <br>
 
 
