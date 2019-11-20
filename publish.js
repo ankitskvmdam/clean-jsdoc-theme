@@ -378,6 +378,8 @@ function buildNav(members) {
     var seen = {};
     var seenTutorials = {};
 
+    var menu = env && env.opts && env.opts.theme_opts && env.opts.theme_opts.menu || undefined;
+    if (menu != undefined) nav += buildMenuNav(menu);
     nav += buildMemberNav(members.tutorials, 'Tutorials', seenTutorials, linktoTutorial, true);
     nav += buildMemberNav(members.classes, 'Classes', seen, linkto);
     nav += buildMemberNav(members.modules, 'Modules', {}, linkto);
@@ -412,6 +414,20 @@ function buildNav(members) {
 
     nav +='</div>'
     return nav;
+}
+
+function buildMenuNav(menu){
+    var m= "<ul>";
+    menu.forEach(function(item){
+        // Setting default value for optional parameter
+        var c = item.class || "";
+        var id = item.id || "";
+        var target = item.target || "";
+        m+="<li><a href='"+ item.link+ "' class='"+ c +"' id='"+ id + "' target='"+ target +"'>"+ item.title+ "</a></li>";
+    });
+
+    m+="</ul>";
+    return m;
 }
 
 function buildSearch(){
