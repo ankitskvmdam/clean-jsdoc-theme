@@ -97,6 +97,25 @@ You can pass an object called `theme_opts` under `opts` for more options like:
       If you did not want any
       filter set it to false.
    */
+
+  // Adding additional menu.
+  "menu": [
+    {
+      "title": "Website", //You have to give title otherwise you get error.
+      "link": "https://ankdev.me/clean-jsdoc-theme/index.html", // You have to give link otherwise you get error.
+      // Below properties are optional.
+      "target": "_blank",
+      "class": "some-class",
+      "id": "some-id"
+    },
+    {
+      "title": "Github",
+      "link": "https://github.com/ankitskvmdam/clean-jsdoc-theme/",
+      "target": "_blank",
+      "class": "some-class",
+      "id": "some-id"
+    }
+  ]
   
   // You can pass meta options also
   "meta": [
@@ -108,13 +127,13 @@ You can pass an object called `theme_opts` under `opts` for more options like:
                   ".my-custom-class{ filter: brightness(10) grayscale(100%)}", // This will apply filter to my-custom-class
   
   //You can add path of your style file. Note it must be relative to your output file. (relative to generated html files.)
-  "add_style_path": ["../custom.css"] // Pass array of path or url
+  "add_style_path": ["../custom.css"], // Pass array of path or url
 
   // You can add custom script to html
   "add_scripts": "function foo(){console.log('foo')}",
 
   // You can add path of your script file. Note it must be relative to your output file. (relative to generated html files.)
-  "add_script_path": ["../custom.js"] // Pass array of path or url
+  "add_script_path": ["../custom.js"], // Pass array of path or url
   
   "footer": "This is footer",   // Here again you can pass html element 
   }
