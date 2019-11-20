@@ -1,6 +1,6 @@
 {
   "name": "clean-jsdoc-theme",
-  "version": "2.2.3",
+  "version": "2.2.4",
   "description": "Clean and minimal JSDoc 3 Template / Theme",
   "main": "publish.js",
   "scripts": {
