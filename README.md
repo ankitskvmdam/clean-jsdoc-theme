@@ -78,8 +78,8 @@ In your `jsdoc.json` file, add a template option.
 ```
 
 ## Features
-We believe in giving freedom to the developer, that's why we have given many option to 
-the developer to customize this theme according to there needs.
+We believe in giving freedom to the developer, that's why we have given many options to 
+the developer to customize this theme according to their needs.
 You can pass an object called `theme_opts` under `opts` for more options like:
 ```javascript
 "opts":{
