@@ -146,7 +146,7 @@ You can pass an object called `theme_opts` under `opts` for more options like:
 
 ## Developing
 
-Before starting please go through our ![contributing guide](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CONTRIBUTING.md).
+Before starting please go through our [contributing guide](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CONTRIBUTING.md).
 
 ```bash 
 git clone https://github.com/ankitskvmdam/clean-jsdoc-theme.git
