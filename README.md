@@ -126,6 +126,9 @@ You can pass an object called `theme_opts` under `opts` for more options like:
       "<meta name=\"author\" content=\"Ankit Kumar\">", 
       "<meta name=\"description\" content=\"Best Clean and minimal JSDoc 3 Template / Theme\">"
     ],
+
+  "search": false, //This option is for either showing or hiding the search. By default it is true.
+  
   // You can create custom style which will overwrite the exisiting class property.
   "create_style": "nav{background: yellow}" +     // This will change the background color of sidebar.
                   ".my-custom-class{ filter: brightness(10) grayscale(100%)}", // This will apply filter to my-custom-class

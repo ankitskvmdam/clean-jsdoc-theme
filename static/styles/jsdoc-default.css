@@ -326,9 +326,15 @@ nav h3 {
   left: 0;
   right: 0;
   bottom: 0;
-  top: 200px;
+  top: 130px;
   overflow: auto;
 }
+
+/* If search box is there then more space is required */
+.search-box + .sidebar-list-div{
+  top: 200px;
+}
+
 
 .sidebar-list-div ul, nav ul {
   font-family: 'body';
