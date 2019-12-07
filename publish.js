@@ -373,7 +373,8 @@ function buildNav(members) {
         else nav = '<h2><a href="index.html">'+title+'</a></h2>'
     }
 
-    nav += buildSearch()
+    var search = env && env.opts && env.opts.theme_opts && env.opts.theme_opts.search;
+    if(search === undefined || JSON.parse(search)) nav += buildSearch()
     nav += '<div class="sidebar-list-div">'
     var seen = {};
     var seenTutorials = {};
