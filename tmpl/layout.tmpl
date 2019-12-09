@@ -21,6 +21,7 @@
     <link type="text/css" rel="stylesheet" href="styles/ionicons.min.css">
     <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
     <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+    <link type="text/css" rel="stylesheet" href="styles/clean-jsdoc-theme.css">
     <?js if(this.dynamicStyle != undefined ) { ?>
       <style>
         <?js= this.dynamicStyle ?>
@@ -38,7 +39,7 @@
     <?js } ?>
 </head>
 <body>
-
+<?js= this.partial('icons.tmpl') ?>
 <input type="checkbox" id="nav-trigger" class="nav-trigger" />
 <label for="nav-trigger" class="navicon-button x">
   <div class="navicon"></div>
@@ -76,6 +77,6 @@ setupSearch(list)
     <?js= this.dynamicScript ?>
   </script>
 <?js } ?>
-
+<script type="text/javascript" src="scripts/misc.js"></script>
 </body>
 </html>
