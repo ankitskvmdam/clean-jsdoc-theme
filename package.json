@@ -15,7 +15,7 @@
   "bugs": {
     "url": "https://github.com/ankitskvmdam/clean-jsdoc-theme/issues"
   },
-  "homepage": "https://github.com/ankitskvmdam/clean-jsdoc-theme#readme",
+  "homepage": "https://ankdev.me/clean-jsdoc-theme/index.html",
   "dependencies": {
     "jsdoc": "^3.6.3"
   },
