@@ -36,7 +36,7 @@ body {
 
 a,
 a:active {
-  color: #007bff;
+  color: #530FFF;
   text-decoration: none;
 }
 
@@ -302,7 +302,7 @@ nav .search-box input{
 }
 .search-item-ul a:hover{
   text-decoration: none;
-  color: #007bff;
+  color: #530FFF;
 }
 
 nav > h2 {
@@ -388,7 +388,7 @@ footer {
   display: block;
   padding: 30px;
   font-size: 80%;
-  color: #999;
+  color: #555555;
   font-style: italic;
 }
 
@@ -505,7 +505,7 @@ h4.name::before{
   overflow: auto;
   border-radius: 8px;
   margin: 30px 0;
-  padding-bottom: 20px;
+  padding-top: 5px;
 }
 
 .prettyprint.source {
@@ -554,7 +554,8 @@ h4.name::before{
 }
 
 .prettyprint.linenums li.selected, .prettyprint.linenums li.selected * {
-   background-color: #404040
+   background-color: #404040;
+   padding: 1px;
 }
 
 .prettyprint.linenums li * {
