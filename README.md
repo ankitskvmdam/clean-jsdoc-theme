@@ -76,7 +76,7 @@ In your `jsdoc.json` file, add a template option.
 We believe in giving freedom to the developer, that's why we have given many options to 
 the developer to customize this theme according to their needs.
 You can pass an object called `theme_opts` under `opts` for more options like:
-```javascript
+```json
 "opts":{
   /*
     Default options
@@ -114,7 +114,7 @@ You can pass an object called `theme_opts` under `opts` for more options like:
       "class": "some-class",
       "id": "some-id"
     }
-  ]
+  ],
   
   // You can pass meta options also
   "meta": [
