@@ -12,7 +12,7 @@ We love your input! We want to make contributing to this project as easy and tra
 - Becoming a maintainer
 
 ## Any contributions you make will be under the MIT Software License
-In short, when you submit code changes, your submissions are understood to be under the same [MIT License](http://choosealicense.com/licenses/mit/) that covers the project. Feel free to contact the maintainers if that's a concern.
+In short, when you submit code changes, your submissions are understood to be under the same [MIT License](http://choosealicense.com/licenses/mit/) that covers the project. Feel free to contact at hello@ankdev.me if that's a concern.
 
 ## Creating issues
 Please go through [bug_report](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/.github/ISSUE_TEMPLATE/bug_report.md) and [feature_request](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/.github/ISSUE_TEMPLATE/feature_request.md) guide for information
