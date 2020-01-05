@@ -538,6 +538,7 @@ h4.name::before{
 
 .prettyprint.linenums {
   padding-left: 70px;
+  padding-top: 25px;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
