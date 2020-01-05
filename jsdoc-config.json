@@ -5,7 +5,7 @@
 	"source": {
 		"include": [
             "./demo/src",
-            "./README.md"
+			"./README.md"
 		]
 	},
 	"plugins": ["plugins/markdown"],
