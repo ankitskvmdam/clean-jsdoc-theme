@@ -59,7 +59,7 @@ var self = this;
 <?js } ?>
 
 <?js if (data.fires && fires.length) { ?>
-<div class="method-member-container flex w-100 overflow-auto mt-20">
+<div class="method-member-container mt-20">
 <strong>Fires:</strong>
 <ul><?js fires.forEach(function(f) { ?>
     <li><?js= self.linkto(f) ?></li>
@@ -67,7 +67,7 @@ var self = this;
 <?js } ?>
 
 <?js if (data.listens && listens.length) { ?>
-<div class="method-member-container flexl w-100 overflow-auto mt-20">
+<div class="method-member-container flex w-100 overflow-auto mt-20">
 <strong>Listens to Events:</strong>
 <ul><?js listens.forEach(function(f) { ?>
     <li><?js= self.linkto(f) ?></li>
