@@ -4,21 +4,21 @@ var self = this;
 ?>
 <?js if (data.kind !== 'module') { ?>
     <?js if (data.kind === 'class' && data.classdesc) { ?>
-    <h2>Constructor</h2>
+        <h2>Constructor</h2>
     <?js } ?>
 
     <h4 class="name" id="<?js= id ?>"><?js= data.attribs + (kind === 'class' ? 'new ' : '') +
     name + (data.signature || '') ?></h4>
 
     <?js if (data.summary) { ?>
-    <p class="summary"><?js= summary ?></p>
+        <p class="summary"><?js= summary ?></p>
     <?js } ?>
 <?js } ?>
 
 <?js if (data.kind !== 'module' && data.description) { ?>
-<div class="description">
-    <?js= data.description ?>
-</div>
+    <div class="description">
+        <?js= data.description ?>
+    </div>
 <?js } ?>
 
 <?js if (data.augments && data.alias && data.alias.indexOf('module:') === 0) { ?>
@@ -50,69 +50,79 @@ var self = this;
 <?js= this.partial('details.tmpl', data) ?>
 
 <?js if (data.kind !== 'module' && data.requires && data.requires.length) { ?>
-<div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-<strong>Requires:</strong>
-<ul><?js data.requires.forEach(function(r) { ?>
-    <li><?js= self.linkto(r) ?></li>
-<?js }); ?></ul>
-</div>
+    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
+        <strong>Requires:</strong>
+        <ul>
+            <?js data.requires.forEach(function(r) { ?>
+                <li><?js= self.linkto(r) ?></li>
+            <?js }); ?>
+        </ul>
+    </div>
 <?js } ?>
 
 <?js if (data.fires && fires.length) { ?>
-<div class="method-member-container flex w-100 overflow-auto mt-20">
-<strong>Fires:</strong>
-<ul><?js fires.forEach(function(f) { ?>
-    <li><?js= self.linkto(f) ?></li>
-<?js }); ?></ul>
-</div>
+    <div class="method-member-container flex w-100 overflow-auto mt-20">
+        <strong>Fires:</strong>
+            <ul>
+                <?js fires.forEach(function(f) { ?>
+                    <li><?js= self.linkto(f) ?></li>
+                <?js }); ?>
+            </ul>
+    </div>
 <?js } ?>
 
 <?js if (data.listens && listens.length) { ?>
-<div class="method-member-container flex w-100 overflow-auto mt-20">
-<strong>Listens to Events:</strong>
-<ul><?js listens.forEach(function(f) { ?>
-    <li><?js= self.linkto(f) ?></li>
-<?js }); ?></ul>
-</div>
+    <div class="method-member-container flex w-100 overflow-auto mt-20">
+        <strong>Listens to Events:</strong>
+        <ul>
+            <?js listens.forEach(function(f) { ?>
+                <li><?js= self.linkto(f) ?></li>
+            <?js }); ?>
+        </ul>
+    </div>
 <?js } ?>
 
 <?js if (data.listeners && listeners.length) { ?>
-<strong>Listeners of This Event:</strong>
-<ul><?js listeners.forEach(function(f) { ?>
-    <li><?js= self.linkto(f) ?></li>
-<?js }); ?></ul>
+    <strong>Listeners of This Event:</strong>
+    <ul>
+        <?js listeners.forEach(function(f) { ?>
+            <li><?js= self.linkto(f) ?></li>
+        <?js }); ?>
+    </ul>
 <?js } ?>
 
 <?js if (data.exceptions && exceptions.length) { ?>
-<strong>Throws:</strong>
-<?js if (exceptions.length > 1) { ?><ul><?js
-    exceptions.forEach(function(r) { ?>
-        <li><?js= self.partial('exceptions.tmpl', r) ?></li>
-    <?js });
-?></ul><?js } else {
-    exceptions.forEach(function(r) { ?>
+    <strong>Throws:</strong>
+    <?js if (exceptions.length > 1) { ?>
+        <ul>
+            <?js exceptions.forEach(function(r) { ?>
+                <li><?js= self.partial('exceptions.tmpl', r) ?></li>
+            <?js }); ?>
+        </ul>
+    <?js } else { exceptions.forEach(function(r) { ?>
         <?js= self.partial('exceptions.tmpl', r) ?>
     <?js });
 } } ?>
 
 <?js if (data.returns && returns.length) { ?>
-<div class="method-member-container mt-20">
-<strong>Returns:</strong>
-<?js if (returns.length > 1) { ?><ul><?js
-    returns.forEach(function(r) { ?>
-        <li><?js= self.partial('returns.tmpl', r) ?></li>
-    <?js });
-?></ul><?js } else {
-    returns.forEach(function(r) { ?>
-        <?js= self.partial('returns.tmpl', r) ?>
-    <?js });
-} ?> 
-</div>
+    <div class="method-member-container mt-20">
+    <strong>Returns:</strong>
+        <?js if (returns.length > 1) { ?>
+            <ul>
+                <?js returns.forEach(function(r) { ?>
+                    <li><?js= self.partial('returns.tmpl', r) ?></li>
+                <?js }); ?>
+            </ul>
+        
+        <?js } else { returns.forEach(function(r) { ?>
+            <?js= self.partial('returns.tmpl', r) ?><?js });
+        } ?> 
+    </div>
 <?js } ?>
 
 <?js if (data.examples && examples.length) { ?>
-<div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-    <strong>Example<?js= examples.length > 1? 's':'' ?></strong>
-    <?js= this.partial('examples.tmpl', examples) ?>
-</div>
+    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
+        <strong>Example<?js= examples.length > 1? 's':'' ?></strong>
+        <?js= this.partial('examples.tmpl', examples) ?>
+    </div>
 <?js } ?>
