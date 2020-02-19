@@ -140,6 +140,9 @@ You can pass an object called `theme_opts` under `opts` for more options like:
 }
 ```
 
+## Bug fix
+* @fires breaks the layout [issue: [#38](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/38)] [fixes: [#39](https://github.com/ankitskvmdam/clean-jsdoc-theme/pull/39)] by[@riksnelders](https://github.com/riksnelders)
+
 ## Developing
 
 Before starting please go through our [contributing guide](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CONTRIBUTING.md).
