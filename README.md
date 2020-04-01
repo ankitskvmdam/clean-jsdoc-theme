@@ -141,7 +141,7 @@ You can pass an object called `theme_opts` under `opts` for more options like:
 ```
 
 ## Bug fix [version 2.2.11]
-* @fires breaks the layout [issue: [#38](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/38)] [fixes: [#39](https://github.com/ankitskvmdam/clean-jsdoc-theme/pull/39)] by[@riksnelders](https://github.com/riksnelders)
+* @fires breaks the layout [issue: [#38](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/38)] [fixes: [#39](https://github.com/ankitskvmdam/clean-jsdoc-theme/pull/39)] by [@riksnelders](https://github.com/riksnelders)
 
 ## Developing
 
