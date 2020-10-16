@@ -4,29 +4,27 @@
  * @class
  */
 class Environment {
-
-	constructor() {
-
-		/**
+    constructor() {
+        /**
 		 * All the living things in this environment
 		 * @type {Array<Alive>}
 		 */
-		this.livingThings = null
+        this.livingThings = null;
 
-		/**
+        /**
 		 * The name of this environment
 		 * @type {String}
 		 */
-		this.name = null
-	}
+        this.name = null;
+    }
 
-	/**
+    /**
      * Vestibulum condimentum tempus {@link Alive} diam.
 	 * @param {EnvironmentConfiguration} config
 	 */
-	start(config) {
+    start(config) {
 
-	}
+    }
 }
 
 /**
@@ -35,7 +33,7 @@ class Environment {
  * @property {Map<String,Number>} strange
  */
 
- /**
+/**
  * Lorem ipsum dolor sit amet, {@link Energy} consectetur adipiscing el
  * @event Environment#beforeDestroy
  * @type {Energy}

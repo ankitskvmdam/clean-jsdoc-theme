@@ -3,7 +3,7 @@
  * @class
  */
 class Alive {
-    constructor(){
+    constructor() {
         /**
          * amount of energy
          * @property {Energy}
@@ -15,7 +15,7 @@ class Alive {
      * @return {Energy} the energy wasted in this surviving instance
      * @method
      */
-	survive() {
-        return null
-	}
+    survive() {
+        return null;
+    }
 }
