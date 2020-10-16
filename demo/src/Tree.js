@@ -4,22 +4,22 @@
  * @extends Alive
  */
 class Tree extends Alive {
-	constructor() {
-		super()
-		/**
+    constructor() {
+        super();
+        /**
 		 * Donec imperdiet dignissim
 		 * @type {Array<Alive>}
 		 */
-		this.branches = null
-	}
-	/**
+        this.branches = null;
+    }
+    /**
 	 * @param {Environment} environment the environment when this Alive thing is surviving
 	 * @return {Energy} the energy wasted in this surviving instance
 	 * @method
 	 * @fires Tree.crop
 	 * @Throws Err
 	 */
-	crop() {
-		return null
-	}
+    crop() {
+        return null;
+    }
 }

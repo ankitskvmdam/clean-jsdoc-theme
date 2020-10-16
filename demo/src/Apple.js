@@ -4,13 +4,13 @@
  * @extends Alive
  */
 class Apple extends Alive {
-	constructor() {
-		super()
-		/**
+    constructor() {
+        super();
+        /**
 		 * Donec imperdiet dignissim
 		 * @type {String}
 		 */
-		this.color = null
+        this.color = null;
     }
 }
 

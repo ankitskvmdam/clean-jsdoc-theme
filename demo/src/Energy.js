@@ -3,19 +3,19 @@
  * @class
  */
 class Energy {
-	constructor() {
-		/**
+    constructor() {
+        /**
 		 * the amount of energy in this unit
 		 * @type {number}
 		 */
-		this.amount = null
+        this.amount = null;
 
         /**
          * Mauris interdum neque {@link Environment} id massa
          * @type {EnergyUnit}
          */
-		this.unit = null
-	}
+        this.unit = null;
+    }
 }
 
 /**
