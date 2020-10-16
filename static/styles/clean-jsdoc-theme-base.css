@@ -7,7 +7,6 @@ pre {
     border-radius: 50%;
     cursor: pointer;
     display: flex;
-    fill: #fff;
     height: 30px;
     justify-content: center;
     position: absolute;
@@ -15,11 +14,6 @@ pre {
     top: 10px;
     transition: 0.3s;
     width: 30px;
-}
-
-.code-copy-icon-container:hover {
-    background-color: #fff;
-    fill: #000;
 }
 
 .code-copy-icon-container > div {
@@ -35,19 +29,16 @@ pre {
 .code-lang-name-container {
     left: 15px;
     position: absolute;
-    top: 10px;   
+    top: 10px;
 }
 
 .code-lang-name {
-    color: #ff8a00;
     font-family: 'code';
     font-size: 12px;
 }
 
 .tooltip {
-    background: #ffce76;
     border-radius: 5px;
-    color: #000;
     opacity: 0;
     padding: 3px 8px;
     position: absolute;

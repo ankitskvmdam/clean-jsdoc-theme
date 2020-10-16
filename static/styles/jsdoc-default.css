@@ -26,9 +26,6 @@ body {
 }
 
 body {
-    background-color: #fff;
-    color: #4d4e53;
-
     font-family: 'body';
     font-size: 16px;
     margin: 0 auto;
@@ -37,7 +34,6 @@ body {
 
 a,
 a:active {
-    color: #530fff;
     text-decoration: none;
 }
 
@@ -61,10 +57,6 @@ p {
     width: 100%;
 }
 
-hr {
-    border: 1px solid #eee;
-}
-
 h1,
 h2,
 h3,
@@ -80,7 +72,6 @@ h3,
 h4,
 h5,
 h6 {
-    color: #000;
     font-weight: 400;
     margin: 0;
 }
@@ -103,7 +94,6 @@ h1.page-title {
 
 h1.page-title::after,
 article h1::after {
-    background: #fbe555;
     bottom: 5px;
     content: '';
     display: block;
@@ -126,7 +116,6 @@ h3 {
 }
 
 h4 {
-    color: #4d4e53;
     font-size: 18px;
     margin: 1em 0 0.2em;
 }
@@ -139,7 +128,6 @@ h5,
 }
 
 .subsection-title {
-    border-bottom: 1px solid #eee;
     text-transform: uppercase;
 }
 
@@ -154,7 +142,6 @@ tt,
 code,
 kbd,
 samp {
-    background: #f4f4f4;
     border-radius: 5px;
     font-family: 'code';
     font-size: 80%;
@@ -183,7 +170,6 @@ header {
 }
 
 section {
-    background-color: #fff;
     display: block;
     padding: 0 30px;
 }
@@ -199,7 +185,6 @@ section h2 {
 }
 
 section h2::after {
-    background: #eee;
     bottom: 0;
     content: '';
     display: block;
@@ -207,16 +192,6 @@ section h2::after {
     position: absolute;
     width: 100%;
     z-index: -1;
-}
-
-::selection {
-    background: #ffce76;
-    color: #1d1919;
-}
-
-::selection {
-    background: #ffce76;
-    color: #1d1919;
 }
 
 section ul {
@@ -229,14 +204,12 @@ section ul {
 }
 
 .signature-attributes {
-    color: #aaa;
     font-size: 60%;
     font-style: italic;
     font-weight: lighter;
 }
 
 nav {
-    background: #001628;
     display: block;
     height: 100%;
     overflow-y: auto;
@@ -257,7 +230,6 @@ nav h2 img {
 }
 
 nav > h2 > a {
-    color: #fff !important;
     display: block;
     font-size: 30px;
     font-weight: 700;
@@ -274,13 +246,7 @@ nav > h2 > a {
 }
 
 /* stylelint-disable */
-nav > h2 > a.filter img {
-    filter: grayscale(100%) brightness(10);
-    filter: grayscale(100%) brightness(10);
-}
-
 nav > h2 > a > .text::after {
-    /* background: #1089ff; */
     bottom: -5px;
     content: '';
     display: block;
@@ -308,7 +274,6 @@ nav .search-box input {
 }
 
 .search-box .search-item-container {
-    background: #fff;
     border-radius: 4px;
     position: absolute;
     top: 35px;
@@ -321,19 +286,16 @@ nav .search-box input {
 }
 
 .search-item-ul li {
-    color: #999;
     font-size: 12px;
     padding: 5px 10px;
     transition: 0.3s;
 }
 
 .search-item-ul li:hover {
-    background: #f7f7f7;
     border-radius: 4px;
 }
 
 .search-item-ul a:hover {
-    color: #530fff;
     text-decoration: none;
 }
 
@@ -344,7 +306,6 @@ nav > h2 {
 nav h2,
 nav h3,
 nav h3 a {
-    color: #fff !important;
     font-size: 18px;
     margin: 0;
 }
@@ -386,7 +347,6 @@ nav ul a {
 }
 
 nav a:hover {
-    color: #1089ff;
     text-decoration: underline;
 }
 
@@ -396,7 +356,6 @@ nav a:hover {
 
 /* stylelint-disable */
 .sidebar-list-div > ul > li > a {
-    color: #c9d1d3;
     font-weight: 500;
     margin: 0;
     padding: 4px 10px;
@@ -408,7 +367,6 @@ nav a:hover {
 }
 
 .sidebar-list-div ul ul a {
-    color: #c9d1d3;
 }
 
 .sidebar-list-div ul ul a,
@@ -419,8 +377,6 @@ nav a:hover {
 /* stylelint-enable */
 
 footer {
-    color: #222;
-    color: #555;
     display: block;
     font-size: 80%;
     font-style: italic;
@@ -428,12 +384,7 @@ footer {
     padding: 30px;
 }
 
-.ancestors {
-    color: #999;
-}
-
 .ancestors a {
-    color: #999 !important;
     text-decoration: none;
 }
 
@@ -442,16 +393,11 @@ footer {
 }
 
 .important {
-    color: #950b02;
     font-weight: bold;
 }
 
 .yes-def {
     text-indent: -1000px;
-}
-
-.type-signature {
-    color: #00918e;
 }
 
 .signature {
@@ -460,7 +406,6 @@ footer {
 }
 
 .name {
-    color: #293a80;
     font-family: 'code';
     font-size: 110%;
     font-weight: bold;
@@ -475,9 +420,6 @@ h4.name::before {
 /* stylelint-enable */
 
 .details {
-    background: #f7f7f7;
-    border-left: 5px solid #001628;
-    color: #001628;
     margin: 0;
     padding: 10px;
 }
@@ -521,11 +463,6 @@ h4.name::before {
     margin-bottom: 32px;
 }
 
-.member-item-container strong,
-.method-member-container strong {
-    color: #001628;
-}
-
 .method-member-container table {
     margin-top: 15px;
 }
@@ -537,7 +474,6 @@ h4.name::before {
 }
 
 .prettyprint {
-    background: #001628;
     border-radius: 8px;
     font-size: 14px;
     margin: 30px 0;
@@ -550,7 +486,6 @@ h4.name::before {
 }
 
 .prettyprint code {
-    background-color: #001628;
     display: block;
     font-size: 14px;
     line-height: 16px;
@@ -588,13 +523,11 @@ h4.name::before {
 }
 
 .prettyprint.linenums li {
-    border-left: 3px #222831 solid;
     min-height: 18px;
 }
 
 .prettyprint.linenums li.selected,
 .prettyprint.linenums li.selected * {
-    background-color: #404040;
     padding: 1px;
 }
 /* stylelint-enable */
@@ -611,7 +544,6 @@ h4.name::before {
     border-collapse: collapse;
     border-radius: 8px;
     border-spacing: 0;
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
     font-size: 14px;
     margin: 30px 0;
     width: 100%;
@@ -620,7 +552,6 @@ h4.name::before {
 .params .name,
 .props .name,
 .name code {
-    color: #4d4e53;
     font-family: 'code';
     font-size: 100%;
 }
@@ -636,22 +567,14 @@ h4.name::before {
     vertical-align: top;
 }
 
-.params td {
-    border-top: 1px solid #eee;
-}
-
 .params thead tr,
 .props thead tr {
-    background-color: #001628;
-    color: #fff;
     font-weight: bold;
 }
 
 /* stylelint-disable */
 .params .params thead tr,
 .props .props thead tr {
-    background-color: #001628;
-    color: #fff;
     font-weight: bold;
 }
 
@@ -668,7 +591,6 @@ h4.name::before {
 }
 
 dl.param-type {
-    border-bottom: 1px solid hsl(0, 0%, 87%);
     margin-bottom: 30px;
     padding-bottom: 30px;
 }
@@ -685,16 +607,12 @@ dl.param-type {
     font-size: 80%;
 }
 
-.disabled {
-    color: #454545;
-}
-
 /* navicon button */
 
 .navicon-button {
     cursor: pointer;
     display: none;
-    padding: 30px 15px;
+    padding: 20px 10px;
     position: relative;
     transition: 0.25s;
     user-select: none;
@@ -716,43 +634,41 @@ dl.param-type {
 }
 
 .navicon-button:hover .navicon::before {
-    top: 0.825rem;
+    top: 0.625rem;
 }
 
 .navicon-button:hover .navicon::after {
-    top: -0.825rem;
+    top: -0.625rem;
 }
 
 /* navicon */
 
 .navicon {
-    background: #000;
     border-radius: 2.5rem;
-    height: 0.3125rem;
+    height: 0.125rem;
     position: relative;
     transition: 0.3s;
-    width: 2.5em;
+    width: 2em;
 }
 
 .navicon::before,
 .navicon::after {
-    background: #000;
     border-radius: 1rem;
     content: '';
     display: block;
-    height: 0.3125rem;
+    height: 0.125rem;
     position: absolute;
     transition: 0.3s 0.25s;
-    width: 2.5rem;
+    width: 2rem;
     z-index: -1;
 }
 
 .navicon::before {
-    top: 0.625rem;
+    top: 0.5rem;
 }
 
 .navicon::after {
-    top: -0.625rem;
+    top: -0.5rem;
 }
 
 /* open */
@@ -767,34 +683,19 @@ dl.param-type {
     transition: 0.5s;
 }
 
-/* Minus */
-
-.nav-trigger:checked + label {
-    transform: scale(0.75);
-}
-
-/* × and + */
-
 /* stylelint-disable */
-.nav-trigger:checked + label.plus .navicon,
-.nav-trigger:checked + label.x .navicon {
-    background: transparent;
-}
-
 .nav-trigger:checked + label.plus .navicon::before,
 .nav-trigger:checked + label.x .navicon::before {
-    background: #000;
     transform: rotate(-45deg);
 }
 
 .nav-trigger:checked + label.plus .navicon::after,
 .nav-trigger:checked + label.x .navicon::after {
-    background: #000;
     transform: rotate(45deg);
 }
 
 .nav-trigger:checked + label.plus {
-    transform: scale(0.75) rotate(45deg);
+    transform: rotate(45deg);
 }
 
 .nav-trigger:checked ~ nav {
@@ -814,7 +715,6 @@ dl.param-type {
 }
 
 .overlay {
-    background: hsla(0, 0%, 0%, 0.5);
     bottom: 0;
     display: none;
     height: 100%;
@@ -826,7 +726,7 @@ dl.param-type {
     z-index: 1;
 }
 
-@media only screen and (min-width: 320px) and (max-width: 680px) {
+@media only screen and (max-width: 42rem) {
     /* Media query */
 
     body {
@@ -843,7 +743,6 @@ dl.param-type {
     }
 
     .navicon-button {
-        background: #f1f1f1;
         border-radius: 10px;
         display: inline-block;
         position: fixed;
