@@ -17,7 +17,7 @@
   },
   "homepage": "https://ankdev.me/clean-jsdoc-theme/index.html",
   "dependencies": {
-    "jsdoc": "^3.6.3"
+    "jsdoc": "^3.6.6"
   },
   "keywords": [
     "jsdoc",
