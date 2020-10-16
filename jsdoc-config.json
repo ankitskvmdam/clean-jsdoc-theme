@@ -1,37 +1,34 @@
 {
-	"tags": {
-		"allowUnknownTags": true
-	},
-	"source": {
-		"include": [
-            "./demo/src",
-			"./README.md"
-		]
-	},
-	"plugins": ["plugins/markdown"],
-	"templates": {
-		"cleverLinks": false,
-		"monospaceLinks": false,
-		"default": {
-			"outputSourceFiles": true
-		}
-	},
-	"opts": {
-		"encoding": "utf8",
-		"destination": "output",
-		"recurse": true,
-		"template": "./",
-		"theme_opts": {
-			"title": "clean-jsdoc-theme",
-			"footer": "Fork: <a href='https://github.com/ankitskvmdam/clean-jsdoc-theme'>https://github.com/ankitskvmdam/clean-jsdoc-theme</a>",
-			"meta": [
-				"<meta name=\"author\" content=\"Ankit Kumar\">", 
-				"<meta name=\"description\" content=\"A beautifully crafted theme/template for JSDoc 3.\">"
-			]
-		}
-	},
-	"markdown.hardwrap": true,
-	"markdown": {
-		"hardwrap": true
-	}
+    "tags": {
+        "allowUnknownTags": true
+    },
+    "source": {
+        "include": ["./demo/src", "./README.md"]
+    },
+    "plugins": ["plugins/markdown"],
+    "templates": {
+        "cleverLinks": false,
+        "monospaceLinks": false,
+        "default": {
+            "outputSourceFiles": true
+        }
+    },
+    "opts": {
+        "encoding": "utf8",
+        "destination": "output",
+        "recurse": true,
+        "template": "./",
+        "theme_opts": {
+            "title": "clean-jsdoc-theme",
+            "footer": "Fork: <a href='https://github.com/ankitskvmdam/clean-jsdoc-theme'>https://github.com/ankitskvmdam/clean-jsdoc-theme</a>",
+            "meta": [
+                "<meta name=\"author\" content=\"Ankit Kumar\">",
+                "<meta name=\"description\" content=\"A beautifully crafted theme/template for JSDoc 3.\">"
+            ]
+        }
+    },
+    "markdown.hardwrap": true,
+    "markdown": {
+        "hardwrap": true
+    }
 }
