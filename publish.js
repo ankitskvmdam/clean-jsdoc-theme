@@ -1,5 +1,4 @@
-/*global env: true */
-'use strict';
+/* global env: true */
 
 var doop = require('jsdoc/util/doop');
 var fs = require('jsdoc/fs');
@@ -17,8 +16,9 @@ var hasOwnProp = Object.prototype.hasOwnProperty;
 
 var data;
 var view;
-var searchListArray = []
+var searchListArray = [];
 
+// eslint-disable-next-line no-restricted-globals
 var outdir = path.normalize(env.opts.destination);
 
 function find(spec) {
@@ -26,7 +26,9 @@ function find(spec) {
 }
 
 function tutoriallink(tutorial) {
-    return helper.toTutorial(tutorial, null, { tag: 'em', classname: 'disabled', prefix: 'Tutorial: ' });
+    return helper.toTutorial(tutorial, null, { tag: 'em',
+        classname: 'disabled',
+        prefix: 'Tutorial: ' });
 }
 
 function getAncestorLinks(doclet) {
@@ -39,6 +41,7 @@ function hashToLink(doclet, hash) {
     var url = helper.createLink(doclet);
 
     url = url.replace(/(#.+|$)/, hash);
+
     return '<a href="' + url + '">' + hash + '</a>';
 }
 
@@ -136,6 +139,7 @@ function addNonParamAttributes(items) {
 
 function addSignatureParams(f) {
     var params = f.params ? addParamAttributes(f.params) : [];
+
     f.signature = util.format( '%s(%s)', (f.signature || ''), params.join(', ') );
 }
 
@@ -206,7 +210,7 @@ function getPathFromDoclet(doclet) {
 }
 
 function generate(type, title, docs, filename, resolveLinks) {
-    resolveLinks = resolveLinks === false ? false : true;
+    resolveLinks = resolveLinks !== false;
 
     var docData = {
         type: type,
@@ -230,6 +234,7 @@ function generateSourceFiles(sourceFiles, encoding) {
         var source;
         // links are keyed to the shortened path in each doclet's `meta.shortpath` property
         var sourceOutfile = helper.getUniqueFilename(sourceFiles[file].shortened);
+
         helper.registerLink(sourceFiles[file].shortened, sourceOutfile);
 
         try {
@@ -238,7 +243,7 @@ function generateSourceFiles(sourceFiles, encoding) {
                 code: helper.htmlsafe( fs.readFileSync(sourceFiles[file].resolved, encoding) )
             };
         }
-        catch(e) {
+        catch (e) {
             logger.error('Error while generating source file %s: %s', file, e.message);
         }
 
@@ -266,6 +271,7 @@ function attachModuleSymbols(doclets, modules) {
         symbols[symbol.longname].push(symbol);
     });
 
+    // eslint-disable-next-line array-callback-return
     return modules.map(function(module) {
         if (symbols[module.longname]) {
             module.modules = symbols[module.longname]
@@ -287,6 +293,102 @@ function attachModuleSymbols(doclets, modules) {
     });
 }
 
+function buildMenuNav(menu) {
+    var m = '<ul>';
+
+    menu.forEach(function(item) {
+        // Setting default value for optional parameter
+        var c = item.class || '';
+        var id = item.id || '';
+        var target = item.target || '';
+
+        m += "<li><a href='" + item.link + "' class='" + c + "' id='" + id + "' target='" + target + "'>" + item.title + '</a></li>';
+    });
+
+    m += '</ul>';
+
+    return m;
+}
+
+function buildSearch() {
+    var search = '<div class="search-box"><input type="text" placeholder="Search..." id="search-box" />';
+    var searchItemContainer = '<div class="search-item-container" id="search-item-container"><ul class="search-item-ul" id="search-item-ul"></ul></div></div>';
+
+    search += searchItemContainer;
+
+    return search;
+}
+
+function buildFooter() {
+    /* prettier-ignore-start */
+    // eslint-disable-next-line
+    var footer = env && env.opts && env.opts['theme_opts'] && env.opts['theme_opts'].footer || '';
+    /* prettier-ignore-end */
+
+    return footer;
+}
+
+function createDynamicStyleSheet() {
+    /* prettier-ignore-start */
+    // eslint-disable-next-line
+    var styleClass = env && env.opts && env.opts['theme_opts'] && env.opts['theme_opts']['create_style'] || undefined;
+    /* prettier-ignore-start */
+
+    return styleClass;
+}
+
+function createDynamicsScripts() {
+    /* prettier-ignore-start */
+    // eslint-disable-next-line
+    var scripts = env && env.opts && env.opts['theme_opts'] && env.opts['theme_opts']['add_scripts'] || undefined;
+    /* prettier-ignore-end */
+
+    return scripts;
+}
+
+function returnPathOfScriptScr() {
+    /* prettier-ignore-start */
+    // eslint-disable-next-line
+    var scriptPath = env && env.opts && env.opts['theme_opts'] && env.opts['theme_opts']['add_script_path'] || undefined;
+    /* prettier-ignore-end */
+
+    return scriptPath;
+}
+
+function returnPathOfStyleSrc() {
+    /* prettier-ignore-start */
+    // eslint-disable-next-line
+    var stylePath = env && env.opts && env.opts['theme_opts'] && env.opts['theme_opts']['add_style_path'] || undefined;
+    /* prettier-ignore-end */
+
+    return stylePath;
+}
+
+function getMetaTagData() {
+    /* prettier-ignore-start */
+    // eslint-disable-next-line
+    var meta = env && env.opts && env.opts['theme_opts'] && env.opts['theme_opts'].meta || undefined;
+    /* prettier-ignore-end */
+
+    return meta;
+}
+
+function getTheme() {
+    /* prettier-ignore-start */
+    // eslint-disable-next-line
+    var theme = env && env.opts && env.opts['theme_opts'] && env.opts['theme_opts'].theme || 'light';
+    /* prettier-ignore-end */
+    var baseThemeName = 'clean-jsdoc-theme';
+    var themeSrc = `${baseThemeName}-${theme}.css`.trim();
+
+    return themeSrc;
+}
+
+function searchList() {
+    return searchListArray;
+}
+
+
 function buildMemberNav(items, itemHeading, itemsSeen, linktoFn) {
     var nav = '';
 
@@ -294,7 +396,8 @@ function buildMemberNav(items, itemHeading, itemsSeen, linktoFn) {
         var itemsNav = '';
 
         items.forEach(function(item) {
-            var methods = find({kind:'function', memberof: item.longname});
+            var methods = find({kind: 'function',
+                memberof: item.longname});
             // var members = find({kind:'member', memberof: item.longname});
 
             if ( !hasOwnProp.call(item, 'longname') ) {
@@ -305,26 +408,27 @@ function buildMemberNav(items, itemHeading, itemsSeen, linktoFn) {
                 searchListArray.push(JSON.stringify({
                     title: item.name,
                     link: linkto(item.longname, item.name)
-                }))
+                }));
                 if (methods.length) {
                     itemsNav += "<ul class='methods'>";
 
-                    methods.forEach(function (method) {
-                        var name = method.longname.split('#')
-                        var first = name[0]
-                        var last = name[1]
-                        name = first + ' &rtrif; ' + last
+                    methods.forEach(function(method) {
+                        var name = method.longname.split('#');
+                        var first = name[0];
+                        var last = name[1];
+
+                        name = first + ' &rtrif; ' + last;
 
                         searchListArray.push(JSON.stringify({
                             title: method.longname,
                             link: linkto(method.longname, name)
-                        }))
+                        }));
                         itemsNav += "<li data-type='method'>";
                         itemsNav += linkto(method.longname, method.name);
-                        itemsNav += "</li>";
+                        itemsNav += '</li>';
                     });
 
-                    itemsNav += "</ul>";
+                    itemsNav += '</ul>';
                 }
                 itemsNav += '</li>';
                 itemsSeen[item.longname] = true;
@@ -362,25 +466,40 @@ function linktoExternal(longName, name) {
  * @return {string} The HTML for the navigation sidebar.
  */
 function buildNav(members) {
-    var title = env && env.opts && env.opts.theme_opts && env.opts.theme_opts.title || "Home"
+    /* prettier-ignore-start */
+    // eslint-disable-next-line
+    var title = (env && env.opts && env.opts['theme_opts'] && env.opts['theme_opts'].title) || 'Home';
+    /* prettier-ignore-end */
+
     var isHTML = RegExp.prototype.test.bind(/(<([^>]+)>)/i);
-    var nav 
-    if(!isHTML(title)) nav = '<h2><a href="index.html"><div class="text">'+title+'</div></a></h2>'
+    var nav;
+
+    if (!isHTML(title)) { nav = '<h2><a href="index.html"><div class="text">' + title + '</div></a></h2>'; }
     else {
-        var filter = env && env.opts && env.opts.theme_opts
-        if(filter.filter === undefined) filter.filter = true
-        if(JSON.parse(filter.filter)) nav = '<h2><a href="index.html" class="filter">'+title+'</a></h2>'
-        else nav = '<h2><a href="index.html">'+title+'</a></h2>'
+        // eslint-disable-next-line no-restricted-globals
+        var filter = env && env.opts && env.opts.theme_opts;
+
+        if (filter.filter === undefined) { filter.filter = true; }
+        if (JSON.parse(filter.filter)) { nav = '<h2><a href="index.html" class="filter">' + title + '</a></h2>'; }
+        else { nav = '<h2><a href="index.html">' + title + '</a></h2>'; }
     }
 
-    var search = env && env.opts && env.opts.theme_opts && env.opts.theme_opts.search;
-    if(search === undefined || JSON.parse(search)) nav += buildSearch()
-    nav += '<div class="sidebar-list-div">'
+    /* prettier-ignore-start */
+    // eslint-disable-next-line
+    var search = env && env.opts && env.opts['theme_opts'] && env.opts['theme_opts'].search;
+    /* prettier-ignore-end */
+
+    if (search === undefined || JSON.parse(search)) { nav += buildSearch(); }
+    nav += '<div class="sidebar-list-div">';
     var seen = {};
     var seenTutorials = {};
 
-    var menu = env && env.opts && env.opts.theme_opts && env.opts.theme_opts.menu || undefined;
-    if (menu != undefined) nav += buildMenuNav(menu);
+    /* prettier-ignore-start */
+    // eslint-disable-next-line
+    var menu = (env && env.opts && env.opts['theme_opts'] && env.opts['theme_opts'].menu) || undefined;
+    /* prettier-ignore-end */
+
+    if (menu !== undefined) { nav += buildMenuNav(menu); }
     nav += buildMemberNav(members.tutorials, 'Tutorials', seenTutorials, linktoTutorial, true);
     nav += buildMemberNav(members.classes, 'Classes', seen, linkto);
     nav += buildMemberNav(members.modules, 'Modules', {}, linkto);
@@ -397,8 +516,8 @@ function buildNav(members) {
             if ( g.kind !== 'typedef' && !hasOwnProp.call(seen, g.longname) ) {
                 searchListArray.push(JSON.stringify({
                     title: g.name,
-                    link: linkto(g.longname, "Global &rtrif; "+ g.name)
-                }))
+                    link: linkto(g.longname, 'Global &rtrif; ' + g.name)
+                }));
                 globalNav += '<li>' + linkto(g.longname, g.name) + '</li>';
             }
             seen[g.longname] = true;
@@ -409,67 +528,15 @@ function buildNav(members) {
             nav += '<h3>' + linkto('global', 'Global') + '</h3>';
         }
         else {
-            nav += '<h3>'+ linkto('global', 'Global') +'</h3><ul>' + globalNav + '</ul>';
+            nav += '<h3>' + linkto('global', 'Global') + '</h3><ul>' + globalNav + '</ul>';
         }
     }
 
-    nav +='</div>'
+    nav += '</div>';
+
     return nav;
 }
 
-function buildMenuNav(menu){
-    var m= "<ul>";
-    menu.forEach(function(item){
-        // Setting default value for optional parameter
-        var c = item.class || "";
-        var id = item.id || "";
-        var target = item.target || "";
-        m+="<li><a href='"+ item.link+ "' class='"+ c +"' id='"+ id + "' target='"+ target +"'>"+ item.title+ "</a></li>";
-    });
-
-    m+="</ul>";
-    return m;
-}
-
-function buildSearch(){
-    var search = '<div class="search-box"><input type="text" placeholder="Search..." id="search-box" />';
-    var searchItemContainer = '<div class="search-item-container" id="search-item-container"><ul class="search-item-ul" id="search-item-ul"></ul></div></div>'
-    search += searchItemContainer
-    return search;
-}
-function buildFooter(){
-    var footer = env && env.opts && env.opts.theme_opts && env.opts.theme_opts.footer || "";
-    return footer;
-}
-
-function createDynamicStyleSheet(){
-    var style_classes = env && env.opts && env.opts.theme_opts && env.opts.theme_opts.create_style || undefined;
-    return style_classes;
-}
-
-function createDynamicsScripts(){
-    var scripts = env && env.opts && env.opts.theme_opts && env.opts.theme_opts.add_scripts || undefined;
-    return scripts
-}
-
-function returnPathOfScriptScr(){
-    var script_path = env && env.opts && env.opts.theme_opts && env.opts.theme_opts.add_script_path || undefined;
-    return script_path
-}
-
-function returnPathOfStyleSrc(){
-    var style_path = env && env.opts && env.opts.theme_opts && env.opts.theme_opts.add_style_path || undefined;
-    return style_path
-}
-
-function getMetaTagData(){
-    var meta = env && env.opts && env.opts.theme_opts && env.opts.theme_opts.meta || undefined;
-    return meta
-}
-
-function searchList(){
-    return searchListArray;
-}
 /**
     @param {TAFFY} taffyData See <http://taffydb.com/>.
     @param {object} opts
@@ -478,10 +545,13 @@ function searchList(){
 exports.publish = function(taffyData, opts, tutorials) {
     data = taffyData;
 
+    // eslint-disable-next-line no-restricted-globals
     var conf = env.conf.templates || {};
+
     conf.default = conf.default || {};
 
     var templatePath = path.normalize(opts.template);
+
     view = new template.Template( path.join(templatePath, 'tmpl') );
 
     // claim some special filenames in advance, so the All-Powerful Overseer of Filename Uniqueness
@@ -490,6 +560,7 @@ exports.publish = function(taffyData, opts, tutorials) {
     // don't call registerLink() on this one! 'index' is also a valid longname
 
     var globalUrl = helper.getUniqueFilename('global');
+
     helper.registerLink('global', globalUrl);
 
     // set up templating
@@ -507,8 +578,9 @@ exports.publish = function(taffyData, opts, tutorials) {
 
     var sourceFiles = {};
     var sourceFilePaths = [];
+
     data().each(function(doclet) {
-         doclet.attribs = '';
+        doclet.attribs = '';
 
         if (doclet.examples) {
             doclet.examples = doclet.examples.map(function(example) {
@@ -533,6 +605,7 @@ exports.publish = function(taffyData, opts, tutorials) {
 
         // build a list of source files
         var sourcePath;
+
         if (doclet.meta) {
             sourcePath = getPathFromDoclet(doclet);
             sourceFiles[sourcePath] = {
@@ -546,7 +619,8 @@ exports.publish = function(taffyData, opts, tutorials) {
     });
 
     // update outdir if necessary, then create outdir
-    var packageInfo = ( find({kind: 'package'}) || [] ) [0];
+    var packageInfo = ( find({kind: 'package'}) || [] )[0];
+
     if (packageInfo && packageInfo.name) {
         outdir = path.join( outdir, packageInfo.name, (packageInfo.version || '') );
     }
@@ -558,6 +632,7 @@ exports.publish = function(taffyData, opts, tutorials) {
 
     staticFiles.forEach(function(fileName) {
         var toDir = fs.toDir( fileName.replace(fromDir, outdir) );
+
         fs.mkPath(toDir);
         fs.copyFileSync(fileName, toDir);
     });
@@ -566,6 +641,7 @@ exports.publish = function(taffyData, opts, tutorials) {
     var staticFilePaths;
     var staticFileFilter;
     var staticFileScanner;
+
     if (conf.default.staticFiles) {
         // The canonical property name is `include`. We accept `paths` for backwards compatibility
         // with a bug in JSDoc 3.2.x.
@@ -581,6 +657,7 @@ exports.publish = function(taffyData, opts, tutorials) {
             extraStaticFiles.forEach(function(fileName) {
                 var sourcePath = fs.toDir(filePath);
                 var toDir = fs.toDir( fileName.replace(sourcePath, outdir) );
+
                 fs.mkPath(toDir);
                 fs.copyFileSync(fileName, toDir);
             });
@@ -592,10 +669,12 @@ exports.publish = function(taffyData, opts, tutorials) {
     }
     data().each(function(doclet) {
         var url = helper.createLink(doclet);
+
         helper.registerLink(doclet.longname, url);
 
         // add a shortened version of the full path
         var docletPath;
+
         if (doclet.meta) {
             docletPath = getPathFromDoclet(doclet);
             docletPath = sourceFiles[docletPath].shortened;
@@ -639,12 +718,11 @@ exports.publish = function(taffyData, opts, tutorials) {
     });
 
     var members = helper.getMembers(data);
+
     members.tutorials = tutorials.children;
 
     // output pretty-printed source files by default
-    var outputSourceFiles = conf.default && conf.default.outputSourceFiles !== false 
-        ? true 
-        : false;
+    var outputSourceFiles = Boolean(conf.default && conf.default.outputSourceFiles !== false);
 
     // add template helpers
     view.find = find;
@@ -659,9 +737,10 @@ exports.publish = function(taffyData, opts, tutorials) {
     view.dynamicScript = createDynamicsScripts();
     view.dynamicScriptSrc = returnPathOfScriptScr();
     view.meta = getMetaTagData();
+    view.theme = getTheme();
     // once for all
     view.nav = buildNav(members);
-    view.searchList = searchList()
+    view.searchList = searchList();
     attachModuleSymbols( find({ longname: {left: 'module:'} }), members.modules );
 
     // generate the pretty-printed source files first so other pages can link to them
@@ -669,8 +748,8 @@ exports.publish = function(taffyData, opts, tutorials) {
         generateSourceFiles(sourceFiles, opts.encoding);
     }
 
-    if (members.globals.length) { 
-        generate('', 'Global', [{kind: 'globalobj'}], globalUrl); 
+    if (members.globals.length) {
+        generate('', 'Global', [{kind: 'globalobj'}], globalUrl);
     }
 
     // index page displays information from package.json and lists files
@@ -679,9 +758,11 @@ exports.publish = function(taffyData, opts, tutorials) {
 
     generate('', 'Home',
         packages.concat(
-            [{kind: 'mainpage', readme: opts.readme, longname: (opts.mainpagetitle) ? opts.mainpagetitle : 'Main Page'}]
+            [{kind: 'mainpage',
+                readme: opts.readme,
+                longname: (opts.mainpagetitle) ? opts.mainpagetitle : 'Main Page'}]
         ).concat(files),
-    indexUrl);
+        indexUrl);
 
     // set up the lists that we'll use to generate pages
     var classes = taffy(members.classes);
@@ -693,31 +774,37 @@ exports.publish = function(taffyData, opts, tutorials) {
 
     Object.keys(helper.longnameToUrl).forEach(function(longname) {
         var myModules = helper.find(modules, {longname: longname});
+
         if (myModules.length) {
             generate('Module', myModules[0].name, myModules, helper.longnameToUrl[longname]);
         }
 
         var myClasses = helper.find(classes, {longname: longname});
+
         if (myClasses.length) {
             generate('Class', myClasses[0].name, myClasses, helper.longnameToUrl[longname]);
         }
 
         var myNamespaces = helper.find(namespaces, {longname: longname});
+
         if (myNamespaces.length) {
             generate('Namespace', myNamespaces[0].name, myNamespaces, helper.longnameToUrl[longname]);
         }
 
         var myMixins = helper.find(mixins, {longname: longname});
+
         if (myMixins.length) {
             generate('Mixin', myMixins[0].name, myMixins, helper.longnameToUrl[longname]);
         }
 
         var myExternals = helper.find(externals, {longname: longname});
+
         if (myExternals.length) {
             generate('External', myExternals[0].name, myExternals, helper.longnameToUrl[longname]);
         }
 
         var myInterfaces = helper.find(interfaces, {longname: longname});
+
         if (myInterfaces.length) {
             generate('Interface', myInterfaces[0].name, myInterfaces, helper.longnameToUrl[longname]);
         }
@@ -747,6 +834,6 @@ exports.publish = function(taffyData, opts, tutorials) {
             saveChildren(child);
         });
     }
-    
+
     saveChildren(tutorials);
 };

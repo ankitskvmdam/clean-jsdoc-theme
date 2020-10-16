@@ -10,18 +10,14 @@
     <?js } ?>
     <title><?js= title ?></title>
 
-    <script src="scripts/prettify/prettify.js"></script>
-    <script src="scripts/prettify/lang-css.js"></script>
-    <script src="scripts/search.js"></script>
-    <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/3.4.5/fuse.min.js"></script> -->
-    <script src="scripts/fuse.js"></script>
     <!--[if lt IE 9]>
       <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-    <link type="text/css" rel="stylesheet" href="styles/ionicons.min.css">
-    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/third-party/ionicons.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/third-party/prettify-tomorrow.css">
     <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
-    <link type="text/css" rel="stylesheet" href="styles/clean-jsdoc-theme.css">
+    <link type="text/css" rel="stylesheet" href="styles/clean-jsdoc-theme-base.css">
+    <link type="text/css" rel="stylesheet" href="styles/<?js= this.theme ?>">
     <?js if(this.dynamicStyle != undefined ) { ?>
       <style>
         <?js= this.dynamicStyle ?>
@@ -65,8 +61,14 @@
   <?js= this.footer ?>
 </footer>
 
+<script src="scripts/third-party/prettify.js"></script>
+<script src="scripts/third-party/lang-css.js"></script>
+<script src="scripts/search.js"></script>
+<script src="scripts/third-party/fuse.js"></script>
+
 <script>prettyPrint();</script>
 <script src="scripts/linenumber.js"></script>
+<script src="scripts/fix-code-block.js"></script>
 <script>
 var list = [<?js= this.searchList ?>];
 setupSearch(list)
