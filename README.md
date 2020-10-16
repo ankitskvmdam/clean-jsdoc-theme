@@ -153,17 +153,11 @@ You can pass an object called `theme_opts` under `opts` for more options like:
 
 ## In version 2.2.12
 
-### Features added
-
-### Bug fix
-
-## In version 2.2.12
-
-## New
+### New
 
 1.  Add dark theme.
 
-## Bug fix
+### Bug fix
 
 1.  Fix typescript-eslint camelCase rule issue [issue: [#37](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/37)]
 1.  Fix ordered list style [issue: [#40](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/40)]
