@@ -7,7 +7,9 @@ A beautifully crafted theme/template for JSDoc 3. We have built this theme/templ
 We give extra care on every part of this theme/template, like instead of using a simple search mechanism we have used one of the most advance search technology <a href="https://fusejs.io/">Fuse.js</a>.<br>
 
 Although, we have given extra care on every part, we know that there might be some part that we didn't cover in our documentation or there might be some bug in our code or there might some feature missing. Feel free to raise <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme/issues">issues</a>, we have a very proactive community ready to solve issues as soon as possible. <br>
-Live demo: https://ankdev.me/clean-jsdoc-theme/index.html
+Live demo (dark): https://ankdev.me/clean-jsdoc-theme/dark/index.html
+Live demo (light): https://ankdev.me/clean-jsdoc-theme/light/index.html
+
 
 ### Demo screen
 
