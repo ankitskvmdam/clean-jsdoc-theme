@@ -1,0 +1,4 @@
+node_modules
+output
+static/scripts/third-party
+static/styles/third-party

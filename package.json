@@ -1,29 +1,43 @@
 {
-  "name": "clean-jsdoc-theme",
-  "version": "2.2.12",
-  "description": "A beautifully crafted theme/template for JSDoc 3. This theme/template looks and feels like a premium theme/template. This is a fully mobile responsive theme and also fully customizable theme.",
-  "main": "publish.js",
-  "scripts": {
-    "test": "node_modules/jsdoc/jsdoc.js -c jsdoc-config.json"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ankitskvmdam/clean-jsdoc-theme.git"
-  },
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/ankitskvmdam/clean-jsdoc-theme/issues"
-  },
-  "homepage": "https://ankdev.me/clean-jsdoc-theme/index.html",
-  "dependencies": {
-    "jsdoc": "^3.6.6"
-  },
-  "keywords": [
-    "jsdoc",
-    "template",
-    "jsdoc-template",
-    "javascript documentation",
-    "customizable jsdoc theme / template"
-  ]
+    "name": "clean-jsdoc-theme",
+    "version": "2.2.12",
+    "description": "A beautifully crafted theme/template for JSDoc 3. This theme/template looks and feels like a premium theme/template. This is a fully mobile responsive theme and also fully customizable theme.",
+    "main": "publish.js",
+    "scripts": {
+        "test": "node_modules/jsdoc/jsdoc.js -c jsdoc-config.json",
+        "lint:types": "eslint . --ext .js",
+        "lint:style": "stylelint static/styles/",
+        "lint": "concurrently --prefix '{time}-{pid}' 'npm run lint:types' 'npm run lint:style'"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/ankitskvmdam/clean-jsdoc-theme.git"
+    },
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/ankitskvmdam/clean-jsdoc-theme/issues"
+    },
+    "homepage": "https://ankdev.me/clean-jsdoc-theme/index.html",
+    "dependencies": {
+        "jsdoc": "^3.6.6"
+    },
+    "keywords": [
+        "jsdoc",
+        "template",
+        "jsdoc-template",
+        "javascript documentation",
+        "customizable jsdoc theme / template"
+    ],
+    "devDependencies": {
+        "@jsdoc/eslint-config": "^1.1.4",
+        "concurrently": "^5.3.0",
+        "eslint": "^7.11.0",
+        "prettier": "^2.1.2",
+        "stylelint": "^13.7.2",
+        "stylelint-config-sass-guidelines": "^7.1.0",
+        "stylelint-config-standard": "^20.0.0",
+        "stylelint-order": "^4.1.0",
+        "stylelint-scss": "^3.18.0"
+    }
 }
