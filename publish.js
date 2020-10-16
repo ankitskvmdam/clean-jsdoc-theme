@@ -373,6 +373,17 @@ function getMetaTagData() {
     return meta;
 }
 
+function getTheme() {
+    /* prettier-ignore-start */
+    // eslint-disable-next-line
+    var theme = env && env.opts && env.opts['theme_opts'] && env.opts['theme_opts'].theme || 'light';
+    /* prettier-ignore-end */
+    var baseThemeName = 'clean-jsdoc-theme';
+    var themeSrc = `${baseThemeName}-${theme}.css`.trim();
+
+    return themeSrc;
+}
+
 function searchList() {
     return searchListArray;
 }
@@ -726,6 +737,7 @@ exports.publish = function(taffyData, opts, tutorials) {
     view.dynamicScript = createDynamicsScripts();
     view.dynamicScriptSrc = returnPathOfScriptScr();
     view.meta = getMetaTagData();
+    view.theme = getTheme();
     // once for all
     view.nav = buildNav(members);
     view.searchList = searchList();

@@ -19,6 +19,7 @@
         "recurse": true,
         "template": "./",
         "theme_opts": {
+            "theme": "dark",
             "title": "clean-jsdoc-theme",
             "footer": "Fork: <a href='https://github.com/ankitskvmdam/clean-jsdoc-theme'>https://github.com/ankitskvmdam/clean-jsdoc-theme</a>",
             "meta": [
