@@ -5,7 +5,7 @@
     "main": "publish.js",
     "scripts": {
         "test": "node_modules/jsdoc/jsdoc.js -c jsdoc-config.json",
-        "lint:types": "eslint . --ext .js",
+        "lint:js": "eslint . --ext .js",
         "lint:style": "stylelint static/styles/",
         "lint": "concurrently --prefix '{time}-{pid}' 'npm run lint:types' 'npm run lint:style'"
     },
