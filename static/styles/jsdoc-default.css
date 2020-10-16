@@ -52,6 +52,10 @@ blockquote {
     margin-bottom: 1em;
 }
 
+ol {
+    list-style-position: inside;
+}
+
 p {
     overflow-x: auto;
     width: 100%;
