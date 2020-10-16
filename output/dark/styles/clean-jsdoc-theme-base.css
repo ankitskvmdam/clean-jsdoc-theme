@@ -1,3 +1,17 @@
+@font-face {
+    font-family: 'heading';
+    src: url('../fonts/Muli-Black.ttf') format('truetype');
+}
+
+@font-face {
+    font-family: 'body';
+    src: url('../fonts/Montserrat-Regular.ttf') format('truetype');
+}
+
+@font-face {
+    font-family: 'code';
+    src: url('../fonts/MavenPro-Regular.ttf') format('truetype');
+}
 pre {
     position: relative;
 }
