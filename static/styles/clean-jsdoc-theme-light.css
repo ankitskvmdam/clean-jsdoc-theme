@@ -140,7 +140,8 @@ footer {
     color: #00918e;
 }
 
-.name {
+.name,
+.name a {
     color: #293a80;
 }
 

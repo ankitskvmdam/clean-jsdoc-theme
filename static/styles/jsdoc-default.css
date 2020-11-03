@@ -397,13 +397,10 @@ footer {
     font-weight: bold;
 }
 
-/* stylelint-disable */
-h4.name::before {
-    content: '# ';
+.name a {
     font-size: 28px;
 }
 
-/* stylelint-enable */
 
 .details {
     margin: 0;
