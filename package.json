@@ -19,8 +19,8 @@
         "url": "https://github.com/ankitskvmdam/clean-jsdoc-theme/issues"
     },
     "homepage": "https://ankdev.me/clean-jsdoc-theme/dark/index.html",
-    "dependencies": {
-        "jsdoc": "^3.6.6"
+    "peerDependencies": {
+        "jsdoc": "3"
     },
     "keywords": [
         "jsdoc",
