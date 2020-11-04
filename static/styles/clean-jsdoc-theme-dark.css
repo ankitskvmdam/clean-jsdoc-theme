@@ -128,7 +128,8 @@ footer {
     color: #00918e;
 }
 
-.name {
+.name,
+.name a {
     color: #f7f7f7;
 }
 
