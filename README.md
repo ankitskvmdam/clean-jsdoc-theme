@@ -1,15 +1,15 @@
 # clean-jsdoc-theme
 
-[![Stars](https://img.shields.io/github/stars/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme) [![Fork](https://img.shields.io/github/forks/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/fork) ![Version](https://img.shields.io/badge/version-2.2.12-%23007bff) [![Issues Open](https://img.shields.io/github/issues/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues) [![Isses Closed](https://img.shields.io/github/issues-closed/ankitskvmdam/clean-jsdoc-theme?color=%234caf50)](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues?q=is%3Aissue+is%3Aclosed) [![Contributors](https://img.shields.io/github/contributors/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors) [![npm downloads](https://img.shields.io/npm/dt/clean-jsdoc-theme)](https://www.npmjs.com/package/clean-jsdoc-theme) [![Build Status](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme.svg?branch=production)](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme) [![lisence](https://img.shields.io/github/license/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/LICENSE) [![Website Of/ficial](https://img.shields.io/website?up_message=official&url=https%3A%2F%2Fankdev.me%2Fclean-jsdoc-theme)](https://ankdev.me/clean-jsdoc-theme/index.html) [![Code of Conduct](https://img.shields.io/badge/code%20of%20conduct-hindi-%23007bff)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CODE_OF_CONDUCT_HINDI.md) [![Code of Conduct](https://img.shields.io/badge/code%20of%20conduct-english-%234caf50)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CODE_OF_CONDUCT.md)
+[![Stars](https://img.shields.io/github/stars/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme) [![Fork](https://img.shields.io/github/forks/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/fork) ![Version](https://img.shields.io/badge/version-2.2.13-%23007bff) [![Issues Open](https://img.shields.io/github/issues/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues) [![Isses Closed](https://img.shields.io/github/issues-closed/ankitskvmdam/clean-jsdoc-theme?color=%234caf50)](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues?q=is%3Aissue+is%3Aclosed) [![Contributors](https://img.shields.io/github/contributors/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors) [![npm downloads](https://img.shields.io/npm/dt/clean-jsdoc-theme)](https://www.npmjs.com/package/clean-jsdoc-theme) [![Build Status](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme.svg?branch=production)](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme) [![lisence](https://img.shields.io/github/license/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/LICENSE) [![Website Of/ficial](https://img.shields.io/website?up_message=official&url=https%3A%2F%2Fankdev.me%2Fclean-jsdoc-theme)](https://ankdev.me/clean-jsdoc-theme/index.html) [![Code of Conduct](https://img.shields.io/badge/code%20of%20conduct-hindi-%23007bff)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CODE_OF_CONDUCT_HINDI.md) [![Code of Conduct](https://img.shields.io/badge/code%20of%20conduct-english-%234caf50)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CODE_OF_CONDUCT.md)
 <br>
-A beautifully crafted theme/template for JSDoc 3. We have built this theme/template to bring the best user experience. This theme/template looks and feels like a premium theme/template. This is a fully mobile responsive theme and also fully customizable theme (for more look below in <a href="#features">feature section</a>).<br>
+A beautifully crafted theme/template for JSDoc 3. This theme/template looks and feels like a premium theme/template. This is a fully mobile responsive theme and also fully customizable theme (for more look below in <a href="#features">feature section</a>).<br>
 
-We give extra care on every part of this theme/template, like instead of using a simple search mechanism we have used one of the most advance search technology <a href="https://fusejs.io/">Fuse.js</a>.<br>
+I give extra care on every part of this theme/template, like instead of using a simple search mechanism I have used one of the most advance search technology <a href="https://fusejs.io/">Fuse.js</a>.<br>
 
-Although, we have given extra care on every part, we know that there might be some part that we didn't cover in our documentation or there might be some bug in our code or there might some feature missing. Feel free to raise <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme/issues">issues</a>, we have a very proactive community ready to solve issues as soon as possible. <br>
+Feel free to raise <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme/issues">issues</a>,
+
 Live demo (dark): https://ankdev.me/clean-jsdoc-theme/dark/index.html <br>
 Live demo (light): https://ankdev.me/clean-jsdoc-theme/light/index.html
-
 
 ### Demo screen
 
@@ -81,7 +81,7 @@ In your `jsdoc.json` file, add a template option.
 
 ## Features
 
-We believe in giving freedom to the developer, that's why we have given many options to
+I believe in giving freedom to the developer, that's why I have given many options to
 the developer to customize this theme according to their needs.
 You can pass an object called `theme_opts` under `opts` for more options like:
 
@@ -93,7 +93,6 @@ You can pass an object called `theme_opts` under `opts` for more options like:
   "theme_opts":{
     // Set theme. Default is light
     "theme": "dark",
-    "title": "clean-jsdoc-theme",
     /*
       Instead of only string you can pass html element like
       <img src="src to your img relative to the output path" class="my-custom-class"/>
@@ -102,6 +101,7 @@ You can pass an object called `theme_opts` under `opts` for more options like:
       Note: If you use html the default overwrite. Also for custom class you have to create
       a class using create_style.This is shown below.
     */
+    "title": "clean-jsdoc-theme",
 
    "filter": false, /*  The default value is true. This will turn the color of image white.
       If you did not want any
@@ -153,6 +153,16 @@ You can pass an object called `theme_opts` under `opts` for more options like:
 }
 ```
 
+## In version 2.2.13
+
+### New
+
+1.  Make the # before members and methods a clickable anchor. [pull request: [#44](https://github.com/ankitskvmdam/clean-jsdoc-theme/pull/44)]
+
+### Other
+
+1.  Change jsdoc into a peerDependency [pull request: [#45](https://github.com/ankitskvmdam/clean-jsdoc-theme/pull/45)]
+
 ## In version 2.2.12
 
 ### New
@@ -173,6 +183,7 @@ Before starting please go through our [contributing guide](https://github.com/an
 git clone https://github.com/ankitskvmdam/clean-jsdoc-theme.git
 cd clean-jsdoc-theme
 npm install
+npm install jsdoc --no-save
 npm run test
 ```
 
@@ -180,8 +191,8 @@ npm run test
 
 ## Contact
 
-If you like our work, then give us a <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme" data-icon="octicon-star" aria-label="Star ankitskvmdam/clean-jsdoc-theme on GitHub">star</a>. This will act as a driving force to add new feature more frequently. <br>
-Mail us at: hello@ankdev.me <br>
+If you like our work, then give me a <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme" data-icon="octicon-star" aria-label="Star ankitskvmdam/clean-jsdoc-theme on GitHub">star</a>. This will act as a driving force to add new feature more frequently. <br>
+Mail me at: hello@ankdev.me <br>
 
 ## License
 
