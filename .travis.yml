@@ -13,7 +13,7 @@ jobs:
       language: node_js
       node_js:
         - "12"
-      install: "npm install"
+      install: "npm install && npm install jsdoc"
       script:
         - npm run test
         
