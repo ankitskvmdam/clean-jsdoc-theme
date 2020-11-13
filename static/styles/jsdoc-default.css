@@ -146,8 +146,6 @@ samp {
 #main {
     margin-left: 15.625rem;
     min-height: calc(100vh - 6.25rem);
-    min-width: 22.5rem;
-    width: calc(100% - 15.625rem);
 }
 /* stylelint-enable */
 
@@ -400,7 +398,6 @@ footer {
 .name a {
     font-size: 28px;
 }
-
 
 .details {
     margin: 0;
