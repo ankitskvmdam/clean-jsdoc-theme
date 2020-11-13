@@ -136,9 +136,7 @@ You can pass an object called `theme_opts` under `opts` for more options like:
   "search": false, //This option is for either showing or hiding the search. By default it is true.
 
   // You can create custom style which will overwrite the exisiting class property.
-  "create_style": "nav{background: yellow}" +     // This will change the background color of sidebar.
-                  ".my-custom-class{ filter: brightness(10) grayscale(100%)}", // This will apply filter to my-custom-class
-
+  "create_style": "nav{background: yellow}", // This will change the background color of sidebar.
   //You can add path of your style file. Note it must be relative to your output file. (relative to generated html files.)
   "add_style_path": ["../custom.css"], // Pass array of path or url
 
