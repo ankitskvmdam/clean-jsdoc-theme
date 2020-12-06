@@ -7,6 +7,7 @@ class Alive {
         /**
          * amount of energy
          * @property {Energy}
+         * @defaultvalue null
          */
         this.energy = null;
     }

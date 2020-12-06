@@ -1,0 +1,2315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+      
+        <meta name="author" content="Ankit Kumar">
+      
+        <meta name="description" content="A beautifully crafted theme/template for JSDoc 3.">
+      
+    
+    <title>Database</title>
+
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/third-party/ionicons.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/third-party/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+    <link type="text/css" rel="stylesheet" href="styles/clean-jsdoc-theme-base.css">
+    <link type="text/css" rel="stylesheet" href="styles/clean-jsdoc-theme-light.css">
+    
+    
+    
+<svg aria-hidden="true" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="display:none">
+    <defs>
+        <symbol id="copy-icon" viewbox="0 0 488.3 488.3">
+            <g>
+                <path d="M314.25,85.4h-227c-21.3,0-38.6,17.3-38.6,38.6v325.7c0,21.3,17.3,38.6,38.6,38.6h227c21.3,0,38.6-17.3,38.6-38.6V124    C352.75,102.7,335.45,85.4,314.25,85.4z M325.75,449.6c0,6.4-5.2,11.6-11.6,11.6h-227c-6.4,0-11.6-5.2-11.6-11.6V124    c0-6.4,5.2-11.6,11.6-11.6h227c6.4,0,11.6,5.2,11.6,11.6V449.6z"/>
+                <path d="M401.05,0h-227c-21.3,0-38.6,17.3-38.6,38.6c0,7.5,6,13.5,13.5,13.5s13.5-6,13.5-13.5c0-6.4,5.2-11.6,11.6-11.6h227    c6.4,0,11.6,5.2,11.6,11.6v325.7c0,6.4-5.2,11.6-11.6,11.6c-7.5,0-13.5,6-13.5,13.5s6,13.5,13.5,13.5c21.3,0,38.6-17.3,38.6-38.6    V38.6C439.65,17.3,422.35,0,401.05,0z"/>
+            </g>
+        </symbol>
+    </defs>
+</svg>
+
+</head>
+<body>
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav>
+    <h2><a href="index.html"><div class="text">clean-jsdoc-theme</div></a></h2><div class="search-box"><input type="text" placeholder="Search..." id="search-box" /><div class="search-item-container" id="search-item-container"><ul class="search-item-ul" id="search-item-ul"></ul></div></div><div class="sidebar-list-div"><h3>Classes</h3><ul><li><a href="Alive.html">Alive</a><ul class='methods'><li data-type='method'><a href="Alive.html#survive">survive</a></li></ul></li><li><a href="Apple.html">Apple</a><ul class='methods'><li data-type='method'><a href="Apple.html#survive">survive</a></li></ul></li><li><a href="Database.html">Database</a><ul class='methods'><li data-type='method'><a href="Database.html#%255B%2522close%2522%255D">["close"]</a></li><li data-type='method'><a href="Database.html#%255B%2522create_function%2522%255D">["create_function"]</a></li><li data-type='method'><a href="Database.html#%255B%2522each%2522%255D">["each"]</a></li><li data-type='method'><a href="Database.html#%255B%2522exec%2522%255D">["exec"]</a></li><li data-type='method'><a href="Database.html#%255B%2522export%2522%255D">["export"]</a></li><li data-type='method'><a href="Database.html#%255B%2522getRowsModified%2522%255D">["getRowsModified"]</a></li><li data-type='method'><a href="Database.html#%255B%2522handleError%2522%255D">["handleError"]</a></li><li data-type='method'><a href="Database.html#%255B%2522iterateStatements%2522%255D">["iterateStatements"]</a></li><li data-type='method'><a href="Database.html#%255B%2522prepare%2522%255D">["prepare"]</a></li><li data-type='method'><a href="Database.html#%255B%2522run%2522%255D">["run"]</a></li></ul></li><li><a href="Energy.html">Energy</a></li><li><a href="Environment.html">Environment</a><ul class='methods'><li data-type='method'><a href="Environment.html#start">start</a></li></ul></li><li><a href="Statement.html">Statement</a><ul class='methods'><li data-type='method'><a href="Statement.html#%255B%2522bind%2522%255D">["bind"]</a></li><li data-type='method'><a href="Statement.html#%255B%2522free%2522%255D">["free"]</a></li><li data-type='method'><a href="Statement.html#%255B%2522freemem%2522%255D">["freemem"]</a></li><li data-type='method'><a href="Statement.html#%255B%2522get%2522%255D">["get"]</a></li><li data-type='method'><a href="Statement.html#%255B%2522getAsObject%2522%255D">["getAsObject"]</a></li><li data-type='method'><a href="Statement.html#%255B%2522getColumnNames%2522%255D">["getColumnNames"]</a></li><li data-type='method'><a href="Statement.html#%255B%2522getNormalizedSQL%2522%255D">["getNormalizedSQL"]</a></li><li data-type='method'><a href="Statement.html#%255B%2522getSQL%2522%255D">["getSQL"]</a></li><li data-type='method'><a href="Statement.html#%255B%2522reset%2522%255D">["reset"]</a></li><li data-type='method'><a href="Statement.html#%255B%2522run%2522%255D">["run"]</a></li><li data-type='method'><a href="Statement.html#%255B%2522step%2522%255D">["step"]</a></li></ul></li><li><a href="StatementIterator.html">StatementIterator</a><ul class='methods'><li data-type='method'><a href="StatementIterator.html#%255B%2522getRemainingSQL%2522%255D">["getRemainingSQL"]</a></li><li data-type='method'><a href="StatementIterator.html#%255B%2522next%2522%255D">["next"]</a></li></ul></li><li><a href="Tree.html">Tree</a><ul class='methods'><li data-type='method'><a href="Tree.html#crop">crop</a></li><li data-type='method'><a href="Tree.html#survive">survive</a></li></ul></li></ul><h3>Modules</h3><ul><li><a href="module-SqlJs.html">SqlJs</a></li></ul><h3>Events</h3><ul><li><a href="Apple.html#event:beEaten">beEaten</a></li><li><a href="Environment.html#event:beforeDestroy">beforeDestroy</a></li></ul><h3><a href="global.html">Global</a></h3><ul><li><a href="global.html#initSqlJs">initSqlJs</a></li></ul></div>
+</nav>
+
+<div id="main">
+    
+    <h1 id='page-title' class="page-title">Database</h1>
+    
+
+    
+
+
+
+
+<section>
+
+
+<header>
+    
+        
+        <h2>
+        
+        Database
+        
+        </h2>
+        
+        
+            <div class="class-description"><p>Represents an SQLite database</p></div>
+            <hr/>
+        
+    
+</header>
+
+
+<article>
+    <div class="container-overview">
+    
+        
+
+    
+        <h2>Constructor</h2>
+    
+
+    <h4 class="name" id="Database">
+        <a href="#Database">#</a>
+        <span class="type-signature"></span>new Database<span class="signature">(data)</span><span class="type-signature"></span>
+    </h4>
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
+        <strong>Parameters:</strong>
+        
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>data</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array.&lt;number></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>An array of bytes representing<br>
+an SQLite database file</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    </div>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="api.js.html">api.js</a>, <a href="api.js.html#line740">line 740</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    </div>
+
+    
+
+    
+
+    
+
+     
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    <h4 class="name" id="%5B%22close%22%5D">
+        <a href="#%5B%22close%22%5D">#</a>
+        <span class="type-signature"></span>["close"]<span class="signature">()</span><span class="type-signature"></span>
+    </h4>
+
+    
+
+
+
+    <div class="description">
+        <p>Close the database, and all associated prepared statements.<br>
+The memory associated to the database and all associated statements<br>
+will be freed.</p>
+<p><strong>Warning</strong>: A statement belonging to a database that has been closed<br>
+cannot be used anymore.</p>
+<p>Databases <strong>must</strong> be closed when you're finished with them, or the<br>
+memory consumption will grow forever</p>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="api.js.html">api.js</a>, <a href="api.js.html#line1002">line 1002</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="%5B%22create_function%22%5D">
+        <a href="#%5B%22create_function%22%5D">#</a>
+        <span class="type-signature"></span>["create_function"]<span class="signature">(name, func)</span><span class="type-signature"> &rarr; {<a href="Database.html">Database</a>}</span>
+    </h4>
+
+    
+
+
+
+    <div class="description">
+        <p>Register a custom function with SQLite</p>
+    </div>
+
+
+
+
+
+
+
+
+
+    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
+        <strong>Parameters:</strong>
+        
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>name</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>the name of the function as referenced in<br>
+SQL statements.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>func</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>the actual function to be executed.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    </div>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="api.js.html">api.js</a>, <a href="api.js.html#line1046">line 1046</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class="method-member-container mt-20">
+    <strong>Returns:</strong>
+        
+            
+<div class="param-desc">
+    <p>The database object. Useful for method chaining</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="Database.html">Database</a></span>
+
+
+    </dd>
+</dl>
+
+    </div>
+
+
+
+    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
+        <strong>Example</strong>
+        
+    <pre class="prettyprint"><code>Register a simple function
+        db.create_function("addOne", function (x) {return x+1;})
+        db.exec("SELECT addOne(1)") // = 2
+    </code></pre>
+
+    </div>
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="%5B%22each%22%5D">
+        <a href="#%5B%22each%22%5D">#</a>
+        <span class="type-signature"></span>["each"]<span class="signature">(sql, params<span class="signature-attributes">opt</span>, callback, done)</span><span class="type-signature"> &rarr; {<a href="Database.html">Database</a>}</span>
+    </h4>
+
+    
+
+
+
+    <div class="description">
+        <p>Execute an sql statement, and call a callback for each row of result.<br>
+Currently this method is synchronous, it will not return until the callback<br>
+has been called on every row of the result. But this might change.</p>
+    </div>
+
+
+
+
+
+
+
+
+
+    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
+        <strong>Parameters:</strong>
+        
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>sql</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>A string of SQL text. Can contain placeholders<br>
+that will be bound to the parameters given as the second argument</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>params</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="Statement.html#.BindParams">Statement.BindParams</a></span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    []
+                
+                </td>
+            
+
+            <td class="description last"><p>Parameters to bind to the query</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>callback</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Function to call on each row of result</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>done</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>A function that will be called when<br>
+all rows have been retrieved</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    </div>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="api.js.html">api.js</a>, <a href="api.js.html#line916">line 916</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class="method-member-container mt-20">
+    <strong>Returns:</strong>
+        
+            
+<div class="param-desc">
+    <p>The database object. Useful for method chaining</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="Database.html">Database</a></span>
+
+
+    </dd>
+</dl>
+
+    </div>
+
+
+
+    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
+        <strong>Example</strong>
+        
+        <p class="code-caption">Read values from a table</p>
+    
+    <pre class="prettyprint"><code>    db.each("SELECT name,age FROM users WHERE age >= $majority", {$majority:18},
+            function (row){console.log(row.name + " is a grown-up.")}
+    );</code></pre>
+
+    </div>
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="%5B%22exec%22%5D">
+        <a href="#%5B%22exec%22%5D">#</a>
+        <span class="type-signature"></span>["exec"]<span class="signature">(sql, params<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Array.&lt;<a href="Database.html#.QueryExecResult">Database.QueryExecResult</a>>}</span>
+    </h4>
+
+    
+
+
+
+    <div class="description">
+        <p>Execute an SQL query, and returns the result.</p>
+<p>This is a wrapper against<br>
+Database.prepare,<br>
+Statement.bind,<br>
+Statement.step,<br>
+Statement.get,<br>
+and Statement.free.</p>
+<p>The result is an array of result elements. There are as many result<br>
+elements as the number of statements in your sql string (statements are<br>
+separated by a semicolon)</p>
+<h2>Example use</h2>
+<p>We will create the following table, named <em>test</em> and query it with a<br>
+multi-line statement using params:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">id</th>
+<th style="text-align:center">age</th>
+<th style="text-align:center">name</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">Ling</td>
+</tr>
+<tr>
+<td style="text-align:center">2</td>
+<td style="text-align:center">18</td>
+<td style="text-align:center">Paul</td>
+</tr>
+</tbody>
+</table>
+<p>We query it like that:</p>
+<pre class="prettyprint source lang-javascript"><code>var db = new SQL.Database();
+var res = db.exec(
+    &quot;DROP TABLE IF EXISTS test;\n&quot;
+    + &quot;CREATE TABLE test (id INTEGER, age INTEGER, name TEXT);&quot;
+    + &quot;INSERT INTO test VALUES ($id1, :age1, @name1);&quot;
+    + &quot;INSERT INTO test VALUES ($id2, :age2, @name2);&quot;
+    + &quot;SELECT id FROM test;&quot;
+    + &quot;SELECT age,name FROM test WHERE id=$id1&quot;,
+    {
+        &quot;$id1&quot;: 1, &quot;:age1&quot;: 1, &quot;@name1&quot;: &quot;Ling&quot;,
+        &quot;$id2&quot;: 2, &quot;:age2&quot;: 18, &quot;@name2&quot;: &quot;Paul&quot;
+    }
+);
+</code></pre>
+<p><code>res</code> is now :</p>
+<pre class="prettyprint source lang-javascript"><code>    [
+        {&quot;columns&quot;:[&quot;id&quot;],&quot;values&quot;:[[1],[2]]},
+        {&quot;columns&quot;:[&quot;age&quot;,&quot;name&quot;],&quot;values&quot;:[[1,&quot;Ling&quot;]]}
+    ]
+</code></pre>
+    </div>
+
+
+
+
+
+
+
+
+
+    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
+        <strong>Parameters:</strong>
+        
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>sql</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>a string containing some SQL text to execute</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>params</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="Statement.html#.BindParams">Statement.BindParams</a></span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>When the SQL statement contains<br>
+placeholders, you can pass them in here. They will be bound to the statement<br>
+before it is executed. If you use the params argument as an array,<br>
+you <strong>cannot</strong> provide an sql string that contains several statements<br>
+(separated by <code>;</code>). This limitation does not apply to params as an object.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    </div>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="api.js.html">api.js</a>, <a href="api.js.html#line849">line 849</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class="method-member-container mt-20">
+    <strong>Returns:</strong>
+        
+            
+<div class="param-desc">
+    <p>The results of each statement</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Array.&lt;<a href="Database.html#.QueryExecResult">Database.QueryExecResult</a>></span>
+
+
+    </dd>
+</dl>
+
+    </div>
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="%5B%22export%22%5D">
+        <a href="#%5B%22export%22%5D">#</a>
+        <span class="type-signature"></span>["export"]<span class="signature">()</span><span class="type-signature"> &rarr; {Uint8Array}</span>
+    </h4>
+
+    
+
+
+
+    <div class="description">
+        <p>Exports the contents of the database to a binary array</p>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="api.js.html">api.js</a>, <a href="api.js.html#line980">line 980</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class="method-member-container mt-20">
+    <strong>Returns:</strong>
+        
+            
+<div class="param-desc">
+    <p>An array of bytes of the SQLite3 database file</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Uint8Array</span>
+
+
+    </dd>
+</dl>
+
+    </div>
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="%5B%22getRowsModified%22%5D">
+        <a href="#%5B%22getRowsModified%22%5D">#</a>
+        <span class="type-signature"></span>["getRowsModified"]<span class="signature">()</span><span class="type-signature"> &rarr; {number}</span>
+    </h4>
+
+    
+
+
+
+    <div class="description">
+        <p>Returns the number of changed rows (modified, inserted or deleted)<br>
+by the latest completed INSERT, UPDATE or DELETE statement on the<br>
+database. Executing any other type of SQL statement does not modify<br>
+the value returned by this function.</p>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="api.js.html">api.js</a>, <a href="api.js.html#line1034">line 1034</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class="method-member-container mt-20">
+    <strong>Returns:</strong>
+        
+            
+<div class="param-desc">
+    <p>the number of rows modified</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">number</span>
+
+
+    </dd>
+</dl>
+
+    </div>
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="%5B%22handleError%22%5D">
+        <a href="#%5B%22handleError%22%5D">#</a>
+        <span class="type-signature"></span>["handleError"]<span class="signature">()</span><span class="type-signature"></span>
+    </h4>
+
+    
+
+
+
+    <div class="description">
+        <p>Analyze a result code, return null if no error occured, and throw<br>
+an error with a descriptive message otherwise</p>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="api.js.html">api.js</a>, <a href="api.js.html#line1020">line 1020</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="%5B%22iterateStatements%22%5D">
+        <a href="#%5B%22iterateStatements%22%5D">#</a>
+        <span class="type-signature"></span>["iterateStatements"]<span class="signature">(sql)</span><span class="type-signature"> &rarr; {<a href="StatementIterator.html">StatementIterator</a>}</span>
+    </h4>
+
+    
+
+
+
+    <div class="description">
+        <p>Iterate over multiple SQL statements in a SQL string.<br>
+This function returns an iterator over <a href="Statement.html">Statement</a> objects.<br>
+You can use a for..of loop to execute the returned statements one by one.</p>
+    </div>
+
+
+
+
+
+
+
+
+
+    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
+        <strong>Parameters:</strong>
+        
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>sql</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>a string of SQL that can contain multiple statements</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    </div>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="api.js.html">api.js</a>, <a href="api.js.html#line974">line 974</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class="method-member-container mt-20">
+    <strong>Returns:</strong>
+        
+            
+<div class="param-desc">
+    <p>the resulting statement iterator</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="StatementIterator.html">StatementIterator</a></span>
+
+
+    </dd>
+</dl>
+
+    </div>
+
+
+
+    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
+        <strong>Example</strong>
+        
+        <p class="code-caption">Get the results of multiple SQL queries</p>
+    
+    <pre class="prettyprint"><code>const sql_queries = "SELECT 1 AS x; SELECT '2' as y";
+for (const statement of db.iterateStatements(sql_queries)) {
+    const sql = statement.getSQL(); // Get the SQL source
+    const result = statement.getAsObject({}); // Get the row of data
+    console.log(sql, result);
+}
+// This will print:
+// 'SELECT 1 AS x;' { x: 1 }
+// " SELECT '2' as y" { y: '2' }</code></pre>
+
+    </div>
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="%5B%22prepare%22%5D">
+        <a href="#%5B%22prepare%22%5D">#</a>
+        <span class="type-signature"></span>["prepare"]<span class="signature">(sql, params<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="Statement.html">Statement</a>}</span>
+    </h4>
+
+    
+
+
+
+    <div class="description">
+        <p>Prepare an SQL statement</p>
+    </div>
+
+
+
+
+
+
+
+
+
+    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
+        <strong>Parameters:</strong>
+        
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>sql</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>a string of SQL, that can contain placeholders<br>
+(<code>?</code>, <code>:VVV</code>, <code>:AAA</code>, <code>@AAA</code>)</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>params</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="Statement.html#.BindParams">Statement.BindParams</a></span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>values to bind to placeholders</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    </div>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="api.js.html">api.js</a>, <a href="api.js.html#line943">line 943</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+    <strong>Throws:</strong>
+    
+        
+
+<dl>
+    <dt>
+        <div class="param-desc">
+        <p>SQLite error</p>
+        </div>
+    </dt>
+    <dd></dd>
+    <dt>
+        <dl>
+            <dt>
+                Type
+            </dt>
+            <dd>
+                
+<span class="param-type">String</span>
+
+
+            </dd>
+        </dl>
+    </dt>
+    <dd></dd>
+</dl>
+
+
+    
+
+
+    <div class="method-member-container mt-20">
+    <strong>Returns:</strong>
+        
+            
+<div class="param-desc">
+    <p>the resulting statement</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="Statement.html">Statement</a></span>
+
+
+    </dd>
+</dl>
+
+    </div>
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="%5B%22run%22%5D">
+        <a href="#%5B%22run%22%5D">#</a>
+        <span class="type-signature"></span>["run"]<span class="signature">(sql, params<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="Database.html">Database</a>}</span>
+    </h4>
+
+    
+
+
+
+    <div class="description">
+        <p>Execute an SQL query, ignoring the rows it returns.</p>
+    </div>
+
+
+
+
+
+
+
+
+
+    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
+        <strong>Parameters:</strong>
+        
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>sql</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>a string containing some SQL text to execute</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>params</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="Statement.html#.BindParams">Statement.BindParams</a></span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>When the SQL statement contains<br>
+placeholders, you can pass them in here. They will be bound to the statement<br>
+before it is executed. If you use the params argument, you <strong>cannot</strong><br>
+provide an sql string that contains several statements (separated by <code>;</code>)</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    </div>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="api.js.html">api.js</a>, <a href="api.js.html#line768">line 768</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class="method-member-container mt-20">
+    <strong>Returns:</strong>
+        
+            
+<div class="param-desc">
+    <p>The database object (useful for method chaining)</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="Database.html">Database</a></span>
+
+
+    </dd>
+</dl>
+
+    </div>
+
+
+
+    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
+        <strong>Example</strong>
+        
+    <pre class="prettyprint"><code>// Insert values in a table
+    db.run(
+        "INSERT INTO test VALUES (:age, :name)",
+        { ':age' : 18, ':name' : 'John' }
+    );
+    </code></pre>
+
+    </div>
+
+
+        
+    
+
+    
+        <h3 class="subsection-title">Type Definitions</h3>
+
+        
+                
+<h4 class="name" id=".QueryExecResult">
+    <a href="#.QueryExecResult">#</a>
+    QueryExecResult
+</h4>
+
+
+
+
+
+
+    <div class="member-item-container flex">
+        <strong>Type: </strong>
+        <ul>
+            <li>
+                
+<span class="param-type">Object</span>
+
+
+            </li>
+        </ul>
+    </div>
+
+
+
+
+
+    <h5 class="subsection-title">Properties</h5>
+
+    
+
+<table class="props">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>columns</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array.&lt;string></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>the name of the columns of the result<br>
+(as returned by Statement.getColumnNames)</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>values</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array.&lt;Array.&lt;<a href="Database.html#.SqlValue">Database.SqlValue</a>>></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>one array per row, containing<br>
+the column values</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="api.js.html">api.js</a>, <a href="api.js.html#line784">line 784</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+            
+                
+<h4 class="name" id=".SqlValue">
+    <a href="#.SqlValue">#</a>
+    SqlValue
+</h4>
+
+
+
+
+
+
+    <div class="member-item-container flex">
+        <strong>Type: </strong>
+        <ul>
+            <li>
+                
+<span class="param-type">string</span>
+|
+
+<span class="param-type">number</span>
+|
+
+<span class="param-type">null</span>
+|
+
+<span class="param-type">Uint8Array</span>
+
+
+            </li>
+        </ul>
+    </div>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="api.js.html">api.js</a>, <a href="api.js.html#line259">line 259</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+            
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+</div>
+
+<footer id="footer">
+  Fork: <a href='https://github.com/ankitskvmdam/clean-jsdoc-theme'>https://github.com/ankitskvmdam/clean-jsdoc-theme</a>
+</footer>
+
+<script src="scripts/third-party/prettify.js"></script>
+<script src="scripts/third-party/lang-css.js"></script>
+<script src="scripts/search.js"></script>
+<script src="scripts/third-party/fuse.js"></script>
+
+<script>prettyPrint();</script>
+<script src="scripts/linenumber.js"></script>
+<script src="scripts/fix-code-block.js"></script>
+<script>
+var list = [{"title":"Alive","link":"<a href=\"Alive.html\">Alive</a>"},{"title":"Alive#survive","link":"<a href=\"Alive.html#survive\">Alive &rtrif; survive</a>"},{"title":"Apple","link":"<a href=\"Apple.html\">Apple</a>"},{"title":"Apple#survive","link":"<a href=\"Apple.html#survive\">Apple &rtrif; survive</a>"},{"title":"Database","link":"<a href=\"Database.html\">Database</a>"},{"title":"Database#[\"close\"]","link":"<a href=\"Database.html#%255B%2522close%2522%255D\">Database &rtrif; [\"close\"]</a>"},{"title":"Database#[\"create_function\"]","link":"<a href=\"Database.html#%255B%2522create_function%2522%255D\">Database &rtrif; [\"create_function\"]</a>"},{"title":"Database#[\"each\"]","link":"<a href=\"Database.html#%255B%2522each%2522%255D\">Database &rtrif; [\"each\"]</a>"},{"title":"Database#[\"exec\"]","link":"<a href=\"Database.html#%255B%2522exec%2522%255D\">Database &rtrif; [\"exec\"]</a>"},{"title":"Database#[\"export\"]","link":"<a href=\"Database.html#%255B%2522export%2522%255D\">Database &rtrif; [\"export\"]</a>"},{"title":"Database#[\"getRowsModified\"]","link":"<a href=\"Database.html#%255B%2522getRowsModified%2522%255D\">Database &rtrif; [\"getRowsModified\"]</a>"},{"title":"Database#[\"handleError\"]","link":"<a href=\"Database.html#%255B%2522handleError%2522%255D\">Database &rtrif; [\"handleError\"]</a>"},{"title":"Database#[\"iterateStatements\"]","link":"<a href=\"Database.html#%255B%2522iterateStatements%2522%255D\">Database &rtrif; [\"iterateStatements\"]</a>"},{"title":"Database#[\"prepare\"]","link":"<a href=\"Database.html#%255B%2522prepare%2522%255D\">Database &rtrif; [\"prepare\"]</a>"},{"title":"Database#[\"run\"]","link":"<a href=\"Database.html#%255B%2522run%2522%255D\">Database &rtrif; [\"run\"]</a>"},{"title":"Energy","link":"<a href=\"Energy.html\">Energy</a>"},{"title":"Environment","link":"<a href=\"Environment.html\">Environment</a>"},{"title":"Environment#start","link":"<a href=\"Environment.html#start\">Environment &rtrif; start</a>"},{"title":"Statement","link":"<a href=\"Statement.html\">Statement</a>"},{"title":"Statement#[\"bind\"]","link":"<a href=\"Statement.html#%255B%2522bind%2522%255D\">Statement &rtrif; [\"bind\"]</a>"},{"title":"Statement#[\"free\"]","link":"<a href=\"Statement.html#%255B%2522free%2522%255D\">Statement &rtrif; [\"free\"]</a>"},{"title":"Statement#[\"freemem\"]","link":"<a href=\"Statement.html#%255B%2522freemem%2522%255D\">Statement &rtrif; [\"freemem\"]</a>"},{"title":"Statement#[\"get\"]","link":"<a href=\"Statement.html#%255B%2522get%2522%255D\">Statement &rtrif; [\"get\"]</a>"},{"title":"Statement#[\"getAsObject\"]","link":"<a href=\"Statement.html#%255B%2522getAsObject%2522%255D\">Statement &rtrif; [\"getAsObject\"]</a>"},{"title":"Statement#[\"getColumnNames\"]","link":"<a href=\"Statement.html#%255B%2522getColumnNames%2522%255D\">Statement &rtrif; [\"getColumnNames\"]</a>"},{"title":"Statement#[\"getNormalizedSQL\"]","link":"<a href=\"Statement.html#%255B%2522getNormalizedSQL%2522%255D\">Statement &rtrif; [\"getNormalizedSQL\"]</a>"},{"title":"Statement#[\"getSQL\"]","link":"<a href=\"Statement.html#%255B%2522getSQL%2522%255D\">Statement &rtrif; [\"getSQL\"]</a>"},{"title":"Statement#[\"reset\"]","link":"<a href=\"Statement.html#%255B%2522reset%2522%255D\">Statement &rtrif; [\"reset\"]</a>"},{"title":"Statement#[\"run\"]","link":"<a href=\"Statement.html#%255B%2522run%2522%255D\">Statement &rtrif; [\"run\"]</a>"},{"title":"Statement#[\"step\"]","link":"<a href=\"Statement.html#%255B%2522step%2522%255D\">Statement &rtrif; [\"step\"]</a>"},{"title":"StatementIterator","link":"<a href=\"StatementIterator.html\">StatementIterator</a>"},{"title":"StatementIterator#[\"getRemainingSQL\"]","link":"<a href=\"StatementIterator.html#%255B%2522getRemainingSQL%2522%255D\">StatementIterator &rtrif; [\"getRemainingSQL\"]</a>"},{"title":"StatementIterator#[\"next\"]","link":"<a href=\"StatementIterator.html#%255B%2522next%2522%255D\">StatementIterator &rtrif; [\"next\"]</a>"},{"title":"Tree","link":"<a href=\"Tree.html\">Tree</a>"},{"title":"Tree#crop","link":"<a href=\"Tree.html#crop\">Tree &rtrif; crop</a>"},{"title":"Tree#survive","link":"<a href=\"Tree.html#survive\">Tree &rtrif; survive</a>"},{"title":"SqlJs","link":"<a href=\"module-SqlJs.html\">SqlJs</a>"},{"title":"beEaten","link":"<a href=\"Apple.html#event:beEaten\">beEaten</a>"},{"title":"beforeDestroy","link":"<a href=\"Environment.html#event:beforeDestroy\">beforeDestroy</a>"},{"title":"initSqlJs","link":"<a href=\"global.html#initSqlJs\">Global &rtrif; initSqlJs</a>"}];
+setupSearch(list)
+</script>
+
+ 
+<script type="text/javascript" src="scripts/misc.js"></script>
+</body>
+</html>

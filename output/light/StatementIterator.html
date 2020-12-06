@@ -10,7 +10,7 @@
         <meta name="description" content="A beautifully crafted theme/template for JSDoc 3.">
       
     
-    <title>Alive</title>
+    <title>StatementIterator</title>
 
     <!--[if lt IE 9]>
       <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
@@ -49,7 +49,7 @@
 
 <div id="main">
     
-    <h1 id='page-title' class="page-title">Alive</h1>
+    <h1 id='page-title' class="page-title">StatementIterator</h1>
     
 
     
@@ -65,12 +65,19 @@
         
         <h2>
         
-        Alive
+            <span class="ancestors"><a href="module-SqlJs.html">SqlJs</a></span>
+        
+        StatementIterator
         
         </h2>
         
         
-            <div class="class-description"><p>Donec imperdiet dignissim semper. Sed vehicula purus dui, eget porta lectus convallis sagittis. Suspendisse ac lectus dignissim, tincidunt nisi quis, gravida metus.</p></div>
+            <div class="class-description"><p>An iterator over multiple SQL statements in a string,<br>
+preparing and returning a Statement object for the next SQL<br>
+statement on each iteration.</p>
+<p>You can't instantiate this class directly, you have to use a<br>
+<a href="Database.html">Database</a> object in order to create a statement iterator</p>
+<p>{@see Database#iterateStatements}</p></div>
             <hr/>
         
     
@@ -86,236 +93,9 @@
         <h2>Constructor</h2>
     
 
-    <h4 class="name" id="Alive">
-        <a href="#Alive">#</a>
-        <span class="type-signature"></span>new Alive<span class="signature">()</span><span class="type-signature"></span>
-    </h4>
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-        <div class="details-item-container">
-            <dt class="tag-source">Source:</dt>
-            <dd class="tag-source"><ul class="dummy"><li>
-                <a href="Alive.js.html">Alive.js</a>, <a href="Alive.js.html#line5">line 5</a>
-            </li></ul></dd>
-        </div>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-    </div>
-
-    
-
-    
-
-    
-
-     
-
-    
-
-    
-        <h3 class="subsection-title">Members</h3>
-
-        
-            
-<h4 class="name" id="energy">
-    <a href="#energy">#</a>
-    <span class="type-signature"></span>energy<span class="type-signature"></span>
-</h4>
-
-
-
-
-<div class="description">
-    <p>amount of energy</p>
-</div>
-
-
-
-
-
-
-
-    <h5 class="subsection-title">Properties</h5>
-
-    
-
-<table class="props">
-    <thead>
-    <tr>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="Energy.html">Energy</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-        <div class="details-item-container">
-            <dt class="tag-default">Default Value:</dt>
-            <dd class="tag-default"><ul class="dummy">
-                    <li  >null</li>
-                </ul></dd>
-        </div>
-    
-
-    
-        <div class="details-item-container">
-            <dt class="tag-source">Source:</dt>
-            <dd class="tag-source"><ul class="dummy"><li>
-                <a href="Alive.js.html">Alive.js</a>, <a href="Alive.js.html#line12">line 12</a>
-            </li></ul></dd>
-        </div>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-        
-    
-
-    
-        <h3 class="subsection-title">Methods</h3>
-
-        
-            
-
-    
-
-    <h4 class="name" id="survive">
-        <a href="#survive">#</a>
-        <span class="type-signature"></span>survive<span class="signature">(environment)</span><span class="type-signature"> &rarr; {<a href="Energy.html">Energy</a>}</span>
+    <h4 class="name" id="StatementIterator">
+        <a href="#StatementIterator">#</a>
+        <span class="type-signature"></span>new StatementIterator<span class="signature">(sql, db)</span><span class="type-signature"></span>
     </h4>
 
     
@@ -356,13 +136,13 @@
 
         <tr>
             
-                <td class="name"><code>environment</code></td>
+                <td class="name"><code>sql</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><a href="Environment.html">Environment</a></span>
+<span class="param-type">string</span>
 
 
             
@@ -372,7 +152,30 @@
 
             
 
-            <td class="description last"><p>the environment when this Alive thing is surviving</p></td>
+            <td class="description last"><p>A string containing multiple SQL statements</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>db</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="Database.html">Database</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The database from which this iterator was created</p></td>
         </tr>
 
     
@@ -380,6 +183,149 @@
 </table>
 
     </div>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="implements">Implements:</dt>
+            <dd class="implements"><ul>
+                
+                    <li>Iterator.&lt;<a href="Statement.html">Statement</a>></li>
+                
+                    <li>Iterable.&lt;<a href="Statement.html">Statement</a>></li>
+                
+            </ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="api.js.html">api.js</a>, <a href="api.js.html#line647">line 647</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
+        <strong>Example</strong>
+        
+    <pre class="prettyprint"><code>// loop over and execute statements in string sql
+for (let statement of db.iterateStatements(sql) {
+    statement.step();
+    // get results, etc.
+    // do not call statement.free() manually, each statement is freed
+    // before the next one is parsed
+}
+
+// capture any bad query exceptions with feedback
+// on the bad sql
+let it = db.iterateStatements(sql);
+try {
+    for (let statement of it) {
+        statement.step();
+    }
+} catch(e) {
+    console.log(
+        `The SQL string "${it.getRemainingSQL()}" ` +
+        `contains the following error: ${e}`
+    );
+}</code></pre>
+
+    </div>
+
+
+    
+    </div>
+
+    
+
+    
+
+    
+
+     
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    <h4 class="name" id="%5B%22getRemainingSQL%22%5D">
+        <a href="#%5B%22getRemainingSQL%22%5D">#</a>
+        <span class="type-signature"></span>["getRemainingSQL"]<span class="signature">()</span><span class="type-signature"> &rarr; {String}</span>
+    </h4>
+
+    
+
+
+
+    <div class="description">
+        <p>Get any un-executed portions remaining of the original SQL string</p>
+    </div>
+
+
+
+
+
+
+
+
 
 
 
@@ -415,7 +361,7 @@
         <div class="details-item-container">
             <dt class="tag-source">Source:</dt>
             <dd class="tag-source"><ul class="dummy"><li>
-                <a href="Alive.js.html">Alive.js</a>, <a href="Alive.js.html#line19">line 19</a>
+                <a href="api.js.html">api.js</a>, <a href="api.js.html#line719">line 719</a>
             </li></ul></dd>
         </div>
     
@@ -443,10 +389,6 @@
     <strong>Returns:</strong>
         
             
-<div class="param-desc">
-    <p>the energy wasted in this surviving instance</p>
-</div>
-
 
 
 <dl class="param-type">
@@ -455,7 +397,143 @@
     </dt>
     <dd>
         
-<span class="param-type"><a href="Energy.html">Energy</a></span>
+<span class="param-type">String</span>
+
+
+    </dd>
+</dl>
+
+    </div>
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="%5B%22next%22%5D">
+        <a href="#%5B%22next%22%5D">#</a>
+        <span class="type-signature"></span>["next"]<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="StatementIterator.html#.StatementIteratorResult">StatementIterator.StatementIteratorResult</a>}</span>
+    </h4>
+
+    
+
+
+
+    <div class="description">
+        <p>Prepare the next available SQL statement</p>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="api.js.html">api.js</a>, <a href="api.js.html#line671">line 671</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+    <strong>Throws:</strong>
+    
+        
+
+<dl>
+    <dt>
+        <div class="param-desc">
+        <p>SQLite error or invalid iterator error</p>
+        </div>
+    </dt>
+    <dd></dd>
+    <dt>
+        <dl>
+            <dt>
+                Type
+            </dt>
+            <dd>
+                
+<span class="param-type">String</span>
+
+
+            </dd>
+        </dl>
+    </dt>
+    <dd></dd>
+</dl>
+
+
+    
+
+
+    <div class="method-member-container mt-20">
+    <strong>Returns:</strong>
+        
+            
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="StatementIterator.html#.StatementIteratorResult">StatementIterator.StatementIteratorResult</a></span>
 
 
     </dd>
@@ -469,6 +547,164 @@
         
     
 
+    
+        <h3 class="subsection-title">Type Definitions</h3>
+
+        
+                
+<h4 class="name" id=".StatementIteratorResult">
+    <a href="#.StatementIteratorResult">#</a>
+    StatementIteratorResult
+</h4>
+
+
+
+
+
+
+    <div class="member-item-container flex">
+        <strong>Type: </strong>
+        <ul>
+            <li>
+                
+<span class="param-type">Object</span>
+|
+
+<span class="param-type">Object</span>
+
+
+            </li>
+        </ul>
+    </div>
+
+
+
+
+
+    <h5 class="subsection-title">Properties</h5>
+
+    
+
+<table class="props">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>value</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="Statement.html">Statement</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>the next available Statement<br>
+(as returned by Database.prepare)</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>done</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>true if there are no more available statements</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="api.js.html">api.js</a>, <a href="api.js.html#line659">line 659</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+            
     
 
     
