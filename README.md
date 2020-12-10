@@ -204,9 +204,9 @@ You can pass an object called `theme_opts` under `opts` for more options like:
 
 ### Breaking changes
 
-1. `add_script_path` previously you have to pass an string of array but now you have to pass an object where keys are the attributes of the script tag
-1. `add_style_path` previously you have to pass an string of array but now you have to pass an object where keys are the attributes of the link tag
-1. `meta` previously you have to pass an string of array but now you have to pass an object where keys are the attributes of the meta tag
+1. `add_script_path` previously you have to pass a string of array but now you have to pass an object where keys are the attributes of the script tag
+1. `add_style_path` previously you have to pass a string of array but now you have to pass an object where keys are the attributes of the link tag
+1. `meta` previously you have to pass a string of array but now you have to pass an object where keys are the attributes of the meta tag
 
 ## In version 2.2.15
 
