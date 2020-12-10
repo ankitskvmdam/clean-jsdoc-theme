@@ -23,8 +23,10 @@
             "title": "clean-jsdoc-theme",
             "footer": "Fork: <a href='https://github.com/ankitskvmdam/clean-jsdoc-theme'>https://github.com/ankitskvmdam/clean-jsdoc-theme</a>",
             "meta": [
-                "<meta name=\"author\" content=\"Ankit Kumar\">",
-                "<meta name=\"description\" content=\"A beautifully crafted theme/template for JSDoc 3.\">"
+                {
+                    "name": "Author",
+                    "content": "Ankit Kumar"
+                }
             ]
         }
     },

@@ -8,6 +8,7 @@ var path = require('jsdoc/path');
 var taffy = require('taffydb').taffy;
 var template = require('jsdoc/template');
 var util = require('util');
+var fse = require('fs-extra');
 
 var htmlsafe = helper.htmlsafe;
 var linkto = helper.linkto;
@@ -20,6 +21,43 @@ var searchListArray = [];
 
 // eslint-disable-next-line no-restricted-globals
 var outdir = path.normalize(env.opts.destination);
+
+function copyStaticFolder() {
+    /* prettier-ignore-start */
+    // eslint-disable-next-line
+    var staticDir = env && env.opts && env.opts['theme_opts'] && env.opts['theme_opts']['static_dir'] || undefined;
+
+    /* prettier-ignore-end */
+    if (staticDir) {
+        for (var i = 0; i < staticDir.length; i++) {
+            var output = path.join(outdir, staticDir[i]);
+
+            fse.copySync(staticDir[i], output);
+        }
+    }
+}
+
+copyStaticFolder();
+
+function copyToOutputFolder(filePath) {
+    var filePathNormalized = path.normalize(filePath);
+
+    fs.copyFileSync(filePathNormalized, outdir);
+}
+
+function copyToOutputFolderFromArray(filePathArray) {
+    var i = 0;
+    var outputList = [];
+
+    if (Array.isArray(filePathArray)) {
+        for (; i < filePathArray.length; i++) {
+            copyToOutputFolder(filePathArray[i]);
+            outputList.push(path.basename(filePathArray[i]));
+        }
+    }
+
+    return outputList;
+}
 
 function find(spec) {
     return helper.find(data, spec);
@@ -328,6 +366,7 @@ function buildFooter() {
     return footer;
 }
 
+// function copy
 function createDynamicStyleSheet() {
     /* prettier-ignore-start */
     // eslint-disable-next-line
@@ -350,8 +389,8 @@ function returnPathOfScriptScr() {
     /* prettier-ignore-start */
     // eslint-disable-next-line
     var scriptPath = env && env.opts && env.opts['theme_opts'] && env.opts['theme_opts']['add_script_path'] || undefined;
-    /* prettier-ignore-end */
 
+    /* prettier-ignore-end */
     return scriptPath;
 }
 
@@ -359,9 +398,48 @@ function returnPathOfStyleSrc() {
     /* prettier-ignore-start */
     // eslint-disable-next-line
     var stylePath = env && env.opts && env.opts['theme_opts'] && env.opts['theme_opts']['add_style_path'] || undefined;
-    /* prettier-ignore-end */
 
+    /* prettier-ignore-end */
     return stylePath;
+}
+
+function includeCss() {
+    /* prettier-ignore-start */
+    // eslint-disable-next-line
+    var stylePath = env && env.opts && env.opts['theme_opts'] && env.opts['theme_opts']['include_css'] || undefined;
+
+    if (stylePath) {
+        stylePath = copyToOutputFolderFromArray(stylePath);
+    }
+
+    /* prettier-ignore-end */
+    return stylePath;
+}
+
+function overlayScrollbarOptions() {
+    /* prettier-ignore-start */
+    // eslint-disable-next-line
+    var overlayOptions = env && env.opts && env.opts['theme_opts'] && env.opts['theme_opts']['overlay_scrollbar'] || undefined;
+
+    if (overlayOptions) {
+        return JSON.stringify(overlayOptions);
+    }
+
+    /* prettier-ignore-end */
+    return undefined;
+}
+
+function includeScript() {
+/* prettier-ignore-start */
+    // eslint-disable-next-line
+    var scriptPath = env && env.opts && env.opts['theme_opts'] && env.opts['theme_opts']['include_js'] || undefined;
+
+    if (scriptPath) {
+        scriptPath = copyToOutputFolderFromArray(scriptPath);
+    }
+
+    /* prettier-ignore-end */
+    return scriptPath;
 }
 
 function getMetaTagData() {
@@ -736,7 +814,10 @@ exports.publish = function(taffyData, opts, tutorials) {
     view.dynamicStyleSrc = returnPathOfStyleSrc();
     view.dynamicScript = createDynamicsScripts();
     view.dynamicScriptSrc = returnPathOfScriptScr();
+    view.includeScript = includeScript();
+    view.includeCss = includeCss();
     view.meta = getMetaTagData();
+    view.overlayScrollbar = overlayScrollbarOptions();
     view.theme = getTheme();
     // once for all
     view.nav = buildNav(members);

@@ -3,11 +3,62 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Adding meta -->
     <?js if(this.meta != undefined ) { ?>
-      <?js this.meta.forEach(function(data){ ?>
-        <?js= data ?>
+      <?js this.meta.forEach(function(src){ ?>
+        <?js var obj=src; var keys=Object.keys(obj); var attributes=''; keys.forEach(function(key) { ?>
+           <?js attributes += key + '="' + obj[key] + '"' ?> 
+        <?js }) ?>
+        <meta <?js=attributes ?> />
       <?js }) ?>
     <?js } ?>
+
+    <!-- Adding external script-->
+    <?js if(this.dynamicScriptSrc != undefined ) { ?>
+      <?js this.dynamicScriptSrc.forEach(function(src){ ?>
+        <?js var obj=src; var keys=Object.keys(obj); var attributes=''; keys.forEach(function(key) { ?>
+           <?js attributes += key + '="' + obj[key] + '"' ?> 
+        <?js }) ?>
+        <script <?js=attributes ?> ></script>
+      <?js }) ?>
+    <?js } ?>
+
+    <!-- Adding external style-->
+    <?js if(this.dynamicStyleSrc != undefined ) { ?>
+      <?js this.dynamicStyleSrc.forEach(function(src){ ?>
+        <?js var obj=src; var keys=Object.keys(obj); var attributes=''; keys.forEach(function(key) { ?>
+           <?js attributes += key + '="' + obj[key] + '"' ?> 
+        <?js }) ?>
+        <link <?js=attributes ?> />
+      <?js }) ?>
+    <?js } ?>
+
+    <!-- Adding scripts-->
+    <?js if(this.includeScript != undefined ) { ?>
+      <?js this.includeScript.forEach(function(source){ ?>
+        <script src="<?js= source ?>"></script>
+      <?js }) ?>
+    <?js } ?>
+
+    <!-- Adding style-->
+    <?js if(this.includeCss != undefined ) { ?>
+      <?js this.includeCss.forEach(function(source){ ?>
+        <link type="text/css" rel="stylesheet" href="<?js= source ?>">
+      <?js }) ?>
+    <?js } ?>
+
+    <!-- Adding overlay script-->
+    <?js if(this.overlayScrollbar != undefined ) { ?>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/overlayscrollbars/1.13.0/js/OverlayScrollbars.min.js" integrity="sha512-5R3ngaUdvyhXkQkIqTf/k+Noq3phjmrqlUQyQYbgfI34Mzcx7vLIIYTy/K1VMHkL33T709kfh5y6R9Xy/Cbt7Q==" crossorigin="anonymous"></script>
+    <?js } ?>
+    
+    <!-- Adding overlay style-->
+    <?js if(this.includeCss != undefined ) { ?>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/overlayscrollbars/1.13.0/css/OverlayScrollbars.min.css" integrity="sha512-pYQcc5kgavar0ah58/O8hw/6Tbo3mWlmQTmvoi1i96cBz7jQYS9as5J+Nfy32rAHY6CgR9ExwnFMcBdGVcKM7g==" crossorigin="anonymous" />
+    <?js } ?>
+
+
     <title><?js= title ?></title>
 
     <!--[if lt IE 9]>
@@ -22,16 +73,6 @@
       <style>
         <?js= this.dynamicStyle ?>
       </style>
-    <?js } ?>
-    <?js if(this.dynamicScriptSrc != undefined ) { ?>
-      <?js this.dynamicScriptSrc.forEach(function(source){ ?>
-        <script src="<?js= source ?>"></script>
-      <?js }) ?>
-    <?js } ?>
-    <?js if(this.dynamicStyleSrc != undefined ) { ?>
-      <?js this.dynamicStyleSrc.forEach(function(source){ ?>
-        <link type="text/css" rel="stylesheet" href="<?js= source ?>">
-      <?js }) ?>
     <?js } ?>
 <?js= this.partial('icons.tmpl') ?>
 </head>
@@ -63,13 +104,14 @@
 <script src="scripts/third-party/lang-css.js"></script>
 <script src="scripts/search.js"></script>
 <script src="scripts/third-party/fuse.js"></script>
+<script type="text/javascript" src="scripts/misc.js"></script>
 
 <script>prettyPrint();</script>
 <script src="scripts/linenumber.js"></script>
 <script src="scripts/fix-code-block.js"></script>
 <script>
-var list = [<?js= this.searchList ?>];
-setupSearch(list)
+  var list = [<?js= this.searchList ?>];
+  setupSearch(list)
 </script>
 
  <?js if(this.dynamicScript != undefined ) { ?>
@@ -77,6 +119,23 @@ setupSearch(list)
     <?js= this.dynamicScript ?>
   </script>
 <?js } ?>
-<script type="text/javascript" src="scripts/misc.js"></script>
+
+<?js if(this.dynamicScript != undefined ) { ?>
+  <script type="text/javascript">
+    <?js= this.dynamicScript ?>
+  </script>
+<?js } ?>
+
+<?js if(this.overlayScrollbar != undefined ) { ?>
+  <script type="text/javascript">
+    var option = JSON.parse('<?js=this.overlayScrollbar ?>')
+    console.log(option)
+    document.addEventListener("DOMContentLoaded", function() {
+    OverlayScrollbars(document.querySelectorAll('body'), option.option || {});
+  });
+  </script>
+<?js } ?>
+
+
 </body>
 </html>
