@@ -176,11 +176,11 @@ You can pass an object called `theme_opts` under `opts` for more options like:
 
   // Include css files
   // Note: You are not required to manually copy file to output dir
-  "include_css_files": ["./static/index.css", "./src/docs/index.css"],
+  "include_css": ["./static/index.css", "./src/docs/index.css"],
 
   // Include js files
   // Note: You are not required to manually copy file to output dir
-  "include_js_files": ["./static/main.js", "./third-party/test/index.js"],
+  "include_js": ["./static/main.js", "./third-party/test/index.js"],
 
   // Include overlay scrollbar
   "overlay_scrollbar": {
