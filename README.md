@@ -1,6 +1,6 @@
 # clean-jsdoc-theme
 
-[![Stars](https://img.shields.io/github/stars/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme) [![Fork](https://img.shields.io/github/forks/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/fork) ![Version](https://img.shields.io/badge/version-2.2.15-%23007bff) [![Issues Open](https://img.shields.io/github/issues/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues) [![Isses Closed](https://img.shields.io/github/issues-closed/ankitskvmdam/clean-jsdoc-theme?color=%234caf50)](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues?q=is%3Aissue+is%3Aclosed) [![Contributors](https://img.shields.io/github/contributors/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors) [![npm downloads](https://img.shields.io/npm/dt/clean-jsdoc-theme)](https://www.npmjs.com/package/clean-jsdoc-theme) [![Build Status](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme.svg?branch=production)](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme) [![lisence](https://img.shields.io/github/license/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/LICENSE) [![Website Of/ficial](https://img.shields.io/website?up_message=official&url=https%3A%2F%2Fankdev.me%2Fclean-jsdoc-theme)](https://ankdev.me/clean-jsdoc-theme/index.html) [![Code of Conduct](https://img.shields.io/badge/code%20of%20conduct-hindi-%23007bff)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CODE_OF_CONDUCT_HINDI.md) [![Code of Conduct](https://img.shields.io/badge/code%20of%20conduct-english-%234caf50)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CODE_OF_CONDUCT.md)
+[![Stars](https://img.shields.io/github/stars/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme) [![Fork](https://img.shields.io/github/forks/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/fork) ![Version](https://img.shields.io/badge/version-3.0.0-%23007bff) [![Issues Open](https://img.shields.io/github/issues/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues) [![Isses Closed](https://img.shields.io/github/issues-closed/ankitskvmdam/clean-jsdoc-theme?color=%234caf50)](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues?q=is%3Aissue+is%3Aclosed) [![Contributors](https://img.shields.io/github/contributors/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors) [![npm downloads](https://img.shields.io/npm/dt/clean-jsdoc-theme)](https://www.npmjs.com/package/clean-jsdoc-theme) [![Build Status](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme.svg?branch=production)](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme) [![lisence](https://img.shields.io/github/license/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/LICENSE) [![Website Of/ficial](https://img.shields.io/website?up_message=official&url=https%3A%2F%2Fankdev.me%2Fclean-jsdoc-theme)](https://ankdev.me/clean-jsdoc-theme/index.html) [![Code of Conduct](https://img.shields.io/badge/code%20of%20conduct-hindi-%23007bff)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CODE_OF_CONDUCT_HINDI.md) [![Code of Conduct](https://img.shields.io/badge/code%20of%20conduct-english-%234caf50)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CODE_OF_CONDUCT.md)
 <br>
 A beautifully crafted theme/template for JSDoc 3. This theme/template looks and feels like a premium theme/template. This is a fully mobile responsive theme and also fully customizable theme (for more look below in <a href="#features">feature section</a>).<br>
 
@@ -129,27 +129,84 @@ You can pass an object called `theme_opts` under `opts` for more options like:
 
   // You can pass meta options also
   "meta": [
-      "<meta name=\"author\" content=\"Ankit Kumar\">",
-      "<meta name=\"description\" content=\"Best Clean and minimal JSDoc 3 Template / Theme\">"
+      {
+        "name": "author",
+        "content": "Ankit Kumar"
+      },
+      {
+        "name": "description",
+        "content": "Best Clean and minimal JSDoc 3 Template/Theme"
+      }
     ],
 
   "search": false, //This option is for either showing or hiding the search. By default it is true.
 
   // You can create custom style which will overwrite the exisiting class property.
   "create_style": "nav{background: yellow}", // This will change the background color of sidebar.
-  //You can add path of your style file. Note it must be relative to your output file. (relative to generated html files.)
-  "add_style_path": ["../custom.css"], // Pass array of path or url
+  // Use this option to add third party css library
+  // Note: You have to pass an array of object, and object keys are actually the attributes which you want
+  // in you link tag.
+  "add_style_path": [
+    {
+      "href": "https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css",
+      "integrity": "sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1",
+      "crossorigin": "anonymous"
+    }
+  ],
 
   // You can add custom script to html
   "add_scripts": "function foo(){console.log('foo')}",
 
-  // You can add path of your script file. Note it must be relative to your output file. (relative to generated html files.)
-  "add_script_path": ["../custom.js"], // Pass array of path or url
+  // Use this option to add third party js library
+  // Note: You have to pass an array of object, and object keys are actually the attributes which you want
+  // in you script tag.
+  "add_script_path": [
+    {
+      "src": "https://code.jquery.com/jquery-3.5.1.js",
+      "integrity": "sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc=",
+      "crossorigin": "anonymous"
+    }
+  ],
 
   "footer": "This is footer",   // Here again you can pass html element
+
+  // Path should be relative to jsdoc configuration file.
+  // Path to static dir which you want to copy to output dir
+  "static_dir": ["./static"],
+
+  // Include css files
+  // Note: You are not required to manually copy file to output dir
+  "include_css_files": ["./static/index.css", "./src/docs/index.css"],
+
+  // Include js files
+  // Note: You are not required to manually copy file to output dir
+  "include_js_files": ["./static/main.js", "./third-party/test/index.js"],
+
+  // Include overlay scrollbar
+  "overlay_scrollbar": {
+      "options": {
+          // ...overlay options
+          // If you want default then pass empty object
+      }
   }
+
 }
 ```
+
+## In version 3.0.0
+
+### New
+
+1. Add an option to include css files.
+1. Add an option to add js.
+1. Add an option to include static folder.
+1. OverlayScrollbar are now supported by default. If you don't want to use it pass an option to disable it.
+
+### Breaking changes
+
+1. `add_script_path` previously you have to pass an array of string but now you have to pass an array of object where keys are the attributes of the script tag
+1. `add_style_path` previously you have to pass an array of string but now you have to pass an array of object where keys are the attributes of the link tag
+1. `meta` previously you have to pass an array of string but now you have to pass an array of object where keys are the attributes of the meta tag
 
 ## In version 2.2.15
 
