@@ -26,6 +26,10 @@
                 {
                     "name": "Author",
                     "content": "Ankit Kumar"
+                },
+                {
+                    "name": "Description",
+                    "content": "A beautifully crafted theme for jsdoc"
                 }
             ]
         }
