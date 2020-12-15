@@ -5,56 +5,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- Adding meta -->
-    <?js if(this.meta != undefined ) { ?>
+    <?js if(this.meta != undefined) { ?>
       <?js this.meta.forEach(function(src){ ?>
-        <?js var obj=src; var keys=Object.keys(obj); var attributes=''; keys.forEach(function(key) { ?>
-           <?js attributes += key + '="' + obj[key] + '"' ?> 
-        <?js }) ?>
-        <meta <?js=attributes ?> />
+        <meta <?js=Object.keys(src).map(key => `${key}="${src[key]}"`).join(" ") ?> />
       <?js }) ?>
     <?js } ?>
 
     <!-- Adding external script-->
-    <?js if(this.dynamicScriptSrc != undefined ) { ?>
+    <?js if(this.dynamicScriptSrc != undefined) { ?>
       <?js this.dynamicScriptSrc.forEach(function(src){ ?>
-        <?js var obj=src; var keys=Object.keys(obj); var attributes=''; keys.forEach(function(key) { ?>
-           <?js attributes += key + '="' + obj[key] + '"' ?> 
-        <?js }) ?>
-        <script <?js=attributes ?> ></script>
+        <script <?js=Object.keys(src).map(key => `${key}="${src[key]}"`).join(" ") ?> ></script>
       <?js }) ?>
     <?js } ?>
 
     <!-- Adding external style-->
-    <?js if(this.dynamicStyleSrc != undefined ) { ?>
+    <?js if(this.dynamicStyleSrc != undefined) { ?>
       <?js this.dynamicStyleSrc.forEach(function(src){ ?>
-        <?js var obj=src; var keys=Object.keys(obj); var attributes=''; keys.forEach(function(key) { ?>
-           <?js attributes += key + '="' + obj[key] + '"' ?> 
-        <?js }) ?>
-        <link <?js=attributes ?> />
+        <link <?js=Object.keys(src).map(key => `${key}="${src[key]}"`).join(" ") ?> />
       <?js }) ?>
     <?js } ?>
 
     <!-- Adding scripts-->
-    <?js if(this.includeScript != undefined ) { ?>
+    <?js if(this.includeScript != undefined) { ?>
       <?js this.includeScript.forEach(function(source){ ?>
         <script src="<?js= source ?>"></script>
       <?js }) ?>
     <?js } ?>
 
     <!-- Adding style-->
-    <?js if(this.includeCss != undefined ) { ?>
+    <?js if(this.includeCss != undefined) { ?>
       <?js this.includeCss.forEach(function(source){ ?>
         <link type="text/css" rel="stylesheet" href="<?js= source ?>">
       <?js }) ?>
     <?js } ?>
 
     <!-- Adding overlay script-->
-    <?js if(this.overlayScrollbar != undefined ) { ?>
+    <?js if(this.overlayScrollbar != undefined) { ?>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/overlayscrollbars/1.13.0/js/OverlayScrollbars.min.js" integrity="sha512-5R3ngaUdvyhXkQkIqTf/k+Noq3phjmrqlUQyQYbgfI34Mzcx7vLIIYTy/K1VMHkL33T709kfh5y6R9Xy/Cbt7Q==" crossorigin="anonymous"></script>
     <?js } ?>
-    
+
     <!-- Adding overlay style-->
-    <?js if(this.includeCss != undefined ) { ?>
+    <?js if(this.includeCss != undefined) { ?>
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/overlayscrollbars/1.13.0/css/OverlayScrollbars.min.css" integrity="sha512-pYQcc5kgavar0ah58/O8hw/6Tbo3mWlmQTmvoi1i96cBz7jQYS9as5J+Nfy32rAHY6CgR9ExwnFMcBdGVcKM7g==" crossorigin="anonymous" />
     <?js } ?>
 
