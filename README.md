@@ -41,8 +41,8 @@ Feel free to raise <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme/is
 
 ### Demo
 
-Live demo (dark): https://ankdev.me/clean-jsdoc-theme/dark/index.html <br>
-Live demo (light): https://ankdev.me/clean-jsdoc-theme/light/index.html
+Live demo (dark): <a href="https://ankdev.me/clean-jsdoc-theme/dark/index.html">https://ankdev.me/clean-jsdoc-theme/dark/index.html</a> <br>
+Live demo (light): <a href="https://ankdev.me/clean-jsdoc-theme/light/index.html">https://ankdev.me/clean-jsdoc-theme/light/index.html</a>
 
 #### Screenshot
 
