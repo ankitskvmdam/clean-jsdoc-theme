@@ -15,7 +15,7 @@
     },
     "opts": {
         "encoding": "utf8",
-        "destination": "output",
+        "destination": "output/dark",
         "recurse": true,
         "template": "./",
         "theme_opts": {
