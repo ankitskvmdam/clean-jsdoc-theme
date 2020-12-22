@@ -547,7 +547,9 @@ footer {
 .params td,
 .params th,
 .props td,
-.props th {
+.props th,
+th,
+td {
     display: table-cell;
     margin: 0;
     padding: 15px;
