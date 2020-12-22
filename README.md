@@ -6,6 +6,39 @@ A beautifully crafted theme/template for JSDoc 3. This theme/template looks and 
 
 Feel free to raise <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme/issues">issues</a>.
 
+### Table of content
+
+-   [Demo](#demo)
+    -   [Screenshot](#screenshot)
+-   [Technologies Used](#technologies-used)
+-   [Motivation](#motivation)
+-   [Install](#install)
+-   [Usage](#usage)
+-   [Nodejs Dependencies](#nodejs-dependency)
+-   [Example Jsdoc Config](#example-jsdoc-config)
+-   [Features](#features)
+    -   [`theme`](#theme--light--dark)
+    -   [`title`](#title-string--html)
+    -   [`filter`](##filter-boolean)
+    -   [`menu`](#menu-array)
+    -   [`meta`](#meta-array)
+    -   [`search](#search-)
+    -   [`overlay_scrollbar`](#overlay_scrollbar-)
+    -   [`create_style`](#create_style-string)
+    -   [`add_scripts`](#add_scripts-string)
+    -   [`add_style_path`](#add_style_path-array)
+    -   [`add_script_path`](#add_script_path-array)
+    -   [`footer`](#footer-string--html)
+    -   [`static_dir`](#static_dir-arraystring)
+    -   [`include_css`](#include_css-arraystring)
+    -   [`include_js`](#include_js-arraystring)
+    -   [Example](#example-theme_opts)
+    -   [Cheat sheet](#cheat-sheet)
+-   [Changelog](#changelog)
+-   [Developing](#developing)
+-   [Contact](#contact)
+-   [License](#license)
+
 ### Demo
 
 Live demo (dark): https://ankdev.me/clean-jsdoc-theme/dark/index.html <br>
@@ -30,7 +63,7 @@ Live demo (light): https://ankdev.me/clean-jsdoc-theme/light/index.html
 ### Motivation
 
 At the time when I was new to js documentation and jsdoc, it was hard for me to find any theme for jsdoc which is highly customizable or regularly maintaining. Also, the search used in other themes is not that advanced.
-To tackle these I created this project. I am actively listening to the community and try to make the change as soon as possible.
+To tackle these I created this project. I am actively listening to the community and try to make the changes as soon as possible.
 
 ## Install
 
@@ -401,7 +434,7 @@ It will include the js files to the output dir and also attache a link tag to th
 
 ## Changelog
 
-Changelog is moved [here (https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CHANGELOG.md)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CHANGELOG.md)
+Changelog is moved [https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CHANGELOG.md](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CHANGELOG.md)
 
 ## Developing
 
