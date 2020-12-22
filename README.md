@@ -36,6 +36,7 @@ Feel free to raise <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme/is
     -   [Cheat sheet](#cheat-sheet)
 -   [Changelog](#changelog)
 -   [Developing](#developing)
+-   [Contributors](#contributors)
 -   [Contact](#contact)
 -   [License](#license)
 
@@ -449,6 +450,12 @@ npm run test
 ```
 
 `npm run test` will generate files in output folder.
+
+## Contributors
+
+<a href="https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=ankitskvmdam/clean-jsdoc-theme" />
+</a>
 
 ## Contact
 
