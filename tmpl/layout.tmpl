@@ -101,8 +101,9 @@
 <script src="scripts/linenumber.js"></script>
 <script src="scripts/fix-code-block.js"></script>
 <script>
-  var list = [<?js= this.searchList ?>];
-  setupSearch(list)
+  var list = [<?js= this.search.list ?>];
+  var options = <?js= this.search.options ?>
+  setupSearch(list, options)
 </script>
 
  <?js if(this.dynamicScript != undefined ) { ?>

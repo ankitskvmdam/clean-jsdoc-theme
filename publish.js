@@ -15,19 +15,23 @@ var linkto = helper.linkto;
 var resolveAuthorLinks = helper.resolveAuthorLinks;
 var hasOwnProp = Object.prototype.hasOwnProperty;
 
+/* prettier-ignore-start */
+// eslint-disable-next-line
+var themeOpts = env && env.opts && env.opts['theme_opts'] || {};
+/* prettier-ignore-end */
+
 var data;
 var view;
 var searchListArray = [];
+var haveSearch = (themeOpts.search === undefined) ? true : Boolean(themeOpts.search);
 
 // eslint-disable-next-line no-restricted-globals
 var outdir = path.normalize(env.opts.destination);
 
-function copyStaticFolder() {
-    /* prettier-ignore-start */
-    // eslint-disable-next-line
-    var staticDir = env && env.opts && env.opts['theme_opts'] && env.opts['theme_opts']['static_dir'] || undefined;
 
-    /* prettier-ignore-end */
+function copyStaticFolder() {
+    var staticDir = themeOpts.static_dir || undefined;
+
     if (staticDir) {
         for (var i = 0; i < staticDir.length; i++) {
             var output = path.join(outdir, staticDir[i]);
@@ -358,112 +362,99 @@ function buildSearch() {
 }
 
 function buildFooter() {
-    /* prettier-ignore-start */
-    // eslint-disable-next-line
-    var footer = env && env.opts && env.opts['theme_opts'] && env.opts['theme_opts'].footer || '';
-    /* prettier-ignore-end */
+    var footer = themeOpts.footer || '';
+
 
     return footer;
 }
 
 // function copy
 function createDynamicStyleSheet() {
-    /* prettier-ignore-start */
-    // eslint-disable-next-line
-    var styleClass = env && env.opts && env.opts['theme_opts'] && env.opts['theme_opts']['create_style'] || undefined;
+    var styleClass = themeOpts.create_style || undefined;
     /* prettier-ignore-start */
 
     return styleClass;
 }
 
 function createDynamicsScripts() {
-    /* prettier-ignore-start */
-    // eslint-disable-next-line
-    var scripts = env && env.opts && env.opts['theme_opts'] && env.opts['theme_opts']['add_scripts'] || undefined;
-    /* prettier-ignore-end */
+    var scripts = themeOpts.add_scripts || undefined;
+
 
     return scripts;
 }
 
 function returnPathOfScriptScr() {
-    /* prettier-ignore-start */
-    // eslint-disable-next-line
-    var scriptPath = env && env.opts && env.opts['theme_opts'] && env.opts['theme_opts']['add_script_path'] || undefined;
+    var scriptPath = themeOpts.add_script_path || undefined;
 
-    /* prettier-ignore-end */
+
     return scriptPath;
 }
 
 function returnPathOfStyleSrc() {
-    /* prettier-ignore-start */
-    // eslint-disable-next-line
-    var stylePath = env && env.opts && env.opts['theme_opts'] && env.opts['theme_opts']['add_style_path'] || undefined;
+    var stylePath = themeOpts.add_style_path || undefined;
 
-    /* prettier-ignore-end */
+
     return stylePath;
 }
 
 function includeCss() {
-    /* prettier-ignore-start */
-    // eslint-disable-next-line
-    var stylePath = env && env.opts && env.opts['theme_opts'] && env.opts['theme_opts']['include_css'] || undefined;
+    var stylePath = themeOpts.include_css || undefined;
 
     if (stylePath) {
         stylePath = copyToOutputFolderFromArray(stylePath);
     }
 
-    /* prettier-ignore-end */
+
     return stylePath;
 }
 
 function overlayScrollbarOptions() {
-    /* prettier-ignore-start */
-    // eslint-disable-next-line
-    var overlayOptions = env && env.opts && env.opts['theme_opts'] && env.opts['theme_opts']['overlay_scrollbar'] || undefined;
+    var overlayOptions = themeOpts.overlay_scrollbar || undefined;
 
     if (overlayOptions) {
         return JSON.stringify(overlayOptions);
     }
 
-    /* prettier-ignore-end */
+
     return undefined;
 }
 
 function includeScript() {
-/* prettier-ignore-start */
-    // eslint-disable-next-line
-    var scriptPath = env && env.opts && env.opts['theme_opts'] && env.opts['theme_opts']['include_js'] || undefined;
+    var scriptPath = themeOpts.include_js || undefined;
 
     if (scriptPath) {
         scriptPath = copyToOutputFolderFromArray(scriptPath);
     }
 
-    /* prettier-ignore-end */
+
     return scriptPath;
 }
 
 function getMetaTagData() {
-    /* prettier-ignore-start */
-    // eslint-disable-next-line
-    var meta = env && env.opts && env.opts['theme_opts'] && env.opts['theme_opts'].meta || undefined;
-    /* prettier-ignore-end */
+    var meta = themeOpts.meta || undefined;
+
 
     return meta;
 }
 
 function getTheme() {
-    /* prettier-ignore-start */
-    // eslint-disable-next-line
-    var theme = env && env.opts && env.opts['theme_opts'] && env.opts['theme_opts'].theme || 'light';
-    /* prettier-ignore-end */
+    var theme = themeOpts.theme || 'light';
     var baseThemeName = 'clean-jsdoc-theme';
     var themeSrc = `${baseThemeName}-${theme}.css`.trim();
 
     return themeSrc;
 }
 
-function searchList() {
-    return searchListArray;
+
+function search() {
+    var searchOption = themeOpts.search;
+
+    var obj = {
+        list: searchListArray,
+        options: JSON.stringify(searchOption)
+    };
+
+    return obj;
 }
 
 
@@ -476,17 +467,19 @@ function buildMemberNav(items, itemHeading, itemsSeen, linktoFn) {
         items.forEach(function(item) {
             var methods = find({kind: 'function',
                 memberof: item.longname});
-            // var members = find({kind:'member', memberof: item.longname});
 
             if ( !hasOwnProp.call(item, 'longname') ) {
                 itemsNav += '<li>' + linktoFn('', item.name);
                 itemsNav += '</li>';
             } else if ( !hasOwnProp.call(itemsSeen, item.longname) ) {
                 itemsNav += '<li>' + linktoFn(item.longname, item.name.replace(/^module:/, ''));
-                searchListArray.push(JSON.stringify({
-                    title: item.name,
-                    link: linkto(item.longname, item.name)
-                }));
+                if (haveSearch) {
+                    searchListArray.push(JSON.stringify({
+                        title: item.name,
+                        link: linkto(item.longname, item.name)
+                    }));
+                }
+
                 if (methods.length) {
                     itemsNav += "<ul class='methods'>";
 
@@ -497,10 +490,12 @@ function buildMemberNav(items, itemHeading, itemsSeen, linktoFn) {
 
                         name = first + ' &rtrif; ' + last;
 
-                        searchListArray.push(JSON.stringify({
-                            title: method.longname,
-                            link: linkto(method.longname, name)
-                        }));
+                        if (haveSearch) {
+                            searchListArray.push(JSON.stringify({
+                                title: method.longname,
+                                link: linkto(method.longname, name)
+                            }));
+                        }
                         itemsNav += "<li data-type='method'>";
                         itemsNav += linkto(method.longname, method.name);
                         itemsNav += '</li>';
@@ -544,10 +539,8 @@ function linktoExternal(longName, name) {
  * @return {string} The HTML for the navigation sidebar.
  */
 function buildNav(members) {
-    /* prettier-ignore-start */
-    // eslint-disable-next-line
-    var title = (env && env.opts && env.opts['theme_opts'] && env.opts['theme_opts'].title) || 'Home';
-    /* prettier-ignore-end */
+    var title = (themeOpts.title) || 'Home';
+
 
     var isHTML = RegExp.prototype.test.bind(/(<([^>]+)>)/i);
     var nav;
@@ -555,27 +548,21 @@ function buildNav(members) {
     if (!isHTML(title)) { nav = '<h2><a href="index.html"><div class="text">' + title + '</div></a></h2>'; }
     else {
         // eslint-disable-next-line no-restricted-globals
-        var filter = env && env.opts && env.opts.theme_opts;
+        var filter = env && env.opts && env.opts.themeOpts;
 
         if (filter.filter === undefined) { filter.filter = true; }
         if (JSON.parse(filter.filter)) { nav = '<h2><a href="index.html" class="filter">' + title + '</a></h2>'; }
         else { nav = '<h2><a href="index.html">' + title + '</a></h2>'; }
     }
 
-    /* prettier-ignore-start */
-    // eslint-disable-next-line
-    var search = env && env.opts && env.opts['theme_opts'] && env.opts['theme_opts'].search;
-    /* prettier-ignore-end */
 
-    if (search === undefined || JSON.parse(search)) { nav += buildSearch(); }
+    if (haveSearch) { nav += buildSearch(); }
     nav += '<div class="sidebar-list-div">';
     var seen = {};
     var seenTutorials = {};
 
-    /* prettier-ignore-start */
-    // eslint-disable-next-line
-    var menu = (env && env.opts && env.opts['theme_opts'] && env.opts['theme_opts'].menu) || undefined;
-    /* prettier-ignore-end */
+    var menu = (themeOpts.menu) || undefined;
+
 
     if (menu !== undefined) { nav += buildMenuNav(menu); }
     nav += buildMemberNav(members.tutorials, 'Tutorials', seenTutorials, linktoTutorial, true);
@@ -821,7 +808,7 @@ exports.publish = function(taffyData, opts, tutorials) {
     view.theme = getTheme();
     // once for all
     view.nav = buildNav(members);
-    view.searchList = searchList();
+    view.search = search();
     attachModuleSymbols( find({ longname: {left: 'module:'} }), members.modules );
 
     // generate the pretty-printed source files first so other pages can link to them
