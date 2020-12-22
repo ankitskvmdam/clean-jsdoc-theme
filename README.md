@@ -2,16 +2,16 @@
 
 [![Stars](https://img.shields.io/github/stars/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme) [![Fork](https://img.shields.io/github/forks/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/fork) ![Version](https://img.shields.io/badge/version-3.0.3-%23007bff) [![Issues Open](https://img.shields.io/github/issues/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues) [![Isses Closed](https://img.shields.io/github/issues-closed/ankitskvmdam/clean-jsdoc-theme?color=%234caf50)](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues?q=is%3Aissue+is%3Aclosed) [![Contributors](https://img.shields.io/github/contributors/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors) [![npm downloads](https://img.shields.io/npm/dt/clean-jsdoc-theme)](https://www.npmjs.com/package/clean-jsdoc-theme) [![Build Status](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme.svg?branch=production)](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme) [![lisence](https://img.shields.io/github/license/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/LICENSE) [![Website Of/ficial](https://img.shields.io/website?up_message=official&url=https%3A%2F%2Fankdev.me%2Fclean-jsdoc-theme)](https://ankdev.me/clean-jsdoc-theme/index.html) [![Code of Conduct](https://img.shields.io/badge/code%20of%20conduct-hindi-%23007bff)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CODE_OF_CONDUCT_HINDI.md) [![Code of Conduct](https://img.shields.io/badge/code%20of%20conduct-english-%234caf50)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CODE_OF_CONDUCT.md)
 <br>
-A beautifully crafted theme/template for JSDoc 3. This theme/template looks and feels like a premium theme/template. This is a fully mobile responsive theme and also fully customizable theme (for more look below in <a href="#features">feature section</a>).<br>
+A beautifully crafted theme/template for JSDoc 3. This theme/template looks and feels like a premium theme/template. This is a fully mobile responsive theme and also highly customizable theme (for more look below in <a href="#features">feature section</a>).<br>
 
-I give extra care on every part of this theme/template, like instead of using a simple search mechanism I have used one of the most advance search technology <a href="https://fusejs.io/">Fuse.js</a>.<br>
+Feel free to raise <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme/issues">issues</a>.
 
-Feel free to raise <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme/issues">issues</a>,
+### Demo
 
 Live demo (dark): https://ankdev.me/clean-jsdoc-theme/dark/index.html <br>
 Live demo (light): https://ankdev.me/clean-jsdoc-theme/light/index.html
 
-### Demo screen
+#### Screenshot
 
 ![Screen-1](./example/screen-1.png)
 ![Screen-2](./example/screen-2.png)
@@ -19,6 +19,18 @@ Live demo (light): https://ankdev.me/clean-jsdoc-theme/light/index.html
 ![Screen-4](./example/screen-4.png)
 ![Screen-5](./example/screen-5.png)
 ![Screen-6](./example/screen-6.png)
+
+### Technologies Used
+
+1. Fuse.js - Fuse.js is a powerful, lightweight fuzzy-search library, with zero dependencies. [Learn More](https://fusejs.io/)
+1. Overlay Scrollbars - A javascript scrollbar plugin which hides native scrollbars, provides
+   custom styleable overlay scrollbars and keeps the native functionality and feeling. [Learn More](https://kingsora.github.io/OverlayScrollbars/#!overview)
+1. Nodejs
+
+### Motivation
+
+At the time when I was new to js documentation and jsdoc, it was hard for me to find any theme for jsdoc which is highly customizable or regularly maintaining. Also, the search used in other themes is not that advanced.
+To tackle these I created this project. I am actively listening to the community and try to make the change as soon as possible.
 
 ## Install
 
@@ -74,179 +86,322 @@ In your `jsdoc.json` file, add a template option.
         "destination": "docs/",
         "recurse": true,
         "verbose": true,
-        "template": "./node_modules/clean-jsdoc-theme"
+        "template": "./node_modules/clean-jsdoc-theme",
+        "theme_opts": {
+            "theme": "dark"
+        }
     }
 }
 ```
 
 ## Features
 
-I believe in giving freedom to the developer, that's why I have given many options to
-the developer to customize this theme according to their needs.
-You can pass an object called `theme_opts` under `opts` for more options like:
+You can pass an object called `theme_opts` under `opts` for more options.
 
-```json5
-"opts":{
-  /*
-    Default options
-  */
-  "theme_opts":{
-    // Set theme. Default is light
-    "theme": "dark",
-    /*
-      Instead of only string you can pass html element like
-      <img src="src to your img relative to the output path" class="my-custom-class"/>
-      Path must be relative to the output file (relative to generated html files.) you
-      can use the absolute path.
-      Note: If you use html the default overwrite. Also for custom class you have to create
-      a class using create_style.This is shown below.
-    */
-    "title": "clean-jsdoc-theme",
+### `theme : "light" | "dark"`
 
-   "filter": false, /*  The default value is true. This will turn the color of image white.
-      If you did not want any
-      filter set it to false.
-   */
+To set the overall theme of the documentation file(s). Currently there is only two variant `"light"` and `"dark"` but in future I will try to add more.
+`Default value is "light"`
 
-  // Adding additional menu.
-  "menu": [
-    {
-      "title": "Website", //You have to give title otherwise you get error.
-      "link": "https://ankdev.me/clean-jsdoc-theme/index.html", // You have to give link otherwise you get error.
-      // Below properties are optional.
-      "target": "_blank",
-      "class": "some-class",
-      "id": "some-id"
-    },
-    {
-      "title": "Github",
-      "link": "https://github.com/ankitskvmdam/clean-jsdoc-theme/",
-      "target": "_blank",
-      "class": "some-class",
-      "id": "some-id"
-    }
-  ],
+### `title: string | HTML`
 
-  // You can pass meta options also
-  "meta": [
-      {
-        "name": "author",
-        "content": "Ankit Kumar"
-      },
-      {
-        "name": "description",
-        "content": "Best Clean and minimal JSDoc 3 Template/Theme"
-      }
-    ],
+To set the title to the navbar. String and HTMl is both accepted. Use HTML to overwrite the default HTML. You can do something like this
 
-  "search": false, //This option is for either showing or hiding the search. By default it is true.
+```json
+ "title": "<img src='path/to/img' class='my-custom-class'/>"
+```
 
-  // You can create custom style which will overwrite the exisiting class property.
-  "create_style": "nav{background: yellow}", // This will change the background color of sidebar.
-  // Use this option to add third party css library
-  // Note: You have to pass an array of object, and object keys are actually the attributes which you want
-  // in you link tag.
-  "add_style_path": [
-    {
-      "href": "https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css",
-      "integrity": "sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1",
-      "crossorigin": "anonymous"
-    }
-  ],
+You can use `static_dir` to copy all you static files to output dir and use that path in place of `path/to/img`. For more details look `static_dir` section.
 
-  // You can add custom script to html
-  "add_scripts": "function foo(){console.log('foo')}",
+### `filter: boolean`
 
-  // Use this option to add third party js library
-  // Note: You have to pass an array of object, and object keys are actually the attributes which you want
-  // in you script tag.
-  "add_script_path": [
-    {
-      "src": "https://code.jquery.com/jquery-3.5.1.js",
-      "integrity": "sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc=",
-      "crossorigin": "anonymous"
-    }
-  ],
+This is deprecated. This is used to turn the navbar image to white for better contrast.
 
-  "footer": "This is footer",   // Here again you can pass html element
+### `menu: Array<{}>`
 
-  // Path should be relative to jsdoc configuration file.
-  // Path to static dir which you want to copy to output dir
-  "static_dir": ["./static"],
+To render extra link(s) in navbar. It accepts an array of objects example:
 
-  // Include css files
-  // Note: You are not required to manually copy file to output dir
-  "include_css": ["./static/index.css", "./src/docs/index.css"],
-
-  // Include js files
-  // Note: You are not required to manually copy file to output dir
-  "include_js": ["./static/main.js", "./third-party/test/index.js"],
-
-  // Include overlay scrollbar
-  "overlay_scrollbar": {
-      "options": {
-          // ...overlay options
-          // If you want default then pass empty object
-      }
+```json
+"menu" : [
+  {
+    "title": "Website",
+    "link": "https://ankdev.me/clean-jsdoc-theme/dark/",
+    "target": "_blank",
+    "class": "some-class",
+    "id": "some-id"
   }
+]
+```
 
+#### Required properties
+
+| name    | type     |
+| ------- | -------- |
+| `title` | `string` |
+| `link`  | `string` |
+
+#### Optional Properties
+
+| name     | type     |
+| -------- | -------- |
+| `target` | `string` |
+| `class`  | `string` |
+| `id`     | `string` |
+
+### `meta: Array<{}>`
+
+A list of `meta` tag attributes to add to the `head` of each page.
+
+```json
+"meta" : [
+  {
+    "name": "author",
+    "content": "Ankit Kumar"
+  },
+  {
+    "name": "description",
+    "content": "Best Clean and minimal JSDoc 3 Template/Theme"
+  }
+]
+```
+
+#### Properties
+
+Any valid combination of [HTML metadata attributes](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta#Attributes).
+
+### `search: {}`
+
+To render search. Default value:
+
+```json
+"search": {
+  "shouldSort": true,
+  "threshold": 0.4,
+  "location": 0,
+  "distance": 100,
+  "maxPatternLength": 32,
+  "minMatchCharLength": 1,
 }
 ```
 
-## In version 3.0.2
+#### Properties
 
-### Bug Fix
+Any valid [fuse.js properties](https://fusejs.io/api/options.html)
 
-1. Simplify the meta/script/link declaration [Pull Request: [#56](https://github.com/ankitskvmdam/clean-jsdoc-theme/pull/56)] [Thanks to [GMartigny](https://github.com/GMartigny)]
+### `overlay_scrollbar: {}`
 
-## In version 3.0.0
+Includes the OverlayScrollbars plugin. Simply passing an empty object will activate this feature.
 
-### New
+```json
+"overlay_scrollbar": {
+  "option": {}
+}
+```
 
-1. Add an option to include css files.
-1. Add an option to add js.
-1. Add an option to include static folder.
-1. OverlayScrollbar are now supported by default. If you don't want to use it pass an option to disable it.
+#### Properties
 
-### Breaking changes
+Any valid [overlay scrollbar properties](https://kingsora.github.io/OverlayScrollbars/#!documentation/options)
 
-1. `add_script_path` previously you have to pass an array of string but now you have to pass an array of object where keys are the attributes of the script tag
-1. `add_style_path` previously you have to pass an array of string but now you have to pass an array of object where keys are the attributes of the link tag
-1. `meta` previously you have to pass an array of string but now you have to pass an array of object where keys are the attributes of the meta tag
+### `create_style: string`
 
-## In version 2.2.15
+To create custom style rules. Example:
 
-### New
+```json
+"create_style": "nav{background: yellow} footer {background: green}"
+```
 
-1. Scrollable code area
+Here the nav and footer style rule is to attached to the HTML's `style` tag.
 
-## In version 2.2.14
+### `add_scripts: string`
 
-### Bug Fix
+To create custom scripts. Example:
 
-1.  Malformed HTML when parsing 'default' JSDoc tags [issue: [#48](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/48)]
+```json
+"create_style": "function foo(){console.log('foo')} function bar() {console.log('bar')}"
+```
 
-## In version 2.2.13
+Here the script is to attached to the HTML's `script` tag.
 
-### New
+### `add_style_path: Array<{}>`
 
-1.  Make the # before members and methods a clickable anchor. [pull request: [#44](https://github.com/ankitskvmdam/clean-jsdoc-theme/pull/44)] [Thanks to [GMartigny](https://github.com/GMartigny)]
+Use this option to add third party css library.
 
-### Other
+> Note: You have to pass an array of object, and object keys are actually the attributes which you want in you link tag.
 
-1.  Change jsdoc into a peerDependency [pull request: [#45](https://github.com/ankitskvmdam/clean-jsdoc-theme/pull/45)][Thanks to [GMartigny](https://github.com/GMartigny)]
+Example:
 
-## In version 2.2.12
+```json
+"add_style_path": [
+  {
+    "href": "https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css",
+    "integrity": "sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1",
+    "crossorigin": "anonymous"
+  }
+],
+```
 
-### New
+#### Properties
 
-1.  Add dark theme.
+Any valid [style tag attributes](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/style)
 
-### Bug fix
+### `add_script_path: Array<{}>`
 
-1.  Fix typescript-eslint camelCase rule issue [issue: [#37](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/37)]
-1.  Fix ordered list style [issue: [#40](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/40)]
-1.  Fix code overflow issue.
+Use this option to add third party js library.
+
+> Note: You have to pass an array of object, and object keys are actually the attributes which you want in you script tag.
+
+Example:
+
+```json
+"add_script_path": [
+  {
+    "href": "https://code.jquery.com/jquery-3.5.1.js",
+    "integrity": "sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc=",
+    "crossorigin": "anonymous"
+  }
+],
+```
+
+### Properties
+
+Any valid [script tag attributes](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script)
+
+### `footer: string | HTML`
+
+Thing which you want to render as the footer. You can either pass a string or HTML.
+Use HTML to overwrite the default HTML.
+
+```json
+"footer": "This is footer"
+```
+
+### `static_dir: Array<string>`
+
+To include static files. Example:
+
+```json
+"static_dir": ["./static"],
+```
+
+This will copy the static folder to the output dir.
+
+> Note: If the directory doesn't exists then you may get an error. Also directory is relative to your jsdoc config file.
+
+This will not flatten then directory it keep the directory structure as it is.
+
+### `include_css: Array<string>`
+
+To include css files. Example:
+
+```json
+"include_css": ["./static/index.css", "./src/docs/index.css"]
+```
+
+> Note: You are not required to manually copy file to output dir
+
+It will include the css files to the output dir and also attache a link tag to the html pointing to the included css file.
+
+### `include_js: Array<string>`
+
+To include js files. Example:
+
+```json
+"include_js": ["./static/index.js", "./src/docs/index.js"]
+```
+
+> Note: You are not required to manually copy file to output dir
+
+It will include the js files to the output dir and also attache a link tag to the html pointing to the included js file.
+
+### Example `theme_opts`
+
+```json
+"opts":{
+  "theme_opts":{
+    "theme": "dark",
+    "title": "clean-jsdoc-theme",
+    "filter": false,
+    "menu": [
+      {
+        "title": "Website",
+        "link": "https://ankdev.me/clean-jsdoc-theme/index.html",
+        "target": "_blank",
+        "class": "some-class",
+        "id": "some-id"
+      },
+      {
+        "title": "Github",
+        "link": "https://github.com/ankitskvmdam/clean-jsdoc-theme/",
+        "target": "_blank",
+        "class": "some-class",
+        "id": "some-id"
+      }
+    ],
+
+    "meta": [
+        {
+          "name": "author",
+          "content": "Ankit Kumar"
+        },
+        {
+          "name": "description",
+          "content": "Best Clean and minimal JSDoc 3 Template/Theme"
+        }
+      ],
+    "search": {},
+    "create_style": "nav{background: yellow}",
+    "add_style_path": [
+      {
+        "href": "https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css",
+        "integrity": "sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1",
+        "crossorigin": "anonymous"
+      }
+    ],
+    "add_scripts": "function foo(){console.log('foo')}",
+    "add_script_path": [
+      {
+        "src": "https://code.jquery.com/jquery-3.5.1.js",
+        "integrity": "sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc=",
+        "crossorigin": "anonymous"
+      }
+    ],
+
+    "footer": "This is footer",
+    "static_dir": ["./static"],
+    "include_css": ["./static/index.css", "./src/docs/index.css"],
+    "include_js": ["./static/main.js", "./third-party/test/index.js"],
+
+    "overlay_scrollbar": {
+        "options": {
+        }
+    }
+  }
+}
+```
+
+### Cheat sheet
+
+| name                | default   | use case                            | expected value(s)         |
+| ------------------- | --------- | ----------------------------------- | ------------------------- |
+| `theme`             | `"light"` | To set the theme variant            | `"light" or "dark"`       |
+| `title`             | `null`    | To set the title                    | `HTML` or `string`        |
+| `filter`            | `false`   | Turn the navbar image to white      | `boolean`                 |
+| `menu`              | `null`    | To render extra link in navbar      | Array of Object(s)        |
+| `meta`              | `null`    | Meta tag attributes                 | Array of Object(s)        |
+| `search`            | `{}`      | To render search or not             | Fuse.js options           |
+| `create_style`      | `null`    | To create custom style rules        | `string`                  |
+| `add_style_path`    | `null`    | To add external css libraries/files | Array of Object(s)        |
+| `add_scripts`       | `null`    | To create custom script             | `string`                  |
+| `add_script_path`   | `null`    | To add external js libraries/files  | Array of Object(s)        |
+| `footer`            | `null`    | To render footer                    | `HTML` or `string`        |
+| `static_dir`        | `null`    | To include static dir               | Array of string           |
+| `include_css`       | `null`    | To include css files                | Array of string           |
+| `include_js`        | `null`    | To include js files                 | `string`                  |
+| `overlay_scrollbar` | `null`    | To use overlay scrollbar            | Overlay Scrollbar options |
+
+## Changelog
+
+Changelog is moved [here (https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CHANGELOG.md)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CHANGELOG.md)
 
 ## Developing
 
@@ -264,8 +419,8 @@ npm run test
 
 ## Contact
 
-If you like our work, then give me a <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme" data-icon="octicon-star" aria-label="Star ankitskvmdam/clean-jsdoc-theme on GitHub">star</a>. This will act as a driving force to add new feature more frequently. <br>
-Mail me at: hello@ankdev.me <br>
+If you like my work, then give me a <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme" data-icon="octicon-star" aria-label="Star ankitskvmdam/clean-jsdoc-theme on GitHub">star</a>. This will act as a driving force to add new feature more frequently. <br>
+Mail me at: <a href="mailto:hello@ankdev.me">hello@ankdev.me</a> <br>
 
 ## License
 
