@@ -1,6 +1,6 @@
 # clean-jsdoc-theme
 
-[![Stars](https://img.shields.io/github/stars/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme) [![Fork](https://img.shields.io/github/forks/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/fork) ![Version](https://img.shields.io/badge/version-3.0.5-%23007bff) [![Issues Open](https://img.shields.io/github/issues/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues) [![Isses Closed](https://img.shields.io/github/issues-closed/ankitskvmdam/clean-jsdoc-theme?color=%234caf50)](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues?q=is%3Aissue+is%3Aclosed) [![Contributors](https://img.shields.io/github/contributors/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors) [![npm downloads](https://img.shields.io/npm/dt/clean-jsdoc-theme)](https://www.npmjs.com/package/clean-jsdoc-theme) [![Build Status](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme.svg?branch=production)](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme) [![license](https://img.shields.io/github/license/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/LICENSE) [![Website Of/ficial](https://img.shields.io/website?up_message=official&url=https%3A%2F%2Fankdev.me%2Fclean-jsdoc-theme)](https://ankdev.me/clean-jsdoc-theme/index.html) [![Code of Conduct](https://img.shields.io/badge/code%20of%20conduct-hindi-%23007bff)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CODE_OF_CONDUCT_HINDI.md) [![Code of Conduct](https://img.shields.io/badge/code%20of%20conduct-english-%234caf50)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CODE_OF_CONDUCT.md)
+[![Stars](https://img.shields.io/github/stars/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme) [![Fork](https://img.shields.io/github/forks/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/fork) ![Version](https://img.shields.io/badge/version-3.0.6-%23007bff) [![Issues Open](https://img.shields.io/github/issues/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues) [![Isses Closed](https://img.shields.io/github/issues-closed/ankitskvmdam/clean-jsdoc-theme?color=%234caf50)](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues?q=is%3Aissue+is%3Aclosed) [![Contributors](https://img.shields.io/github/contributors/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors) [![npm downloads](https://img.shields.io/npm/dt/clean-jsdoc-theme)](https://www.npmjs.com/package/clean-jsdoc-theme) [![Build Status](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme.svg?branch=production)](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme) [![license](https://img.shields.io/github/license/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/LICENSE) [![Website Of/ficial](https://img.shields.io/website?up_message=official&url=https%3A%2F%2Fankdev.me%2Fclean-jsdoc-theme)](https://ankdev.me/clean-jsdoc-theme/index.html) [![Code of Conduct](https://img.shields.io/badge/code%20of%20conduct-hindi-%23007bff)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CODE_OF_CONDUCT_HINDI.md) [![Code of Conduct](https://img.shields.io/badge/code%20of%20conduct-english-%234caf50)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CODE_OF_CONDUCT.md)
 <br>
 A beautifully crafted theme/template for JSDoc 3. This theme/template looks and feels like a premium theme/template. This is a fully mobile responsive theme and also highly customizable theme (for more look below in <a href="#features">feature section</a>).<br>
 
@@ -17,21 +17,21 @@ Feel free to raise <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme/is
 -   [Nodejs Dependencies](#nodejs-dependency)
 -   [Example Jsdoc Config](#example-jsdoc-config)
 -   [Features](#features)
-    -   [`theme`](#theme--light--dark)
-    -   [`title`](#title-string--html)
-    -   [`filter`](#filter-boolean)
-    -   [`menu`](#menu-array)
-    -   [`meta`](#meta-array)
-    -   [`search`](#search-)
-    -   [`overlay_scrollbar`](#overlay_scrollbar-)
-    -   [`create_style`](#create_style-string)
-    -   [`add_scripts`](#add_scripts-string)
-    -   [`add_style_path`](#add_style_path-array)
-    -   [`add_script_path`](#add_script_path-array)
-    -   [`footer`](#footer-string--html)
-    -   [`static_dir`](#static_dir-arraystring)
-    -   [`include_css`](#include_css-arraystring)
-    -   [`include_js`](#include_js-arraystring)
+    -   [theme](#theme--light--dark)
+    -   [title](#title-string--html)
+    -   [filter](#filter-boolean)
+    -   [menu](#menu-array)
+    -   [meta](#meta-array)
+    -   [search](#search-)
+    -   [overlay_scrollbar](#overlay_scrollbar-)
+    -   [create_style](#create_style-string)
+    -   [add_scripts](#add_scripts-string)
+    -   [add_style_path](#add_style_path-array)
+    -   [add_script_path](#add_script_path-array)
+    -   [footer](#footer-string--html)
+    -   [static_dir](#static_dir-arraystring)
+    -   [include_css](#include_css-arraystring)
+    -   [include_js](#include_js-arraystring)
     -   [Example](#example-theme_opts)
     -   [Cheat sheet](#cheat-sheet)
 -   [Changelog](#changelog)
@@ -40,7 +40,7 @@ Feel free to raise <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme/is
 -   [Contact](#contact)
 -   [License](#license)
 
-### Demo
+## Demo
 
 Live demo (dark): <a href="https://ankdev.me/clean-jsdoc-theme/dark/index.html">https://ankdev.me/clean-jsdoc-theme/dark/index.html</a> <br>
 Live demo (light): <a href="https://ankdev.me/clean-jsdoc-theme/light/index.html">https://ankdev.me/clean-jsdoc-theme/light/index.html</a>
@@ -54,14 +54,14 @@ Live demo (light): <a href="https://ankdev.me/clean-jsdoc-theme/light/index.html
 ![Screen-5](./example/screen-5.png)
 ![Screen-6](./example/screen-6.png)
 
-### Technologies Used
+## Technologies Used
 
 1. Fuse.js - Fuse.js is a powerful, lightweight fuzzy-search library, with zero dependencies. [Learn More](https://fusejs.io/)
 1. Overlay Scrollbars - A javascript scrollbar plugin which hides native scrollbars, provides
    custom styleable overlay scrollbars and keeps the native functionality and feeling. [Learn More](https://kingsora.github.io/OverlayScrollbars/#!overview)
 1. Nodejs
 
-### Motivation
+## Motivation
 
 At the time when I was new to js documentation and jsdoc, it was hard for me to find any theme for jsdoc which is highly customizable or regularly maintaining. Also, the search used in other themes is not that advanced.
 To tackle these I created this project. I am actively listening to the community and try to make the changes as soon as possible.
@@ -435,7 +435,7 @@ It will include the js files to the output dir and also attache a link tag to th
 
 ## Changelog
 
-Changelog is moved [https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CHANGELOG.md](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CHANGELOG.md)
+Changelog is moved to [https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CHANGELOG.md](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CHANGELOG.md)
 
 ## Developing
 
