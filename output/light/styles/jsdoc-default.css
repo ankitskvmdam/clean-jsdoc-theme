@@ -18,6 +18,7 @@ body {
     font-family: 'body';
     font-size: 16px;
     margin: 0 auto;
+    overflow-x: hidden;
     padding: 0;
 }
 
@@ -528,7 +529,8 @@ footer {
 }
 
 .params,
-.props {
+.props,
+table {
     border-collapse: collapse;
     border-radius: 8px;
     border-spacing: 0;
@@ -547,7 +549,9 @@ footer {
 .params td,
 .params th,
 .props td,
-.props th {
+.props th,
+th,
+td {
     display: table-cell;
     margin: 0;
     padding: 15px;
