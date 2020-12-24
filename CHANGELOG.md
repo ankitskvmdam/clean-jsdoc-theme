@@ -1,5 +1,12 @@
 ## Change Log
 
+## In version 3.0.6
+
+### Bug Fix
+
+1. Fix body overflow.
+1. Fix css for table.
+
 ## In version 3.0.4
 
 ### New
