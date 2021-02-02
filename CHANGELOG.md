@@ -1,5 +1,11 @@
 ## Change Log
 
+## In version 3.0.7
+
+### Feature
+
+1. Now left panel classes and modules can be collapse. [Feature Request #57](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/57)
+
 ## In version 3.0.6
 
 ### Bug Fix
