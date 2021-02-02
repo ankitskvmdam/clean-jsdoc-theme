@@ -9,6 +9,7 @@ var taffy = require('taffydb').taffy;
 var template = require('jsdoc/template');
 var util = require('util');
 var fse = require('fs-extra');
+var svgDownIcon = require('./helpers/down-arrow');
 
 var htmlsafe = helper.htmlsafe;
 var linkto = helper.linkto;
@@ -471,8 +472,33 @@ function buildMemberNav(items, itemHeading, itemsSeen, linktoFn) {
             if ( !hasOwnProp.call(item, 'longname') ) {
                 itemsNav += '<li>' + linktoFn('', item.name);
                 itemsNav += '</li>';
-            } else if ( !hasOwnProp.call(itemsSeen, item.longname) ) {
-                itemsNav += '<li>' + linktoFn(item.longname, item.name.replace(/^module:/, ''));
+            } else if (!hasOwnProp.call(itemsSeen, item.longname)) {
+                /**
+                 * Only have accordion class name if it have any child.
+                 * Otherwise it didn't makes any sense.
+                 */
+                var accordionClassName = (methods.length) ? '"accordion collapsed"' : '""';
+
+                /**
+                 * Id give to accordion.
+                 */
+                var accordionId = (methods.length) ? Math.floor(Math.random() * 10000000) : '""';
+
+                itemsNav += '<li class=' +
+                    accordionClassName +
+                    ' id=' +
+                    accordionId +
+                    '>';
+
+                var linkTitle = linktoFn(item.longname, item.name.replace(/^module:/, ''));
+
+                if (methods.length) {
+                    itemsNav += '<div class="accordion-title">' + linkTitle + svgDownIcon + '</div>';
+                } else {
+                    itemsNav += linkTitle;
+                }
+
+
                 if (haveSearch) {
                     searchListArray.push(JSON.stringify({
                         title: item.name,
@@ -481,7 +507,7 @@ function buildMemberNav(items, itemHeading, itemsSeen, linktoFn) {
                 }
 
                 if (methods.length) {
-                    itemsNav += "<ul class='methods'>";
+                    itemsNav += "<ul class='methods accordion-content'>";
 
                     methods.forEach(function(method) {
                         var name = method.longname.split('#');
