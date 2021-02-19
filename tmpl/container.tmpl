@@ -72,6 +72,12 @@
             <h3>Example<?js= doc.examples.length > 1? 's':'' ?></h3>
             <?js= self.partial('examples.tmpl', doc.examples) ?>
         <?js } ?>
+
+
+        <?js if (doc.see) { ?>
+            <h3 class="subsection-title">See:</h3>
+            <p><?js= doc.see ?></p>
+        <?js } ?>
     <?js } ?>
     </div>
 
