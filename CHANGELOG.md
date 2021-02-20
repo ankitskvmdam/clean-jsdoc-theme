@@ -1,5 +1,11 @@
 ## Change Log
 
+### In version 3.0.8
+
+#### Feature
+
+1. Add support for `@see` documentation link. [#59](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/58)
+
 ## In version 3.0.7
 
 ### Feature
