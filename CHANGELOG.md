@@ -1,5 +1,13 @@
 ## Change Log
 
+### In version 3.0.9
+
+#### Bug Fixes
+
+1. On Mobile screen the ham icon is not visible. That is solved in this release.
+2. Fix: Tooltip copied text color.
+3. Fix: When copied code, `JAVASCRIPT\nCopied!` also got attached with it.
+
 ### In version 3.0.8
 
 #### Feature
