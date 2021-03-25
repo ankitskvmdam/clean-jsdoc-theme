@@ -1,5 +1,25 @@
 ## Change Log
 
+### In version 3.0.10
+
+### Bug Fixes
+
+1. Previously, we are enforcing below templates:
+
+```js
+// jsdoc config file
+// ...other options.
+  templates: {
+    cleverLinks: true,
+    monospaceLinks: false,
+    default: {
+        outputSourceFiles: false,
+    }
+  },
+```
+
+In this release we removed this template rule.
+
 ### In version 3.0.9
 
 #### Bug Fixes
