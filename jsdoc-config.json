@@ -6,13 +6,6 @@
         "include": ["./demo/src", "./README.md"]
     },
     "plugins": ["plugins/markdown"],
-    "templates": {
-        "cleverLinks": false,
-        "monospaceLinks": false,
-        "default": {
-            "outputSourceFiles": true
-        }
-    },
     "opts": {
         "encoding": "utf8",
         "destination": "output/dark",
