@@ -2,13 +2,43 @@
 var data = obj;
 var self = this;
 var defaultObjectClass = '';
+var printDeatils = false
+var loopVar = 0;
+var detailsKeys = [
+    'version',
+    'since',
+    'inherited',
+    'inherits',
+    'overrides',
+    'implementations',
+    'implements',
+    'mixes',
+    'deprecated',
+    'author',
+    'copyright',
+    'license',
+    'defaultvalue',
+    'tutorials',
+    'see',
+    'todo'
+]
 
 // Check if the default value is an object or array; if so, apply code highlighting
 if (data.defaultvalue && (data.defaultvaluetype === 'object' || data.defaultvaluetype === 'array')) {
     data.defaultvalue = "<pre class=\"prettyprint\"><code>" + data.defaultvalue + "</code></pre>";
     defaultObjectClass = ' class="object-value"';
 }
+
+// Check whether to print details or not
+for(; loopVar < detailsKeys.length; loopVar += 1) {
+    if(data[detailsKeys[loopVar]]) {
+        printDeatils = true
+        break
+    }
+}
+
 ?>
+
 <?js
     var properties = data.properties;
     if (properties && properties.length && properties.forEach) {
@@ -20,6 +50,7 @@ if (data.defaultvalue && (data.defaultvaluetype === 'object' || data.defaultvalu
 
 <?js } ?>
 
+<?js if(printDeatils) { ?>
 <dl class="details">
 
     <?js if (data.version) {?>
@@ -173,3 +204,5 @@ if (data.defaultvalue && (data.defaultvaluetype === 'object' || data.defaultvalu
         </div>
     <?js } ?>
 </dl>
+
+<?js } ?>
