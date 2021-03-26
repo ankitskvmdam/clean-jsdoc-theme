@@ -6,7 +6,7 @@ A beautifully crafted theme/template for JSDoc 3. This theme/template looks and 
 
 Feel free to raise <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme/issues">issues</a>.
 
-### Table of content
+## Table of content
 
 -   [Demo](#demo)
     -   [Screenshot](#screenshot)

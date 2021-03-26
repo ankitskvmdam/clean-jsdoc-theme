@@ -1,3 +1,8 @@
+::selection {
+    background: #ffce76;
+    color: #1d1919;
+}
+
 body {
     background-color: #fff;
     color: #2f343a;
@@ -18,11 +23,16 @@ h3,
 h4,
 h5,
 h6 {
-    color: #000;
+    color: #2f343a;
 }
 
-h1 {
+h1,
+h2 {
     border-bottom: 0.0625rem solid #eee;
+}
+
+a {
+    color: #2f343a;
 }
 
 .navbar {
