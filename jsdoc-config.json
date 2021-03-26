@@ -24,6 +24,20 @@
                     "name": "Description",
                     "content": "A beautifully crafted theme for jsdoc"
                 }
+            ],
+            "menu": [
+                {
+                    "title": "test",
+                    "id": "test-id"
+                },
+                {
+                    "title": "test2",
+                    "id": "test-id"
+                },
+                {
+                    "title": "test3",
+                    "id": "test-id"
+                }
             ]
         }
     },

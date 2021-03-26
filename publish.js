@@ -9,7 +9,6 @@ var taffy = require('taffydb').taffy;
 var template = require('jsdoc/template');
 var util = require('util');
 var fse = require('fs-extra');
-var svgDownIcon = require('./helpers/down-arrow');
 
 var htmlsafe = helper.htmlsafe;
 var linkto = helper.linkto;
@@ -498,7 +497,10 @@ function buildMemberNav(items, itemHeading, itemsSeen, linktoFn) {
                 var linkTitle = linktoFn(item.longname, item.name.replace(/^module:/, ''));
 
                 if (methods.length) {
-                    itemsNav += '<div class="accordion-heading child">' + linkTitle + svgDownIcon + '</div>';
+                    itemsNav += '<div class="accordion-heading child">' +
+                        linkTitle +
+                        '<svg><use xlink:href="#down-icon"></use></svg>' +
+                        '</div>';
                 } else {
                     itemsNav += linkTitle;
                 }
@@ -540,7 +542,9 @@ function buildMemberNav(items, itemHeading, itemsSeen, linktoFn) {
         });
 
         if (itemsNav !== '') {
-            nav += '<div class="accordion collapsed"> <h3 class="accordion-heading">' +
+            nav += '<div class="accordion collapsed" id="' +
+                Math.floor(Math.random() * 10000000) +
+                '" > <h3 class="accordion-heading">' +
                 itemHeading + '<svg><use xlink:href="#down-icon"></use></svg>' +
                 '</h3><ul class="accordion-content">' +
                 itemsNav +
@@ -612,29 +616,30 @@ function buildNav(members) {
     nav += buildMemberNav(members.namespaces, 'Namespaces', seen, linkto);
     nav += buildMemberNav(members.mixins, 'Mixins', seen, linkto);
     nav += buildMemberNav(members.interfaces, 'Interfaces', seen, linkto);
+    nav += buildMemberNav(members.globals, 'Global', seen, linkto);
 
-    if (members.globals.length) {
-        var globalNav = '';
+    // if (members.globals.length) {
+    //     var globalNav = '';
 
-        members.globals.forEach(function(g) {
-            if ( g.kind !== 'typedef' && !hasOwnProp.call(seen, g.longname) ) {
-                searchListArray.push(JSON.stringify({
-                    title: g.name,
-                    link: linkto(g.longname, 'Global &rtrif; ' + g.name)
-                }));
-                globalNav += '<li>' + linkto(g.longname, g.name) + '</li>';
-            }
-            seen[g.longname] = true;
-        });
+    //     members.globals.forEach(function(g) {
+    //         if ( g.kind !== 'typedef' && !hasOwnProp.call(seen, g.longname) ) {
+    //             searchListArray.push(JSON.stringify({
+    //                 title: g.name,
+    //                 link: linkto(g.longname, 'Global &rtrif; ' + g.name)
+    //             }));
+    //             globalNav += '<li>' + linkto(g.longname, g.name) + '</li>';
+    //         }
+    //         seen[g.longname] = true;
+    //     });
 
-        if (!globalNav) {
-            // turn the heading into a link so you can actually get to the global page
-            nav += '<h3>' + linkto('global', 'Global') + '</h3>';
-        }
-        else {
-            nav += '<h3>' + linkto('global', 'Global') + '</h3><ul>' + globalNav + '</ul>';
-        }
-    }
+    //     if (!globalNav) {
+    //         // turn the heading into a link so you can actually get to the global page
+    //         nav += '<h3>' + linkto('global', 'Global') + '</h3>';
+    //     }
+    //     else {
+    //         nav += '<h3>' + linkto('global', 'Global') + '</h3><ul>' + globalNav + '</ul>';
+    //     }
+    // }
 
     nav += '</div>';
 

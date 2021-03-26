@@ -125,44 +125,52 @@ function getAccordionIdsFromLocalStorage() {
 }
 
 
-function toggleAccordion(element) {
+function toggleAccordion(element, isImmediate) {
     var currentNode = element;
-
-    console.log(element);
     var isCollapsed = currentNode.classList.contains('collapsed');
-
-    var currentNodeUL = currentNode.querySelector('ul');
+    var currentNodeUL = currentNode.querySelector('.accordion-content');
 
     if (isCollapsed) {
+        if (isImmediate) {
+            currentNode.classList.remove('collapsed');
+            currentNodeUL.style.height = 'auto';
+
+            return;
+        }
+
         var scrollHeight = currentNodeUL.scrollHeight;
 
-        currentNodeUL.style.minHeight = scrollHeight + 'px';
+        currentNodeUL.style.height = scrollHeight + 'px';
         currentNode.classList.remove('collapsed');
         setAccordionIdToLocalStorage(currentNode.id);
+        setTimeout(function() {
+            if (!currentNode.classList.contains('collapsed'))
+            { currentNodeUL.style.height = 'auto'; }
+        }, 600);
     } else {
-        currentNodeUL.style.minHeight = '0px';
+        currentNodeUL.style.height = '0px';
         currentNode.classList.add('collapsed');
         removeAccordionIdFromLocalStorage(currentNode.id);
     }
 }
 
 (function() {
-    // if (localStorage.getItem(accordionLocalStorageKey) === undefined ||
-    // localStorage.getItem(accordionLocalStorageKey) === null
-    // ) {
-    //     console.log('reset', localStorage.getItem(accordionLocalStorageKey));
-    //     localStorage.setItem(accordionLocalStorageKey, '{}');
-    // }
+    if (localStorage.getItem(accordionLocalStorageKey) === undefined ||
+    localStorage.getItem(accordionLocalStorageKey) === null
+    ) {
+        console.log('reset', localStorage.getItem(accordionLocalStorageKey));
+        localStorage.setItem(accordionLocalStorageKey, '{}');
+    }
     var allAccordion = document.querySelectorAll('.accordion-heading');
-    // var ids = getAccordionIdsFromLocalStorage();
+    var ids = getAccordionIdsFromLocalStorage();
 
 
     allAccordion.forEach(function(item) {
-        console.log('parent', item.parentNode);
-        console.log('item', item);
-        item.addEventListener('click', function() { toggleAccordion(item.parentNode); } );
-        // if (item.id in ids) {
-        //     toggleAccordion( item);
-        // }
+        var parent = item.parentNode;
+
+        item.addEventListener('click', function() { toggleAccordion(parent); } );
+        if (parent.id in ids) {
+            toggleAccordion(parent, true);
+        }
     });
 })();
