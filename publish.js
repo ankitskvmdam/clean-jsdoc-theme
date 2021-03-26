@@ -354,12 +354,17 @@ function buildMenuNav(menu) {
 }
 
 function buildSearch() {
-    var search = '<div class="search-box"><input type="text" placeholder="Search..." id="search-box" />';
+    var searchHTML = '<div class="search-box">' +
+        '<div class="search-box-input-container">' +
+        '<svg class="search-icon" alt="search-icon"><use xlink:href="#search-icon"></use></svg>' +
+        '<input class="search-box-input" type="text" placeholder="Search..." id="search-box" />' +
+        '</div>';
+
     var searchItemContainer = '<div class="search-item-container" id="search-item-container"><ul class="search-item-ul" id="search-item-ul"></ul></div></div>';
 
-    search += searchItemContainer;
+    searchHTML += searchItemContainer;
 
-    return search;
+    return searchHTML;
 }
 
 function buildFooter() {
@@ -571,7 +576,11 @@ function buildNav(members) {
     var isHTML = RegExp.prototype.test.bind(/(<([^>]+)>)/i);
     var nav;
 
-    if (!isHTML(title)) { nav = '<h2><a href="index.html"><div class="text">' + title + '</div></a></h2>'; }
+    if (!isHTML(title)) {
+        nav = '<div class="navbar-heading" id="navbar-heading"><a href="index.html"><h2 class="navbar-heading-text">' +
+            title +
+            '</h2></a></div>';
+    }
     else {
         // eslint-disable-next-line no-restricted-globals
         var filter = env && env.opts && env.opts.themeOpts;

@@ -13,9 +13,7 @@ body {
 body {
     font-family: 'body';
     font-size: 16px;
-    margin: 0 auto;
     overflow-x: hidden;
-    padding: 0;
     position: relative;
 }
 
@@ -72,31 +70,18 @@ h6 {
 }
 
 h1 {
-    font-size: 48px;
-    font-weight: 300;
-    margin: 1em 0 0.5em;
-    position: relative;
-    z-index: 1;
+    font-size: 42px;
+    margin-bottom: 1rem;
+    margin-top: 2rem;
+    padding-bottom: 0.5rem;
+}
+
+img {
+    max-width: 100%;
 }
 
 /* stylelint-disable */
-h1.page-title {
-    font-size: 48px;
-    margin: 10px 30px 20px;
-    position: relative;
-    z-index: 10;
-}
 
-h1.page-title::after,
-article h1::after {
-    bottom: 5px;
-    content: '';
-    display: block;
-    height: 15px;
-    position: absolute;
-    width: 100%;
-    z-index: -1;
-}
 
 /* stylelint-enable */
 

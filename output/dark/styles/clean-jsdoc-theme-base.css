@@ -13,96 +13,28 @@
     src: url('../fonts/MavenPro-Regular.ttf') format('truetype');
 }
 
-.accordion {
-    overflow: hidden;
+.main-content {
+    /**
+    * This should match with the width of the nav / sidebar.
+    */
+    margin-left: 18.75rem;
+    padding: 1rem 2rem;
 }
 
-.accordion-title {
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    padding: 4px 10px;
-}
-
-.accordion-title svg {
-    fill: #fff;
-    margin-right: 0.5rem;
-    transition: 0.3s;
-}
-
-.accordion.collapsed svg {
-    transform: rotate(180deg);
-}
-
-.accordion.collapsed .accordion-content {
-    padding: 0 !important;
-}
-
-.accordion .accordion-content {
-    height: 0;
-    margin-right: 1rem !important;
-    overflow: hidden;
-    padding: 0.625rem 0;
-    transition: 0.3s;
-}
-
-.accordion .methods a {
-    padding: 0.25rem 1.25rem !important;
-}
-
-pre {
-    position: relative;
-}
-
-.pre-top-bar-container {
-    align-items: center;
-    display: flex;
-    justify-content: space-between;
+.navbar {
+    bottom: 0;
     left: 0;
-    padding: 0.3125rem 1.5rem;
-    position: absolute;
-    right: 0;
+    position: fixed;
     top: 0;
+    width: 18.75rem;    
 }
 
-.code-copy-icon-container {
-    align-items: center;
-    border-radius: 50%;
-    cursor: pointer;
+.navbar-heading {
     display: flex;
-    height: 1.875rem;
-    justify-content: center;
-    transition: 0.3s;
-    width: 1.875rem;
+    justify-content: flex-start;
+    padding: 2rem 1rem;
 }
 
-.code-copy-icon-container > div {
-    margin-top: 0.25rem;
-    position: relative;
-}
-
-.sm-icon {
-    height: 1rem;
-    width: 1rem;
-}
-
-.code-lang-name {
-    font-family: 'code';
-    font-size: 12px;
-}
-
-.tooltip {
-    border-radius: 5px;
-    opacity: 0;
-    padding: 3px 8px;
-    position: absolute;
-    right: 30px;
-    top: -2px;
-    transform: scale(0);
-    transition: 0.3s;
-}
-
-.show-tooltip {
-    opacity: 1;
-    transform: scale(1);
+.navbar-heading-text {
+    font-size: 1.8rem;
 }
