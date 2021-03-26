@@ -354,10 +354,10 @@ function buildMenuNav(menu) {
 }
 
 function buildSearch() {
-    var searchHTML = '<div class="search-box">' +
+    var searchHTML = '<div class="search-box" id="search-box">' +
         '<div class="search-box-input-container">' +
+        '<input class="search-box-input" type="text" placeholder="Search..." id="search-box-input" />' +
         '<svg class="search-icon" alt="search-icon"><use xlink:href="#search-icon"></use></svg>' +
-        '<input class="search-box-input" type="text" placeholder="Search..." id="search-box" />' +
         '</div>';
 
     var searchItemContainer = '<div class="search-item-container" id="search-item-container"><ul class="search-item-ul" id="search-item-ul"></ul></div></div>';

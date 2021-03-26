@@ -8,21 +8,21 @@
     <!-- Adding meta -->
     <?js if(this.meta != undefined) { ?>
     <?js this.meta.forEach(function(src){ ?>
-    <meta <?js=Object.keys(src).map(key=> `${key}="${src[key]}"`).join(" ") ?> />
+    <meta <?js= Object.keys(src).map(key=> `${key}="${src[key]}"`).join(" ") ?> />
     <?js }) ?>
     <?js } ?>
 
     <!-- Adding external script-->
     <?js if(this.dynamicScriptSrc != undefined) { ?>
     <?js this.dynamicScriptSrc.forEach(function(src){ ?>
-    <script <?js=Object.keys(src).map(key=> `${key}="${src[key]}"`).join(" ") ?> ></script>
+    <script <?js= Object.keys(src).map(key=> `${key}="${src[key]}"`).join(" ") ?> ></script>
     <?js }) ?>
     <?js } ?>
 
     <!-- Adding external style-->
     <?js if(this.dynamicStyleSrc != undefined) { ?>
     <?js this.dynamicStyleSrc.forEach(function(src){ ?>
-    <link <?js=Object.keys(src).map(key=> `${key}="${src[key]}"`).join(" ") ?> />
+    <link <?js= Object.keys(src).map(key=> `${key}="${src[key]}"`).join(" ") ?> />
     <?js }) ?>
     <?js } ?>
 
@@ -71,7 +71,7 @@
     <link type="text/css" rel="stylesheet" href="styles/<?js= this.theme ?>">
     <?js if(this.dynamicStyle != undefined ) { ?>
     <style>
-      <?js=this.dynamicStyle ?>
+      <?js= this.dynamicStyle ?>
     </style>
     <?js } ?>
     <?js= this.partial('icons.tmpl') ?>
@@ -107,20 +107,20 @@
     <script src="scripts/linenumber.js"></script>
     <script src="scripts/fix-code-block.js"></script>
     <script>
-      var list = [<? js = this.search.list ?>];
-      var options = <? js = this.search.options ?>
+      var list = [<?js= this.search.list ?>];
+      var options = <?js= this.search.options ?>
         setupSearch(list, options)
     </script>
 
     <?js if(this.dynamicScript != undefined ) { ?>
     <script type="text/javascript">
-        <? js = this.dynamicScript ?>
+        <?js= this.dynamicScript ?>
     </script>
     <?js } ?>
 
     <?js if(this.dynamicScript != undefined ) { ?>
     <script type="text/javascript">
-    <? js = this.dynamicScript ?>
+    <?js= this.dynamicScript ?>
     </script>
     <?js } ?>
 

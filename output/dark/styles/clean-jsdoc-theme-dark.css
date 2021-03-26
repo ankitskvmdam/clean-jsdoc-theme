@@ -28,3 +28,36 @@ h1 {
 .navbar {
     background: #000;
 }
+
+
+.search-box-input-container {
+    background: #2a2b2c;
+}
+
+.search-icon {
+    fill: #aeaeae;
+}
+
+.search-box-input {
+    color: #fff;
+}
+
+.search-box-input::placeholder {
+    color: #aeaeae;
+}
+
+.search-box-input:focus + .search-icon {
+    fill: #fff;
+}
+
+.search-item-ul {
+    background: #333;
+}
+
+.search-item-ul li:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.search-item-ul a {
+    color: #fff;
+}

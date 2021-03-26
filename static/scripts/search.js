@@ -8,7 +8,7 @@ function showSearchList() {
 }
 
 function checkClick(e) {
-    if ( e.target.id !== 'search-box') {
+    if ( e.target.id !== 'search-box-input') {
         setTimeout(function() {
             hideSearchList();
         }, 60);
@@ -49,7 +49,7 @@ function search(list, options, keys, searchKey) {
 
 /* eslint-disable-next-line */
 function setupSearch(list, options) {
-    var inputBox = document.getElementById('search-box');
+    var inputBox = document.getElementById('search-box-input');
     var keys = ['title'];
 
     inputBox.addEventListener('keyup', function() {
