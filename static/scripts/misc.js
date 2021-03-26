@@ -136,34 +136,33 @@ function toggleAccordion(element) {
     if (isCollapsed) {
         var scrollHeight = currentNodeUL.scrollHeight;
 
-        currentNodeUL.style.height = scrollHeight + 20 + 'px';
+        currentNodeUL.style.minHeight = scrollHeight + 'px';
         currentNode.classList.remove('collapsed');
         setAccordionIdToLocalStorage(currentNode.id);
     } else {
-        currentNodeUL.style.height = '0px';
+        currentNodeUL.style.minHeight = '0px';
         currentNode.classList.add('collapsed');
         removeAccordionIdFromLocalStorage(currentNode.id);
     }
 }
 
 (function() {
-    if (localStorage.getItem(accordionLocalStorageKey) === undefined ||
-    localStorage.getItem(accordionLocalStorageKey) === null
-    ) {
-        console.log('reset', localStorage.getItem(accordionLocalStorageKey));
-        localStorage.setItem(accordionLocalStorageKey, '{}');
-    }
-    var getAllAccordion = document.querySelectorAll('.accordion');
-    var ids = getAccordionIdsFromLocalStorage();
+    // if (localStorage.getItem(accordionLocalStorageKey) === undefined ||
+    // localStorage.getItem(accordionLocalStorageKey) === null
+    // ) {
+    //     console.log('reset', localStorage.getItem(accordionLocalStorageKey));
+    //     localStorage.setItem(accordionLocalStorageKey, '{}');
+    // }
+    var allAccordion = document.querySelectorAll('.accordion-heading');
+    // var ids = getAccordionIdsFromLocalStorage();
 
-    getAllAccordion.forEach(function(item) {
-        var clickElement = item.querySelector('.accordion-title');
 
-        console.log(clickElement);
-
-        clickElement.addEventListener('click', function() { toggleAccordion(item); } );
-        if (item.id in ids) {
-            toggleAccordion( item);
-        }
+    allAccordion.forEach(function(item) {
+        console.log('parent', item.parentNode);
+        console.log('item', item);
+        item.addEventListener('click', function() { toggleAccordion(item.parentNode); } );
+        // if (item.id in ids) {
+        //     toggleAccordion( item);
+        // }
     });
 })();

@@ -61,3 +61,16 @@ h1 {
 .search-item-ul a {
     color: #fff;
 }
+
+.accordion-heading {
+    color: #fff;
+    fill: #fff;
+}
+
+.accordion-content {
+    background: #111;
+}
+
+.accordion-content a {
+    color: #fff;
+}

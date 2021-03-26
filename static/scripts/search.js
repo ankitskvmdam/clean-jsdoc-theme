@@ -39,7 +39,7 @@ function search(list, options, keys, searchKey) {
     searchUL.innerHTML = '';
 
     if (result.length === 0) {
-        searchUL.innerHTML += '<li> No Result Found </li>';
+        searchUL.innerHTML += '<li class="p-h-n"> No Result Found </li>';
     } else {
         result.forEach(function(item) {
             searchUL.innerHTML += '<li>' + item.link + '</li>';

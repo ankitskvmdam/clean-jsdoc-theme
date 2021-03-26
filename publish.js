@@ -482,7 +482,7 @@ function buildMemberNav(items, itemHeading, itemsSeen, linktoFn) {
                  * Only have accordion class name if it have any child.
                  * Otherwise it didn't makes any sense.
                  */
-                var accordionClassName = (methods.length) ? '"accordion collapsed"' : '""';
+                var accordionClassName = (methods.length) ? '"accordion collapsed child"' : '"accordion-list"';
 
                 /**
                  * Id give to accordion.
@@ -498,7 +498,7 @@ function buildMemberNav(items, itemHeading, itemsSeen, linktoFn) {
                 var linkTitle = linktoFn(item.longname, item.name.replace(/^module:/, ''));
 
                 if (methods.length) {
-                    itemsNav += '<div class="accordion-title">' + linkTitle + svgDownIcon + '</div>';
+                    itemsNav += '<div class="accordion-heading child">' + linkTitle + svgDownIcon + '</div>';
                 } else {
                     itemsNav += linkTitle;
                 }
@@ -540,7 +540,11 @@ function buildMemberNav(items, itemHeading, itemsSeen, linktoFn) {
         });
 
         if (itemsNav !== '') {
-            nav += '<h3>' + itemHeading + '</h3><ul>' + itemsNav + '</ul>';
+            nav += '<div class="accordion collapsed"> <h3 class="accordion-heading">' +
+                itemHeading + '<svg><use xlink:href="#down-icon"></use></svg>' +
+                '</h3><ul class="accordion-content">' +
+                itemsNav +
+                '</ul> </div>';
         }
     }
 
@@ -592,7 +596,7 @@ function buildNav(members) {
 
 
     if (haveSearch) { nav += buildSearch(); }
-    nav += '<div class="sidebar-list-div">';
+    nav += '<div class="sidebar-main-content" id="sidebar-main-content">';
     var seen = {};
     var seenTutorials = {};
 
