@@ -344,7 +344,10 @@ function buildMenuNav(menu) {
         var id = item.id || '';
         var target = item.target || '';
 
-        m += "<li><a href='" + item.link + "' class='" + c + "' id='" + id + "' target='" + target + "'>" + item.title + '</a></li>';
+        c += ' menu-link';
+
+        m += '<li class="menu-li">' +
+            "<a href='" + item.link + "' class='" + c + "' id='" + id + "' target='" + target + "'>" + item.title + '</a></li>';
     });
 
     m += '</ul>';
