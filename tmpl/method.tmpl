@@ -24,22 +24,28 @@ var self = this;
 <?js } ?>
 
 <?js if (data.augments && data.alias && data.alias.indexOf('module:') === 0) { ?>
+    <div class="method-member-container mt-20">
     <strong>Extends:</strong>
     <?js= self.partial('augments.tmpl', data) ?>
+    </div>
 <?js } ?>
 
 <?js if (kind === 'event' && data.type && data.type.names) {?>
+    <div class="method-member-container mt-20">
     <strong>Type:</strong>
     <ul>
         <li>
             <?js= self.partial('type.tmpl', data.type.names) ?>
         </li>
     </ul>
+    </div>
 <?js } ?>
 
 <?js if (data['this']) { ?>
+    <div class="method-member-container mt-20">
     <strong>This:</strong>
     <ul><li><?js= this.linkto(data['this'], data['this']) ?></li></ul>
+    </div>
 <?js } ?>
 
 <?js if (data.params && params.length) { ?>
@@ -85,15 +91,18 @@ var self = this;
 <?js } ?>
 
 <?js if (data.listeners && listeners.length) { ?>
+    <div class="method-member-container mt-20">
     <strong>Listeners of This Event:</strong>
     <ul>
         <?js listeners.forEach(function(f) { ?>
             <li><?js= self.linkto(f) ?></li>
         <?js }); ?>
     </ul>
+    </div>
 <?js } ?>
 
 <?js if (data.exceptions && exceptions.length) { ?>
+    <div class="method-member-container mt-20">
     <strong>Throws:</strong>
     <?js if (exceptions.length > 1) { ?>
         <ul>
@@ -103,8 +112,9 @@ var self = this;
         </ul>
     <?js } else { exceptions.forEach(function(r) { ?>
         <?js= self.partial('exceptions.tmpl', r) ?>
-    <?js });
-} } ?>
+    <?js });} ?>
+    <div>
+<?js } ?>
 
 <?js if (data.returns && returns.length) { ?>
     <div class="method-member-container mt-20">
@@ -117,8 +127,8 @@ var self = this;
             </ul>
 
         <?js } else { returns.forEach(function(r) { ?>
-            <?js= self.partial('returns.tmpl', r) ?><?js });
-        } ?>
+            <?js= self.partial('returns.tmpl', r) ?>
+            <?js });} ?>
     </div>
 <?js } ?>
 
