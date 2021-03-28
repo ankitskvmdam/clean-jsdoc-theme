@@ -18,7 +18,7 @@
 */
 
 .p-h-n {
-    padding: 1rem;
+    padding: 0.4rem 1rem;
 }
 
 .main-content {
@@ -26,6 +26,7 @@
     * This should match with the width of the nav / sidebar.
     */
     margin-left: 18.75rem;
+    overflow-x: auto;
     padding: 1rem 2rem;
 }
 
@@ -35,6 +36,13 @@
     position: fixed;
     top: 0;
     width: 18.75rem;    
+}
+
+.footer {
+    font-size: 0.8rem;
+    margin-left: 18.75rem;
+    margin-top: 1rem;
+    padding: 1rem 2rem;
 }
 
 .navbar h1,
@@ -52,6 +60,10 @@
     display: flex;
     justify-content: flex-start;
     padding: 2rem 1rem;
+}
+
+.navbar-heading a:hover {
+    text-decoration: none;
 }
 
 .navbar-heading-text {
@@ -178,7 +190,6 @@
 }
 
 .methods.accordion-content {
-    background: #202020;
     margin: 0;
 }
 
@@ -243,4 +254,9 @@ pre {
 .show-tooltip {
     opacity: 1;
     transform: scale(1);
+}
+
+blockquote {
+    font-size: 0.875rem;
+    padding: 0.0625rem 1.25rem;
 }

@@ -1,42 +1,4 @@
-body {
-    background-color: #000;
-    color: #fff;
-}
 
-a,
-a:active {
-    color: #009bff;
-}
-
-hr {
-    border: 1px solid #333;
-}
-
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-    color: #f7f7f7;
-}
-
-/* stylelint-disable */
-
-h1.page-title::after,
-article h1::after {
-    background: #333;
-}
-
-/* stylelint-enable */
-
-h4 {
-    color: #4d4e53;
-}
-
-.subsection-title {
-    border-bottom: 1px solid #333;
-}
 
 tt,
 code,

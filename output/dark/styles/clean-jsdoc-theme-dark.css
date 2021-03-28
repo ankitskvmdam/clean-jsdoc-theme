@@ -64,7 +64,8 @@ h2 {
     background: rgba(0, 0, 0, 0.1);
 }
 
-.search-item-ul a {
+.search-item-ul a,
+.search-item-ul li {
     color: #fff;
 }
 
@@ -79,6 +80,10 @@ h2 {
 
 .accordion-content a {
     color: #fff;
+}
+
+.methods.accordion-content {
+    background: #202020;
 }
 
 .menu-link {
@@ -98,11 +103,6 @@ samp {
     color: #aaa;
 }
 
-
-footer {
-    background: #101010;
-    color: #f7f7f7;
-}
 
 .ancestors {
     color: #999;
@@ -126,8 +126,7 @@ footer {
 }
 
 .details {
-    background: #222;
-    border-left: 5px solid #555;
+    background: #000;
     color: #fff;
 }
 
@@ -165,13 +164,14 @@ table .name,
 
 table td,
 .params td {
-    background: #1b1b1b;
+    background-color: #000;
+    border-top: 1px solid #191919;
 }
 
 table thead tr,
 .params thead tr,
 .props thead tr {
-    background-color: #101010;
+    background-color: #000;
     color: #fff;
 }
 
@@ -179,7 +179,7 @@ table thead tr,
 table .params thead tr,
 .params .params thead tr,
 .props .props thead tr {
-    background-color: #001628;
+    background-color: #000;
     color: #fff;
 }
 
@@ -283,4 +283,19 @@ table .params thead tr,
 /* a function name */
 .fun {
     color: #4271ae;
+}
+
+
+blockquote {
+
+}
+
+
+ol.linenums li {
+    color: #fff;
+}
+
+code {
+    background: #333;
+    color: #fff;
 }

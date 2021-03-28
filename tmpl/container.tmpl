@@ -35,13 +35,11 @@
         <?js } ?>
         <?js if (doc.classdesc) { ?>
             <div class="class-description"><?js= doc.classdesc ?></div>
-            <hr/>
         <?js } ?>
     <?js } else if (doc.kind === 'module' && doc.modules) { ?>
         <?js doc.modules.forEach(function(module) { ?>
             <?js if (module.classdesc) { ?>
                 <div class="class-description"><?js= module.classdesc ?></div>
-                <hr/>
             <?js } ?>
         <?js }) ?>
     <?js } ?>
