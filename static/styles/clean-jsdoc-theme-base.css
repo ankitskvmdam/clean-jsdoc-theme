@@ -33,10 +33,18 @@
 .navbar {
     bottom: 0;
     left: 0;
+    overflow: hidden;
     position: fixed;
     top: 0;
-    width: 18.75rem;    
+    width: 18.75rem;
+    z-index: 10;
 }
+
+.navbar.expanded {
+    right: 0;
+    width: 100%;
+}
+
 
 .footer {
     font-size: 0.8rem;
@@ -259,4 +267,26 @@ pre {
 blockquote {
     font-size: 0.875rem;
     padding: 0.0625rem 1.25rem;
+}
+
+.allow-overflow {
+    overflow: auto;
+}
+
+@media screen and (max-width: 50rem) {
+
+    .navbar {
+        width: 0;
+    }
+
+    .main-content,
+    .footer {
+        margin-left: 0;
+        padding: 1rem;
+    }
+
+    .method-member-container {
+        overflow: auto;
+    }
+    
 }
