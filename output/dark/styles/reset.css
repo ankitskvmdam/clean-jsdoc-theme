@@ -332,3 +332,7 @@ code {
     font-size: 0.8rem;
     padding: 0.1rem 0.4rem;
 }
+
+.mt-20 {
+    margin-top: 20px;
+}
