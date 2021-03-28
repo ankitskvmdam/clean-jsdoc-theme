@@ -287,9 +287,9 @@ table .params thead tr,
 
 
 blockquote {
-
+    background: #181818;
+    color: #fff;
 }
-
 
 ol.linenums li {
     color: #fff;
