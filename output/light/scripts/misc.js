@@ -174,3 +174,41 @@ function toggleAccordion(element, isImmediate) {
         }
     });
 })();
+
+
+/**
+ *
+ * @param {HTMLElement} element
+ * @param {HTMLElement} navbar
+ */
+function toggleNavbar(element, navbar) {
+    console.log('cliced');
+    /**
+     * If class is present than it is expanded.
+     */
+    var isExpanded = element.classList.contains('expanded');
+
+    if (isExpanded) {
+        element.classList.remove('expanded');
+        navbar.classList.remove('expanded');
+    } else {
+        element.classList.add('expanded');
+        navbar.classList.add('expanded');
+    }
+}
+
+/**
+ * Navbar ham
+ */
+(function() {
+    var navbarHam = document.querySelector('#navbar-ham');
+    var navbar = document.querySelector('#navbar');
+
+    console.log('adding', navbarHam, navbar);
+
+    if (navbarHam && navbar) {
+        navbarHam.addEventListener('click', function() {
+            toggleNavbar(navbarHam, navbar);
+        });
+    }
+})();

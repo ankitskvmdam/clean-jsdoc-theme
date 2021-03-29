@@ -35,6 +35,16 @@ h2 {
     background: #000;
 }
 
+.navbar-ham {
+    background: #444;
+}
+
+.navbar-ham .first,
+.navbar-ham .second,
+.navbar-ham .third {
+    background: #fff;
+}
+
 
 .search-box-input-container {
     background: #2a2b2c;

@@ -35,6 +35,16 @@ h2 {
     background: #f8f8fa;
 }
 
+.navbar-ham {
+    background: #ddd;
+}
+
+.navbar-ham .first,
+.navbar-ham .second,
+.navbar-ham .third {
+    background: #000;
+}
+
 blockquote {
     background: #f7f7f7;
     color: #888;
