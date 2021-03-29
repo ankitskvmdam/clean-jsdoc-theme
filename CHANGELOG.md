@@ -1,5 +1,20 @@
 ## Change Log
 
+### In version 3.1.0
+
+### Bug fixes
+
+1. fix unclosed <div> in method.tmpl [#63](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/63)
+
+### New
+
+1. Add brand new light and dark theme.
+1. Add collapsible main section in navbar.
+
+### Refactor
+
+1. Refactor css and js to improve performance.
+
 ### In version 3.0.10
 
 ### Bug Fixes
@@ -32,7 +47,7 @@ In this release we removed this template rule.
 
 #### Feature
 
-1. Add support for `@see` documentation link. [#59](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/58)
+1. Add support for `@see` documentation link. [#59](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/59)
 
 ## In version 3.0.7
 
