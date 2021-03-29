@@ -128,9 +128,9 @@ In your `jsdoc.json` file, add a template option.
 }
 ```
 
-## Features
+## Options
 
-You can pass an object called `theme_opts` under `opts` for more options.
+To use custom options (such as light and dark modes), pass an object called `theme_opts` in your config file under `opts`.
 
 ### `theme : "light" | "dark"`
 
@@ -139,7 +139,7 @@ To set the overall theme of the documentation file(s). Currently there is only t
 
 ### `title: string | HTML`
 
-To set the title to the navbar. String and HTMl is both accepted. Use HTML to overwrite the default HTML. You can do something like this
+This option sets the title of the document in the navbar. Both strings and HTML are accepted; use HTML to overwrite the default HTML, and a string to set a plaintext title. One example of this is below:
 
 ```json
  "title": "<img src='path/to/img' class='my-custom-class'/>"
@@ -149,11 +149,11 @@ You can use `static_dir` to copy all you static files to output dir and use that
 
 ### `filter: boolean`
 
-This is deprecated. This is used to turn the navbar image to white for better contrast.
+This option is now deprecated, it was used to change the navbar image to white for better contrast.
 
 ### `menu: Array<{}>`
 
-To render extra link(s) in navbar. It accepts an array of objects example:
+This options allows rendering  of extra link(s) in navbar to the side of the documentation. It accepts an array of objects, such as in the following example example:
 
 ```json
 "menu" : [
