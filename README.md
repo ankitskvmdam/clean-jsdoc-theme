@@ -153,7 +153,7 @@ This option is now deprecated, it was used to change the navbar image to white f
 
 ### `menu: Array<{}>`
 
-This options allows rendering  of extra link(s) in navbar to the side of the documentation. It accepts an array of objects, such as in the following example example:
+This options allows rendering of extra link(s) in navbar to the side of the documentation. It accepts an array of objects, such as in the following example example:
 
 ```json
 "menu" : [
@@ -345,7 +345,7 @@ To include js files. Example:
 
 > Note: You are not required to manually copy file to output dir
 
-It will include the js files to the output dir and also attach a link tag to the html pointing to the included js file.
+It will include the js files to the output dir and also attach a script tag to the html pointing to the included js file.
 
 ### Example `theme_opts`
 
