@@ -5,6 +5,7 @@
 
 [![Stars](https://img.shields.io/github/stars/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme) [![Fork](https://img.shields.io/github/forks/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/fork) ![Version](https://img.shields.io/badge/version-3.1.0-%23007bff) [![Issues Open](https://img.shields.io/github/issues/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues) [![Isses Closed](https://img.shields.io/github/issues-closed/ankitskvmdam/clean-jsdoc-theme?color=%234caf50)](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues?q=is%3Aissue+is%3Aclosed) [![Contributors](https://img.shields.io/github/contributors/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors) [![npm downloads](https://img.shields.io/npm/dt/clean-jsdoc-theme)](https://www.npmjs.com/package/clean-jsdoc-theme) [![Build Status](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme.svg?branch=production)](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme) [![license](https://img.shields.io/github/license/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/LICENSE) [![Website Of/ficial](https://img.shields.io/website?up_message=official&url=https%3A%2F%2Fankdev.me%2Fclean-jsdoc-theme)](https://ankdev.me/clean-jsdoc-theme/index.html) [![Code of Conduct](https://img.shields.io/badge/code%20of%20conduct-hindi-%23007bff)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CODE_OF_CONDUCT_HINDI.md) [![Code of Conduct](https://img.shields.io/badge/code%20of%20conduct-english-%234caf50)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CODE_OF_CONDUCT.md)
 <br>
+
 Clean-jsdoc-theme is a beautifully crafted theme/template for JSDoc 3. This theme/template looks and feels like a premium theme/template as it's mobile responsive and also highly customizable. For more features [look below at the options section](#features).
 
 For any suggestions, questions or bugs, feel free to create an <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme/issues">issue</a> in this repo.
@@ -121,7 +122,7 @@ This option is now deprecated, it was used to change the navbar image to white f
 
 ### `menu: Array<{}>`
 
-This options allows rendering  of extra link(s) in navbar to the side of the documentation. It accepts an array of objects, such as in the following example example:
+This options allows rendering of extra link(s) in navbar to the side of the documentation. It accepts an array of objects, such as in the following example example:
 
 ```json
 "menu" : [
@@ -313,7 +314,7 @@ To include js files. Example:
 
 > Note: You are not required to manually copy file to output dir
 
-It will include the js files to the output dir and also attach a link tag to the html pointing to the included js file.
+It will include the js files to the output dir and also attach a script tag to the html pointing to the included js file.
 
 ### Example `theme_opts`
 
