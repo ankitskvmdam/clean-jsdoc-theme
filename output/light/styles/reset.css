@@ -155,6 +155,11 @@ ol.linenums li {
 
 .details ul li::before {
     content: '';
+    margin: 0;
+}
+
+.details ul li p {
+    margin: 0;
 }
 
 
@@ -336,3 +341,5 @@ code {
 .mt-20 {
     margin-top: 20px;
 }
+
+.details
