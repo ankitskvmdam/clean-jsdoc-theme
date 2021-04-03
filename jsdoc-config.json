@@ -27,16 +27,14 @@
             ],
             "menu": [
                 {
-                    "title": "test",
-                    "id": "test-id"
+                    "title": "Github",
+                    "id": "github",
+                    "link": "https://github.com/ankitskvmdam/clean-jsdoc-theme"
                 },
                 {
-                    "title": "test2",
-                    "id": "test-id"
-                },
-                {
-                    "title": "test3",
-                    "id": "test-id"
+                    "title": "npm",
+                    "id": "npm",
+                    "link": "https://www.npmjs.com/package/clean-jsdoc-theme"
                 }
             ]
         }
