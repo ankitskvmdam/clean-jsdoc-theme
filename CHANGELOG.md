@@ -1,5 +1,15 @@
 ## Change Log
 
+### In version 3.1.2
+
+### New
+
+1. Change ham animation.
+
+### Others
+
+1. Update readme file.
+
 ### In version 3.1.0
 
 ### Bug fixes
