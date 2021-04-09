@@ -116,10 +116,6 @@ This option sets the title of the document in the navbar. Both strings and HTML 
 
 You can use `static_dir` to copy all you static files to output dir and use that path in place of `path/to/img`. For more details look `static_dir` section.
 
-### `filter: boolean`
-
-This option is now deprecated, it was used to change the navbar image to white for better contrast.
-
 ### `menu: Array<{}>`
 
 This options allows rendering of extra link(s) in navbar to the side of the documentation. It accepts an array of objects, such as in the following example example:
@@ -323,7 +319,6 @@ It will include the js files to the output dir and also attach a script tag to t
   "theme_opts":{
     "theme": "dark",
     "title": "clean-jsdoc-theme",
-    "filter": false,
     "menu": [
       {
         "title": "Website",
@@ -388,7 +383,6 @@ It will include the js files to the output dir and also attach a script tag to t
 | ------------------- | --------- | ----------------------------------- | ------------------------- |
 | `theme`             | `"light"` | To set the theme variant            | `"light" or "dark"`       |
 | `title`             | `null`    | To set the title                    | `HTML` or `string`        |
-| `filter`            | `false`   | Turn the navbar image to white      | `boolean`                 |
 | `menu`              | `null`    | To render extra link in navbar      | Array of Object(s)        |
 | `meta`              | `null`    | Meta tag attributes                 | Array of Object(s)        |
 | `search`            | `{}`      | To render search or not             | Fuse.js options           |
