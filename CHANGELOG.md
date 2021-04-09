@@ -1,5 +1,15 @@
 ## Change Log
 
+### In version 3.2.0
+
+### Bug Fix
+
+1. When passing HTML as title then there is NPM Error. In this release that error is fixed.
+
+### Others
+
+1. Remove filter support.
+
 ### In version 3.1.2
 
 ### New
