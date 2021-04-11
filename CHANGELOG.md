@@ -1,5 +1,11 @@
 ## Change Log
 
+### In version 3.2.1
+
+### Feature
+
+1. Now there is an option to make navbar resizeable.
+
 ### In version 3.2.0
 
 ### Bug Fix
