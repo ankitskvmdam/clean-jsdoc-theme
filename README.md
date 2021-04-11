@@ -183,6 +183,12 @@ To render search. Default value:
 }
 ```
 
+If you don't want to render search box then do the following:
+
+```json
+"search" false
+```
+
 #### Properties
 
 Any valid [fuse.js properties](https://fusejs.io/api/options.html)
