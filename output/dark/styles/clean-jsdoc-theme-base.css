@@ -36,7 +36,6 @@
     overflow: hidden;
     position: fixed;
     top: 0;
-    transition: 0.3s;
     width: 18.75rem;
     z-index: 10;
 
@@ -95,6 +94,36 @@
     transform: rotate(135deg) translate(-0.4rem, 0.3125rem);
 }
 
+.navbar-resize {
+    bottom: 0;
+    cursor: col-resize;
+    display: none;
+    left: auto;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 0.5rem;
+}
+
+.navbar:hover .navbar-resize {
+    display: block;
+}
+
+.resize-dots-container {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    justify-content: center;
+    position: relative;
+}
+
+.resize-dots-container .dots {
+    border-radius: 50%;
+    height: 0.25rem;
+    margin: 0.125rem 0;
+    width: 0.25rem;
+}
 
 
 .footer {
@@ -333,12 +362,18 @@ blockquote {
     }
 
     .navbar {
+        transition: 0.3s;
         width: 0;
     }
 
     .navbar.expanded {
         right: 0;
         width: 100%;
+    }
+
+    .navbar:hover .navbar-resize,
+    .navbar-resize {
+        display: none;
     }
 
     .main-content,

@@ -45,6 +45,14 @@ h2 {
     background: #fff;
 }
 
+.navbar-resize {
+    background: #111;
+}
+
+.resize-dots-container .dots {
+    background-color: #fff;
+}
+
 
 .search-box-input-container {
     background: #2a2b2c;

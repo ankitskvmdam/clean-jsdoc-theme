@@ -45,6 +45,14 @@ h2 {
     background: #000;
 }
 
+.navbar-resize {
+    background: #eee;
+}
+
+.resize-dots-container .dots {
+    background-color: #000;
+}
+
 blockquote {
     background: #f7f7f7;
     color: #888;
