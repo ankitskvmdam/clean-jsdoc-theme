@@ -81,6 +81,16 @@
 
     <nav class="navbar" id="navbar">
       <?js= this.nav ?>
+      <?js if(this.resizeable.navbar !== undefined) { ?>
+        <div class="navbar-resize" id="navbar-resize">
+          <div class="resize-dots-container">
+            <div class="dots"></div>
+            <div class="dots"></div>
+            <div class="dots"></div>
+          </div> 
+        </div>
+      <?js } ?>
+
     </nav>
     <div class="navbar-ham" id="navbar-ham">
       <div>
@@ -106,24 +116,34 @@
 
     <script src="scripts/third-party/prettify.js"></script>
     <script src="scripts/third-party/lang-css.js"></script>
-    <script src="scripts/search.js"></script>
-    <script src="scripts/third-party/fuse.js"></script>
     <script type="text/javascript" src="scripts/misc.js"></script>
 
     <script>prettyPrint();</script>
     <script src="scripts/linenumber.js"></script>
     <script src="scripts/fix-code-block.js"></script>
     <script src="scripts/fix-navbar.js"></script>
-    <script>
-      var list = [<?js= this.search.list ?>];
-      var options = <?js= this.search.options ?>
-        setupSearch(list, options)
-    </script>
+    <?js if(!Boolean(this.search.options)) { ?>
+      <script src="scripts/search.js"></script>
+      <script src="scripts/third-party/fuse.js"></script>
+      <script>
+        var list = [<?js= this.search.list ?>];
+        var options = <?js= this.search.options ?>
+          setupSearch(list, options)
+      </script>
+    <?js } ?>
 
     <?js if(this.dynamicScript != undefined ) { ?>
     <script type="text/javascript">
         <?js= this.dynamicScript ?>
     </script>
+    <?js } ?>
+
+    <?js if(this.resizeable.navbar != undefined ) { ?>
+      <script src="scripts/resize.js"></script>
+      <script type="text/javascript">
+        var option = <?js= JSON.stringify(this.resizeable.navbar) ?>
+        setupResizeOptions(option)
+      </script>
     <?js } ?>
 
     <?js if(this.dynamicScript != undefined ) { ?>
