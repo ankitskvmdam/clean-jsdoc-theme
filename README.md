@@ -213,7 +213,7 @@ This will make certain element in DOM resizeable. Currently we only support navb
 resizeable. By default navbar is not resizeable. To make navbar you have to do the following:
 
 ```json
-"resizeable: {
+"resizeable": {
   "navbar": {
     "min": "300",
     "max": "600"
@@ -227,12 +227,12 @@ Don't include any unit. Also, units of max and min is inferred in `px`.
 > If you don't want to give min and max value and want to use the default values then pass empty object.
 
 ```json
-"resizeable: {
+"resizeable": {
   "navbar": {}
 }
 ```
 
-If you didn't pass any think in navbar then navbar is not resizeable.
+If you didn't pass any thing in navbar then navbar is not resizeable.
 
 ### `create_style: string`
 
