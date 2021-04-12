@@ -363,12 +363,12 @@ blockquote {
 
     .navbar {
         transition: 0.3s;
-        width: 0;
+        width: 0 !important;
     }
 
     .navbar.expanded {
         right: 0;
-        width: 100%;
+        width: 100% !important;
     }
 
     .navbar:hover .navbar-resize,
@@ -378,7 +378,7 @@ blockquote {
 
     .main-content,
     .footer {
-        margin-left: 0;
+        margin-left: 0 !important;
         padding: 1rem;
     }
 

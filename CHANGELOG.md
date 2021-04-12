@@ -1,5 +1,11 @@
 ## Change Log
 
+### In version 3.2.3
+
+### Bug Fix
+
+1. On mobile screen navbar, main content and footer are not as expected after applying resize.
+
 ### In version 3.2.1
 
 ### Feature
