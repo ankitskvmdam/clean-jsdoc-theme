@@ -1,5 +1,11 @@
 ## Change Log
 
+### In version 3.2.4
+
+### Bug Fix
+
+1. When the codebase is large then search didn't works. [#68](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/68)
+
 ### In version 3.2.3
 
 ### Bug Fix
