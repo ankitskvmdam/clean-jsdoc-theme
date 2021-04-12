@@ -209,8 +209,7 @@ Any valid [overlay scrollbar properties](https://kingsora.github.io/OverlayScrol
 
 ### `resizeable: {}`
 
-This will make certain element in DOM resizeable. Currently we only support navbar to be
-resizeable. By default navbar is not resizeable. To make navbar you have to do the following:
+This will make certain element in DOM resizeable. Currently we only support navbar to be resizeable. By default navbar is not resizeable. To make navbar resizeable you have to do the following:
 
 ```json
 "resizeable": {
