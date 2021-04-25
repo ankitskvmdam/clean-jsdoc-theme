@@ -250,6 +250,7 @@ This will add a link to the codepen with prefilled data.
 ```
 
 `options` can be any valid codepen options. For more visit: [Codepen Prefill options](https://blog.codepen.io/documentation/prefill/#all-the-json-options-0)
+if you want default behaviour then don't pass anything in options.
 
 ### `create_style: string`
 
