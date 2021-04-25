@@ -422,6 +422,12 @@ function resizeable() {
     return resizeOpts;
 }
 
+function codepen() {
+    var codepenOpts = themeOpts.codepen || {};
+
+    return codepenOpts;
+}
+
 function overlayScrollbarOptions() {
     var overlayOptions = themeOpts.overlay_scrollbar || undefined;
 
@@ -835,6 +841,7 @@ exports.publish = function(taffyData, opts, tutorials) {
     view.nav = buildNav(members);
     view.search = search();
     view.resizeable = resizeable();
+    view.codepen = codepen();
     attachModuleSymbols( find({ longname: {left: 'module:'} }), members.modules );
 
     // generate the pretty-printed source files first so other pages can link to them

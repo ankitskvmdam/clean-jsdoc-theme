@@ -3,7 +3,7 @@
 <p align=center><i align="center">A beautiful, responsive, customizable theme for JSDoc</i></p>
 <hr>
 
-[![Stars](https://img.shields.io/github/stars/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme) [![Fork](https://img.shields.io/github/forks/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/fork) ![Version](https://img.shields.io/badge/version-3.2.4-%23007bff) [![Issues Open](https://img.shields.io/github/issues/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues) [![Contributors](https://img.shields.io/github/contributors/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors) [![Build Status](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme.svg?branch=production)](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme) [![license](https://img.shields.io/github/license/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/LICENSE)
+[![Stars](https://img.shields.io/github/stars/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme) [![Fork](https://img.shields.io/github/forks/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/fork) ![Version](https://img.shields.io/badge/version-3.2.5-%23007bff) [![Issues Open](https://img.shields.io/github/issues/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues) [![Contributors](https://img.shields.io/github/contributors/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors) [![Build Status](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme.svg?branch=production)](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme) [![license](https://img.shields.io/github/license/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/LICENSE)
 <br>
 
 Clean-jsdoc-theme is a beautifully crafted theme/template for JSDoc 3. This theme/template looks and feels like a premium theme/template as it's mobile responsive and also highly customizable. For more options [look below at the options section](#options).
@@ -233,6 +233,24 @@ Don't include any unit. Also, units of max and min is inferred in `px`.
 
 If you didn't pass any thing in navbar then navbar is not resizeable.
 
+### `codepen: {}`
+
+This will add a link to the codepen with prefilled data.
+
+> Note: Currently this feature is only enabled for examples section.
+
+```json
+"codepen": {
+  "enable_for": ["examples"],
+  "options": {
+    "js_external": "https://code.jquery.com/jquery-3.6.0.min.js",
+    "js_pre_processor": "babel"
+  }
+}
+```
+
+`options` can be any valid codepen options. For more visit: [Codepen Prefill options](https://blog.codepen.io/documentation/prefill/#all-the-json-options-0)
+
 ### `create_style: string`
 
 To create custom style rules. Example:
@@ -419,6 +437,7 @@ It will include the js files to the output dir and also attach a script tag to t
 | `meta`              | `null`    | Meta tag attributes                 | Array of Object(s)        |
 | `search`            | `{}`      | To render search or not             | Fuse.js options           |
 | `resizeable`        | `{}`      | To make certain element resizeable  | `Object`                  |
+| `codepen`           | `{}`      | To open code in codepen             | `Object`                  |
 | `create_style`      | `null`    | To create custom style rules        | `string`                  |
 | `add_style_path`    | `null`    | To add external css libraries/files | Array of Object(s)        |
 | `add_scripts`       | `null`    | To create custom script             | `string`                  |

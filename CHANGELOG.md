@@ -4,7 +4,7 @@
 
 ### Feature
 
-1. Add an option to open example code in codepen.
+1. Add an option to open code in codepen.
 
 ### Bug Fix
 
