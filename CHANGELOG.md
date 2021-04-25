@@ -1,6 +1,6 @@
 ## Change Log
 
-### In version 3.2.5
+### In version 3.2.6
 
 ### Feature
 
@@ -10,6 +10,7 @@
 
 1. Fix the css of example caption. [View changes.](https://github.com/ankitskvmdam/clean-jsdoc-theme/commit/1cba9400a6d9ae2991eb5b32282e7572510656c6)
 1. Fix the overflow css of code section. [View changes.](https://github.com/ankitskvmdam/clean-jsdoc-theme/commit/1cba9400a6d9ae2991eb5b32282e7572510656c6)
+1. Fix the css of code block in dark theme.
 
 ### In version 3.2.4
 
