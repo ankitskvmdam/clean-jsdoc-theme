@@ -1,13 +1,39 @@
 <?js
     var data = obj;
     var self = this;
+    var codepen = this.codepen;
+    var enable_for = codepen.enable_for || [];
 
     data.forEach(function(example) {
+
+        var jsonString = JSON.stringify(example.code)
+                                    .replace(/"/g, "&quot;")
+                                    .replace(/'/g, "&apos;");
         if (example.caption) {
     ?>
         <p class="code-caption"><?js= example.caption ?></p>
     <?js } ?>
+    <div class="rel">
     <pre class="prettyprint"><code><?js= self.htmlsafe(example.code) ?></code></pre>
+    
+    <?js 
+        if(enable_for.findIndex(function (val) { return val === "examples"}) !== -1) { 
+            var options = codepen.options || {};
+            var optionsString = '';
+            var optionsKey = Object.keys(options)
+            optionsKey.map((key, idx) => {
+                optionsString += '"' + key +'": "' + options[key] + '"';
+                if(idx !== optionsKey.length - 1) {
+                    optionsString += ','
+                }
+            })     
+    ?>
+        <form action="https://codepen.io/pen/define" method="POST" target="_blank" class="codepen-form">
+            <input type="hidden" name="data" value='{"title": "<?js= example.caption || 'Example' ?>", "js": <?js= jsonString ?>, <?js= optionsString ?> }' />
+            <input type="image" src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/t-1/cp-arrow-right.svg" value="Create New Pen with Prefilled Data" width="40" height="40" />
+        </form>
+    <?js } ?>
+    </div>
 <?js
     });
 ?>

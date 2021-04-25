@@ -42,6 +42,13 @@
                     "min": "300",
                     "max": "600"
                 }
+            },
+            "codepen": {
+                "enable_for": ["examples"],
+                "options": {
+                    "js_external": "https://code.jquery.com/jquery-3.6.0.min.js",
+                    "js_pre_processor": "babel"
+                }
             }
         }
     },

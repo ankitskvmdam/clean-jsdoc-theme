@@ -1,5 +1,16 @@
 ## Change Log
 
+### In version 3.2.5
+
+### Feature
+
+1. Add an option to open example code in codepen.
+
+### Bug Fix
+
+1. Fix the css of example caption. [View changes.](https://github.com/ankitskvmdam/clean-jsdoc-theme/commit/1cba9400a6d9ae2991eb5b32282e7572510656c6)
+1. Fix the overflow css of code section. [View changes.](https://github.com/ankitskvmdam/clean-jsdoc-theme/commit/1cba9400a6d9ae2991eb5b32282e7572510656c6)
+
 ### In version 3.2.4
 
 ### Bug Fix
