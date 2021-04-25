@@ -387,3 +387,7 @@ blockquote {
     }
     
 }
+
+.rel {
+    position: relative;
+}

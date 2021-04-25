@@ -158,7 +158,6 @@ function toggleAccordion(element, isImmediate) {
     if (localStorage.getItem(accordionLocalStorageKey) === undefined ||
     localStorage.getItem(accordionLocalStorageKey) === null
     ) {
-        console.log('reset', localStorage.getItem(accordionLocalStorageKey));
         localStorage.setItem(accordionLocalStorageKey, '{}');
     }
     var allAccordion = document.querySelectorAll('.accordion-heading');
@@ -182,7 +181,6 @@ function toggleAccordion(element, isImmediate) {
  * @param {HTMLElement} navbar
  */
 function toggleNavbar(element, navbar) {
-    console.log('cliced');
     /**
      * If class is present than it is expanded.
      */
@@ -203,8 +201,6 @@ function toggleNavbar(element, navbar) {
 (function() {
     var navbarHam = document.querySelector('#navbar-ham');
     var navbar = document.querySelector('#navbar');
-
-    console.log('adding', navbarHam, navbar);
 
     if (navbarHam && navbar) {
         navbarHam.addEventListener('click', function() {

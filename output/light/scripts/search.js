@@ -31,9 +31,18 @@ function search(list, options, keys, searchKey) {
 
     var op = Object.assign({}, defaultOptions, options);
 
+    // eslint-disable-next-line no-undef
+    var searchIndex = Fuse.createIndex(op.keys, list);
+
     /* eslint-disable-next-line */
-    var fuse = new Fuse(list, op);
+    var fuse = new Fuse(list, op, searchIndex);
+
     var result = fuse.search(searchKey);
+
+    console.log(result, result.length);
+    if (result.length > 20) { result = result.slice(0, 20); }
+
+    console.log(result);
     var searchUL = document.getElementById('search-item-ul');
 
     searchUL.innerHTML = '';
@@ -41,8 +50,8 @@ function search(list, options, keys, searchKey) {
     if (result.length === 0) {
         searchUL.innerHTML += '<li class="p-h-n"> No Result Found </li>';
     } else {
-        result.forEach(function(item) {
-            searchUL.innerHTML += '<li>' + item.link + '</li>';
+        result.forEach(function(obj) {
+            searchUL.innerHTML += '<li>' + obj.item.link + '</li>';
         });
     }
 }

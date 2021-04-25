@@ -365,8 +365,7 @@ Module["onRuntimeInitialized"] = function onRuntimeInitialized() {
     @param {Statement.BindParams} [params] If set, the values will be bound
     to the statement before it is executed
     @return {Database.SqlValue[]} One row of result
-    @example
-    <caption>Print all the rows of the table test to the console</caption>
+    @example <caption>Print all the rows of the table test to the console</caption>
     var stmt = db.prepare("SELECT * FROM test");
     while (stmt.step()) console.log(stmt.get());
      */
@@ -1035,7 +1034,7 @@ Module["onRuntimeInitialized"] = function onRuntimeInitialized() {
         return sqlite3_changes(this.db);
     };
     /** Register a custom function with SQLite
-    @example Register a simple function
+    @example <caption>Register a simple function</caption>
         db.create_function("addOne", function (x) {return x+1;})
         db.exec("SELECT addOne(1)") // = 2
     @param {string} name the name of the function as referenced in

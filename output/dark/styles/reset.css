@@ -37,10 +37,8 @@ h1 {
 h2,
 h3 {
     margin: 1rem 0;
-    padding-bottom: 0.5rem; 
+    padding-bottom: 0.5rem;
 }
-
-
 
 img {
     max-width: 100%;
@@ -55,9 +53,8 @@ a:hover {
 }
 
 p {
-    margin: 1rem 0; 
+    margin: 1rem 0;
 }
-
 
 article ul {
     list-style: none;
@@ -74,15 +71,14 @@ article ol li {
     padding: 0.5rem 0;
 }
 
-
 article ol {
     padding-left: 1rem;
 }
 
+/* stylelint-disable-next-line */
 ol.linenums li {
     padding: 0;
 }
-
 
 .variation {
     display: none;
@@ -93,7 +89,6 @@ ol.linenums li {
     font-style: italic;
     font-weight: lighter;
 }
-
 
 .ancestors a {
     text-decoration: none;
@@ -158,10 +153,10 @@ ol.linenums li {
     margin: 0;
 }
 
+/* stylelint-disable-next-line */
 .details ul li p {
     margin: 0;
 }
-
 
 /* stylelint-disable */
 .details pre.prettyprint {
@@ -182,9 +177,7 @@ ol.linenums li {
 }
 
 .code-caption {
-    font-size: 107%;
-    font-style: italic;
-    margin: 0;
+    font-size: 90%;
 }
 
 .prettyprint {
@@ -201,6 +194,10 @@ ol.linenums li {
 
 .prettyprint code {
     display: block;
+    /*
+        display is set to table if supported.
+    */
+    display: table;
     font-size: 0.875rem;
     line-height: 1rem;
     padding: 1rem 2rem;
@@ -340,4 +337,10 @@ code {
 
 .mt-20 {
     margin-top: 20px;
+}
+
+.codepen-form {
+    bottom: 0;
+    position: absolute;
+    right: 10px;
 }
