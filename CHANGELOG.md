@@ -1,5 +1,11 @@
 ## Change Log
 
+### In version 3.2.7
+
+### Bug Fix
+
+1. Fix: quotes issue for codepen options.
+
 ### In version 3.2.6
 
 ### Feature
