@@ -22,11 +22,11 @@
             var optionsString = '';
             var optionsKey = Object.keys(options)
             optionsKey.map((key, idx) => {
-                optionsString += '"' + key +'": "' + options[key] + '"';
+                optionsString += '"' + key +'": "' + options[key].replace(/"/g, "&quot;").replace(/'/g, "&apos;") + '"';
                 if(idx !== optionsKey.length - 1) {
                     optionsString += ','
                 }
-            })     
+            })
     ?>
         <form action="https://codepen.io/pen/define" method="POST" target="_blank" class="codepen-form">
             <input type="hidden" name="data" value='{"title": "<?js= example.caption || 'Example' ?>", "js": <?js= jsonString ?>, <?js= optionsString ?> }' />
