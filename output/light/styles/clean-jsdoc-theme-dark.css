@@ -148,6 +148,11 @@ samp {
     color: #fff;
 }
 
+.prettyprint,
+.pre-top-bar-container {
+    background: #000;
+}
+
 .member-item-container strong,
 .method-member-container strong {
     color: #fff;

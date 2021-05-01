@@ -5,6 +5,8 @@
 ### Bug Fix
 
 1. Fix: quotes issue for codepen options.
+1. Fix: source is not printing if source is the only key. (#71)[https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/71]
+1. Fix (css): font size of return type. (#70)[https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/70]
 
 ### In version 3.2.6
 
