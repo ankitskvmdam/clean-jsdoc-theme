@@ -147,6 +147,10 @@ This options allows rendering of extra link(s) in navbar to the side of the docu
 | `class`  | `string` |
 | `id`     | `string` |
 
+### `menuLocation: "up" | "down"`
+
+This options allows to adjust the location of the menu items listed in `menu` array, either at the top or at the bottom among all navbar items. `Default value is "up".`
+
 ### `meta: Array<{}>`
 
 A list of `meta` tag attributes to add to the `head` of each page.
