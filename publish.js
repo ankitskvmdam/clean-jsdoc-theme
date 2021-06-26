@@ -615,9 +615,10 @@ function buildNav(members) {
     var seenTutorials = {};
 
     var menu = (themeOpts.menu) || undefined;
+    var menuLocation = themeOpts.menuLocation || 'up';
 
 
-    if (menu !== undefined) { nav += buildMenuNav(menu); }
+    if (menu !== undefined && menuLocation === 'up') { nav += buildMenuNav(menu); }
     nav += buildMemberNav(members.tutorials, 'Tutorials', seenTutorials, linktoTutorial, true);
     nav += buildMemberNav(members.classes, 'Classes', seen, linkto);
     nav += buildMemberNav(members.modules, 'Modules', {}, linkto);
@@ -627,7 +628,7 @@ function buildNav(members) {
     nav += buildMemberNav(members.mixins, 'Mixins', seen, linkto);
     nav += buildMemberNav(members.interfaces, 'Interfaces', seen, linkto);
     nav += buildMemberNav(members.globals, 'Global', seen, linkto);
-
+    if (menu !== undefined && menuLocation === 'down') { nav += buildMenuNav(menu); }
     nav += '</div>';
 
     return nav;
