@@ -1,5 +1,14 @@
 ## Change Log
 
+
+### In version 3.2.8
+### Bug Fixes
+1. Fix: Search condition statement. (#81)[https://github.com/ankitskvmdam/clean-jsdoc-theme/pull/81]
+1. Fix: missing styles/heading.css. (#80)[https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/80]
+
+### Feature
+1. Feat: add menuLocation option to adjust the place to append extra links. (#78)[https://github.com/ankitskvmdam/clean-jsdoc-theme/pull/78]
+
 ### In version 3.2.7
 
 ### Bug Fix
