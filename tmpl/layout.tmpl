@@ -154,7 +154,6 @@
     <?js if(this.overlayScrollbar != undefined ) { ?>
     <script type="text/javascript">
     var option = JSON.parse('<?js=this.overlayScrollbar ?>')
-      console.log(option)
       document.addEventListener("DOMContentLoaded", function () {
         OverlayScrollbars(document.querySelectorAll('body'), option.option || {});
       });
