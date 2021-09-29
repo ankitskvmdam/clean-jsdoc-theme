@@ -483,33 +483,50 @@ function search() {
     return obj;
 }
 
-
 function buildMemberNav(items, itemHeading, itemsSeen, linktoFn) {
     var nav = '';
 
     if (items.length) {
-        var itemsNav = '';
+        // Pre-process children
+        var itemsWithChildren = items.map(item => {
+            if (item.memberof) {
+                const parent = items.find(i => i.name === item.memberof)
+                if (parent) {
+                    if (!parent.children)
+                        parent.children = []
+                    
+                    parent.children.push(item)
 
-        items.forEach(function(item) {
+                    return undefined
+                }
+            }
+            return item
+        }).filter(i => i)
+
+        function buildNavItem (item) {
             var methods = find({kind: 'function',
-                memberof: item.longname});
+                memberof: item.longname})
+            var children = item.children || []
 
-            if ( !hasOwnProp.call(item, 'longname') ) {
-                itemsNav += '<li>' + linktoFn('', item.name);
-                itemsNav += '</li>';
-            } else if (!hasOwnProp.call(itemsSeen, item.longname)) {
+            if (!item.longname) {
+                var itemNav = '<li>' + linktoFn('', item.name) + '</li>';
+                return itemNav;
+            } else if (!itemsSeen[item.longname]) {
+                var itemNav = ''
                 /**
                  * Only have accordion class name if it have any child.
                  * Otherwise it didn't makes any sense.
                  */
-                var accordionClassName = (methods.length) ? '"accordion collapsed child"' : '"accordion-list"';
+                var accordionNeeded = methods.length || children.length
+
+                var accordionClassName = (accordionNeeded) ? '"accordion collapsed child"' : '"accordion-list"';
 
                 /**
                  * Id give to accordion.
                  */
-                var accordionId = (methods.length) ? Math.floor(Math.random() * 10000000) : '""';
+                var accordionId = (accordionNeeded) ? Math.floor(Math.random() * 10000000) : '""';
 
-                itemsNav += '<li class=' +
+                itemNav += '<li class=' +
                     accordionClassName +
                     ' id=' +
                     accordionId +
@@ -517,13 +534,13 @@ function buildMemberNav(items, itemHeading, itemsSeen, linktoFn) {
 
                 var linkTitle = linktoFn(item.longname, item.name.replace(/^module:/, ''));
 
-                if (methods.length) {
-                    itemsNav += '<div class="accordion-heading child">' +
+                if (accordionNeeded) {
+                    itemNav += '<div class="accordion-heading child">' +
                         linkTitle +
                         '<svg><use xlink:href="#down-icon"></use></svg>' +
                         '</div>';
                 } else {
-                    itemsNav += linkTitle;
+                    itemNav += linkTitle;
                 }
 
 
@@ -534,33 +551,121 @@ function buildMemberNav(items, itemHeading, itemsSeen, linktoFn) {
                     }));
                 }
 
-                if (methods.length) {
-                    itemsNav += "<ul class='methods accordion-content'>";
+                if (accordionNeeded) {
+                    itemNav += "<ul class='methods accordion-content'>";
 
-                    methods.forEach(function(method) {
-                        var name = method.longname.split('#');
-                        var first = name[0];
-                        var last = name[1];
+                    if (methods.length) {
+                        methods.forEach(function(method) {
+                            var name = method.longname.split('#');
+                            var first = name[0];
+                            var last = name[1];
 
-                        name = first + ' &rtrif; ' + last;
+                            name = first + ' &rtrif; ' + last;
 
-                        if (haveSearch) {
-                            searchListArray.push(JSON.stringify({
-                                title: method.longname,
-                                link: linkto(method.longname, name)
-                            }));
-                        }
-                        itemsNav += "<li data-type='method'>";
-                        itemsNav += linkto(method.longname, method.name);
-                        itemsNav += '</li>';
-                    });
+                            if (haveSearch) {
+                                searchListArray.push(JSON.stringify({
+                                    title: method.longname,
+                                    link: linkto(method.longname, name)
+                                }));
+                            }
+                            itemNav += "<li data-type='method'>";
+                            itemNav += linkto(method.longname, method.name);
+                            itemNav += '</li>';
+                        });
+                    }
 
-                    itemsNav += '</ul>';
+                    if (children.length) {
+                        children.forEach(function(child) {
+                            var subItemNav = buildNavItem(child);
+
+                            itemNav += subItemNav;
+                        });
+                    }
+
+                    itemNav += '</ul>';
                 }
-                itemsNav += '</li>';
+                itemNav += '</li>';
                 itemsSeen[item.longname] = true;
+
+                return itemNav
             }
-        });
+        }
+
+        var itemsNav = itemsWithChildren.map(function(item) {
+            return buildNavItem(item)
+        })
+
+        // items.forEach(function(item) {
+        //     var methods = find({kind: 'function',
+        //         memberof: item.longname});
+
+        //     if (!hasOwnProp.call(item, 'longname') ) {
+        //         itemsNav += '<li>' + linktoFn('', item.name);
+        //         itemsNav += '</li>';
+        //     } else if (!hasOwnProp.call(itemsSeen, item.longname)) {
+        //         /**
+        //          * Only have accordion class name if it have any child.
+        //          * Otherwise it didn't makes any sense.
+        //          */
+        //         var accordionClassName = (methods.length) ? '"accordion collapsed child"' : '"accordion-list"';
+
+        //         /**
+        //          * Id give to accordion.
+        //          */
+        //         var accordionId = (methods.length) ? Math.floor(Math.random() * 10000000) : '""';
+
+        //         itemsNav += '<li class=' +
+        //             accordionClassName +
+        //             ' id=' +
+        //             accordionId +
+        //             '>';
+
+        //         var linkTitle = linktoFn(item.longname, item.name.replace(/^module:/, ''));
+
+        //         if (methods.length) {
+        //             itemsNav += '<div class="accordion-heading child">' +
+        //                 linkTitle +
+        //                 '<svg><use xlink:href="#down-icon"></use></svg>' +
+        //                 '</div>';
+        //         } else {
+        //             itemsNav += linkTitle;
+        //         }
+
+
+        //         if (haveSearch) {
+        //             searchListArray.push(JSON.stringify({
+        //                 title: item.name,
+        //                 link: linkto(item.longname, item.name)
+        //             }));
+        //         }
+
+        //         if (methods.length) {
+        //             itemsNav += "<ul class='methods accordion-content'>";
+
+        //             methods.forEach(function(method) {
+        //                 var name = method.longname.split('#');
+        //                 var first = name[0];
+        //                 var last = name[1];
+
+        //                 name = first + ' &rtrif; ' + last;
+
+        //                 if (haveSearch) {
+        //                     searchListArray.push(JSON.stringify({
+        //                         title: method.longname,
+        //                         link: linkto(method.longname, name)
+        //                     }));
+        //                 }
+        //                 itemsNav += "<li data-type='method'>";
+        //                 itemsNav += linkto(method.longname, method.name);
+        //                 itemsNav += '</li>';
+        //             });
+
+        //             itemsNav += '</ul>';
+        //         }
+        //         itemsNav += '</li>';
+        //         itemsSeen[item.longname] = true;
+        //     }
+        // });
 
         if (itemsNav !== '') {
             nav += '<div class="accordion collapsed" id="' +
@@ -568,7 +673,7 @@ function buildMemberNav(items, itemHeading, itemsSeen, linktoFn) {
                 '" > <h3 class="accordion-heading">' +
                 itemHeading + '<svg><use xlink:href="#down-icon"></use></svg>' +
                 '</h3><ul class="accordion-content">' +
-                itemsNav +
+                itemsNav.join('') +
                 '</ul> </div>';
         }
     }
