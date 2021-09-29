@@ -106,6 +106,16 @@ To use custom options (such as light and dark modes), pass an object called `the
 To set the overall theme of the documentation file(s). Currently there is only two variant `"light"` and `"dark"` but in future I will try to add more.
 `Default value is "light"`
 
+### `favicon: string`
+
+This option sets the favicon of the document. It accepts strings defining the path of the icon.
+
+```json
+ "favion": "path/to/img"
+```
+
+You can use `static_dir` to copy all you static files to output dir and use that path in place of `path/to/img`. For more details look `static_dir` section.
+
 ### `title: string | HTML`
 
 This option sets the title of the document in the navbar. Both strings and HTML are accepted; use HTML to overwrite the default HTML, and a string to set a plaintext title. One example of this is below:

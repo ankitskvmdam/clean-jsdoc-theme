@@ -376,6 +376,12 @@ function buildFooter() {
     return footer;
 }
 
+function getFavicon() {
+    var favicon = themeOpts.favicon || undefined
+
+    return favicon
+}
+
 // function copy
 function createDynamicStyleSheet() {
     var styleClass = themeOpts.create_style || undefined;
@@ -829,6 +835,7 @@ exports.publish = function(taffyData, opts, tutorials) {
     view.htmlsafe = htmlsafe;
     view.outputSourceFiles = outputSourceFiles;
     view.footer = buildFooter();
+    view.favicon = getFavicon();
     view.dynamicStyle = createDynamicStyleSheet();
     view.dynamicStyleSrc = returnPathOfStyleSrc();
     view.dynamicScript = createDynamicsScripts();
