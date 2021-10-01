@@ -5,6 +5,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <!-- Adding favicon -->
+    <?js if(this.favicon != undefined) { ?>
+    <link rel="icon" href="<?js= this.favicon?>" />
+    <?js } ?>
+
     <!-- Adding meta -->
     <?js if(this.meta != undefined) { ?>
     <?js this.meta.forEach(function(src){ ?>
@@ -121,7 +126,7 @@
     <script src="scripts/linenumber.js"></script>
     <script src="scripts/fix-code-block.js"></script>
     <script src="scripts/fix-navbar.js"></script>
-    <?js if(!Boolean(this.search.options)) { ?>
+    <?js if(this.search.options !== 'false') { ?>
       <script src="scripts/search.js"></script>
       <script src="scripts/third-party/fuse.js"></script>
       <script>
@@ -154,7 +159,6 @@
     <?js if(this.overlayScrollbar != undefined ) { ?>
     <script type="text/javascript">
     var option = JSON.parse('<?js=this.overlayScrollbar ?>')
-      console.log(option)
       document.addEventListener("DOMContentLoaded", function () {
         OverlayScrollbars(document.querySelectorAll('body'), option.option || {});
       });
