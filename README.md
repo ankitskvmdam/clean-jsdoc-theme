@@ -12,8 +12,11 @@ For any suggestions, questions or bugs, feel free to create an <a href="https://
 
 ## Demo
 
-Live demo (dark): <a href="https://ankdev.me/clean-jsdoc-theme/dark/index.html">https://ankdev.me/clean-jsdoc-theme/dark/index.html</a> <br>
-Live demo (light): <a href="https://ankdev.me/clean-jsdoc-theme/light/index.html">https://ankdev.me/clean-jsdoc-theme/light/index.html</a>
+1. Live demo (dark): <a href="https://ankdev.me/clean-jsdoc-theme/dark/index.html">https://ankdev.me/clean-jsdoc-theme/dark/index.html</a> <br>
+1. Live demo (light): <a href="https://ankdev.me/clean-jsdoc-theme/light/index.html">https://ankdev.me/clean-jsdoc-theme/light/index.html</a>
+
+## Examples
+1. [https://github.com/ankitskvmdam/clean-jsdoc-theme-example](https://github.com/ankitskvmdam/clean-jsdoc-theme-example)
 
 #### Screenshot
 
