@@ -689,7 +689,7 @@ exports.publish = function(taffyData, opts, tutorials) {
             doclet.examples = doclet.examples.map(function(example) {
                 var caption, code;
                  
-                 if(example==='undefined') {
+                 if(example===undefined) {
                     return {
                        caption:"",
                        code:""
