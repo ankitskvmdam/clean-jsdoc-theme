@@ -2,27 +2,26 @@
 var data = obj;
 var self = this;
 var defaultObjectClass = '';
-var printDeatils = false
 var loopVar = 0;
 var detailsKeys = [
-    'author',
     'copyright',
     'defaultvalue',
     'deprecated',
-    'inherited',
-    'inherits',
-    'implementations',
-    'implements',
     'license',
-    'meta',
-    'mixes',
     'overrides',
-    'see',
     'since',
-    'todo',
-    'tutorials',
     'version',
 ]
+var hasToPrintDetails = (data.meta && self.outputSourceFiles) || 
+                        (data.author && author.length) || 
+                        (data.mixes && data.mixes.length) ||
+                        (data.inherited && data.inherits && !data.overrides) ||
+                        (data.implementations && data.implementations.length) ||
+                        (data.implements && data.implements.length) ||
+                        (data.tutorials && tutorials.length) || 
+                        (data.see && see.length) ||
+                        (data.todo && todo.length)
+
 
 // Check if the default value is an object or array; if so, apply code highlighting
 if (data.defaultvalue && (data.defaultvaluetype === 'object' || data.defaultvaluetype === 'array')) {
@@ -33,7 +32,7 @@ if (data.defaultvalue && (data.defaultvaluetype === 'object' || data.defaultvalu
 // Check whether to print details or not
 for(; loopVar < detailsKeys.length; loopVar += 1) {
     if(data[detailsKeys[loopVar]]) {
-        printDeatils = true
+        hasToPrintDetails = true
         break
     }
 }
@@ -51,7 +50,7 @@ for(; loopVar < detailsKeys.length; loopVar += 1) {
 
 <?js } ?>
 
-<?js if(printDeatils) { ?>
+<?js if(hasToPrintDetails) { ?>
 <dl class="details">
 
     <?js if (data.version) {?>
