@@ -114,7 +114,7 @@ ol.linenums li {
 }
 
 .name a {
-    font-size: 28px;
+    font-size: 90%;
 }
 
 .details {
@@ -240,8 +240,13 @@ ol.linenums li {
     padding-left: 0;
 }
 
+.prettyprint.linenums code,
 .prettyprint.linenums li {
-    min-height: 18px;
+    min-height: 25px;
+}
+
+.prettyprint.linenums code {
+    display: inline;
 }
 
 .prettyprint.linenums li.selected,
