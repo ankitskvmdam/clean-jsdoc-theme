@@ -6,6 +6,7 @@
 
 1. Fix: Line height of empty line is render as 0 on Mozilla firefox.
 1. Fix: Unnecessary errors with empty examples (#92)[https://github.com/ankitskvmdam/clean-jsdoc-theme/pull/92]
+1. Fix: Disabled source still produces 'details' block (#90)[https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/90]
 
 ### In version 3.2.8
 
