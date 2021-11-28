@@ -481,25 +481,25 @@ It will include the js files to the output dir and also attach a script tag to t
 
 ### Cheat sheet
 
-| name                | default                                                                                                              | use case                            | expected value(s)         |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | ------------------------- |
-| `theme`             | `"light"`                                                                                                            | To set the theme variant            | `"light" or "dark"`       |
-| `title`             | `null`                                                                                                               | To set the title                    | `HTML` or `string`        |
-| `menu`              | `null`                                                                                                               | To render extra link in navbar      | Array of Object(s)        |
-| `meta`              | `null`                                                                                                               | Meta tag attributes                 | Array of Object(s)        |
-| `search`            | `{}`                                                                                                                 | To render search or not             | Fuse.js options           |
-| `resizeable`        | `{}`                                                                                                                 | To make certain element resizeable  | `Object`                  |
-| `codepen`           | `{}`                                                                                                                 | To open code in codepen             | `Object`                  |
-| `create_style`      | `null`                                                                                                               | To create custom style rules        | `string`                  |
-| `add_style_path`    | `null`                                                                                                               | To add external css libraries/files | Array of Object(s)        |
-| `add_scripts`       | `null`                                                                                                               | To create custom script             | `string`                  |
-| `add_script_path`   | `null`                                                                                                               | To add external js libraries/files  | Array of Object(s)        |
-| `footer`            | `null`                                                                                                               | To render footer                    | `HTML` or `string`        |
-| `static_dir`        | `null`                                                                                                               | To include static dir               | Array of string           |
-| `include_css`       | `null`                                                                                                               | To include css files                | Array of string           |
-| `include_js`        | `null`                                                                                                               | To include js files                 | `string`                  |
-| `overlay_scrollbar` | `null`                                                                                                               | To use overlay scrollbar            | Overlay Scrollbar options |
-| `sections`          | `["Menu", "Modules", "Classes", "Externals", "Events", "Namespaces", "Mixins", "Tutorials", "Interfaces", "Global"]` | To use overlay scrollbar            | Overlay Scrollbar options |
+| name                | default                                                                                                              | use case                                                    | expected value(s)         |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | ------------------------- |
+| `theme`             | `"light"`                                                                                                            | To set the theme variant                                    | `"light" or "dark"`       |
+| `title`             | `null`                                                                                                               | To set the title                                            | `HTML` or `string`        |
+| `menu`              | `null`                                                                                                               | To render extra link in navbar                              | Array of Object(s)        |
+| `meta`              | `null`                                                                                                               | Meta tag attributes                                         | Array of Object(s)        |
+| `search`            | `{}`                                                                                                                 | To render search or not                                     | Fuse.js options           |
+| `resizeable`        | `{}`                                                                                                                 | To make certain element resizeable                          | `Object`                  |
+| `codepen`           | `{}`                                                                                                                 | To open code in codepen                                     | `Object`                  |
+| `create_style`      | `null`                                                                                                               | To create custom style rules                                | `string`                  |
+| `add_style_path`    | `null`                                                                                                               | To add external css libraries/files                         | Array of Object(s)        |
+| `add_scripts`       | `null`                                                                                                               | To create custom script                                     | `string`                  |
+| `add_script_path`   | `null`                                                                                                               | To add external js libraries/files                          | Array of Object(s)        |
+| `footer`            | `null`                                                                                                               | To render footer                                            | `HTML` or `string`        |
+| `static_dir`        | `null`                                                                                                               | To include static dir                                       | Array of string           |
+| `include_css`       | `null`                                                                                                               | To include css files                                        | Array of string           |
+| `include_js`        | `null`                                                                                                               | To include js files                                         | `string`                  |
+| `overlay_scrollbar` | `null`                                                                                                               | To use overlay scrollbar                                    | Overlay Scrollbar options |
+| `sections`          | `["Menu", "Modules", "Classes", "Externals", "Events", "Namespaces", "Mixins", "Tutorials", "Interfaces", "Global"]` | To order navbar sections or to hide/remove sidebar sections | `Array<SECTION_TYPE>`     |
 
 ## Changelog
 
