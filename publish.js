@@ -29,6 +29,32 @@ var haveSearch =
 // eslint-disable-next-line no-restricted-globals
 var outdir = path.normalize(env.opts.destination);
 
+var SECTION_TYPE = {
+    Classes: 'Classes',
+    Modules: 'Modules',
+    Externals: 'Externals',
+    Events: 'Events',
+    Namespaces: 'Namespaces',
+    Mixins: 'Mixins',
+    Tutorials: 'Tutorials',
+    Interfaces: 'Interfaces',
+    Global: 'Global',
+    Menu: 'Menu'
+};
+
+var defaultSections = [
+    SECTION_TYPE.Menu,
+    SECTION_TYPE.Modules,
+    SECTION_TYPE.Classes,
+    SECTION_TYPE.Externals,
+    SECTION_TYPE.Events,
+    SECTION_TYPE.Namespaces,
+    SECTION_TYPE.Mixins,
+    SECTION_TYPE.Tutorials,
+    SECTION_TYPE.Interfaces,
+    SECTION_TYPE.Global
+];
+
 function copyStaticFolder() {
     var staticDir = themeOpts.static_dir || undefined;
 
@@ -64,6 +90,13 @@ function copyToOutputFolderFromArray(filePathArray) {
 }
 
 function find(spec) {
+    if (spec.sectionName === SECTION_TYPE.Tutorials) {
+        /**
+         * Tutorial section has no member.
+         */
+        return [];
+    }
+
     return helper.find(data, spec);
 }
 
@@ -379,6 +412,10 @@ function attachModuleSymbols(doclets, modules) {
 }
 
 function buildMenuNav(menu) {
+    if (menu === undefined) {
+        return '';
+    }
+
     var m = '<ul>';
 
     menu.forEach(function(item) {
@@ -530,15 +567,24 @@ function search() {
     return obj;
 }
 
-function buildMemberNav(items, itemHeading, itemsSeen, linktoFn) {
+function buildMemberNav({
+    items,
+    itemHeading,
+    itemsSeen,
+    linktoFn,
+    sectionName
+}) {
     var nav = '';
 
     if (items.length) {
         var itemsNav = '';
 
         items.forEach(function(item) {
-            var methods = find({ kind: 'function',
-                memberof: item.longname });
+            var methods = find({
+                kind: 'function',
+                memberof: item.longname,
+                sectionName
+            });
 
             if (!hasOwnProp.call(item, 'longname')) {
                 itemsNav += '<li>' + linktoFn('', item.name);
@@ -681,30 +727,95 @@ function buildNav(members) {
     var seenTutorials = {};
 
     var menu = themeOpts.menu || undefined;
-    var menuLocation = themeOpts.menuLocation || 'up';
+    var sectionsOrder = themeOpts.sections || defaultSections;
 
-    if (menu !== undefined && menuLocation === 'up') {
-        nav += buildMenuNav(menu);
-    }
-    nav += buildMemberNav(
-        members.tutorials,
-        'Tutorials',
-        seenTutorials,
-        linktoTutorial,
-        true
-    );
-    nav += buildMemberNav(members.classes, 'Classes', seen, linkto);
-    nav += buildMemberNav(members.modules, 'Modules', {}, linkto);
-    nav += buildMemberNav(members.externals, 'Externals', seen, linktoExternal);
-    nav += buildMemberNav(members.events, 'Events', seen, linkto);
-    nav += buildMemberNav(members.namespaces, 'Namespaces', seen, linkto);
-    nav += buildMemberNav(members.mixins, 'Mixins', seen, linkto);
-    nav += buildMemberNav(members.interfaces, 'Interfaces', seen, linkto);
-    nav += buildMemberNav(members.globals, 'Global', seen, linkto);
-    if (menu !== undefined && menuLocation === 'down') {
-        nav += buildMenuNav(menu);
-    }
-    nav += '</div>';
+    var sections = {
+        [SECTION_TYPE.Menu]: buildMenuNav(menu),
+
+        [SECTION_TYPE.Modules]: buildMemberNav({
+            itemHeading: 'Modules',
+            items: members.modules,
+            itemsSeen: {},
+            linktoFn: linkto,
+            sectionName: SECTION_TYPE.Modules
+        }),
+
+        [SECTION_TYPE.Classes]: buildMemberNav({
+            itemHeading: 'Classes',
+            items: members.classes,
+            itemsSeen: seen,
+            linktoFn: linkto,
+            sectionName: SECTION_TYPE.Classes
+        }),
+
+        [SECTION_TYPE.Externals]: buildMemberNav({
+            itemHeading: 'Externals',
+            items: members.externals,
+            itemsSeen: seen,
+            linktoFn: linktoExternal,
+            sectionName: SECTION_TYPE.Externals
+        }),
+
+        [SECTION_TYPE.Events]: buildMemberNav({
+            itemHeading: 'Events',
+            items: members.events,
+            itemsSeen: seen,
+            linktoFn: linkto,
+            sectionName: SECTION_TYPE.Events
+        }),
+
+        [SECTION_TYPE.Namespaces]: buildMemberNav({
+            itemHeading: 'Namespaces',
+            items: members.namespaces,
+            itemsSeen: seen,
+            linktoFn: linkto,
+            sectionName: SECTION_TYPE.Namespaces
+        }),
+
+        [SECTION_TYPE.Mixins]: buildMemberNav({
+            itemHeading: 'Mixins',
+            items: members.mixins,
+            itemsSeen: seen,
+            linktoFn: linkto,
+            sectionName: SECTION_TYPE.Mixins
+        }),
+
+        [SECTION_TYPE.Tutorials]: buildMemberNav({
+            itemHeading: 'Tutorials',
+            items: members.tutorials,
+            itemsSeen: seenTutorials,
+            linktoFn: linktoTutorial,
+            sectionName: SECTION_TYPE.Tutorials
+        }),
+
+        [SECTION_TYPE.Interfaces]: buildMemberNav({
+            itemHeading: 'Interfaces',
+            items: members.interfaces,
+            itemsSeen: seen,
+            linktoFn: linkto,
+            sectionName: SECTION_TYPE.Interfaces
+        }),
+
+        [SECTION_TYPE.Global]: buildMemberNav({
+            itemHeading: 'Global',
+            items: members.globals,
+            itemsSeen: seen,
+            linktoFn: linkto,
+            sectionName: SECTION_TYPE.Global
+        })
+    };
+
+    sectionsOrder.forEach((section) => {
+        if (SECTION_TYPE[section] !== undefined) {
+            nav += sections[section];
+        } else {
+            var errorMsg = `While building nav. Section name: ${section} is not recognized.
+            Accepted sections are: ${defaultSections.join(', ')} 
+            `;
+
+            throw new Error(errorMsg);
+        }
+    });
 
     return nav;
 }
