@@ -582,13 +582,6 @@ function buildMemberNav({
                         memberof: item.longname
                     });
 
-            if (sectionName === SECTION_TYPE.Global) {
-                console.log(
-                    item.longname,
-                    !hasOwnProp.call(item, 'longname'),
-                    !hasOwnProp.call(itemsSeen, item.longname)
-                );
-            }
             if (!hasOwnProp.call(item, 'longname')) {
                 itemsNav += '<li>' + linktoFn('', item.name);
                 itemsNav += '</li>';
