@@ -1,12 +1,21 @@
 ## Change Log
 
-### In version 3.2.11
+### In version 3.3.0
+
+### Feature
+
+1. Now there is an option to order the navbar section.
 
 ### Bug Fixes
 
 1. Fix: Line height of empty line is render as 0 on Mozilla firefox.
 1. Fix: Unnecessary errors with empty examples (#92)[https://github.com/ankitskvmdam/clean-jsdoc-theme/pull/92]
 1. Fix: Disabled source still produces 'details' block (#90)[https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/90]
+1. Fix: Tutorials that share their name with a class will have that classes methods dropdown (#80)[https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/89]
+
+### Options Removed
+
+1. `menuLocation`: `menuLocation` theme_opts is removed. Now `sections` can be used to order the entire navbar section
 
 ### In version 3.2.8
 

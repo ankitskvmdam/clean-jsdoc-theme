@@ -3,7 +3,7 @@
 <p align=center><i align="center">A beautiful, responsive, customizable theme for JSDoc</i></p>
 <hr>
 
-[![Stars](https://img.shields.io/github/stars/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme) [![Fork](https://img.shields.io/github/forks/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/fork) ![Version](https://img.shields.io/badge/version-3.2.11-005bff) [![Issues Open](https://img.shields.io/github/issues/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues) [![Contributors](https://img.shields.io/github/contributors/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors) [![Build Status](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme.svg?branch=production)](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme) [![license](https://img.shields.io/github/license/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/LICENSE)
+[![Stars](https://img.shields.io/github/stars/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme) [![Fork](https://img.shields.io/github/forks/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/fork) ![Version](https://img.shields.io/badge/version-3.3.0-005bff) [![Issues Open](https://img.shields.io/github/issues/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues) [![Contributors](https://img.shields.io/github/contributors/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors) [![Build Status](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme.svg?branch=production)](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme) [![license](https://img.shields.io/github/license/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/LICENSE)
 <br>
 
 Clean-jsdoc-theme is a beautifully crafted theme/template for JSDoc 3. This theme/template looks and feels like a premium theme/template as it's mobile responsive and also highly customizable. For more options [look below at the options section](#options).
@@ -161,9 +161,29 @@ This options allows rendering of extra link(s) in navbar to the side of the docu
 | `class`  | `string` |
 | `id`     | `string` |
 
-### `menuLocation: "up" | "down"`
+### `sections: Array<SECTION_TYPE>`
 
-This options allows to adjust the location of the menu items listed in `menu` array, either at the top or at the bottom among all navbar items. `Default value is "up".`
+This can be used to order the navbar sections. This can also be used to hide/remove any section.
+
+```js
+// SECTION_TYPE
+[
+    'Classes',
+    'Modules',
+    'Externals',
+    'Events',
+    'Namespaces',
+    'Mixins',
+    'Tutorials',
+    'Interfaces',
+    'Global',
+    'Menu',
+];
+```
+
+```json5
+"sections": ["Classes", "Modules", "Global", "Menu"] // Only 4 members will be in the navbar.
+```
 
 ### `meta: Array<{}>`
 
@@ -461,24 +481,25 @@ It will include the js files to the output dir and also attach a script tag to t
 
 ### Cheat sheet
 
-| name                | default   | use case                            | expected value(s)         |
-| ------------------- | --------- | ----------------------------------- | ------------------------- |
-| `theme`             | `"light"` | To set the theme variant            | `"light" or "dark"`       |
-| `title`             | `null`    | To set the title                    | `HTML` or `string`        |
-| `menu`              | `null`    | To render extra link in navbar      | Array of Object(s)        |
-| `meta`              | `null`    | Meta tag attributes                 | Array of Object(s)        |
-| `search`            | `{}`      | To render search or not             | Fuse.js options           |
-| `resizeable`        | `{}`      | To make certain element resizeable  | `Object`                  |
-| `codepen`           | `{}`      | To open code in codepen             | `Object`                  |
-| `create_style`      | `null`    | To create custom style rules        | `string`                  |
-| `add_style_path`    | `null`    | To add external css libraries/files | Array of Object(s)        |
-| `add_scripts`       | `null`    | To create custom script             | `string`                  |
-| `add_script_path`   | `null`    | To add external js libraries/files  | Array of Object(s)        |
-| `footer`            | `null`    | To render footer                    | `HTML` or `string`        |
-| `static_dir`        | `null`    | To include static dir               | Array of string           |
-| `include_css`       | `null`    | To include css files                | Array of string           |
-| `include_js`        | `null`    | To include js files                 | `string`                  |
-| `overlay_scrollbar` | `null`    | To use overlay scrollbar            | Overlay Scrollbar options |
+| name                | default                                                                                                              | use case                            | expected value(s)         |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | ------------------------- |
+| `theme`             | `"light"`                                                                                                            | To set the theme variant            | `"light" or "dark"`       |
+| `title`             | `null`                                                                                                               | To set the title                    | `HTML` or `string`        |
+| `menu`              | `null`                                                                                                               | To render extra link in navbar      | Array of Object(s)        |
+| `meta`              | `null`                                                                                                               | Meta tag attributes                 | Array of Object(s)        |
+| `search`            | `{}`                                                                                                                 | To render search or not             | Fuse.js options           |
+| `resizeable`        | `{}`                                                                                                                 | To make certain element resizeable  | `Object`                  |
+| `codepen`           | `{}`                                                                                                                 | To open code in codepen             | `Object`                  |
+| `create_style`      | `null`                                                                                                               | To create custom style rules        | `string`                  |
+| `add_style_path`    | `null`                                                                                                               | To add external css libraries/files | Array of Object(s)        |
+| `add_scripts`       | `null`                                                                                                               | To create custom script             | `string`                  |
+| `add_script_path`   | `null`                                                                                                               | To add external js libraries/files  | Array of Object(s)        |
+| `footer`            | `null`                                                                                                               | To render footer                    | `HTML` or `string`        |
+| `static_dir`        | `null`                                                                                                               | To include static dir               | Array of string           |
+| `include_css`       | `null`                                                                                                               | To include css files                | Array of string           |
+| `include_js`        | `null`                                                                                                               | To include js files                 | `string`                  |
+| `overlay_scrollbar` | `null`                                                                                                               | To use overlay scrollbar            | Overlay Scrollbar options |
+| `sections`          | `["Menu", "Modules", "Classes", "Externals", "Events", "Namespaces", "Mixins", "Tutorials", "Interfaces", "Global"]` | To use overlay scrollbar            | Overlay Scrollbar options |
 
 ## Changelog
 
