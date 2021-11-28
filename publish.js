@@ -90,13 +90,6 @@ function copyToOutputFolderFromArray(filePathArray) {
 }
 
 function find(spec) {
-    if (spec.sectionName === SECTION_TYPE.Tutorials) {
-        /**
-         * Tutorial section has no member.
-         */
-        return [];
-    }
-
     return helper.find(data, spec);
 }
 
@@ -580,12 +573,22 @@ function buildMemberNav({
         var itemsNav = '';
 
         items.forEach(function(item) {
-            var methods = find({
-                kind: 'function',
-                memberof: item.longname,
-                sectionName
-            });
+            var methods =
+                sectionName === SECTION_TYPE.Tutorials ||
+                sectionName === SECTION_TYPE.Global ?
+                    [] :
+                    find({
+                        kind: 'function',
+                        memberof: item.longname
+                    });
 
+            if (sectionName === SECTION_TYPE.Global) {
+                console.log(
+                    item.longname,
+                    !hasOwnProp.call(item, 'longname'),
+                    !hasOwnProp.call(itemsSeen, item.longname)
+                );
+            }
             if (!hasOwnProp.call(item, 'longname')) {
                 itemsNav += '<li>' + linktoFn('', item.name);
                 itemsNav += '</li>';
@@ -725,6 +728,7 @@ function buildNav(members) {
     nav += '<div class="sidebar-main-content" id="sidebar-main-content">';
     var seen = {};
     var seenTutorials = {};
+    var seenGlobal = {};
 
     var menu = themeOpts.menu || undefined;
     var sectionsOrder = themeOpts.sections || defaultSections;
@@ -799,7 +803,7 @@ function buildNav(members) {
         [SECTION_TYPE.Global]: buildMemberNav({
             itemHeading: 'Global',
             items: members.globals,
-            itemsSeen: seen,
+            itemsSeen: seenGlobal,
             linktoFn: linkto,
             sectionName: SECTION_TYPE.Global
         })

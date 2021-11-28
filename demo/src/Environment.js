@@ -34,6 +34,12 @@ class Environment {
  */
 
 /**
+ * @typedef {Object} Environment
+ * @property {String} name
+ * @property {Map<String,Number>} strange
+ */
+
+/**
  * Lorem ipsum dolor sit amet, {@link Energy} consectetur adipiscing el
  * @event Environment#beforeDestroy
  * @type {Energy}
