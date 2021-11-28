@@ -11,6 +11,7 @@
         "destination": "output/light",
         "recurse": true,
         "template": "./",
+        "tutorials": "./demo/src/tutorials",
         "theme_opts": {
             "theme": "light",
             "title": "clean-jsdoc-theme",
