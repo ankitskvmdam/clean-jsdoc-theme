@@ -305,7 +305,7 @@ Here the nav and footer style rule is to attached to the HTML's `style` tag.
 To create custom scripts. Example:
 
 ```json
-"create_style": "function foo(){console.log('foo')} function bar() {console.log('bar')}"
+"add_scripts": "function foo(){console.log('foo')} function bar() {console.log('bar')}"
 ```
 
 Here the script is to attached to the HTML's `script` tag.
