@@ -37,7 +37,7 @@ For any suggestions, questions or bugs, feel free to create an <a href="https://
 ## Motivation
 
 When I was new to JavaScript documentation and [JSDoc](https://jsdoc.app/), it was hard for me to find a theme for JSDoc which was highly customizable or regularly maintained. Features that these lacked included responsiveness, a working search bar, and customization.
-To tackle these problems I created this project, an easy to use, responsive theme for JSDoc. I am actively working on this project and I try to make changes to the project frequently to make sure it's up to date, and suggestions and bugs are fixed.
+To tackle these problems I created this project, an easy to use, responsive theme for JSDoc. I am actively working on this project and I try to make changes to the project frequently to make sure it's up to date.
 
 ## Installation
 
@@ -49,21 +49,11 @@ On your command line type
 npm install clean-jsdoc-theme
 ```
 
-## Usage
-
-Clone repository to your designated JSDoc template directory, then run the following command:
-
-```bash
-jsdoc entry-file.js -t path/to/clean-jsdoc-theme
-```
-
-## Node.js Dependency
-
 In your projects `package.json` file add a generate script
 
 ```json
 "script": {
-  "generate-docs": "node_modules/.bin/jsdoc --configure .jsdoc.json --verbose"
+  "generate-docs": "node_modules/.bin/jsdoc --configure jsdoc.json --verbose"
 }
 ```
 
@@ -74,6 +64,12 @@ In your `jsdoc.json` file, add a template option.
   "template": "node_modules/clean-jsdoc-theme"
 }
 ```
+
+Now to generate docs run
+```bash
+npm run generate-docs
+```
+For more information look at [https://github.com/ankitskvmdam/clean-jsdoc-theme-example](https://github.com/ankitskvmdam/clean-jsdoc-theme-example)  
 
 ## Example JSDoc Config
 
