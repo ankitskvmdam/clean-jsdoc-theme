@@ -1,5 +1,11 @@
 ## Change Log
 
+### In version 3.3.2
+
+### Feature
+
+1. Add an option to excludes inherited symbols. (#96)[https://github.com/ankitskvmdam/clean-jsdoc-theme/pull/96]
+
 ### In version 3.3.0
 
 ### Feature
