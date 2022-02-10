@@ -397,6 +397,16 @@ To include js files. Example:
 
 It will include the js files to the output dir and also attach a script tag to the html pointing to the included js file.
 
+### `exclude_inherited: <boolean>`
+
+To exclude inherited symbols. Example:
+
+```json
+"exclude_inherited": true
+```
+
+This will remove all symbols (members, methods ...) that come from inherited parents.
+
 ### Example `theme_opts`
 
 ```json
@@ -454,6 +464,8 @@ It will include the js files to the output dir and also attach a script tag to t
     "include_css": ["./static/index.css", "./src/docs/index.css"],
     "include_js": ["./static/main.js", "./third-party/test/index.js"],
 
+    "exclude_inherited": true,
+
     "overlay_scrollbar": {
         "options": {
         }
@@ -494,6 +506,7 @@ It will include the js files to the output dir and also attach a script tag to t
 | `static_dir`        | `null`                                                                                                               | To include static dir                                                      | Array of string           |
 | `include_css`       | `null`                                                                                                               | To include css files                                                       | Array of string           |
 | `include_js`        | `null`                                                                                                               | To include js files                                                        | `string`                  |
+| `exclude_inherited` | `false`                                                                                                              | To exclude inherited symbols                                               | `boolean`                 |
 | `overlay_scrollbar` | `null`                                                                                                               | To use overlay scrollbar                                                   | Overlay Scrollbar options |
 | `sections`          | `["Menu", "Modules", "Classes", "Externals", "Events", "Namespaces", "Mixins", "Tutorials", "Interfaces", "Global"]` | To order navbar/sidebar sections or to hide/remove navbar/sidebar sections | `Array<SECTION_TYPE>`     |
 
