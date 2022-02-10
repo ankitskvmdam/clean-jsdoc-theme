@@ -1051,6 +1051,7 @@ exports.publish = function(taffyData, opts, tutorials) {
     view.search = search();
     view.resizeable = resizeable();
     view.codepen = codepen();
+    view.excludeInherited = Boolean(themeOpts.exclude_inherited);
     attachModuleSymbols(
         find({ longname: { left: 'module:' } }),
         members.modules
