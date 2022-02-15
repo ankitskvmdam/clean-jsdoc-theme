@@ -43,14 +43,12 @@ function search(list, options, keys, searchKey) {
 
     var searchUL = document.getElementById('search-item-ul');
 
-    searchUL.innerHTML = '';
-
     if (result.length === 0) {
-        searchUL.innerHTML += '<li class="p-h-n"> No Result Found </li>';
+        searchUL.innerHTML = '<li class="p-h-n"> No Result Found </li>';
     } else {
-        result.forEach(function(obj) {
-            searchUL.innerHTML += '<li>' + obj.item.link + '</li>';
-        });
+        searchUL.innerHTML = result.reduce(function(html, obj) {
+            return html + '<li>' + obj.item.link + '</li>';
+        }, '');
     }
 }
 
