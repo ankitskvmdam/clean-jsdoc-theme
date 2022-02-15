@@ -579,7 +579,8 @@ function buildMemberNav({
                     [] :
                     find({
                         kind: 'function',
-                        memberof: item.longname
+                        memberof: item.longname,
+                        inherited: {'!is': Boolean(themeOpts.exclude_inherited)}
                     });
 
             if (!hasOwnProp.call(item, 'longname')) {
