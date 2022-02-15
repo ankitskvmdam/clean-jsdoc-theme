@@ -39,10 +39,8 @@ function search(list, options, keys, searchKey) {
 
     var result = fuse.search(searchKey);
 
-    console.log(result, result.length);
     if (result.length > 20) { result = result.slice(0, 20); }
 
-    console.log(result);
     var searchUL = document.getElementById('search-item-ul');
 
     searchUL.innerHTML = '';
@@ -79,5 +77,3 @@ function setupSearch(list, options) {
         window.addEventListener('click', checkClick);
     });
 }
-
-
