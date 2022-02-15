@@ -637,7 +637,7 @@ function buildMemberNav({
                     itemsNav += "<ul class='methods accordion-content'>";
 
                     methods.forEach(function(method) {
-                        var name = method.longname.split('#');
+                        var name = method.longname.split(method.scope === 'static' ? '.' : '#');
                         var first = name[0];
                         var last = name[1];
 
