@@ -732,7 +732,7 @@ function buildNav(members) {
         [SECTION_TYPE.Modules]: buildMemberNav({
             itemHeading: 'Modules',
             items: members.modules,
-            itemsSeen: {},
+            itemsSeen: seen,
             linktoFn: linkto,
             sectionName: SECTION_TYPE.Modules
         }),
