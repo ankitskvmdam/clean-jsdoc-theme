@@ -579,7 +579,8 @@ function buildMemberNav({
                     [] :
                     find({
                         kind: 'function',
-                        memberof: item.longname
+                        memberof: item.longname,
+                        inherited: {'!is': Boolean(themeOpts.exclude_inherited)}
                     });
 
             if (!hasOwnProp.call(item, 'longname')) {
@@ -636,7 +637,7 @@ function buildMemberNav({
                     itemsNav += "<ul class='methods accordion-content'>";
 
                     methods.forEach(function(method) {
-                        var name = method.longname.split('#');
+                        var name = method.longname.split(method.scope === 'static' ? '.' : '#');
                         var first = name[0];
                         var last = name[1];
 
@@ -732,7 +733,7 @@ function buildNav(members) {
         [SECTION_TYPE.Modules]: buildMemberNav({
             itemHeading: 'Modules',
             items: members.modules,
-            itemsSeen: {},
+            itemsSeen: seen,
             linktoFn: linkto,
             sectionName: SECTION_TYPE.Modules
         }),
