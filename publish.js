@@ -943,10 +943,10 @@ exports.publish = function(taffyData, opts, tutorials) {
             conf.default.staticFiles.include ||
             conf.default.staticFiles.paths ||
             [];
-        staticFileFilter = new (require('jsdoc/src/filter').Filter)(
+        staticFileFilter = new ((require('jsdoc/src/filter').Filter))(
             conf.default.staticFiles
         );
-        staticFileScanner = new (require('jsdoc/src/scanner').Scanner)();
+        staticFileScanner = new ((require('jsdoc/src/scanner').Scanner))();
 
         staticFilePaths.forEach(function(filePath) {
             var extraStaticFiles = staticFileScanner.scan(
