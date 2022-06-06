@@ -1,9 +1,13 @@
+<?js
+    var data = this.navbar;
+?>
+
 <nav class="navbar">
     <div class="navbar-left-items">
         <?js 
-            if(this.navbar.menu) { ?>
+            if(data.menu) { ?>
             <?js 
-                this.navbar.menu.forEach(function(item) {
+                data.menu.forEach(function(item) {
                     var className = item.class || '';
                     var id = item.id || '';
                     var target = item.target || '';

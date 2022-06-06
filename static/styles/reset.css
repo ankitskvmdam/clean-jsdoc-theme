@@ -4,6 +4,10 @@
     padding: 0;
 }
 
+html {
+    font-size: 16px;
+}
+
 html,
 body {
     min-height: 100%;
@@ -13,7 +17,6 @@ body {
 
 body {
     font-family: 'body';
-    font-size: 16px;
     overflow-x: hidden;
     position: relative;
 }
