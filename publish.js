@@ -402,57 +402,6 @@ function attachModuleSymbols(doclets, modules) {
   });
 }
 
-function buildMenuNav(menu) {
-  if (menu === undefined) {
-    return '';
-  }
-
-  var m = '<ul>';
-
-  menu.forEach(function(item) {
-    // Setting default value for optional parameter
-    var c = item.class || '';
-    var id = item.id || '';
-    var target = item.target || '';
-
-    c += ' menu-link';
-
-    m +=
-            '<li class="menu-li">' +
-            "<a href='" +
-            item.link +
-            "' class='" +
-            c +
-            "' id='" +
-            id +
-            "' target='" +
-            target +
-            "'>" +
-            item.title +
-            '</a></li>';
-  });
-
-  m += '</ul>';
-
-  return m;
-}
-
-function buildSearch() {
-  var searchHTML =
-        '<div class="search-box" id="search-box">' +
-        '<div class="search-box-input-container">' +
-        '<input class="search-box-input" type="text" placeholder="Search..." id="search-box-input" />' +
-        '<svg class="search-icon" alt="search-icon"><use xlink:href="#search-icon"></use></svg>' +
-        '</div>';
-
-  var searchItemContainer =
-        '<div class="search-item-container" id="search-item-container"><ul class="search-item-ul" id="search-item-ul"></ul></div></div>';
-
-  searchHTML += searchItemContainer;
-
-  return searchHTML;
-}
-
 function buildFooter() {
   var footer = themeOpts.footer || '';
 
