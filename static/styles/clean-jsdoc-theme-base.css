@@ -234,16 +234,15 @@ pre {
     transform: scale(1);
 }
 
-blockquote {
-    font-size: 0.875rem;
-    padding: 0.0625rem 1.25rem;
-}
-
 .allow-overflow {
     overflow: auto;
 }
 
-@media screen and (max-width: 50rem) {
+.bold {
+    font-family: heading;
+}
+
+@media screen and (max-width: 50em) {
     .navbar-ham {
         display: block;
     }
@@ -271,6 +270,12 @@ blockquote {
 
     .method-member-container {
         overflow: auto;
+    }
+}
+
+@media screen and (max-width: 98em) {
+    .toc-container {
+        display: none;
     }
 }
 

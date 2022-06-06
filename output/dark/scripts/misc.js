@@ -144,32 +144,15 @@ function getAccordionIdsFromLocalStorage() {
   return ids || {};
 }
 
-function toggleAccordion(element, isImmediate) {
+function toggleAccordion(element) {
   var currentNode = element;
-  var isCollapsed = currentNode.classList.contains('collapsed');
-  var currentNodeUL = currentNode.querySelector('.accordion-content');
+  var isCollapsed = currentNode.getAttribute('data-isopen') === 'false';
 
   if (isCollapsed) {
-    if (isImmediate) {
-      currentNode.classList.remove('collapsed');
-      currentNodeUL.style.height = 'auto';
-
-      return;
-    }
-
-    var scrollHeight = currentNodeUL.scrollHeight;
-
-    currentNodeUL.style.height = scrollHeight + 'px';
-    currentNode.classList.remove('collapsed');
+    currentNode.setAttribute('data-isopen', 'true');
     setAccordionIdToLocalStorage(currentNode.id);
-    setTimeout(function() {
-      if (!currentNode.classList.contains('collapsed')) {
-        currentNodeUL.style.height = 'auto';
-      }
-    }, 600);
   } else {
-    currentNodeUL.style.height = '0px';
-    currentNode.classList.add('collapsed');
+    currentNode.setAttribute('data-isopen', 'false');
     removeAccordionIdFromLocalStorage(currentNode.id);
   }
 }
@@ -181,17 +164,15 @@ function toggleAccordion(element, isImmediate) {
   ) {
     localStorage.setItem(accordionLocalStorageKey, '{}');
   }
-  var allAccordion = document.querySelectorAll('.accordion-heading');
+  var allAccordion = document.querySelectorAll('.sidebar-section-title');
   var ids = getAccordionIdsFromLocalStorage();
 
   allAccordion.forEach(function(item) {
-    var parent = item.parentNode;
-
     item.addEventListener('click', function() {
-      toggleAccordion(parent);
+      toggleAccordion(item);
     });
-    if (parent.id in ids) {
-      toggleAccordion(parent, true);
+    if (item.id in ids) {
+      toggleAccordion(item);
     }
   });
 })();

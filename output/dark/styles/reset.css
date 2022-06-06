@@ -4,6 +4,10 @@
     padding: 0;
 }
 
+html {
+    font-size: 16px;
+}
+
 html,
 body {
     min-height: 100%;
@@ -13,7 +17,6 @@ body {
 
 body {
     font-family: 'body';
-    font-size: 16px;
     overflow-x: hidden;
     position: relative;
 }
@@ -133,14 +136,21 @@ ol.linenums li {
     font-size: 90%;
 }
 
+blockquote {
+    font-size: 0.875rem;
+    padding: 0.0625rem 1.25rem;
+    border-radius: 1rem;
+}
+
 .details {
+    border-radius: 1rem;
     margin: 1rem 0;
-    padding: 0.625rem 1rem;
 }
 
 .details .details-item-container {
     display: flex;
     margin: 10px 0;
+    padding: 1rem 2rem;
 }
 
 .details dt {
@@ -281,12 +291,36 @@ ol.linenums li {
 .params,
 .props,
 table {
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0 0.5rem;
     border-radius: 8px;
-    border-spacing: 0;
     font-size: 14px;
     margin: 0;
     width: 100%;
+}
+
+table td:first-child,
+.params td:first-child,
+table thead th:first-child,
+.params thead th:first-child,
+.props thead th:first-child {
+    border-top-left-radius: 1rem;
+    border-bottom-left-radius: 1rem;
+}
+
+table td:last-child,
+.params td:last-child,
+table thead th:last-child,
+.params thead th:last-child,
+.props thead th:last-child {
+    border-top-right-radius: 1rem;
+    border-bottom-right-radius: 1rem;
+}
+
+table th,
+.params th {
+    position: sticky;
+    top: 0;
 }
 
 .params .name,
@@ -304,7 +338,7 @@ th,
 td {
     display: table-cell;
     margin: 0;
-    padding: 15px;
+    padding: 1rem 2rem;
     text-align: left;
     vertical-align: top;
 }
