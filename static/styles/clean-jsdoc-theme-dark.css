@@ -25,11 +25,34 @@ h6 {
 .sidebar {
     background-color: #222;
     color: #999;
-    overflow: auto;
 }
 
-.sidebar h5 {
+.sidebar .title {
     color: #999;
+}
+
+.sidebar-section-title {
+    color: #999;
+}
+
+.sidebar-section-title:hover {
+    background: #252525;
+}
+
+.with-arrow {
+    fill: #999;
+}
+
+.sidebar-section-children-container {
+    background: #292929;
+}
+
+.sidebar-section-children a:hover {
+    background: #2c2c2c;
+}
+
+.sidebar-section-children a {
+    color: #fff;
 }
 
 .navbar-item a {
