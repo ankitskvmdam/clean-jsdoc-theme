@@ -13,19 +13,22 @@
     src: url('../fonts/MavenPro-Regular.ttf') format('truetype');
 }
 
-/*
-* Padding horizontal normal
-*/
-
 .body-wrapper {
     display: flex;
+    flex-direction: column;
     height: 100vh;
+    position: relative;
 }
 
 .sidebar-container {
-    width: 25rem;
-    padding: 1rem;
+    position: fixed;
     display: flex;
+    padding: 1rem;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 25rem;
+    z-index: 10;
 }
 
 .sidebar {
@@ -102,17 +105,20 @@
 }
 
 .toc-container {
-    width: 20rem;
-}
-
-.content-container {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding: 1rem 0;
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 25rem;
 }
 
 .navbar-container {
+    position: fixed;
+    z-index: 10;
+    top: 0;
+    left: 25rem;
+    right: 25rem;
+    height: 5rem;
     display: flex;
     justify-content: center;
 }
@@ -151,6 +157,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    padding: 5rem 25rem 0;
 }
 
 .main-wrapper {
@@ -165,6 +172,7 @@
 
 .footer {
     width: 100%;
+    margin: 5rem 0 -1rem 0;
     border-radius: 1rem;
     font-size: 0.875rem;
     display: flex;
@@ -273,9 +281,17 @@ pre {
     }
 }
 
-@media screen and (max-width: 98em) {
+@media screen and (max-width: 90em) {
     .toc-container {
         display: none;
+    }
+
+    .main-content {
+        padding: 5rem 0 0 25rem;
+    }
+
+    .navbar-container {
+        right: 0;
     }
 }
 

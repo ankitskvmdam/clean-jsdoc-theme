@@ -55,6 +55,10 @@ h6 {
     color: #fff;
 }
 
+.navbar-container {
+    background: #1a1a1a;
+}
+
 .navbar-item a {
     color: #999;
 }

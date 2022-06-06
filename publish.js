@@ -404,7 +404,7 @@ function attachModuleSymbols(doclets, modules) {
 }
 
 function buildFooter() {
-  var footer = themeOpts.footer || '';
+  var footer = themeOpts.footer;
 
   return footer;
 }

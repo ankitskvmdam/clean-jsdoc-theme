@@ -83,36 +83,35 @@
 
   <body>
 
+    <div class="sidebar-container">
+      <?js= this.partial('sidebar.tmpl') ?>
+    </div>
+    
+    <div class="navbar-container">
+      <?js= this.partial('navbar.tmpl') ?>
+    </div>
+
+    <div class="toc-container">
+      <?js= this.partial('toc.tmpl') ?>
+    </div>
+    
     <div class="body-wrapper">
-      <div class="sidebar-container">
-        
-        <?js= this.partial('sidebar.tmpl') ?>
-      
-      </div>
+      <div class="main-content">
+        <div class="main-wrapper">
+          <?js= content ?>
 
-      <div class="content-container">
-        <div class="navbar-container">
-          
-          <?js= this.partial('navbar.tmpl') ?>
-
-        </div>
-
-        <div class="main-content">
-          <div class="main-wrapper">
-            <?js= content ?>
-          </div>
-
+          <?js if(this.footer) {?>
+            
           <footer class="footer" id="footer">
             <div class="wrapper">
               <?js= this.footer ?>
             </div>
           </footer>
+          <?js } ?>
+        
         </div>
       </div>
-              
-      <div class="toc-container">
-        
-      </div>
+
     </div>
 
     <script src="scripts/third-party/prettify.js"></script>
