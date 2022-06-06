@@ -1,53 +1,48 @@
 /* global document */
 (function() {
-    var targets = document.querySelectorAll('pre');
-    var main = document.querySelector('#main');
+  var article = document.querySelector('article');
+  var targets = document.querySelectorAll('pre');
+  var footer = document.querySelector('#footer');
+  var navbar = document.querySelector('#navbar');
 
-    var footer = document.querySelector('#footer');
-    var pageTitle = document.querySelector('#page-title');
-    var pageTitleHeight = 0;
+  var footerHeight = footer.getBoundingClientRect().height;
+  var navbarHeight = navbar.getBoundingClientRect().height;
 
-    var footerHeight = footer.getBoundingClientRect().height;
+  // eslint-disable-next-line no-undef
+  var divMaxHeight = window.innerHeight - navbarHeight - footerHeight - 168;
 
-    if (pageTitle) {
-        pageTitleHeight = pageTitle.getBoundingClientRect().height;
+  setTimeout(function() {
+    targets.forEach(function(item) {
+      var innerHTML = item.innerHTML;
+      var divElement = document.createElement('div');
 
-        // Adding margin (Outer height)
-        pageTitleHeight += 45;
-    }
+      if (article.childElementCount === 1) {
+        // this means we are on code page.
+        item.style.margin = 0;
+      }
 
-    // subtracted 20 for extra padding.
+      divElement.style.maxHeight = divMaxHeight + 'px';
+      divElement.style.marginTop = '2rem';
+      divElement.innerHTML = innerHTML;
+
+      item.innerHTML = '';
+      item.appendChild(divElement);
+    });
+
+    // See if we have to move something into view
     // eslint-disable-next-line no-undef
-    var divMaxHeight = window.innerHeight - pageTitleHeight - footerHeight - 80;
+    var location = window.location.href.split('#')[1];
 
-    setTimeout(function() {
-        targets.forEach(function(item) {
-            var innerHTML = item.innerHTML;
-            var divElement = document.createElement('div');
+    if (location && location.length > 0) {
+      try {
+        var element = document.querySelector(
+          '#'.concat(decodeURI(location))
+        );
 
-            divElement.style.maxHeight = divMaxHeight + 'px';
-            divElement.style.marginTop = '2rem';
-            divElement.innerHTML = innerHTML;
-            // item.removeChild();
-            item.innerHTML = '';
-            item.appendChild(divElement);
-        });
-
-        // eslint-disable-next-line no-undef
-        main.style.minHeight = window.innerHeight - footerHeight - 15 + 'px';
-
-        // See if we have to move something into view
-        // eslint-disable-next-line no-undef
-        var location = window.location.href.split('#')[1];
-
-        if (location && location.length > 0) {
-            try {
-                var element = document.querySelector('#'.concat(decodeURI(location)));
-
-                element.scrollIntoView();
-            } catch (error) {
-                console.log(error);
-            }
-        }
-    }, 300);
+        element.scrollIntoView();
+      } catch (error) {
+        console.log(error);
+      }
+    }
+  }, 300);
 })();
