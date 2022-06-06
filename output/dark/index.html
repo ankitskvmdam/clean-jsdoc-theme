@@ -102,7 +102,7 @@
     <div class="sidebar-items-container">
         
 
-                    <div class="sidebar-section-title with-arrow" data-isopen="false" id="pN7QLWRKcrfM6KhJpHsG3">
+                    <div class="sidebar-section-title with-arrow" data-isopen="false" id="3HKyMUkf7cv7SE0BXfM3t">
                         <div>Modules</div>
                         <svg><use xlink:href="#down-icon"></use></svg>
                     </div>
@@ -118,7 +118,7 @@
 
                     
 
-                    <div class="sidebar-section-title with-arrow" data-isopen="false" id="aR8HO5oDrk6ewKvj5XBQJ">
+                    <div class="sidebar-section-title with-arrow" data-isopen="false" id="2P7rfR0jAJFUqxjgGMKLm">
                         <div>Classes</div>
                         <svg><use xlink:href="#down-icon"></use></svg>
                     </div>
@@ -169,7 +169,7 @@
 
                     
 
-                    <div class="sidebar-section-title with-arrow" data-isopen="false" id="un-ci-GB_KqBk8XklkNh8">
+                    <div class="sidebar-section-title with-arrow" data-isopen="false" id="-HZjadzAfyeO610OtSXZA">
                         <div>Events</div>
                         <svg><use xlink:href="#down-icon"></use></svg>
                     </div>
@@ -190,7 +190,7 @@
 
                     
 
-                    <div class="sidebar-section-title with-arrow" data-isopen="false" id="KvOId0_YM2VrxgZwmma3g">
+                    <div class="sidebar-section-title with-arrow" data-isopen="false" id="AyRYrAS0aAaOgms9n566H">
                         <div>Tutorials</div>
                         <svg><use xlink:href="#down-icon"></use></svg>
                     </div>
@@ -221,7 +221,7 @@
 
                     
 
-                    <div class="sidebar-section-title with-arrow" data-isopen="false" id="6bD2093rS_Ulf7e4ionNM">
+                    <div class="sidebar-section-title with-arrow" data-isopen="false" id="Y-YYYAW4uw-LfO_OxgnoL">
                         <div>Global</div>
                         <svg><use xlink:href="#down-icon"></use></svg>
                     </div>
@@ -261,7 +261,7 @@
 </div>
     </div>
     
-    <div class="navbar-container">
+    <div class="navbar-container" id="navbar">
       
 
 <nav class="navbar">
@@ -516,25 +516,6 @@ To tackle these problems I created this project, an easy to use, responsive them
 </code></pre>
 <h4>Properties</h4>
 <p>Any valid <a href="https://kingsora.github.io/OverlayScrollbars/#!documentation/options">overlay scrollbar properties</a></p>
-<h3><code>resizeable: {}</code></h3>
-<p>This will make certain element in DOM resizeable. Currently we only support navbar to be resizeable. By default navbar is not resizeable. To make navbar resizeable you have to do the following:</p>
-<pre class="prettyprint source lang-json"><code>&quot;resizeable&quot;: {
-  &quot;navbar&quot;: {
-    &quot;min&quot;: &quot;300&quot;,
-    &quot;max&quot;: &quot;600&quot;
-  }
-}
-</code></pre>
-<p>Don't include any unit. Also, units of max and min is inferred in <code>px</code>.</p>
-<blockquote>
-<p>Note: Navbar is not resizeable on mobile/small screens.<br>
-If you don't want to give min and max value and want to use the default values then pass empty object.</p>
-</blockquote>
-<pre class="prettyprint source lang-json"><code>&quot;resizeable&quot;: {
-  &quot;navbar&quot;: {}
-}
-</code></pre>
-<p>If you didn't pass any thing in navbar then navbar is not resizeable.</p>
 <h3><code>codepen: {}</code></h3>
 <p>This will add a link to the codepen with prefilled data.</p>
 <blockquote>
@@ -688,12 +669,6 @@ Use HTML to overwrite the default HTML.</p>
         &quot;options&quot;: {
         }
     },
-    &quot;resizeable&quot;: {
-      &quot;navbar&quot;: {
-        &quot;min&quot;: &quot;300&quot;,
-        &quot;max&quot;: &quot;600&quot;
-      }
-    },
     &quot;codepen&quot;: {
       &quot;enable_for&quot;: [&quot;examples&quot;],
       &quot;options&quot;: {
@@ -744,12 +719,6 @@ Use HTML to overwrite the default HTML.</p>
 <td><code>{}</code></td>
 <td>To render search or not</td>
 <td>Fuse.js options</td>
-</tr>
-<tr>
-<td><code>resizeable</code></td>
-<td><code>{}</code></td>
-<td>To make certain element resizeable</td>
-<td><code>Object</code></td>
 </tr>
 <tr>
 <td><code>codepen</code></td>
@@ -854,7 +823,7 @@ Mail me at: <a href="mailto:hello@ankdev.me">hello@ankdev.me</a> <br></p>
 
 
           
-            
+
           <footer class="footer" id="footer">
             <div class="wrapper">
               <div style='margin-bottom: 0.5rem;'>clean-jsdoc-theme</div> Fork: <a href='https://github.com/ankitskvmdam/clean-jsdoc-theme'>https://github.com/ankitskvmdam/clean-jsdoc-theme</a>
@@ -874,7 +843,6 @@ Mail me at: <a href="mailto:hello@ankdev.me">hello@ankdev.me</a> <br></p>
     <script>prettyPrint();</script>
     <script src="scripts/linenumber.js"></script>
     <script src="scripts/fix-code-block.js"></script>
-    <script src="scripts/fix-navbar.js"></script>
     
       <script src="scripts/search.js"></script>
       <script src="scripts/third-party/fuse.js"></script>
@@ -885,14 +853,6 @@ Mail me at: <a href="mailto:hello@ankdev.me">hello@ankdev.me</a> <br></p>
       </script>
     
 
-    
-
-    
-      <script src="scripts/resize.js"></script>
-      <script type="text/javascript">
-        var option = {"min":"300","max":"600"}
-        setupResizeOptions(option)
-      </script>
     
 
     

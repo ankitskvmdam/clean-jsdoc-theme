@@ -1,4 +1,5 @@
 /* global document */
+// This file is @deprecated
 
 var NAVBAR_OPTIONS = {};
 

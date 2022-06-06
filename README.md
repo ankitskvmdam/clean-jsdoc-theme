@@ -241,32 +241,6 @@ Includes the OverlayScrollbars plugin. Simply passing an empty object will activ
 
 Any valid [overlay scrollbar properties](https://kingsora.github.io/OverlayScrollbars/#!documentation/options)
 
-### `resizeable: {}`
-
-This will make certain element in DOM resizeable. Currently we only support navbar to be resizeable. By default navbar is not resizeable. To make navbar resizeable you have to do the following:
-
-```json
-"resizeable": {
-  "navbar": {
-    "min": "300",
-    "max": "600"
-  }
-}
-```
-
-Don't include any unit. Also, units of max and min is inferred in `px`.
-
-> Note: Navbar is not resizeable on mobile/small screens.
-> If you don't want to give min and max value and want to use the default values then pass empty object.
-
-```json
-"resizeable": {
-  "navbar": {}
-}
-```
-
-If you didn't pass any thing in navbar then navbar is not resizeable.
-
 ### `codepen: {}`
 
 This will add a link to the codepen with prefilled data.
@@ -470,12 +444,6 @@ This will remove all symbols (members, methods ...) that come from inherited par
         "options": {
         }
     },
-    "resizeable": {
-      "navbar": {
-        "min": "300",
-        "max": "600"
-      }
-    },
     "codepen": {
       "enable_for": ["examples"],
       "options": {
@@ -496,7 +464,6 @@ This will remove all symbols (members, methods ...) that come from inherited par
 | `menu`              | `null`                                                                                                       | To render extra link in navbar                                             | Array of Object(s)        |
 | `meta`              | `null`                                                                                                       | Meta tag attributes                                                        | Array of Object(s)        |
 | `search`            | `{}`                                                                                                         | To render search or not                                                    | Fuse.js options           |
-| `resizeable`        | `{}`                                                                                                         | To make certain element resizeable                                         | `Object`                  |
 | `codepen`           | `{}`                                                                                                         | To open code in codepen                                                    | `Object`                  |
 | `create_style`      | `null`                                                                                                       | To create custom style rules                                               | `string`                  |
 | `add_style_path`    | `null`                                                                                                       | To add external css libraries/files                                        | Array of Object(s)        |

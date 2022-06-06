@@ -115,10 +115,10 @@
 .navbar-container {
     position: fixed;
     z-index: 10;
-    top: 0;
+    top: 1rem;
     left: 25rem;
     right: 25rem;
-    height: 5rem;
+    height: 6rem;
     display: flex;
     justify-content: center;
 }
@@ -163,7 +163,7 @@
 .main-wrapper {
     width: 100%;
     max-width: 60rem;
-    padding: 2rem 4rem;
+    padding: 3rem 4rem 1rem;
 }
 
 .p-h-n {
@@ -172,7 +172,7 @@
 
 .footer {
     width: 100%;
-    margin: 5rem 0 -1rem 0;
+    margin: 5rem 0 0 0;
     border-radius: 1rem;
     font-size: 0.875rem;
     display: flex;

@@ -1,5 +1,5 @@
 /* global document */
-(function() {
+function fixCodeBlocks() {
   var article = document.querySelector('article');
   var targets = document.querySelectorAll('pre');
   var footer = document.querySelector('#footer');
@@ -45,4 +45,7 @@
       }
     }
   }, 300);
-})();
+}
+
+// eslint-disable-next-line no-undef
+window.addEventListener('DOMContentLoaded', fixCodeBlocks);
