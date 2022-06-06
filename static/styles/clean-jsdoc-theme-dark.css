@@ -32,6 +32,15 @@ h6 {
     color: #999;
 }
 
+.footer {
+    background: #222;
+    color: #999;
+}
+
+.footer a {
+    color: #999;
+}
+
 tt,
 code,
 kbd,

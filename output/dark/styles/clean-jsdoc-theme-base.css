@@ -34,6 +34,10 @@
     padding: 2rem;
 }
 
+.toc-container {
+    width: 20rem;
+}
+
 .content-container {
     flex: 1;
     display: flex;
@@ -81,7 +85,16 @@
 
 .footer {
     width: 100%;
-    background-color: red;
+    border-radius: 1rem;
+    font-size: 0.875rem;
+    display: flex;
+    justify-content: center;
+}
+
+.footer .wrapper {
+    flex: 1;
+    padding: 1rem 2rem;
+    max-width: 70rem;
 }
 
 pre {

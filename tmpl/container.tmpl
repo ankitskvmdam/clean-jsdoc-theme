@@ -23,7 +23,7 @@
 <header>
     <?js if (!doc.longname || doc.kind !== 'module') { ?>
         <?js if ((doc.ancestors && doc.ancestors.length) || doc.name || doc.variation) { ?>
-        <h2>
+        <h1>
         <?js if (doc.ancestors && doc.ancestors.length) { ?>
             <span class="ancestors"><?js= doc.ancestors.join('') ?></span>
         <?js } ?>
@@ -31,7 +31,7 @@
         <?js if (doc.variation) { ?>
             <sup class="variation"><?js= doc.variation ?></sup>
         <?js } ?>
-        </h2>
+        </h1>
         <?js } ?>
         <?js if (doc.classdesc) { ?>
             <div class="class-description"><?js= doc.classdesc ?></div>

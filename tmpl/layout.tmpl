@@ -89,6 +89,7 @@
         <?js= this.partial('sidebar.tmpl') ?>
       
       </div>
+
       <div class="content-container">
         <div class="navbar-container">
           
@@ -98,22 +99,19 @@
 
         <div class="main-content">
           <div class="main-wrapper">
-            <?js if (title != 'Home') { ?>
-            <h1 id='page-title' class="page-title">
-              <?js= title ?>
-            </h1>
-            <?js } ?>
-      
             <?js= content ?>
-      
           </div>
-          
+
           <footer class="footer" id="footer">
-            <?js= this.footer ?>
+            <div class="wrapper">
+              <?js= this.footer ?>
+            </div>
           </footer>
-
         </div>
-
+      </div>
+              
+      <div class="toc-container">
+        Toc container
       </div>
     </div>
 

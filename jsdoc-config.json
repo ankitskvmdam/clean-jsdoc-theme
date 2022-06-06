@@ -15,7 +15,7 @@
         "theme_opts": {
             "theme": "dark",
             "title": "clean-jsdoc-theme",
-            "footer": "Fork: <a href='https://github.com/ankitskvmdam/clean-jsdoc-theme'>https://github.com/ankitskvmdam/clean-jsdoc-theme</a>",
+            "footer": "<div style='margin-bottom: 0.5rem;'>clean-jsdoc-theme</div> Fork: <a href='https://github.com/ankitskvmdam/clean-jsdoc-theme'>https://github.com/ankitskvmdam/clean-jsdoc-theme</a>",
             "meta": [
                 {
                     "name": "Author",
