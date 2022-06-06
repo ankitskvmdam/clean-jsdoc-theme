@@ -4,8 +4,8 @@
 }
 
 body {
-    background-color: #121216;
-    color: #f8f8f9;
+    background-color: #1a1a1a;
+    color: #fff;
 }
 
 a,
@@ -31,84 +31,6 @@ h2 {
     border-bottom: 0.0625rem solid #333;
 }
 
-.navbar {
-    background: #000;
-}
-
-.navbar-ham {
-    background: #444;
-}
-
-.navbar-ham .first,
-.navbar-ham .second,
-.navbar-ham .third {
-    background: #fff;
-}
-
-.navbar-resize {
-    background: #222;
-}
-
-.resize-dots-container .dots {
-    background-color: #fff;
-}
-
-
-.search-box-input-container {
-    background: #2a2b2c;
-}
-
-.search-icon {
-    fill: #aeaeae;
-}
-
-.search-box-input {
-    color: #fff;
-}
-
-.search-box-input::placeholder {
-    color: #aeaeae;
-}
-
-.search-box-input:focus + .search-icon {
-    fill: #fff;
-}
-
-.search-item-ul {
-    background: #333;
-}
-
-.search-item-ul li:hover {
-    background: rgba(0, 0, 0, 0.1);
-}
-
-.search-item-ul a,
-.search-item-ul li {
-    color: #fff;
-}
-
-.accordion-heading {
-    color: #fff;
-    fill: #fff;
-}
-
-.accordion-content {
-    background: #111;
-}
-
-.accordion-content a {
-    color: #fff;
-}
-
-.methods.accordion-content {
-    background: #202020;
-}
-
-.menu-link {
-    color: #fff;
-}
-
-
 tt,
 code,
 kbd,
@@ -116,11 +38,9 @@ samp {
     background: #222;
 }
 
-
 .signature-attributes {
     color: #aaa;
 }
-
 
 .ancestors {
     color: #999;
@@ -205,7 +125,6 @@ table .params thead tr,
     background-color: #000;
     color: #fff;
 }
-
 
 .disabled {
     color: #aaaaaa;
@@ -307,7 +226,6 @@ table .params thead tr,
 .fun {
     color: #4271ae;
 }
-
 
 blockquote {
     background: #202020;

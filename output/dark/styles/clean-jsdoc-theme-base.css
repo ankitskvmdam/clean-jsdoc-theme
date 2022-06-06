@@ -23,108 +23,12 @@
 
 .main-content {
     /**
-    * This should match with the width of the nav / sidebar.
+    * This should match with the width of the sidebar.
     */
     margin-left: 18.75rem;
     overflow-x: auto;
     padding: 1rem 2rem;
 }
-
-.navbar {
-    bottom: 0;
-    left: 0;
-    overflow: hidden;
-    position: fixed;
-    top: 0;
-    width: 18.75rem;
-    z-index: 10;
-
-}
-
-.navbar-ham {
-    bottom: 1rem;
-    cursor: pointer;
-    display: none;
-    height: 2.5rem;
-    padding-top: 0.2rem;
-    position: fixed;
-    right: 1rem;
-    width: 3rem;
-    z-index: 100;
-}
-
-.navbar-ham .first,
-.navbar-ham .second,
-.navbar-ham .third {
-    height: 0.125rem;
-    left: 0.5rem;
-    position: absolute;
-    transition: 0.3s;
-    width: 2rem;
-}
-
-.navbar-ham div {
-    height: 2.1rem;
-    overflow: hidden;
-    position: relative;
-    width: 3rem;
-}
-
-.navbar-ham .first {
-    top: 0.5rem;
-}
-
-.navbar-ham .second {
-    top: 1rem;
-}
-
-.navbar-ham .third {
-    top: 1.5rem;
-}
-
-.navbar-ham.expanded .first {
-    transform: rotate(45deg) translate(0.3125rem, 0.3125rem);
-}
-
-.navbar-ham.expanded .second {
-    transform: translateX(200%);
-}
-
-.navbar-ham.expanded .third {
-    transform: rotate(135deg) translate(-0.4rem, 0.3125rem);
-}
-
-.navbar-resize {
-    bottom: 0;
-    cursor: col-resize;
-    display: none;
-    left: auto;
-    position: absolute;
-    right: 0;
-    top: 0;
-    width: 0.5rem;
-}
-
-.navbar:hover .navbar-resize {
-    display: block;
-}
-
-.resize-dots-container {
-    align-items: center;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    justify-content: center;
-    position: relative;
-}
-
-.resize-dots-container .dots {
-    border-radius: 50%;
-    height: 0.25rem;
-    margin: 0.125rem 0;
-    width: 0.25rem;
-}
-
 
 .footer {
     font-size: 0.8rem;
@@ -173,7 +77,6 @@
 .search-icon {
     height: 1rem;
     width: 1rem;
-
 }
 
 .search-box-input {
@@ -224,7 +127,6 @@
     margin: 1rem 0;
 }
 
-
 .accordion-heading {
     cursor: pointer;
     display: flex;
@@ -264,13 +166,11 @@
 
 .accordion-heading.child {
     padding: 0.5rem 1rem;
-
 }
 
-.accordion [data-type=method] {
+.accordion [data-type='method'] {
     margin: 0.5rem 1rem;
 }
-
 
 .accordion.child {
     margin: 0;
@@ -281,11 +181,9 @@
     margin: 0;
 }
 
-
 .menu-li {
     margin: 1rem 0;
 }
-
 
 pre {
     position: relative;
@@ -353,10 +251,7 @@ blockquote {
     overflow: auto;
 }
 
-
-
 @media screen and (max-width: 50rem) {
-
     .navbar-ham {
         display: block;
     }
@@ -385,7 +280,6 @@ blockquote {
     .method-member-container {
         overflow: auto;
     }
-    
 }
 
 .rel {
