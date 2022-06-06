@@ -41,6 +41,7 @@
         "stylelint-scss": "^3.19.0"
     },
     "dependencies": {
-        "fs-extra": "^10.1.0"
+        "fs-extra": "^10.1.0",
+        "nanoid": "^3.3.4"
     }
 }

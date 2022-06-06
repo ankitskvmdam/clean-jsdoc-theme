@@ -9,6 +9,7 @@ var taffy = require('taffydb').taffy;
 var template = require('jsdoc/template');
 var util = require('util');
 var fse = require('fs-extra');
+var nanoid = require('nanoid').nanoid;
 
 var htmlsafe = helper.htmlsafe;
 var linkto = helper.linkto;
@@ -516,7 +517,8 @@ function buildSidebarMembers({
 }) {
   const navProps = {
     name: itemHeading,
-    items: []
+    items: [],
+    id: nanoid()
   };
 
   if (items.length) {
@@ -526,7 +528,6 @@ function buildSidebarMembers({
         anchor: item.longname ?
           linktoFn(item.longname, item.name) :
           linktoFn('', item.name),
-
         children: []
       };
 
@@ -603,7 +604,10 @@ function linktoExternal(longName, name) {
 }
 
 function buildNavbar() {
-  return { menu: themeOpts.menu || undefined };
+  return {
+    menu: themeOpts.menu || undefined,
+    search: hasSearch
+  };
 }
 
 /**
@@ -626,8 +630,7 @@ function buildSidebar(members) {
   var isHTML = RegExp.prototype.test.bind(/(<([^>]+)>)/i);
 
   var nav = {
-    sections: [],
-    search: false
+    sections: []
   };
 
   if (!isHTML(title)) {
@@ -640,10 +643,6 @@ function buildSidebar(members) {
       title,
       isHTML: true
     };
-  }
-
-  if (hasSearch) {
-    nav.search = true;
   }
 
   var seen = {};
