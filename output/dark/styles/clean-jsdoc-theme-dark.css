@@ -10,11 +10,7 @@ body {
 
 a,
 a:active {
-    color: #00abff;
-}
-
-hr {
-    border: 1px solid #333;
+    color: #00bbff;
 }
 
 h1,
@@ -23,12 +19,17 @@ h3,
 h4,
 h5,
 h6 {
-    color: #f8f8f9;
+    color: #fff;
 }
 
-h1,
-h2 {
-    border-bottom: 0.0625rem solid #333;
+.sidebar {
+    background-color: #222;
+    color: #999;
+    overflow: auto;
+}
+
+.sidebar h5 {
+    color: #999;
 }
 
 tt,

@@ -83,23 +83,39 @@
 
   <body>
 
-    <?js= this.partial('sidebar.tmpl') ?>
-    <?js= this.partial('navbar.tmpl') ?>
+    <div class="body-wrapper">
+      <div class="sidebar-container">
+        
+        <?js= this.partial('sidebar.tmpl') ?>
+      
+      </div>
+      <div class="content-container">
+        <div class="navbar-container">
+          
+          <?js= this.partial('navbar.tmpl') ?>
 
+        </div>
 
-    <div id="main" class="main-content">
-      <?js if (title != 'Home') { ?>
-      <h1 id='page-title' class="page-title">
-        <?js= title ?>
-      </h1>
-      <?js } ?>
+        <div class="main-content">
+          <div class="main-wrapper">
+            <?js if (title != 'Home') { ?>
+            <h1 id='page-title' class="page-title">
+              <?js= title ?>
+            </h1>
+            <?js } ?>
+      
+            <?js= content ?>
+      
+          </div>
+          
+          <footer class="footer" id="footer">
+            <?js= this.footer ?>
+          </footer>
 
-      <?js= content ?>
+        </div>
+
+      </div>
     </div>
-
-    <footer class="footer" id="footer">
-      <?js= this.footer ?>
-    </footer>
 
     <script src="scripts/third-party/prettify.js"></script>
     <script src="scripts/third-party/lang-css.js"></script>
