@@ -115,10 +115,11 @@
 .navbar-container {
     position: fixed;
     z-index: 10;
-    top: 1rem;
+    top: 0;
     left: 25rem;
     right: 25rem;
     height: 6rem;
+    padding-top: 1rem;
     display: flex;
     justify-content: center;
 }
