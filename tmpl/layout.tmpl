@@ -87,7 +87,7 @@
       <?js= this.partial('sidebar.tmpl') ?>
     </div>
     
-    <div class="navbar-container">
+    <div class="navbar-container" id="navbar">
       <?js= this.partial('navbar.tmpl') ?>
     </div>
 
@@ -101,7 +101,7 @@
           <?js= content ?>
 
           <?js if(this.footer) {?>
-            
+
           <footer class="footer" id="footer">
             <div class="wrapper">
               <?js= this.footer ?>
@@ -121,7 +121,6 @@
     <script>prettyPrint();</script>
     <script src="scripts/linenumber.js"></script>
     <script src="scripts/fix-code-block.js"></script>
-    <script src="scripts/fix-navbar.js"></script>
     <?js if(this.search.options !== 'false') { ?>
       <script src="scripts/search.js"></script>
       <script src="scripts/third-party/fuse.js"></script>
@@ -136,14 +135,6 @@
     <script type="text/javascript">
         <?js= this.dynamicScript ?>
     </script>
-    <?js } ?>
-
-    <?js if(this.resizeable.navbar != undefined ) { ?>
-      <script src="scripts/resize.js"></script>
-      <script type="text/javascript">
-        var option = <?js= JSON.stringify(this.resizeable.navbar) ?>
-        setupResizeOptions(option)
-      </script>
     <?js } ?>
 
     <?js if(this.overlayScrollbar != undefined ) { ?>
