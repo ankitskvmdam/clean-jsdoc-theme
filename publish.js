@@ -603,7 +603,7 @@ function linktoExternal(longName, name) {
 }
 
 function buildNavbar() {
-  return themeOpts.menu || undefined;
+  return { menu: themeOpts.menu || undefined };
 }
 
 /**

@@ -1,19 +1,25 @@
 <nav class="navbar">
     <div class="navbar-left-items">
-        <div class="navbar-item">
-            <a>Github</a>
+        <?js 
+            if(this.navbar.menu) { ?>
+            <?js 
+                this.navbar.menu.forEach(function(item) {
+                    var className = item.class || '';
+                    var id = item.id || '';
+                    var target = item.target || '';
+                    className += ' navbar-item'
+                    ?>
+                    
+        <div class="<?js=className ?>"> 
+            <a id="<?js= id ?>" href="<?js= item.link ?>" target="<?js= target ?>">
+                <?js= item.title?>
+            </a>
         </div>
-        <div class="navbar-item">
-            <a>npm</a>
-        </div>
-        <div class="navbar-item">
-            <a>Website</a>
-        </div>
-    </div>
 
-    <div class="navbar-right-items">
-        <div class="navbar-item">
-            Right
-        </div>
+            <?js
+                })
+            }
+        ?>
+
     </div>
 <nav>

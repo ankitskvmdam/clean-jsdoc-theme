@@ -32,6 +32,19 @@ h6 {
     color: #999;
 }
 
+.navbar-item a {
+    color: #999;
+}
+
+.navbar-item a:active {
+    color: #aaa;
+    background-color: #222;
+}
+
+.navbar-item:hover {
+    background: #202020;
+}
+
 .footer {
     background: #222;
     color: #999;
