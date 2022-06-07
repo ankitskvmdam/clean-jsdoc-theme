@@ -29,12 +29,6 @@
     <!-- Adding style-->
     
 
-    <!-- Adding overlay script-->
-    
-
-    <!-- Adding overlay style-->
-    
-
 
     <title>
       Tutorial: Allive
@@ -43,7 +37,6 @@
     <!--[if lt IE 9]>
       <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-    <link type="text/css" rel="stylesheet" href="styles/third-party/ionicons.min.css">
     <link type="text/css" rel="stylesheet" href="styles/third-party/prettify-tomorrow.css">
     <link type="text/css" rel="stylesheet" href="styles/reset.css">
     <link type="text/css" rel="stylesheet" href="styles/clean-jsdoc-theme-base.css">
@@ -84,6 +77,8 @@
         </symbol>
     </defs>
 </svg>
+
+    <script src="scripts/third-party/tocbot.min.js"></script>
   </head>
 
   <body>
@@ -102,7 +97,7 @@
     <div class="sidebar-items-container">
         
 
-                    <div class="sidebar-section-title with-arrow" data-isopen="false" id="OI9-95ts-1acH5dKj4XT5">
+                    <div class="sidebar-section-title with-arrow" data-isopen="false" id="L0DfcUjmhniIqBkk9LqGx">
                         <div>Modules</div>
                         <svg><use xlink:href="#down-icon"></use></svg>
                     </div>
@@ -118,7 +113,7 @@
 
                     
 
-                    <div class="sidebar-section-title with-arrow" data-isopen="false" id="Ve_O-A-Sl5ZWH4djSTm5S">
+                    <div class="sidebar-section-title with-arrow" data-isopen="false" id="hHMfeI_LxnaLaGSTTyuoR">
                         <div>Classes</div>
                         <svg><use xlink:href="#down-icon"></use></svg>
                     </div>
@@ -169,7 +164,7 @@
 
                     
 
-                    <div class="sidebar-section-title with-arrow" data-isopen="false" id="KdDhf_FkWnvYjNx-tVApz">
+                    <div class="sidebar-section-title with-arrow" data-isopen="false" id="VGJrJQuj-A-NIWNOmYp6d">
                         <div>Events</div>
                         <svg><use xlink:href="#down-icon"></use></svg>
                     </div>
@@ -190,7 +185,7 @@
 
                     
 
-                    <div class="sidebar-section-title with-arrow" data-isopen="false" id="RP5muDdXZVDoqNRlC2h6q">
+                    <div class="sidebar-section-title with-arrow" data-isopen="false" id="jZ5QpqDQioJbb5wKIUmru">
                         <div>Tutorials</div>
                         <svg><use xlink:href="#down-icon"></use></svg>
                     </div>
@@ -221,7 +216,7 @@
 
                     
 
-                    <div class="sidebar-section-title with-arrow" data-isopen="false" id="A8nRQYhUSLnPI4dnwedi4">
+                    <div class="sidebar-section-title with-arrow" data-isopen="false" id="4vocR_oTI3JA-DXdsSNb_">
                         <div>Global</div>
                         <svg><use xlink:href="#down-icon"></use></svg>
                     </div>
@@ -290,8 +285,9 @@
     </div>
 
     <div class="toc-container">
-      <div>
-Toc container
+      <div class="toc-content">
+    <span class="bold">On this page</span>
+    <div id="toc"></div>
 </div>
     </div>
     
@@ -356,8 +352,17 @@ Toc container
 
     
 
-    
 
+    <script type="text/javascript">
+      tocbot.init({
+        tocSelector: '#toc',
+        contentSelector: '.main-content',
+        headingSelector: 'h1, h2, h3, h4',
+        hasInnerContainers: true,
+        scrollContainer: '.main-content',
+      });
+
+    </script>
 
   </body>
 

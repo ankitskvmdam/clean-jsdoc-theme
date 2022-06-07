@@ -210,3 +210,12 @@ function toggleNavbar(element, navbar) {
     });
   }
 })();
+
+// function bringIdToView() {
+//   var id = window.location.hash
+
+//   if(id === '') return
+// }
+
+// eslint-disable-next-line no-undef
+// window.addEventListener('DOMContentLoaded', bringIdToView);

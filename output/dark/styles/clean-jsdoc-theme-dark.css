@@ -81,6 +81,16 @@ h6 {
     color: #999;
 }
 
+.toc-link {
+    color: #777;
+    transition: color 0.3s;
+    font-size: 0.875rem;
+}
+
+.toc-link.is-active-link {
+    color: #fff;
+}
+
 tt,
 code,
 kbd,

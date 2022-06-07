@@ -22,6 +22,7 @@ function fixCodeBlocks() {
       }
 
       divElement.style.maxHeight = divMaxHeight + 'px';
+      // divElement.setAttribute('data-simplebar', 'true');
       divElement.style.marginTop = '2rem';
       divElement.innerHTML = innerHTML;
 

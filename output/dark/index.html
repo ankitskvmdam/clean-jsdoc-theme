@@ -29,12 +29,6 @@
     <!-- Adding style-->
     
 
-    <!-- Adding overlay script-->
-    
-
-    <!-- Adding overlay style-->
-    
-
 
     <title>
       Home
@@ -43,7 +37,6 @@
     <!--[if lt IE 9]>
       <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-    <link type="text/css" rel="stylesheet" href="styles/third-party/ionicons.min.css">
     <link type="text/css" rel="stylesheet" href="styles/third-party/prettify-tomorrow.css">
     <link type="text/css" rel="stylesheet" href="styles/reset.css">
     <link type="text/css" rel="stylesheet" href="styles/clean-jsdoc-theme-base.css">
@@ -84,6 +77,8 @@
         </symbol>
     </defs>
 </svg>
+
+    <script src="scripts/third-party/tocbot.min.js"></script>
   </head>
 
   <body>
@@ -102,7 +97,7 @@
     <div class="sidebar-items-container">
         
 
-                    <div class="sidebar-section-title with-arrow" data-isopen="false" id="OI9-95ts-1acH5dKj4XT5">
+                    <div class="sidebar-section-title with-arrow" data-isopen="false" id="L0DfcUjmhniIqBkk9LqGx">
                         <div>Modules</div>
                         <svg><use xlink:href="#down-icon"></use></svg>
                     </div>
@@ -118,7 +113,7 @@
 
                     
 
-                    <div class="sidebar-section-title with-arrow" data-isopen="false" id="Ve_O-A-Sl5ZWH4djSTm5S">
+                    <div class="sidebar-section-title with-arrow" data-isopen="false" id="hHMfeI_LxnaLaGSTTyuoR">
                         <div>Classes</div>
                         <svg><use xlink:href="#down-icon"></use></svg>
                     </div>
@@ -169,7 +164,7 @@
 
                     
 
-                    <div class="sidebar-section-title with-arrow" data-isopen="false" id="KdDhf_FkWnvYjNx-tVApz">
+                    <div class="sidebar-section-title with-arrow" data-isopen="false" id="VGJrJQuj-A-NIWNOmYp6d">
                         <div>Events</div>
                         <svg><use xlink:href="#down-icon"></use></svg>
                     </div>
@@ -190,7 +185,7 @@
 
                     
 
-                    <div class="sidebar-section-title with-arrow" data-isopen="false" id="RP5muDdXZVDoqNRlC2h6q">
+                    <div class="sidebar-section-title with-arrow" data-isopen="false" id="jZ5QpqDQioJbb5wKIUmru">
                         <div>Tutorials</div>
                         <svg><use xlink:href="#down-icon"></use></svg>
                     </div>
@@ -221,7 +216,7 @@
 
                     
 
-                    <div class="sidebar-section-title with-arrow" data-isopen="false" id="A8nRQYhUSLnPI4dnwedi4">
+                    <div class="sidebar-section-title with-arrow" data-isopen="false" id="4vocR_oTI3JA-DXdsSNb_">
                         <div>Global</div>
                         <svg><use xlink:href="#down-icon"></use></svg>
                     </div>
@@ -290,8 +285,9 @@
     </div>
 
     <div class="toc-container">
-      <div>
-Toc container
+      <div class="toc-content">
+    <span class="bold">On this page</span>
+    <div id="toc"></div>
 </div>
     </div>
     
@@ -316,38 +312,36 @@ Toc container
 
 
     <section class="readme">
-        <article><h1>clean-jsdoc-theme</h1>
+        <article><h1 id="clean-jsdoc-theme">clean-jsdoc-theme</h1>
 <p>A beautiful, responsive, customizable theme for JSDoc</p>
 <p><a href="https://github.com/ankitskvmdam/clean-jsdoc-theme"><img src="https://img.shields.io/github/stars/ankitskvmdam/clean-jsdoc-theme" alt="Stars"></a> <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme/fork"><img src="https://img.shields.io/github/forks/ankitskvmdam/clean-jsdoc-theme" alt="Fork"></a> <img src="https://img.shields.io/badge/version-3.3.3-005bff" alt="Version"> <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme/issues"><img src="https://img.shields.io/github/issues/ankitskvmdam/clean-jsdoc-theme" alt="Issues Open"></a> <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors"><img src="https://img.shields.io/github/contributors/ankitskvmdam/clean-jsdoc-theme" alt="Contributors"></a> <a href="https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme"><img src="https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme.svg?branch=production" alt="Build Status"></a> <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/LICENSE"><img src="https://img.shields.io/github/license/ankitskvmdam/clean-jsdoc-theme" alt="license"></a><br>
 <br></p>
 <p>Clean-jsdoc-theme is a beautifully crafted theme/template for JSDoc 3. This theme/template looks and feels like a premium theme/template as it's mobile responsive and also highly customizable. For more options <a href="#options">look below at the options section</a>.</p>
 <p>For any suggestions, questions or bugs, feel free to create an <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme/issues">issue</a> in this repo.</p>
-<h2>Demo</h2>
+<h2 id="demo">Demo</h2>
 <ol>
 <li>Live demo (dark): <a href="https://ankdev.me/clean-jsdoc-theme/dark/index.html">https://ankdev.me/clean-jsdoc-theme/dark/index.html</a> <br></li>
 <li>Live demo (light): <a href="https://ankdev.me/clean-jsdoc-theme/light/index.html">https://ankdev.me/clean-jsdoc-theme/light/index.html</a></li>
 </ol>
-<h2>Examples</h2>
+<h2 id="examples">Examples</h2>
 <ol>
 <li><a href="https://github.com/ankitskvmdam/clean-jsdoc-theme-example">https://github.com/ankitskvmdam/clean-jsdoc-theme-example</a> - This repo will give an overview of how to setup clean-jsdoc-theme.</li>
 </ol>
-<h4>Screenshot</h4>
+<h3 id="screenshot">Screenshot</h3>
 <p><img src="./example/screen-1.png" alt="Screen-1"><br>
 <img src="./example/screen-2.png" alt="Screen-2"><br>
 <img src="./example/screen-3.png" alt="Screen-3"><br>
 <img src="./example/screen-4.png" alt="Screen-4"><br>
 <img src="./example/screen-5.png" alt="Screen-5"><br>
 <img src="./example/screen-6.png" alt="Screen-6"></p>
-<h2>Libraries Used</h2>
+<h2 id="libraries-used">Libraries Used</h2>
 <ol>
 <li><a href="https://fusejs.io/">Fuse.js</a> - Fuse.js is a powerful, lightweight fuzzy-search library, with zero dependencies.</li>
-<li><a href="https://kingsora.github.io/OverlayScrollbars/#!overview">Overlay Scrollbars</a> - A javascript scrollbar plugin which hides native scrollbars, provides<br>
-custom styleable overlay scrollbars and keeps the native functionality and feeling of native scrollbars.</li>
 </ol>
-<h2>Motivation</h2>
+<h2 id="motivation">Motivation</h2>
 <p>When I was new to JavaScript documentation and <a href="https://jsdoc.app/">JSDoc</a>, it was hard for me to find a theme for JSDoc which was highly customizable or regularly maintained. Features that these lacked included responsiveness, a working search bar, and customization.<br>
 To tackle these problems I created this project, an easy to use, responsive theme for JSDoc. I am actively working on this project and I try to make changes to the project frequently to make sure it's up to date.</p>
-<h2>Installation</h2>
+<h2 id="installation">Installation</h2>
 <blockquote>
 <p>Note you must have <code>npm</code> installed on your machine.</p>
 </blockquote>
@@ -368,7 +362,7 @@ To tackle these problems I created this project, an easy to use, responsive them
 <pre class="prettyprint source lang-bash"><code>npm run generate-docs
 </code></pre>
 <p>For more information look at <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme-example">https://github.com/ankitskvmdam/clean-jsdoc-theme-example</a></p>
-<h2>Example JSDoc Config</h2>
+<h2 id="example-jsdoc-config">Example JSDoc Config</h2>
 <pre class="prettyprint source lang-json"><code>{
     &quot;source&quot;: {
         &quot;include&quot;: [&quot;lib&quot;, &quot;package.json&quot;, &quot;README.md&quot;],
@@ -391,22 +385,22 @@ To tackle these problems I created this project, an easy to use, responsive them
     }
 }
 </code></pre>
-<h2>Options</h2>
+<h2 id="options">Options</h2>
 <p>To use custom options (such as light and dark modes), pass an object called <code>theme_opts</code> in your config file under <code>opts</code>.</p>
-<h3><code>theme : &quot;light&quot; | &quot;dark&quot;</code></h3>
+<h3 id="theme-%3A-%22light%22-%7C-%22dark%22"><code>theme : &quot;light&quot; | &quot;dark&quot;</code></h3>
 <p>To set the overall theme of the documentation file(s). Currently there is only two variant <code>&quot;light&quot;</code> and <code>&quot;dark&quot;</code> but in future I will try to add more.<br>
 <code>Default value is &quot;light&quot;</code></p>
-<h3><code>favicon: string</code></h3>
+<h3 id="favicon%3A-string"><code>favicon: string</code></h3>
 <p>This option sets the favicon of the document. It accepts strings defining the path of the icon.</p>
 <pre class="prettyprint source lang-json"><code> &quot;favion&quot;: &quot;path/to/img&quot;
 </code></pre>
 <p>You can use <code>static_dir</code> to copy all you static files to output dir and use that path in place of <code>path/to/img</code>. For more details look <code>static_dir</code> section.</p>
-<h3><code>title: string | HTML</code></h3>
+<h3 id="title%3A-string-%7C-html"><code>title: string | HTML</code></h3>
 <p>This option sets the title of the document in the navbar. Both strings and HTML are accepted; use HTML to overwrite the default HTML, and a string to set a plaintext title. One example of this is below:</p>
 <pre class="prettyprint source lang-json"><code> &quot;title&quot;: &quot;&lt;img src='path/to/img' class='my-custom-class'/>&quot;
 </code></pre>
 <p>You can use <code>static_dir</code> to copy all you static files to output dir and use that path in place of <code>path/to/img</code>. For more details look <code>static_dir</code> section.</p>
-<h3><code>menu: Array&lt;{}&gt;</code></h3>
+<h3 id="menu%3A-array%3C%7B%7D%3E"><code>menu: Array&lt;{}&gt;</code></h3>
 <p>This options allows rendering of extra link(s) in navbar to the side of the documentation. It accepts an array of objects, such as in the following example example:</p>
 <pre class="prettyprint source lang-json"><code>&quot;menu&quot; : [
   {
@@ -418,7 +412,7 @@ To tackle these problems I created this project, an easy to use, responsive them
   }
 ]
 </code></pre>
-<h4>Required properties</h4>
+<h4 id="required-properties">Required properties</h4>
 <table>
 <thead>
 <tr>
@@ -437,7 +431,7 @@ To tackle these problems I created this project, an easy to use, responsive them
 </tr>
 </tbody>
 </table>
-<h4>Optional Properties</h4>
+<h4 id="optional-properties">Optional Properties</h4>
 <table>
 <thead>
 <tr>
@@ -460,7 +454,7 @@ To tackle these problems I created this project, an easy to use, responsive them
 </tr>
 </tbody>
 </table>
-<h3><code>sections: Array&lt;SECTION_TYPE&gt;</code></h3>
+<h3 id="sections%3A-array%3Csection_type%3E"><code>sections: Array&lt;SECTION_TYPE&gt;</code></h3>
 <p>This can be used to order the navbar sections. This can also be used to hide/remove any section.</p>
 <pre class="prettyprint source lang-js"><code>// SECTION_TYPE
 [
@@ -477,7 +471,7 @@ To tackle these problems I created this project, an easy to use, responsive them
 </code></pre>
 <pre class="prettyprint source lang-json5"><code>&quot;sections&quot;: [&quot;Classes&quot;, &quot;Modules&quot;, &quot;Global&quot;] // Only 4 members will be in the navbar.
 </code></pre>
-<h3><code>meta: Array&lt;{}&gt;</code></h3>
+<h3 id="meta%3A-array%3C%7B%7D%3E"><code>meta: Array&lt;{}&gt;</code></h3>
 <p>A list of <code>meta</code> tag attributes to add to the <code>head</code> of each page.</p>
 <pre class="prettyprint source lang-json"><code>&quot;meta&quot; : [
   {
@@ -490,9 +484,9 @@ To tackle these problems I created this project, an easy to use, responsive them
   }
 ]
 </code></pre>
-<h4>Properties</h4>
+<h4 id="properties">Properties</h4>
 <p>Any valid combination of <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta#Attributes">HTML metadata attributes</a>.</p>
-<h3><code>search: {}</code></h3>
+<h3 id="search%3A-%7B%7D"><code>search: {}</code></h3>
 <p>To render search. Default value:</p>
 <pre class="prettyprint source lang-json"><code>&quot;search&quot;: {
   &quot;shouldSort&quot;: true,
@@ -506,17 +500,9 @@ To tackle these problems I created this project, an easy to use, responsive them
 <p>If you don't want to render search box then do the following:</p>
 <pre class="prettyprint source lang-json"><code>&quot;search&quot; false
 </code></pre>
-<h4>Properties</h4>
+<h4 id="properties-1">Properties</h4>
 <p>Any valid <a href="https://fusejs.io/api/options.html">fuse.js properties</a></p>
-<h3><code>overlay_scrollbar: {}</code></h3>
-<p>Includes the OverlayScrollbars plugin. Simply passing an empty object will activate this feature.</p>
-<pre class="prettyprint source lang-json"><code>&quot;overlay_scrollbar&quot;: {
-  &quot;option&quot;: {}
-}
-</code></pre>
-<h4>Properties</h4>
-<p>Any valid <a href="https://kingsora.github.io/OverlayScrollbars/#!documentation/options">overlay scrollbar properties</a></p>
-<h3><code>codepen: {}</code></h3>
+<h3 id="codepen%3A-%7B%7D"><code>codepen: {}</code></h3>
 <p>This will add a link to the codepen with prefilled data.</p>
 <blockquote>
 <p>Note: Currently this feature is only enabled for examples section.</p>
@@ -531,17 +517,17 @@ To tackle these problems I created this project, an easy to use, responsive them
 </code></pre>
 <p><code>options</code> can be any valid codepen options. For more visit: <a href="https://blog.codepen.io/documentation/prefill/#all-the-json-options-0">Codepen Prefill options</a><br>
 if you want default behaviour then don't pass anything in options.</p>
-<h3><code>create_style: string</code></h3>
+<h3 id="create_style%3A-string"><code>create_style: string</code></h3>
 <p>To create custom style rules. Example:</p>
 <pre class="prettyprint source lang-json"><code>&quot;create_style&quot;: &quot;nav{background: yellow} footer {background: green}&quot;
 </code></pre>
 <p>Here the nav and footer style rule is to attached to the HTML's <code>style</code> tag.</p>
-<h3><code>add_scripts: string</code></h3>
+<h3 id="add_scripts%3A-string"><code>add_scripts: string</code></h3>
 <p>To create custom scripts. Example:</p>
 <pre class="prettyprint source lang-json"><code>&quot;add_scripts&quot;: &quot;function foo(){console.log('foo')} function bar() {console.log('bar')}&quot;
 </code></pre>
 <p>Here the script is to attached to the HTML's <code>script</code> tag.</p>
-<h3><code>add_style_path: Array&lt;{}&gt;</code></h3>
+<h3 id="add_style_path%3A-array%3C%7B%7D%3E"><code>add_style_path: Array&lt;{}&gt;</code></h3>
 <p>Use this option to add third party css library.</p>
 <blockquote>
 <p>Note: You have to pass an array of object, and object keys are actually the attributes which you want in you link tag.</p>
@@ -555,9 +541,9 @@ if you want default behaviour then don't pass anything in options.</p>
   }
 ],
 </code></pre>
-<h4>Properties</h4>
+<h4 id="properties-2">Properties</h4>
 <p>Any valid <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/style">style tag attributes</a></p>
-<h3><code>add_script_path: Array&lt;{}&gt;</code></h3>
+<h3 id="add_script_path%3A-array%3C%7B%7D%3E"><code>add_script_path: Array&lt;{}&gt;</code></h3>
 <p>Use this option to add third party js library.</p>
 <blockquote>
 <p>Note: You have to pass an array of object, and object keys are actually the attributes which you want in you script tag.</p>
@@ -571,14 +557,14 @@ if you want default behaviour then don't pass anything in options.</p>
   }
 ],
 </code></pre>
-<h3>Properties</h3>
+<h3 id="properties-3">Properties</h3>
 <p>Any valid <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script">script tag attributes</a></p>
-<h3><code>footer: string | HTML</code></h3>
+<h3 id="footer%3A-string-%7C-html"><code>footer: string | HTML</code></h3>
 <p>Thing which you want to render as the footer. You can either pass a string or HTML.<br>
 Use HTML to overwrite the default HTML.</p>
 <pre class="prettyprint source lang-json"><code>&quot;footer&quot;: &quot;This is footer&quot;
 </code></pre>
-<h3><code>static_dir: Array&lt;string&gt;</code></h3>
+<h3 id="static_dir%3A-array%3Cstring%3E"><code>static_dir: Array&lt;string&gt;</code></h3>
 <p>To include static files. Example:</p>
 <pre class="prettyprint source lang-json"><code>&quot;static_dir&quot;: [&quot;./static&quot;],
 </code></pre>
@@ -587,7 +573,7 @@ Use HTML to overwrite the default HTML.</p>
 <p>Note: If the directory doesn't exists then you may get an error. Also directory is relative to your jsdoc config file.</p>
 </blockquote>
 <p>This will not flatten then directory it keep the directory structure as it is.</p>
-<h3><code>include_css: Array&lt;string&gt;</code></h3>
+<h3 id="include_css%3A-array%3Cstring%3E"><code>include_css: Array&lt;string&gt;</code></h3>
 <p>To include css files. Example:</p>
 <pre class="prettyprint source lang-json"><code>&quot;include_css&quot;: [&quot;./static/index.css&quot;, &quot;./src/docs/index.css&quot;]
 </code></pre>
@@ -595,7 +581,7 @@ Use HTML to overwrite the default HTML.</p>
 <p>Note: You are not required to manually copy file to output dir</p>
 </blockquote>
 <p>It will include the css files to the output dir and also attach a link tag to the html pointing to the included css file.</p>
-<h3><code>include_js: Array&lt;string&gt;</code></h3>
+<h3 id="include_js%3A-array%3Cstring%3E"><code>include_js: Array&lt;string&gt;</code></h3>
 <p>To include js files. Example:</p>
 <pre class="prettyprint source lang-json"><code>&quot;include_js&quot;: [&quot;./static/index.js&quot;, &quot;./src/docs/index.js&quot;]
 </code></pre>
@@ -603,12 +589,12 @@ Use HTML to overwrite the default HTML.</p>
 <p>Note: You are not required to manually copy file to output dir</p>
 </blockquote>
 <p>It will include the js files to the output dir and also attach a script tag to the html pointing to the included js file.</p>
-<h3><code>exclude_inherited: &lt;boolean&gt;</code></h3>
+<h3 id="exclude_inherited%3A-%3Cboolean%3E"><code>exclude_inherited: &lt;boolean&gt;</code></h3>
 <p>To exclude inherited symbols. Example:</p>
 <pre class="prettyprint source lang-json"><code>&quot;exclude_inherited&quot;: true
 </code></pre>
 <p>This will remove all symbols (members, methods ...) that come from inherited parents.</p>
-<h3>Example <code>theme_opts</code></h3>
+<h3 id="example-theme_opts">Example <code>theme_opts</code></h3>
 <pre class="prettyprint source lang-json"><code>&quot;opts&quot;:{
   &quot;theme_opts&quot;:{
     &quot;theme&quot;: &quot;dark&quot;,
@@ -664,11 +650,6 @@ Use HTML to overwrite the default HTML.</p>
     &quot;include_js&quot;: [&quot;./static/main.js&quot;, &quot;./third-party/test/index.js&quot;],
 
     &quot;exclude_inherited&quot;: true,
-
-    &quot;overlay_scrollbar&quot;: {
-        &quot;options&quot;: {
-        }
-    },
     &quot;codepen&quot;: {
       &quot;enable_for&quot;: [&quot;examples&quot;],
       &quot;options&quot;: {
@@ -679,7 +660,7 @@ Use HTML to overwrite the default HTML.</p>
   }
 }
 </code></pre>
-<h3>Cheat sheet</h3>
+<h3 id="cheat-sheet">Cheat sheet</h3>
 <table>
 <thead>
 <tr>
@@ -781,12 +762,6 @@ Use HTML to overwrite the default HTML.</p>
 <td><code>boolean</code></td>
 </tr>
 <tr>
-<td><code>overlay_scrollbar</code></td>
-<td><code>null</code></td>
-<td>To use overlay scrollbar</td>
-<td>Overlay Scrollbar options</td>
-</tr>
-<tr>
 <td><code>sections</code></td>
 <td><code>[&quot;Modules&quot;, &quot;Classes&quot;, &quot;Externals&quot;, &quot;Events&quot;, &quot;Namespaces&quot;, &quot;Mixins&quot;, &quot;Tutorials&quot;, &quot;Interfaces&quot;, &quot;Global&quot;]</code></td>
 <td>To order navbar/sidebar sections or to hide/remove navbar/sidebar sections</td>
@@ -794,9 +769,9 @@ Use HTML to overwrite the default HTML.</p>
 </tr>
 </tbody>
 </table>
-<h2>Changelog</h2>
+<h2 id="changelog">Changelog</h2>
 <p>Changelog is moved to <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CHANGELOG.md">https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CHANGELOG.md</a></p>
-<h2>Developing</h2>
+<h2 id="developing">Developing</h2>
 <p>Before starting please go through our <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CONTRIBUTING.md">contributing guide</a>.</p>
 <pre class="prettyprint source lang-bash"><code>git clone https://github.com/ankitskvmdam/clean-jsdoc-theme.git
 cd clean-jsdoc-theme
@@ -805,14 +780,14 @@ npm install jsdoc --no-save
 npm run test
 </code></pre>
 <p><code>npm run test</code> will generate files in output folder.</p>
-<h2>Contributors</h2>
+<h2 id="contributors">Contributors</h2>
 <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=ankitskvmdam/clean-jsdoc-theme" />
 </a>
-<h2>Contact</h2>
+<h2 id="contact">Contact</h2>
 <p>If you like my work, then give me a <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme" data-icon="octicon-star" aria-label="Star ankitskvmdam/clean-jsdoc-theme on GitHub">star</a>. This will act as a driving force to add new feature more frequently. <br><br>
 Mail me at: <a href="mailto:hello@ankdev.me">hello@ankdev.me</a> <br></p>
-<h2>License</h2>
+<h2 id="license">License</h2>
 <p>Licensed under the MIT license.</p></article>
     </section>
 
@@ -855,8 +830,17 @@ Mail me at: <a href="mailto:hello@ankdev.me">hello@ankdev.me</a> <br></p>
 
     
 
-    
 
+    <script type="text/javascript">
+      tocbot.init({
+        tocSelector: '#toc',
+        contentSelector: '.main-content',
+        headingSelector: 'h1, h2, h3, h4',
+        hasInnerContainers: true,
+        scrollContainer: '.main-content',
+      });
+
+    </script>
 
   </body>
 

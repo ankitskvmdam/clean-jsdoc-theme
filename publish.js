@@ -463,16 +463,6 @@ function codepen() {
   return codepenOpts;
 }
 
-function overlayScrollbarOptions() {
-  var overlayOptions = themeOpts.overlay_scrollbar || undefined;
-
-  if (overlayOptions) {
-    return JSON.stringify(overlayOptions);
-  }
-
-  return undefined;
-}
-
 function includeScript() {
   var scriptPath = themeOpts.include_js || undefined;
 
@@ -967,7 +957,6 @@ exports.publish = function(taffyData, opts, tutorials) {
   view.includeScript = includeScript();
   view.includeCss = includeCss();
   view.meta = getMetaTagData();
-  view.overlayScrollbar = overlayScrollbarOptions();
   view.theme = getTheme();
   // once for all
   view.sidebar = buildSidebar(members);
