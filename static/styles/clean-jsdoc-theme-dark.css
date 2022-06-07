@@ -140,8 +140,7 @@ samp {
     color: #fff;
 }
 
-.prettyprint,
-.pre-top-bar-container {
+.prettyprint {
     background: #222;
 }
 
@@ -206,7 +205,7 @@ table .params thead tr,
 }
 
 .code-copy-icon-container:hover {
-    background-color: #333;
+    background-color: #444;
 }
 
 .code-lang-name {

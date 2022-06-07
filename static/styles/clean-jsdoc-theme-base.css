@@ -52,6 +52,7 @@
     margin-top: 5rem;
     overflow: auto;
     flex: 1;
+    position: relative;
 }
 
 .sidebar-section-title {
@@ -83,6 +84,7 @@
 
 .sidebar-section-children-container {
     border-radius: 0.5rem;
+    overflow: hidden;
 }
 
 .sidebar-section-children a {
@@ -137,6 +139,10 @@
     overflow: hidden;
     text-overflow: ellipsis;
     width: 100%;
+}
+
+.toc-link.is-active-link {
+    font-family: heading;
 }
 
 .has-anchor {

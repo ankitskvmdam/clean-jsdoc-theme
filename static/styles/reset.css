@@ -216,10 +216,6 @@ dt {
 
 .prettyprint code {
     display: block;
-    /*
-        display is set to table if supported.
-    */
-    display: table;
     font-size: 0.875rem;
     line-height: 1rem;
     padding: 1rem 2rem;
