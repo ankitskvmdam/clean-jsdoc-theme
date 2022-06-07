@@ -79,11 +79,64 @@ function initAccordion() {
   });
 }
 
-// function bringIdToView() {
-//   var id = window.location.hash
+function isSourcePage() {
+  return Boolean(document.querySelector('.prettyprint.source.linenums'));
+}
 
-//   if(id === '') return
-// }
+function bringElementIntoView(element, updateHistory = true) {
+  var navbar = document.querySelector('.navbar-container');
+  var body = document.querySelector('.main-content');
+  var elementTop = element.getBoundingClientRect().top;
+
+  var offset = 16;
+
+  if (navbar) {
+    offset += navbar.scrollHeight;
+  }
+
+  body.scrollBy(0, elementTop - offset);
+
+  if (updateHistory) {
+    // eslint-disable-next-line no-undef
+    history.pushState(null, null, '#' + element.id);
+  }
+}
+
+// eslint-disable-next-line no-unused-vars
+function bringLinkToView(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  var id = event.currentTarget.getAttribute('href');
+
+  if (!id) {
+    return;
+  }
+
+  var element = document.getElementById(id.slice(1));
+
+  if (element) {
+    bringElementIntoView(element);
+  }
+}
+
+function bringIdToViewOnMount() {
+  if (isSourcePage()) {
+    return;
+  }
+
+  // eslint-disable-next-line no-undef
+  var id = window.location.hash;
+
+  if (id === '') {
+    return;
+  }
+
+  var element = document.getElementById(id.slice(1));
+
+  if (element) {
+    bringElementIntoView(element, false);
+  }
+}
 
 function createAnchorElement(id) {
   var anchor = document.createElement('a');
@@ -91,6 +144,7 @@ function createAnchorElement(id) {
   anchor.textContent = '#';
   anchor.href = '#' + id;
   anchor.classList.add('link-anchor');
+  anchor.onclick = bringLinkToView;
 
   return anchor;
 }
@@ -269,15 +323,15 @@ function fixCodeBlocks() {
 
     // See if we have to move something into view
     // eslint-disable-next-line no-undef
-    var location = window.location.href.split('#')[1];
+    var location = window.location.hash;
 
-    if (location && location.length > 0) {
+    if (location !== '') {
       try {
-        var element = document.querySelector(
-          '#'.concat(decodeURI(location))
-        );
+        var element = document.querySelector(decodeURI(location));
 
-        element.scrollIntoView();
+        if (element) {
+          element.scrollIntoView();
+        }
       } catch (error) {
         console.log(error);
       }
@@ -286,13 +340,9 @@ function fixCodeBlocks() {
 }
 
 function hideTocOnSourcePage() {
-  var source = document.querySelector('.prettyprint.source.linenums');
-
-  if (source) {
+  if (isSourcePage()) {
     document.querySelector('.toc-container').style.display = 'none';
   }
-
-  console.log('source', source);
 }
 
 function onDomContentLoaded() {
@@ -302,6 +352,9 @@ function onDomContentLoaded() {
   addCodeTopBar();
   fixCodeBlocks();
   hideTocOnSourcePage();
+  setTimeout(function() {
+    bringIdToViewOnMount();
+  }, 1000);
 }
 
 // eslint-disable-next-line no-undef
