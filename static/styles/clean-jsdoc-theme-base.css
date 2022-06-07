@@ -107,9 +107,9 @@
 .toc-container {
     position: fixed;
     top: 0;
-    right: 1rem;
+    right: 4rem;
     bottom: 0;
-    width: 20rem;
+    width: 16rem;
     z-index: 10;
 }
 
@@ -126,13 +126,17 @@
     overflow: auto;
 }
 
+.toc-list {
+    padding-left: 1rem;
+    list-style: none;
+}
+
 .toc-link {
     display: block;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     width: 100%;
-    color: #aaa;
 }
 
 .navbar-container {
@@ -307,7 +311,7 @@ pre {
     }
 }
 
-@media screen and (max-width: 90em) {
+@media screen and (max-width: 100em) {
     .toc-container {
         display: none;
     }

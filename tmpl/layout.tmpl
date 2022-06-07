@@ -45,21 +45,6 @@
     <?js }) ?>
     <?js } ?>
 
-    <!-- Adding overlay script-->
-    <?js if(this.overlayScrollbar != undefined) { ?>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/overlayscrollbars/1.13.0/js/OverlayScrollbars.min.js"
-      integrity="sha512-5R3ngaUdvyhXkQkIqTf/k+Noq3phjmrqlUQyQYbgfI34Mzcx7vLIIYTy/K1VMHkL33T709kfh5y6R9Xy/Cbt7Q=="
-      crossorigin="anonymous"></script>
-    <?js } ?>
-
-    <!-- Adding overlay style-->
-    <?js if(this.includeCss != undefined) { ?>
-    <link rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/overlayscrollbars/1.13.0/css/OverlayScrollbars.min.css"
-      integrity="sha512-pYQcc5kgavar0ah58/O8hw/6Tbo3mWlmQTmvoi1i96cBz7jQYS9as5J+Nfy32rAHY6CgR9ExwnFMcBdGVcKM7g=="
-      crossorigin="anonymous" />
-    <?js } ?>
-
 
     <title>
       <?js= title ?>
@@ -68,7 +53,6 @@
     <!--[if lt IE 9]>
       <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-    <link type="text/css" rel="stylesheet" href="styles/third-party/ionicons.min.css">
     <link type="text/css" rel="stylesheet" href="styles/third-party/prettify-tomorrow.css">
     <link type="text/css" rel="stylesheet" href="styles/reset.css">
     <link type="text/css" rel="stylesheet" href="styles/clean-jsdoc-theme-base.css">
@@ -79,6 +63,8 @@
     </style>
     <?js } ?>
     <?js= this.partial('icons.tmpl') ?>
+
+    <script src="scripts/third-party/tocbot.min.js"></script>
   </head>
 
   <body>
@@ -137,15 +123,17 @@
     </script>
     <?js } ?>
 
-    <?js if(this.overlayScrollbar != undefined ) { ?>
-    <script type="text/javascript">
-    var option = JSON.parse('<?js=this.overlayScrollbar ?>')
-      document.addEventListener("DOMContentLoaded", function () {
-        OverlayScrollbars(document.querySelectorAll('body'), option.option || {});
-      });
-    </script>
-    <?js } ?>
 
+    <script type="text/javascript">
+      tocbot.init({
+        tocSelector: '#toc',
+        contentSelector: '.main-content',
+        headingSelector: 'h1, h2, h3, h4',
+        hasInnerContainers: true,
+        scrollContainer: '.main-content',
+      });
+
+    </script>
 
   </body>
 
