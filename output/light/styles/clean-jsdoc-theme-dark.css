@@ -1,20 +1,16 @@
 ::selection {
     background: #ffce76;
-    color: #000;
+    color: #222;
 }
 
 body {
-    background-color: #121216;
-    color: #f8f8f9;
+    background-color: #1a1a1a;
+    color: #fff;
 }
 
 a,
 a:active {
-    color: #00abff;
-}
-
-hr {
-    border: 1px solid #333;
+    color: #00bbff;
 }
 
 h1,
@@ -23,91 +19,85 @@ h3,
 h4,
 h5,
 h6 {
-    color: #f8f8f9;
-}
-
-h1,
-h2 {
-    border-bottom: 0.0625rem solid #333;
-}
-
-.navbar {
-    background: #000;
-}
-
-.navbar-ham {
-    background: #444;
-}
-
-.navbar-ham .first,
-.navbar-ham .second,
-.navbar-ham .third {
-    background: #fff;
-}
-
-.navbar-resize {
-    background: #222;
-}
-
-.resize-dots-container .dots {
-    background-color: #fff;
-}
-
-
-.search-box-input-container {
-    background: #2a2b2c;
-}
-
-.search-icon {
-    fill: #aeaeae;
-}
-
-.search-box-input {
     color: #fff;
 }
 
-.search-box-input::placeholder {
-    color: #aeaeae;
+.sidebar {
+    background-color: #222;
+    color: #999;
 }
 
-.search-box-input:focus + .search-icon {
-    fill: #fff;
+.sidebar .title {
+    color: #999;
 }
 
-.search-item-ul {
-    background: #333;
+.sidebar-section-title {
+    color: #999;
 }
 
-.search-item-ul li:hover {
-    background: rgba(0, 0, 0, 0.1);
+.sidebar-section-title:hover {
+    background: #252525;
 }
 
-.search-item-ul a,
-.search-item-ul li {
+.with-arrow {
+    fill: #999;
+}
+
+.sidebar-section-children-container {
+    background: #292929;
+}
+
+.sidebar-section-children a:hover {
+    background: #2c2c2c;
+}
+
+.sidebar-section-children a {
     color: #fff;
 }
 
-.accordion-heading {
-    color: #fff;
-    fill: #fff;
+.navbar-container {
+    background: #1a1a1a;
 }
 
-.accordion-content {
-    background: #111;
+.navbar-item a {
+    color: #999;
 }
 
-.accordion-content a {
-    color: #fff;
+.navbar-item a:active {
+    color: #aaa;
+    background-color: #222;
 }
 
-.methods.accordion-content {
+.navbar-item:hover {
     background: #202020;
 }
 
-.menu-link {
+.footer {
+    background: #222;
+    color: #999;
+}
+
+.footer a {
+    color: #999;
+}
+
+.toc-link {
+    color: #777;
+    transition: color 0.3s;
+    font-size: 0.875rem;
+}
+
+.toc-link.is-active-link {
     color: #fff;
 }
 
+.has-anchor .link-anchor {
+    color: #555;
+}
+
+.has-anchor .link-anchor:hover {
+    color: #888;
+}
 
 tt,
 code,
@@ -116,11 +106,9 @@ samp {
     background: #222;
 }
 
-
 .signature-attributes {
     color: #aaa;
 }
-
 
 .ancestors {
     color: #999;
@@ -144,13 +132,16 @@ samp {
 }
 
 .details {
-    background: #000;
+    background: #222;
     color: #fff;
 }
 
-.prettyprint,
-.pre-top-bar-container {
-    background: #000;
+.details a {
+    color: #fff;
+}
+
+.prettyprint {
+    background: #222;
 }
 
 .member-item-container strong,
@@ -159,12 +150,12 @@ samp {
 }
 
 .pre-top-bar-container {
-    background: #090909;
+    background: #292929;
 }
 
 .prettyprint.source,
 .prettyprint code {
-    background-color: #000;
+    background-color: #222;
 }
 
 .prettyprint.linenums li {
@@ -187,14 +178,13 @@ table .name,
 
 table td,
 .params td {
-    background-color: #000;
-    border-top: 1px solid #191919;
+    background-color: #292929;
 }
 
-table thead tr,
-.params thead tr,
-.props thead tr {
-    background-color: #000;
+table thead th,
+.params thead th,
+.props thead th {
+    background-color: #222;
     color: #fff;
 }
 
@@ -202,10 +192,9 @@ table thead tr,
 table .params thead tr,
 .params .params thead tr,
 .props .props thead tr {
-    background-color: #000;
+    background-color: #222;
     color: #fff;
 }
-
 
 .disabled {
     color: #aaaaaa;
@@ -216,7 +205,7 @@ table .params thead tr,
 }
 
 .code-copy-icon-container:hover {
-    background-color: #333;
+    background-color: #444;
 }
 
 .code-lang-name {
@@ -225,13 +214,13 @@ table .params thead tr,
 
 .tooltip {
     background: #ffce76;
-    color: #000;
+    color: #222;
 }
 
 .tooltip .pun,
 .tooltip .typ {
     background: #ffce76;
-    color: #000;
+    color: #222;
 }
 
 /* code */
@@ -308,9 +297,8 @@ table .params thead tr,
     color: #4271ae;
 }
 
-
 blockquote {
-    background: #202020;
+    background: #222;
     color: #fff;
 }
 
