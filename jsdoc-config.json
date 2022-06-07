@@ -53,8 +53,8 @@
             }
         }
     },
-    "markdown.hardwrap": true,
     "markdown": {
-        "hardwrap": true
+        "hardwrap": true,
+        "idInHeadings": true
     }
 }
