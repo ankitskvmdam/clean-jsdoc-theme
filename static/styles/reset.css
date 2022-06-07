@@ -104,7 +104,6 @@ ol.linenums li {
 }
 
 .signature-attributes {
-    font-size: 60%;
     font-style: italic;
     font-weight: lighter;
 }
@@ -123,17 +122,11 @@ ol.linenums li {
 
 .signature {
     font-family: 'code';
-    font-size: 80%;
 }
 
 .name {
     font-family: 'code';
-    font-size: 110%;
     font-weight: bold;
-}
-
-.name a {
-    font-size: 90%;
 }
 
 blockquote {
@@ -150,6 +143,10 @@ blockquote {
 .details .details-item-container {
     display: flex;
     padding: 1rem 2rem;
+}
+
+dt {
+    font-family: heading;
 }
 
 .details dt {
@@ -202,7 +199,7 @@ blockquote {
 }
 
 .code-caption {
-    font-size: 90%;
+    font-size: 0.875rem;
 }
 
 .prettyprint {
@@ -326,7 +323,7 @@ table th,
 .props .name,
 .name code {
     font-family: 'code';
-    font-size: 100%;
+    font-size: 1rem;
 }
 
 .params td,
@@ -379,7 +376,7 @@ dl.param-type {
 
 .param-type dd {
     font-family: 'code';
-    font-size: 80%;
+    font-size: 1rem;
 }
 
 code {

@@ -91,6 +91,14 @@ h6 {
     color: #fff;
 }
 
+.has-anchor .link-anchor {
+    color: #555;
+}
+
+.has-anchor .link-anchor:hover {
+    color: #888;
+}
+
 tt,
 code,
 kbd,

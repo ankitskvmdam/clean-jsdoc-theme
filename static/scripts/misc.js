@@ -217,5 +217,39 @@ function toggleNavbar(element, navbar) {
 //   if(id === '') return
 // }
 
+function createAnchorElement(id) {
+  var anchor = document.createElement('a');
+
+  anchor.textContent = '#';
+  anchor.href = '#' + id;
+  anchor.classList.add('link-anchor');
+
+  return anchor;
+}
+
+function addAnchor() {
+  var main = document.querySelector('.main-content').querySelector('section');
+
+  var h1 = main.querySelectorAll('h1');
+  var h2 = main.querySelectorAll('h2');
+  var h3 = main.querySelectorAll('h3');
+  var h4 = main.querySelectorAll('h4');
+
+  var targets = [h1, h2, h3, h4];
+
+  targets.forEach(function(target) {
+    target.forEach(function(heading) {
+      var anchor = createAnchorElement(heading.id);
+
+      heading.classList.add('has-anchor');
+      heading.append(anchor);
+    });
+  });
+}
+
+function onDomContentLoaded() {
+  addAnchor();
+}
+
 // eslint-disable-next-line no-undef
-// window.addEventListener('DOMContentLoaded', bringIdToView);
+window.addEventListener('DOMContentLoaded', onDomContentLoaded);

@@ -54,7 +54,7 @@
         }
     },
     "markdown": {
-        "hardwrap": true,
+        "hardwrap": false,
         "idInHeadings": true
     }
 }
