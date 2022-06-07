@@ -312,7 +312,8 @@ pre {
     }
 
     .navbar-container {
-        right: 0;
+        /* For scrollbar */
+        right: 1rem;
     }
 }
 
