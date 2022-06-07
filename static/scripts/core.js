@@ -285,12 +285,23 @@ function fixCodeBlocks() {
   }, 300);
 }
 
+function hideTocOnSourcePage() {
+  var source = document.querySelector('.prettyprint.source.linenums');
+
+  if (source) {
+    document.querySelector('.toc-container').style.display = 'none';
+  }
+
+  console.log('source', source);
+}
+
 function onDomContentLoaded() {
   initAccordion();
   addAnchor();
   addLineNums();
   addCodeTopBar();
   fixCodeBlocks();
+  hideTocOnSourcePage();
 }
 
 // eslint-disable-next-line no-undef
