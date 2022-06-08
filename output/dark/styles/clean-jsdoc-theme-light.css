@@ -59,8 +59,14 @@ h6 {
     background: #fff;
 }
 
+.icon-button svg,
 .navbar-item a {
     color: #222;
+    fill: #222;
+}
+
+.icon-button:hover {
+    background: #f1f1f1;
 }
 
 .navbar-item a:active {
@@ -142,6 +148,22 @@ h6 {
     background: #f7f7f7;
 }
 
+.pre-div {
+    background: #f7f7f7;
+}
+
+.hljs .hljs-ln-numbers {
+    color: #aaa;
+}
+
+.hljs .selected {
+    background: #ccc;
+}
+
+.hljs .selected .hljs-ln-numbers {
+    color: #444;
+}
+
 .pre-top-bar-container {
     background-color: #eee;
 }
@@ -190,7 +212,7 @@ table .params thead tr,
 }
 
 .code-lang-name {
-    color: #983628;
+    color: #ff0000;
 }
 
 .tooltip {
@@ -204,79 +226,78 @@ table .params thead tr,
     color: #000;
 }
 
-.pln {
-    color: #a44a3f;
+/* Code */
+
+.hljs-comment,
+.hljs-quote {
+    color: #a0a1a7;
 }
 
-/* string content */
-.str {
-    color: #048560;
+.hljs-doctag,
+.hljs-keyword,
+.hljs-formula {
+    color: #a626a4;
 }
 
-/* a keyword */
-.kwd {
-    color: #00afdb;
+.hljs-section,
+.hljs-name,
+.hljs-selector-tag,
+.hljs-deletion,
+.hljs-subst {
+    color: #e45649;
 }
 
-/* a comment */
-.com {
-    color: #0bb945;
+.hljs-literal {
+    color: #0184bb;
 }
 
-/* a type name */
-.typ {
-    color: #dba400;
+.hljs-string,
+.hljs-regexp,
+.hljs-addition,
+.hljs-attribute,
+.hljs-meta .hljs-string {
+    color: #50a14f;
 }
 
-/* a literal value */
-.lit {
-    color: #866500;
+.hljs-attr,
+.hljs-variable,
+.hljs-template-variable,
+.hljs-type,
+.hljs-selector-class,
+.hljs-selector-attr,
+.hljs-selector-pseudo,
+.hljs-number {
+    color: #986801;
 }
 
-/* punctuation */
-.pun {
-    color: #f80606;
+.hljs-symbol,
+.hljs-bullet,
+.hljs-link,
+.hljs-meta,
+.hljs-selector-id,
+.hljs-title {
+    color: #4078f2;
 }
 
-/* lisp open bracket */
-.opn {
-    color: #00b89f;
+.hljs-built_in,
+.hljs-title.class_,
+.hljs-class .hljs-title {
+    color: #c18401;
 }
 
-/* lisp close bracket */
-.clo {
-    color: #637bbe;
+.hljs-emphasis {
+    font-style: italic;
 }
 
-/* a markup tag name */
-.tag {
-    color: #007bff;
+.hljs-strong {
+    font-weight: bold;
 }
 
-/* a markup attribute name */
-.atn {
-    color: #b88a00;
+.hljs-link {
+    text-decoration: underline;
 }
 
-/* a markup attribute value */
-.atv {
-    color: #00676e;
-}
-
-/* a declaration */
-.dec {
-    color: #b96719;
-}
-
-/* a variable name */
-.var {
-    color: #00c230;
-}
-
-/* a function name */
-.fun {
-    color: #004aaa;
-}
+/* Code Ends */
 
 blockquote {
     background: #eee;
