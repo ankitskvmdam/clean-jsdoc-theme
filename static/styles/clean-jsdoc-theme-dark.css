@@ -59,8 +59,18 @@ h6 {
     background: #1a1a1a;
 }
 
+.icon-button svg,
 .navbar-item a {
     color: #999;
+    fill: #999;
+}
+
+.icon-button:hover {
+    background: #333;
+}
+
+.icon-button:active {
+    background: #444;
 }
 
 .navbar-item a:active {

@@ -529,6 +529,27 @@ code {
     display: flex;
 }
 
+.icon-button svg {
+    height: 1rem;
+    width: 1rem;
+}
+
+.icon-button {
+    background: transparent;
+    display: inline-flex;
+    border: 0;
+    padding: 0.5rem;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.navbar-right-item {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 .navbar-item {
     border-radius: 0.5rem;
     overflow: hidden;
