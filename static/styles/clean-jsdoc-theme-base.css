@@ -234,7 +234,7 @@ pre.prettyprint {
     display: block;
     font-size: 1rem;
     line-height: 1.75;
-    padding: 0;
+    padding: 0 0 1rem;
 }
 
 .params,
@@ -635,7 +635,7 @@ pre {
 }
 
 .code-lang-name {
-    font-family: 'code';
+    font-family: 'body';
     font-size: 0.75rem;
 }
 
