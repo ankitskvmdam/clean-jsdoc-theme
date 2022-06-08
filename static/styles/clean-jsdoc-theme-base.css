@@ -213,6 +213,10 @@ dt {
     margin-top: 15px;
 }
 
+.pre-div .hljs-ln {
+    margin: 0;
+}
+
 .code-caption {
     font-size: 0.875rem;
 }
