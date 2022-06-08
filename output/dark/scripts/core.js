@@ -273,7 +273,6 @@ function getPreDiv() {
   var divElement = document.createElement('div');
 
   divElement.classList.add('pre-div');
-  divElement.style.marginTop = '2rem';
 
   return divElement;
 }

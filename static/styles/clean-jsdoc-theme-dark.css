@@ -219,78 +219,99 @@ table .params thead tr,
 }
 
 /* code */
-.pln {
-    color: #ffdd4a;
+.hljs-comment {
+    color: #8b949e;
 }
 
-.str {
-    color: #56e39f;
+.hljs-doctag,
+.hljs-keyword,
+.hljs-template-tag,
+.hljs-variable.language_ {
+    color: #ff7b72;
 }
 
-/* a keyword */
-.kwd {
-    color: #08b2e3;
+.hljs-template-variable,
+.hljs-type {
+    color: #30ac7c;
 }
 
-/* a comment */
-.com {
-    color: #999;
+.hljs-meta,
+.hljs-string,
+.hljs-regexp {
+    color: #a5d6ff;
 }
 
-/* a type name */
-.typ {
-    color: #ef6f6c;
+.hljs-title.class_,
+.hljs-title {
+    color: #ffa657;
 }
 
-/* a literal value */
-.lit {
-    color: #f5d67b;
+.hljs-title.class_.inherited__,
+.hljs-title.function_ {
+    color: #d2a8ff;
 }
 
-/* punctuation */
-.pun {
-    color: #5adbff;
+.hljs-attr,
+.hljs-attribute,
+.hljs-literal,
+.hljs-meta,
+.hljs-number,
+.hljs-operator,
+.hljs-selector-attr,
+.hljs-selector-class,
+.hljs-selector-id,
+.hljs-variable {
+    color: #79c0ff;
 }
 
-/* lisp open bracket */
-.opn {
-    color: #72e0d1;
+.hljs-meta .hljs-string,
+.hljs-regexp,
+.hljs-string {
+    color: #a5d6ff;
 }
 
-/* lisp close bracket */
-.clo {
-    color: #72e0d1;
+.hljs-built_in,
+.hljs-symbol {
+    color: #ffa657;
 }
 
-/* a markup tag name */
-.tag {
-    color: #007bff;
+.hljs-code,
+.hljs-comment,
+.hljs-formula {
+    color: #8b949e;
 }
 
-/* a markup attribute name */
-.atn {
-    color: #f5d67b;
+.hljs-name,
+.hljs-quote,
+.hljs-selector-pseudo,
+.hljs-selector-tag {
+    color: #7ee787;
 }
 
-/* a markup attribute value */
-.atv {
-    color: #3e999f;
+.hljs-subst {
+    color: #c9d1d9;
 }
 
-/* a declaration */
-.dec {
-    color: #f5871f;
+.hljs-section {
+    color: #1f6feb;
+    font-weight: 700;
 }
 
-/* a variable name */
-.var {
-    color: #f5d67b;
+.hljs-bullet {
+    color: #f2cc60;
 }
 
-/* a function name */
-.fun {
-    color: #4271ae;
+.hljs-emphasis {
+    color: #c9d1d9;
+    font-style: italic;
 }
+
+.hljs-strong {
+    color: #c9d1d9;
+    font-weight: 700;
+}
+
+/* code end*/
 
 blockquote {
     background: #222;
@@ -299,5 +320,5 @@ blockquote {
 
 code {
     background: #333;
-    color: #fff;
+    color: #c9d1d9;
 }
