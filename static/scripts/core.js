@@ -169,31 +169,6 @@ function addAnchor() {
   });
 }
 
-function addLineNums() {
-  var source = document.getElementsByClassName('prettyprint source linenums');
-  var i = 0;
-  var lineNumber = 0;
-  var lineId;
-  var lines;
-  var totalLines;
-  var anchorHash;
-
-  if (source && source[0]) {
-    anchorHash = document.location.hash.substring(1);
-    lines = source[0].getElementsByTagName('li');
-    totalLines = lines.length;
-
-    for (; i < totalLines; i++) {
-      lineNumber++;
-      lineId = 'line' + lineNumber;
-      lines[i].id = lineId;
-      if (lineId === anchorHash) {
-        lines[i].className += ' selected';
-      }
-    }
-  }
-}
-
 /**
  *
  * @param {string} value
@@ -278,7 +253,6 @@ function getPreDiv() {
 }
 
 function processAllPre() {
-  // addLineNums();
   var targets = document.querySelectorAll('pre');
   var footer = document.querySelector('#footer');
   var navbar = document.querySelector('#navbar');
@@ -306,6 +280,22 @@ function processAllPre() {
   });
 }
 
+function highlightAndBringLineIntoView() {
+  // eslint-disable-next-line no-undef
+  var lineNumber = window.location.hash.replace('#line', '');
+
+  try {
+    var selector = '[data-line-number="' + lineNumber + '"';
+
+    var element = document.querySelector(selector);
+
+    element.scrollIntoView();
+    element.parentNode.classList.add('selected');
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 function onDomContentLoaded() {
   // Highlighting code
 
@@ -326,11 +316,13 @@ function onDomContentLoaded() {
 
   initAccordion();
   addAnchor();
-
   processAllPre();
   hideTocOnSourcePage();
   setTimeout(function() {
     bringIdToViewOnMount();
+    if (isSourcePage()) {
+      highlightAndBringLineIntoView();
+    }
   }, 1000);
 }
 

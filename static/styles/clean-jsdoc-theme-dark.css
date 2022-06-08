@@ -167,6 +167,14 @@ samp {
     color: #777;
 }
 
+.hljs .selected {
+    background: #444;
+}
+
+.hljs .selected .hljs-ln-numbers {
+    color: #eee;
+}
+
 /* stylelint-enable */
 
 table .name,
