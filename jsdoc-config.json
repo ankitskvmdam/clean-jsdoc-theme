@@ -8,12 +8,12 @@
     "plugins": ["plugins/markdown"],
     "opts": {
         "encoding": "utf8",
-        "destination": "output/dark",
+        "destination": "output/light",
         "recurse": true,
         "template": "./",
         "tutorials": "./demo/src/tutorials",
         "theme_opts": {
-            "theme": "dark",
+            "theme": "light",
             "title": "clean-jsdoc-theme",
             "footer": "<div style='margin-bottom: 0.5rem;'>clean-jsdoc-theme</div> Fork: <a href='https://github.com/ankitskvmdam/clean-jsdoc-theme'>https://github.com/ankitskvmdam/clean-jsdoc-theme</a>",
             "meta": [

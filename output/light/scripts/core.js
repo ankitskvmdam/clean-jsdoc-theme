@@ -80,7 +80,7 @@ function initAccordion() {
 }
 
 function isSourcePage() {
-  return Boolean(document.querySelector('.prettyprint.source.linenums'));
+  return Boolean(document.querySelector('#source-page'));
 }
 
 function bringElementIntoView(element, updateHistory = true) {
@@ -169,31 +169,6 @@ function addAnchor() {
   });
 }
 
-function addLineNums() {
-  var source = document.getElementsByClassName('prettyprint source linenums');
-  var i = 0;
-  var lineNumber = 0;
-  var lineId;
-  var lines;
-  var totalLines;
-  var anchorHash;
-
-  if (source && source[0]) {
-    anchorHash = document.location.hash.substring(1);
-    lines = source[0].getElementsByTagName('li');
-    totalLines = lines.length;
-
-    for (; i < totalLines; i++) {
-      lineNumber++;
-      lineId = 'line' + lineNumber;
-      lines[i].id = lineId;
-      if (lineId === anchorHash) {
-        lines[i].className += ' selected';
-      }
-    }
-  }
-}
-
 /**
  *
  * @param {string} value
@@ -237,62 +212,47 @@ function copyFunction(id) {
   showTooltip('tooltip-' + id);
 }
 
-function addCodeTopBar() {
-  // capturing all pre element on the page
-  var allPre = document.getElementsByTagName('pre');
-
-  var i, classList;
-
-  for (i = 0; i < allPre.length; i++) {
-    // get the list of class in current pre element
-    classList = allPre[i].classList;
-    var id = 'pre-id-' + i;
-
-    // tooltip
-    var tooltip =
-            '<div class="tooltip" id="tooltip-' + id + '">Copied!</div>';
-
-    // template of copy to clipboard icon container
-    var copyToClipboard =
-            '<div class="code-copy-icon-container" onclick="copyFunction(\'' +
-            id +
-            '\')"><div><svg class="sm-icon" alt="click to copy"><use xlink:href="#copy-icon"></use></svg>' +
-            tooltip +
-            '<div></div>';
-
-    // extract the code language
-    var langName = classList[classList.length - 1];
-
-    if (typeof langName === 'string') {
-      langName = langName.split('-')[1];
-    }
-
-    /**
-         * By default language name is javascript.
-         */
-    if (langName === undefined) {
-      langName = 'JavaScript';
-    }
-
-    // if(langName != undefined)
-    var langNameDiv =
-            '<div class="code-lang-name-container"><div class="code-lang-name">' +
-            langName.toLocaleUpperCase() +
-            '</div></div>';
-    // else langNameDiv = '';
-
-    // appending everything to the current pre element
-    allPre[i].innerHTML +=
-            '<div class="pre-top-bar-container">' +
-            langNameDiv +
-            copyToClipboard +
-            '</div>';
-    allPre[i].setAttribute('id', id);
+function hideTocOnSourcePage() {
+  if (isSourcePage()) {
+    document.querySelector('.toc-container').style.display = 'none';
   }
 }
 
-function fixCodeBlocks() {
-  var article = document.querySelector('article');
+function getPreTopBar(id, lang) {
+  // tooltip
+  var tooltip = '<div class="tooltip" id="tooltip-' + id + '">Copied!</div>';
+
+  // template of copy to clipboard icon container
+  var copyToClipboard =
+        '<div class="code-copy-icon-container" onclick="copyFunction(\'' +
+        id +
+        '\')"><div><svg class="sm-icon" alt="click to copy"><use xlink:href="#copy-icon"></use></svg>' +
+        tooltip +
+        '<div></div>';
+
+  var langNameDiv =
+        '<div class="code-lang-name-container"><div class="code-lang-name">' +
+        lang.toLocaleUpperCase() +
+        '</div></div>';
+
+  var topBar =
+        '<div class="pre-top-bar-container">' +
+        langNameDiv +
+        copyToClipboard +
+        '</div>';
+
+  return topBar;
+}
+
+function getPreDiv() {
+  var divElement = document.createElement('div');
+
+  divElement.classList.add('pre-div');
+
+  return divElement;
+}
+
+function processAllPre() {
   var targets = document.querySelectorAll('pre');
   var footer = document.querySelector('#footer');
   var navbar = document.querySelector('#navbar');
@@ -301,59 +261,68 @@ function fixCodeBlocks() {
   var navbarHeight = navbar.getBoundingClientRect().height;
 
   // eslint-disable-next-line no-undef
-  var divMaxHeight = window.innerHeight - navbarHeight - footerHeight - 168;
+  var preMaxHeight = window.innerHeight - navbarHeight - footerHeight - 168;
 
-  setTimeout(function() {
-    targets.forEach(function(item) {
-      var innerHTML = item.innerHTML;
-      var divElement = document.createElement('div');
+  // var isSource = isSourcePage();
 
-      if (article.childElementCount === 1) {
-        // this means we are on code page.
-        item.style.margin = 0;
-      }
+  targets.forEach(function(pre, idx) {
+    var div = getPreDiv();
+    var id = 'pre-id' + idx;
+    var lang = pre.getAttribute('data-lang');
+    var topBar = getPreTopBar(id, lang);
 
-      divElement.style.maxHeight = divMaxHeight + 'px';
-      divElement.style.marginTop = '2rem';
-      divElement.innerHTML = innerHTML;
+    div.innerHTML = topBar;
 
-      item.innerHTML = '';
-      item.appendChild(divElement);
-    });
-
-    // See if we have to move something into view
-    // eslint-disable-next-line no-undef
-    var location = window.location.hash;
-
-    if (location !== '') {
-      try {
-        var element = document.querySelector(decodeURI(location));
-
-        if (element) {
-          element.scrollIntoView();
-        }
-      } catch (error) {
-        console.log(error);
-      }
-    }
-  }, 300);
+    pre.style.maxHeight = preMaxHeight + 'px';
+    pre.id = id;
+    pre.parentNode.insertBefore(div, pre);
+    div.appendChild(pre);
+  });
 }
 
-function hideTocOnSourcePage() {
-  if (isSourcePage()) {
-    document.querySelector('.toc-container').style.display = 'none';
+function highlightAndBringLineIntoView() {
+  // eslint-disable-next-line no-undef
+  var lineNumber = window.location.hash.replace('#line', '');
+
+  try {
+    var selector = '[data-line-number="' + lineNumber + '"';
+
+    var element = document.querySelector(selector);
+
+    element.scrollIntoView();
+    element.parentNode.classList.add('selected');
+  } catch (error) {
+    console.error(error);
   }
 }
 
 function onDomContentLoaded() {
+  // Highlighting code
+
+  // eslint-disable-next-line no-undef
+  hljs.addPlugin({
+    'after:highlightElement': function(obj) {
+      obj.el.parentNode.setAttribute('data-lang', obj.result.language);
+    }
+  });
+  // eslint-disable-next-line no-undef
+  hljs.highlightAll();
+  // eslint-disable-next-line no-undef
+  hljs.initLineNumbersOnLoad({
+    singleLine: true
+  });
+
+  // Highlight complete
+
   initAccordion();
   addAnchor();
-  addLineNums();
-  addCodeTopBar();
-  fixCodeBlocks();
+  processAllPre();
   hideTocOnSourcePage();
   setTimeout(function() {
     bringIdToViewOnMount();
+    if (isSourcePage()) {
+      highlightAndBringLineIntoView();
+    }
   }, 1000);
 }
 
