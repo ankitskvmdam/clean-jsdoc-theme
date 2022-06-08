@@ -103,7 +103,7 @@ To use custom options (such as light and dark modes), pass an object called `the
 ### `theme : "light" | "dark"`
 
 To set the overall theme of the documentation file(s). Currently there is only two variant `"light"` and `"dark"` but in future I will try to add more.
-`Default value is "light"`
+`Default value is "dark"`
 
 ### `favicon: string`
 
@@ -438,7 +438,7 @@ This will remove all symbols (members, methods ...) that come from inherited par
 
 | name                | default                                                                                                      | use case                                                                   | expected value(s)     |
 | ------------------- | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- | --------------------- |
-| `theme`             | `"light"`                                                                                                    | To set the theme variant                                                   | `"light" or "dark"`   |
+| `theme`             | `"dark"`                                                                                                     | To set the theme variant                                                   | `"light" or "dark"`   |
 | `title`             | `null`                                                                                                       | To set the title                                                           | `HTML` or `string`    |
 | `menu`              | `null`                                                                                                       | To render extra link in navbar                                             | Array of Object(s)    |
 | `meta`              | `null`                                                                                                       | Meta tag attributes                                                        | Array of Object(s)    |

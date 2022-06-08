@@ -156,6 +156,11 @@ samp {
 .prettyprint.source,
 .prettyprint code {
     background-color: #222;
+    color: #c9d1d9;
+}
+
+.pre-div {
+    background-color: #222;
 }
 
 .hljs .hljs-ln-numbers {
@@ -316,9 +321,4 @@ table .params thead tr,
 blockquote {
     background: #222;
     color: #fff;
-}
-
-code {
-    background: #333;
-    color: #c9d1d9;
 }

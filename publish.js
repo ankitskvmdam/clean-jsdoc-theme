@@ -480,7 +480,7 @@ function getMetaTagData() {
 }
 
 function getTheme() {
-  var theme = themeOpts.theme || 'light';
+  var theme = themeOpts.theme || 'dark';
   var baseThemeName = 'clean-jsdoc-theme';
   var themeSrc = `${baseThemeName}-${theme}.css`.trim();
 

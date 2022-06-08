@@ -278,7 +278,6 @@ function getPreDiv() {
 }
 
 function processAllPre() {
-  // addLineNums();
   var targets = document.querySelectorAll('pre');
   var footer = document.querySelector('#footer');
   var navbar = document.querySelector('#navbar');
