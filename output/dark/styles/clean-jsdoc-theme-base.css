@@ -1,16 +1,16 @@
 @font-face {
     font-family: 'heading';
-    src: url('../fonts/Muli-Black.ttf') format('truetype');
+    src: url('../fonts/WorkSans-Bold.ttf') format('truetype');
 }
 
 @font-face {
     font-family: 'body';
-    src: url('../fonts/Montserrat-Regular.ttf') format('truetype');
+    src: url('../fonts/OpenSans-Regular.ttf') format('truetype');
 }
 
 @font-face {
     font-family: 'code';
-    src: url('../fonts/MavenPro-Regular.ttf') format('truetype');
+    src: url('../fonts/Inconsolata-Regular.ttf') format('truetype');
 }
 
 .body-wrapper {
@@ -84,6 +84,7 @@
 
 .sidebar-section-children-container {
     border-radius: 0.5rem;
+    overflow: hidden;
 }
 
 .sidebar-section-children a {
@@ -138,6 +139,10 @@
     overflow: hidden;
     text-overflow: ellipsis;
     width: 100%;
+}
+
+.toc-link.is-active-link {
+    font-family: heading;
 }
 
 .has-anchor {
@@ -239,6 +244,25 @@ pre {
     position: relative;
 }
 
+.hljs table td {
+    background: transparent;
+    padding: 0 0.6125rem;
+    line-height: 1.5;
+}
+
+.hljs .hljs-ln-numbers {
+    width: 2rem;
+    white-space: nowrap;
+    user-select: none;
+    padding-left: 1.5rem;
+}
+
+.pre-div {
+    position: relative;
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
 .pre-top-bar-container {
     align-items: center;
     display: flex;
@@ -248,6 +272,7 @@ pre {
     position: absolute;
     right: 0;
     top: 0;
+    z-index: 1;
 }
 
 .code-copy-icon-container {

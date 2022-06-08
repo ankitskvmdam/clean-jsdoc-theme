@@ -205,9 +205,7 @@ dt {
 .prettyprint {
     border-radius: 1rem;
     font-size: 0.875rem;
-    margin: 2rem 0;
     overflow: auto;
-    padding-top: 0.3125rem;
 }
 
 .prettyprint.source {
@@ -218,66 +216,7 @@ dt {
     display: block;
     font-size: 1rem;
     line-height: 1.75;
-    padding: 1rem 2rem;
-}
-
-.prettyprint > code {
-    padding: 2rem;
-}
-
-.prettyprint .linenums code {
-    padding: 0 1rem;
-}
-
-/* stylelint-disable */
-.prettyprint .linenums li:first-of-type code {
-    padding-top: 1rem;
-}
-
-.prettyprint code span.line {
-    display: inline-block;
-}
-
-.prettyprint.linenums {
-    user-select: none;
-    user-select: none;
-    user-select: none;
-    user-select: none;
-}
-
-.prettyprint.linenums > div {
-    margin-top: 1.6rem;
-    padding-left: 4.7rem;
-}
-
-.prettyprint > div {
-    overflow: auto;
-}
-
-.prettyprint.linenums ol {
-    padding-left: 0;
-}
-
-.prettyprint.linenums code,
-.prettyprint.linenums li {
-    min-height: 2rem;
-}
-
-.prettyprint.linenums code {
-    display: inline;
-}
-
-.prettyprint.linenums li.selected,
-.prettyprint.linenums li.selected * {
-    padding: 0.06125rem;
-}
-/* stylelint-enable */
-
-.prettyprint.linenums li * {
-    user-select: text;
-    user-select: text;
-    user-select: text;
-    user-select: text;
+    padding: 3rem 0 1rem;
 }
 
 .params,
@@ -378,7 +317,7 @@ dl.param-type {
 code {
     border-radius: 0.3rem;
     font-family: 'code';
-    font-size: 0.8rem;
+    font-size: 1rem;
     padding: 0.1rem 0.4rem;
 }
 

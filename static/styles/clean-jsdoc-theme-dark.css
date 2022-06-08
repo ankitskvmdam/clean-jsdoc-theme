@@ -158,15 +158,10 @@ samp {
     background-color: #222;
 }
 
-.prettyprint.linenums li {
-    border-left: 3px #222831 solid;
+.hljs .hljs-ln-numbers {
+    color: #777;
 }
 
-/* stylelint-disable */
-.prettyprint.linenums li.selected,
-.prettyprint.linenums li.selected * {
-    background-color: #404040;
-}
 /* stylelint-enable */
 
 table .name,
@@ -299,10 +294,6 @@ table .params thead tr,
 
 blockquote {
     background: #222;
-    color: #fff;
-}
-
-ol.linenums li {
     color: #fff;
 }
 

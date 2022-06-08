@@ -175,7 +175,7 @@ This can be used to order the navbar sections. This can also be used to hide/rem
 ];
 ```
 
-```json5
+```json
 "sections": ["Classes", "Modules", "Global"] // Only 4 members will be in the navbar.
 ```
 

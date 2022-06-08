@@ -53,7 +53,10 @@
     <!--[if lt IE 9]>
       <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-    <link type="text/css" rel="stylesheet" href="styles/third-party/prettify-tomorrow.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"></script>
+    <script src="//cdn.jsdelivr.net/npm/highlightjs-line-numbers.js@2.8.0/dist/highlightjs-line-numbers.min.js"></script>
+
     <link type="text/css" rel="stylesheet" href="styles/reset.css">
     <link type="text/css" rel="stylesheet" href="styles/clean-jsdoc-theme-base.css">
     <link type="text/css" rel="stylesheet" href="styles/<?js= this.theme ?>">
@@ -100,11 +103,8 @@
 
     </div>
 
-    <script src="scripts/third-party/prettify.js"></script>
-    <script src="scripts/third-party/lang-css.js"></script>
     <script type="text/javascript" src="scripts/core.js"></script>
 
-    <script>prettyPrint();</script>
     <?js if(this.search.options !== 'false') { ?>
       <!--<script src="scripts/search.js"></script>
       <script src="scripts/third-party/fuse.js"></script>

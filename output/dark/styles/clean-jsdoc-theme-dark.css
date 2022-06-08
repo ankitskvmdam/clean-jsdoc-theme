@@ -140,8 +140,7 @@ samp {
     color: #fff;
 }
 
-.prettyprint,
-.pre-top-bar-container {
+.prettyprint {
     background: #222;
 }
 
@@ -159,15 +158,10 @@ samp {
     background-color: #222;
 }
 
-.prettyprint.linenums li {
-    border-left: 3px #222831 solid;
+.hljs .hljs-ln-numbers {
+    color: #777;
 }
 
-/* stylelint-disable */
-.prettyprint.linenums li.selected,
-.prettyprint.linenums li.selected * {
-    background-color: #404040;
-}
 /* stylelint-enable */
 
 table .name,
@@ -206,7 +200,7 @@ table .params thead tr,
 }
 
 .code-copy-icon-container:hover {
-    background-color: #333;
+    background-color: #444;
 }
 
 .code-lang-name {
@@ -300,10 +294,6 @@ table .params thead tr,
 
 blockquote {
     background: #222;
-    color: #fff;
-}
-
-ol.linenums li {
     color: #fff;
 }
 
