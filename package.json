@@ -18,7 +18,7 @@
     "bugs": {
         "url": "https://github.com/ankitskvmdam/clean-jsdoc-theme/issues"
     },
-    "homepage": "https://ankdev.me/clean-jsdoc-theme/dark/index.html",
+    "homepage": "https://ankdev.me/clean-jsdoc-theme/v4/index.html",
     "peerDependencies": {
         "jsdoc": "3"
     },
