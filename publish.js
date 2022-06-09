@@ -493,7 +493,7 @@ function getMetaTagData() {
 }
 
 function getTheme() {
-  var theme = themeOpts.theme || 'dark';
+  var theme = themeOpts.default_theme || 'dark';
 
   return theme;
 }

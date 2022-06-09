@@ -1,8 +1,57 @@
 /* global document */
 var accordionLocalStorageKey = 'accordion-id';
+var themeLocalStorageKey = 'theme';
+var fontSizeLocalStorageKey = 'font-size';
+var html = document.querySelector('html');
+
+var MAX_FONT_SIZE = 30;
+var MIN_FONT_SIZE = 10;
 
 // eslint-disable-next-line no-undef
 var localStorage = window.localStorage;
+
+function getTheme() {
+  var body = document.body;
+
+  return body.getAttribute('data-theme');
+}
+
+function updateTheme(theme) {
+  var body = document.body;
+  var svgUse = document.querySelector('#theme-svg-use');
+
+  body.setAttribute('data-theme', theme);
+  body.classList.remove('dark', 'light');
+  body.classList.add(theme);
+  svgUse.setAttribute('xlink:href', '#' + theme + '-theme-icon');
+
+  localStorage.setItem(themeLocalStorageKey, theme);
+}
+
+function toggleTheme() {
+  var body = document.body;
+  var theme = body.getAttribute('data-theme');
+
+  var newTheme = theme === 'dark' ? 'light' : 'dark';
+
+  updateTheme(newTheme);
+}
+
+(function() {
+  var theme = getTheme();
+
+  var themeStoredInLocalStorage = localStorage.getItem(themeLocalStorageKey);
+
+  if (themeStoredInLocalStorage) {
+    if (theme === themeStoredInLocalStorage) {
+      return;
+    }
+
+    updateTheme(themeStoredInLocalStorage);
+  } else {
+    localStorage.setItem(themeLocalStorageKey, theme);
+  }
+})();
 
 /**
  * Function to set accordion id to localStorage.
@@ -296,13 +345,143 @@ function highlightAndBringLineIntoView() {
   }
 }
 
+function getFontSize() {
+  var currentFontSize = 16;
+
+  try {
+    currentFontSize = Number.parseInt(
+      html.style.fontSize.split('px')[0],
+      10
+    );
+  } catch (error) {
+    console.log(error);
+  }
+
+  return currentFontSize;
+}
+
+function updateFontSize(fontSize) {
+  html.style.fontSize = fontSize + 'px';
+  localStorage.setItem(fontSizeLocalStorageKey, fontSize);
+  var fontSizeText = document.querySelector('#font-size-text');
+
+  if (fontSizeText) {
+    fontSizeText.innerHTML = fontSize;
+  }
+}
+
+(function() {
+  var fontSize = getFontSize();
+  var fontSizeInLocalStorage = localStorage.getItem(fontSizeLocalStorageKey);
+
+  if (fontSizeInLocalStorage) {
+    var n = Number.parseInt(fontSizeInLocalStorage, 10);
+
+    if (n === fontSize) {
+      return;
+    }
+    updateFontSize(n);
+  } else {
+    localStorage.setItem(fontSizeInLocalStorage, fontSize);
+  }
+})();
+
+// eslint-disable-next-line no-unused-vars
+function incrementFont(event) {
+  var n = getFontSize();
+
+  if (n < MAX_FONT_SIZE) {
+    updateFontSize(n + 1);
+  }
+}
+
+// eslint-disable-next-line no-unused-vars
+function decrementFont(event) {
+  var n = getFontSize();
+
+  if (n > MIN_FONT_SIZE) {
+    updateFontSize(n - 1);
+  }
+}
+
+function fontSizeTooltip() {
+  var fontSize = getFontSize();
+
+  return `
+  <div class="font-size-tooltip">
+    <button class="icon-button ${
+  fontSize >= MAX_FONT_SIZE ? 'disabled' : ''
+}" onclick="decrementFont(event)">
+      <svg>
+        <use xlink:href="#minus-icon"></use>
+      </svg>
+    </button>
+    <div class="font-size-text" id="font-size-text">
+      ${fontSize}
+    </div>
+    <button class="icon-button ${
+  fontSize <= MIN_FONT_SIZE ? 'disabled' : ''
+}" onclick="incrementFont(event)">
+      <svg>
+        <use xlink:href="#add-icon"></use>
+      </svg>
+    </button>
+    <button class="icon-button" onclick="updateFontSize(16)">
+      <svg>
+        <use xlink:href="#reset-icon"></use>
+      </svg>
+    </button>
+  </div>
+
+  `;
+}
+
+function initTooltip() {
+  // add tooltip to navbar item
+  // eslint-disable-next-line no-undef
+  tippy('#theme-toggle', {
+    content: 'Toggle Theme',
+    delay: 500
+  });
+
+  // eslint-disable-next-line no-undef
+  tippy('#search-button', {
+    content: 'Search',
+    delay: 500
+  });
+
+  // eslint-disable-next-line no-undef
+  tippy('#font-size', {
+    content: 'Change font size',
+    delay: 500
+  });
+
+  // eslint-disable-next-line no-undef
+  tippy('#font-size', {
+    content: fontSizeTooltip(),
+    trigger: 'click',
+    interactive: true,
+    allowHTML: true,
+    placement: 'left'
+  });
+}
+
 function onDomContentLoaded() {
+  var themeButton = document.querySelector('#theme-toggle');
+
+  if (themeButton) {
+    themeButton.addEventListener('click', toggleTheme);
+  }
+
   // Highlighting code
 
   // eslint-disable-next-line no-undef
   hljs.addPlugin({
     'after:highlightElement': function(obj) {
-      obj.el.parentNode.setAttribute('data-lang', obj.result.language);
+      // Replace 'code' with result.language when
+      // we are able to cross check the correctness of
+      // result.
+      obj.el.parentNode.setAttribute('data-lang', 'code');
     }
   });
   // eslint-disable-next-line no-undef
@@ -324,6 +503,7 @@ function onDomContentLoaded() {
       highlightAndBringLineIntoView();
     }
   }, 1000);
+  initTooltip();
 }
 
 // eslint-disable-next-line no-undef

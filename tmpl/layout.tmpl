@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="font-size: 16px">
 
   <head>
     <meta charset="utf-8">
@@ -56,6 +56,10 @@
 
     <script src="scripts/third-party/hljs.js"></script>
     <script src="scripts/third-party/hljs-line-num.js"></script>
+    <script src="scripts/third-party/popper.js"></script>
+    <script src="scripts/third-party/tippy.js"></script>
+    <script src="scripts/third-party/tocbot.js"></script>
+
     <link rel="stylesheet" href="styles/clean-jsdoc-theme.min.css">
     <?js if(this.dynamicStyle != undefined ) { ?>
     <style>
@@ -64,10 +68,9 @@
     <?js } ?>
     <?js= this.partial('icons.tmpl') ?>
 
-    <script src="scripts/third-party/tocbot.min.js"></script>
   </head>
 
-  <body class="<?js= this.theme ?>">
+  <body class="<?js= this.theme ?>" data-theme="<?js= this.theme?>">
 
     <div class="sidebar-container">
       <?js= this.partial('sidebar.tmpl') ?>

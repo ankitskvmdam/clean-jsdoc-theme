@@ -543,6 +543,7 @@ code {
     border-radius: 50%;
     cursor: pointer;
     transition: background 0.3s;
+    margin: 0 0.25rem;
 }
 
 .navbar-right-item {

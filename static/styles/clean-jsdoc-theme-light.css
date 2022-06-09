@@ -65,6 +65,23 @@ body.light {
     fill: #222;
 }
 
+.light .tippy-box {
+    background: #f1f1f1;
+    color: #111;
+}
+
+.light .tippy-arrow {
+    color: #f1f1f1;
+}
+
+.light .font-size-tooltip .icon-button svg {
+    fill: #111;
+}
+
+.light .font-size-tooltip .icon-button.disabled svg {
+    fill: #999;
+}
+
 .light .icon-button:hover {
     background: #f1f1f1;
 }

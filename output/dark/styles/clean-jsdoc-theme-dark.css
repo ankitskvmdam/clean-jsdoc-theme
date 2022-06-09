@@ -65,6 +65,14 @@ h6 {
     fill: #999;
 }
 
+.font-size-tooltip .icon-button svg {
+    fill: #fff;
+}
+
+.font-size-tooltip .icon-button.disabled {
+    background: #999;
+}
+
 .icon-button:hover {
     background: #333;
 }

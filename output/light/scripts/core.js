@@ -1,8 +1,52 @@
 /* global document */
 var accordionLocalStorageKey = 'accordion-id';
+var themeLocalStorageKey = 'theme';
 
 // eslint-disable-next-line no-undef
 var localStorage = window.localStorage;
+
+function getTheme() {
+  var body = document.body;
+
+  return body.getAttribute('data-theme');
+}
+
+function updateTheme(theme) {
+  var body = document.body;
+  var svgUse = document.querySelector('#theme-svg-use');
+
+  body.setAttribute('data-theme', theme);
+  body.classList.remove('dark', 'light');
+  body.classList.add(theme);
+  svgUse.setAttribute('xlink:href', '#' + theme + '-theme-icon');
+
+  localStorage.setItem(themeLocalStorageKey, theme);
+}
+
+function toggleTheme() {
+  var body = document.body;
+  var theme = body.getAttribute('data-theme');
+
+  var newTheme = theme === 'dark' ? 'light' : 'dark';
+
+  updateTheme(newTheme);
+}
+
+(function() {
+  var theme = getTheme();
+
+  var themeStoredInLocalStorage = localStorage.getItem(themeLocalStorageKey);
+
+  if (themeStoredInLocalStorage) {
+    if (theme === themeStoredInLocalStorage) {
+      return;
+    }
+
+    updateTheme(themeStoredInLocalStorage);
+  } else {
+    localStorage.setItem(themeLocalStorageKey, theme);
+  }
+})();
 
 /**
  * Function to set accordion id to localStorage.
@@ -296,7 +340,39 @@ function highlightAndBringLineIntoView() {
   }
 }
 
+function initTooltip() {
+  // add tooltip to navbar item
+  // eslint-disable-next-line no-undef
+  tippy('#theme-toggle', {
+    content: 'Toggle Theme'
+  });
+
+  // eslint-disable-next-line no-undef
+  tippy('#search-button', {
+    content: 'Search'
+  });
+
+  // eslint-disable-next-line no-undef
+  tippy('#font-size', {
+    content: 'Change font size'
+  });
+
+  // eslint-disable-next-line no-undef
+  tippy('#font-size', {
+    content: '</div>- 16px +<div>',
+    trigger: 'click',
+    interactive: true,
+    allowHTML: true
+  });
+}
+
 function onDomContentLoaded() {
+  var themeButton = document.querySelector('#theme-toggle');
+
+  if (themeButton) {
+    themeButton.addEventListener('click', toggleTheme);
+  }
+
   // Highlighting code
 
   // eslint-disable-next-line no-undef
@@ -327,6 +403,7 @@ function onDomContentLoaded() {
       highlightAndBringLineIntoView();
     }
   }, 1000);
+  initTooltip();
 }
 
 // eslint-disable-next-line no-undef

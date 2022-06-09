@@ -19,10 +19,6 @@
     padding: 0;
 }
 
-html {
-    font-size: 16px;
-}
-
 html,
 body {
     min-height: 100%;
@@ -110,9 +106,6 @@ article ol {
 }
 
 /* stylelint-disable-next-line */
-ol.linenums li {
-    padding: 0;
-}
 
 .variation {
     display: none;
@@ -211,6 +204,10 @@ dt {
 
 .method-member-container table {
     margin-top: 15px;
+}
+
+.pre-div .hljs-ln {
+    margin: 0;
 }
 
 .code-caption {
@@ -548,6 +545,7 @@ code {
     display: flex;
     justify-content: center;
     align-items: center;
+    margin: 0 0.25rem;
 }
 
 .navbar-item {
@@ -560,6 +558,16 @@ code {
     padding: 1rem 2rem;
     text-decoration: none;
     transition: 0.3s;
+}
+
+.font-size-tooltip {
+    display: flex;
+    align-items: center;
+    margin: 0 -0.5rem;
+}
+
+.font-size-tooltip .icon-button.disabled {
+    pointer-events: none;
 }
 
 .main-content {
