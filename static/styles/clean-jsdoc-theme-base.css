@@ -49,17 +49,17 @@ h1 {
 
 h2 {
     font-size: 2.25rem;
-    margin: 2rem 0;
+    margin: 2rem 0 0;
 }
 
 h3 {
     font-size: 2rem;
-    margin: 2rem 0;
+    margin: 2rem 0 0;
 }
 
 h4 {
     font-size: 1.5rem;
-    margin: 1.5rem 0;
+    margin: 1.5rem 0 0;
 }
 
 h5 {
@@ -232,6 +232,10 @@ pre.prettyprint {
     font-size: 1rem;
     line-height: 1.75;
     padding: 0 0 1rem;
+}
+
+h4.name {
+    margin-top: 0.5rem;
 }
 
 .params,
@@ -767,9 +771,6 @@ pre {
     font-size: 0.875rem;
 }
 
-@media screen and (max-width: 50em) {
-}
-
 @media screen and (max-width: 100em) {
     .toc-container {
         display: none;
@@ -789,6 +790,31 @@ pre {
     }
 }
 
+@media screen and (max-width: 65em) {
+    .sidebar-container {
+        display: none;
+    }
+
+    .main-content {
+        padding-left: 0;
+        padding-top: 1rem;
+    }
+
+    .navbar-container {
+        display: none;
+    }
+}
+
 .rel {
     position: relative;
+}
+
+.icon-button.codepen-button svg {
+    height: 1.5rem;
+    width: 1.5rem;
+}
+
+.table-div {
+    width: 100%;
+    overflow: auto;
 }

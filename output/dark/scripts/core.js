@@ -457,6 +457,12 @@ function initTooltip() {
   });
 
   // eslint-disable-next-line no-undef
+  tippy('.codepen-button', {
+    content: 'Open code in CodePen',
+    placement: 'left'
+  });
+
+  // eslint-disable-next-line no-undef
   tippy('#font-size', {
     content: fontSizeTooltip(),
     trigger: 'click',
@@ -464,6 +470,32 @@ function initTooltip() {
     allowHTML: true,
     placement: 'left'
   });
+}
+
+function fixTable() {
+  var tables = document.querySelectorAll('table');
+  var table;
+
+  // eslint-disable-next-line no-undef
+  if (window.innerWidth > 900) {
+    // Only fixing table if width is smaller than 900px
+    return;
+  }
+
+  for (table of tables) {
+    console.log('Table', table);
+    if (table.classList.contains('hljs-ln')) {
+      // don't want to wrap code blocks.
+      return;
+    }
+    console.log('Table processing');
+
+    var div = document.createElement('div');
+
+    div.classList.add('table-div');
+    table.parentNode.insertBefore(div, table);
+    div.appendChild(table);
+  }
 }
 
 function onDomContentLoaded() {
@@ -504,6 +536,7 @@ function onDomContentLoaded() {
     }
   }, 1000);
   initTooltip();
+  fixTable();
 }
 
 // eslint-disable-next-line no-undef
