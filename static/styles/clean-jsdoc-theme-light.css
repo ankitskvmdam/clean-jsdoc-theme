@@ -109,7 +109,7 @@ body.light {
 }
 
 .light .toc-link {
-    color: #aaa;
+    color: #999;
     transition: color 0.3s;
     font-size: 0.875rem;
 }
