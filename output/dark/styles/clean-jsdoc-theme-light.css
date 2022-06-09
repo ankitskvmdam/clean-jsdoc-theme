@@ -333,3 +333,43 @@ body.light {
     background: #eee;
     color: #000;
 }
+
+.light .search-container {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.light .search-container .wrapper {
+    background: #eee;
+}
+
+.light .search-result-c {
+    color: #aaa;
+}
+
+.light .search-box-c {
+    fill: #333;
+}
+
+.light .search-input {
+    background: #f7f7f7;
+}
+
+.light .search-result-item {
+    background: #f7f7f7;
+}
+
+.light .search-result-item:hover {
+    background: #e9e9e9;
+}
+
+.light .search-result-item:active {
+    background: #f7f7f7;
+}
+
+.light .search-result-item-title {
+    color: #111;
+}
+
+.light .search-result-item-p {
+    color: #aaa;
+}

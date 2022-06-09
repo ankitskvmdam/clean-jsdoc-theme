@@ -348,3 +348,48 @@ blockquote {
     background: #222;
     color: #fff;
 }
+
+.search-container {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.search-container .wrapper {
+    background: #222;
+}
+
+.search-result-c {
+    color: #666;
+}
+
+.search-box-c {
+    fill: #333;
+}
+
+.search-input {
+    background: #333;
+    color: #fff;
+}
+
+.search-box-c svg {
+    fill: #fff;
+}
+
+.search-result-item {
+    background: #333;
+}
+
+.search-result-item:hover {
+    background: #444;
+}
+
+.search-result-item:active {
+    background: #555;
+}
+
+.search-result-item-title {
+    color: #fff;
+}
+
+.search-result-item-p {
+    color: #aaa;
+}
