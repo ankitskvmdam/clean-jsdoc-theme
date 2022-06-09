@@ -19,11 +19,12 @@ function getTheme() {
 function updateTheme(theme) {
   var body = document.body;
   var svgUse = document.querySelector('#theme-svg-use');
+  var icon = theme === 'dark' ? 'light' : 'dark';
 
   body.setAttribute('data-theme', theme);
   body.classList.remove('dark', 'light');
   body.classList.add(theme);
-  svgUse.setAttribute('xlink:href', '#' + theme + '-theme-icon');
+  svgUse.setAttribute('xlink:href', '#' + icon + '-theme-icon');
 
   localStorage.setItem(themeLocalStorageKey, theme);
 }
@@ -483,12 +484,10 @@ function fixTable() {
   }
 
   for (table of tables) {
-    console.log('Table', table);
     if (table.classList.contains('hljs-ln')) {
       // don't want to wrap code blocks.
       return;
     }
-    console.log('Table processing');
 
     var div = document.createElement('div');
 
