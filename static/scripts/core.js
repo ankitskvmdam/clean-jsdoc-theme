@@ -18,13 +18,16 @@ function getTheme() {
 
 function updateTheme(theme) {
   var body = document.body;
-  var svgUse = document.querySelector('#theme-svg-use');
+  var svgUse = document.querySelectorAll('.theme-svg-use');
   var icon = theme === 'dark' ? 'light' : 'dark';
 
   body.setAttribute('data-theme', theme);
   body.classList.remove('dark', 'light');
   body.classList.add(theme);
-  svgUse.setAttribute('xlink:href', '#' + icon + '-theme-icon');
+
+  svgUse.forEach(function(svg) {
+    svg.setAttribute('xlink:href', '#' + icon + '-theme-icon');
+  });
 
   localStorage.setItem(themeLocalStorageKey, theme);
 }
@@ -440,19 +443,19 @@ function fontSizeTooltip() {
 function initTooltip() {
   // add tooltip to navbar item
   // eslint-disable-next-line no-undef
-  tippy('#theme-toggle', {
+  tippy('.theme-toggle', {
     content: 'Toggle Theme',
     delay: 500
   });
 
   // eslint-disable-next-line no-undef
-  tippy('#search-button', {
+  tippy('.search-button', {
     content: 'Search',
     delay: 500
   });
 
   // eslint-disable-next-line no-undef
-  tippy('#font-size', {
+  tippy('.font-size', {
     content: 'Change font size',
     delay: 500
   });
@@ -464,7 +467,7 @@ function initTooltip() {
   });
 
   // eslint-disable-next-line no-undef
-  tippy('#font-size', {
+  tippy('.font-size', {
     content: fontSizeTooltip(),
     trigger: 'click',
     interactive: true,
@@ -497,11 +500,42 @@ function fixTable() {
   }
 }
 
+function onMobileMenuClick(event) {
+  var mobileMenuContainer = document.querySelector('#mobile-sidebar');
+  var target = event.currentTarget;
+  var svgUse = target.querySelector('use');
+  var isOpen = target.getAttribute('data-isopen') === 'true';
+
+  if (mobileMenuContainer) {
+    if (isOpen) {
+      mobileMenuContainer.style.display = 'none';
+      target.setAttribute('data-isopen', 'false');
+      svgUse.setAttribute('xlink:href', '#menu-icon');
+    } else {
+      mobileMenuContainer.style.display = 'block';
+      target.setAttribute('data-isopen', 'true');
+      svgUse.setAttribute('xlink:href', '#close-icon');
+    }
+  }
+}
+
+function initMobileMenu() {
+  var menu = document.querySelector('#mobile-menu');
+
+  if (menu) {
+    menu.addEventListener('click', onMobileMenuClick);
+  }
+}
+
 function onDomContentLoaded() {
-  var themeButton = document.querySelector('#theme-toggle');
+  var themeButton = document.querySelectorAll('.theme-toggle');
+
+  initMobileMenu();
 
   if (themeButton) {
-    themeButton.addEventListener('click', toggleTheme);
+    themeButton.forEach(function(button) {
+      button.addEventListener('click', toggleTheme);
+    });
   }
 
   // Highlighting code

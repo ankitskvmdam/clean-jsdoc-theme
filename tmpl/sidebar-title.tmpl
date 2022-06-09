@@ -1,0 +1,10 @@
+<?js
+    var data = this.sidebar
+
+        if(data.title.isHTML) { ?>
+            <?js= data.title.title ?>
+        <?js } else { ?>
+
+            <a href="/" class="sidebar-title"><?js= data.title.title ?></a>
+
+    <?js } ?>

@@ -377,12 +377,16 @@ code {
     flex-direction: column;
 }
 
-.sidebar .title {
+.sidebar-title {
     margin: 0;
     padding: 0 2rem;
     text-decoration: none;
     font-size: 1.5rem;
     font-family: heading;
+}
+
+.sidebar-title:hover {
+    text-decoration: none;
 }
 
 .sidebar-items-container {
@@ -703,7 +707,7 @@ pre {
     right: 0;
     left: 0;
     justify-content: center;
-    z-index: 20;
+    z-index: 50;
     align-items: flex-start;
 }
 
@@ -771,6 +775,56 @@ pre {
     font-size: 0.875rem;
 }
 
+.mobile-menu-icon-container {
+    display: none;
+    position: fixed;
+    bottom: 1.5rem;
+    right: 2rem;
+    z-index: 30;
+}
+
+.mobile-menu-icon-container .icon-button svg {
+    height: 2rem;
+    width: 2rem;
+}
+
+.mobile-sidebar-container {
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    padding: 1rem;
+    z-index: 25;
+
+    display: none;
+}
+
+.mobile-sidebar-wrapper {
+    border-radius: 1rem;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    padding-top: 2rem;
+}
+
+.mobile-nav-links {
+    display: flex;
+    flex-wrap: wrap;
+    padding-top: 2rem;
+}
+
+.mobile-sidebar-items-c {
+    flex: 1;
+    overflow: auto;
+}
+
+.mobile-navbar-actions {
+    display: flex;
+    padding: 1rem;
+}
+
 @media screen and (max-width: 100em) {
     .toc-container {
         display: none;
@@ -791,8 +845,33 @@ pre {
 }
 
 @media screen and (max-width: 65em) {
+    h1 {
+        font-size: 3rem;
+    }
+
+    h2 {
+        font-size: 2rem;
+    }
+
+    h3 {
+        font-size: 1.875;
+    }
+
+    h4,
+    h5,
+    h6 {
+        font-size: 1rem;
+    }
+
+    .mobile-menu-icon-container {
+        display: block;
+    }
+
     .sidebar-container {
         display: none;
+    }
+    .search-container .wrapper {
+        margin-left: 1rem;
     }
 
     .main-content {

@@ -179,14 +179,16 @@ function search(event) {
 
 function onDomContentLoaded() {
   var input = document.querySelector('#search-input');
-  var searchButton = document.querySelector('#search-button');
+  var searchButton = document.querySelectorAll('.search-button');
   var searchContainer = document.querySelector('#search-container');
   var searchWrapper = document.querySelector('#search-wrapper');
 
   var debouncedSearch = debounce(search, 300);
 
   if (searchButton) {
-    searchButton.addEventListener('click', showSearch);
+    searchButton.forEach(function(item) {
+      item.addEventListener('click', showSearch);
+    });
   }
 
   if (searchContainer) {

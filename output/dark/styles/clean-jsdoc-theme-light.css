@@ -27,7 +27,7 @@ body.light {
     color: #222;
 }
 
-.light .sidebar .title {
+.light .sidebar-title {
     color: #222;
 }
 
@@ -346,12 +346,13 @@ body.light {
     color: #aaa;
 }
 
-.light .search-box-c {
+.light .search-box-c svg {
     fill: #333;
 }
 
 .light .search-input {
     background: #f7f7f7;
+    color: #111;
 }
 
 .light .search-result-item {
@@ -372,4 +373,20 @@ body.light {
 
 .light .search-result-item-p {
     color: #aaa;
+}
+
+.light .mobile-menu-icon-container .icon-button {
+    background: #f1f1f1;
+}
+
+.light .mobile-menu-icon-container .icon-button[data-isopen='true'] {
+    background: #e5e5e5;
+}
+
+.light .mobile-sidebar-container {
+    background: #fff;
+}
+
+.light .mobile-sidebar-wrapper {
+    background: #f7f7f7;
 }

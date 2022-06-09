@@ -1,0 +1,19 @@
+<?js 
+    var data = this.navbar
+if(data.search) { ?>
+    <div class="navbar-right-item">
+        <button class="icon-button search-button">
+            <svg><use xlink:href="#search-icon"></use></svg>
+        </button>
+    </div>
+<?js } ?>
+<div class="navbar-right-item" >
+    <button class="icon-button theme-toggle">
+        <svg><use class="theme-svg-use" xlink:href="#<?js= this.theme?>-theme-icon"></use></svg>
+    </button>
+</div>
+<div class="navbar-right-item" >
+    <button class="icon-button font-size">
+        <svg><use xlink:href="#font-size-icon"></use></svg>
+    </button>
+</div>
