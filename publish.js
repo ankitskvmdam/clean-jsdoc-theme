@@ -58,7 +58,9 @@ var defaultSections = [
 var HTML_MINIFY_OPTIONS = {
   collapseWhitespace: true,
   removeComments: true,
-  html5: true
+  html5: true,
+  minifyJS: true,
+  minifyCSS: true
 };
 
 function copyStaticFolder() {
