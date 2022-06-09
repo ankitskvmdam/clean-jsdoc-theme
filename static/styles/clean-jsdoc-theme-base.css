@@ -110,9 +110,6 @@ article ol {
 }
 
 /* stylelint-disable-next-line */
-ol.linenums li {
-    padding: 0;
-}
 
 .variation {
     display: none;

@@ -10,6 +10,7 @@ var template = require('jsdoc/template');
 var util = require('util');
 var fse = require('fs-extra');
 var nanoid = require('nanoid').nanoid;
+var htmlMinify = require('html-minifier');
 
 var htmlsafe = helper.htmlsafe;
 var linkto = helper.linkto;
@@ -53,6 +54,12 @@ var defaultSections = [
   SECTION_TYPE.Interfaces,
   SECTION_TYPE.Global
 ];
+
+var HTML_MINIFY_OPTIONS = {
+  collapseWhitespace: true,
+  removeComments: true,
+  html5: true
+};
 
 function copyStaticFolder() {
   var staticDir = themeOpts.static_dir || undefined;
@@ -320,7 +327,11 @@ function generate(type, title, docs, filename, resolveLinks) {
     html = helper.resolveLinks(html); // turn {@link foo} into <a href="foodoc.html">foo</a>
   }
 
-  fs.writeFileSync(outpath, html, 'utf8');
+  fs.writeFileSync(
+    outpath,
+    htmlMinify.minify(html, HTML_MINIFY_OPTIONS),
+    'utf8'
+  );
 }
 
 function generateSourceFiles(sourceFiles, encoding) {
@@ -481,10 +492,8 @@ function getMetaTagData() {
 
 function getTheme() {
   var theme = themeOpts.theme || 'dark';
-  var baseThemeName = 'clean-jsdoc-theme';
-  var themeSrc = `${baseThemeName}-${theme}.css`.trim();
 
-  return themeSrc;
+  return theme;
 }
 
 function search() {
@@ -1090,7 +1099,12 @@ exports.publish = function(taffyData, opts, tutorials) {
 
     // yes, you can use {@link} in tutorials too!
     html = helper.resolveLinks(html); // turn {@link foo} into <a href="foodoc.html">foo</a>
-    fs.writeFileSync(tutorialPath, html, 'utf8');
+
+    fs.writeFileSync(
+      tutorialPath,
+      htmlMinify.minify(html, HTML_MINIFY_OPTIONS),
+      'utf8'
+    );
   }
 
   // tutorials can have only one parent so there is no risk for loops

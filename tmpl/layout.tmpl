@@ -56,9 +56,7 @@
 
     <script src="scripts/third-party/hljs.js"></script>
     <script src="scripts/third-party/hljs-line-num.js"></script>
-
-    <link type="text/css" rel="stylesheet" href="styles/clean-jsdoc-theme-base.css">
-    <link type="text/css" rel="stylesheet" href="styles/<?js= this.theme ?>">
+    <link rel="stylesheet" href="styles/clean-jsdoc-theme.min.css">
     <?js if(this.dynamicStyle != undefined ) { ?>
     <style>
       <?js= this.dynamicStyle ?>
@@ -69,7 +67,7 @@
     <script src="scripts/third-party/tocbot.min.js"></script>
   </head>
 
-  <body>
+  <body class="<?js= this.theme ?>">
 
     <div class="sidebar-container">
       <?js= this.partial('sidebar.tmpl') ?>
@@ -102,7 +100,7 @@
 
     </div>
 
-    <script type="text/javascript" src="scripts/core.js"></script>
+    <script type="text/javascript" src="scripts/core.min.js"></script>
 
     <?js if(this.search.options !== 'false') { ?>
       <!--<script src="scripts/search.js"></script>

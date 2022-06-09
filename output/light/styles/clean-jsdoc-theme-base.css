@@ -110,9 +110,6 @@ article ol {
 }
 
 /* stylelint-disable-next-line */
-ol.linenums li {
-    padding: 0;
-}
 
 .variation {
     display: none;
@@ -211,6 +208,10 @@ dt {
 
 .method-member-container table {
     margin-top: 15px;
+}
+
+.pre-div .hljs-ln {
+    margin: 0;
 }
 
 .code-caption {

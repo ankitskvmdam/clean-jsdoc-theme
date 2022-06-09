@@ -302,7 +302,10 @@ function onDomContentLoaded() {
   // eslint-disable-next-line no-undef
   hljs.addPlugin({
     'after:highlightElement': function(obj) {
-      obj.el.parentNode.setAttribute('data-lang', obj.result.language);
+      // Replace 'code' with result.language when
+      // we are able to cross check the correctness of
+      // result.
+      obj.el.parentNode.setAttribute('data-lang', 'code');
     }
   });
   // eslint-disable-next-line no-undef
