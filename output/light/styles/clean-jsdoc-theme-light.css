@@ -164,6 +164,10 @@ body.light {
     background: #ccc;
 }
 
+.light table.hljs-ln td {
+    background: none;
+}
+
 .light .hljs .selected .hljs-ln-numbers {
     color: #444;
 }
