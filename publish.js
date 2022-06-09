@@ -498,6 +498,12 @@ function getTheme() {
   return theme;
 }
 
+function getBaseURL() {
+  var url = themeOpts.base_url || '';
+
+  return url;
+}
+
 function buildSidebarMembers({
   items,
   itemHeading,
@@ -961,6 +967,7 @@ exports.publish = function(taffyData, opts, tutorials) {
   view.navbar = buildNavbar();
   view.resizeable = resizeable();
   view.codepen = codepen();
+  view.baseURL = getBaseURL();
   view.excludeInherited = Boolean(themeOpts.exclude_inherited);
   attachModuleSymbols(
     find({ longname: { left: 'module:' } }),

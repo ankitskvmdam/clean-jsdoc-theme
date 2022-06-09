@@ -34,7 +34,10 @@ function showSearch() {
 }
 
 function fetchAllData(obj = {}) {
-  fetch('../data/search.json')
+  // eslint-disable-next-line no-undef
+  var url = baseURL + 'data/search.json';
+
+  fetch(url)
     .then(function(d) {
       return d.json();
     })

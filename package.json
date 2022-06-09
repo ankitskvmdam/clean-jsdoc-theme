@@ -14,7 +14,7 @@
         "url": "git+https://github.com/ankitskvmdam/clean-jsdoc-theme.git"
     },
     "author": "Ank",
-    "license": "ISC",
+    "license": "MIT",
     "bugs": {
         "url": "https://github.com/ankitskvmdam/clean-jsdoc-theme/issues"
     },
