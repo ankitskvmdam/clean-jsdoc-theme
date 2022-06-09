@@ -800,6 +800,10 @@ pre {
     display: none;
 }
 
+.mobile-sidebar-container.show {
+    display: block;
+}
+
 .mobile-sidebar-wrapper {
     border-radius: 1rem;
     height: 100%;
@@ -841,6 +845,12 @@ pre {
     .navbar-container {
         /* For scrollbar */
         right: 1rem;
+    }
+}
+
+@media screen and (min-width: 65em) {
+    .mobile-sidebar-container.show {
+        display: none;
     }
 }
 

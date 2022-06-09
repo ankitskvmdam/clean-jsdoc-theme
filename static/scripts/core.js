@@ -508,11 +508,11 @@ function onMobileMenuClick(event) {
 
   if (mobileMenuContainer) {
     if (isOpen) {
-      mobileMenuContainer.style.display = 'none';
+      mobileMenuContainer.classList.remove('show');
       target.setAttribute('data-isopen', 'false');
       svgUse.setAttribute('xlink:href', '#menu-icon');
     } else {
-      mobileMenuContainer.style.display = 'block';
+      mobileMenuContainer.classList.add('show');
       target.setAttribute('data-isopen', 'true');
       svgUse.setAttribute('xlink:href', '#close-icon');
     }
