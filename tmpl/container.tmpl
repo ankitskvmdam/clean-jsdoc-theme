@@ -24,7 +24,7 @@
 <header>
     <?js if (!doc.longname || doc.kind !== 'module') { ?>
         <?js if ((doc.ancestors && doc.ancestors.length) || doc.name || doc.variation) { ?>
-        <h1 id="<?js= doc.name ?>" class="has-anchor">
+        <h1 id="<?js= doc.name ?>-title" class="has-anchor">
         <?js if (doc.ancestors && doc.ancestors.length) { ?>
             <span class="ancestors"><?js= doc.ancestors.join('') ?></span>
         <?js } ?>

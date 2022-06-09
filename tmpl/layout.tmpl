@@ -103,16 +103,15 @@
 
     </div>
 
+    <?js if(this.navbar.search) { ?>
+        <?js= this.partial('search.tmpl')?>
+    <?js } ?>
+
     <script type="text/javascript" src="scripts/core.min.js"></script>
 
-    <?js if(this.search.options !== 'false') { ?>
-      <!--<script src="scripts/search.js"></script>
+    <?js if(this.navbar.search !== 'false') { ?>
+      <script src="scripts/search.min.js"></script>
       <script src="scripts/third-party/fuse.js"></script>
-      <script>
-        var list = [<?js= this.search.list ?>];
-        var options = <?js= this.search.options ?>
-          setupSearch(list, options)
-      </script> -->
     <?js } ?>
 
     <?js if(this.dynamicScript != undefined ) { ?>

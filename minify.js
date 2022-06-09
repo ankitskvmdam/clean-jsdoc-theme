@@ -11,6 +11,10 @@ const uglifyFiles = [
   {
     src: path.join(scriptsPath, 'core.js'),
     dest: path.join(scriptsPath, 'core.min.js')
+  },
+  {
+    src: path.join(scriptsPath, 'search.js'),
+    dest: path.join(scriptsPath, 'search.min.js')
   }
 ];
 

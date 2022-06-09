@@ -28,11 +28,13 @@
     </div>
 
     <div class="navbar-right-items">
-        <div class="navbar-right-item">
-            <button class="icon-button" id="search-button">
-                <svg><use xlink:href="#search-icon"></use></svg>
-            </button>
-        </div>
+        <?js if(data.search) { ?>
+            <div class="navbar-right-item">
+                <button class="icon-button" id="search-button">
+                    <svg><use xlink:href="#search-icon"></use></svg>
+                </button>
+            </div>
+        <?js } ?>
         <div class="navbar-right-item" >
             <button class="icon-button" id="theme-toggle">
                 <svg><use id="theme-svg-use" xlink:href="#<?js= this.theme?>-theme-icon"></use></svg>

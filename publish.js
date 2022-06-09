@@ -498,17 +498,6 @@ function getTheme() {
   return theme;
 }
 
-function search() {
-  var searchOption = themeOpts.search;
-
-  var obj = {
-    list: searchListArray,
-    options: JSON.stringify(searchOption)
-  };
-
-  return obj;
-}
-
 function buildSidebarMembers({
   items,
   itemHeading,
@@ -551,12 +540,11 @@ function buildSidebarMembers({
         );
 
         if (hasSearch) {
-          searchListArray.push(
-            JSON.stringify({
-              title: item.name,
-              link: linkto(item.longname, item.name)
-            })
-          );
+          searchListArray.push({
+            title: item.name,
+            link: linkto(item.longname, item.name),
+            description: item.description
+          });
         }
 
         if (methods.length) {
@@ -577,12 +565,11 @@ function buildSidebarMembers({
             name = first + ' &rtrif; ' + last;
 
             if (hasSearch) {
-              searchListArray.push(
-                JSON.stringify({
-                  title: method.longname,
-                  link: linkto(method.longname, name)
-                })
-              );
+              searchListArray.push({
+                title: method.longname,
+                link: linkto(method.longname, name),
+                description: item.classdesc
+              });
             }
           });
         }
@@ -972,7 +959,6 @@ exports.publish = function(taffyData, opts, tutorials) {
   // once for all
   view.sidebar = buildSidebar(members);
   view.navbar = buildNavbar();
-  view.search = search();
   view.resizeable = resizeable();
   view.codepen = codepen();
   view.excludeInherited = Boolean(themeOpts.exclude_inherited);
@@ -980,6 +966,18 @@ exports.publish = function(taffyData, opts, tutorials) {
     find({ longname: { left: 'module:' } }),
     members.modules
   );
+
+  // output search file if search
+
+  if (hasSearch) {
+    fs.mkPath(path.join(outdir, 'data'));
+    fs.writeFileSync(
+      path.join(outdir, 'data', 'search.json'),
+      JSON.stringify({
+        list: searchListArray
+      })
+    );
+  }
 
   // generate the pretty-printed source files first so other pages can link to them
   if (outputSourceFiles) {
