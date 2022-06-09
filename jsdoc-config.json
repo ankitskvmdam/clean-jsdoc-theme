@@ -8,7 +8,7 @@
     "plugins": ["plugins/markdown"],
     "opts": {
         "encoding": "utf8",
-        "destination": "output/dark",
+        "destination": "output/v4",
         "recurse": true,
         "template": "./",
         "tutorials": "./demo/src/tutorials",
