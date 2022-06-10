@@ -718,9 +718,16 @@ pre {
 .search-container .wrapper {
     width: 100%;
     max-width: 60rem;
-    padding: 2rem;
+    padding: 4rem 2rem 2rem;
     border-radius: 1rem;
     margin: 3rem 25rem;
+    position: relative;
+}
+
+.search-close-button {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
 }
 
 .search-result-c {

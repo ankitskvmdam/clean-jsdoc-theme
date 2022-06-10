@@ -353,6 +353,10 @@ blockquote {
     background: rgba(255, 255, 255, 0.1);
 }
 
+.icon-button.search-close-button svg {
+    fill: #a00;
+}
+
 .search-container .wrapper {
     background: #222;
 }

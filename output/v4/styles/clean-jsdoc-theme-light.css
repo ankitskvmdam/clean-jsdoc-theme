@@ -338,6 +338,10 @@ body.light {
     background: rgba(0, 0, 0, 0.1);
 }
 
+.light .search-close-button svg {
+    fill: #f00;
+}
+
 .light .search-container .wrapper {
     background: #eee;
 }
