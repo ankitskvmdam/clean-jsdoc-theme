@@ -350,6 +350,7 @@ function generateSourceFiles(sourceFiles, encoding) {
     try {
       source = {
         kind: 'source',
+        title: sourceOutfile.replace('.html', ''),
         code: helper.htmlsafe(
           fs.readFileSync(sourceFiles[file].resolved, encoding)
         )

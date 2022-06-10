@@ -607,6 +607,10 @@ code {
     justify-content: center;
 }
 
+.source-page + .footer {
+    margin-top: 3rem;
+}
+
 .footer .wrapper {
     flex: 1;
     padding: 1rem 2rem;

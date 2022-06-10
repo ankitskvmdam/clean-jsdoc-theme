@@ -314,7 +314,7 @@ function processAllPre() {
   var navbarHeight = navbar.getBoundingClientRect().height;
 
   // eslint-disable-next-line no-undef
-  var preMaxHeight = window.innerHeight - navbarHeight - footerHeight - 180;
+  var preMaxHeight = window.innerHeight - navbarHeight - footerHeight - 250;
 
   // var isSource = isSourcePage();
 
