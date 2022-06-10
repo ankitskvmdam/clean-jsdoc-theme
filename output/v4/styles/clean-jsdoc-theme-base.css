@@ -910,6 +910,15 @@ pre {
     .navbar-container {
         display: none;
     }
+
+    .source-page + .footer,
+    .footer {
+        margin-top: 2rem;
+    }
+
+    .has-anchor:hover .link-anchor {
+        visibility: hidden;
+    }
 }
 
 .rel {
