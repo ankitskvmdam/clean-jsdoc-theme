@@ -881,6 +881,9 @@ pre {
         padding: 0 1rem 1rem;
     }
 
+    .search-result-c {
+        max-height: 25rem;
+    }
     .mobile-menu-icon-container {
         display: block;
     }
