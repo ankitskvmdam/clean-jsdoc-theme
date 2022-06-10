@@ -499,7 +499,7 @@ function getTheme() {
 }
 
 function getBaseURL() {
-  var url = themeOpts.base_url || '';
+  var url = themeOpts.base_url || '/';
 
   return url;
 }
