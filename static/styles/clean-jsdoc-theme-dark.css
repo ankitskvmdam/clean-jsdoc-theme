@@ -399,10 +399,6 @@ blockquote {
 }
 
 .mobile-menu-icon-container .icon-button {
-    background: #222;
-}
-
-.mobile-menu-icon-container .icon-button[data-isopen='true'] {
     background: #333;
 }
 
