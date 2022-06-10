@@ -877,6 +877,10 @@ pre {
         font-size: 1rem;
     }
 
+    .main-wrapper {
+        padding: 0 1rem 1rem;
+    }
+
     .mobile-menu-icon-container {
         display: block;
     }
