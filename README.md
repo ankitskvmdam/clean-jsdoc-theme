@@ -224,7 +224,7 @@ By default, the search feature is available in the theme. If you don't want the 
 
 ```json
 "theme_opts": {
-	"search": false
+  "search": false
 }
 ```
 
