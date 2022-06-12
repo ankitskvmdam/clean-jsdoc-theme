@@ -11,12 +11,13 @@ Some salient features:
 1. It has a premium-looking dark and light theme.
 1. It minifies all the output HTML files (this helps in saving a few KBs).
 1. It has search support. The search feature doesn't increase the size of output HTML files.
+1. It updates regularly.
 
 We know that no library is perfect. That's why we are open to hearing from the community about the theme. For any suggestions, questions or bugs, feel free to create an <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme/issues">issue</a>.
 
 ## Demo
 
-1. To view this theme, visit [ankdev.me/clean-jsdoc-theme/v4](https://ankdev.me/clean-jsdoc-theme/v4).
+1. To view this theme, visit [https://ankdev.me/clean-jsdoc-theme/v4](https://ankdev.me/clean-jsdoc-theme/v4).
 
 1. If you want to see a demo repo to set up this theme, visit [https://github.com/ankitskvmdam/clean-jsdoc-theme-example](https://github.com/ankitskvmdam/clean-jsdoc-theme-example). This repo will guide you step by step on how to setup jsdoc and clean-jsdoc-theme in your existing repo.
 
@@ -426,7 +427,7 @@ npm run build
 
 ## Thanks
 
-Thanks to [fuse.js](https://fusejs.io/), [hljs](https://highlightjs.org/), and [tippy.js](https://tippyjs.bootcss.com/).
+Thanks to [fuse.js](https://fusejs.io/), [hljs](https://highlightjs.org/),[tippy.js](https://tippyjs.bootcss.com/), and all awesome contributors.
 
 ## Contact
 
