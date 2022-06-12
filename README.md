@@ -273,7 +273,7 @@ To create custom scripts. Example:
 
 ### Add style paths
 
-Use this option to add third party css library. If you want to add your own custom css file then consider using [Add custom css files](#Add custom css files)
+Use this option to add third party css library. If you want to add your own custom css file then consider using [Add custom css files](#add-custom-css-files)
 
 > Note: You have to pass an array of object, and object keys are actually the attributes which you want in you link tag.
 
@@ -291,7 +291,7 @@ Example:
 
 ### Add script paths
 
-Use this option to add third party js library. If you want to add your own custom script file then consider using [Add custom script files](#Add custom script files)
+Use this option to add third party js library. If you want to add your own custom script file then consider using [Add custom script files](#add-custom-script-files)
 
 > Note: You have to pass an array of object, and object keys are actually the attributes which you want in you script tag.
 
