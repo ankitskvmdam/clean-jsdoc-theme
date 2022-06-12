@@ -125,7 +125,7 @@ To set favicon add the following in your jsodc config files.
 
 ```
 
-You can use [`static_dir`](#Add static dir) option to copy all you static files to output dir and use that path in place of `path/to/img`.
+You can use [`static_dir`](#add-static-dir) option to copy all you static files to output dir and use that path in place of `path/to/img`.
 
 ### Add title
 
@@ -137,7 +137,7 @@ Both strings and HTML are accepted; use HTML to overwrite the default HTML, and 
 }
 ```
 
-You can use [`static_dir`](#Add static dir) option to copy all you static files to output dir and use that path in place of `path/to/img`.
+You can use [`static_dir`](#add-static-dir) option to copy all you static files to output dir and use that path in place of `path/to/img`.
 
 ### Add navbar menu
 
