@@ -1,42 +1,42 @@
 # clean-jsdoc-theme
 
-A beautiful, responsive, customizable theme for JSDoc
-
 [![Stars](https://img.shields.io/github/stars/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme) [![Fork](https://img.shields.io/github/forks/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/fork) ![Version](https://img.shields.io/badge/version-4.0.0-005bff) [![Issues Open](https://img.shields.io/github/issues/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues) [![Contributors](https://img.shields.io/github/contributors/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors) [![Build Status](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme.svg?branch=production)](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme) [![license](https://img.shields.io/github/license/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/LICENSE)
 <br>
 
-Clean-jsdoc-theme is a beautifully crafted theme/template for JSDoc 3. This theme/template looks and feels like a premium theme/template as it's mobile responsive and also highly customizable. For more options [look below at the options section](#options).
+clean-jsdoc-theme is a beautifully crafted theme for JSDoc 3. It is a clean and fully responsive theme with loads of customisation features.
 
-For any suggestions, questions or bugs, feel free to create an <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme/issues">issue</a> in this repo.
+Some salient features:
 
-## Setup Example
+1. It supports most screens, i.e., desktops, laptops, iPad and mobile devices.
+1. It has a premium-looking dark and light theme.
+1. It minifies all the output HTML files (this helps in saving a few KBs).
+1. It has search support. The search feature doesn't increase the size of output HTML files.
 
-1. [https://github.com/ankitskvmdam/clean-jsdoc-theme-example](https://github.com/ankitskvmdam/clean-jsdoc-theme-example) - This repo will give an overview of how to setup clean-jsdoc-theme.
+We know that no library is perfect. That's why we are open to hearing from the community about the theme. For any suggestions, questions or bugs, feel free to create an <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme/issues">issue</a>.
 
-## Libraries Used
+## Demo
 
-1. [Fuse.js](https://fusejs.io/) - Fuse.js is a powerful, lightweight fuzzy-search library, with zero dependencies.
+1. To view this theme, visit [ankdev.me/clean-jsdoc-theme/v4](https://ankdev.me/clean-jsdoc-theme/v4).
 
-## Motivation
-
-When I was new to JavaScript documentation and [JSDoc](https://jsdoc.app/), it was hard for me to find a theme for JSDoc which was highly customizable or regularly maintained. Features that these lacked included responsiveness, a working search bar, and customization.
-To tackle these problems I created this project, an easy to use, responsive theme for JSDoc. I am actively working on this project and I try to make changes to the project frequently to make sure it's up to date.
+1. If you want to see a demo repo to set up this theme, visit [https://github.com/ankitskvmdam/clean-jsdoc-theme-example](https://github.com/ankitskvmdam/clean-jsdoc-theme-example). This repo will guide you step by step on how to setup jsdoc and clean-jsdoc-theme in your existing repo.
 
 ## Installation
 
-> Note you must have `npm` installed on your machine.
+> Note you must have `node` and `npm` installed on your machine.
 
 On your command line type
 
 ```bash
-npm install clean-jsdoc-theme
+npm install clean-jsdoc-theme --save-dev
+# or
+yarn add clean-jsdoc-theme -D
 ```
 
-In your projects `package.json` file add a generate script
+In your projects `package.json` file add a generate script. You need to run this script when you want to generate documentation.
 
 ```json
 "script": {
-  "generate-docs": "node_modules/.bin/jsdoc --configure jsdoc.json --verbose"
+  "generate-docs": "jsdoc --configure jsdoc.json --verbose"
 }
 ```
 
@@ -47,6 +47,8 @@ In your `jsdoc.json` file, add a template option.
   "template": "node_modules/clean-jsdoc-theme"
 }
 ```
+
+> Heads Up! In the `generate_docs` script, there is a configure option. The value of that option is `jsdoc.json`. Make sure the `jsdoc.json` file exists. `jsdoc.json` contains configurations for JSDoc. If you have your JSDoc config in a different file, replace `jsdoc.json` with the name of the file in which you have your JSDoc config.
 
 Now to generate docs run
 
@@ -76,7 +78,11 @@ For more information look at [https://github.com/ankitskvmdam/clean-jsdoc-theme-
         "verbose": true,
         "template": "./node_modules/clean-jsdoc-theme",
         "theme_opts": {
-            "theme": "dark"
+            "default_theme": "dark"
+        },
+        "markdown": {
+            "hardwrap": false,
+            "idInHeadings": true // This is important for clean-jsdoc-theme, otherwise some features might not work.
         }
     }
 }
@@ -84,67 +90,97 @@ For more information look at [https://github.com/ankitskvmdam/clean-jsdoc-theme-
 
 ## Options
 
-To use custom options (such as light and dark modes), pass an object called `theme_opts` in your config file under `opts`.
+### Set a default theme
 
-### `theme : "light" | "dark"`
-
-To set the overall theme of the documentation file(s). Currently there is only two variant `"light"` and `"dark"` but in future I will try to add more.
-`Default value is "dark"`
-
-### `favicon: string`
-
-This option sets the favicon of the document. It accepts strings defining the path of the icon.
+To set the default theme add the following in your jsodc config file:
 
 ```json
+"theme_opts": {
+  "default_theme": "dark" // or "light"
+}
+```
+
+### Set base url
+
+If you want to set the base url:
+
+```json
+"theme_opts": {
+  "base_url": "https://ankdev.me/v4/"
+}
+```
+
+> Make sure to add the ending forward slash (`/`).
+
+If you are using search feature then make sure to add `base_url`, otherwise your search query might fail.
+
+### Add favicon
+
+To set favicon add the following in your jsodc config files.
+
+```json
+"theme_opts": {
  "favion": "path/to/img"
+}
+
 ```
 
-You can use `static_dir` to copy all you static files to output dir and use that path in place of `path/to/img`. For more details look `static_dir` section.
+You can use [`static_dir`](#Add static dir) option to copy all you static files to output dir and use that path in place of `path/to/img`.
 
-### `title: string | HTML`
+### Add title
 
-This option sets the title of the document in the navbar. Both strings and HTML are accepted; use HTML to overwrite the default HTML, and a string to set a plaintext title. One example of this is below:
+Both strings and HTML are accepted; use HTML to overwrite the default HTML, and a string to set a plaintext title. One example of this is below:
 
 ```json
- "title": "<img src='path/to/img' class='my-custom-class'/>"
+"theme_opts": {
+  "title": "<img src='path/to/img' class='my-custom-class'/>" // or "title": "clean-jsodc-theme"
+}
 ```
 
-You can use `static_dir` to copy all you static files to output dir and use that path in place of `path/to/img`. For more details look `static_dir` section.
+You can use [`static_dir`](#Add static dir) option to copy all you static files to output dir and use that path in place of `path/to/img`.
 
-### `menu: Array<{}>`
+### Add navbar menu
 
-This options allows rendering of extra link(s) in navbar to the side of the documentation. It accepts an array of objects, such as in the following example example:
+To render extra link(s) in navbar. It accepts an array of objects:
 
 ```json
-"menu" : [
-  {
-    "title": "Website",
-    "link": "https://ankdev.me/clean-jsdoc-theme/dark/",
-    "target": "_blank",
-    "class": "some-class",
-    "id": "some-id"
-  }
-]
+"theme_opts": {
+  "menu" : [
+    {
+      "title": "Website",
+      "link": "https://ankdev.me/clean-jsdoc-theme/dark/",
+      "target": "_blank",
+      "class": "some-class",
+      "id": "some-id"
+    },
+    {
+      // more if you want to.
+    }
+  ]
+}
 ```
 
-#### Required properties
+`menu` is an array of object. Each object has five properties, out of which two are required (`title` and `link`). If any object doesn't have the required properties then you might expect an error.
 
-| name    | type     |
-| ------- | -------- |
-| `title` | `string` |
-| `link`  | `string` |
+<b>Properties</b>
 
-#### Optional Properties
+| name     | type     | required |
+| -------- | -------- | -------- |
+| `title`  | `string` | required |
+| `link`   | `string` | required |
+| `target` | `string` | optional |
+| `class`  | `string` | optional |
+| `id`     | `string` | optional |
 
-| name     | type     |
-| -------- | -------- |
-| `target` | `string` |
-| `class`  | `string` |
-| `id`     | `string` |
+### Sections
 
-### `sections: Array<SECTION_TYPE>`
+There is an option to order the occurrence of sections in the sidebar. You can use this option to hide/remove any section.
 
-This can be used to order the navbar sections. This can also be used to hide/remove any section.
+```json
+"theme_opts": {
+  "sections": ["Classes", "Modules", "Global"] // Only three members will be in the sidebar.
+}
+```
 
 ```js
 // SECTION_TYPE
@@ -161,98 +197,83 @@ This can be used to order the navbar sections. This can also be used to hide/rem
 ];
 ```
 
-```json
-"sections": ["Classes", "Modules", "Global"] // Only 4 members will be in the navbar.
-```
+### Meta
 
-### `meta: Array<{}>`
-
-A list of `meta` tag attributes to add to the `head` of each page.
+There is also an option to add meta tag to every generated HTML file. You can use `meta` option to include a list of `meta` tags into `head`.
 
 ```json
-"meta" : [
-  {
-    "name": "author",
-    "content": "Ankit Kumar"
-  },
-  {
-    "name": "description",
-    "content": "Best Clean and minimal JSDoc 3 Template/Theme"
-  }
-]
-```
-
-#### Properties
-
-Any valid combination of [HTML metadata attributes](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta#Attributes).
-
-### `search: {}`
-
-To render search. Default value:
-
-```json
-"search": {
-  "shouldSort": true,
-  "threshold": 0.4,
-  "location": 0,
-  "distance": 100,
-  "maxPatternLength": 32,
-  "minMatchCharLength": 1,
+"theme_opts": {
+  "meta" : [
+    {
+      "name": "author",
+      "content": "Ankit Kumar"
+    },
+    {
+      "name": "description",
+      "content": "Best Clean and minimal JSDoc 3 Template/Theme"
+    }
+  ]
 }
 ```
 
-If you don't want to render search box then do the following:
+`meta` is an array of object. Each objects can have any valid combination of [HTML metadata attributes](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta#Attributes).
+
+### Search
+
+By default, the search feature is available in the theme. If you don't want the search feature, you can do the following:
 
 ```json
-"search" false
+"theme_opts": {
+	"search": false
+}
 ```
 
-#### Properties
+> Make sure you have added the `base_url` option as well, otherwise your search query might fail.
 
-Any valid [fuse.js properties](https://fusejs.io/api/options.html)
+How does the search work?
+If the search feature is enabled, you'll see a `data` folder in the output. This `data` folder contains a JSON called `search.json`. There is a fetch request when user types anything in the search box. That means search data is only loaded if user wants to search anything.
 
-### `codepen: {}`
+### CodePen
 
-This will add a link to the codepen with prefilled data.
-
-> Note: Currently this feature is only enabled for examples section.
+> Note: Currently this feature is only enabled for the examples section.
 
 ```json
-"codepen": {
-  "enable_for": ["examples"],
-  "options": {
-    "js_external": "https://code.jquery.com/jquery-3.6.0.min.js",
-    "js_pre_processor": "babel"
+"theme_opts": {
+  "codepen": {
+    "enable_for": ["examples"],
+    "options": {
+      "js_external": "https://code.jquery.com/jquery-3.6.0.min.js",
+      "js_pre_processor": "babel"
+    }
   }
 }
 ```
 
-`options` can be any valid codepen options. For more visit: [Codepen Prefill options](https://blog.codepen.io/documentation/prefill/#all-the-json-options-0)
-if you want default behaviour then don't pass anything in options.
+`options` can be any valid CodePen options. For more visit: [Codepen Prefill options](https://blog.codepen.io/documentation/prefill/#all-the-json-options-0)
 
-### `create_style: string`
+### Add styles
 
 To create custom style rules. Example:
 
 ```json
-"create_style": "nav{background: yellow} footer {background: green}"
+"theme_opts" {
+  "create_style": ".sidebar-title { font-size: 2rem }"
+}
 ```
 
-Here the nav and footer style rule is to attached to the HTML's `style` tag.
-
-### `add_scripts: string`
+### Add scripts
 
 To create custom scripts. Example:
 
 ```json
-"add_scripts": "function foo(){console.log('foo')} function bar() {console.log('bar')}"
+"theme_opts": {
+  "add_scripts": "function foo(){console.log('foo')} function bar() {console.log('bar')}"
+}
 ```
 
-Here the script is to attached to the HTML's `script` tag.
+### Add style paths
 
-### `add_style_path: Array<{}>`
-
-Use this option to add third party css library.
+Use this option to add third party css library. If you want to add your own custom css file then consider using [Add custom css files](#Add custom css files)
 
 > Note: You have to pass an array of object, and object keys are actually the attributes which you want in you link tag.
 
@@ -268,13 +289,9 @@ Example:
 ],
 ```
 
-#### Properties
+### Add script paths
 
-Any valid [style tag attributes](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/style)
-
-### `add_script_path: Array<{}>`
-
-Use this option to add third party js library.
+Use this option to add third party js library. If you want to add your own custom script file then consider using [Add custom script files](#Add custom script files)
 
 > Note: You have to pass an array of object, and object keys are actually the attributes which you want in you script tag.
 
@@ -290,58 +307,60 @@ Example:
 ],
 ```
 
-### Properties
-
-Any valid [script tag attributes](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script)
-
-### `footer: string | HTML`
-
-Thing which you want to render as the footer. You can either pass a string or HTML.
-Use HTML to overwrite the default HTML.
+### Footer
 
 ```json
-"footer": "This is footer"
+"theme_opts": {
+
+  "footer": "This is footer" // or <div class="footer-wrapper">This is a footer </div>
+}
 ```
 
-### `static_dir: Array<string>`
+### Add static dir
 
-To include static files. Example:
+To include static files:
 
 ```json
-"static_dir": ["./static"],
+"theme_opts": {
+  "static_dir": ["./static"],
+}
 ```
 
 This will copy the static folder to the output dir.
 
 > Note: If the directory doesn't exists then you may get an error. Also directory is relative to your jsdoc config file.
 
-This will not flatten then directory it keep the directory structure as it is.
+This will not flatten the directory it keep the directory structure as it is.
 
-### `include_css: Array<string>`
+### Add custom css files
 
 To include css files. Example:
 
 ```json
-"include_css": ["./static/index.css", "./src/docs/index.css"]
+"theme_opts" {
+  "include_css": ["./static/index.css", "./src/docs/index.css"]
+}
 ```
 
 > Note: You are not required to manually copy file to output dir
 
 It will include the css files to the output dir and also attach a link tag to the html pointing to the included css file.
 
-### `include_js: Array<string>`
+### Add custom script files
 
 To include js files. Example:
 
 ```json
-"include_js": ["./static/index.js", "./src/docs/index.js"]
+"theme_opts": {
+  "include_js": ["./static/index.js", "./src/docs/index.js"]
+}
 ```
 
 > Note: You are not required to manually copy file to output dir
 
 It will include the js files to the output dir and also attach a script tag to the html pointing to the included js file.
 
-### `exclude_inherited: <boolean>`
+### To exclude inherited
 
 To exclude inherited symbols. Example:
 
@@ -351,84 +370,15 @@ To exclude inherited symbols. Example:
 
 This will remove all symbols (members, methods ...) that come from inherited parents.
 
-### Example `theme_opts`
-
-```json
-"opts":{
-  "theme_opts":{
-    "theme": "dark",
-    "title": "clean-jsdoc-theme",
-    "menu": [
-      {
-        "title": "Website",
-        "link": "https://ankdev.me/clean-jsdoc-theme/index.html",
-        "target": "_blank",
-        "class": "some-class",
-        "id": "some-id"
-      },
-      {
-        "title": "Github",
-        "link": "https://github.com/ankitskvmdam/clean-jsdoc-theme/",
-        "target": "_blank",
-        "class": "some-class",
-        "id": "some-id"
-      }
-    ],
-
-    "meta": [
-        {
-          "name": "author",
-          "content": "Ankit Kumar"
-        },
-        {
-          "name": "description",
-          "content": "Best Clean and minimal JSDoc 3 Template/Theme"
-        }
-      ],
-    "search": {},
-    "create_style": "nav{background: yellow}",
-    "add_style_path": [
-      {
-        "href": "https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css",
-        "integrity": "sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1",
-        "crossorigin": "anonymous"
-      }
-    ],
-    "add_scripts": "function foo(){console.log('foo')}",
-    "add_script_path": [
-      {
-        "src": "https://code.jquery.com/jquery-3.5.1.js",
-        "integrity": "sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc=",
-        "crossorigin": "anonymous"
-      }
-    ],
-
-    "footer": "This is footer",
-    "static_dir": ["./static"],
-    "include_css": ["./static/index.css", "./src/docs/index.css"],
-    "include_js": ["./static/main.js", "./third-party/test/index.js"],
-
-    "exclude_inherited": true,
-    "codepen": {
-      "enable_for": ["examples"],
-      "options": {
-        "js_external": "https://code.jquery.com/jquery-3.6.0.min.js",
-        "js_pre_processor": "babel"
-      }
-    }
-  }
-}
-```
-
-### Cheat sheet
+## Cheat sheet
 
 | name                | default                                                                                                      | use case                                                                   | expected value(s)     |
 | ------------------- | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- | --------------------- |
-| `theme`             | `"dark"`                                                                                                     | To set the theme variant                                                   | `"light" or "dark"`   |
+| `default_theme`     | `"dark"`                                                                                                     | To set the default theme                                                   | `"light" or "dark"`   |
 | `title`             | `null`                                                                                                       | To set the title                                                           | `HTML` or `string`    |
 | `menu`              | `null`                                                                                                       | To render extra link in navbar                                             | Array of Object(s)    |
 | `meta`              | `null`                                                                                                       | Meta tag attributes                                                        | Array of Object(s)    |
-| `search`            | `{}`                                                                                                         | To render search or not                                                    | Fuse.js options       |
+| `search`            | `true`                                                                                                       | To render search or not                                                    | `true` or `false`     |
 | `codepen`           | `{}`                                                                                                         | To open code in codepen                                                    | `Object`              |
 | `create_style`      | `null`                                                                                                       | To create custom style rules                                               | `string`              |
 | `add_style_path`    | `null`                                                                                                       | To add external css libraries/files                                        | Array of Object(s)    |
@@ -454,10 +404,10 @@ git clone https://github.com/ankitskvmdam/clean-jsdoc-theme.git
 cd clean-jsdoc-theme
 npm install
 npm install jsdoc --no-save
-npm run test
+npm run build
 ```
 
-`npm run test` will generate files in output folder.
+`npm run build` will generate files in output folder.
 
 ## Contributors
 
@@ -465,9 +415,14 @@ npm run test
   <img src="https://contrib.rocks/image?repo=ankitskvmdam/clean-jsdoc-theme" />
 </a>
 
+## Thanks
+
+Thanks to [fuse.js](https://fusejs.io/), [hljs](https://highlightjs.org/), and [tippy.js](https://tippyjs.bootcss.com/).
+
 ## Contact
 
-If you like my work, then give me a <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme" data-icon="octicon-star" aria-label="Star ankitskvmdam/clean-jsdoc-theme on GitHub">star</a>. This will act as a driving force to add new feature more frequently. <br>
+If you like my work, then give me a <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme" data-icon="octicon-star" aria-label="Star ankitskvmdam/clean-jsdoc-theme on GitHub">star</a>.
+
 Mail me at: <a href="mailto:hello@ankdev.me">hello@ankdev.me</a> <br>
 
 ## License
