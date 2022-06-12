@@ -17,7 +17,7 @@ We know that no library is perfect. That's why we are open to hearing from the c
 
 ## Demo
 
-1. To view this theme, visit [ankdev.me/clean-jsdoc-theme/v4](https://ankdev.me/clean-jsdoc-theme/v4).
+1. To view this theme, visit [https://ankdev.me/clean-jsdoc-theme/v4](https://ankdev.me/clean-jsdoc-theme/v4).
 
 1. If you want to see a demo repo to set up this theme, visit [https://github.com/ankitskvmdam/clean-jsdoc-theme-example](https://github.com/ankitskvmdam/clean-jsdoc-theme-example). This repo will guide you step by step on how to setup jsdoc and clean-jsdoc-theme in your existing repo.
 
