@@ -20,6 +20,15 @@ We know that no library is perfect. That's why we are open to hearing from the c
 
 1. If you want to see a demo repo to set up this theme, visit [https://github.com/ankitskvmdam/clean-jsdoc-theme-example](https://github.com/ankitskvmdam/clean-jsdoc-theme-example). This repo will guide you step by step on how to setup jsdoc and clean-jsdoc-theme in your existing repo.
 
+## Screenshots
+
+![Dark theme](./example/screen-1.png)
+![Light theme](./example/screen-2.png)
+![Mobile View](./example/screen-3.png)
+![Search view](./example/screen-4.png)
+![Class page](./example/screen-5.png)
+![Code page](./example/screen-6.png)
+
 ## Installation
 
 > Note you must have `node` and `npm` installed on your machine.
