@@ -7,6 +7,7 @@
 1. New dark and light theme.
 1. New search feature which doesn't cost KBs. [#search](https://github.com/ankitskvmdam/clean-jsdoc-theme#search)
 1. Minify all generated files.
+1. Added Table of content.
 
 ### Removed
 
