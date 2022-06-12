@@ -251,6 +251,16 @@ If the search feature is enabled, you'll see a `data` folder in the output. This
 
 `options` can be any valid CodePen options. For more visit: [Codepen Prefill options](https://blog.codepen.io/documentation/prefill/#all-the-json-options-0)
 
+### Add static dir
+
+To include static files:
+
+```json
+"theme_opts": {
+  "static_dir": ["./static"],
+}
+```
+
 ### Add styles
 
 To create custom style rules. Example:
@@ -258,16 +268,6 @@ To create custom style rules. Example:
 ```json
 "theme_opts" {
   "create_style": ".sidebar-title { font-size: 2rem }"
-}
-```
-
-### Add scripts
-
-To create custom scripts. Example:
-
-```json
-"theme_opts": {
-  "add_scripts": "function foo(){console.log('foo')} function bar() {console.log('bar')}"
 }
 ```
 
@@ -289,6 +289,30 @@ Example:
 ],
 ```
 
+### Add custom css files
+
+To include css files. Example:
+
+```json
+"theme_opts" {
+  "include_css": ["./static/index.css", "./src/docs/index.css"]
+}
+```
+
+> Note: You are not required to manually copy file to output dir
+
+It will include the css files to the output dir and also attach a link tag to the html pointing to the included css file.
+
+### Add scripts
+
+To create custom scripts. Example:
+
+```json
+"theme_opts": {
+  "add_scripts": "function foo(){console.log('foo')} function bar() {console.log('bar')}"
+}
+```
+
 ### Add script paths
 
 Use this option to add third party js library. If you want to add your own custom script file then consider using [Add custom script files](#add-custom-script-files)
@@ -307,44 +331,11 @@ Example:
 ],
 ```
 
-### Footer
-
-```json
-"theme_opts": {
-
-  "footer": "This is footer" // or <div class="footer-wrapper">This is a footer </div>
-}
-```
-
-### Add static dir
-
-To include static files:
-
-```json
-"theme_opts": {
-  "static_dir": ["./static"],
-}
-```
-
 This will copy the static folder to the output dir.
 
 > Note: If the directory doesn't exists then you may get an error. Also directory is relative to your jsdoc config file.
 
 This will not flatten the directory it keep the directory structure as it is.
-
-### Add custom css files
-
-To include css files. Example:
-
-```json
-"theme_opts" {
-  "include_css": ["./static/index.css", "./src/docs/index.css"]
-}
-```
-
-> Note: You are not required to manually copy file to output dir
-
-It will include the css files to the output dir and also attach a link tag to the html pointing to the included css file.
 
 ### Add custom script files
 
@@ -359,6 +350,15 @@ To include js files. Example:
 > Note: You are not required to manually copy file to output dir
 
 It will include the js files to the output dir and also attach a script tag to the html pointing to the included js file.
+
+### Footer
+
+```json
+"theme_opts": {
+
+  "footer": "This is footer" // or <div class="footer-wrapper">This is a footer </div>
+}
+```
 
 ### To exclude inherited
 
