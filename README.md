@@ -11,6 +11,7 @@ Some salient features:
 1. It has a premium-looking dark and light theme.
 1. It minifies all the output HTML files (this helps in saving a few KBs).
 1. It has search support. The search feature doesn't increase the size of output HTML files.
+1. It updates regularly.
 
 We know that no library is perfect. That's why we are open to hearing from the community about the theme. For any suggestions, questions or bugs, feel free to create an <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme/issues">issue</a>.
 
