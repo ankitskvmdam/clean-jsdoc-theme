@@ -1,5 +1,20 @@
 ## Change Log
 
+### In version 4.0.0
+
+### New
+
+1. New dark and light theme.
+1. New search feature which doesn't cost KBs. [#search](https://github.com/ankitskvmdam/clean-jsdoc-theme#search)
+1. Minify all generated files.
+
+### Removed
+
+1. Search options
+1. `theme` options. Now it is `default_theme`
+1. `overlay_scrollbar`. We found that you can include overlay scrollbar using [`add_script_path`](https://github.com/ankitskvmdam/clean-jsdoc-theme#add-script-paths) and [`include_js`](https://github.com/ankitskvmdam/clean-jsdoc-theme#add-custom-script-files) options.
+1. `resizeable`. Now there is no option to resize sidebar.
+
 ### In version 3.3.2
 
 ### Feature
