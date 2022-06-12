@@ -82,6 +82,11 @@ a:hover {
     text-decoration: underline;
 }
 
+/* badges */
+a img {
+    margin-right: 0.5rem;
+}
+
 p {
     margin: 1rem 0;
 }
