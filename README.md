@@ -427,7 +427,7 @@ npm run build
 
 ## Thanks
 
-Thanks to [fuse.js](https://fusejs.io/), [hljs](https://highlightjs.org/), and [tippy.js](https://tippyjs.bootcss.com/).
+Thanks to [fuse.js](https://fusejs.io/), [hljs](https://highlightjs.org/),[tippy.js](https://tippyjs.bootcss.com/), and all awesome contributors.
 
 ## Contact
 
