@@ -226,25 +226,11 @@ table .params thead tr,
     color: #aaaaaa;
 }
 
-.code-copy-icon-container {
-    fill: #fff;
-}
-
-.code-copy-icon-container:hover {
-    background-color: #444;
-}
-
 .code-lang-name {
     color: #ff8a00;
 }
 
 .tooltip {
-    background: #ffce76;
-    color: #222;
-}
-
-.tooltip .pun,
-.tooltip .typ {
     background: #ffce76;
     color: #222;
 }
