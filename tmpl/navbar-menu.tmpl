@@ -1,5 +1,6 @@
 <?js 
     var data = this.navbar
+    var idSuffix = obj || ''
     if(data.menu) { ?>
     <?js 
         data.menu.forEach(function(item) {
@@ -7,6 +8,9 @@
             var id = item.id || '';
             var target = item.target || '';
             className += ' navbar-item'
+            if(id) {
+                id += idSuffix
+            }
             ?>
             
 <div class="<?js=className ?>"> 

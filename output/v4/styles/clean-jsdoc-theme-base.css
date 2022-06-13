@@ -43,6 +43,7 @@ h5,
 h6 {
     font-family: 'heading';
     font-weight: normal;
+    line-height: 1.75;
 }
 
 h1 {
@@ -56,17 +57,15 @@ h2 {
 }
 
 h3 {
-    font-size: 2rem;
-    margin: 2rem 0 0;
+    font-size: 1.5rem;
 }
 
 h4 {
-    font-size: 1.5rem;
-    margin: 1.5rem 0 0;
+    font-size: 1.25rem;
 }
 
 h5 {
-    font-size: 1.25rem;
+    font-size: 1rem;
 }
 
 h6 {
@@ -549,6 +548,7 @@ code {
 
 .icon-button {
     background: transparent;
+    position: relative;
     display: inline-flex;
     border: 0;
     padding: 0.5rem;
@@ -694,7 +694,7 @@ pre {
     padding: 0.1875rem 0.5rem;
     position: absolute;
     right: 2rem;
-    top: -0.125rem;
+    top: 0.3125rem;
     transform: scale(0);
     transition: 0.3s;
 }

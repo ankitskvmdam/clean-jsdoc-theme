@@ -67,20 +67,20 @@
         <?js= self.partial('details.tmpl', doc) ?>
 
         <?js if (doc.examples && doc.examples.length) { ?>
-            <h3 id="example" class="has-anchor">Example<?js= doc.examples.length > 1? 's':'' ?></h3>
+            <h2 id="example" class="has-anchor">Example<?js= doc.examples.length > 1? 's':'' ?></h2>
             <?js= self.partial('examples.tmpl', doc.examples) ?>
         <?js } ?>
     <?js } ?>
     </div>
 
     <?js if (doc.augments && doc.augments.length) { ?>
-        <h3 id="Extends" class="subsection-title has-anchor">Extends</h3>
+        <h2 id="Extends" class="subsection-title has-anchor">Extends</h2>
 
         <?js= self.partial('augments.tmpl', doc) ?>
     <?js } ?>
 
     <?js if (doc.requires && doc.requires.length) { ?>
-        <h3 id="requires" class="subsection-title has-anchor">Requires</h3>
+        <h2 id="requires" class="subsection-title has-anchor">Requires</h2>
 
         <ul><?js doc.requires.forEach(function(r) { ?>
             <li><?js= self.linkto(r, r) ?></li>
@@ -91,7 +91,7 @@
         var classes = self.find({kind: 'class', memberof: doc.longname, inherited: {'!is': self.excludeInherited}});
         if (!isGlobalPage && classes && classes.length) {
     ?>
-        <h3 id="classes" class="subsection-title has-anchor">Classes</h3>
+        <h2 id="classes" class="subsection-title has-anchor">Classes</h2>
 
         <dl><?js classes.forEach(function(c) { ?>
             <dt><?js= self.linkto(c.longname, c.name) ?></dt>
@@ -103,7 +103,7 @@
         var mixins = self.find({kind: 'mixin', memberof: doc.longname, inherited: {'!is': self.excludeInherited}});
         if (!isGlobalPage && mixins && mixins.length) {
     ?>
-        <h3 id="mixins" class="subsection-title has-anchor">Mixins</h3>
+        <h2 id="mixins" class="subsection-title has-anchor">Mixins</h2>
 
         <dl><?js mixins.forEach(function(m) { ?>
             <dt><?js= self.linkto(m.longname, m.name) ?></dt>
@@ -115,7 +115,7 @@
         var namespaces = self.find({kind: 'namespace', memberof: doc.longname, inherited: {'!is': self.excludeInherited}});
         if (!isGlobalPage && namespaces && namespaces.length) {
     ?>
-        <h3 id="namespaces" class="subsection-title has-anchor">Namespaces</h3>
+        <h2 id="namespaces" class="subsection-title has-anchor">Namespaces</h2>
 
         <dl><?js namespaces.forEach(function(n) { ?>
             <dt><?js= self.linkto(n.longname, n.name) ?></dt>
@@ -134,7 +134,7 @@
         }
         if (members && members.length && members.forEach) {
     ?>
-        <h3 id="members" class="subsection-title has-anchor">Members</h3>
+        <h2 id="members" class="subsection-title has-anchor">Members</h2>
 
         <?js members.forEach(function(p) { ?>
             <?js= self.partial('members.tmpl', p) ?>
@@ -145,7 +145,7 @@
         var methods = self.find({kind: 'function', memberof: isGlobalPage ? {isUndefined: true} : doc.longname, inherited: {'!is': self.excludeInherited}});
         if (methods && methods.length && methods.forEach) {
     ?>
-        <h3 id="methods" class="subsection-title has-anchor">Methods</h3>
+        <h2 id="methods" class="subsection-title has-anchor">Methods</h2>
 
         <?js methods.forEach(function(m) { ?>
             <?js= self.partial('method.tmpl', m) ?>
@@ -156,7 +156,7 @@
         var typedefs = self.find({kind: 'typedef', memberof: isGlobalPage ? {isUndefined: true} : doc.longname, inherited: {'!is': self.excludeInherited}});
         if (typedefs && typedefs.length && typedefs.forEach) {
     ?>
-        <h3 id="type-definitions" class="subsection-title has-anchor">Type Definitions</h3>
+        <h2 id="type-definitions" class="subsection-title has-anchor">Type Definitions</h2>
 
         <?js typedefs.forEach(function(e) {
                 if (e.signature) {
@@ -176,7 +176,7 @@
         var events = self.find({kind: 'event', memberof: isGlobalPage ? {isUndefined: true} : doc.longname, inherited: {'!is': self.excludeInherited}});
         if (events && events.length && events.forEach) {
     ?>
-        <h3 id="events" class="subsection-title has-anchor">Events</h3>
+        <h2 id="events" class="subsection-title has-anchor">Events</h2>
 
         <?js events.forEach(function(e) { ?>
             <?js= self.partial('method.tmpl', e) ?>

@@ -83,11 +83,11 @@ body.light {
 }
 
 .light .icon-button:hover {
-    background: #f1f1f1;
+    background: #ddd;
 }
 
 .light .icon-button:active {
-    background: #e5e5e5;
+    background: #ccc;
 }
 
 .light .navbar-item a:active {
@@ -228,25 +228,11 @@ body.light {
     color: #454545;
 }
 
-.light .code-copy-icon-container {
-    fill: #111;
-}
-
-.light .code-copy-icon-container:hover {
-    background-color: #ddd;
-}
-
 .light .code-lang-name {
     color: #ff0000;
 }
 
 .light .tooltip {
-    background: #ffce76;
-    color: #000;
-}
-
-.light .tooltip .pun,
-.light .tooltip .typ {
     background: #ffce76;
     color: #000;
 }
@@ -330,7 +316,7 @@ body.light {
 }
 
 .light code {
-    background: #eee;
+    background: #ddd;
     color: #000;
 }
 
