@@ -15,6 +15,10 @@ const uglifyFiles = [
   {
     src: path.join(scriptsPath, 'search.js'),
     dest: path.join(scriptsPath, 'search.min.js')
+  },
+  {
+    src: path.join(scriptsPath, 'third-party', 'hljs-original.js'),
+    dest: path.join(scriptsPath, 'third-party', 'hljs.js')
   }
 ];
 
