@@ -277,11 +277,11 @@ function getPreTopBar(id, lang = '') {
 
   // template of copy to clipboard icon container
   var copyToClipboard =
-        '<div class="code-copy-icon-container" onclick="copyFunction(\'' +
+        '<button aria-label="copy code" class="icon-button" onclick="copyFunction(\'' +
         id +
-        '\')"><div><svg class="sm-icon" alt="click to copy"><use xlink:href="#copy-icon"></use></svg>' +
+        '\')"><svg class="sm-icon" alt="click to copy"><use xlink:href="#copy-icon"></use></svg>' +
         tooltip +
-        '<div></div>';
+        '</button>';
 
   var langNameDiv =
         '<div class="code-lang-name-container"><div class="code-lang-name">' +
@@ -413,7 +413,7 @@ function fontSizeTooltip() {
 
   return `
   <div class="font-size-tooltip">
-    <button class="icon-button ${
+    <button aria-label="decrease-font-size" class="icon-button ${
   fontSize >= MAX_FONT_SIZE ? 'disabled' : ''
 }" onclick="decrementFont(event)">
       <svg>
@@ -423,7 +423,7 @@ function fontSizeTooltip() {
     <div class="font-size-text" id="font-size-text">
       ${fontSize}
     </div>
-    <button class="icon-button ${
+    <button aria-label="increase-font-size" class="icon-button ${
   fontSize <= MIN_FONT_SIZE ? 'disabled' : ''
 }" onclick="incrementFont(event)">
       <svg>
