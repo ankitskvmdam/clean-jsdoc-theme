@@ -30,7 +30,7 @@
     ?>
         <form action="https://codepen.io/pen/define" method="POST" target="_blank" class="codepen-form">
             <input type="hidden" name="data" value='{"title": "<?js= example.caption || 'Example' ?>", "js": <?js= jsonString ?>, <?js= optionsString ?> }' />
-            <button class="icon-button codepen-button" type="submit" value="Create New Pen with Prefilled Data">
+            <button class="icon-button codepen-button" type="submit" value="Create New Pen with Prefilled Data" aria-label='open in codepen'>
                 <svg><use xlink:href="#codepen-icon"></use></svg>
             </button>
         </form>
