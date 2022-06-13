@@ -54,10 +54,10 @@
       <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
 
-    <script src="scripts/third-party/hljs.js"></script>
-    <script src="scripts/third-party/hljs-line-num.js"></script>
-    <script src="scripts/third-party/popper.js"></script>
-    <script src="scripts/third-party/tippy.js"></script>
+    <script src="scripts/third-party/hljs.js" defer></script>
+    <script src="scripts/third-party/hljs-line-num.js" defer></script>
+    <script src="scripts/third-party/popper.js" defer></script>
+    <script src="scripts/third-party/tippy.js" defer></script>
     <script src="scripts/third-party/tocbot.js"></script>
 
     <script>
@@ -117,8 +117,8 @@
     <script type="text/javascript" src="scripts/core.min.js"></script>
 
     <?js if(this.navbar.search !== 'false') { ?>
-      <script src="scripts/search.min.js"></script>
-      <script src="scripts/third-party/fuse.js"></script>
+      <script src="scripts/search.min.js" defer></script>
+      <script src="scripts/third-party/fuse.js" defer></script>
     <?js } ?>
 
     <?js if(this.dynamicScript != undefined ) { ?>
