@@ -1,16 +1,19 @@
 @font-face {
     font-family: 'heading';
     src: url('../fonts/WorkSans-Bold.ttf') format('truetype');
+    font-display: swap;
 }
 
 @font-face {
     font-family: 'body';
     src: url('../fonts/OpenSans-Regular.ttf') format('truetype');
+    font-display: swap;
 }
 
 @font-face {
     font-family: 'code';
     src: url('../fonts/Inconsolata-Regular.ttf') format('truetype');
+    font-display: swap;
 }
 
 * {
@@ -938,4 +941,15 @@ pre {
 .table-div {
     width: 100%;
     overflow: auto;
+}
+
+/* scroll bar */
+::-webkit-scrollbar {
+    width: 0.3125rem;
+    height: 0.3125rem;
+}
+
+::-webkit-scrollbar-thumb,
+::-webkit-scrollbar-track {
+    border-radius: 1rem;
 }
