@@ -2,9 +2,9 @@
 var data = obj;
 var self = this;
 ?>
-<h4 class="name has-anchor" id="<?js= id ?>">
+<h3 class="name has-anchor" id="<?js= id ?>">
     <?js= data.attribs + name + (data.signature ? data.signature : '') ?>
-</h4>
+</h3>
 
 <?js if (data.summary) { ?>
 <p class="summary"><?js= summary ?></p>
@@ -30,13 +30,13 @@ var self = this;
 <?js= this.partial('details.tmpl', data) ?>
 
 <?js if (data.fires && fires.length) { ?>
-    <h5>Fires:</h5>
+    <b>Fires:</b>
     <ul><?js fires.forEach(function(f) { ?>
         <li><?js= self.linkto(f) ?></li>
     <?js }); ?></ul>
 <?js } ?>
 
 <?js if (data.examples && examples.length) { ?>
-    <h5>Example<?js= examples.length > 1? 's':'' ?></h5>
+    <b>Example<?js= examples.length > 1? 's':'' ?></b>
     <?js= this.partial('examples.tmpl', examples) ?>
 <?js } ?>

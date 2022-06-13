@@ -35,6 +35,10 @@ body {
     position: relative;
 }
 
+b {
+    font-family: heading;
+}
+
 h1,
 h2,
 h3,
