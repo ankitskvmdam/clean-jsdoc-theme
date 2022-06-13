@@ -5138,6 +5138,7 @@ var hljs = (function () {
         __proto__: null,
         grmr_bash: bash,
         grmr_scss: scss,
+        grmr_css: scss,
         grmr_javascript: javascript,
         grmr_json: json,
         grmr_xml: xml,
