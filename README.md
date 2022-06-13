@@ -422,7 +422,7 @@ npm run build
 ## Contributors
 
 <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=ankitskvmdam/clean-jsdoc-theme" />
+  <img src="https://contrib.rocks/image?repo=ankitskvmdam/clean-jsdoc-theme" alt="clean-jsdoc-contributors" />
 </a>
 
 ## Thanks
