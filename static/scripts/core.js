@@ -271,7 +271,7 @@ function hideTocOnSourcePage() {
   }
 }
 
-function getPreTopBar(id, lang) {
+function getPreTopBar(id, lang = '') {
   // tooltip
   var tooltip = '<div class="tooltip" id="tooltip-' + id + '">Copied!</div>';
 
@@ -321,7 +321,7 @@ function processAllPre() {
   targets.forEach(function(pre, idx) {
     var div = getPreDiv();
     var id = 'pre-id' + idx;
-    var lang = pre.getAttribute('data-lang');
+    var lang = pre.getAttribute('data-lang') || '';
     var topBar = getPreTopBar(id, lang);
 
     div.innerHTML = topBar;
