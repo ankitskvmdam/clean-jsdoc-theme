@@ -99,12 +99,6 @@ p {
 
 article ul {
     list-style: none;
-    padding-left: 1rem;
-}
-
-article ul li::before {
-    content: '\2014\a0';
-    margin-right: 0.5rem;
 }
 
 article ul li,
@@ -112,8 +106,14 @@ article ol li {
     padding: 0.5rem 0;
 }
 
-article ol {
-    padding-left: 1rem;
+article ol,
+article ul {
+    padding-left: 3rem;
+}
+
+article ol p,
+article ul p {
+    margin: 0;
 }
 
 /* stylelint-disable-next-line */
