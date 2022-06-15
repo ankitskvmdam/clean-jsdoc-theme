@@ -1,14 +1,19 @@
 /* global document */
 
 var searchData;
-var searchId = 'f73c3473-f750-4298-bb07-3837be4f2c2bff66efc0-857b-4d13-930d-9e8db5ae4338';
+var searchId = 'LiBfqbJVcV';
 var searchHash = '#' + searchId;
+var searchContainerID = '#PkfLWpAbet';
+var searchWrapperID = '#iCxFxjkHbP';
+var searchCloseButtonID = '#VjLlGakifb';
+var searchInputID = '#vpcKVYIppa';
+var searchResultCID = '#fWwVHRuDuN';
 
 function hideSearch() {
-  var container = document.querySelector('#search-container');
+  var container = document.querySelector(searchContainerID);
 
   // eslint-disable-next-line no-undef
-  if (window.location.hash === searchHash ) {
+  if (window.location.hash === searchHash) {
     // eslint-disable-next-line no-undef
     history.go(-1);
   }
@@ -30,8 +35,8 @@ function listenKey(event) {
 }
 
 function showSearch() {
-  var container = document.querySelector('#search-container');
-  var input = document.querySelector('#search-input');
+  var container = document.querySelector(searchContainerID);
+  var input = document.querySelector(searchInputID);
 
   // eslint-disable-next-line no-undef
   window.onhashchange = hideSearch;
@@ -150,7 +155,7 @@ function debounce(func, wait, immediate) {
 
 function search(event) {
   var value = event.target.value;
-  var resultBox = document.querySelector('#search-result-c');
+  var resultBox = document.querySelector(searchResultCID);
   var keys = ['title', 'description'];
 
   if (!resultBox) {
@@ -201,11 +206,11 @@ function search(event) {
 }
 
 function onDomContentLoaded() {
-  var input = document.querySelector('#search-input');
+  var input = document.querySelector(searchInputID);
   var searchButton = document.querySelectorAll('.search-button');
-  var searchContainer = document.querySelector('#search-container');
-  var searchWrapper = document.querySelector('#search-wrapper');
-  var searchCloseButton = document.querySelector('#search-close-button');
+  var searchContainer = document.querySelector(searchContainerID);
+  var searchWrapper = document.querySelector(searchWrapperID);
+  var searchCloseButton = document.querySelector(searchCloseButtonID);
 
   var debouncedSearch = debounce(search, 300);
 
