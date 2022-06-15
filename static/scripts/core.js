@@ -307,21 +307,28 @@ function getPreDiv() {
 
 function processAllPre() {
   var targets = document.querySelectorAll('pre');
-  var footer = document.querySelector('#footer');
-  var navbar = document.querySelector('#navbar');
+  var footer = document.querySelector('#PeOAagUepe');
+  var navbar = document.querySelector('#VuAckcnZhf');
 
-  var footerHeight = footer.getBoundingClientRect().height;
-  var navbarHeight = navbar.getBoundingClientRect().height;
+  var navbarHeight = 0;
+  var footerHeight = 0;
+
+  if (footer) {
+    footerHeight = footer.getBoundingClientRect().height;
+  }
+
+  if (navbar) {
+    navbarHeight = navbar.getBoundingClientRect().height;
+  }
 
   // eslint-disable-next-line no-undef
   var preMaxHeight = window.innerHeight - navbarHeight - footerHeight - 250;
 
-  // var isSource = isSourcePage();
-
   targets.forEach(function(pre, idx) {
     var div = getPreDiv();
-    var id = 'pre-id' + idx;
-    var lang = pre.getAttribute('data-lang') || '';
+    var id = 'ScDloZOMdL' + idx;
+
+    var lang = pre.getAttribute('data-lang') || 'code';
     var topBar = getPreTopBar(id, lang);
 
     div.innerHTML = topBar;
@@ -367,7 +374,9 @@ function getFontSize() {
 function updateFontSize(fontSize) {
   html.style.fontSize = fontSize + 'px';
   localStorage.setItem(fontSizeLocalStorageKey, fontSize);
-  var fontSizeText = document.querySelector('#font-size-text');
+  var fontSizeText = document.querySelector(
+    '#b77a68a492f343baabea06fad81f651e'
+  );
 
   if (fontSizeText) {
     fontSizeText.innerHTML = fontSize;
@@ -420,7 +429,7 @@ function fontSizeTooltip() {
         <use xlink:href="#minus-icon"></use>
       </svg>
     </button>
-    <div class="font-size-text" id="font-size-text">
+    <div class="font-size-text" id="b77a68a492f343baabea06fad81f651e">
       ${fontSize}
     </div>
     <button aria-label="increase-font-size" class="icon-button ${
