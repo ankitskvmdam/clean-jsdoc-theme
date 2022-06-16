@@ -80,16 +80,40 @@ function fetchAllData(obj = {}) {
     });
 }
 
+// eslint-disable-next-line no-unused-vars
+function onClickSearchItem(event) {
+  var target = event.currentTarget;
+
+  if (target) {
+    var href = target.getAttribute('href') || '';
+    var id = href.split('#')[1] || '';
+    var element = document.getElementById(id);
+
+    if (!element) {
+      id = decodeURI(id);
+      element = document.getElementById(id);
+    }
+
+    if (element) {
+      setTimeout(function() {
+        // eslint-disable-next-line no-undef
+        bringElementIntoView(element); // defined in core.js
+      }, 100);
+    }
+  }
+}
+
 function buildSearchResult(result) {
   var output = '';
 
   for (const res of result) {
     var data = res.item;
+
     var link = res.item.link.replace('<a href="', '').replace(/">.*/, '');
 
     output += `
 
-    <a href="${link}" class="search-result-item">
+    <a onclick="onClickSearchItem(event)" href="${link}" class="search-result-item">
       <div class="search-result-item-title">
           ${data.title}
       </div>
@@ -187,7 +211,6 @@ function search(event) {
 
     fetchAllData({
       onSuccess: function(list) {
-        console.log('Onsucess');
         var result = getSearchResult(list, keys, value);
 
         onSuccess(result);
@@ -236,6 +259,11 @@ function onDomContentLoaded() {
 
   if (input) {
     input.addEventListener('keyup', debouncedSearch);
+  }
+
+  // eslint-disable-next-line no-undef
+  if (window.location.hash === searchHash) {
+    showSearch();
   }
 }
 
