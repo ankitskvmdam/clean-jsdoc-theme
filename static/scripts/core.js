@@ -137,6 +137,11 @@ function isSourcePage() {
 }
 
 function bringElementIntoView(element, updateHistory = true) {
+  // If element is null then we are not going further
+  if (!element) {
+    return;
+  }
+
   var navbar = document.querySelector('.navbar-container');
   var body = document.querySelector('.main-content');
   var elementTop = element.getBoundingClientRect().top;
@@ -147,7 +152,9 @@ function bringElementIntoView(element, updateHistory = true) {
     offset += navbar.scrollHeight;
   }
 
-  body.scrollBy(0, elementTop - offset);
+  if (body) {
+    body.scrollBy(0, elementTop - offset);
+  }
 
   if (updateHistory) {
     // eslint-disable-next-line no-undef
@@ -185,6 +192,11 @@ function bringIdToViewOnMount() {
   }
 
   var element = document.getElementById(id.slice(1));
+
+  if (!element) {
+    id = decodeURI(id);
+    element = document.getElementById(id.slice(1));
+  }
 
   if (element) {
     bringElementIntoView(element, false);
