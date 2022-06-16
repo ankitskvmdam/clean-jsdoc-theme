@@ -135,10 +135,6 @@ article ul p {
     font-weight: bold;
 }
 
-.yes-def {
-    text-indent: -1000px;
-}
-
 .signature {
     font-family: 'code';
 }
@@ -170,28 +166,20 @@ dt {
 
 .details dt {
     float: left;
-    min-width: 180px;
-    padding: 0 10px;
+    min-width: 11rem;
 }
 
 .details ul {
     margin: 0;
-}
-
-.details ul {
+    display: inline-flex;
     list-style-type: none;
 }
 
 .details ul li {
-    display: inline-block;
-    margin-right: 10px;
+    display: inline-flex;
+    margin-right: 0.6125rem;
     padding: 0;
     word-break: break-word;
-}
-
-.details ul li::before {
-    content: '';
-    margin: 0;
 }
 
 /* stylelint-disable-next-line */
@@ -210,11 +198,11 @@ dt {
 }
 
 .description {
-    margin-bottom: 32px;
+    margin-bottom: 2rem;
 }
 
 .method-member-container table {
-    margin-top: 15px;
+    margin-top: 1rem;
 }
 
 .pre-div .hljs-ln {
@@ -243,6 +231,10 @@ pre.prettyprint {
     font-size: 1rem;
     line-height: 1.75;
     padding: 0 0 1rem;
+}
+
+.prettyprint .compact {
+    padding: 0;
 }
 
 h4.name {

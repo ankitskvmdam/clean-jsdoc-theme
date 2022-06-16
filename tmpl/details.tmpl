@@ -23,10 +23,9 @@ var hasToPrintDetails = (data.meta && self.outputSourceFiles) ||
                         (data.todo && todo.length)
 
 
-// Check if the default value is an object or array; if so, apply code highlighting
+// // Check if the default value is an object or array; if so, apply code highlighting
 if (data.defaultvalue && (data.defaultvaluetype === 'object' || data.defaultvaluetype === 'array')) {
-    data.defaultvalue = "<pre class=\"prettyprint\"><code>" + data.defaultvalue + "</code></pre>";
-    defaultObjectClass = ' class="object-value"';
+    data.defaultvalue = "<pre class='prettyprint'><code class='nohljsln compact'>" + data.defaultvalue + "</code></pre>";
 }
 
 // Check whether to print details or not
@@ -56,21 +55,21 @@ for(; loopVar < detailsKeys.length; loopVar += 1) {
     <?js if (data.version) {?>
         <div class="details-item-container">
             <dt class="tag-version bold">Version</dt>
-            <dd class="tag-version"><ul class="dummy"><li><?js= version ?></li></ul></dd>
+            <dd class="tag-version"><ul><li><?js= version ?></li></ul></dd>
         </div>
     <?js } ?>
 
     <?js if (data.since) {?>
         <div class="details-item-container">
             <dt class="tag-since bold">Since</dt>
-            <dd class="tag-since"><ul class="dummy"><li><?js= since ?></li></ul></dd>
+            <dd class="tag-since"><ul><li><?js= since ?></li></ul></dd>
         </div>
     <?js } ?>
 
     <?js if (data.inherited && data.inherits && !data.overrides) { ?>
         <div class="details-item-container">
             <dt class="inherited-from bold">Inherited From</dt>
-            <dd class="inherited-from"><ul class="dummy"><li>
+            <dd class="inherited-from"><ul><li>
                 <?js= this.linkto(data.inherits, this.htmlsafe(data.inherits)) ?>
             </li></ul></dd>
         </div>
@@ -79,7 +78,7 @@ for(; loopVar < detailsKeys.length; loopVar += 1) {
     <?js if (data.overrides) { ?>
         <div class="details-item-container">
             <dt class="tag-overrides bold">Overrides</dt>
-            <dd class="tag-overrides"><ul class="dummy"><li>
+            <dd class="tag-overrides"><ul><li>
                 <?js= this.linkto(data.overrides, this.htmlsafe(data.overrides)) ?>
             </li></ul></dd>
         </div>
@@ -122,8 +121,8 @@ for(; loopVar < detailsKeys.length; loopVar += 1) {
     <?js if (data.deprecated) { ?>
         <div class="details-item-container">
             <dt class="important tag-deprecated bold">Deprecated</dt><?js
-                if (data.deprecated === true) { ?><dd class="yes-def tag-deprecated"><ul class="dummy"><li>Yes</li></ul></dd><?js }
-                else { ?><dd><ul class="dummy"><li><?js= data.deprecated ?></li></ul></dd><?js }
+                if (data.deprecated === true) { ?><dd class="tag-deprecated"><ul><li>Yes</li></ul></dd><?js }
+                else { ?><dd><ul><li><?js= data.deprecated ?></li></ul></dd><?js }
             ?>
         </div>
     <?js } ?>
@@ -142,22 +141,22 @@ for(; loopVar < detailsKeys.length; loopVar += 1) {
     <?js if (data.copyright) {?>
         <div class="details-item-container">
             <dt class="tag-copyright bold">Copyright</dt>
-            <dd class="tag-copyright"><ul class="dummy"><li><?js= copyright ?></li></ul></dd>
+            <dd class="tag-copyright"><ul><li><?js= copyright ?></li></ul></dd>
         </div>
     <?js } ?>
 
     <?js if (data.license) {?>
         <div class="details-item-container">
             <dt class="tag-license bold">License</dt>
-            <dd class="tag-license"><ul class="dummy"><li><?js= license ?></li></ul></dd>
+            <dd class="tag-license"><ul><li><?js= license ?></li></ul></dd>
         </div>
     <?js } ?>
 
     <?js if (data.defaultvalue) {?>
         <div class="details-item-container">
             <dt class="tag-default bold">Default Value</dt>
-            <dd class="tag-default"><ul class="dummy">
-                    <li <?js= defaultObjectClass ?> ><?js= data.defaultvalue ?></li>
+            <dd class="tag-default"><ul>
+                    <li data-skip-pre-process="true"><?js= data.defaultvalue ?></li>
                 </ul></dd>
         </div>
     <?js } ?>
@@ -165,7 +164,7 @@ for(; loopVar < detailsKeys.length; loopVar += 1) {
     <?js if (data.meta && self.outputSourceFiles) {?>
         <div class="details-item-container">
             <dt class="tag-source bold">Source</dt>
-            <dd class="tag-source"><ul class="dummy"><li>
+            <dd class="tag-source"><ul><li>
                 <?js= self.linkto(meta.shortpath) ?>, <?js= self.linkto(meta.shortpath, 'line ' + meta.lineno, null, 'line' + meta.lineno) ?>
             </li></ul></dd>
         </div>
