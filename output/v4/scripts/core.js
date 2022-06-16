@@ -325,6 +325,12 @@ function processAllPre() {
   var preMaxHeight = window.innerHeight - navbarHeight - footerHeight - 250;
 
   targets.forEach(function(pre, idx) {
+    var parent = pre.parentNode;
+
+    if (parent && parent.getAttribute('data-skip-pre-process') === 'true') {
+      return;
+    }
+
     var div = getPreDiv();
     var id = 'ScDloZOMdL' + idx;
 
