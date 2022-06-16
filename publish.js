@@ -549,7 +549,7 @@ function buildSidebarMembers({
         if (hasSearch) {
           searchListArray.push({
             title: item.name,
-            link: linkto(item.longname, item.name),
+            link: linktoFn(item.longname, item.name),
             description: item.description
           });
         }
@@ -558,7 +558,7 @@ function buildSidebarMembers({
           methods.forEach(function(method) {
             const itemChild = {
               name: method.longName,
-              link: linkto(method.longname, method.name)
+              link: linktoFn(method.longname, method.name)
             };
 
             currentItem.children.push(itemChild);
@@ -574,7 +574,7 @@ function buildSidebarMembers({
             if (hasSearch) {
               searchListArray.push({
                 title: method.longname,
-                link: linkto(method.longname, name),
+                link: linktoFn(method.longname, name),
                 description: item.classdesc
               });
             }
