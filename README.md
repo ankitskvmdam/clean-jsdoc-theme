@@ -90,11 +90,12 @@ For more information look at [https://github.com/ankitskvmdam/clean-jsdoc-theme-
         "template": "./node_modules/clean-jsdoc-theme",
         "theme_opts": {
             "default_theme": "dark"
-        },
-        "markdown": {
-            "hardwrap": false,
-            "idInHeadings": true // This is important for clean-jsdoc-theme, otherwise some features might not work.
         }
+    },
+    
+    "markdown": {
+      "hardwrap": false,
+      "idInHeadings": true // This is important for clean-jsdoc-theme, otherwise some features might not work.
     }
 }
 ```
