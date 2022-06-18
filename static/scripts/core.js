@@ -289,7 +289,7 @@ function getPreTopBar(id, lang = '') {
 
   // template of copy to clipboard icon container
   var copyToClipboard =
-        '<button aria-label="copy code" class="icon-button" onclick="copyFunction(\'' +
+        '<button aria-label="copy code" class="icon-button copy-code" onclick="copyFunction(\'' +
         id +
         '\')"><svg class="sm-icon" alt="click to copy"><use xlink:href="#copy-icon"></use></svg>' +
         tooltip +
@@ -490,6 +490,12 @@ function initTooltip() {
   // eslint-disable-next-line no-undef
   tippy('.codepen-button', {
     content: 'Open code in CodePen',
+    placement: 'left'
+  });
+
+  // eslint-disable-next-line no-undef
+  tippy('.copy-code', {
+    content: 'Copy this code',
     placement: 'left'
   });
 
