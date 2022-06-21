@@ -19,14 +19,14 @@ function getTheme() {
 function updateTheme(theme) {
   var body = document.body;
   var svgUse = document.querySelectorAll('.theme-svg-use');
-  var icon = theme === 'dark' ? 'light' : 'dark';
+  var iconID = theme === 'dark' ? '#light-theme-icon' : '#dark-theme-icon';
 
   body.setAttribute('data-theme', theme);
   body.classList.remove('dark', 'light');
   body.classList.add(theme);
 
   svgUse.forEach(function(svg) {
-    svg.setAttribute('xlink:href', '#' + icon + '-theme-icon');
+    svg.setAttribute('xlink:href', iconID);
   });
 
   localStorage.setItem(themeLocalStorageKey, theme);
