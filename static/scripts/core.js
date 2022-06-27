@@ -413,7 +413,7 @@ function updateFontSize(fontSize) {
     }
     updateFontSize(n);
   } else {
-    localStorage.setItem(fontSizeInLocalStorage, fontSize);
+    updateFontSize(fontSize);
   }
 })();
 
