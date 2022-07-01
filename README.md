@@ -132,7 +132,7 @@ To set favicon add the following in your jsodc config files.
 
 ```json
 "theme_opts": {
- "favion": "path/to/img"
+ "favicon": "path/to/img"
 }
 
 ```
