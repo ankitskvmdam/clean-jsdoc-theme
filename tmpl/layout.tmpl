@@ -61,8 +61,17 @@
     <script src="scripts/third-party/tocbot.js"></script>
 
     <script>
+      var baseURL = "/"
+      var locationPathname = ""
+
       // Global variables
-      var baseURL = "<?js= this.baseURL ?>"
+      <?js if (this.baseURL) { ?>
+        baseURL = "<?js= this.baseURL ?>"
+      <?js } else { ?>
+        locationPathname = document.location.pathname
+        baseURL = locationPathname.substr(0, locationPathname.lastIndexOf("/") + 1)
+      <?js } ?>
+
     </script>
 
     <link rel="stylesheet" href="styles/clean-jsdoc-theme.min.css">
