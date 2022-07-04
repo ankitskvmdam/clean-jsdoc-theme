@@ -33,7 +33,7 @@
         "@jsdoc/eslint-config": "^1.1.6",
         "concurrently": "^7.2.2",
         "csso": "^5.0.3",
-        "eslint": "^7.22.0",
+        "eslint": "^8.19.0",
         "prettier": "^2.2.1",
         "stylelint": "^13.12.0",
         "stylelint-config-sass-guidelines": "^8.0.0",
