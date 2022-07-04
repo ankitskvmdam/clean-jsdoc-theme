@@ -92,10 +92,10 @@ For more information look at [https://github.com/ankitskvmdam/clean-jsdoc-theme-
             "default_theme": "dark"
         }
     },
-    
+
     "markdown": {
-      "hardwrap": false,
-      "idInHeadings": true // This is important for clean-jsdoc-theme, otherwise some features might not work.
+        "hardwrap": false,
+        "idInHeadings": true // This is important for clean-jsdoc-theme, otherwise some features might not work.
     }
 }
 ```
@@ -132,7 +132,7 @@ To set favicon add the following in your jsodc config files.
 
 ```json
 "theme_opts": {
- "favion": "path/to/img"
+ "favicon": "path/to/img"
 }
 
 ```

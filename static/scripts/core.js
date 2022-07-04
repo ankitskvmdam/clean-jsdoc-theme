@@ -19,14 +19,14 @@ function getTheme() {
 function updateTheme(theme) {
   var body = document.body;
   var svgUse = document.querySelectorAll('.theme-svg-use');
-  var icon = theme === 'dark' ? 'light' : 'dark';
+  var iconID = theme === 'dark' ? '#light-theme-icon' : '#dark-theme-icon';
 
   body.setAttribute('data-theme', theme);
   body.classList.remove('dark', 'light');
   body.classList.add(theme);
 
   svgUse.forEach(function(svg) {
-    svg.setAttribute('xlink:href', '#' + icon + '-theme-icon');
+    svg.setAttribute('xlink:href', iconID);
   });
 
   localStorage.setItem(themeLocalStorageKey, theme);
@@ -289,7 +289,7 @@ function getPreTopBar(id, lang = '') {
 
   // template of copy to clipboard icon container
   var copyToClipboard =
-        '<button aria-label="copy code" class="icon-button" onclick="copyFunction(\'' +
+        '<button aria-label="copy code" class="icon-button copy-code" onclick="copyFunction(\'' +
         id +
         '\')"><svg class="sm-icon" alt="click to copy"><use xlink:href="#copy-icon"></use></svg>' +
         tooltip +
@@ -413,7 +413,7 @@ function updateFontSize(fontSize) {
     }
     updateFontSize(n);
   } else {
-    localStorage.setItem(fontSizeInLocalStorage, fontSize);
+    updateFontSize(fontSize);
   }
 })();
 
@@ -490,6 +490,12 @@ function initTooltip() {
   // eslint-disable-next-line no-undef
   tippy('.codepen-button', {
     content: 'Open code in CodePen',
+    placement: 'left'
+  });
+
+  // eslint-disable-next-line no-undef
+  tippy('.copy-code', {
+    content: 'Copy this code',
     placement: 'left'
   });
 
