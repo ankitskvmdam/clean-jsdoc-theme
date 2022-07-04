@@ -1,6 +1,6 @@
 # clean-jsdoc-theme
 
-[![Stars](https://img.shields.io/github/stars/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme) [![Fork](https://img.shields.io/github/forks/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/fork) ![Version](https://img.shields.io/badge/version-4.0.7-005bff) [![Issues Open](https://img.shields.io/github/issues/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues) [![Contributors](https://img.shields.io/github/contributors/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors) [![Build Status](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme.svg?branch=production)](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme) [![license](https://img.shields.io/github/license/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/LICENSE)
+[![Stars](https://img.shields.io/github/stars/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme) [![Fork](https://img.shields.io/github/forks/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/fork) ![Version](https://img.shields.io/badge/version-4.0.8-005bff) [![Issues Open](https://img.shields.io/github/issues/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues) [![Contributors](https://img.shields.io/github/contributors/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors) [![Build Status](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme.svg?branch=production)](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme) [![license](https://img.shields.io/github/license/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/LICENSE)
 <br>
 
 clean-jsdoc-theme is a beautifully crafted theme for JSDoc 3. It is a clean and fully responsive theme with loads of customisation features.
@@ -21,15 +21,6 @@ We know that no library is perfect. That's why we are open to hearing from the c
 1. To view this theme, visit [https://ankdev.me/clean-jsdoc-theme/v4](https://ankdev.me/clean-jsdoc-theme/v4).
 
 1. If you want to see a demo repo to set up this theme, visit [https://github.com/ankitskvmdam/clean-jsdoc-theme-example](https://github.com/ankitskvmdam/clean-jsdoc-theme-example). This repo will guide you step by step on how to setup jsdoc and clean-jsdoc-theme in your existing repo.
-
-## Screenshots
-
-![Dark theme](./example/screen-1.png)
-![Light theme](./example/screen-2.png)
-![Mobile View](./example/screen-3.png)
-![Search view](./example/screen-4.png)
-![Class page](./example/screen-5.png)
-![Code page](./example/screen-6.png)
 
 ## Installation
 
@@ -92,10 +83,10 @@ For more information look at [https://github.com/ankitskvmdam/clean-jsdoc-theme-
             "default_theme": "dark"
         }
     },
-    
+
     "markdown": {
-      "hardwrap": false,
-      "idInHeadings": true // This is important for clean-jsdoc-theme, otherwise some features might not work.
+        "hardwrap": false,
+        "idInHeadings": true // This is important for clean-jsdoc-theme, otherwise some features might not work.
     }
 }
 ```
