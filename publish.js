@@ -500,9 +500,7 @@ function getTheme() {
 }
 
 function getBaseURL() {
-  var url = themeOpts.base_url || '/';
-
-  return url;
+  return themeOpts.base_url;
 }
 
 function buildSidebarMembers({
