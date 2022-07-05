@@ -1,6 +1,6 @@
 {
     "name": "clean-jsdoc-theme",
-    "version": "4.0.8",
+    "version": "4.1.0",
     "description": "A beautifully crafted theme/template for JSDoc 3. This theme/template looks and feels like a premium theme/template. This is a fully mobile responsive theme and also fully customizable theme.",
     "main": "publish.js",
     "scripts": {
@@ -35,16 +35,16 @@
         "csso": "^5.0.3",
         "eslint": "^8.19.0",
         "prettier": "^2.2.1",
-        "stylelint": "^13.12.0",
-        "stylelint-config-sass-guidelines": "^8.0.0",
+        "stylelint": "^14.9.1",
+        "stylelint-config-sass-guidelines": "^9.0.0",
         "stylelint-config-standard": "^20.0.0",
-        "stylelint-order": "^4.1.0",
-        "stylelint-scss": "^3.19.0",
+        "stylelint-order": "^5.0.0",
+        "stylelint-scss": "^4.2.0",
         "uglify-js": "^3.16.0"
     },
     "dependencies": {
         "fs-extra": "^10.1.0",
         "html-minifier": "^4.0.0",
-        "nanoid": "^4.0.0"
+        "nanoid": "^3.3.4"
     }
 }
