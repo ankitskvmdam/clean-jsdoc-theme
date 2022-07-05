@@ -400,6 +400,15 @@ This will remove all symbols (members, methods ...) that come from inherited par
 | `exclude_inherited` | `false`                                                                                                      | To exclude inherited symbols                                               | `boolean`             |
 | `sections`          | `["Modules", "Classes", "Externals", "Events", "Namespaces", "Mixins", "Tutorials", "Interfaces", "Global"]` | To order navbar/sidebar sections or to hide/remove navbar/sidebar sections | `Array<SECTION_TYPE>` |
 
+Don't forget to add the following in your jsdoc config file, otherwise toc will not work on some pages.
+
+```json
+"markdown": {
+  "idInHeadings": true // This is important for clean-jsdoc-theme, otherwise some features might not work.
+}
+
+```
+
 ## Changelog
 
 Changelog is moved to [https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CHANGELOG.md](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CHANGELOG.md)
