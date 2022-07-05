@@ -500,6 +500,7 @@ code {
 .has-anchor .link-anchor {
     position: absolute;
     left: 0;
+    top: 0;
     transform: translateX(-100%);
     text-decoration: none;
     visibility: hidden;
