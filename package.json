@@ -1,6 +1,6 @@
 {
     "name": "clean-jsdoc-theme",
-    "version": "4.1.0",
+    "version": "4.1.1",
     "description": "A beautifully crafted theme/template for JSDoc 3. This theme/template looks and feels like a premium theme/template. This is a fully mobile responsive theme and also fully customizable theme.",
     "main": "publish.js",
     "scripts": {
