@@ -37,7 +37,7 @@
         "prettier": "^2.2.1",
         "stylelint": "^14.9.1",
         "stylelint-config-sass-guidelines": "^9.0.0",
-        "stylelint-config-standard": "^20.0.0",
+        "stylelint-config-standard": "^26.0.0",
         "stylelint-order": "^5.0.0",
         "stylelint-scss": "^4.2.0",
         "uglify-js": "^3.16.0"
