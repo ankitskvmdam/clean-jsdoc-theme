@@ -560,6 +560,15 @@ function initMobileMenu() {
   }
 }
 
+function addHrefToSidebarTitle() {
+  var title = document.querySelector('#sidebar-title-anchor');
+
+  if (title) {
+    // eslint-disable-next-line no-undef
+    title.setAttribute('href', baseURL);
+  }
+}
+
 function onDomContentLoaded() {
   var themeButton = document.querySelectorAll('.theme-toggle');
 
@@ -603,6 +612,7 @@ function onDomContentLoaded() {
   }, 1000);
   initTooltip();
   fixTable();
+  addHrefToSidebarTitle();
 }
 
 // eslint-disable-next-line no-undef
