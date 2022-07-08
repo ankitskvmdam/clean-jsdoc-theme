@@ -2,12 +2,15 @@
 
 ### In version 4.0.0
 
+This is the most performant version of `clean-jsdoc-theme`. Check the [report on lighthouse](https://googlechrome.github.io/lighthouse/viewer/?psiurl=https%3A%2F%2Fankdev.me%2Fclean-jsdoc-theme%2Fv4%2Findex.html&strategy=desktop&category=performance&category=accessibility&category=best-practices&category=seo&category=pwa&utm_source=lh-chrome-ext).
+
 ### New
 
-1. New dark and light theme.
-1. New search feature which doesn't cost KBs. [#search](https://github.com/ankitskvmdam/clean-jsdoc-theme#search)
-1. Minify all generated files.
-1. Added Table of content.
+1. New dark and light theme. Now you can toggle between dark and light themes.
+2. There is an option to change the default font size.
+3. New search feature which doesn't cost KBs. [#search](https://github.com/ankitskvmdam/clean-jsdoc-theme#search)
+4. Minify all generated files.
+5. Added Table of content.
 
 ### Removed
 
