@@ -561,12 +561,12 @@ function initMobileMenu() {
 }
 
 function addHrefToSidebarTitle() {
-  var title = document.querySelector('#sidebar-title-anchor');
+  var titles = document.querySelectorAll('.sidebar-title-anchor');
 
-  if (title) {
+  titles.forEach(function(title) {
     // eslint-disable-next-line no-undef
     title.setAttribute('href', baseURL);
-  }
+  });
 }
 
 function onDomContentLoaded() {
