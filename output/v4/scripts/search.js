@@ -35,6 +35,16 @@ function listenKey(event) {
 }
 
 function showSearch() {
+  try {
+    // Closing mobile menu before opening
+    // search box.
+    // It is defined in core.js
+    // eslint-disable-next-line no-undef
+    hideMobileMenu();
+  } catch (error) {
+    console.error(error);
+  }
+
   var container = document.querySelector(searchContainerID);
   var input = document.querySelector(searchInputID);
 

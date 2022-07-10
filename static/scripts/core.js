@@ -533,22 +533,46 @@ function fixTable() {
   }
 }
 
-function onMobileMenuClick(event) {
+function hideMobileMenu() {
   var mobileMenuContainer = document.querySelector('#mobile-sidebar');
-  var target = event.currentTarget;
+  var target = document.querySelector('#mobile-menu');
   var svgUse = target.querySelector('use');
-  var isOpen = target.getAttribute('data-isopen') === 'true';
 
   if (mobileMenuContainer) {
-    if (isOpen) {
-      mobileMenuContainer.classList.remove('show');
-      target.setAttribute('data-isopen', 'false');
-      svgUse.setAttribute('xlink:href', '#menu-icon');
-    } else {
-      mobileMenuContainer.classList.add('show');
-      target.setAttribute('data-isopen', 'true');
-      svgUse.setAttribute('xlink:href', '#close-icon');
-    }
+    mobileMenuContainer.classList.remove('show');
+  }
+  if (target) {
+    target.setAttribute('data-isopen', 'false');
+  }
+  if (svgUse) {
+    svgUse.setAttribute('xlink:href', '#menu-icon');
+  }
+}
+
+function showMobileMenu() {
+  var mobileMenuContainer = document.querySelector('#mobile-sidebar');
+  var target = document.querySelector('#mobile-menu');
+  var svgUse = target.querySelector('use');
+
+  if (mobileMenuContainer) {
+    mobileMenuContainer.classList.add('show');
+  }
+  if (target) {
+    target.setAttribute('data-isopen', 'true');
+  }
+  if (svgUse) {
+    svgUse.setAttribute('xlink:href', '#close-icon');
+  }
+}
+
+function onMobileMenuClick() {
+  var target = document.querySelector('#mobile-menu');
+  var isOpen = target.getAttribute('data-isopen') === 'true';
+
+  if (isOpen) {
+    hideMobileMenu();
+  } else {
+    showMobileMenu();
   }
 }
 
@@ -561,12 +585,12 @@ function initMobileMenu() {
 }
 
 function addHrefToSidebarTitle() {
-  var title = document.querySelector('#sidebar-title-anchor');
+  var titles = document.querySelectorAll('.sidebar-title-anchor');
 
-  if (title) {
+  titles.forEach(function(title) {
     // eslint-disable-next-line no-undef
     title.setAttribute('href', baseURL);
-  }
+  });
 }
 
 function onDomContentLoaded() {
