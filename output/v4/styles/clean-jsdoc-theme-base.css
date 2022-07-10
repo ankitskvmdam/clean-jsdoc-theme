@@ -845,6 +845,31 @@ pre {
     padding: 1rem;
 }
 
+.rel {
+    position: relative;
+}
+
+.icon-button.codepen-button svg {
+    height: 1.5rem;
+    width: 1.5rem;
+}
+
+.table-div {
+    width: 100%;
+    overflow: auto;
+}
+
+/* scroll bar */
+::-webkit-scrollbar {
+    width: 0.3125rem;
+    height: 0.3125rem;
+}
+
+::-webkit-scrollbar-thumb,
+::-webkit-scrollbar-track {
+    border-radius: 1rem;
+}
+
 @media screen and (max-width: 100em) {
     .toc-container {
         display: none;
@@ -924,29 +949,4 @@ pre {
     .has-anchor:hover .link-anchor {
         visibility: hidden;
     }
-}
-
-.rel {
-    position: relative;
-}
-
-.icon-button.codepen-button svg {
-    height: 1.5rem;
-    width: 1.5rem;
-}
-
-.table-div {
-    width: 100%;
-    overflow: auto;
-}
-
-/* scroll bar */
-::-webkit-scrollbar {
-    width: 0.3125rem;
-    height: 0.3125rem;
-}
-
-::-webkit-scrollbar-thumb,
-::-webkit-scrollbar-track {
-    border-radius: 1rem;
 }
