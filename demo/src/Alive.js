@@ -9,6 +9,12 @@ class Alive {
          * amount of energy
          * @property {Energy}
          * @defaultvalue null
+         * 
+         * @example
+         * world = this.world
+         * function test() {
+         *  return world
+         * }
          */
         this.energy = null;
         /**

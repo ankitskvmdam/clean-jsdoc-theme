@@ -353,6 +353,7 @@ function processAllPre() {
 
     pre.style.maxHeight = preMaxHeight + 'px';
     pre.id = id;
+    pre.classList.add('prettyprint');
     pre.parentNode.insertBefore(div, pre);
     div.appendChild(pre);
   });

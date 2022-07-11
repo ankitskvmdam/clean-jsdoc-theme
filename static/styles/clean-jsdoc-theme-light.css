@@ -160,10 +160,6 @@ body.light {
     color: #101010;
 }
 
-.light .details a {
-    color: #111;
-}
-
 .light .member-item-container strong,
 .light .method-member-container strong {
     color: #000;
