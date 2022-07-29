@@ -23,11 +23,11 @@ function hideSearch() {
   }
 }
 
-function listenKey(event) {
+function listenCloseKey(event) {
   if (event.key === 'Escape') {
     hideSearch();
     // eslint-disable-next-line no-undef
-    window.removeEventListener('keyup', listenKey);
+    window.removeEventListener('keyup', listenCloseKey);
   }
 }
 
@@ -54,7 +54,7 @@ function showSearch() {
   if (searchContainer) {
     searchContainer.style.display = 'flex';
     // eslint-disable-next-line no-undef
-    window.addEventListener('keyup', listenKey);
+    window.addEventListener('keyup', listenCloseKey);
   }
 
   if (searchInput) {
