@@ -142,22 +142,23 @@ function getSearchResult(list, keys, searchKey) {
 }
 
 function debounce(func, wait, immediate) {
-  var timeout;
+  let timeout;
 
   return function() {
-    // eslint-disable-next-line consistent-this, no-invalid-this
-    var context = this,
-      args = arguments;
+    const args = arguments;
 
     clearTimeout(timeout);
-    timeout = setTimeout(function() {
+    timeout = setTimeout(() => {
       timeout = null;
       if (!immediate) {
-        func.apply(context, args);
+        // eslint-disable-next-line consistent-this, no-invalid-this
+        func.apply(this, args);
       }
     }, wait);
+
     if (immediate && !timeout) {
-      func.apply(context, args);
+      // eslint-disable-next-line consistent-this, no-invalid-this
+      func.apply(this, args);
     }
   };
 }
