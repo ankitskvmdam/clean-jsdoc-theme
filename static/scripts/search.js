@@ -1,6 +1,5 @@
 /* global document */
 
-var searchData;
 var searchId = 'LiBfqbJVcV';
 var searchHash = '#' + searchId;
 var searchContainerID = '#PkfLWpAbet';
@@ -68,26 +67,13 @@ function showSearch() {
   }
 }
 
-function fetchAllData(obj = {}) {
+async function fetchAllData() {
   // eslint-disable-next-line no-undef
-  var url = baseURL + 'data/search.json';
+  const url = new URL('data/search.json', baseURL);
+  const result = await fetch(url);
+  const { list } = await result.json();
 
-  fetch(url)
-    .then(function(d) {
-      return d.json();
-    })
-    .then(function(d) {
-      searchData = d.list;
-      if (typeof obj.onSuccess === 'function') {
-        obj.onSuccess(d.list);
-      }
-    })
-    .catch(function(error) {
-      console.error(error);
-      if (typeof obj.onError === 'function') {
-        obj.onError();
-      }
-    });
+  return list;
 }
 
 // eslint-disable-next-line no-unused-vars
@@ -187,10 +173,12 @@ function debounce(func, wait, immediate) {
   };
 }
 
-function search(event) {
-  var value = event.target.value;
-  var resultBox = document.querySelector(searchResultCID);
-  var keys = ['title', 'description'];
+let searchData;
+
+async function search(event) {
+  const value = event.target.value;
+  const resultBox = document.querySelector(searchResultCID);
+  const keys = ['title', 'description'];
 
   if (!resultBox) {
     console.error('Search result container not found');
@@ -204,38 +192,27 @@ function search(event) {
     return;
   }
 
-  function onSuccess(res) {
-    if (res.length === 0) {
-      resultBox.innerHTML =
-                'No result found! Try some different combination.';
-
-      return;
-    }
-    var output = buildSearchResult(res);
-
-    resultBox.innerHTML = output;
-  }
-
   if (!searchData) {
     resultBox.innerHTML = 'Loading...';
 
-    fetchAllData({
-      onSuccess: function(list) {
-        var result = getSearchResult(list, keys, value);
+    try {
+      // eslint-disable-next-line require-atomic-updates
+      searchData = await fetchAllData();
+    } catch (e) {
+      resultBox.innerHTML = 'Failed to load result.';
 
-        onSuccess(result);
-      },
-      onError: function() {
-        resultBox.innerHTML = 'Failed to load result.';
-      }
-    });
+      return;
+    }
+  }
+
+  const result = getSearchResult(searchData, keys, value);
+
+  if (result.length === 0) {
+    resultBox.innerHTML = 'No result found! Try some different combination.';
 
     return;
   }
-
-  var result = getSearchResult(searchData, keys, value);
-
-  onSuccess(result);
+  resultBox.innerHTML = buildSearchResult(result);
 }
 
 function onDomContentLoaded() {
