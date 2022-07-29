@@ -8,6 +8,10 @@ const searchCloseButton = document.querySelector('#VjLlGakifb');
 const searchInput = document.querySelector('#vpcKVYIppa');
 const resultBox = document.querySelector('#fWwVHRuDuN');
 
+function showResultText(text) {
+  resultBox.innerHTML = `<span class="search-result-c-text">${text}</span>`;
+}
+
 function hideSearch() {
   // eslint-disable-next-line no-undef
   if (window.location.hash === searchHash) {
@@ -181,21 +185,20 @@ async function search(event) {
   }
 
   if (!value) {
-    resultBox.innerHTML = 'Type anything to view search result';
+    showResultText('Type anything to view search result');
 
     return;
   }
 
   if (!searchData) {
-    resultBox.innerHTML = 'Loading...';
+    showResultText('Loading...');
 
     try {
       // eslint-disable-next-line require-atomic-updates
       searchData = await fetchAllData();
     } catch (e) {
       console.log(e);
-      // eslint-disable-next-line require-atomic-updates
-      resultBox.innerHTML = 'Failed to load result.';
+      showResultText('Failed to load result.');
 
       return;
     }
@@ -203,8 +206,14 @@ async function search(event) {
 
   const result = getSearchResult(searchData, keys, value);
 
+  if (!result.length) {
+    showResultText('No result found! Try some different combination.');
+
+    return;
+  }
+
   // eslint-disable-next-line require-atomic-updates
-  resultBox.innerHTML = !result.length ? 'No result found! Try some different combination.' : buildSearchResult(result);
+  resultBox.innerHTML = buildSearchResult(result);
 }
 
 function onDomContentLoaded() {
