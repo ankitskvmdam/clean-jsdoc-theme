@@ -124,7 +124,7 @@ function buildSearchResult(result) {
 }
 
 function getSearchResult(list, keys, searchKey) {
-  var defaultOptions = {
+  const defaultOptions = {
     shouldSort: true,
     threshold: 0.4,
     location: 0,
@@ -134,19 +134,18 @@ function getSearchResult(list, keys, searchKey) {
     keys: keys
   };
 
-  // var op = Object.assign({}, defaultOptions, options);
-  var op = defaultOptions;
+  const options = { ...defaultOptions };
 
   // eslint-disable-next-line no-undef
-  var searchIndex = Fuse.createIndex(op.keys, list);
+  const searchIndex = Fuse.createIndex(options.keys, list);
 
-  /* eslint-disable-next-line */
-    var fuse = new Fuse(list, op, searchIndex);
+  // eslint-disable-next-line no-undef
+  const fuse = new Fuse(list, options, searchIndex);
 
-  var result = fuse.search(searchKey);
+  const result = fuse.search(searchKey);
 
   if (result.length > 20) {
-    result = result.slice(0, 20);
+    return result.slice(0, 20);
   }
 
   return result;
