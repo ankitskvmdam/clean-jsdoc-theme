@@ -193,6 +193,7 @@ async function search(event) {
       // eslint-disable-next-line require-atomic-updates
       searchData = await fetchAllData();
     } catch (e) {
+      console.log(e);
       // eslint-disable-next-line require-atomic-updates
       resultBox.innerHTML = 'Failed to load result.';
 
