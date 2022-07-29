@@ -1,16 +1,14 @@
 /* global document */
 
-var searchId = 'LiBfqbJVcV';
-var searchHash = '#' + searchId;
-var searchContainerID = '#PkfLWpAbet';
-var searchWrapperID = '#iCxFxjkHbP';
-var searchCloseButtonID = '#VjLlGakifb';
-var searchInputID = '#vpcKVYIppa';
-var searchResultCID = '#fWwVHRuDuN';
+const searchId = 'LiBfqbJVcV';
+const searchHash = '#' + searchId;
+const searchContainer = document.querySelector('#PkfLWpAbet');
+const searchWrapper = document.querySelector('#iCxFxjkHbP');
+const searchCloseButton = document.querySelector('#VjLlGakifb');
+const searchInput = document.querySelector('#vpcKVYIppa');
+const resultBox = document.querySelector('#fWwVHRuDuN');
 
 function hideSearch() {
-  var container = document.querySelector(searchContainerID);
-
   // eslint-disable-next-line no-undef
   if (window.location.hash === searchHash) {
     // eslint-disable-next-line no-undef
@@ -20,8 +18,8 @@ function hideSearch() {
   // eslint-disable-next-line no-undef
   window.onhashchange = null;
 
-  if (container) {
-    container.style.display = 'none';
+  if (searchContainer) {
+    searchContainer.style.display = 'none';
   }
 }
 
@@ -44,9 +42,6 @@ function showSearch() {
     console.error(error);
   }
 
-  var container = document.querySelector(searchContainerID);
-  var input = document.querySelector(searchInputID);
-
   // eslint-disable-next-line no-undef
   window.onhashchange = hideSearch;
 
@@ -56,14 +51,14 @@ function showSearch() {
     history.pushState(null, null, searchHash);
   }
 
-  if (container) {
-    container.style.display = 'flex';
+  if (searchContainer) {
+    searchContainer.style.display = 'flex';
     // eslint-disable-next-line no-undef
     window.addEventListener('keyup', listenKey);
   }
 
-  if (input) {
-    input.focus();
+  if (searchInput) {
+    searchInput.focus();
   }
 }
 
@@ -171,7 +166,6 @@ let searchData;
 
 async function search(event) {
   const value = event.target.value;
-  const resultBox = document.querySelector(searchResultCID);
   const keys = ['title', 'description'];
 
   if (!resultBox) {
@@ -212,9 +206,6 @@ async function search(event) {
 function onDomContentLoaded() {
   var input = document.querySelector(searchInputID);
   var searchButton = document.querySelectorAll('.search-button');
-  var searchContainer = document.querySelector(searchContainerID);
-  var searchWrapper = document.querySelector(searchWrapperID);
-  var searchCloseButton = document.querySelector(searchCloseButtonID);
 
   var debouncedSearch = debounce(search, 300);
 
