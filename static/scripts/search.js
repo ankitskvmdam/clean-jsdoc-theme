@@ -201,9 +201,8 @@ async function search(event) {
 }
 
 function onDomContentLoaded() {
-  var searchButton = document.querySelectorAll('.search-button');
-
-  var debouncedSearch = debounce(search, 300);
+  const searchButton = document.querySelectorAll('.search-button');
+  const debouncedSearch = debounce(search, 300);
 
   if (searchCloseButton) {
     searchCloseButton.addEventListener('click', hideSearch);
