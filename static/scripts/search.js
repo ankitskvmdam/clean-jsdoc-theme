@@ -73,16 +73,16 @@ async function fetchAllData() {
 
 // eslint-disable-next-line no-unused-vars
 function onClickSearchItem(event) {
-  var target = event.currentTarget;
+  const target = event.currentTarget;
 
   if (target) {
-    var href = target.getAttribute('href') || '';
-    var id = href.split('#')[1] || '';
-    var element = document.getElementById(id);
+    const href = target.getAttribute('href') || '';
+    let elementId = href.split('#')[1] || '';
+    let element = document.getElementById(elementId);
 
     if (!element) {
-      id = decodeURI(id);
-      element = document.getElementById(id);
+      elementId = decodeURI(elementId);
+      element = document.getElementById(elementId);
     }
 
     if (element) {
@@ -187,6 +187,7 @@ async function search(event) {
       // eslint-disable-next-line require-atomic-updates
       searchData = await fetchAllData();
     } catch (e) {
+      // eslint-disable-next-line require-atomic-updates
       resultBox.innerHTML = 'Failed to load result.';
 
       return;
@@ -195,12 +196,8 @@ async function search(event) {
 
   const result = getSearchResult(searchData, keys, value);
 
-  if (result.length === 0) {
-    resultBox.innerHTML = 'No result found! Try some different combination.';
-
-    return;
-  }
-  resultBox.innerHTML = buildSearchResult(result);
+  // eslint-disable-next-line require-atomic-updates
+  resultBox.innerHTML = !result.length ? 'No result found! Try some different combination.' : buildSearchResult(result);
 }
 
 function onDomContentLoaded() {
