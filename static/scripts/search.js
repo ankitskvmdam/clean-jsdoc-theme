@@ -204,7 +204,6 @@ async function search(event) {
 }
 
 function onDomContentLoaded() {
-  var input = document.querySelector(searchInputID);
   var searchButton = document.querySelectorAll('.search-button');
 
   var debouncedSearch = debounce(search, 300);
@@ -229,8 +228,8 @@ function onDomContentLoaded() {
     });
   }
 
-  if (input) {
-    input.addEventListener('keyup', debouncedSearch);
+  if (searchInput) {
+    searchInput.addEventListener('keyup', debouncedSearch);
   }
 
   // eslint-disable-next-line no-undef
