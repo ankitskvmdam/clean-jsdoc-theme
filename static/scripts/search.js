@@ -100,22 +100,17 @@ function onClickSearchItem(event) {
 }
 
 function buildSearchResult(result) {
-  var output = '';
+  let output = '';
 
   for (const res of result) {
-    var data = res.item;
+    const { title, description } = res.item;
 
-    var link = res.item.link.replace('<a href="', '').replace(/">.*/, '');
+    const link = res.item.link.replace('<a href="', '').replace(/">.*/, '');
 
     output += `
-
     <a onclick="onClickSearchItem(event)" href="${link}" class="search-result-item">
-      <div class="search-result-item-title">
-          ${data.title}
-      </div>
-      <div class="search-result-item-p">
-          ${data.description ? data.description : 'No description available.'}
-      </div>
+      <div class="search-result-item-title">${title}</div>
+      <div class="search-result-item-p">${description || 'No description available.'}</div>
     </a>
     `;
   }
