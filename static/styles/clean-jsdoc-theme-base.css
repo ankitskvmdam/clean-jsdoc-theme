@@ -737,6 +737,12 @@ pre {
     right: 1rem;
 }
 
+.search-result-c-text {
+    display: flex;
+    justify-content: center;
+    user-select: none;
+}
+
 .search-result-c {
     min-height: 20rem;
     max-height: 40rem;

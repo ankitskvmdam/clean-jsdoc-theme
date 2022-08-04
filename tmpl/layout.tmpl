@@ -67,6 +67,8 @@
       // Global variables
       <?js if (this.baseURL) { ?>
         baseURL = "<?js= this.baseURL ?>"
+        baseURL = baseURL.replace(/https?:\/\//i, '')
+        baseURL = baseURL.substr(baseURL.indexOf("/"))
       <?js } else { ?>
         locationPathname = document.location.pathname
         baseURL = locationPathname.substr(0, locationPathname.lastIndexOf("/") + 1)
