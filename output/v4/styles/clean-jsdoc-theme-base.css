@@ -148,6 +148,7 @@ blockquote {
     font-size: 0.875rem;
     padding: 0.0625rem 1.25rem;
     border-radius: 1rem;
+    margin: 0.5rem 0;
 }
 
 .details {
@@ -191,6 +192,7 @@ dt {
 .details pre.prettyprint {
     margin: 0;
 }
+
 /* stylelint-enable */
 
 .details .object-value {
@@ -307,14 +309,14 @@ td {
     font-weight: bold;
 }
 
-.params td.description > p:first-child,
-.props td.description > p:first-child {
+.params td.description>p:first-child,
+.props td.description>p:first-child {
     margin-top: 0;
     padding-top: 0;
 }
 
-.params td.description > p:last-child,
-.props td.description > p:last-child {
+.params td.description>p:last-child,
+.props td.description>p:last-child {
     margin-bottom: 0;
     padding-bottom: 0;
 }
@@ -441,12 +443,12 @@ code {
     text-decoration: none;
 }
 
-.with-arrow[data-isopen='false'] + .sidebar-section-children-container {
+.with-arrow[data-isopen='false']+.sidebar-section-children-container {
     height: 0;
     overflow: hidden;
 }
 
-.with-arrow[data-isopen='true'] + .sidebar-section-children-container {
+.with-arrow[data-isopen='true']+.sidebar-section-children-container {
     height: auto;
 }
 
@@ -612,7 +614,7 @@ code {
     justify-content: center;
 }
 
-.source-page + .footer {
+.source-page+.footer {
     margin-top: 3rem;
 }
 
@@ -636,8 +638,12 @@ pre {
 .hljs .hljs-ln-numbers {
     width: 2rem;
     white-space: nowrap;
-    user-select: none;
+    /* user-select: none; */
     padding-left: 1.5rem;
+}
+
+.hljs-ln-line.hljs-ln-numbers::before {
+    content: attr(data-line-number);
 }
 
 .pre-div {
@@ -656,7 +662,6 @@ pre {
     position: absolute;
     right: 0;
     top: 0;
-    z-index: 1;
 }
 
 .code-copy-icon-container {
@@ -670,7 +675,7 @@ pre {
     width: 1.875rem;
 }
 
-.code-copy-icon-container > div {
+.code-copy-icon-container>div {
     margin-top: 0.25rem;
     position: relative;
 }
@@ -733,6 +738,12 @@ pre {
     position: absolute;
     top: 1rem;
     right: 1rem;
+}
+
+.search-result-c-text {
+    display: flex;
+    justify-content: center;
+    user-select: none;
 }
 
 .search-result-c {
@@ -859,6 +870,10 @@ pre {
     overflow: auto;
 }
 
+.tag-default {
+    overflow: auto
+}
+
 /* scroll bar */
 ::-webkit-scrollbar {
     width: 0.3125rem;
@@ -921,6 +936,7 @@ pre {
     .search-result-c {
         max-height: 25rem;
     }
+
     .mobile-menu-icon-container {
         display: block;
     }
@@ -928,6 +944,7 @@ pre {
     .sidebar-container {
         display: none;
     }
+
     .search-container .wrapper {
         margin-left: 1rem;
     }
@@ -941,7 +958,7 @@ pre {
         display: none;
     }
 
-    .source-page + .footer,
+    .source-page+.footer,
     .footer {
         margin-top: 2rem;
     }

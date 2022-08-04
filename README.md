@@ -139,7 +139,6 @@ To set favicon add the following in your jsodc config files.
 "theme_opts": {
  "favicon": "path/to/img"
 }
-
 ```
 
 You can use [`static_dir`](#add-static-dir) option to copy all you static files to output dir and use that path in place of `path/to/img`.

@@ -1,17 +1,18 @@
 /* global document */
 
-var searchData;
-var searchId = 'LiBfqbJVcV';
-var searchHash = '#' + searchId;
-var searchContainerID = '#PkfLWpAbet';
-var searchWrapperID = '#iCxFxjkHbP';
-var searchCloseButtonID = '#VjLlGakifb';
-var searchInputID = '#vpcKVYIppa';
-var searchResultCID = '#fWwVHRuDuN';
+const searchId = 'LiBfqbJVcV';
+const searchHash = '#' + searchId;
+const searchContainer = document.querySelector('#PkfLWpAbet');
+const searchWrapper = document.querySelector('#iCxFxjkHbP');
+const searchCloseButton = document.querySelector('#VjLlGakifb');
+const searchInput = document.querySelector('#vpcKVYIppa');
+const resultBox = document.querySelector('#fWwVHRuDuN');
+
+function showResultText(text) {
+  resultBox.innerHTML = `<span class="search-result-c-text">${text}</span>`;
+}
 
 function hideSearch() {
-  var container = document.querySelector(searchContainerID);
-
   // eslint-disable-next-line no-undef
   if (window.location.hash === searchHash) {
     // eslint-disable-next-line no-undef
@@ -21,16 +22,16 @@ function hideSearch() {
   // eslint-disable-next-line no-undef
   window.onhashchange = null;
 
-  if (container) {
-    container.style.display = 'none';
+  if (searchContainer) {
+    searchContainer.style.display = 'none';
   }
 }
 
-function listenKey(event) {
+function listenCloseKey(event) {
   if (event.key === 'Escape') {
     hideSearch();
     // eslint-disable-next-line no-undef
-    window.removeEventListener('keyup', listenKey);
+    window.removeEventListener('keyup', listenCloseKey);
   }
 }
 
@@ -45,9 +46,6 @@ function showSearch() {
     console.error(error);
   }
 
-  var container = document.querySelector(searchContainerID);
-  var input = document.querySelector(searchInputID);
-
   // eslint-disable-next-line no-undef
   window.onhashchange = hideSearch;
 
@@ -57,51 +55,43 @@ function showSearch() {
     history.pushState(null, null, searchHash);
   }
 
-  if (container) {
-    container.style.display = 'flex';
+  if (searchContainer) {
+    searchContainer.style.display = 'flex';
     // eslint-disable-next-line no-undef
-    window.addEventListener('keyup', listenKey);
+    window.addEventListener('keyup', listenCloseKey);
   }
 
-  if (input) {
-    input.focus();
+  if (searchInput) {
+    searchInput.focus();
   }
 }
 
-function fetchAllData(obj = {}) {
+async function fetchAllData() {
   // eslint-disable-next-line no-undef
-  var url = baseURL + 'data/search.json';
+  const { hostname, protocol, port } = location;
 
-  fetch(url)
-    .then(function(d) {
-      return d.json();
-    })
-    .then(function(d) {
-      searchData = d.list;
-      if (typeof obj.onSuccess === 'function') {
-        obj.onSuccess(d.list);
-      }
-    })
-    .catch(function(error) {
-      console.error(error);
-      if (typeof obj.onError === 'function') {
-        obj.onError();
-      }
-    });
+  // eslint-disable-next-line no-undef
+  const base = protocol + '//' + hostname + (port !== '' ? ':' + port : '') + baseURL;
+  // eslint-disable-next-line no-undef
+  const url = new URL('data/search.json', base);
+  const result = await fetch(url);
+  const { list } = await result.json();
+
+  return list;
 }
 
 // eslint-disable-next-line no-unused-vars
 function onClickSearchItem(event) {
-  var target = event.currentTarget;
+  const target = event.currentTarget;
 
   if (target) {
-    var href = target.getAttribute('href') || '';
-    var id = href.split('#')[1] || '';
-    var element = document.getElementById(id);
+    const href = target.getAttribute('href') || '';
+    let elementId = href.split('#')[1] || '';
+    let element = document.getElementById(elementId);
 
     if (!element) {
-      id = decodeURI(id);
-      element = document.getElementById(id);
+      elementId = decodeURI(elementId);
+      element = document.getElementById(elementId);
     }
 
     if (element) {
@@ -114,22 +104,17 @@ function onClickSearchItem(event) {
 }
 
 function buildSearchResult(result) {
-  var output = '';
+  let output = '';
 
   for (const res of result) {
-    var data = res.item;
+    const { title, description } = res.item;
 
-    var link = res.item.link.replace('<a href="', '').replace(/">.*/, '');
+    const link = res.item.link.replace('<a href="', '').replace(/">.*/, '');
 
     output += `
-
     <a onclick="onClickSearchItem(event)" href="${link}" class="search-result-item">
-      <div class="search-result-item-title">
-          ${data.title}
-      </div>
-      <div class="search-result-item-p">
-          ${data.description ? data.description : 'No description available.'}
-      </div>
+      <div class="search-result-item-title">${title}</div>
+      <div class="search-result-item-p">${description || 'No description available.'}</div>
     </a>
     `;
   }
@@ -138,7 +123,7 @@ function buildSearchResult(result) {
 }
 
 function getSearchResult(list, keys, searchKey) {
-  var defaultOptions = {
+  const defaultOptions = {
     shouldSort: true,
     threshold: 0.4,
     location: 0,
@@ -148,49 +133,50 @@ function getSearchResult(list, keys, searchKey) {
     keys: keys
   };
 
-  // var op = Object.assign({}, defaultOptions, options);
-  var op = defaultOptions;
+  const options = { ...defaultOptions };
 
   // eslint-disable-next-line no-undef
-  var searchIndex = Fuse.createIndex(op.keys, list);
+  const searchIndex = Fuse.createIndex(options.keys, list);
 
-  /* eslint-disable-next-line */
-    var fuse = new Fuse(list, op, searchIndex);
+  // eslint-disable-next-line no-undef
+  const fuse = new Fuse(list, options, searchIndex);
 
-  var result = fuse.search(searchKey);
+  const result = fuse.search(searchKey);
 
   if (result.length > 20) {
-    result = result.slice(0, 20);
+    return result.slice(0, 20);
   }
 
   return result;
 }
 
 function debounce(func, wait, immediate) {
-  var timeout;
+  let timeout;
 
   return function() {
-    // eslint-disable-next-line consistent-this, no-invalid-this
-    var context = this,
-      args = arguments;
+    const args = arguments;
 
     clearTimeout(timeout);
-    timeout = setTimeout(function() {
+    timeout = setTimeout(() => {
       timeout = null;
       if (!immediate) {
-        func.apply(context, args);
+        // eslint-disable-next-line consistent-this, no-invalid-this
+        func.apply(this, args);
       }
     }, wait);
+
     if (immediate && !timeout) {
-      func.apply(context, args);
+      // eslint-disable-next-line consistent-this, no-invalid-this
+      func.apply(this, args);
     }
   };
 }
 
-function search(event) {
-  var value = event.target.value;
-  var resultBox = document.querySelector(searchResultCID);
-  var keys = ['title', 'description'];
+let searchData;
+
+async function search(event) {
+  const value = event.target.value;
+  const keys = ['title', 'description'];
 
   if (!resultBox) {
     console.error('Search result container not found');
@@ -199,53 +185,40 @@ function search(event) {
   }
 
   if (!value) {
-    resultBox.innerHTML = 'Type anything to view search result';
+    showResultText('Type anything to view search result');
 
     return;
-  }
-
-  function onSuccess(res) {
-    if (res.length === 0) {
-      resultBox.innerHTML =
-                'No result found! Try some different combination.';
-
-      return;
-    }
-    var output = buildSearchResult(res);
-
-    resultBox.innerHTML = output;
   }
 
   if (!searchData) {
-    resultBox.innerHTML = 'Loading...';
+    showResultText('Loading...');
 
-    fetchAllData({
-      onSuccess: function(list) {
-        var result = getSearchResult(list, keys, value);
+    try {
+      // eslint-disable-next-line require-atomic-updates
+      searchData = await fetchAllData();
+    } catch (e) {
+      console.log(e);
+      showResultText('Failed to load result.');
 
-        onSuccess(result);
-      },
-      onError: function() {
-        resultBox.innerHTML = 'Failed to load result.';
-      }
-    });
+      return;
+    }
+  }
+
+  const result = getSearchResult(searchData, keys, value);
+
+  if (!result.length) {
+    showResultText('No result found! Try some different combination.');
 
     return;
   }
 
-  var result = getSearchResult(searchData, keys, value);
-
-  onSuccess(result);
+  // eslint-disable-next-line require-atomic-updates
+  resultBox.innerHTML = buildSearchResult(result);
 }
 
 function onDomContentLoaded() {
-  var input = document.querySelector(searchInputID);
-  var searchButton = document.querySelectorAll('.search-button');
-  var searchContainer = document.querySelector(searchContainerID);
-  var searchWrapper = document.querySelector(searchWrapperID);
-  var searchCloseButton = document.querySelector(searchCloseButtonID);
-
-  var debouncedSearch = debounce(search, 300);
+  const searchButton = document.querySelectorAll('.search-button');
+  const debouncedSearch = debounce(search, 300);
 
   if (searchCloseButton) {
     searchCloseButton.addEventListener('click', hideSearch);
@@ -267,8 +240,8 @@ function onDomContentLoaded() {
     });
   }
 
-  if (input) {
-    input.addEventListener('keyup', debouncedSearch);
+  if (searchInput) {
+    searchInput.addEventListener('keyup', debouncedSearch);
   }
 
   // eslint-disable-next-line no-undef

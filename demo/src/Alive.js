@@ -3,7 +3,7 @@
  * @class
  */
 class Alive {
-    
+
     constructor() {
         /**
          * amount of energy
@@ -18,15 +18,15 @@ class Alive {
          */
         this.energy = null;
         /**
-        * This is a number array.
-        * @constant
-        * @type Object
-        * @default
-        */
-       this.NUMBER_ARRAY = {
-        google: "Google",
-        games: "Games"
-       }
+         * This is a number array.
+         * @constant
+         * @type Object
+         * @default
+         */
+        this.NUMBER_ARRAY = {
+            google: "Google",
+            games: "Games"
+        }
     }
     /**
      * @param {Environment} environment the environment when this Alive thing is surviving
@@ -36,6 +36,21 @@ class Alive {
      * @deprecated
      */
     survive() {
+        return null;
+    }
+    /**
+     * Text
+     * > Text
+     * 
+     * 
+     *```js
+     * code
+     *```
+     *
+     * 
+     * > Note that commands are not matched in captions or in the middle of the text.
+     */
+    gameQuery() {
         return null;
     }
 }

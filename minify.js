@@ -19,6 +19,10 @@ const uglifyFiles = [
   {
     src: path.join(scriptsPath, 'third-party', 'hljs-original.js'),
     dest: path.join(scriptsPath, 'third-party', 'hljs.js')
+  },
+  {
+    src: path.join(scriptsPath, 'third-party', 'hljs-line-num-original.js'),
+    dest: path.join(scriptsPath, 'third-party', 'hljs-line-num.js')
   }
 ];
 

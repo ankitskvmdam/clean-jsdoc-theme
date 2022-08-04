@@ -239,6 +239,7 @@ function addAnchor() {
  * @param {string} value
  */
 function copy(value) {
+  console.log(value);
   const el = document.createElement('textarea');
 
   el.value = value;
@@ -271,7 +272,7 @@ function copyFunction(id) {
   }
 
   // copy
-  copy(element.innerText);
+  copy(element.innerText.trim());
 
   // show tooltip
   showTooltip('tooltip-' + id);

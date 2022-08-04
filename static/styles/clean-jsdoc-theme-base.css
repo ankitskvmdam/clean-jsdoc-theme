@@ -638,8 +638,12 @@ pre {
 .hljs .hljs-ln-numbers {
     width: 2rem;
     white-space: nowrap;
-    user-select: none;
+    /* user-select: none; */
     padding-left: 1.5rem;
+}
+
+.hljs-ln-line.hljs-ln-numbers::before {
+    content: attr(data-line-number);
 }
 
 .pre-div {
@@ -658,7 +662,6 @@ pre {
     position: absolute;
     right: 0;
     top: 0;
-    z-index: 1;
 }
 
 .code-copy-icon-container {
