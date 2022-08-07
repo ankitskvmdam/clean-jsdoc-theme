@@ -643,3 +643,14 @@ function onDomContentLoaded() {
 
 // eslint-disable-next-line no-undef
 window.addEventListener('DOMContentLoaded', onDomContentLoaded);
+
+console.log('Hash event added');
+
+// eslint-disable-next-line no-undef
+window.addEventListener('hashchange', (event) => {
+  const url = new URL(event.newURL);
+
+  if (url.hash !== '') {
+    bringIdToViewOnMount(url.hash);
+  }
+});
