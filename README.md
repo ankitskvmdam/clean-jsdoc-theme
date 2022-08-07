@@ -371,7 +371,6 @@ It will include the js files to the output dir and also attach a script tag to t
 
 ```json
 "theme_opts": {
-
   "footer": "This is footer" // or <div class="footer-wrapper">This is a footer </div>
 }
 ```
