@@ -15,9 +15,9 @@ This is the most performant version of `clean-jsdoc-theme`. Check the [report on
 ### Removed
 
 1. Search options
-1. `theme` options. Now it is `default_theme`
-1. `overlay_scrollbar`. We found that you can include overlay scrollbar using [`add_script_path`](https://github.com/ankitskvmdam/clean-jsdoc-theme#add-script-paths) and [`include_js`](https://github.com/ankitskvmdam/clean-jsdoc-theme#add-custom-script-files) options.
-1. `resizeable`. Now there is no option to resize sidebar.
+2. `theme` options. Now it is `default_theme`
+3. `overlay_scrollbar`. We found that you can include overlay scrollbar using [`add_script_path`](https://github.com/ankitskvmdam/clean-jsdoc-theme#add-script-paths) and [`include_js`](https://github.com/ankitskvmdam/clean-jsdoc-theme#add-custom-script-files) options.
+4. `resizeable`. Now there is no option to resize sidebar.
 
 ### In version 3.3.2
 
@@ -34,9 +34,9 @@ This is the most performant version of `clean-jsdoc-theme`. Check the [report on
 ### Bug Fixes
 
 1. Fix: Line height of empty line is render as 0 on Mozilla firefox.
-1. Fix: Unnecessary errors with empty examples (#92)[https://github.com/ankitskvmdam/clean-jsdoc-theme/pull/92]
-1. Fix: Disabled source still produces 'details' block (#90)[https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/90]
-1. Fix: Tutorials that share their name with a class will have that classes methods dropdown (#80)[https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/89]
+2. Fix: Unnecessary errors with empty examples (#92)[https://github.com/ankitskvmdam/clean-jsdoc-theme/pull/92]
+3. Fix: Disabled source still produces 'details' block (#90)[https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/90]
+4. Fix: Tutorials that share their name with a class will have that classes methods dropdown (#80)[https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/89]
 
 ### Options Removed
 
@@ -47,7 +47,7 @@ This is the most performant version of `clean-jsdoc-theme`. Check the [report on
 ### Bug Fixes
 
 1. Fix: Search condition statement. (#81)[https://github.com/ankitskvmdam/clean-jsdoc-theme/pull/81]
-1. Fix: missing styles/heading.css. (#80)[https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/80]
+2. Fix: missing styles/heading.css. (#80)[https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/80]
 
 ### Feature
 
@@ -58,8 +58,8 @@ This is the most performant version of `clean-jsdoc-theme`. Check the [report on
 ### Bug Fix
 
 1. Fix: quotes issue for codepen options.
-1. Fix: source is not printing if source is the only key. (#71)[https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/71]
-1. Fix (css): font size of return type. (#70)[https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/70]
+2. Fix: source is not printing if source is the only key. (#71)[https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/71]
+3. Fix (css): font size of return type. (#70)[https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/70]
 
 ### In version 3.2.6
 
@@ -70,8 +70,8 @@ This is the most performant version of `clean-jsdoc-theme`. Check the [report on
 ### Bug Fix
 
 1. Fix the css of example caption. [View changes.](https://github.com/ankitskvmdam/clean-jsdoc-theme/commit/1cba9400a6d9ae2991eb5b32282e7572510656c6)
-1. Fix the overflow css of code section. [View changes.](https://github.com/ankitskvmdam/clean-jsdoc-theme/commit/1cba9400a6d9ae2991eb5b32282e7572510656c6)
-1. Fix the css of code block in dark theme.
+2. Fix the overflow css of code section. [View changes.](https://github.com/ankitskvmdam/clean-jsdoc-theme/commit/1cba9400a6d9ae2991eb5b32282e7572510656c6)
+3. Fix the css of code block in dark theme.
 
 ### In version 3.2.4
 
@@ -120,7 +120,7 @@ This is the most performant version of `clean-jsdoc-theme`. Check the [report on
 ### New
 
 1. Add brand new light and dark theme.
-1. Add collapsible main section in navbar.
+2. Add collapsible main section in navbar.
 
 ### Refactor
 
@@ -171,7 +171,7 @@ In this release we removed this template rule.
 ### Bug Fix
 
 1. Fix body overflow.
-1. Fix css for table.
+2. Fix css for table.
 
 ## In version 3.0.4
 
@@ -190,15 +190,15 @@ In this release we removed this template rule.
 ### New
 
 1. Add an option to include css files.
-1. Add an option to add js.
-1. Add an option to include static folder.
-1. OverlayScrollbar are now supported by default. If you don't want to use it pass an option to disable it.
+2. Add an option to add js.
+3. Add an option to include static folder.
+4. OverlayScrollbar are now supported by default. If you don't want to use it pass an option to disable it.
 
 ### Breaking changes
 
 1. `add_script_path` previously you have to pass an array of string but now you have to pass an array of object where keys are the attributes of the script tag
-1. `add_style_path` previously you have to pass an array of string but now you have to pass an array of object where keys are the attributes of the link tag
-1. `meta` previously you have to pass an array of string but now you have to pass an array of object where keys are the attributes of the meta tag
+2. `add_style_path` previously you have to pass an array of string but now you have to pass an array of object where keys are the attributes of the link tag
+3. `meta` previously you have to pass an array of string but now you have to pass an array of object where keys are the attributes of the meta tag
 
 ## In version 2.2.15
 
@@ -230,6 +230,6 @@ In this release we removed this template rule.
 
 ### Bug fix
 
-1.  Fix typescript-eslint camelCase rule issue [issue: [#37](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/37)]
-1.  Fix ordered list style [issue: [#40](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/40)]
-1.  Fix code overflow issue.
+1. Fix typescript-eslint camelCase rule issue [issue: [#37](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/37)]
+2. Fix ordered list style [issue: [#40](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/40)]
+3. Fix code overflow issue.

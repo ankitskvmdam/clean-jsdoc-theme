@@ -8,11 +8,11 @@ clean-jsdoc-theme is a beautifully crafted theme for JSDoc 3. It is a clean and 
 Some salient features:
 
 1. It supports most screens, i.e., desktops, laptops, iPad and mobile devices.
-1. It has a premium-looking dark and light theme.
-1. It minifies all the output HTML files (this helps in saving a few KBs).
-1. It has search support. The search feature doesn't increase the size of output HTML files.
-1. It updates regularly.
-1. It is highly performant. [Check lighthouse report here](https://googlechrome.github.io/lighthouse/viewer/?psiurl=https%3A%2F%2Fankdev.me%2Fclean-jsdoc-theme%2Fv4%2Findex.html&strategy=desktop&category=performance&category=accessibility&category=best-practices&category=seo&category=pwa&utm_source=lh-chrome-ext).
+2. It has a premium-looking dark and light theme.
+3. It minifies all the output HTML files (this helps in saving a few KBs).
+4. It has search support. The search feature doesn't increase the size of output HTML files.
+5. It updates regularly.
+6. It is highly performant. [Check lighthouse report here](https://googlechrome.github.io/lighthouse/viewer/?psiurl=https%3A%2F%2Fankdev.me%2Fclean-jsdoc-theme%2Fv4%2Findex.html&strategy=desktop&category=performance&category=accessibility&category=best-practices&category=seo&category=pwa&utm_source=lh-chrome-ext).
 
 We know that no library is perfect. That's why we are open to hearing from the community about the theme. For any suggestions, questions or bugs, feel free to create an <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme/issues">issue</a>.
 
@@ -20,7 +20,7 @@ We know that no library is perfect. That's why we are open to hearing from the c
 
 1. To view this theme, visit [https://ankdev.me/clean-jsdoc-theme/v4](https://ankdev.me/clean-jsdoc-theme/v4).
 
-1. If you want to see a demo repo to set up this theme, visit [https://github.com/ankitskvmdam/clean-jsdoc-theme-example](https://github.com/ankitskvmdam/clean-jsdoc-theme-example). This repo will guide you step by step on how to setup jsdoc and clean-jsdoc-theme in your existing repo.
+2. If you want to see a demo repo to set up this theme, visit [https://github.com/ankitskvmdam/clean-jsdoc-theme-example](https://github.com/ankitskvmdam/clean-jsdoc-theme-example). This repo will guide you step by step on how to setup jsdoc and clean-jsdoc-theme in your existing repo.
 
 ## Screenshots
 
@@ -181,7 +181,7 @@ To render extra link(s) in navbar. It accepts an array of objects:
 <b>Properties</b>
 
 | name     | type     | required |
-| -------- | -------- | -------- |
+|----------|----------|----------|
 | `title`  | `string` | required |
 | `link`   | `string` | required |
 | `target` | `string` | optional |
@@ -388,7 +388,7 @@ This will remove all symbols (members, methods ...) that come from inherited par
 ## Cheat sheet
 
 | name                | default                                                                                                      | use case                                                                   | expected value(s)     |
-| ------------------- | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- | --------------------- |
+|---------------------|--------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------|-----------------------|
 | `default_theme`     | `"dark"`                                                                                                     | To set the default theme                                                   | `"light" or "dark"`   |
 | `title`             | `null`                                                                                                       | To set the title                                                           | `HTML` or `string`    |
 | `base_url`          | `/`                                                                                                          | To set the base URL                                                        | `string`              |

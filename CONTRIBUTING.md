@@ -20,5 +20,5 @@ Please go through [bug_report](https://github.com/ankitskvmdam/clean-jsdoc-theme
 ## Pull Request Process
 1. Ensure any install or build dependencies are removed before the end of the layer when doing a 
    build.
-1. Fill the pull request template.
+2. Fill the pull request template.
    
