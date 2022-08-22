@@ -34,7 +34,7 @@
 /**
  * Asynchronously initializes sql.js
  * @function initSqlJs
- * @param {SqlJsConfig} config module inititialization parameters
+ * @param {SqlJsConfig} config module initialization parameters
  * @returns {SqlJs}
  * @example
  * initSqlJs({
@@ -253,7 +253,7 @@ Module["onRuntimeInitialized"] = function onRuntimeInitialized() {
         // Index of the leftmost parameter is 1
         this.pos = 1;
         // Pointers to allocated memory, that need to be freed
-        // when the statemend is destroyed
+        // when the statement is destroyed
         this.allocatedmem = [];
     }
     /** @typedef {string|number|null|Uint8Array} Database.SqlValue */
@@ -261,7 +261,7 @@ Module["onRuntimeInitialized"] = function onRuntimeInitialized() {
         Database.SqlValue[]|Object<string, Database.SqlValue>|null
     } Statement.BindParams
      */
-    /** Bind values to the parameters, after having reseted the statement.
+    /** Bind values to the parameters, after having reset the statement.
     * If values is null, do nothing and return true.
     *
     * SQL statements can have parameters,
@@ -309,7 +309,7 @@ Module["onRuntimeInitialized"] = function onRuntimeInitialized() {
         }
         return true;
     };
-    /** Execute the statement, fetching the the next line of result,
+    /** Execute the statement, fetching the next line of result,
     that can be retrieved with {@link Statement.get}.
     @return {boolean} true if a row of result available
     @throws {String} SQLite Error
@@ -615,7 +615,7 @@ Module["onRuntimeInitialized"] = function onRuntimeInitialized() {
      *
      * @example
      * // loop over and execute statements in string sql
-     * for (let statement of db.iterateStatements(sql) {
+     * for (let statement of db.iterateStatements(sql)) {
      *     statement.step();
      *     // get results, etc.
      *     // do not call statement.free() manually, each statement is freed
@@ -896,8 +896,8 @@ Module["onRuntimeInitialized"] = function onRuntimeInitialized() {
             stackRestore(stack);
         }
     };
-    /** Execute an sql statement, and call a callback for each row of result.
-    Currently this method is synchronous, it will not return until the callback
+    /** Execute a sql statement, and call a callback for each row of result.
+    Currently, this method is synchronous, it will not return until the callback
     has been called on every row of the result. But this might change.
     @param {string} sql A string of SQL text. Can contain placeholders
     that will be bound to the parameters given as the second argument
@@ -956,7 +956,7 @@ Module["onRuntimeInitialized"] = function onRuntimeInitialized() {
     };
     /** Iterate over multiple SQL statements in a SQL string.
      * This function returns an iterator over {@link Statement} objects.
-     * You can use a for..of loop to execute the returned statements one by one.
+     * You can use a for...of loop to execute the returned statements one by one.
      * @param {string} sql a string of SQL that can contain multiple statements
      * @return {StatementIterator} the resulting statement iterator
      * @example <caption>Get the results of multiple SQL queries</caption>
@@ -1012,7 +1012,7 @@ Module["onRuntimeInitialized"] = function onRuntimeInitialized() {
         FS.unlink("/" + this.filename);
         this.db = null;
     };
-    /** Analyze a result code, return null if no error occured, and throw
+    /** Analyze a result code, return null if no error occurred, and throw
     an error with a descriptive message otherwise
     @nodoc
      */

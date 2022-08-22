@@ -612,7 +612,7 @@ function onDomContentLoaded() {
   hljs.addPlugin({
     'after:highlightElement': function(obj) {
       // Replace 'code' with result.language when
-      // we are able to cross check the correctness of
+      // we are able to cross-check the correctness of
       // result.
       obj.el.parentNode.setAttribute('data-lang', 'code');
     }
