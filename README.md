@@ -282,7 +282,7 @@ To include static files:
 To create custom style rules. Example:
 
 ```json
-"theme_opts" {
+  "theme_opts": {
   "create_style": ".sidebar-title { font-size: 2rem }"
 }
 ```
@@ -310,7 +310,7 @@ Example:
 To include css files. Example:
 
 ```json
-"theme_opts" {
+"theme_opts": {
   "include_css": ["./static/index.css", "./src/docs/index.css"]
 }
 ```
