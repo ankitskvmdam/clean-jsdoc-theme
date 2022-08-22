@@ -18,6 +18,6 @@
       }
     ],
     "at-rule-name-space-after": "always",
-    "rule-empty-line-before": "always",
+    "rule-empty-line-before": "always"
   }
 }
