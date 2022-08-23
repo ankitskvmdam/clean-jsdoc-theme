@@ -3,7 +3,8 @@
 [![Stars](https://img.shields.io/github/stars/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme) [![Fork](https://img.shields.io/github/forks/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/fork) ![Version](https://img.shields.io/badge/version-4.1.7-005bff) [![Issues Open](https://img.shields.io/github/issues/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues) [![Contributors](https://img.shields.io/github/contributors/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors) [![Build Status](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme.svg?branch=production)](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme) [![license](https://img.shields.io/github/license/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/LICENSE)
 <br>
 
-`clean-jsdoc-theme` is a beautifully crafted theme for JSDoc 3. It is a clean and fully responsive theme with loads of customisation features.
+`clean-jsdoc-theme` is a beautifully crafted theme for JSDoc 3. It is a clean and fully responsive theme with loads of
+customisation features.
 
 Some salient features:
 
@@ -12,15 +13,21 @@ Some salient features:
 3. It minifies all the output HTML files (this helps in saving a few KBs).
 4. It has search support. The search feature doesn't increase the size of output HTML files.
 5. It is regularly updated.
-6. It is highly performant. [Check lighthouse report here](https://googlechrome.github.io/lighthouse/viewer/?psiurl=https%3A%2F%2Fankdev.me%2Fclean-jsdoc-theme%2Fv4%2Findex.html&strategy=desktop&category=performance&category=accessibility&category=best-practices&category=seo&category=pwa&utm_source=lh-chrome-ext).
+6. It is highly
+   performant. [Check lighthouse report here](https://googlechrome.github.io/lighthouse/viewer/?psiurl=https%3A%2F%2Fankdev.me%2Fclean-jsdoc-theme%2Fv4%2Findex.html&strategy=desktop&category=performance&category=accessibility&category=best-practices&category=seo&category=pwa&utm_source=lh-chrome-ext)
+   .
 
-We know that no library is perfect. That's why we are open to hearing from the community about the theme. For any suggestions, questions or bugs, feel free to create an <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme/issues">issue</a>.
+We know that no library is perfect. That's why we are open to hearing from the community about the theme. For any
+suggestions, questions or bugs, feel free to create
+an <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme/issues">issue</a>.
 
 ## Demo
 
 1. To view this theme, visit [https://ankdev.me/clean-jsdoc-theme/v4](https://ankdev.me/clean-jsdoc-theme/v4).
 
-2. If you want to see a demo repo to set up this theme, visit [clean-jsdoc-theme-example](https://github.com/ankitskvmdam/clean-jsdoc-theme-example). This repo will guide you step by step on how to set up JSDoc and `clean-jsdoc-theme` in your existing repo.
+2. If you want to see a demo repo to set up this theme,
+   visit [clean-jsdoc-theme-example](https://github.com/ankitskvmdam/clean-jsdoc-theme-example). This repo will guide
+   you step by step on how to set up JSDoc and `clean-jsdoc-theme` in your existing repo.
 
 ## Screenshots
 
@@ -51,7 +58,10 @@ In your projects `package.json` file, add a script to generate the documentation
 }
 ```
 
-> Heads Up! In the above `generate_docs` script, the value of the `--configure` option is `jsdoc.json`. Make sure the `jsdoc.json` file exists as it contains the JSDoc configuration. If you have your JSDoc config in a different file, replace `jsdoc.json` with its name.
+> Heads Up! In the above `generate_docs` script, the value of the `--configure` option is `jsdoc.json`. Make sure
+> the `jsdoc.json` file exists as it contains the JSDoc configuration. If you have your JSDoc config in a different
+> file,
+> replace `jsdoc.json` with its name.
 
 In your `jsdoc.json` file, add a template option to use `clean-jsdoc-theme` instead of the default JSDoc theme:
 
@@ -67,36 +77,41 @@ Now, run the previously added script to generate the documentation :
 npm run generate-docs
 ```
 
-For more information, look at the [clean-jsdoc-theme-example](https://github.com/ankitskvmdam/clean-jsdoc-theme-example) repository.
+For more information, look at the [clean-jsdoc-theme-example](https://github.com/ankitskvmdam/clean-jsdoc-theme-example)
+repository.
 
 ## Example JSDoc Config
 
 ```json
 {
-    "source": {
-        "include": ["lib", "package.json", "README.md"],
-        "includePattern": ".js$",
-        "excludePattern": "(node_modules/|docs)"
-    },
-
-    "plugins": ["plugins/markdown"],
-
-    "opts": {
-        "encoding": "utf8",
-        "readme": "./README.md",
-        "destination": "docs/",
-        "recurse": true,
-        "verbose": true,
-        "template": "./node_modules/clean-jsdoc-theme",
-        "theme_opts": {
-            "default_theme": "dark"
-        }
-    },
-
-    "markdown": {
-        "hardwrap": false,
-        "idInHeadings": true // This is important for clean-jsdoc-theme, otherwise some features might not work.
+  "source": {
+    "include": [
+      "lib",
+      "package.json",
+      "README.md"
+    ],
+    "includePattern": ".js$",
+    "excludePattern": "(node_modules/|docs)"
+  },
+  "plugins": [
+    "plugins/markdown"
+  ],
+  "opts": {
+    "encoding": "utf8",
+    "readme": "./README.md",
+    "destination": "docs/",
+    "recurse": true,
+    "verbose": true,
+    "template": "./node_modules/clean-jsdoc-theme",
+    "theme_opts": {
+      "default_theme": "dark"
     }
+  },
+  "markdown": {
+    "hardwrap": false,
+    "idInHeadings": true
+    // This is important for clean-jsdoc-theme, otherwise some features might not work.
+  }
 }
 ```
 
@@ -137,15 +152,17 @@ To set a favicon, add the following in your JSDoc config file:
 
 ```json
 "theme_opts": {
- "favicon": "path/to/img"
+  "favicon": "path/to/img"
 }
 ```
 
-You can use [`static_dir`](#add-static-dir) option to copy all you static files to output dir and use that path instead of `path/to/img`.
+You can use [`static_dir`](#add-static-dir) option to copy all you static files to output dir and use that path instead
+of `path/to/img`.
 
 ### Add title
 
-Both strings and HTML are accepted. Use HTML to overwrite the default HTML, and a string to set a plaintext title. One example of this is below:
+Both strings and HTML are accepted. Use HTML to overwrite the default HTML, and a string to set a plaintext title. One
+example of this is below:
 
 ```json
 "theme_opts": {
@@ -153,7 +170,8 @@ Both strings and HTML are accepted. Use HTML to overwrite the default HTML, and 
 }
 ```
 
-You can use [`static_dir`](#add-static-dir) option to copy all you static files to output dir and use that path in place of `path/to/img`.
+You can use [`static_dir`](#add-static-dir) option to copy all you static files to output dir and use that path in place
+of `path/to/img`.
 
 ### Add navbar menu
 
@@ -161,7 +179,7 @@ To render extra link(s) in navbar. It accepts an array of objects:
 
 ```json
 "theme_opts": {
-  "menu" : [
+  "menu": [
     {
       "title": "Website",
       "link": "https://ankdev.me/clean-jsdoc-theme/dark/",
@@ -176,7 +194,8 @@ To render extra link(s) in navbar. It accepts an array of objects:
 }
 ```
 
-`menu` is an array of objects. Each object has five properties, out of which two are required (`title` and `link`). If an object doesn't have the required properties, then you might expect an error.
+`menu` is an array of objects. Each object has five properties, out of which two are required (`title` and `link`). If
+an object doesn't have the required properties, then you might expect an error.
 
 <b>Properties</b>
 
@@ -190,7 +209,8 @@ To render extra link(s) in navbar. It accepts an array of objects:
 
 ### Sections
 
-There is also an option to add a meta tag to every generated HTML file. You can use the `meta` option to include a list of `meta` tags into `head`.
+There is also an option to add a meta tag to every generated HTML file. You can use the `meta` option to include a list
+of `meta` tags into `head`.
 
 ```json
 "theme_opts": {
@@ -201,25 +221,26 @@ There is also an option to add a meta tag to every generated HTML file. You can 
 ```js
 // SECTION_TYPE
 [
-    'Classes',
-    'Modules',
-    'Externals',
-    'Events',
-    'Namespaces',
-    'Mixins',
-    'Tutorials',
-    'Interfaces',
-    'Global',
+  'Classes',
+  'Modules',
+  'Externals',
+  'Events',
+  'Namespaces',
+  'Mixins',
+  'Tutorials',
+  'Interfaces',
+  'Global',
 ];
 ```
 
 ### Meta
 
-There is also an option to add meta tag to every generated HTML file. You can use `meta` option to include a list of `meta` tags into `head`.
+There is also an option to add meta tag to every generated HTML file. You can use `meta` option to include a list
+of `meta` tags into `head`.
 
 ```json
 "theme_opts": {
-  "meta" : [
+  "meta": [
     {
       "name": "author",
       "content": "Ankit Kumar"
@@ -232,14 +253,15 @@ There is also an option to add meta tag to every generated HTML file. You can us
 }
 ```
 
-`meta` is an array of objects. Each objects can have any valid combination of [HTML metadata attributes](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta#Attributes).
+`meta` is an array of objects. Each objects can have any valid combination
+of [HTML metadata attributes](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta#Attributes).
 
 ### Search
 
 By default, the search feature is enabled in the theme.
 
 > Make sure you have added the `base_url` option as well, otherwise your search query might fail.
-> 
+>
 If you want to disable the search feature, you can do the following:
 
 ```json
@@ -250,7 +272,9 @@ If you want to disable the search feature, you can do the following:
 
 **How does the search work?**
 
-If the search feature is enabled, you'll see a `data` folder in the output. This `data` folder contains a JSON called `search.json`. There is a fetch request when user types anything in the search box. That means search data is only loaded if user wants to search anything.
+If the search feature is enabled, you'll see a `data` folder in the output. This `data` folder contains a JSON
+called `search.json`. There is a fetch request when user types anything in the search box. That means search data is
+only loaded if user wants to search anything.
 
 ### CodePen
 
@@ -268,7 +292,8 @@ If the search feature is enabled, you'll see a `data` folder in the output. This
 }
 ```
 
-`options` can be any valid CodePen option. For more visit: [Codepen Prefill options](https://blog.codepen.io/documentation/prefill/#all-the-json-options-0)
+`options` can be any valid CodePen option. For more
+visit: [Codepen Prefill options](https://blog.codepen.io/documentation/prefill/#all-the-json-options-0)
 
 ### Add static dir
 
@@ -285,14 +310,15 @@ To include static files:
 To create custom style rules. Example:
 
 ```json
-  "theme_opts": {
+"theme_opts": {
   "create_style": ".sidebar-title { font-size: 2rem }"
 }
 ```
 
 ### Add style paths
 
-Use this option to add third party css library. If you want to add your own custom css file then consider using [Add custom css files](#add-custom-css-files)
+Use this option to add third party css library. If you want to add your own custom css file then consider
+using [Add custom css files](#add-custom-css-files)
 
 > Note: you have to pass an array of objects. Each object key will be an attribute inside the generated script tag.
 
@@ -320,7 +346,8 @@ To include css files. Example:
 
 > Note: you are not required to manually copy file to output dir.
 
-It will include the css files to the output dir and also attach a link tag to the html pointing to the included css file.
+It will include the css files to the output dir and also attach a link tag to the html pointing to the included css
+file.
 
 ### Add scripts
 
@@ -334,9 +361,11 @@ To create custom scripts. Example:
 
 ### Add script paths
 
-Use this option to add third party js library. If you want to add your own custom script file then consider using [Add custom script files](#add-custom-script-files)
+Use this option to add third party js library. If you want to add your own custom script file then consider
+using [Add custom script files](#add-custom-script-files)
 
-> Note: you have to pass an array of objects, and object keys are actually the attributes which you want in you script tag.
+> Note: you have to pass an array of objects, and object keys are actually the attributes which you want in you script
+> tag.
 
 Example:
 
@@ -368,7 +397,8 @@ To include js files. Example:
 
 > Note: you are not required to manually copy file to output dir.
 
-It will include the js files to the output dir and also attach a script tag to the html pointing to the included js file.
+It will include the js files to the output dir and also attach a script tag to the html pointing to the included js
+file.
 
 ### Footer
 
@@ -420,11 +450,13 @@ Don't forget to add the following in your jsdoc config file, otherwise toc will 
 
 ## Changelog
 
-Changelog is moved to [https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CHANGELOG.md](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CHANGELOG.md)
+Changelog is moved
+to [https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CHANGELOG.md](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CHANGELOG.md)
 
 ## Developing
 
-Before starting please go through our [contributing guide](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CONTRIBUTING.md).
+Before starting please go through
+our [contributing guide](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CONTRIBUTING.md).
 
 ```bash
 git clone https://github.com/ankitskvmdam/clean-jsdoc-theme.git
@@ -444,11 +476,14 @@ npm run build
 
 ## Thanks
 
-Thanks to [fuse.js](https://fusejs.io/), [hljs](https://highlightjs.org/),[tippy.js](https://tippyjs.bootcss.com/), and all awesome contributors.
+Thanks to [fuse.js](https://fusejs.io/), [hljs](https://highlightjs.org/),[tippy.js](https://tippyjs.bootcss.com/), and
+all awesome contributors.
 
 ## Contact
 
-If you like my work, then give me a <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme" data-icon="octicon-star" aria-label="Star ankitskvmdam/clean-jsdoc-theme on GitHub">star</a>.
+If you like my work, then give me
+a <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme" data-icon="octicon-star" aria-label="Star ankitskvmdam/clean-jsdoc-theme on GitHub">
+star</a>.
 
 Mail me at: <a href="mailto:hello@ankdev.me">hello@ankdev.me</a> <br>
 
