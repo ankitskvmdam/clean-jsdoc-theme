@@ -1,23 +1,18 @@
 {
-  "extends": "stylelint-config-sass-guidelines",
+  "extends": [
+    "stylelint-config-sass-guidelines",
+    "stylelint-config-prettier"
+  ],
   "plugins": [
     "stylelint-order",
     "stylelint-scss"
   ],
   "rules": {
-    "indentation": 4,
     "order/order": [
-			"custom-properties",
-			"declarations"
-		],
-		"order/properties-alphabetical-order": true,
-    "block-opening-brace-space-before": "always",
-    "block-closing-brace-newline-after": [
-      "always", {
-        "ignoreAtRules": [ "if", "else" ]
-      }
+      "custom-properties",
+      "declarations"
     ],
-    "at-rule-name-space-after": "always",
+    "order/properties-alphabetical-order": true,
     "rule-empty-line-before": "always"
   }
 }

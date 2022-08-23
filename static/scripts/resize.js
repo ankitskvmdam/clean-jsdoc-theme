@@ -9,8 +9,8 @@ var NAVBAR_OPTIONS = {};
   var navbar = document.querySelector('#navbar');
   var footer = document.querySelector('#footer');
   var mainSection = document.querySelector('#main');
-  // eslint-disable-next-line no-undef
   var localStorageResizeObject = JSON.parse(
+    // eslint-disable-next-line no-undef
     localStorage.getItem(NAVBAR_RESIZE_LOCAL_STORAGE_KEY)
   );
 
