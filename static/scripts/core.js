@@ -272,7 +272,11 @@ function copyFunction(id) {
   }
 
   // copy
-  copy(element.innerText.trim());
+  copy(
+    element.innerText
+      .trim()
+      .replace(/(^\t)/gm, '')
+  );
 
   // show tooltip
   showTooltip('tooltip-' + id);
