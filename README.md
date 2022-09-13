@@ -53,7 +53,7 @@ yarn add clean-jsdoc-theme -D
 In your projects `package.json` file, add a script to generate the documentation using JSDoc :
 
 ```json
-"script": {
+"scripts": {
   "generate-docs": "jsdoc --configure jsdoc.json --verbose"
 }
 ```
