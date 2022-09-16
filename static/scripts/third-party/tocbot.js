@@ -322,6 +322,51 @@ function BuildHtml(options) {
         return position
     }
 
+
+    function updateListActiveElement(topHeader) {
+        var forEach = [].forEach
+
+        var tocLinks = tocElement
+            .querySelectorAll('.' + options.linkClass)
+        forEach.call(tocLinks, function (tocLink) {
+            tocLink.className = tocLink.className.split(SPACE_CHAR + options.activeLinkClass).join('')
+        })
+        var tocLis = tocElement
+            .querySelectorAll('.' + options.listItemClass)
+        forEach.call(tocLis, function (tocLi) {
+            tocLi.className = tocLi.className.split(SPACE_CHAR + options.activeListItemClass).join('')
+        })
+
+        // Add the active class to the active tocLink.
+        var activeTocLink = tocElement
+            .querySelector('.' + options.linkClass +
+                '.node-name--' + topHeader.nodeName +
+                '[href="' + options.basePath + '#' + topHeader.id.replace(/([ #;&,.+*~':"!^$[\]()=>|/@])/g, '\\$1') + '"]')
+        if (activeTocLink && activeTocLink.className.indexOf(options.activeLinkClass) === -1) {
+            activeTocLink.className += SPACE_CHAR + options.activeLinkClass
+        }
+        var li = activeTocLink && activeTocLink.parentNode
+        if (li && li.className.indexOf(options.activeListItemClass) === -1) {
+            li.className += SPACE_CHAR + options.activeListItemClass
+        }
+
+        var tocLists = tocElement
+            .querySelectorAll('.' + options.listClass + '.' + options.collapsibleClass)
+
+        // Collapse the other collapsible lists.
+        forEach.call(tocLists, function (list) {
+            if (list.className.indexOf(options.isCollapsedClass) === -1) {
+                list.className += SPACE_CHAR + options.isCollapsedClass
+            }
+        })
+
+        // Expand the active link's collapsible list and its sibling if applicable.
+        if (activeTocLink && activeTocLink.nextSibling && activeTocLink.nextSibling.className.indexOf(options.isCollapsedClass) !== -1) {
+            activeTocLink.nextSibling.className = activeTocLink.nextSibling.className.split(SPACE_CHAR + options.isCollapsedClass).join('')
+        }
+        removeCollapsedFromParents(activeTocLink && activeTocLink.parentNode.parentNode)
+    }
+
     /**
      * Update TOC highlighting and collpased groupings.
      */
@@ -364,45 +409,7 @@ function BuildHtml(options) {
             })
 
             // Remove the active class from the other tocLinks.
-            var tocLinks = tocElement
-                .querySelectorAll('.' + options.linkClass)
-            forEach.call(tocLinks, function (tocLink) {
-                tocLink.className = tocLink.className.split(SPACE_CHAR + options.activeLinkClass).join('')
-            })
-            var tocLis = tocElement
-                .querySelectorAll('.' + options.listItemClass)
-            forEach.call(tocLis, function (tocLi) {
-                tocLi.className = tocLi.className.split(SPACE_CHAR + options.activeListItemClass).join('')
-            })
-
-            // Add the active class to the active tocLink.
-            var activeTocLink = tocElement
-                .querySelector('.' + options.linkClass +
-                    '.node-name--' + topHeader.nodeName +
-                    '[href="' + options.basePath + '#' + topHeader.id.replace(/([ #;&,.+*~':"!^$[\]()=>|/@])/g, '\\$1') + '"]')
-            if (activeTocLink && activeTocLink.className.indexOf(options.activeLinkClass) === -1) {
-                activeTocLink.className += SPACE_CHAR + options.activeLinkClass
-            }
-            var li = activeTocLink && activeTocLink.parentNode
-            if (li && li.className.indexOf(options.activeListItemClass) === -1) {
-                li.className += SPACE_CHAR + options.activeListItemClass
-            }
-
-            var tocLists = tocElement
-                .querySelectorAll('.' + options.listClass + '.' + options.collapsibleClass)
-
-            // Collapse the other collapsible lists.
-            forEach.call(tocLists, function (list) {
-                if (list.className.indexOf(options.isCollapsedClass) === -1) {
-                    list.className += SPACE_CHAR + options.isCollapsedClass
-                }
-            })
-
-            // Expand the active link's collapsible list and its sibling if applicable.
-            if (activeTocLink && activeTocLink.nextSibling && activeTocLink.nextSibling.className.indexOf(options.isCollapsedClass) !== -1) {
-                activeTocLink.nextSibling.className = activeTocLink.nextSibling.className.split(SPACE_CHAR + options.isCollapsedClass).join('')
-            }
-            removeCollapsedFromParents(activeTocLink && activeTocLink.parentNode.parentNode)
+            updateListActiveElement(topHeader)
         }
     }
 
@@ -444,7 +451,8 @@ function BuildHtml(options) {
         enableTocAnimation: enableTocAnimation,
         disableTocAnimation: disableTocAnimation,
         render: render,
-        updateToc: updateToc
+        updateToc: updateToc,
+        updateListActiveElement: updateListActiveElement
     }
 }
 
@@ -594,6 +602,7 @@ function updateTocScroll(options) {
         this._buildHtml = buildHtml
         this._parseContent = parseContent
         this._headingsArray = headingsArray
+        this.updateTocListActiveElement = buildHtml.updateListActiveElement
 
         // Destroy it if it exists first.
         tocbot.destroy()
