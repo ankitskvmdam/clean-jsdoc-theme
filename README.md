@@ -1,6 +1,6 @@
 # clean-jsdoc-theme
 
-[![Stars](https://img.shields.io/github/stars/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme) [![Fork](https://img.shields.io/github/forks/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/fork) ![Version](https://img.shields.io/badge/version-4.1.7-005bff) [![Issues Open](https://img.shields.io/github/issues/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues) [![Contributors](https://img.shields.io/github/contributors/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors) [![Build Status](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme.svg?branch=production)](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme) [![license](https://img.shields.io/github/license/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/LICENSE)
+[![Stars](https://img.shields.io/github/stars/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme) [![Fork](https://img.shields.io/github/forks/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/fork) ![Version](https://img.shields.io/badge/version-4.1.8-005bff) [![Issues Open](https://img.shields.io/github/issues/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues) [![Contributors](https://img.shields.io/github/contributors/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors) [![Build Status](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme.svg?branch=production)](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme) [![license](https://img.shields.io/github/license/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/LICENSE)
 <br>
 
 `clean-jsdoc-theme` is a beautifully crafted theme for JSDoc 3. It is a clean and fully responsive theme with loads of
@@ -84,34 +84,28 @@ repository.
 
 ```json
 {
-  "source": {
-    "include": [
-      "lib",
-      "package.json",
-      "README.md"
-    ],
-    "includePattern": ".js$",
-    "excludePattern": "(node_modules/|docs)"
-  },
-  "plugins": [
-    "plugins/markdown"
-  ],
-  "opts": {
-    "encoding": "utf8",
-    "readme": "./README.md",
-    "destination": "docs/",
-    "recurse": true,
-    "verbose": true,
-    "template": "./node_modules/clean-jsdoc-theme",
-    "theme_opts": {
-      "default_theme": "dark"
+    "source": {
+        "include": ["lib", "package.json", "README.md"],
+        "includePattern": ".js$",
+        "excludePattern": "(node_modules/|docs)"
+    },
+    "plugins": ["plugins/markdown"],
+    "opts": {
+        "encoding": "utf8",
+        "readme": "./README.md",
+        "destination": "docs/",
+        "recurse": true,
+        "verbose": true,
+        "template": "./node_modules/clean-jsdoc-theme",
+        "theme_opts": {
+            "default_theme": "dark"
+        }
+    },
+    "markdown": {
+        "hardwrap": false,
+        "idInHeadings": true
+        // This is important for clean-jsdoc-theme, otherwise some features might not work.
     }
-  },
-  "markdown": {
-    "hardwrap": false,
-    "idInHeadings": true
-    // This is important for clean-jsdoc-theme, otherwise some features might not work.
-  }
 }
 ```
 
@@ -159,6 +153,16 @@ To set a favicon, add the following in your JSDoc config file:
 You can use [`static_dir`](#add-static-dir) option to copy all you static files to output dir and use that path instead
 of `path/to/img`.
 
+### Add homepage title
+
+To add the title of the homepage use the `homepageTitle` property as follows:
+
+```json
+"theme_opts": {
+  "homepageTitle": "Clean JSDoc theme"
+}
+```
+
 ### Add title
 
 Both strings and HTML are accepted. Use HTML to overwrite the default HTML, and a string to set a plaintext title. One
@@ -200,7 +204,7 @@ an object doesn't have the required properties, then you might expect an error.
 <b>Properties</b>
 
 | name     | type     | required |
-|----------|----------|----------|
+| -------- | -------- | -------- |
 | `title`  | `string` | required |
 | `link`   | `string` | required |
 | `target` | `string` | optional |
@@ -221,15 +225,15 @@ of `meta` tags into `head`.
 ```js
 // SECTION_TYPE
 [
-  'Classes',
-  'Modules',
-  'Externals',
-  'Events',
-  'Namespaces',
-  'Mixins',
-  'Tutorials',
-  'Interfaces',
-  'Global',
+    'Classes',
+    'Modules',
+    'Externals',
+    'Events',
+    'Namespaces',
+    'Mixins',
+    'Tutorials',
+    'Interfaces',
+    'Global'
 ];
 ```
 
@@ -262,7 +266,7 @@ By default, the search feature is enabled in the theme.
 
 > Make sure you have added the `base_url` option as well, otherwise your search query might fail.
 >
-If you want to disable the search feature, you can do the following:
+> If you want to disable the search feature, you can do the following:
 
 ```json
 "theme_opts": {
@@ -421,8 +425,9 @@ This will remove all symbols (members, methods ...) that come from inherited par
 ## Cheat sheet
 
 | name                | default                                                                                                      | use case                                                                   | expected value(s)     |
-|---------------------|--------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------|-----------------------|
+| ------------------- | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- | --------------------- |
 | `default_theme`     | `"dark"`                                                                                                     | To set the default theme                                                   | `"light" or "dark"`   |
+| `homepageTitle`     | "Home"                                                                                                       | To set the title of homepage                                               | `string`              |
 | `title`             | `null`                                                                                                       | To set the title                                                           | `HTML` or `string`    |
 | `base_url`          | `/`                                                                                                          | To set the base URL                                                        | `string`              |
 | `menu`              | `null`                                                                                                       | To render extra link in navbar                                             | Array of Object(s)    |
