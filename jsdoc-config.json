@@ -14,6 +14,7 @@
         "tutorials": "./demo/src/tutorials",
         "theme_opts": {
             "search": true,
+            "homepageTitle": "Clean JSDoc Theme",
             "default_theme": "dark",
             "title": "clean-jsdoc-theme",
             "footer": "<div style='margin-bottom: 0.5rem;'>clean-jsdoc-theme</div> Fork: <a href='https://github.com/ankitskvmdam/clean-jsdoc-theme'>https://github.com/ankitskvmdam/clean-jsdoc-theme</a>",
