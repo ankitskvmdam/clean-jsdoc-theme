@@ -9,8 +9,8 @@ var NAVBAR_OPTIONS = {};
   var navbar = document.querySelector('#navbar');
   var footer = document.querySelector('#footer');
   var mainSection = document.querySelector('#main');
-  // eslint-disable-next-line no-undef
   var localStorageResizeObject = JSON.parse(
+    // eslint-disable-next-line no-undef
     localStorage.getItem(NAVBAR_RESIZE_LOCAL_STORAGE_KEY)
   );
 
@@ -33,7 +33,7 @@ var NAVBAR_OPTIONS = {};
       max = Number.parseInt(NAVBAR_OPTIONS.max, 10) || 600;
 
     /**
-         * Just to add some checks. If min is smaller then 10 then
+         * Just to add some checks. If min is smaller than 10 then
          * user may accidentally end up reducing the size of navbar
          * less than 10. In that case user will not able to resize navbar
          * because navbar slider will be hidden.

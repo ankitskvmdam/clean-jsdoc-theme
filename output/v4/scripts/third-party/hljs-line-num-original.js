@@ -123,7 +123,11 @@
                 // other browsers can directly use the selection string
                 selectionText = selection.toString();
             }
-            e.clipboardData.setData('text/plain', selectionText);
+            e.clipboardData.setData(
+              'text/plain',
+              selectionText
+                .replace(/(^\t)/gm, '')
+            );
             e.preventDefault();
         }
     });
