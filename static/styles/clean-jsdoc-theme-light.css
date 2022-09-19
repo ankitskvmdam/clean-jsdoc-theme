@@ -114,8 +114,6 @@ body.light {
 
 .light .toc-link {
     color: #999;
-    transition: color 0.3s;
-    font-size: 0.875rem;
 }
 
 .light .toc-link.is-active-link {
@@ -142,7 +140,7 @@ body.light {
     color: #999 !important;
 }
 
-.light .important {
+.light .tag-deprecated {
     color: #ee1313;
 }
 

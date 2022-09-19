@@ -11,6 +11,7 @@ var util = require('util');
 var fse = require('fs-extra');
 var nanoid = require('nanoid').nanoid;
 var htmlMinify = require('html-minifier');
+var css = require('./css')
 
 var htmlsafe = helper.htmlsafe;
 var linkto = helper.linkto;
@@ -741,6 +742,10 @@ function buildSidebar(members) {
 }
 
 
+function processCSSProps() {
+
+}
+
 /**
     @param {TAFFY} taffyData See <http://taffydb.com/>.
     @param {object} opts
@@ -1135,4 +1140,6 @@ exports.publish = function (taffyData, opts, tutorials) {
     }
 
     saveChildren(tutorials);
+    processCSSProps()
+
 };

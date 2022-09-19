@@ -105,8 +105,6 @@ h6 {
 
 .toc-link {
     color: #777;
-    transition: color 0.3s;
-    font-size: 0.875rem;
 }
 
 .toc-link.is-active-link {
@@ -140,7 +138,7 @@ samp {
     color: #999 !important;
 }
 
-.important {
+.tag-deprecated {
     color: #c51313;
 }
 
@@ -236,10 +234,6 @@ table .params thead tr,
 }
 
 /* code */
-.hljs-comment {
-    color: #8b949e;
-}
-
 .hljs-doctag,
 .hljs-keyword,
 .hljs-template-tag,
@@ -253,6 +247,7 @@ table .params thead tr,
 }
 
 .hljs-meta,
+.hljs-meta .hljs-string,
 .hljs-string,
 .hljs-regexp {
     color: #a5d6ff;
@@ -279,12 +274,6 @@ table .params thead tr,
 .hljs-selector-id,
 .hljs-variable {
     color: #79c0ff;
-}
-
-.hljs-meta .hljs-string,
-.hljs-regexp,
-.hljs-string {
-    color: #a5d6ff;
 }
 
 .hljs-built_in,
