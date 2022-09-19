@@ -263,13 +263,20 @@ function addSignatureReturns(f) {
         );
     }
 
-    f.signature =
-        '<span class="signature">' +
-        (f.signature || '') +
-        '</span>' +
-        '<span class="type-signature">' +
-        returnTypesString +
-        '</span>';
+    var signatureOutput = ""
+
+    if (f.signature) {
+        signatureOutput = '<span class="signature">' +
+            (f.signature || '') +
+            '</span>'
+    }
+    if (returnTypesString) {
+        signatureOutput += '<span class="type-signature">' +
+            returnTypesString +
+            '</span>'
+    }
+
+    f.signature = signatureOutput
 }
 
 function addSignatureTypes(f) {
@@ -528,15 +535,15 @@ function buildSidebarMembers({
 
             var methods =
                 sectionName === SECTION_TYPE.Tutorials ||
-                sectionName === SECTION_TYPE.Global
+                    sectionName === SECTION_TYPE.Global
                     ? []
                     : find({
-                          kind: 'function',
-                          memberof: item.longname,
-                          inherited: {
-                              '!is': Boolean(themeOpts.exclude_inherited)
-                          }
-                      });
+                        kind: 'function',
+                        memberof: item.longname,
+                        inherited: {
+                            '!is': Boolean(themeOpts.exclude_inherited)
+                        }
+                    });
 
             if (!hasOwnProp.call(itemsSeen, item.longname)) {
                 currentItem.anchor = linktoFn(
@@ -733,6 +740,7 @@ function buildSidebar(members) {
     return nav;
 }
 
+
 /**
     @param {TAFFY} taffyData See <http://taffydb.com/>.
     @param {object} opts
@@ -762,9 +770,9 @@ exports.publish = function (taffyData, opts, tutorials) {
     // set up templating
     view.layout = conf.default.layoutFile
         ? path.getResourcePath(
-              path.dirname(conf.default.layoutFile),
-              path.basename(conf.default.layoutFile)
-          )
+            path.dirname(conf.default.layoutFile),
+            path.basename(conf.default.layoutFile)
+        )
         : 'layout.tmpl';
 
     // set up tutorials for helper
