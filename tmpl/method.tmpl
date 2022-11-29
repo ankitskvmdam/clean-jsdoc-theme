@@ -12,7 +12,7 @@ var self = this;
     </h3>
 
     <?js if (data.summary) { ?>
-        <p class="summary"><?js= summary ?></p>
+        <div class="summary"><?js= summary ?></div>
     <?js } ?>
 <?js } ?>
 
@@ -130,6 +130,23 @@ var self = this;
             <?js });} ?>
     </div>
 <?js } ?>
+
+<?js if (data.yields && yields.length) { ?>
+    <div class="method-member-container mt-20">
+    <strong>Yields:</strong>
+        <?js if (yields.length > 1) { ?>
+            <ul>
+                <?js yields.forEach(function(r) { ?>
+                    <li><?js= self.partial('returns.tmpl', r) ?></li>
+                <?js }); ?>
+            </ul>
+
+        <?js } else { yields.forEach(function(r) { ?>
+            <?js= self.partial('returns.tmpl', r) ?>
+            <?js });} ?>
+    </div>
+<?js } ?>
+
 
 <?js if (data.examples && examples.length) { ?>
     <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">

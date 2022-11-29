@@ -1,1 +1,672 @@
-!function(e){var t={};function n(o){if(t[o])return t[o].exports;var l=t[o]={i:o,l:!1,exports:{}};return e[o].call(l.exports,l,l.exports,n),l.l=!0,l.exports}n.m=e,n.c=t,n.d=function(e,t,o){n.o(e,t)||Object.defineProperty(e,t,{enumerable:!0,get:o})},n.r=function(e){"undefined"!=typeof Symbol&&Symbol.toStringTag&&Object.defineProperty(e,Symbol.toStringTag,{value:"Module"}),Object.defineProperty(e,"__esModule",{value:!0})},n.t=function(e,t){if(1&t&&(e=n(e)),8&t)return e;if(4&t&&"object"==typeof e&&e&&e.__esModule)return e;var o=Object.create(null);if(n.r(o),Object.defineProperty(o,"default",{enumerable:!0,value:e}),2&t&&"string"!=typeof e)for(var l in e)n.d(o,l,function(t){return e[t]}.bind(null,l));return o},n.n=function(e){var t=e&&e.__esModule?function(){return e.default}:function(){return e};return n.d(t,"a",t),t},n.o=function(e,t){return Object.prototype.hasOwnProperty.call(e,t)},n.p="",n(n.s=0)}([function(e,t,n){(function(o){var l,r,i;!function(o,s){r=[],l=function(e){"use strict";var t,o,l,r=n(2),i={},s={},c=n(3),a=n(4),u=!!(e&&e.document&&e.document.querySelector&&e.addEventListener);if("undefined"==typeof window&&!u)return;var d=Object.prototype.hasOwnProperty;function f(e,t,n){var o,l;return t||(t=250),function(){var r=n||this,i=+new Date,s=arguments;o&&i<o+t?(clearTimeout(l),l=setTimeout(function(){o=i,e.apply(r,s)},t)):(o=i,e.apply(r,s))}}return s.destroy=function(){if(!i.skipRendering)try{document.querySelector(i.tocSelector).innerHTML=""}catch(e){console.warn("Element not found: "+i.tocSelector)}i.scrollContainer&&document.querySelector(i.scrollContainer)?(document.querySelector(i.scrollContainer).removeEventListener("scroll",this._scrollListener,!1),document.querySelector(i.scrollContainer).removeEventListener("resize",this._scrollListener,!1),t&&document.querySelector(i.scrollContainer).removeEventListener("click",this._clickListener,!1)):(document.removeEventListener("scroll",this._scrollListener,!1),document.removeEventListener("resize",this._scrollListener,!1),t&&document.removeEventListener("click",this._clickListener,!1))},s.init=function(e){if(u&&(i=function(){for(var e={},t=0;t<arguments.length;t++){var n=arguments[t];for(var o in n)d.call(n,o)&&(e[o]=n[o])}return e}(r,e||{}),this.options=i,this.state={},i.scrollSmooth&&(i.duration=i.scrollSmoothDuration,i.offset=i.scrollSmoothOffset,s.scrollSmooth=n(5).initSmoothScrolling(i)),t=c(i),o=a(i),this._buildHtml=t,this._parseContent=o,s.destroy(),null!==(l=o.selectHeadings(i.contentSelector,i.headingSelector)))){var m=o.nestHeadingsArray(l).nest;i.skipRendering||t.render(i.tocSelector,m),this._scrollListener=f(function(e){t.updateToc(l);var n=e&&e.target&&e.target.scrollingElement&&0===e.target.scrollingElement.scrollTop;(e&&(0===e.eventPhase||null===e.currentTarget)||n)&&(t.updateToc(l),i.scrollEndCallback&&i.scrollEndCallback(e))},i.throttleTimeout),this._scrollListener(),i.scrollContainer&&document.querySelector(i.scrollContainer)?(document.querySelector(i.scrollContainer).addEventListener("scroll",this._scrollListener,!1),document.querySelector(i.scrollContainer).addEventListener("resize",this._scrollListener,!1)):(document.addEventListener("scroll",this._scrollListener,!1),document.addEventListener("resize",this._scrollListener,!1));var h=null;return this._clickListener=f(function(e){i.scrollSmooth&&t.disableTocAnimation(e),t.updateToc(l),h&&clearTimeout(h),h=setTimeout(function(){t.enableTocAnimation()},i.scrollSmoothDuration)},i.throttleTimeout),i.scrollContainer&&document.querySelector(i.scrollContainer)?document.querySelector(i.scrollContainer).addEventListener("click",this._clickListener,!1):document.addEventListener("click",this._clickListener,!1),this}},s.refresh=function(e){s.destroy(),s.init(e||this.options)},e.tocbot=s,s}(o),void 0===(i="function"==typeof l?l.apply(t,r):l)||(e.exports=i)}(void 0!==o?o:this.window||this.global)}).call(this,n(1))},function(e,t){var n;n=function(){return this}();try{n=n||Function("return this")()||(0,eval)("this")}catch(e){"object"==typeof window&&(n=window)}e.exports=n},function(e,t){e.exports={tocSelector:".js-toc",contentSelector:".js-toc-content",headingSelector:"h1, h2, h3",ignoreSelector:".js-toc-ignore",hasInnerContainers:!1,linkClass:"toc-link",extraLinkClasses:"",activeLinkClass:"is-active-link",listClass:"toc-list",extraListClasses:"",isCollapsedClass:"is-collapsed",collapsibleClass:"is-collapsible",listItemClass:"toc-list-item",activeListItemClass:"is-active-li",collapseDepth:0,scrollSmooth:!0,scrollSmoothDuration:420,scrollSmoothOffset:0,scrollEndCallback:function(e){},headingsOffset:1,throttleTimeout:50,positionFixedSelector:null,positionFixedClass:"is-position-fixed",fixedSidebarOffset:"auto",includeHtml:!1,onClick:function(e){},orderedList:!0,scrollContainer:null,skipRendering:!1,headingLabelCallback:!1,ignoreHiddenElements:!1,headingObjectCallback:null,basePath:""}},function(e,t){e.exports=function(e){var t=[].forEach,n=[].some,o=document.body,l=!0,r=" ";function i(n,o){var l=o.appendChild(function(n){var o=document.createElement("li"),l=document.createElement("a");e.listItemClass&&o.setAttribute("class",e.listItemClass);e.onClick&&(l.onclick=e.onClick);e.includeHtml&&n.childNodes.length?t.call(n.childNodes,function(e){l.appendChild(e.cloneNode(!0))}):l.textContent=n.textContent;return l.setAttribute("href",e.basePath+"#"+n.id),l.setAttribute("class",e.linkClass+r+"node-name--"+n.nodeName+r+e.extraLinkClasses),o.appendChild(l),o}(n));if(n.children.length){var c=s(n.isCollapsed);n.children.forEach(function(e){i(e,c)}),l.appendChild(c)}}function s(t){var n=e.orderedList?"ol":"ul",o=document.createElement(n),l=e.listClass+r+e.extraListClasses;return t&&(l+=r+e.collapsibleClass,l+=r+e.isCollapsedClass),o.setAttribute("class",l),o}return{enableTocAnimation:function(){l=!0},disableTocAnimation:function(t){var n=t.target||t.srcElement;"string"==typeof n.className&&-1!==n.className.indexOf(e.linkClass)&&(l=!1)},render:function(e,t){var n=s(!1);t.forEach(function(e){i(e,n)});var o=document.querySelector(e);if(null!==o)return o.firstChild&&o.removeChild(o.firstChild),0===t.length?o:o.appendChild(n)},updateToc:function(i){var s;s=e.scrollContainer&&document.querySelector(e.scrollContainer)?document.querySelector(e.scrollContainer).scrollTop:document.documentElement.scrollTop||o.scrollTop,e.positionFixedSelector&&function(){var t;t=e.scrollContainer&&document.querySelector(e.scrollContainer)?document.querySelector(e.scrollContainer).scrollTop:document.documentElement.scrollTop||o.scrollTop;var n=document.querySelector(e.positionFixedSelector);"auto"===e.fixedSidebarOffset&&(e.fixedSidebarOffset=document.querySelector(e.tocSelector).offsetTop),t>e.fixedSidebarOffset?-1===n.className.indexOf(e.positionFixedClass)&&(n.className+=r+e.positionFixedClass):n.className=n.className.split(r+e.positionFixedClass).join("")}();var c,a=i;if(l&&null!==document.querySelector(e.tocSelector)&&a.length>0){n.call(a,function(t,n){return function t(n){var o=0;return n!==document.querySelector(e.contentSelector&&null!=n)&&(o=n.offsetTop,e.hasInnerContainers&&(o+=t(n.offsetParent))),o}(t)>s+e.headingsOffset+10?(c=a[0===n?n:n-1],!0):n===a.length-1?(c=a[a.length-1],!0):void 0});var u=document.querySelector(e.tocSelector).querySelectorAll("."+e.linkClass);t.call(u,function(t){t.className=t.className.split(r+e.activeLinkClass).join("")});var d=document.querySelector(e.tocSelector).querySelectorAll("."+e.listItemClass);t.call(d,function(t){t.className=t.className.split(r+e.activeListItemClass).join("")});var f=document.querySelector(e.tocSelector).querySelector("."+e.linkClass+".node-name--"+c.nodeName+'[href="'+e.basePath+"#"+c.id.replace(/([ #;&,.+*~':"!^$[\]()=>|/@])/g,"\\$1")+'"]');-1===f.className.indexOf(e.activeLinkClass)&&(f.className+=r+e.activeLinkClass);var m=f.parentNode;m&&-1===m.className.indexOf(e.activeListItemClass)&&(m.className+=r+e.activeListItemClass);var h=document.querySelector(e.tocSelector).querySelectorAll("."+e.listClass+"."+e.collapsibleClass);t.call(h,function(t){-1===t.className.indexOf(e.isCollapsedClass)&&(t.className+=r+e.isCollapsedClass)}),f.nextSibling&&-1!==f.nextSibling.className.indexOf(e.isCollapsedClass)&&(f.nextSibling.className=f.nextSibling.className.split(r+e.isCollapsedClass).join("")),function t(n){return-1!==n.className.indexOf(e.collapsibleClass)&&-1!==n.className.indexOf(e.isCollapsedClass)?(n.className=n.className.split(r+e.isCollapsedClass).join(""),t(n.parentNode.parentNode)):n}(f.parentNode.parentNode)}}}}},function(e,t){e.exports=function(e){var t=[].reduce;function n(e){return e[e.length-1]}function o(t){if(!(t instanceof window.HTMLElement))return t;if(e.ignoreHiddenElements&&(!t.offsetHeight||!t.offsetParent))return null;var n={id:t.id,children:[],nodeName:t.nodeName,headingLevel:function(e){return+e.nodeName.split("H").join("")}(t),textContent:e.headingLabelCallback?String(e.headingLabelCallback(t.textContent)):t.textContent.trim()};return e.includeHtml&&(n.childNodes=t.childNodes),e.headingObjectCallback?e.headingObjectCallback(n,t):n}return{nestHeadingsArray:function(l){return t.call(l,function(t,l){var r=o(l);return r&&function(t,l){for(var r=o(t),i=r.headingLevel,s=l,c=n(s),a=i-(c?c.headingLevel:0);a>0;)(c=n(s))&&void 0!==c.children&&(s=c.children),a--;i>=e.collapseDepth&&(r.isCollapsed=!0),s.push(r)}(r,t.nest),t},{nest:[]})},selectHeadings:function(t,n){var o=n;e.ignoreSelector&&(o=n.split(",").map(function(t){return t.trim()+":not("+e.ignoreSelector+")"}));try{return document.querySelector(t).querySelectorAll(o)}catch(e){return console.warn("Element not found: "+t),null}}}}},function(e,t){function n(e,t){var n=window.pageYOffset,o={duration:t.duration,offset:t.offset||0,callback:t.callback,easing:t.easing||d},l=document.querySelector('[id="'+decodeURI(e).split("#").join("")+'"]'),r=typeof e==="string"?o.offset+(e?l&&l.getBoundingClientRect().top||0:-(document.documentElement.scrollTop||document.body.scrollTop)):e,i=typeof o.duration==="function"?o.duration(r):o.duration,s,c;function a(e){c=e-s;window.scrollTo(0,o.easing(c,n,r,i));if(c<i){requestAnimationFrame(a)}else{u()}}function u(){if(window.scrollTo(0,n+r),"function"==typeof o.callback){o.callback()}}function d(e,t,n,o){return(e/=o/2)<1?n/2*e*e+t:-n/2*(--e*(e-2)-1)+t}requestAnimationFrame(function(e){s=e;a(e)})}t.initSmoothScrolling=function(e){document.documentElement.style;var t=e.duration,o=e.offset,l=location.hash?r(location.href):location.href;function r(e){return e.slice(0,e.lastIndexOf("#"))}!function(){document.body.addEventListener("click",function(i){if(!function(e){return"a"===e.tagName.toLowerCase()&&(e.hash.length>0||"#"===e.href.charAt(e.href.length-1))&&(r(e.href)===l||r(e.href)+"#"===l)}(i.target)||i.target.className.indexOf("no-smooth-scroll")>-1||"#"===i.target.href.charAt(i.target.href.length-2)&&"!"===i.target.href.charAt(i.target.href.length-1)||-1===i.target.className.indexOf(e.linkClass))return;n(i.target.hash,{duration:t,offset:o,callback:function(){!function(e){var t=document.getElementById(e.substring(1));t&&(/^(?:a|select|input|button|textarea)$/i.test(t.tagName)||(t.tabIndex=-1),t.focus())}(i.target.hash)}})},!1)}()}}]);
+/* eslint no-var: off */
+var defaultOptions = {
+    ignoreSelector: '.js-toc-ignore',
+    linkClass: 'toc-link',
+    extraLinkClasses: '',
+    activeLinkClass: 'is-active-link',
+    listClass: 'toc-list',
+    extraListClasses: '',
+    isCollapsedClass: 'is-collapsed',
+    collapsibleClass: 'is-collapsible',
+    listItemClass: 'toc-list-item',
+    activeListItemClass: 'is-active-li',
+    collapseDepth: 0,
+    scrollSmooth: true,
+    scrollSmoothDuration: 420,
+    scrollSmoothOffset: 0,
+    scrollEndCallback: function (e) { },
+    throttleTimeout: 50,
+    positionFixedSelector: null,
+    positionFixedClass: 'is-position-fixed',
+    fixedSidebarOffset: 'auto',
+    includeHtml: false,
+    includeTitleTags: false,
+    orderedList: true,
+    scrollContainer: null,
+    skipRendering: false,
+    headingLabelCallback: false,
+    ignoreHiddenElements: false,
+    headingObjectCallback: null,
+    basePath: '',
+    disableTocScrollSync: false
+}
+
+function ParseContent(options) {
+    var reduce = [].reduce
+
+    /**
+     * Get the last item in an array and return a reference to it.
+     * @param {Array} array
+     * @return {Object}
+     */
+    function getLastItem(array) {
+        return array[array.length - 1]
+    }
+
+    /**
+     * Get heading level for a heading dom node.
+     * @param {HTMLElement} heading
+     * @return {Number}
+     */
+    function getHeadingLevel(heading) {
+        return +heading.nodeName.toUpperCase().replace('H', '')
+    }
+
+    /**
+     * Get important properties from a heading element and store in a plain object.
+     * @param {HTMLElement} heading
+     * @return {Object}
+     */
+    function getHeadingObject(heading) {
+        // each node is processed twice by this method because nestHeadingsArray() and addNode() calls it
+        // first time heading is real DOM node element, second time it is obj
+        // that is causing problem so I am processing only original DOM node
+        if (!(heading instanceof window.HTMLElement)) return heading
+
+        if (options.ignoreHiddenElements && (!heading.offsetHeight || !heading.offsetParent)) {
+            return null
+        }
+
+        const headingLabel = heading.getAttribute('data-heading-label') ||
+            (options.headingLabelCallback ? String(options.headingLabelCallback(heading.textContent)) : heading.textContent.trim())
+        var obj = {
+            id: heading.id,
+            children: [],
+            nodeName: heading.nodeName,
+            headingLevel: getHeadingLevel(heading),
+            textContent: headingLabel
+        }
+
+        if (options.includeHtml) {
+            obj.childNodes = heading.childNodes
+        }
+
+        if (options.headingObjectCallback) {
+            return options.headingObjectCallback(obj, heading)
+        }
+
+        return obj
+    }
+
+    /**
+     * Add a node to the nested array.
+     * @param {Object} node
+     * @param {Array} nest
+     * @return {Array}
+     */
+    function addNode(node, nest) {
+        var obj = getHeadingObject(node)
+        var level = obj.headingLevel
+        var array = nest
+        var lastItem = getLastItem(array)
+        var lastItemLevel = lastItem
+            ? lastItem.headingLevel
+            : 0
+        var counter = level - lastItemLevel
+
+        while (counter > 0) {
+            lastItem = getLastItem(array)
+            // Handle case where there are multiple h5+ in a row.
+            if (lastItem && level === lastItem.headingLevel) {
+                break
+            } else if (lastItem && lastItem.children !== undefined) {
+                array = lastItem.children
+            }
+            counter--
+        }
+
+        if (level >= options.collapseDepth) {
+            obj.isCollapsed = true
+        }
+
+        array.push(obj)
+        return array
+    }
+
+    /**
+     * Select headings in content area, exclude any selector in options.ignoreSelector
+     * @param {HTMLElement} contentElement
+     * @param {Array} headingSelector
+     * @return {Array}
+     */
+    function selectHeadings(contentElement, headingSelector) {
+        var selectors = headingSelector
+        if (options.ignoreSelector) {
+            selectors = headingSelector.split(',')
+                .map(function mapSelectors(selector) {
+                    return selector.trim() + ':not(' + options.ignoreSelector + ')'
+                })
+        }
+        try {
+            return contentElement.querySelectorAll(selectors)
+        } catch (e) {
+            console.warn('Headers not found with selector: ' + selectors); // eslint-disable-line
+            return null
+        }
+    }
+
+    /**
+     * Nest headings array into nested arrays with 'children' property.
+     * @param {Array} headingsArray
+     * @return {Object}
+     */
+    function nestHeadingsArray(headingsArray) {
+        return reduce.call(headingsArray, function reducer(prev, curr) {
+            var currentHeading = getHeadingObject(curr)
+            if (currentHeading) {
+                addNode(currentHeading, prev.nest)
+            }
+            return prev
+        }, {
+            nest: []
+        })
+    }
+
+    return {
+        nestHeadingsArray: nestHeadingsArray,
+        selectHeadings: selectHeadings
+    }
+}
+
+function BuildHtml(options) {
+    var forEach = [].forEach
+    var some = [].some
+    var body = document.body
+    var tocElement
+    var mainContainer = document.querySelector(options.contentSelector)
+    var currentlyHighlighting = true
+    var SPACE_CHAR = ' '
+
+    /**
+     * Create link and list elements.
+     * @param {Object} d
+     * @param {HTMLElement} container
+     * @return {HTMLElement}
+     */
+    function createEl(d, container) {
+        var link = container.appendChild(createLink(d))
+        if (d.children.length) {
+            var list = createList(d.isCollapsed)
+            d.children.forEach(function (child) {
+                createEl(child, list)
+            })
+            link.appendChild(list)
+        }
+    }
+
+    /**
+     * Render nested heading array data into a given element.
+     * @param {HTMLElement} parent Optional. If provided updates the {@see tocElement} to match.
+     * @param {Array} data
+     * @return {HTMLElement}
+     */
+    function render(parent, data) {
+        var collapsed = false
+        var container = createList(collapsed)
+
+        data.forEach(function (d) {
+            createEl(d, container)
+        })
+
+        // Return if no TOC element is provided or known.
+        tocElement = parent || tocElement
+        if (tocElement === null) {
+            return
+        }
+
+        // Remove existing child if it exists.
+        if (tocElement.firstChild) {
+            tocElement.removeChild(tocElement.firstChild)
+        }
+
+        // Just return the parent and don't append the list if no links are found.
+        if (data.length === 0) {
+            return tocElement
+        }
+
+        // Append the Elements that have been created
+        return tocElement.appendChild(container)
+    }
+
+    /**
+     * Create link element.
+     * @param {Object} data
+     * @return {HTMLElement}
+     */
+    function createLink(data) {
+        var item = document.createElement('li')
+        var a = document.createElement('a')
+        if (options.listItemClass) {
+            item.setAttribute('class', options.listItemClass)
+        }
+
+        if (options.onClick) {
+            a.onclick = options.onClick
+        }
+
+        if (options.includeTitleTags) {
+            a.setAttribute('title', data.textContent)
+        }
+
+        if (options.includeHtml && data.childNodes.length) {
+            forEach.call(data.childNodes, function (node) {
+                a.appendChild(node.cloneNode(true))
+            })
+        } else {
+            // Default behavior.
+            a.textContent = data.textContent
+        }
+        a.setAttribute('href', options.basePath + '#' + data.id)
+        a.setAttribute('class', options.linkClass +
+            SPACE_CHAR + 'node-name--' + data.nodeName +
+            SPACE_CHAR + options.extraLinkClasses)
+        item.appendChild(a)
+        return item
+    }
+
+    /**
+     * Create list element.
+     * @param {Boolean} isCollapsed
+     * @return {HTMLElement}
+     */
+    function createList(isCollapsed) {
+        var listElement = (options.orderedList) ? 'ol' : 'ul'
+        var list = document.createElement(listElement)
+        var classes = options.listClass +
+            SPACE_CHAR + options.extraListClasses
+        if (isCollapsed) {
+            classes += SPACE_CHAR + options.collapsibleClass
+            classes += SPACE_CHAR + options.isCollapsedClass
+        }
+        list.setAttribute('class', classes)
+        return list
+    }
+
+    /**
+     * Update fixed sidebar class.
+     * @return {HTMLElement}
+     */
+    function updateFixedSidebarClass() {
+        if (options.scrollContainer && document.querySelector(options.scrollContainer)) {
+            var top
+            top = document.querySelector(options.scrollContainer).scrollTop
+        } else {
+            top = document.documentElement.scrollTop || body.scrollTop
+        }
+        var posFixedEl = document.querySelector(options.positionFixedSelector)
+
+        if (options.fixedSidebarOffset === 'auto') {
+            options.fixedSidebarOffset = tocElement.offsetTop
+        }
+
+        if (top > options.fixedSidebarOffset) {
+            if (posFixedEl.className.indexOf(options.positionFixedClass) === -1) {
+                posFixedEl.className += SPACE_CHAR + options.positionFixedClass
+            }
+        } else {
+            posFixedEl.className = posFixedEl.className.split(SPACE_CHAR + options.positionFixedClass).join('')
+        }
+    }
+
+    /**
+     * Get top position of heading
+     * @param {HTMLElement} obj
+     * @return {int} position
+     */
+    function getHeadingTopPos(obj) {
+        var position = 0
+        if (obj !== null) {
+            position = obj.offsetTop
+            if (options.hasInnerContainers) { position += getHeadingTopPos(obj.offsetParent) }
+        }
+        return position
+    }
+
+
+    function updateListActiveElement(topHeader) {
+        var forEach = [].forEach
+
+        var tocLinks = tocElement
+            .querySelectorAll('.' + options.linkClass)
+        forEach.call(tocLinks, function (tocLink) {
+            tocLink.className = tocLink.className.split(SPACE_CHAR + options.activeLinkClass).join('')
+        })
+        var tocLis = tocElement
+            .querySelectorAll('.' + options.listItemClass)
+        forEach.call(tocLis, function (tocLi) {
+            tocLi.className = tocLi.className.split(SPACE_CHAR + options.activeListItemClass).join('')
+        })
+
+        // Add the active class to the active tocLink.
+        var activeTocLink = tocElement
+            .querySelector('.' + options.linkClass +
+                '.node-name--' + topHeader.nodeName +
+                '[href="' + options.basePath + '#' + topHeader.id.replace(/([ #;&,.+*~':"!^$[\]()=>|/@])/g, '\\$1') + '"]')
+        if (activeTocLink && activeTocLink.className.indexOf(options.activeLinkClass) === -1) {
+            activeTocLink.className += SPACE_CHAR + options.activeLinkClass
+        }
+        var li = activeTocLink && activeTocLink.parentNode
+        if (li && li.className.indexOf(options.activeListItemClass) === -1) {
+            li.className += SPACE_CHAR + options.activeListItemClass
+        }
+
+        var tocLists = tocElement
+            .querySelectorAll('.' + options.listClass + '.' + options.collapsibleClass)
+
+        // Collapse the other collapsible lists.
+        forEach.call(tocLists, function (list) {
+            if (list.className.indexOf(options.isCollapsedClass) === -1) {
+                list.className += SPACE_CHAR + options.isCollapsedClass
+            }
+        })
+
+        // Expand the active link's collapsible list and its sibling if applicable.
+        if (activeTocLink && activeTocLink.nextSibling && activeTocLink.nextSibling.className.indexOf(options.isCollapsedClass) !== -1) {
+            activeTocLink.nextSibling.className = activeTocLink.nextSibling.className.split(SPACE_CHAR + options.isCollapsedClass).join('')
+        }
+        removeCollapsedFromParents(activeTocLink && activeTocLink.parentNode.parentNode)
+    }
+
+    /**
+     * Update TOC highlighting and collpased groupings.
+     */
+    function updateToc(headingsArray) {
+        // If a fixed content container was set
+        if (options.scrollContainer && document.querySelector(options.scrollContainer)) {
+            var top
+            top = document.querySelector(options.scrollContainer).scrollTop
+        } else {
+            top = document.documentElement.scrollTop || body.scrollTop
+        }
+
+        // Add fixed class at offset
+        if (options.positionFixedSelector) {
+            updateFixedSidebarClass()
+        }
+
+        // Get the top most heading currently visible on the page so we know what to highlight.
+        var headings = headingsArray
+        var topHeader
+        // Using some instead of each so that we can escape early.
+        if (currentlyHighlighting &&
+            tocElement !== null &&
+            headings.length > 0) {
+            some.call(headings, function (heading, i) {
+                var modifiedTopOffset = top + 10
+                if (mainContainer) {
+                    modifiedTopOffset += mainContainer.clientHeight * (mainContainer.scrollTop) / (mainContainer.scrollHeight - mainContainer.clientHeight)
+                }
+                if (getHeadingTopPos(heading) > modifiedTopOffset) {
+                    // Don't allow negative index value.
+                    var index = (i === 0) ? i : i - 1
+                    topHeader = headings[index]
+                    return true
+                } else if (i === headings.length - 1) {
+                    // This allows scrolling for the last heading on the page.
+                    topHeader = headings[headings.length - 1]
+                    return true
+                }
+            })
+
+            // Remove the active class from the other tocLinks.
+            updateListActiveElement(topHeader)
+        }
+    }
+
+    /**
+     * Remove collpased class from parent elements.
+     * @param {HTMLElement} element
+     * @return {HTMLElement}
+     */
+    function removeCollapsedFromParents(element) {
+        if (element && element.className.indexOf(options.collapsibleClass) !== -1 && element.className.indexOf(options.isCollapsedClass) !== -1) {
+            element.className = element.className.split(SPACE_CHAR + options.isCollapsedClass).join('')
+            return removeCollapsedFromParents(element.parentNode.parentNode)
+        }
+        return element
+    }
+
+    /**
+     * Disable TOC Animation when a link is clicked.
+     * @param {Event} event
+     */
+    function disableTocAnimation(event) {
+        var target = event.target || event.srcElement
+        if (typeof target.className !== 'string' || target.className.indexOf(options.linkClass) === -1) {
+            return
+        }
+        // Bind to tocLink clicks to temporarily disable highlighting
+        // while smoothScroll is animating.
+        currentlyHighlighting = false
+    }
+
+    /**
+     * Enable TOC Animation.
+     */
+    function enableTocAnimation() {
+        currentlyHighlighting = true
+    }
+
+    return {
+        enableTocAnimation: enableTocAnimation,
+        disableTocAnimation: disableTocAnimation,
+        render: render,
+        updateToc: updateToc,
+        updateListActiveElement: updateListActiveElement
+    }
+}
+
+function updateTocScroll(options) {
+    var toc = options.tocElement || document.querySelector(options.tocSelector)
+    if (toc && toc.scrollHeight > toc.clientHeight) {
+        var activeItem = toc.querySelector('.' + options.activeListItemClass)
+        if (activeItem) {
+            var topOffset = toc.getBoundingClientRect().top
+            toc.scrollTop = activeItem.offsetTop - topOffset
+        }
+    }
+}
+
+(function (root, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define([], factory(root))
+    } else if (typeof exports === 'object') {
+        module.exports = factory(root)
+    } else {
+        root.tocbot = factory(root)
+    }
+})(typeof global !== 'undefined' ? global : this.window || this.global, function (root) {
+    'use strict'
+
+    var options = {}
+    var tocbot = {}
+    var buildHtml
+    var parseContent
+
+    // Just return if its not a browser.
+    var supports = !!root && !!root.document && !!root.document.querySelector && !!root.addEventListener // Feature test
+    if (typeof window === 'undefined' && !supports) {
+        return
+    }
+    var headingsArray
+
+    // From: https://github.com/Raynos/xtend
+    var hasOwnProperty = Object.prototype.hasOwnProperty
+    function extend() {
+        var target = {}
+        for (var i = 0; i < arguments.length; i++) {
+            var source = arguments[i]
+            for (var key in source) {
+                if (hasOwnProperty.call(source, key)) {
+                    target[key] = source[key]
+                }
+            }
+        }
+        return target
+    }
+
+    // From: https://remysharp.com/2010/07/21/throttling-function-calls
+    function throttle(fn, threshhold, scope) {
+        threshhold || (threshhold = 250)
+        var last
+        var deferTimer
+        return function () {
+            var context = scope || this
+            var now = +new Date()
+            var args = arguments
+            if (last && now < last + threshhold) {
+                // hold on to it
+                clearTimeout(deferTimer)
+                deferTimer = setTimeout(function () {
+                    last = now
+                    fn.apply(context, args)
+                }, threshhold)
+            } else {
+                last = now
+                fn.apply(context, args)
+            }
+        }
+    }
+
+    function getContentElement(options) {
+        try {
+            return options.contentElement || document.querySelector(options.contentSelector)
+        } catch (e) {
+            console.warn('Contents element not found: ' + options.contentSelector) // eslint-disable-line
+            return null
+        }
+    }
+
+    function getTocElement(options) {
+        try {
+            return options.tocElement || document.querySelector(options.tocSelector)
+        } catch (e) {
+            console.warn('TOC element not found: ' + options.tocSelector) // eslint-disable-line
+            return null
+        }
+    }
+
+    /**
+     * Destroy tocbot.
+     */
+    tocbot.destroy = function () {
+        var tocElement = getTocElement(options)
+        if (tocElement === null) {
+            return
+        }
+
+        if (!options.skipRendering) {
+            // Clear HTML.
+            if (tocElement) {
+                tocElement.innerHTML = ''
+            }
+        }
+
+        // Remove event listeners.
+        if (options.scrollContainer && document.querySelector(options.scrollContainer)) {
+            document.querySelector(options.scrollContainer).removeEventListener('scroll', this._scrollListener, false)
+            document.querySelector(options.scrollContainer).removeEventListener('resize', this._scrollListener, false)
+        } else {
+            document.removeEventListener('scroll', this._scrollListener, false)
+            document.removeEventListener('resize', this._scrollListener, false)
+        }
+    }
+
+    /**
+     * Initialize tocbot.
+     * @param {object} customOptions
+     */
+    tocbot.init = function (customOptions) {
+        // feature test
+        if (!supports) {
+            return
+        }
+
+        // Merge defaults with user options.
+        // Set to options variable at the top.
+        options = extend(defaultOptions, customOptions || {})
+        this.options = options
+        this.state = {}
+
+        // Init smooth scroll if enabled (default).
+        if (options.scrollSmooth) {
+            options.duration = options.scrollSmoothDuration
+            options.offset = options.scrollSmoothOffset
+        }
+
+        // Pass options to these modules.
+        buildHtml = BuildHtml(options)
+        parseContent = ParseContent(options)
+
+        // For testing purposes.
+        this._buildHtml = buildHtml
+        this._parseContent = parseContent
+        this._headingsArray = headingsArray
+        this.updateTocListActiveElement = buildHtml.updateListActiveElement
+
+        // Destroy it if it exists first.
+        tocbot.destroy()
+
+        var contentElement = getContentElement(options)
+        if (contentElement === null) {
+            return
+        }
+
+        var tocElement = getTocElement(options)
+        if (tocElement === null) {
+            return
+        }
+
+        // Get headings array.
+        headingsArray = parseContent.selectHeadings(contentElement, options.headingSelector)
+        // Return if no headings are found.
+        if (headingsArray === null) {
+            return
+        }
+
+        // Build nested headings array.
+        var nestedHeadingsObj = parseContent.nestHeadingsArray(headingsArray)
+        var nestedHeadings = nestedHeadingsObj.nest
+
+        // Render.
+        if (!options.skipRendering) {
+            buildHtml.render(tocElement, nestedHeadings)
+        }
+
+        // Update Sidebar and bind listeners.
+        this._scrollListener = throttle(function (e) {
+            buildHtml.updateToc(headingsArray)
+            !options.disableTocScrollSync && updateTocScroll(options)
+            var isTop = e && e.target && e.target.scrollingElement && e.target.scrollingElement.scrollTop === 0
+            if ((e && (e.eventPhase === 0 || e.currentTarget === null)) || isTop) {
+                buildHtml.updateToc(headingsArray)
+                if (options.scrollEndCallback) {
+                    options.scrollEndCallback(e)
+                }
+            }
+        }, options.throttleTimeout)
+        this._scrollListener()
+        if (options.scrollContainer && document.querySelector(options.scrollContainer)) {
+            document.querySelector(options.scrollContainer).addEventListener('scroll', this._scrollListener, false)
+            document.querySelector(options.scrollContainer).addEventListener('resize', this._scrollListener, false)
+        } else {
+            document.addEventListener('scroll', this._scrollListener, false)
+            document.addEventListener('resize', this._scrollListener, false)
+        }
+
+        return this
+    }
+
+    /**
+     * Refresh tocbot.
+     */
+    tocbot.refresh = function (customOptions) {
+        tocbot.destroy()
+        tocbot.init(customOptions || this.options)
+    }
+
+    // Make tocbot available globally.
+    root.tocbot = tocbot
+
+    return tocbot
+})

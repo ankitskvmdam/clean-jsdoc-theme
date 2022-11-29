@@ -58,7 +58,7 @@
     <script src="scripts/third-party/hljs-line-num.js" defer></script>
     <script src="scripts/third-party/popper.js" defer></script>
     <script src="scripts/third-party/tippy.js" defer></script>
-    <script src="scripts/third-party/tocbot.js"></script>
+    <script src="scripts/third-party/tocbot.min.js"></script>
 
     <script>
       var baseURL = "/"
@@ -140,7 +140,7 @@
 
 
     <script type="text/javascript">
-      tocbot.init({
+      var tocbotInstance = tocbot.init({
         tocSelector: '#eed4d2a0bfd64539bb9df78095dec881',
         contentSelector: '.main-content',
         headingSelector: 'h1, h2, h3',
