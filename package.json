@@ -45,7 +45,7 @@
     "uglify-js": "^3.16.0"
   },
   "dependencies": {
-    "fs-extra": "^10.1.0",
+    "fs-extra": "^11.1.0",
     "html-minifier": "^4.0.0",
     "nanoid": "^3.3.4"
   }
