@@ -11,11 +11,14 @@ var util = require('util');
 var fse = require('fs-extra');
 var nanoid = require('nanoid').nanoid;
 var htmlMinify = require('html-minifier');
+var showdown = require('showdown');
 
+var mdToHTMLConverter = new showdown.Converter()
 var htmlsafe = helper.htmlsafe;
 var linkto = helper.linkto;
 var resolveAuthorLinks = helper.resolveAuthorLinks;
 var hasOwnProp = Object.prototype.hasOwnProperty;
+
 
 /* prettier-ignore-start */
 // eslint-disable-next-line
@@ -232,18 +235,19 @@ function addSignatureParams(f) {
 }
 
 function addSignatureReturns(f) {
-    var attribs = [];
-    var attribsString = '';
-    var returnTypes = [];
-    var returnTypesString = '';
+    const attribs = [];
+    let attribsString = '';
+    let returnTypes = [];
+    let returnTypesString = '';
+    const source = f.yields || f.returns;
 
     // jam all the return-type attributes into an array. this could create odd results (for example,
     // if there are both nullable and non-nullable return types), but let's assume that most people
     // who use multiple @return tags aren't using Closure Compiler type annotations, and vice-versa.
-    if (f.returns) {
-        f.returns.forEach(function (item) {
-            helper.getAttribs(item).forEach(function (attrib) {
-                if (attribs.indexOf(attrib) === -1) {
+    if (source) {
+        source.forEach((item) => {
+            helper.getAttribs(item).forEach((attrib) => {
+                if (!attribs.includes(attrib)) {
                     attribs.push(attrib);
                 }
             });
@@ -252,15 +256,11 @@ function addSignatureReturns(f) {
         attribsString = buildAttribsString(attribs);
     }
 
-    if (f.returns) {
-        returnTypes = addNonParamAttributes(f.returns);
+    if (source) {
+        returnTypes = addNonParamAttributes(source);
     }
     if (returnTypes.length) {
-        returnTypesString = util.format(
-            ' &rarr; %s{%s}',
-            attribsString,
-            returnTypes.join('|')
-        );
+        returnTypesString = ` &rarr; ${attribsString}{${returnTypes.join('|')}}`;
     }
 
     var signatureOutput = ""
@@ -428,6 +428,12 @@ function buildFooter() {
     var footer = themeOpts.footer;
 
     return footer;
+}
+
+function moduleHeader() {
+    var displayModuleHeader = themeOpts.displayModuleHeader || false;
+
+    return displayModuleHeader;
 }
 
 function getFavicon() {
@@ -740,6 +746,18 @@ function buildSidebar(members) {
     return nav;
 }
 
+/**
+ * Currently for some reason yields markdown is
+ * not processed by jsdoc. So, we are processing it here
+ * 
+ * @param {Array<{type: string, description: string}>} yields
+ */
+function getProcessedYield(yields) {
+    if (!Array.isArray(yields)) return []
+
+    return yields.map((y) => ({ ...y, description: mdToHTMLConverter.makeHtml(y.description) }))
+}
+
 
 /**
     @param {TAFFY} taffyData See <http://taffydb.com/>.
@@ -779,6 +797,7 @@ exports.publish = function (taffyData, opts, tutorials) {
     helper.setTutorials(tutorials);
 
     data = helper.prune(data);
+
     data.sort('longname, version, since');
     helper.addEventListeners(data);
 
@@ -832,6 +851,10 @@ exports.publish = function (taffyData, opts, tutorials) {
             if (sourceFilePaths.indexOf(sourcePath) === -1) {
                 sourceFilePaths.push(sourcePath);
             }
+        }
+
+        if (doclet.yields) {
+            doclet.yields = getProcessedYield(doclet.yields)
         }
     });
 
@@ -960,6 +983,7 @@ exports.publish = function (taffyData, opts, tutorials) {
     view.htmlsafe = htmlsafe;
     view.outputSourceFiles = outputSourceFiles;
     view.footer = buildFooter();
+    view.displayModuleHeader = moduleHeader();
     view.favicon = getFavicon();
     view.dynamicStyle = createDynamicStyleSheet();
     view.dynamicStyleSrc = returnPathOfStyleSrc();

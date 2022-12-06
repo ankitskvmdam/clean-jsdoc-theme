@@ -39,6 +39,11 @@
         <?js } ?>
     <?js } else if (doc.kind === 'module' && doc.modules) { ?>
         <?js doc.modules.forEach(function(module) { ?>
+            <?js if (module.name && self.displayModuleHeader) { ?>
+                <h1 id="<?js= module.name ?>-title" class="has-anchor">
+                    <?js= module.name ?>
+                </h1>
+            <?js } ?>
             <?js if (module.classdesc) { ?>
                 <div class="class-description"><?js= module.classdesc ?></div>
             <?js } ?>
