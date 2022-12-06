@@ -1033,14 +1033,14 @@ Module["onRuntimeInitialized"] = function onRuntimeInitialized() {
     Database.prototype["getRowsModified"] = function getRowsModified() {
         return sqlite3_changes(this.db);
     };
-    /** Register a custom function with SQLite
+    /** Register a custom `function` with SQLite
     @example <caption>Register a simple function</caption>
         db.create_function("addOne", function (x) {return x+1;})
         db.exec("SELECT addOne(1)") // = 2
     @param {string} name the name of the function as referenced in
     SQL statements.
     @param {function} func the actual function to be executed.
-    @return {Database} The database object. Useful for method chaining
+    @return {Database} The database `object`. Useful for method chaining
      */
     Database.prototype["create_function"] = function create_function(
         name,
