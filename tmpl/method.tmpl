@@ -1,6 +1,7 @@
 <?js
 var data = obj;
 var self = this;
+
 ?>
 <?js if (data.kind !== 'module' && !data.hideconstructor) { ?>
     <?js if (data.kind === 'class' && data.classdesc) { ?>
@@ -28,6 +29,7 @@ var self = this;
     <?js= self.partial('augments.tmpl', data) ?>
     </div>
 <?js } ?>
+
 
 <?js if (kind === 'event' && data.type && data.type.names) {?>
     <div class="method-member-container mt-20">
@@ -99,6 +101,23 @@ var self = this;
     </ul>
     </div>
 <?js } ?>
+
+<?js if (data.modifies && modifies.length) {?>
+    <div class="method-member-container mt-20">
+    <strong>Modifies:</strong>
+        <?js if (modifies.length > 1) { ?>
+            <ul>
+                <?js modifies.forEach(function(r) { ?>
+                    <li><?js= self.partial('type.tmpl', r) ?></li>
+                <?js }); ?>
+            </ul>
+
+        <?js } else { modifies.forEach(function(r) { ?>
+            <?js= self.partial('type.tmpl', r) ?>
+            <?js });} ?>
+    </div>
+<?js } ?>
+
 
 <?js if (data.exceptions && exceptions.length) { ?>
     <div class="method-member-container mt-20">

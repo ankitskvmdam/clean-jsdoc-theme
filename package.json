@@ -1,53 +1,56 @@
 {
-  "name": "clean-jsdoc-theme",
-  "version": "4.1.10",
-  "description": "A beautifully crafted theme/template for JSDoc 3. This theme/template looks and feels like a premium theme/template. This is a fully mobile responsive theme and also fully customizable theme.",
-  "main": "publish.js",
-  "scripts": {
-    "build": "node minify.js && node node_modules/jsdoc/jsdoc.js -c jsdoc-config.json",
-    "lint:js": "eslint . --ext .js --fix",
-    "lint:style": "stylelint-config-prettier-check && stylelint static/styles/",
-    "lint": "npm run lint:js && npm run lint:style"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ankitskvmdam/clean-jsdoc-theme.git"
-  },
-  "author": "Ank",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/ankitskvmdam/clean-jsdoc-theme/issues"
-  },
-  "homepage": "https://ankdev.me/clean-jsdoc-theme/v4/index.html",
-  "peerDependencies": {
-    "jsdoc": "3"
-  },
-  "keywords": [
-    "jsdoc",
-    "template",
-    "jsdoc-template",
-    "javascript documentation",
-    "customizable jsdoc theme / template"
-  ],
-  "devDependencies": {
-    "@jsdoc/eslint-config": "^1.1.6",
-    "concurrently": "^7.2.2",
-    "csso": "^5.0.3",
-    "eslint": "^8.19.0",
-    "eslint-config-prettier": "^8.5.0",
-    "prettier": "^2.2.1",
-    "stylelint": "^14.9.1",
-    "stylelint-config-prettier": "^9.0.3",
-    "stylelint-config-sass-guidelines": "^9.0.0",
-    "stylelint-config-standard": "^26.0.0",
-    "stylelint-order": "^5.0.0",
-    "stylelint-scss": "^4.2.0",
-    "uglify-js": "^3.16.0"
-  },
-  "dependencies": {
-    "fs-extra": "^10.1.0",
-    "html-minifier": "^4.0.0",
-    "nanoid": "^3.3.4",
-    "showdown": "^2.1.0"
-  }
+    "name": "clean-jsdoc-theme",
+    "version": "4.1.11",
+    "description": "A beautifully crafted theme/template for JSDoc 3. This theme/template looks and feels like a premium theme/template. This is a fully mobile responsive theme and also fully customizable theme.",
+    "main": "publish.js",
+    "scripts": {
+        "build": "node minify.js && node node_modules/jsdoc/jsdoc.js -c jsdoc-config.json",
+        "lint:js": "eslint . --ext .js --fix",
+        "lint:style": "stylelint-config-prettier-check && stylelint static/styles/",
+        "lint": "npm run lint:js && npm run lint:style"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/ankitskvmdam/clean-jsdoc-theme.git"
+    },
+    "author": "Ank",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/ankitskvmdam/clean-jsdoc-theme/issues"
+    },
+    "homepage": "https://ankdev.me/clean-jsdoc-theme/v4/index.html",
+    "peerDependencies": {
+        "jsdoc": "[3, 4]"
+    },
+    "keywords": [
+        "jsdoc",
+        "template",
+        "jsdoc-template",
+        "javascript documentation",
+        "customizable jsdoc theme / template"
+    ],
+    "devDependencies": {
+        "@jsdoc/eslint-config": "^1.1.6",
+        "concurrently": "^7.2.2",
+        "csso": "^5.0.3",
+        "eslint": "^8.19.0",
+        "eslint-config-prettier": "^8.5.0",
+        "prettier": "^2.2.1",
+        "stylelint": "^14.9.1",
+        "stylelint-config-prettier": "^9.0.3",
+        "stylelint-config-sass-guidelines": "^9.0.0",
+        "stylelint-config-standard": "^26.0.0",
+        "stylelint-order": "^5.0.0",
+        "stylelint-scss": "^4.2.0",
+        "uglify-js": "^3.16.0"
+    },
+    "dependencies": {
+        "@jsdoc/salty": "^0.2.2",
+        "common-path-prefix": "^3.0.0",
+        "fs-extra": "^10.1.0",
+        "html-minifier": "^4.0.0",
+        "lodash": "^4.17.21",
+        "nanoid": "^3.3.4",
+        "showdown": "^2.1.0"
+    }
 }

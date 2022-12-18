@@ -1,104 +1,58 @@
-/* global env: true */
+const _ = require('lodash');
+const commonPathPrefix = require('common-path-prefix');
+const env = require('jsdoc/env');
+const fs = require('jsdoc/fs');
+const helper = require('jsdoc/util/templateHelper');
+const logger = require('jsdoc/util/logger');
+const path = require('jsdoc/path');
+const { taffy } = require('@jsdoc/salty');
+const template = require('jsdoc/template');
+const nanoid = require('nanoid').nanoid;
+const htmlMinify = require('html-minifier');
 
-var doop = require('jsdoc/util/doop');
-var fs = require('jsdoc/fs');
-var helper = require('jsdoc/util/templateHelper');
-var logger = require('jsdoc/util/logger');
-var path = require('jsdoc/path');
-var taffy = require('taffydb').taffy;
-var template = require('jsdoc/template');
-var util = require('util');
-var fse = require('fs-extra');
-var nanoid = require('nanoid').nanoid;
-var htmlMinify = require('html-minifier');
-var showdown = require('showdown');
+const {
+    buildFooter,
+    codepen,
+    createDynamicStyleSheet,
+    createDynamicsScripts,
+    getBaseURL,
+    getFavicon,
+    getMetaTagData,
+    getTheme,
+    includeCss,
+    includeScript,
+    moduleHeader,
+    resizeable,
+    returnPathOfScriptScr,
+    returnPathOfStyleSrc,
+    copyStaticFolder,
+    getProcessedYield,
+} = require('./clean-jsdoc-theme-helper');
 
-var mdToHTMLConverter = new showdown.Converter()
-var htmlsafe = helper.htmlsafe;
-var linkto = helper.linkto;
-var resolveAuthorLinks = helper.resolveAuthorLinks;
-var hasOwnProp = Object.prototype.hasOwnProperty;
+const {
+    HTML_MINIFY_OPTIONS,
+    SECTION_TYPE,
+    defaultSections,
+} = require('./clean-jsdoc-theme-defaults');
 
+const htmlsafe = helper.htmlsafe;
+const linkto = helper.linkto;
+const resolveAuthorLinks = helper.resolveAuthorLinks;
+const hasOwnProp = Object.prototype.hasOwnProperty;
 
-/* prettier-ignore-start */
-// eslint-disable-next-line
-var themeOpts = (env && env.opts && env.opts['theme_opts']) || {};
-/* prettier-ignore-end */
+const themeOpts = (env && env.opts && env.opts.theme_opts) || {};
 
-var data;
-var view;
-var searchListArray = [];
-var hasSearch =
+let data;
+let view;
+const searchListArray = [];
+const hasSearch =
     themeOpts.search === undefined ? true : Boolean(themeOpts.search);
 
 // eslint-disable-next-line no-restricted-globals
-var outdir = path.normalize(env.opts.destination);
+let outdir = path.normalize(env.opts.destination);
 
-var SECTION_TYPE = {
-    Classes: 'Classes',
-    Modules: 'Modules',
-    Externals: 'Externals',
-    Events: 'Events',
-    Namespaces: 'Namespaces',
-    Mixins: 'Mixins',
-    Tutorials: 'Tutorials',
-    Interfaces: 'Interfaces',
-    Global: 'Global'
-};
-
-var defaultSections = [
-    SECTION_TYPE.Modules,
-    SECTION_TYPE.Classes,
-    SECTION_TYPE.Externals,
-    SECTION_TYPE.Events,
-    SECTION_TYPE.Namespaces,
-    SECTION_TYPE.Mixins,
-    SECTION_TYPE.Tutorials,
-    SECTION_TYPE.Interfaces,
-    SECTION_TYPE.Global
-];
-
-var HTML_MINIFY_OPTIONS = {
-    collapseWhitespace: true,
-    removeComments: true,
-    html5: true,
-    minifyJS: true,
-    minifyCSS: true
-};
-
-function copyStaticFolder() {
-    var staticDir = themeOpts.static_dir || undefined;
-
-    if (staticDir) {
-        for (var i = 0; i < staticDir.length; i++) {
-            var output = path.join(outdir, staticDir[i]);
-
-            fse.copySync(staticDir[i], output);
-        }
-    }
-}
-
-copyStaticFolder();
-
-function copyToOutputFolder(filePath) {
-    var filePathNormalized = path.normalize(filePath);
-
-    fs.copyFileSync(filePathNormalized, outdir);
-}
-
-function copyToOutputFolderFromArray(filePathArray) {
-    var i = 0;
-    var outputList = [];
-
-    if (Array.isArray(filePathArray)) {
-        for (; i < filePathArray.length; i++) {
-            copyToOutputFolder(filePathArray[i]);
-            outputList.push(path.basename(filePathArray[i]));
-        }
-    }
-
-    return outputList;
-}
+// copy static folders
+copyStaticFolder(themeOpts, outdir);
 
 function find(spec) {
     return helper.find(data, spec);
@@ -108,7 +62,7 @@ function tutoriallink(tutorial) {
     return helper.toTutorial(tutorial, null, {
         tag: 'em',
         classname: 'disabled',
-        prefix: 'Tutorial: '
+        prefix: 'Tutorial: ',
     });
 }
 
@@ -116,53 +70,62 @@ function getAncestorLinks(doclet) {
     return helper.getAncestorLinks(data, doclet);
 }
 
-function hashToLink(doclet, hash) {
+function hashToLink(doclet, hash, dependencies) {
+    let url;
+
     if (!/^(#.+)/.test(hash)) {
         return hash;
     }
 
-    var url = helper.createLink(doclet);
-
+    url = helper.createLink(doclet, dependencies);
     url = url.replace(/(#.+|$)/, hash);
 
-    return '<a href="' + url + '">' + hash + '</a>';
+    return `<a href="${url}">${hash}</a>`;
 }
 
-function needsSignature(doclet) {
-    var needsSig = false;
+function needsSignature({ kind, type, meta }) {
+    let needsSig = false;
 
     // function and class definitions always get a signature
-    if (doclet.kind === 'function' || doclet.kind === 'class') {
+    if (kind === 'function' || kind === 'class') {
         needsSig = true;
     }
+
     // typedefs that contain functions get a signature, too
-    else if (
-        doclet.kind === 'typedef' &&
-        doclet.type &&
-        doclet.type.names &&
-        doclet.type.names.length
-    ) {
-        for (var i = 0, l = doclet.type.names.length; i < l; i++) {
-            if (doclet.type.names[i].toLowerCase() === 'function') {
+    else if (kind === 'typedef' && type && type.names && type.names.length) {
+        for (var i = 0, l = type.names.length; i < l; i++) {
+            if (type.names[i].toLowerCase() === 'function') {
                 needsSig = true;
                 break;
             }
         }
     }
 
+    // and namespaces that are functions get a signature (but finding them is a
+    // bit messy)
+    else if (
+        kind === 'namespace' &&
+        meta &&
+        meta.code &&
+        meta.code.type &&
+        meta.code.type.match(/[Ff]unction/)
+    ) {
+        needsSig = true;
+    }
+
     return needsSig;
 }
 
-function getSignatureAttributes(item) {
-    var attributes = [];
+function getSignatureAttributes({ optional, nullable }) {
+    const attributes = [];
 
-    if (item.optional) {
+    if (optional) {
         attributes.push('opt');
     }
 
-    if (item.nullable === true) {
+    if (nullable === true) {
         attributes.push('nullable');
-    } else if (item.nullable === false) {
+    } else if (nullable === false) {
         attributes.push('non-null');
     }
 
@@ -170,19 +133,17 @@ function getSignatureAttributes(item) {
 }
 
 function updateItemName(item) {
-    var attributes = getSignatureAttributes(item);
-    var itemName = item.name || '';
+    const attributes = getSignatureAttributes(item);
+    let itemName = item.name || '';
 
     if (item.variable) {
         itemName = '&hellip;' + itemName;
     }
 
     if (attributes && attributes.length) {
-        itemName = util.format(
-            '%s<span class="signature-attributes">%s</span>',
-            itemName,
-            attributes.join(', ')
-        );
+        itemName = `${itemName}<span class="signature-attributes">${attributes.join(
+            ', '
+        )}</span>`;
     }
 
     return itemName;
@@ -190,14 +151,12 @@ function updateItemName(item) {
 
 function addParamAttributes(params) {
     return params
-        .filter(function (param) {
-            return param.name && param.name.indexOf('.') === -1;
-        })
+        .filter(({ name }) => name && !name.includes('.'))
         .map(updateItemName);
 }
 
 function buildItemTypeStrings(item) {
-    var types = [];
+    const types = [];
 
     if (item && item.type && item.type.names) {
         item.type.names.forEach(function (name) {
@@ -209,17 +168,17 @@ function buildItemTypeStrings(item) {
 }
 
 function buildAttribsString(attribs) {
-    var attribsString = '';
+    let attribsString = '';
 
     if (attribs && attribs.length) {
-        attribsString = htmlsafe(util.format('(%s) ', attribs.join(', ')));
+        htmlsafe(`(${attribs.join(', ')}) `);
     }
 
     return attribsString;
 }
 
 function addNonParamAttributes(items) {
-    var types = [];
+    let types = [];
 
     items.forEach(function (item) {
         types = types.concat(buildItemTypeStrings(item));
@@ -229,9 +188,9 @@ function addNonParamAttributes(items) {
 }
 
 function addSignatureParams(f) {
-    var params = f.params ? addParamAttributes(f.params) : [];
+    const params = f.params ? addParamAttributes(f.params) : [];
 
-    f.signature = util.format('%s(%s)', f.signature || '', params.join(', '));
+    f.signature = `${f.signature || ''}(${params.join(', ')})`;
 }
 
 function addSignatureReturns(f) {
@@ -260,43 +219,38 @@ function addSignatureReturns(f) {
         returnTypes = addNonParamAttributes(source);
     }
     if (returnTypes.length) {
-        returnTypesString = ` &rarr; ${attribsString}{${returnTypes.join('|')}}`;
+        returnTypesString = ` &rarr; ${attribsString}{${returnTypes.join(
+            '|'
+        )}}`;
     }
 
-    var signatureOutput = ""
+    var signatureOutput = '';
 
     if (f.signature) {
-        signatureOutput = '<span class="signature">' +
-            (f.signature || '') +
-            '</span>'
+        signatureOutput =
+            '<span class="signature">' + (f.signature || '') + '</span>';
     }
     if (returnTypesString) {
-        signatureOutput += '<span class="type-signature">' +
-            returnTypesString +
-            '</span>'
+        signatureOutput +=
+            '<span class="type-signature">' + returnTypesString + '</span>';
     }
 
-    f.signature = signatureOutput
+    f.signature = signatureOutput;
 }
 
 function addSignatureTypes(f) {
-    var types = f.type ? buildItemTypeStrings(f) : [];
+    const types = f.type ? buildItemTypeStrings(f) : [];
 
     f.signature =
-        (f.signature || '') +
-        '<span class="type-signature">' +
-        (types.length ? ' :' + types.join('|') : '') +
-        '</span>';
+        `${f.signature || ''}<span class="type-signature">` +
+        `${types.length ? ` :${types.join('|')}` : ''}</span>`;
 }
 
 function addAttribs(f) {
-    var attribs = helper.getAttribs(f);
-    var attribsString = buildAttribsString(attribs);
+    const attribs = helper.getAttribs(f);
+    const attribsString = buildAttribsString(attribs);
 
-    f.attribs = util.format(
-        '<span class="type-signature">%s</span>',
-        attribsString
-    );
+    f.attribs = `<span class="type-signature">${attribsString}</span>`;
 }
 
 function shortenPaths(files, commonPrefix) {
@@ -310,29 +264,31 @@ function shortenPaths(files, commonPrefix) {
     return files;
 }
 
-function getPathFromDoclet(doclet) {
-    if (!doclet.meta) {
+function getPathFromDoclet({ meta }) {
+    if (!meta) {
         return null;
     }
 
-    return doclet.meta.path && doclet.meta.path !== 'null'
-        ? path.join(doclet.meta.path, doclet.meta.filename)
-        : doclet.meta.filename;
+    return meta.path && meta.path !== 'null'
+        ? path.join(meta.path, meta.filename)
+        : meta.filename;
 }
 
-function generate(type, title, docs, filename, resolveLinks) {
-    resolveLinks = resolveLinks !== false;
+function generate(title, docs, filename, resolveLinks) {
+    let docData;
+    let html;
+    let outpath;
 
-    var docData = {
-        type: type,
+    docData = {
+        env: env,
         title: title,
-        docs: docs
+        docs: docs,
     };
 
-    var outpath = path.join(outdir, filename),
-        html = view.render('container.tmpl', docData);
+    outpath = path.join(outdir, filename);
+    html = view.render('container.tmpl', docData);
 
-    if (resolveLinks) {
+    if (resolveLinks !== false) {
         html = helper.resolveLinks(html); // turn {@link foo} into <a href="foodoc.html">foo</a>
     }
 
@@ -343,24 +299,23 @@ function generate(type, title, docs, filename, resolveLinks) {
     );
 }
 
-function generateSourceFiles(sourceFiles, encoding) {
-    encoding = encoding || 'utf8';
+function generateSourceFiles(sourceFiles, encoding = 'utf8') {
     Object.keys(sourceFiles).forEach(function (file) {
-        var source;
+        let source;
         // links are keyed to the shortened path in each doclet's `meta.shortpath` property
-        var sourceOutfile = helper.getUniqueFilename(
+        const sourceOutFile = helper.getUniqueFilename(
             sourceFiles[file].shortened
         );
 
-        helper.registerLink(sourceFiles[file].shortened, sourceOutfile);
+        helper.registerLink(sourceFiles[file].shortened, sourceOutFile);
 
         try {
             source = {
                 kind: 'source',
-                title: sourceOutfile.replace('.html', ''),
+                title: sourceOutFile.replace('.html', ''),
                 code: helper.htmlsafe(
                     fs.readFileSync(sourceFiles[file].resolved, encoding)
-                )
+                ),
             };
         } catch (e) {
             logger.error(
@@ -371,10 +326,9 @@ function generateSourceFiles(sourceFiles, encoding) {
         }
 
         generate(
-            'Source',
-            sourceFiles[file].shortened,
+            `Source: ${sourceFiles[file].shortened}`,
             [source],
-            sourceOutfile,
+            sourceOutFile,
             false
         );
     });
@@ -392,30 +346,30 @@ function generateSourceFiles(sourceFiles, encoding) {
  * @param {Array.<module:jsdoc/doclet.Doclet>} modules - The array of module doclets to search.
  */
 function attachModuleSymbols(doclets, modules) {
-    var symbols = {};
+    const symbols = {};
 
     // build a lookup table
-    doclets.forEach(function (symbol) {
+    doclets.forEach((symbol) => {
         symbols[symbol.longname] = symbols[symbol.longname] || [];
         symbols[symbol.longname].push(symbol);
     });
 
-    // eslint-disable-next-line array-callback-return
-    return modules.map(function (module) {
+    modules.forEach((module) => {
         if (symbols[module.longname]) {
             module.modules = symbols[module.longname]
                 // Only show symbols that have a description. Make an exception for classes, because
                 // we want to show the constructor-signature heading no matter what.
-                .filter(function (symbol) {
-                    return symbol.description || symbol.kind === 'class';
-                })
-                .map(function (symbol) {
-                    symbol = doop(symbol);
+                .filter(
+                    ({ description, kind }) => description || kind === 'class'
+                )
+                .map((symbol) => {
+                    symbol = _.cloneDeep(symbol);
 
                     if (symbol.kind === 'class' || symbol.kind === 'function') {
-                        symbol.name =
-                            symbol.name.replace('module:', '(require("') +
-                            '"))';
+                        symbol.name = `${symbol.name.replace(
+                            'module:',
+                            '(require("'
+                        )}"))`;
                     }
 
                     return symbol;
@@ -424,109 +378,17 @@ function attachModuleSymbols(doclets, modules) {
     });
 }
 
-function buildFooter() {
-    var footer = themeOpts.footer;
-
-    return footer;
-}
-
-function moduleHeader() {
-    var displayModuleHeader = themeOpts.displayModuleHeader || false;
-
-    return displayModuleHeader;
-}
-
-function getFavicon() {
-    var favicon = themeOpts.favicon || undefined;
-
-    return favicon;
-}
-
-// function copy
-function createDynamicStyleSheet() {
-    var styleClass = themeOpts.create_style || undefined;
-    /* prettier-ignore-start */
-
-    return styleClass;
-}
-
-function createDynamicsScripts() {
-    var scripts = themeOpts.add_scripts || undefined;
-
-    return scripts;
-}
-
-function returnPathOfScriptScr() {
-    var scriptPath = themeOpts.add_script_path || undefined;
-
-    return scriptPath;
-}
-
-function returnPathOfStyleSrc() {
-    var stylePath = themeOpts.add_style_path || undefined;
-
-    return stylePath;
-}
-
-function includeCss() {
-    var stylePath = themeOpts.include_css || undefined;
-
-    if (stylePath) {
-        stylePath = copyToOutputFolderFromArray(stylePath);
-    }
-
-    return stylePath;
-}
-
-function resizeable() {
-    var resizeOpts = themeOpts.resizeable || {};
-
-    return resizeOpts;
-}
-
-function codepen() {
-    var codepenOpts = themeOpts.codepen || {};
-
-    return codepenOpts;
-}
-
-function includeScript() {
-    var scriptPath = themeOpts.include_js || undefined;
-
-    if (scriptPath) {
-        scriptPath = copyToOutputFolderFromArray(scriptPath);
-    }
-
-    return scriptPath;
-}
-
-function getMetaTagData() {
-    var meta = themeOpts.meta || undefined;
-
-    return meta;
-}
-
-function getTheme() {
-    var theme = themeOpts.default_theme || 'dark';
-
-    return theme;
-}
-
-function getBaseURL() {
-    return themeOpts.base_url;
-}
-
 function buildSidebarMembers({
     items,
     itemHeading,
     itemsSeen,
     linktoFn,
-    sectionName
+    sectionName,
 }) {
     const navProps = {
         name: itemHeading,
         items: [],
-        id: nanoid()
+        id: nanoid(),
     };
 
     if (items.length) {
@@ -536,7 +398,7 @@ function buildSidebarMembers({
                 anchor: item.longname
                     ? linktoFn(item.longname, item.name)
                     : linktoFn('', item.name),
-                children: []
+                children: [],
             };
 
             var methods =
@@ -547,8 +409,8 @@ function buildSidebarMembers({
                         kind: 'function',
                         memberof: item.longname,
                         inherited: {
-                            '!is': Boolean(themeOpts.exclude_inherited)
-                        }
+                            '!is': Boolean(themeOpts.exclude_inherited),
+                        },
                     });
 
             if (!hasOwnProp.call(itemsSeen, item.longname)) {
@@ -561,7 +423,7 @@ function buildSidebarMembers({
                     searchListArray.push({
                         title: item.name,
                         link: linktoFn(item.longname, item.name),
-                        description: item.description
+                        description: item.description,
                     });
                 }
 
@@ -569,7 +431,7 @@ function buildSidebarMembers({
                     methods.forEach(function (method) {
                         const itemChild = {
                             name: method.longName,
-                            link: linktoFn(method.longname, method.name)
+                            link: linktoFn(method.longname, method.name),
                         };
 
                         currentItem.children.push(itemChild);
@@ -586,7 +448,7 @@ function buildSidebarMembers({
                             searchListArray.push({
                                 title: method.longname,
                                 link: linktoFn(method.longname, name),
-                                description: item.classdesc
+                                description: item.classdesc,
                             });
                         }
                     });
@@ -609,15 +471,24 @@ function linktoExternal(longName, name) {
     return linkto(longName, name.replace(/(^"|"$)/g, ''));
 }
 
+/**
+ * This function is added by clean-jsdoc-theme devs
+ * This function is added by clean-jsdoc-theme devs
+ * This function is added by clean-jsdoc-theme devs
+ *
+ */
 function buildNavbar() {
     return {
         menu: themeOpts.menu || undefined,
-        search: hasSearch
+        search: hasSearch,
     };
 }
 
 /**
- * Create the navigation sidebar.
+ * This function is added by clean-jsdoc-theme devs
+ * This function is added by clean-jsdoc-theme devs
+ * This function is added by clean-jsdoc-theme devs
+ *
  * @param {object} members The members that will be used to create the sidebar.
  * @param {array<object>} members.classes
  * @param {array<object>} members.externals
@@ -636,18 +507,18 @@ function buildSidebar(members) {
     var isHTML = RegExp.prototype.test.bind(/(<([^>]+)>)/i);
 
     var nav = {
-        sections: []
+        sections: [],
     };
 
     if (!isHTML(title)) {
         nav.title = {
             title,
-            isHTML: false
+            isHTML: false,
         };
     } else {
         nav.title = {
             title,
-            isHTML: true
+            isHTML: true,
         };
     }
 
@@ -663,7 +534,7 @@ function buildSidebar(members) {
             items: members.modules,
             itemsSeen: seen,
             linktoFn: linkto,
-            sectionName: SECTION_TYPE.Modules
+            sectionName: SECTION_TYPE.Modules,
         }),
 
         [SECTION_TYPE.Classes]: buildSidebarMembers({
@@ -671,7 +542,7 @@ function buildSidebar(members) {
             items: members.classes,
             itemsSeen: seen,
             linktoFn: linkto,
-            sectionName: SECTION_TYPE.Classes
+            sectionName: SECTION_TYPE.Classes,
         }),
 
         [SECTION_TYPE.Externals]: buildSidebarMembers({
@@ -679,7 +550,7 @@ function buildSidebar(members) {
             items: members.externals,
             itemsSeen: seen,
             linktoFn: linktoExternal,
-            sectionName: SECTION_TYPE.Externals
+            sectionName: SECTION_TYPE.Externals,
         }),
 
         [SECTION_TYPE.Events]: buildSidebarMembers({
@@ -687,7 +558,7 @@ function buildSidebar(members) {
             items: members.events,
             itemsSeen: seen,
             linktoFn: linkto,
-            sectionName: SECTION_TYPE.Events
+            sectionName: SECTION_TYPE.Events,
         }),
 
         [SECTION_TYPE.Namespaces]: buildSidebarMembers({
@@ -695,7 +566,7 @@ function buildSidebar(members) {
             items: members.namespaces,
             itemsSeen: seen,
             linktoFn: linkto,
-            sectionName: SECTION_TYPE.Namespaces
+            sectionName: SECTION_TYPE.Namespaces,
         }),
 
         [SECTION_TYPE.Mixins]: buildSidebarMembers({
@@ -703,7 +574,7 @@ function buildSidebar(members) {
             items: members.mixins,
             itemsSeen: seen,
             linktoFn: linkto,
-            sectionName: SECTION_TYPE.Mixins
+            sectionName: SECTION_TYPE.Mixins,
         }),
 
         [SECTION_TYPE.Tutorials]: buildSidebarMembers({
@@ -711,7 +582,7 @@ function buildSidebar(members) {
             items: members.tutorials,
             itemsSeen: seenTutorials,
             linktoFn: linktoTutorial,
-            sectionName: SECTION_TYPE.Tutorials
+            sectionName: SECTION_TYPE.Tutorials,
         }),
 
         [SECTION_TYPE.Interfaces]: buildSidebarMembers({
@@ -719,7 +590,7 @@ function buildSidebar(members) {
             items: members.interfaces,
             itemsSeen: seen,
             linktoFn: linkto,
-            sectionName: SECTION_TYPE.Interfaces
+            sectionName: SECTION_TYPE.Interfaces,
         }),
 
         [SECTION_TYPE.Global]: buildSidebarMembers({
@@ -727,8 +598,8 @@ function buildSidebar(members) {
             items: members.globals,
             itemsSeen: seenGlobal,
             linktoFn: linkto,
-            sectionName: SECTION_TYPE.Global
-        })
+            sectionName: SECTION_TYPE.Global,
+        }),
     };
 
     sectionsOrder.forEach((section) => {
@@ -747,76 +618,71 @@ function buildSidebar(members) {
 }
 
 /**
- * Currently for some reason yields markdown is
- * not processed by jsdoc. So, we are processing it here
- * 
- * @param {Array<{type: string, description: string}>} yields
- */
-function getProcessedYield(yields) {
-    if (!Array.isArray(yields)) return []
-
-    return yields.map((y) => ({ ...y, description: mdToHTMLConverter.makeHtml(y.description) }))
-}
-
-
-/**
     @param {TAFFY} taffyData See <http://taffydb.com/>.
     @param {object} opts
     @param {Tutorial} tutorials
  */
 exports.publish = function (taffyData, opts, tutorials) {
+    let classes;
+    let conf;
+    let externals;
+    let files;
+    let fromDir;
+    let globalUrl;
+    let indexUrl;
+    let interfaces;
+    let members;
+    let mixins;
+    let modules;
+    let namespaces;
+    let outputSourceFiles;
+    let packageInfo;
+    let packages;
+    const sourceFilePaths = [];
+    let sourceFiles = {};
+    let staticFileFilter;
+    let staticFilePaths;
+    let staticFiles;
+    let staticFileScanner;
+    let templatePath;
+
     data = taffyData;
 
-    // eslint-disable-next-line no-restricted-globals
-    var conf = env.conf.templates || {};
-
+    conf = env.conf.templates || {};
     conf.default = conf.default || {};
 
-    var templatePath = path.normalize(opts.template);
-
+    templatePath = path.normalize(opts.template);
     view = new template.Template(path.join(templatePath, 'tmpl'));
 
     // claim some special filenames in advance, so the All-Powerful Overseer of Filename Uniqueness
     // doesn't try to hand them out later
-    var indexUrl = helper.getUniqueFilename('index');
+    indexUrl = helper.getUniqueFilename('index');
     // don't call registerLink() on this one! 'index' is also a valid longname
 
-    var globalUrl = helper.getUniqueFilename('global');
-
+    globalUrl = helper.getUniqueFilename('global');
     helper.registerLink('global', globalUrl);
 
     // set up templating
     view.layout = conf.default.layoutFile
-        ? path.getResourcePath(
-            path.dirname(conf.default.layoutFile),
-            path.basename(conf.default.layoutFile)
-        )
+        ? path.resolve(conf.default.layoutFile)
         : 'layout.tmpl';
 
     // set up tutorials for helper
     helper.setTutorials(tutorials);
 
     data = helper.prune(data);
-
     data.sort('longname, version, since');
     helper.addEventListeners(data);
 
-    var sourceFiles = {};
-    var sourceFilePaths = [];
+    data().each((doclet) => {
+        let sourcePath;
 
-    data().each(function (doclet) {
         doclet.attribs = '';
 
         if (doclet.examples) {
-            doclet.examples = doclet.examples.map(function (example) {
-                var caption, code;
-
-                if (example === undefined) {
-                    return {
-                        caption: '',
-                        code: ''
-                    };
-                }
+            doclet.examples = doclet.examples.map((example) => {
+                let caption;
+                let code;
 
                 if (
                     example.match(
@@ -829,7 +695,7 @@ exports.publish = function (taffyData, opts, tutorials) {
 
                 return {
                     caption: caption || '',
-                    code: code || example
+                    code: code || example,
                 };
             });
         }
@@ -840,48 +706,43 @@ exports.publish = function (taffyData, opts, tutorials) {
         }
 
         // build a list of source files
-        var sourcePath;
-
         if (doclet.meta) {
             sourcePath = getPathFromDoclet(doclet);
             sourceFiles[sourcePath] = {
                 resolved: sourcePath,
-                shortened: null
+                shortened: null,
             };
             if (sourceFilePaths.indexOf(sourcePath) === -1) {
                 sourceFilePaths.push(sourcePath);
             }
         }
 
+        // added by clean-jsdoc-theme-dev.
+        // to process yields.
         if (doclet.yields) {
-            doclet.yields = getProcessedYield(doclet.yields)
+            doclet.yields = getProcessedYield(doclet.yields);
         }
     });
 
     // update outdir if necessary, then create outdir
-    var packageInfo = (find({ kind: 'package' }) || [])[0];
-
+    packageInfo = (find({ kind: 'package' }) || [])[0];
     if (packageInfo && packageInfo.name) {
         outdir = path.join(outdir, packageInfo.name, packageInfo.version || '');
     }
     fs.mkPath(outdir);
 
     // copy the template's static files to outdir
-    var fromDir = path.join(templatePath, 'static');
-    var staticFiles = fs.ls(fromDir, 3);
+    fromDir = path.join(templatePath, 'static');
+    staticFiles = fs.ls(fromDir, 3);
 
-    staticFiles.forEach(function (fileName) {
-        var toDir = fs.toDir(fileName.replace(fromDir, outdir));
+    staticFiles.forEach((fileName) => {
+        const toDir = fs.toDir(fileName.replace(fromDir, outdir));
 
         fs.mkPath(toDir);
         fs.copyFileSync(fileName, toDir);
     });
 
     // copy user-specified static files to outdir
-    var staticFilePaths;
-    var staticFileFilter;
-    var staticFileScanner;
-
     if (conf.default.staticFiles) {
         // The canonical property name is `include`. We accept `paths` for backwards compatibility
         // with a bug in JSDoc 3.2.x.
@@ -894,16 +755,17 @@ exports.publish = function (taffyData, opts, tutorials) {
         );
         staticFileScanner = new (require('jsdoc/src/scanner').Scanner)();
 
-        staticFilePaths.forEach(function (filePath) {
-            var extraStaticFiles = staticFileScanner.scan(
+        staticFilePaths.forEach((filePath) => {
+            filePath = path.resolve(env.pwd, filePath);
+            const extraStaticFiles = staticFileScanner.scan(
                 [filePath],
                 10,
                 staticFileFilter
             );
 
-            extraStaticFiles.forEach(function (fileName) {
-                var sourcePath = fs.toDir(filePath);
-                var toDir = fs.toDir(fileName.replace(sourcePath, outdir));
+            extraStaticFiles.forEach((fileName) => {
+                const sourcePath = fs.toDir(filePath);
+                const toDir = fs.toDir(fileName.replace(sourcePath, outdir));
 
                 fs.mkPath(toDir);
                 fs.copyFileSync(fileName, toDir);
@@ -914,17 +776,17 @@ exports.publish = function (taffyData, opts, tutorials) {
     if (sourceFilePaths.length) {
         sourceFiles = shortenPaths(
             sourceFiles,
-            path.commonPrefix(sourceFilePaths)
+            commonPathPrefix(sourceFilePaths)
         );
     }
+
     data().each(function (doclet) {
-        var url = helper.createLink(doclet);
+        let docletPath;
+        const url = helper.createLink(doclet);
 
         helper.registerLink(doclet.longname, url);
 
         // add a shortened version of the full path
-        var docletPath;
-
         if (doclet.meta) {
             docletPath = getPathFromDoclet(doclet);
             docletPath = sourceFiles[docletPath].shortened;
@@ -935,7 +797,7 @@ exports.publish = function (taffyData, opts, tutorials) {
     });
 
     data().each(function (doclet) {
-        var url = helper.longnameToUrl[doclet.longname];
+        const url = helper.longnameToUrl[doclet.longname];
 
         if (url.indexOf('#') > -1) {
             doclet.id = helper.longnameToUrl[doclet.longname].split(/#/).pop();
@@ -951,7 +813,7 @@ exports.publish = function (taffyData, opts, tutorials) {
     });
 
     // do this after the urls have all been generated
-    data().each(function (doclet) {
+    data().each((doclet) => {
         doclet.ancestors = getAncestorLinks(doclet);
 
         if (doclet.kind === 'member') {
@@ -966,12 +828,11 @@ exports.publish = function (taffyData, opts, tutorials) {
         }
     });
 
-    var members = helper.getMembers(data);
-
+    members = helper.getMembers(data);
     members.tutorials = tutorials.children;
 
     // output pretty-printed source files by default
-    var outputSourceFiles = Boolean(
+    outputSourceFiles = Boolean(
         conf.default && conf.default.outputSourceFiles !== false
     );
 
@@ -982,37 +843,37 @@ exports.publish = function (taffyData, opts, tutorials) {
     view.tutoriallink = tutoriallink;
     view.htmlsafe = htmlsafe;
     view.outputSourceFiles = outputSourceFiles;
-    view.footer = buildFooter();
-    view.displayModuleHeader = moduleHeader();
-    view.favicon = getFavicon();
-    view.dynamicStyle = createDynamicStyleSheet();
-    view.dynamicStyleSrc = returnPathOfStyleSrc();
-    view.dynamicScript = createDynamicsScripts();
-    view.dynamicScriptSrc = returnPathOfScriptScr();
-    view.includeScript = includeScript();
-    view.includeCss = includeCss();
-    view.meta = getMetaTagData();
-    view.theme = getTheme();
+    view.footer = buildFooter(themeOpts);
+    view.displayModuleHeader = moduleHeader(themeOpts);
+    view.favicon = getFavicon(themeOpts);
+    view.dynamicStyle = createDynamicStyleSheet(themeOpts);
+    view.dynamicStyleSrc = returnPathOfStyleSrc(themeOpts);
+    view.dynamicScript = createDynamicsScripts(themeOpts);
+    view.dynamicScriptSrc = returnPathOfScriptScr(themeOpts);
+    view.includeScript = includeScript(themeOpts, outdir);
+    view.includeCss = includeCss(themeOpts, outdir);
+    view.meta = getMetaTagData(themeOpts);
+    view.theme = getTheme(themeOpts);
     // once for all
     view.sidebar = buildSidebar(members);
-    view.navbar = buildNavbar();
-    view.resizeable = resizeable();
-    view.codepen = codepen();
-    view.baseURL = getBaseURL();
+    view.navbar = buildNavbar(themeOpts);
+    view.resizeable = resizeable(themeOpts);
+    view.codepen = codepen(themeOpts);
+    view.baseURL = getBaseURL(themeOpts);
     view.excludeInherited = Boolean(themeOpts.exclude_inherited);
     attachModuleSymbols(
         find({ longname: { left: 'module:' } }),
         members.modules
     );
 
+    // added by clean-jsdoc-theme-devs
     // output search file if search
-
     if (hasSearch) {
         fs.mkPath(path.join(outdir, 'data'));
         fs.writeFileSync(
             path.join(outdir, 'data', 'search.json'),
             JSON.stringify({
-                list: searchListArray
+                list: searchListArray,
             })
         );
     }
@@ -1023,16 +884,16 @@ exports.publish = function (taffyData, opts, tutorials) {
     }
 
     if (members.globals.length) {
-        generate('', 'Global', [{ kind: 'globalobj' }], globalUrl);
+        generate('Global', [{ kind: 'globalobj' }], globalUrl);
     }
 
     // index page displays information from package.json and lists files
-    var files = find({ kind: 'file' });
-    var packages = find({ kind: 'package' });
-    var homepageTitle = themeOpts.homepageTitle || 'Home';
+    files = find({ kind: 'file' });
+    packages = find({ kind: 'package' });
+    // added by clean-jsdoc-theme-devs
+    const homepageTitle = themeOpts.homepageTitle || 'Home';
 
     generate(
-        '',
         homepageTitle,
         packages
             .concat([
@@ -1041,83 +902,72 @@ exports.publish = function (taffyData, opts, tutorials) {
                     readme: opts.readme,
                     longname: opts.mainpagetitle
                         ? opts.mainpagetitle
-                        : 'Main Page'
-                }
+                        : 'Main Page',
+                },
             ])
             .concat(files),
         indexUrl
     );
 
     // set up the lists that we'll use to generate pages
-    var classes = taffy(members.classes);
-    var modules = taffy(members.modules);
-    var namespaces = taffy(members.namespaces);
-    var mixins = taffy(members.mixins);
-    var externals = taffy(members.externals);
-    var interfaces = taffy(members.interfaces);
+    classes = taffy(members.classes);
+    modules = taffy(members.modules);
+    namespaces = taffy(members.namespaces);
+    mixins = taffy(members.mixins);
+    externals = taffy(members.externals);
+    interfaces = taffy(members.interfaces);
 
     Object.keys(helper.longnameToUrl).forEach(function (longname) {
-        var myModules = helper.find(modules, { longname: longname });
+        const myClasses = helper.find(classes, { longname: longname });
+        const myExternals = helper.find(externals, { longname: longname });
+        const myInterfaces = helper.find(interfaces, { longname: longname });
+        const myMixins = helper.find(mixins, { longname: longname });
+        const myModules = helper.find(modules, { longname: longname });
+        const myNamespaces = helper.find(namespaces, { longname: longname });
 
         if (myModules.length) {
             generate(
-                'Module',
-                myModules[0].name,
+                `Module: ${myModules[0].name}`,
                 myModules,
                 helper.longnameToUrl[longname]
             );
         }
 
-        var myClasses = helper.find(classes, { longname: longname });
-
         if (myClasses.length) {
             generate(
-                'Class',
-                myClasses[0].name,
+                `Class: ${myClasses[0].name}`,
                 myClasses,
                 helper.longnameToUrl[longname]
             );
         }
 
-        var myNamespaces = helper.find(namespaces, { longname: longname });
-
         if (myNamespaces.length) {
             generate(
-                'Namespace',
-                myNamespaces[0].name,
+                `Namespace: ${myNamespaces[0].name}`,
                 myNamespaces,
                 helper.longnameToUrl[longname]
             );
         }
 
-        var myMixins = helper.find(mixins, { longname: longname });
-
         if (myMixins.length) {
             generate(
-                'Mixin',
-                myMixins[0].name,
+                `Mixin: ${myMixins[0].name}`,
                 myMixins,
                 helper.longnameToUrl[longname]
             );
         }
 
-        var myExternals = helper.find(externals, { longname: longname });
-
         if (myExternals.length) {
             generate(
-                'External',
-                myExternals[0].name,
+                `External: ${myExternals[0].name}`,
                 myExternals,
                 helper.longnameToUrl[longname]
             );
         }
 
-        var myInterfaces = helper.find(interfaces, { longname: longname });
-
         if (myInterfaces.length) {
             generate(
-                'Interface',
-                myInterfaces[0].name,
+                `Interface: ${myInterfaces[0].name}`,
                 myInterfaces,
                 helper.longnameToUrl[longname]
             );
@@ -1126,15 +976,15 @@ exports.publish = function (taffyData, opts, tutorials) {
 
     // TODO: move the tutorial functions to templateHelper.js
     function generateTutorial(title, tutorial, filename) {
-        var tutorialData = {
+        const tutorialData = {
             title: title,
             header: tutorial.title,
             content: tutorial.parse(),
-            children: tutorial.children
+            children: tutorial.children,
         };
 
-        var tutorialPath = path.join(outdir, filename);
-        var html = view.render('tutorial.tmpl', tutorialData);
+        const tutorialPath = path.join(outdir, filename);
+        let html = view.render('tutorial.tmpl', tutorialData);
 
         // yes, you can use {@link} in tutorials too!
         html = helper.resolveLinks(html); // turn {@link foo} into <a href="foodoc.html">foo</a>
@@ -1147,10 +997,10 @@ exports.publish = function (taffyData, opts, tutorials) {
     }
 
     // tutorials can have only one parent so there is no risk for loops
-    function saveChildren(node) {
-        node.children.forEach(function (child) {
+    function saveChildren({ children }) {
+        children.forEach(function (child) {
             generateTutorial(
-                'Tutorial: ' + child.title,
+                `Tutorial: ${child.title}`,
                 child,
                 helper.tutorialToUrl(child.name)
             );
