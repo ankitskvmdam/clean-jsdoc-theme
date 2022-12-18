@@ -20,7 +20,7 @@
     },
     "homepage": "https://ankdev.me/clean-jsdoc-theme/v4/index.html",
     "peerDependencies": {
-        "jsdoc": "4"
+        "jsdoc": "[3, 4]"
     },
     "keywords": [
         "jsdoc",
