@@ -9,7 +9,6 @@ const { taffy } = require('@jsdoc/salty');
 const template = require('jsdoc/template');
 const nanoid = require('nanoid').nanoid;
 const htmlMinify = require('html-minifier');
-const showdown = require('showdown');
 
 const {
     buildFooter,
@@ -27,6 +26,7 @@ const {
     returnPathOfScriptScr,
     returnPathOfStyleSrc,
     copyStaticFolder,
+    getProcessedYield,
 } = require('./clean-jsdoc-theme-helper');
 
 const {
@@ -39,7 +39,6 @@ const htmlsafe = helper.htmlsafe;
 const linkto = helper.linkto;
 const resolveAuthorLinks = helper.resolveAuthorLinks;
 const hasOwnProp = Object.prototype.hasOwnProperty;
-const mdToHTMLConverter = new showdown.Converter();
 
 const themeOpts = (env && env.opts && env.opts.theme_opts) || {};
 
@@ -350,7 +349,7 @@ function attachModuleSymbols(doclets, modules) {
     const symbols = {};
 
     // build a lookup table
-    doclets.forEach(function (symbol) {
+    doclets.forEach((symbol) => {
         symbols[symbol.longname] = symbols[symbol.longname] || [];
         symbols[symbol.longname].push(symbol);
     });
@@ -472,6 +471,12 @@ function linktoExternal(longName, name) {
     return linkto(longName, name.replace(/(^"|"$)/g, ''));
 }
 
+/**
+ * This function is added by clean-jsdoc-theme devs
+ * This function is added by clean-jsdoc-theme devs
+ * This function is added by clean-jsdoc-theme devs
+ *
+ */
 function buildNavbar() {
     return {
         menu: themeOpts.menu || undefined,
@@ -480,7 +485,10 @@ function buildNavbar() {
 }
 
 /**
- * Create the navigation sidebar.
+ * This function is added by clean-jsdoc-theme devs
+ * This function is added by clean-jsdoc-theme devs
+ * This function is added by clean-jsdoc-theme devs
+ *
  * @param {object} members The members that will be used to create the sidebar.
  * @param {array<object>} members.classes
  * @param {array<object>} members.externals
@@ -610,46 +618,48 @@ function buildSidebar(members) {
 }
 
 /**
- * Currently for some reason yields markdown is
- * not processed by jsdoc. So, we are processing it here
- *
- * @param {Array<{type: string, description: string}>} yields
- */
-function getProcessedYield(yields) {
-    if (!Array.isArray(yields)) return [];
-
-    return yields.map((y) => ({
-        ...y,
-        description: mdToHTMLConverter.makeHtml(y.description),
-    }));
-}
-
-/**
     @param {TAFFY} taffyData See <http://taffydb.com/>.
     @param {object} opts
     @param {Tutorial} tutorials
  */
 exports.publish = function (taffyData, opts, tutorials) {
+    let classes;
+    let conf;
+    let externals;
+    let files;
+    let fromDir;
+    let globalUrl;
+    let indexUrl;
+    let interfaces;
+    let members;
+    let mixins;
+    let modules;
+    let namespaces;
+    let outputSourceFiles;
+    let packageInfo;
+    let packages;
+    const sourceFilePaths = [];
+    let sourceFiles = {};
+    let staticFileFilter;
+    let staticFilePaths;
+    let staticFiles;
+    let staticFileScanner;
+    let templatePath;
+
     data = taffyData;
 
-    console.log('Options', opts.get);
-
-    // eslint-disable-next-line no-restricted-globals
-    var conf = env.conf.templates || {};
-
+    conf = env.conf.templates || {};
     conf.default = conf.default || {};
 
-    var templatePath = path.normalize(opts.template);
-
+    templatePath = path.normalize(opts.template);
     view = new template.Template(path.join(templatePath, 'tmpl'));
 
     // claim some special filenames in advance, so the All-Powerful Overseer of Filename Uniqueness
     // doesn't try to hand them out later
-    var indexUrl = helper.getUniqueFilename('index');
+    indexUrl = helper.getUniqueFilename('index');
     // don't call registerLink() on this one! 'index' is also a valid longname
 
-    var globalUrl = helper.getUniqueFilename('global');
-
+    globalUrl = helper.getUniqueFilename('global');
     helper.registerLink('global', globalUrl);
 
     // set up templating
@@ -661,26 +671,18 @@ exports.publish = function (taffyData, opts, tutorials) {
     helper.setTutorials(tutorials);
 
     data = helper.prune(data);
-
     data.sort('longname, version, since');
     helper.addEventListeners(data);
 
-    var sourceFiles = {};
-    var sourceFilePaths = [];
+    data().each((doclet) => {
+        let sourcePath;
 
-    data().each(function (doclet) {
         doclet.attribs = '';
 
         if (doclet.examples) {
-            doclet.examples = doclet.examples.map(function (example) {
-                var caption, code;
-
-                if (example === undefined) {
-                    return {
-                        caption: '',
-                        code: '',
-                    };
-                }
+            doclet.examples = doclet.examples.map((example) => {
+                let caption;
+                let code;
 
                 if (
                     example.match(
@@ -704,8 +706,6 @@ exports.publish = function (taffyData, opts, tutorials) {
         }
 
         // build a list of source files
-        var sourcePath;
-
         if (doclet.meta) {
             sourcePath = getPathFromDoclet(doclet);
             sourceFiles[sourcePath] = {
@@ -717,35 +717,32 @@ exports.publish = function (taffyData, opts, tutorials) {
             }
         }
 
+        // added by clean-jsdoc-theme-dev.
+        // to process yields.
         if (doclet.yields) {
             doclet.yields = getProcessedYield(doclet.yields);
         }
     });
 
     // update outdir if necessary, then create outdir
-    var packageInfo = (find({ kind: 'package' }) || [])[0];
-
+    packageInfo = (find({ kind: 'package' }) || [])[0];
     if (packageInfo && packageInfo.name) {
         outdir = path.join(outdir, packageInfo.name, packageInfo.version || '');
     }
     fs.mkPath(outdir);
 
     // copy the template's static files to outdir
-    var fromDir = path.join(templatePath, 'static');
-    var staticFiles = fs.ls(fromDir, 3);
+    fromDir = path.join(templatePath, 'static');
+    staticFiles = fs.ls(fromDir, 3);
 
-    staticFiles.forEach(function (fileName) {
-        var toDir = fs.toDir(fileName.replace(fromDir, outdir));
+    staticFiles.forEach((fileName) => {
+        const toDir = fs.toDir(fileName.replace(fromDir, outdir));
 
         fs.mkPath(toDir);
         fs.copyFileSync(fileName, toDir);
     });
 
     // copy user-specified static files to outdir
-    var staticFilePaths;
-    var staticFileFilter;
-    var staticFileScanner;
-
     if (conf.default.staticFiles) {
         // The canonical property name is `include`. We accept `paths` for backwards compatibility
         // with a bug in JSDoc 3.2.x.
@@ -758,16 +755,17 @@ exports.publish = function (taffyData, opts, tutorials) {
         );
         staticFileScanner = new (require('jsdoc/src/scanner').Scanner)();
 
-        staticFilePaths.forEach(function (filePath) {
-            var extraStaticFiles = staticFileScanner.scan(
+        staticFilePaths.forEach((filePath) => {
+            filePath = path.resolve(env.pwd, filePath);
+            const extraStaticFiles = staticFileScanner.scan(
                 [filePath],
                 10,
                 staticFileFilter
             );
 
-            extraStaticFiles.forEach(function (fileName) {
-                var sourcePath = fs.toDir(filePath);
-                var toDir = fs.toDir(fileName.replace(sourcePath, outdir));
+            extraStaticFiles.forEach((fileName) => {
+                const sourcePath = fs.toDir(filePath);
+                const toDir = fs.toDir(fileName.replace(sourcePath, outdir));
 
                 fs.mkPath(toDir);
                 fs.copyFileSync(fileName, toDir);
@@ -781,14 +779,14 @@ exports.publish = function (taffyData, opts, tutorials) {
             commonPathPrefix(sourceFilePaths)
         );
     }
+
     data().each(function (doclet) {
-        var url = helper.createLink(doclet);
+        let docletPath;
+        const url = helper.createLink(doclet);
 
         helper.registerLink(doclet.longname, url);
 
         // add a shortened version of the full path
-        var docletPath;
-
         if (doclet.meta) {
             docletPath = getPathFromDoclet(doclet);
             docletPath = sourceFiles[docletPath].shortened;
@@ -799,7 +797,7 @@ exports.publish = function (taffyData, opts, tutorials) {
     });
 
     data().each(function (doclet) {
-        var url = helper.longnameToUrl[doclet.longname];
+        const url = helper.longnameToUrl[doclet.longname];
 
         if (url.indexOf('#') > -1) {
             doclet.id = helper.longnameToUrl[doclet.longname].split(/#/).pop();
@@ -815,7 +813,7 @@ exports.publish = function (taffyData, opts, tutorials) {
     });
 
     // do this after the urls have all been generated
-    data().each(function (doclet) {
+    data().each((doclet) => {
         doclet.ancestors = getAncestorLinks(doclet);
 
         if (doclet.kind === 'member') {
@@ -830,12 +828,11 @@ exports.publish = function (taffyData, opts, tutorials) {
         }
     });
 
-    var members = helper.getMembers(data);
-
+    members = helper.getMembers(data);
     members.tutorials = tutorials.children;
 
     // output pretty-printed source files by default
-    var outputSourceFiles = Boolean(
+    outputSourceFiles = Boolean(
         conf.default && conf.default.outputSourceFiles !== false
     );
 
@@ -869,8 +866,8 @@ exports.publish = function (taffyData, opts, tutorials) {
         members.modules
     );
 
+    // added by clean-jsdoc-theme-devs
     // output search file if search
-
     if (hasSearch) {
         fs.mkPath(path.join(outdir, 'data'));
         fs.writeFileSync(
@@ -887,16 +884,16 @@ exports.publish = function (taffyData, opts, tutorials) {
     }
 
     if (members.globals.length) {
-        generate('', 'Global', [{ kind: 'globalobj' }], globalUrl);
+        generate('Global', [{ kind: 'globalobj' }], globalUrl);
     }
 
     // index page displays information from package.json and lists files
-    var files = find({ kind: 'file' });
-    var packages = find({ kind: 'package' });
-    var homepageTitle = themeOpts.homepageTitle || 'Home';
+    files = find({ kind: 'file' });
+    packages = find({ kind: 'package' });
+    // added by clean-jsdoc-theme-devs
+    const homepageTitle = themeOpts.homepageTitle || 'Home';
 
     generate(
-        '',
         homepageTitle,
         packages
             .concat([
@@ -913,75 +910,64 @@ exports.publish = function (taffyData, opts, tutorials) {
     );
 
     // set up the lists that we'll use to generate pages
-    var classes = taffy(members.classes);
-    var modules = taffy(members.modules);
-    var namespaces = taffy(members.namespaces);
-    var mixins = taffy(members.mixins);
-    var externals = taffy(members.externals);
-    var interfaces = taffy(members.interfaces);
+    classes = taffy(members.classes);
+    modules = taffy(members.modules);
+    namespaces = taffy(members.namespaces);
+    mixins = taffy(members.mixins);
+    externals = taffy(members.externals);
+    interfaces = taffy(members.interfaces);
 
     Object.keys(helper.longnameToUrl).forEach(function (longname) {
-        var myModules = helper.find(modules, { longname: longname });
+        const myClasses = helper.find(classes, { longname: longname });
+        const myExternals = helper.find(externals, { longname: longname });
+        const myInterfaces = helper.find(interfaces, { longname: longname });
+        const myMixins = helper.find(mixins, { longname: longname });
+        const myModules = helper.find(modules, { longname: longname });
+        const myNamespaces = helper.find(namespaces, { longname: longname });
 
         if (myModules.length) {
             generate(
-                'Module',
-                myModules[0].name,
+                `Module: ${myModules[0].name}`,
                 myModules,
                 helper.longnameToUrl[longname]
             );
         }
 
-        var myClasses = helper.find(classes, { longname: longname });
-
         if (myClasses.length) {
             generate(
-                'Class',
-                myClasses[0].name,
+                `Class: ${myClasses[0].name}`,
                 myClasses,
                 helper.longnameToUrl[longname]
             );
         }
 
-        var myNamespaces = helper.find(namespaces, { longname: longname });
-
         if (myNamespaces.length) {
             generate(
-                'Namespace',
-                myNamespaces[0].name,
+                `Namespace: ${myNamespaces[0].name}`,
                 myNamespaces,
                 helper.longnameToUrl[longname]
             );
         }
 
-        var myMixins = helper.find(mixins, { longname: longname });
-
         if (myMixins.length) {
             generate(
-                'Mixin',
-                myMixins[0].name,
+                `Mixin: ${myMixins[0].name}`,
                 myMixins,
                 helper.longnameToUrl[longname]
             );
         }
 
-        var myExternals = helper.find(externals, { longname: longname });
-
         if (myExternals.length) {
             generate(
-                'External',
-                myExternals[0].name,
+                `External: ${myExternals[0].name}`,
                 myExternals,
                 helper.longnameToUrl[longname]
             );
         }
 
-        var myInterfaces = helper.find(interfaces, { longname: longname });
-
         if (myInterfaces.length) {
             generate(
-                'Interface',
-                myInterfaces[0].name,
+                `Interface: ${myInterfaces[0].name}`,
                 myInterfaces,
                 helper.longnameToUrl[longname]
             );
@@ -990,15 +976,15 @@ exports.publish = function (taffyData, opts, tutorials) {
 
     // TODO: move the tutorial functions to templateHelper.js
     function generateTutorial(title, tutorial, filename) {
-        var tutorialData = {
+        const tutorialData = {
             title: title,
             header: tutorial.title,
             content: tutorial.parse(),
             children: tutorial.children,
         };
 
-        var tutorialPath = path.join(outdir, filename);
-        var html = view.render('tutorial.tmpl', tutorialData);
+        const tutorialPath = path.join(outdir, filename);
+        let html = view.render('tutorial.tmpl', tutorialData);
 
         // yes, you can use {@link} in tutorials too!
         html = helper.resolveLinks(html); // turn {@link foo} into <a href="foodoc.html">foo</a>
@@ -1011,10 +997,10 @@ exports.publish = function (taffyData, opts, tutorials) {
     }
 
     // tutorials can have only one parent so there is no risk for loops
-    function saveChildren(node) {
-        node.children.forEach(function (child) {
+    function saveChildren({ children }) {
+        children.forEach(function (child) {
             generateTutorial(
-                'Tutorial: ' + child.title,
+                `Tutorial: ${child.title}`,
                 child,
                 helper.tutorialToUrl(child.name)
             );

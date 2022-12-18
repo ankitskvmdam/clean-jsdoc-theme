@@ -1,6 +1,10 @@
 const path = require('path')
 const fs = require('fs')
 const fse = require('fs-extra')
+const showdown = require('showdown');
+
+
+const mdToHTMLConverter = new showdown.Converter();
 
 function copyToOutputFolder(filePath, outdir) {
     var filePathNormalized = path.normalize(filePath);
@@ -126,6 +130,22 @@ function copyStaticFolder(themeOpts, outdir) {
     }
 }
 
+/**
+ * Currently for some reason yields markdown is
+ * not processed by jsdoc. So, we are processing it here
+ *
+ * @param {Array<{type: string, description: string}>} yields
+ */
+function getProcessedYield(yields) {
+    if (!Array.isArray(yields)) return [];
+
+    return yields.map((y) => ({
+        ...y,
+        description: mdToHTMLConverter.makeHtml(y.description),
+    }));
+}
+
+
 
 module.exports = {
     buildFooter,
@@ -142,5 +162,6 @@ module.exports = {
     resizeable,
     returnPathOfScriptScr,
     returnPathOfStyleSrc,
-    copyStaticFolder
+    copyStaticFolder,
+    getProcessedYield,
 }
