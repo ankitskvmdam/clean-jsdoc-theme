@@ -1,5 +1,9 @@
 ## Change Log
 
+### In version 4.2.0
+
+1. Add an option to include files list in homepage. Previously we are including it by default. From now the developer has to explicitly ask for it. For more [see](https:/github.com/ankitskvmdam/clean-jsdoc-theme#add-files-list-in-homepage)
+
 ### In version 4.0.0
 
 This is the most performant version of `clean-jsdoc-theme`. Check

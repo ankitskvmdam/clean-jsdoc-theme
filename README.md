@@ -177,6 +177,18 @@ example of this is below:
 You can use [`static_dir`](#add-static-dir) option to copy all you static files to output dir and use that path in place
 of `path/to/img`.
 
+### Add files list in homepage
+
+By default `clean-jsdoc-theme` will not include the list of files in the homepage. If you want to add them the do the following
+
+```json
+"theme_opts": {
+  "includeFilesListInHomepage": true // by default it is false.
+}
+```
+
+> Note: You need to add @file tag in the .js if you want to include it in the file list. For more details on `@file` visit: https://jsdoc.app/tags-file.html
+
 ### Add navbar menu
 
 To render extra link(s) in navbar. It accepts an array of objects:
