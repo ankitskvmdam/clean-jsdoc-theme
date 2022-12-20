@@ -892,6 +892,7 @@ exports.publish = function (taffyData, opts, tutorials) {
     packages = find({ kind: 'package' });
     // added by clean-jsdoc-theme-devs
     const homepageTitle = themeOpts.homepageTitle || 'Home';
+    const includeFilesListInHomepage = themeOpts.includeFilesListInHomepage || false
 
     generate(
         homepageTitle,
@@ -905,7 +906,7 @@ exports.publish = function (taffyData, opts, tutorials) {
                         : 'Main Page',
                 },
             ])
-            .concat(files),
+            .concat(includeFilesListInHomepage ? files : []),
         indexUrl
     );
 
