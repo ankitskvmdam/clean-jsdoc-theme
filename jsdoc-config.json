@@ -3,7 +3,7 @@
         "allowUnknownTags": true
     },
     "source": {
-        "include": ["./demo/src", "./README.md"]
+        "include": ["./demo/src", "./README.md", "./static/scripts/core.js"]
     },
     "plugins": ["plugins/markdown"],
     "opts": {
@@ -13,6 +13,7 @@
         "template": "./",
         "tutorials": "./demo/src/tutorials",
         "theme_opts": {
+            "includeFilesListInHomepage": true,
             "search": true,
             "homepageTitle": "Clean JSDoc Theme",
             "default_theme": "dark",

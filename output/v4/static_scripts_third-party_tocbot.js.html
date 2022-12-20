@@ -1,0 +1,674 @@
+<!DOCTYPE html><html lang="en" style="font-size:16px"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="Author" content="Ankit Kumar"><meta name="Description" content="A beautifully crafted theme for jsdoc"><title>Source: static/scripts/third-party/tocbot.js</title><!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]--><script src="scripts/third-party/hljs.js" defer="defer"></script><script src="scripts/third-party/hljs-line-num.js" defer="defer"></script><script src="scripts/third-party/popper.js" defer="defer"></script><script src="scripts/third-party/tippy.js" defer="defer"></script><script src="scripts/third-party/tocbot.min.js"></script><script>var baseURL="/",locationPathname="",baseURL=(locationPathname=document.location.pathname).substr(0,locationPathname.lastIndexOf("/")+1)</script><link rel="stylesheet" href="styles/clean-jsdoc-theme.min.css"><svg aria-hidden="true" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="display:none"><defs><symbol id="copy-icon" viewbox="0 0 488.3 488.3"><g><path d="M314.25,85.4h-227c-21.3,0-38.6,17.3-38.6,38.6v325.7c0,21.3,17.3,38.6,38.6,38.6h227c21.3,0,38.6-17.3,38.6-38.6V124    C352.75,102.7,335.45,85.4,314.25,85.4z M325.75,449.6c0,6.4-5.2,11.6-11.6,11.6h-227c-6.4,0-11.6-5.2-11.6-11.6V124    c0-6.4,5.2-11.6,11.6-11.6h227c6.4,0,11.6,5.2,11.6,11.6V449.6z"/><path d="M401.05,0h-227c-21.3,0-38.6,17.3-38.6,38.6c0,7.5,6,13.5,13.5,13.5s13.5-6,13.5-13.5c0-6.4,5.2-11.6,11.6-11.6h227    c6.4,0,11.6,5.2,11.6,11.6v325.7c0,6.4-5.2,11.6-11.6,11.6c-7.5,0-13.5,6-13.5,13.5s6,13.5,13.5,13.5c21.3,0,38.6-17.3,38.6-38.6    V38.6C439.65,17.3,422.35,0,401.05,0z"/></g></symbol><symbol id="search-icon" viewBox="0 0 512 512"><g><g><path d="M225.474,0C101.151,0,0,101.151,0,225.474c0,124.33,101.151,225.474,225.474,225.474    c124.33,0,225.474-101.144,225.474-225.474C450.948,101.151,349.804,0,225.474,0z M225.474,409.323    c-101.373,0-183.848-82.475-183.848-183.848S124.101,41.626,225.474,41.626s183.848,82.475,183.848,183.848    S326.847,409.323,225.474,409.323z"/></g></g><g><g><path d="M505.902,476.472L386.574,357.144c-8.131-8.131-21.299-8.131-29.43,0c-8.131,8.124-8.131,21.306,0,29.43l119.328,119.328    c4.065,4.065,9.387,6.098,14.715,6.098c5.321,0,10.649-2.033,14.715-6.098C514.033,497.778,514.033,484.596,505.902,476.472z"/></g></g></symbol><symbol id="font-size-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M11.246 15H4.754l-2 5H.6L7 4h2l6.4 16h-2.154l-2-5zm-.8-2L8 6.885 5.554 13h4.892zM21 12.535V12h2v8h-2v-.535a4 4 0 1 1 0-6.93zM19 18a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></symbol><symbol id="add-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2z"/></symbol><symbol id="minus-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M5 11h14v2H5z"/></symbol><symbol id="dark-theme-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M10 7a7 7 0 0 0 12 4.9v.1c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2h.1A6.979 6.979 0 0 0 10 7zm-6 5a8 8 0 0 0 15.062 3.762A9 9 0 0 1 8.238 4.938 7.999 7.999 0 0 0 4 12z"/></symbol><symbol id="light-theme-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M12 18a6 6 0 1 1 0-12 6 6 0 0 1 0 12zm0-2a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM11 1h2v3h-2V1zm0 19h2v3h-2v-3zM3.515 4.929l1.414-1.414L7.05 5.636 5.636 7.05 3.515 4.93zM16.95 18.364l1.414-1.414 2.121 2.121-1.414 1.414-2.121-2.121zm2.121-14.85l1.414 1.415-2.121 2.121-1.414-1.414 2.121-2.121zM5.636 16.95l1.414 1.414-2.121 2.121-1.414-1.414 2.121-2.121zM23 11v2h-3v-2h3zM4 11v2H1v-2h3z"/></symbol><symbol id="reset-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M18.537 19.567A9.961 9.961 0 0 1 12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10c0 2.136-.67 4.116-1.81 5.74L17 12h3a8 8 0 1 0-2.46 5.772l.997 1.795z"/></symbol><symbol id="down-icon" viewBox="0 0 16 16"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.7803 6.21967C13.0732 6.51256 13.0732 6.98744 12.7803 7.28033L8.53033 11.5303C8.23744 11.8232 7.76256 11.8232 7.46967 11.5303L3.21967 7.28033C2.92678 6.98744 2.92678 6.51256 3.21967 6.21967C3.51256 5.92678 3.98744 5.92678 4.28033 6.21967L8 9.93934L11.7197 6.21967C12.0126 5.92678 12.4874 5.92678 12.7803 6.21967Z"></path></symbol><symbol id="codepen-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M16.5 13.202L13 15.535v3.596L19.197 15 16.5 13.202zM14.697 12L12 10.202 9.303 12 12 13.798 14.697 12zM20 10.869L18.303 12 20 13.131V10.87zM19.197 9L13 4.869v3.596l3.5 2.333L19.197 9zM7.5 10.798L11 8.465V4.869L4.803 9 7.5 10.798zM4.803 15L11 19.131v-3.596l-3.5-2.333L4.803 15zM4 13.131L5.697 12 4 10.869v2.262zM2 9a1 1 0 0 1 .445-.832l9-6a1 1 0 0 1 1.11 0l9 6A1 1 0 0 1 22 9v6a1 1 0 0 1-.445.832l-9 6a1 1 0 0 1-1.11 0l-9-6A1 1 0 0 1 2 15V9z"/></symbol><symbol id="close-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M12 10.586l4.95-4.95 1.414 1.414-4.95 4.95 4.95 4.95-1.414 1.414-4.95-4.95-4.95 4.95-1.414-1.414 4.95-4.95-4.95-4.95L7.05 5.636z"/></symbol><symbol id="menu-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M3 4h18v2H3V4zm0 7h18v2H3v-2zm0 7h18v2H3v-2z"/></symbol></defs></svg></head><body class="dark" data-theme="dark"><div class="sidebar-container"><div class="sidebar" id="sidebar"><a href="/" class="sidebar-title sidebar-title-anchor">clean-jsdoc-theme</a><div class="sidebar-items-container"><div class="sidebar-section-title with-arrow" data-isopen="false" id="Ofa5L9UikqAowa8jlkq_2"><div>Modules</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="module-SqlJs.html">SqlJs</a></div><div class="sidebar-section-children"><a href="module-bookshelf.html">bookshelf</a></div><div class="sidebar-section-children"><a href="module-color_mixer.html">color/mixer</a></div></div><div class="sidebar-section-title with-arrow" data-isopen="false" id="qkUBJXVKGpR08Xp4YJchF"><div>Classes</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="Alive.html">Alive</a></div><div class="sidebar-section-children"><a href="Apple.html">Apple</a></div><div class="sidebar-section-children"><a href="Database.html">Database</a></div><div class="sidebar-section-children"><a href="Energy.html">Energy</a></div><div class="sidebar-section-children"><a href="Environment.html">Environment</a></div><div class="sidebar-section-children"><a href="HTMLRenderer.html">HTMLRenderer</a></div><div class="sidebar-section-children"><a href="MultiRegex.html">MultiRegex</a></div><div class="sidebar-section-children"><a href="Response.html">Response</a></div><div class="sidebar-section-children"><a href="Statement.html">Statement</a></div><div class="sidebar-section-children"><a href="StatementIterator.html">StatementIterator</a></div><div class="sidebar-section-children"><a href="Test.html">Test</a></div><div class="sidebar-section-children"><a href="TokenTree.html">TokenTree</a></div><div class="sidebar-section-children"><a href="TokenTreeEmitter.html">TokenTreeEmitter</a></div><div class="sidebar-section-children"><a href="Tree.html">Tree</a></div><div class="sidebar-section-children"><a href="World.html">World</a></div><div class="sidebar-section-children"><a href="module-bookshelf.Book.html">Book</a></div></div><div class="sidebar-section-title with-arrow" data-isopen="false" id="Yg2NIZ7gZAVYDpwBiSpWc"><div>Events</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="Apple.html#event:beEaten">beEaten</a></div><div class="sidebar-section-children"><a href="Environment.html#event:beforeDestroy">beforeDestroy</a></div></div><div class="sidebar-section-title with-arrow" data-isopen="false" id="0cKvNCKdn6bUveR30ps7o"><div>Tutorials</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="tutorial-Alive_.html">Alive</a></div><div class="sidebar-section-children"><a href="tutorial-Apple_.html">Apple</a></div><div class="sidebar-section-children"><a href="tutorial-Environment_.html">Environment</a></div><div class="sidebar-section-children"><a href="tutorial-Other.html">Other</a></div></div><div class="sidebar-section-title with-arrow" data-isopen="false" id="zT62BMhamVKWgfbTSJUzF"><div>Global</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="global.html#%2522on:begin%2522">"on:begin"</a></div><div class="sidebar-section-children"><a href="global.html#%2522on:begin%2522">"on:begin"</a></div><div class="sidebar-section-children"><a href="global.html#%2522on:end%2522">"on:end"</a></div><div class="sidebar-section-children"><a href="global.html#EnergyUnit">EnergyUnit</a></div><div class="sidebar-section-children"><a href="global.html#EnvironmentConfiguration">EnvironmentConfiguration</a></div><div class="sidebar-section-children"><a href="global.html#Renderer">Renderer</a></div><div class="sidebar-section-children"><a href="global.html#SqlJs">SqlJs</a></div><div class="sidebar-section-children"><a href="global.html#SqlJsConfig">SqlJsConfig</a></div><div class="sidebar-section-children"><a href="global.html#copy">copy</a></div><div class="sidebar-section-children"><a href="global.html#e">e</a></div><div class="sidebar-section-children"><a href="global.html#fibonacci">fibonacci</a></div><div class="sidebar-section-children"><a href="global.html#getAccordionIdsFromLocalStorage">getAccordionIdsFromLocalStorage</a></div><div class="sidebar-section-children"><a href="global.html#initSqlJs">initSqlJs</a></div><div class="sidebar-section-children"><a href="global.html#removeAccordionIdFromLocalStorage">removeAccordionIdFromLocalStorage</a></div><div class="sidebar-section-children"><a href="global.html#setAccordionIdToLocalStorage">setAccordionIdToLocalStorage</a></div></div></div></div></div><div class="navbar-container" id="VuAckcnZhf"><nav class="navbar"><div class="navbar-left-items"><div class="navbar-item"><a id="github" href="https://github.com/ankitskvmdam/clean-jsdoc-theme" target="">Github</a></div><div class="navbar-item"><a id="npm" href="https://www.npmjs.com/package/clean-jsdoc-theme" target="">npm</a></div></div><div class="navbar-right-items"><div class="navbar-right-item"><button class="icon-button search-button" aria-label="open-search"><svg><use xlink:href="#search-icon"></use></svg></button></div><div class="navbar-right-item"><button class="icon-button theme-toggle" aria-label="toggle-theme"><svg><use class="theme-svg-use" xlink:href="#light-theme-icon"></use></svg></button></div><div class="navbar-right-item"><button class="icon-button font-size" aria-label="change-font-size"><svg><use xlink:href="#font-size-icon"></use></svg></button></div></div><nav></nav></nav></div><div class="toc-container"><div class="toc-content"><span class="bold">On this page</span><div id="eed4d2a0bfd64539bb9df78095dec881"></div></div></div><div class="body-wrapper"><div class="main-content"><div class="main-wrapper"><section id="source-page" class="source-page"><header><h1 id="title" class="has-anchor">static_scripts_third-party_tocbot.js</h1></header><article><pre class="prettyprint source lang-js"><code>/* eslint no-var: off */
+var defaultOptions = {
+    ignoreSelector: '.js-toc-ignore',
+    linkClass: 'toc-link',
+    extraLinkClasses: '',
+    activeLinkClass: 'is-active-link',
+    listClass: 'toc-list',
+    extraListClasses: '',
+    isCollapsedClass: 'is-collapsed',
+    collapsibleClass: 'is-collapsible',
+    listItemClass: 'toc-list-item',
+    activeListItemClass: 'is-active-li',
+    collapseDepth: 0,
+    scrollSmooth: true,
+    scrollSmoothDuration: 420,
+    scrollSmoothOffset: 0,
+    scrollEndCallback: function (e) { },
+    throttleTimeout: 50,
+    positionFixedSelector: null,
+    positionFixedClass: 'is-position-fixed',
+    fixedSidebarOffset: 'auto',
+    includeHtml: false,
+    includeTitleTags: false,
+    orderedList: true,
+    scrollContainer: null,
+    skipRendering: false,
+    headingLabelCallback: false,
+    ignoreHiddenElements: false,
+    headingObjectCallback: null,
+    basePath: '',
+    disableTocScrollSync: false
+}
+
+function ParseContent(options) {
+    var reduce = [].reduce
+
+    /**
+     * Get the last item in an array and return a reference to it.
+     * @param {Array} array
+     * @return {Object}
+     */
+    function getLastItem(array) {
+        return array[array.length - 1]
+    }
+
+    /**
+     * Get heading level for a heading dom node.
+     * @param {HTMLElement} heading
+     * @return {Number}
+     */
+    function getHeadingLevel(heading) {
+        return +heading.nodeName.toUpperCase().replace('H', '')
+    }
+
+    /**
+     * Get important properties from a heading element and store in a plain object.
+     * @param {HTMLElement} heading
+     * @return {Object}
+     */
+    function getHeadingObject(heading) {
+        // each node is processed twice by this method because nestHeadingsArray() and addNode() calls it
+        // first time heading is real DOM node element, second time it is obj
+        // that is causing problem so I am processing only original DOM node
+        if (!(heading instanceof window.HTMLElement)) return heading
+
+        if (options.ignoreHiddenElements &amp;&amp; (!heading.offsetHeight || !heading.offsetParent)) {
+            return null
+        }
+
+        const headingLabel = heading.getAttribute('data-heading-label') ||
+            (options.headingLabelCallback ? String(options.headingLabelCallback(heading.textContent)) : heading.textContent.trim())
+        var obj = {
+            id: heading.id,
+            children: [],
+            nodeName: heading.nodeName,
+            headingLevel: getHeadingLevel(heading),
+            textContent: headingLabel
+        }
+
+        if (options.includeHtml) {
+            obj.childNodes = heading.childNodes
+        }
+
+        if (options.headingObjectCallback) {
+            return options.headingObjectCallback(obj, heading)
+        }
+
+        return obj
+    }
+
+    /**
+     * Add a node to the nested array.
+     * @param {Object} node
+     * @param {Array} nest
+     * @return {Array}
+     */
+    function addNode(node, nest) {
+        var obj = getHeadingObject(node)
+        var level = obj.headingLevel
+        var array = nest
+        var lastItem = getLastItem(array)
+        var lastItemLevel = lastItem
+            ? lastItem.headingLevel
+            : 0
+        var counter = level - lastItemLevel
+
+        while (counter > 0) {
+            lastItem = getLastItem(array)
+            // Handle case where there are multiple h5+ in a row.
+            if (lastItem &amp;&amp; level === lastItem.headingLevel) {
+                break
+            } else if (lastItem &amp;&amp; lastItem.children !== undefined) {
+                array = lastItem.children
+            }
+            counter--
+        }
+
+        if (level >= options.collapseDepth) {
+            obj.isCollapsed = true
+        }
+
+        array.push(obj)
+        return array
+    }
+
+    /**
+     * Select headings in content area, exclude any selector in options.ignoreSelector
+     * @param {HTMLElement} contentElement
+     * @param {Array} headingSelector
+     * @return {Array}
+     */
+    function selectHeadings(contentElement, headingSelector) {
+        var selectors = headingSelector
+        if (options.ignoreSelector) {
+            selectors = headingSelector.split(',')
+                .map(function mapSelectors(selector) {
+                    return selector.trim() + ':not(' + options.ignoreSelector + ')'
+                })
+        }
+        try {
+            return contentElement.querySelectorAll(selectors)
+        } catch (e) {
+            console.warn('Headers not found with selector: ' + selectors); // eslint-disable-line
+            return null
+        }
+    }
+
+    /**
+     * Nest headings array into nested arrays with 'children' property.
+     * @param {Array} headingsArray
+     * @return {Object}
+     */
+    function nestHeadingsArray(headingsArray) {
+        return reduce.call(headingsArray, function reducer(prev, curr) {
+            var currentHeading = getHeadingObject(curr)
+            if (currentHeading) {
+                addNode(currentHeading, prev.nest)
+            }
+            return prev
+        }, {
+            nest: []
+        })
+    }
+
+    return {
+        nestHeadingsArray: nestHeadingsArray,
+        selectHeadings: selectHeadings
+    }
+}
+
+function BuildHtml(options) {
+    var forEach = [].forEach
+    var some = [].some
+    var body = document.body
+    var tocElement
+    var mainContainer = document.querySelector(options.contentSelector)
+    var currentlyHighlighting = true
+    var SPACE_CHAR = ' '
+
+    /**
+     * Create link and list elements.
+     * @param {Object} d
+     * @param {HTMLElement} container
+     * @return {HTMLElement}
+     */
+    function createEl(d, container) {
+        var link = container.appendChild(createLink(d))
+        if (d.children.length) {
+            var list = createList(d.isCollapsed)
+            d.children.forEach(function (child) {
+                createEl(child, list)
+            })
+            link.appendChild(list)
+        }
+    }
+
+    /**
+     * Render nested heading array data into a given element.
+     * @param {HTMLElement} parent Optional. If provided updates the {@see tocElement} to match.
+     * @param {Array} data
+     * @return {HTMLElement}
+     */
+    function render(parent, data) {
+        var collapsed = false
+        var container = createList(collapsed)
+
+        data.forEach(function (d) {
+            createEl(d, container)
+        })
+
+        // Return if no TOC element is provided or known.
+        tocElement = parent || tocElement
+        if (tocElement === null) {
+            return
+        }
+
+        // Remove existing child if it exists.
+        if (tocElement.firstChild) {
+            tocElement.removeChild(tocElement.firstChild)
+        }
+
+        // Just return the parent and don't append the list if no links are found.
+        if (data.length === 0) {
+            return tocElement
+        }
+
+        // Append the Elements that have been created
+        return tocElement.appendChild(container)
+    }
+
+    /**
+     * Create link element.
+     * @param {Object} data
+     * @return {HTMLElement}
+     */
+    function createLink(data) {
+        var item = document.createElement('li')
+        var a = document.createElement('a')
+        if (options.listItemClass) {
+            item.setAttribute('class', options.listItemClass)
+        }
+
+        if (options.onClick) {
+            a.onclick = options.onClick
+        }
+
+        if (options.includeTitleTags) {
+            a.setAttribute('title', data.textContent)
+        }
+
+        if (options.includeHtml &amp;&amp; data.childNodes.length) {
+            forEach.call(data.childNodes, function (node) {
+                a.appendChild(node.cloneNode(true))
+            })
+        } else {
+            // Default behavior.
+            a.textContent = data.textContent
+        }
+        a.setAttribute('href', options.basePath + '#' + data.id)
+        a.setAttribute('class', options.linkClass +
+            SPACE_CHAR + 'node-name--' + data.nodeName +
+            SPACE_CHAR + options.extraLinkClasses)
+        item.appendChild(a)
+        return item
+    }
+
+    /**
+     * Create list element.
+     * @param {Boolean} isCollapsed
+     * @return {HTMLElement}
+     */
+    function createList(isCollapsed) {
+        var listElement = (options.orderedList) ? 'ol' : 'ul'
+        var list = document.createElement(listElement)
+        var classes = options.listClass +
+            SPACE_CHAR + options.extraListClasses
+        if (isCollapsed) {
+            classes += SPACE_CHAR + options.collapsibleClass
+            classes += SPACE_CHAR + options.isCollapsedClass
+        }
+        list.setAttribute('class', classes)
+        return list
+    }
+
+    /**
+     * Update fixed sidebar class.
+     * @return {HTMLElement}
+     */
+    function updateFixedSidebarClass() {
+        if (options.scrollContainer &amp;&amp; document.querySelector(options.scrollContainer)) {
+            var top
+            top = document.querySelector(options.scrollContainer).scrollTop
+        } else {
+            top = document.documentElement.scrollTop || body.scrollTop
+        }
+        var posFixedEl = document.querySelector(options.positionFixedSelector)
+
+        if (options.fixedSidebarOffset === 'auto') {
+            options.fixedSidebarOffset = tocElement.offsetTop
+        }
+
+        if (top > options.fixedSidebarOffset) {
+            if (posFixedEl.className.indexOf(options.positionFixedClass) === -1) {
+                posFixedEl.className += SPACE_CHAR + options.positionFixedClass
+            }
+        } else {
+            posFixedEl.className = posFixedEl.className.split(SPACE_CHAR + options.positionFixedClass).join('')
+        }
+    }
+
+    /**
+     * Get top position of heading
+     * @param {HTMLElement} obj
+     * @return {int} position
+     */
+    function getHeadingTopPos(obj) {
+        var position = 0
+        if (obj !== null) {
+            position = obj.offsetTop
+            if (options.hasInnerContainers) { position += getHeadingTopPos(obj.offsetParent) }
+        }
+        return position
+    }
+
+
+    function updateListActiveElement(topHeader) {
+        var forEach = [].forEach
+
+        var tocLinks = tocElement
+            .querySelectorAll('.' + options.linkClass)
+        forEach.call(tocLinks, function (tocLink) {
+            tocLink.className = tocLink.className.split(SPACE_CHAR + options.activeLinkClass).join('')
+        })
+        var tocLis = tocElement
+            .querySelectorAll('.' + options.listItemClass)
+        forEach.call(tocLis, function (tocLi) {
+            tocLi.className = tocLi.className.split(SPACE_CHAR + options.activeListItemClass).join('')
+        })
+
+        // Add the active class to the active tocLink.
+        var activeTocLink = tocElement
+            .querySelector('.' + options.linkClass +
+                '.node-name--' + topHeader.nodeName +
+                '[href="' + options.basePath + '#' + topHeader.id.replace(/([ #;&amp;,.+*~':"!^$[\]()=>|/@])/g, '\\$1') + '"]')
+        if (activeTocLink &amp;&amp; activeTocLink.className.indexOf(options.activeLinkClass) === -1) {
+            activeTocLink.className += SPACE_CHAR + options.activeLinkClass
+        }
+        var li = activeTocLink &amp;&amp; activeTocLink.parentNode
+        if (li &amp;&amp; li.className.indexOf(options.activeListItemClass) === -1) {
+            li.className += SPACE_CHAR + options.activeListItemClass
+        }
+
+        var tocLists = tocElement
+            .querySelectorAll('.' + options.listClass + '.' + options.collapsibleClass)
+
+        // Collapse the other collapsible lists.
+        forEach.call(tocLists, function (list) {
+            if (list.className.indexOf(options.isCollapsedClass) === -1) {
+                list.className += SPACE_CHAR + options.isCollapsedClass
+            }
+        })
+
+        // Expand the active link's collapsible list and its sibling if applicable.
+        if (activeTocLink &amp;&amp; activeTocLink.nextSibling &amp;&amp; activeTocLink.nextSibling.className.indexOf(options.isCollapsedClass) !== -1) {
+            activeTocLink.nextSibling.className = activeTocLink.nextSibling.className.split(SPACE_CHAR + options.isCollapsedClass).join('')
+        }
+        removeCollapsedFromParents(activeTocLink &amp;&amp; activeTocLink.parentNode.parentNode)
+    }
+
+    /**
+     * Update TOC highlighting and collpased groupings.
+     */
+    function updateToc(headingsArray) {
+        // If a fixed content container was set
+        if (options.scrollContainer &amp;&amp; document.querySelector(options.scrollContainer)) {
+            var top
+            top = document.querySelector(options.scrollContainer).scrollTop
+        } else {
+            top = document.documentElement.scrollTop || body.scrollTop
+        }
+
+        // Add fixed class at offset
+        if (options.positionFixedSelector) {
+            updateFixedSidebarClass()
+        }
+
+        // Get the top most heading currently visible on the page so we know what to highlight.
+        var headings = headingsArray
+        var topHeader
+        // Using some instead of each so that we can escape early.
+        if (currentlyHighlighting &amp;&amp;
+            tocElement !== null &amp;&amp;
+            headings.length > 0) {
+            some.call(headings, function (heading, i) {
+                var modifiedTopOffset = top + 10
+                if (mainContainer) {
+                    modifiedTopOffset += mainContainer.clientHeight * (mainContainer.scrollTop) / (mainContainer.scrollHeight - mainContainer.clientHeight)
+                }
+                if (getHeadingTopPos(heading) > modifiedTopOffset) {
+                    // Don't allow negative index value.
+                    var index = (i === 0) ? i : i - 1
+                    topHeader = headings[index]
+                    return true
+                } else if (i === headings.length - 1) {
+                    // This allows scrolling for the last heading on the page.
+                    topHeader = headings[headings.length - 1]
+                    return true
+                }
+            })
+
+            // Remove the active class from the other tocLinks.
+            updateListActiveElement(topHeader)
+        }
+    }
+
+    /**
+     * Remove collpased class from parent elements.
+     * @param {HTMLElement} element
+     * @return {HTMLElement}
+     */
+    function removeCollapsedFromParents(element) {
+        if (element &amp;&amp; element.className.indexOf(options.collapsibleClass) !== -1 &amp;&amp; element.className.indexOf(options.isCollapsedClass) !== -1) {
+            element.className = element.className.split(SPACE_CHAR + options.isCollapsedClass).join('')
+            return removeCollapsedFromParents(element.parentNode.parentNode)
+        }
+        return element
+    }
+
+    /**
+     * Disable TOC Animation when a link is clicked.
+     * @param {Event} event
+     */
+    function disableTocAnimation(event) {
+        var target = event.target || event.srcElement
+        if (typeof target.className !== 'string' || target.className.indexOf(options.linkClass) === -1) {
+            return
+        }
+        // Bind to tocLink clicks to temporarily disable highlighting
+        // while smoothScroll is animating.
+        currentlyHighlighting = false
+    }
+
+    /**
+     * Enable TOC Animation.
+     */
+    function enableTocAnimation() {
+        currentlyHighlighting = true
+    }
+
+    return {
+        enableTocAnimation: enableTocAnimation,
+        disableTocAnimation: disableTocAnimation,
+        render: render,
+        updateToc: updateToc,
+        updateListActiveElement: updateListActiveElement
+    }
+}
+
+function updateTocScroll(options) {
+    var toc = options.tocElement || document.querySelector(options.tocSelector)
+    if (toc &amp;&amp; toc.scrollHeight > toc.clientHeight) {
+        var activeItem = toc.querySelector('.' + options.activeListItemClass)
+        if (activeItem) {
+            var topOffset = toc.getBoundingClientRect().top
+            toc.scrollTop = activeItem.offsetTop - topOffset
+        }
+    }
+}
+
+(function (root, factory) {
+    if (typeof define === 'function' &amp;&amp; define.amd) {
+        define([], factory(root))
+    } else if (typeof exports === 'object') {
+        module.exports = factory(root)
+    } else {
+        root.tocbot = factory(root)
+    }
+})(typeof global !== 'undefined' ? global : this.window || this.global, function (root) {
+    'use strict'
+
+    var options = {}
+    var tocbot = {}
+    var buildHtml
+    var parseContent
+
+    // Just return if its not a browser.
+    var supports = !!root &amp;&amp; !!root.document &amp;&amp; !!root.document.querySelector &amp;&amp; !!root.addEventListener // Feature test
+    if (typeof window === 'undefined' &amp;&amp; !supports) {
+        return
+    }
+    var headingsArray
+
+    // From: https://github.com/Raynos/xtend
+    var hasOwnProperty = Object.prototype.hasOwnProperty
+    function extend() {
+        var target = {}
+        for (var i = 0; i &lt; arguments.length; i++) {
+            var source = arguments[i]
+            for (var key in source) {
+                if (hasOwnProperty.call(source, key)) {
+                    target[key] = source[key]
+                }
+            }
+        }
+        return target
+    }
+
+    // From: https://remysharp.com/2010/07/21/throttling-function-calls
+    function throttle(fn, threshhold, scope) {
+        threshhold || (threshhold = 250)
+        var last
+        var deferTimer
+        return function () {
+            var context = scope || this
+            var now = +new Date()
+            var args = arguments
+            if (last &amp;&amp; now &lt; last + threshhold) {
+                // hold on to it
+                clearTimeout(deferTimer)
+                deferTimer = setTimeout(function () {
+                    last = now
+                    fn.apply(context, args)
+                }, threshhold)
+            } else {
+                last = now
+                fn.apply(context, args)
+            }
+        }
+    }
+
+    function getContentElement(options) {
+        try {
+            return options.contentElement || document.querySelector(options.contentSelector)
+        } catch (e) {
+            console.warn('Contents element not found: ' + options.contentSelector) // eslint-disable-line
+            return null
+        }
+    }
+
+    function getTocElement(options) {
+        try {
+            return options.tocElement || document.querySelector(options.tocSelector)
+        } catch (e) {
+            console.warn('TOC element not found: ' + options.tocSelector) // eslint-disable-line
+            return null
+        }
+    }
+
+    /**
+     * Destroy tocbot.
+     */
+    tocbot.destroy = function () {
+        var tocElement = getTocElement(options)
+        if (tocElement === null) {
+            return
+        }
+
+        if (!options.skipRendering) {
+            // Clear HTML.
+            if (tocElement) {
+                tocElement.innerHTML = ''
+            }
+        }
+
+        // Remove event listeners.
+        if (options.scrollContainer &amp;&amp; document.querySelector(options.scrollContainer)) {
+            document.querySelector(options.scrollContainer).removeEventListener('scroll', this._scrollListener, false)
+            document.querySelector(options.scrollContainer).removeEventListener('resize', this._scrollListener, false)
+        } else {
+            document.removeEventListener('scroll', this._scrollListener, false)
+            document.removeEventListener('resize', this._scrollListener, false)
+        }
+    }
+
+    /**
+     * Initialize tocbot.
+     * @param {object} customOptions
+     */
+    tocbot.init = function (customOptions) {
+        // feature test
+        if (!supports) {
+            return
+        }
+
+        // Merge defaults with user options.
+        // Set to options variable at the top.
+        options = extend(defaultOptions, customOptions || {})
+        this.options = options
+        this.state = {}
+
+        // Init smooth scroll if enabled (default).
+        if (options.scrollSmooth) {
+            options.duration = options.scrollSmoothDuration
+            options.offset = options.scrollSmoothOffset
+        }
+
+        // Pass options to these modules.
+        buildHtml = BuildHtml(options)
+        parseContent = ParseContent(options)
+
+        // For testing purposes.
+        this._buildHtml = buildHtml
+        this._parseContent = parseContent
+        this._headingsArray = headingsArray
+        this.updateTocListActiveElement = buildHtml.updateListActiveElement
+
+        // Destroy it if it exists first.
+        tocbot.destroy()
+
+        var contentElement = getContentElement(options)
+        if (contentElement === null) {
+            return
+        }
+
+        var tocElement = getTocElement(options)
+        if (tocElement === null) {
+            return
+        }
+
+        // Get headings array.
+        headingsArray = parseContent.selectHeadings(contentElement, options.headingSelector)
+        // Return if no headings are found.
+        if (headingsArray === null) {
+            return
+        }
+
+        // Build nested headings array.
+        var nestedHeadingsObj = parseContent.nestHeadingsArray(headingsArray)
+        var nestedHeadings = nestedHeadingsObj.nest
+
+        // Render.
+        if (!options.skipRendering) {
+            buildHtml.render(tocElement, nestedHeadings)
+        }
+
+        // Update Sidebar and bind listeners.
+        this._scrollListener = throttle(function (e) {
+            buildHtml.updateToc(headingsArray)
+            !options.disableTocScrollSync &amp;&amp; updateTocScroll(options)
+            var isTop = e &amp;&amp; e.target &amp;&amp; e.target.scrollingElement &amp;&amp; e.target.scrollingElement.scrollTop === 0
+            if ((e &amp;&amp; (e.eventPhase === 0 || e.currentTarget === null)) || isTop) {
+                buildHtml.updateToc(headingsArray)
+                if (options.scrollEndCallback) {
+                    options.scrollEndCallback(e)
+                }
+            }
+        }, options.throttleTimeout)
+        this._scrollListener()
+        if (options.scrollContainer &amp;&amp; document.querySelector(options.scrollContainer)) {
+            document.querySelector(options.scrollContainer).addEventListener('scroll', this._scrollListener, false)
+            document.querySelector(options.scrollContainer).addEventListener('resize', this._scrollListener, false)
+        } else {
+            document.addEventListener('scroll', this._scrollListener, false)
+            document.addEventListener('resize', this._scrollListener, false)
+        }
+
+        return this
+    }
+
+    /**
+     * Refresh tocbot.
+     */
+    tocbot.refresh = function (customOptions) {
+        tocbot.destroy()
+        tocbot.init(customOptions || this.options)
+    }
+
+    // Make tocbot available globally.
+    root.tocbot = tocbot
+
+    return tocbot
+})</code></pre></article></section><footer class="footer" id="PeOAagUepe"><div class="wrapper"><div style="margin-bottom:.5rem">clean-jsdoc-theme</div>Fork: <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme">https://github.com/ankitskvmdam/clean-jsdoc-theme</a></div></footer></div></div></div><div class="search-container" id="PkfLWpAbet" style="display:none"><div class="wrapper" id="iCxFxjkHbP"><button class="icon-button search-close-button" id="VjLlGakifb" aria-label="close search"><svg><use xlink:href="#close-icon"></use></svg></button><div class="search-box-c"><svg><use xlink:href="#search-icon"></use></svg> <input type="text" id="vpcKVYIppa" class="search-input" placeholder="Search..." autofocus></div><div class="search-result-c" id="fWwVHRuDuN"><span class="search-result-c-text">Type anything to view search result</span></div></div></div><div class="mobile-menu-icon-container"><button class="icon-button" id="mobile-menu" data-isopen="false" aria-label="menu"><svg><use xlink:href="#menu-icon"></use></svg></button></div><div id="mobile-sidebar" class="mobile-sidebar-container"><div class="mobile-sidebar-wrapper"><a href="/" class="sidebar-title sidebar-title-anchor">clean-jsdoc-theme</a><div class="mobile-nav-links"><div class="navbar-item"><a id="github-mobile" href="https://github.com/ankitskvmdam/clean-jsdoc-theme" target="">Github</a></div><div class="navbar-item"><a id="npm-mobile" href="https://www.npmjs.com/package/clean-jsdoc-theme" target="">npm</a></div></div><div class="mobile-sidebar-items-c"><div class="sidebar-section-title with-arrow" data-isopen="false" id="Ofa5L9UikqAowa8jlkq_2"><div>Modules</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="module-SqlJs.html">SqlJs</a></div><div class="sidebar-section-children"><a href="module-bookshelf.html">bookshelf</a></div><div class="sidebar-section-children"><a href="module-color_mixer.html">color/mixer</a></div></div><div class="sidebar-section-title with-arrow" data-isopen="false" id="qkUBJXVKGpR08Xp4YJchF"><div>Classes</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="Alive.html">Alive</a></div><div class="sidebar-section-children"><a href="Apple.html">Apple</a></div><div class="sidebar-section-children"><a href="Database.html">Database</a></div><div class="sidebar-section-children"><a href="Energy.html">Energy</a></div><div class="sidebar-section-children"><a href="Environment.html">Environment</a></div><div class="sidebar-section-children"><a href="HTMLRenderer.html">HTMLRenderer</a></div><div class="sidebar-section-children"><a href="MultiRegex.html">MultiRegex</a></div><div class="sidebar-section-children"><a href="Response.html">Response</a></div><div class="sidebar-section-children"><a href="Statement.html">Statement</a></div><div class="sidebar-section-children"><a href="StatementIterator.html">StatementIterator</a></div><div class="sidebar-section-children"><a href="Test.html">Test</a></div><div class="sidebar-section-children"><a href="TokenTree.html">TokenTree</a></div><div class="sidebar-section-children"><a href="TokenTreeEmitter.html">TokenTreeEmitter</a></div><div class="sidebar-section-children"><a href="Tree.html">Tree</a></div><div class="sidebar-section-children"><a href="World.html">World</a></div><div class="sidebar-section-children"><a href="module-bookshelf.Book.html">Book</a></div></div><div class="sidebar-section-title with-arrow" data-isopen="false" id="Yg2NIZ7gZAVYDpwBiSpWc"><div>Events</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="Apple.html#event:beEaten">beEaten</a></div><div class="sidebar-section-children"><a href="Environment.html#event:beforeDestroy">beforeDestroy</a></div></div><div class="sidebar-section-title with-arrow" data-isopen="false" id="0cKvNCKdn6bUveR30ps7o"><div>Tutorials</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="tutorial-Alive_.html">Alive</a></div><div class="sidebar-section-children"><a href="tutorial-Apple_.html">Apple</a></div><div class="sidebar-section-children"><a href="tutorial-Environment_.html">Environment</a></div><div class="sidebar-section-children"><a href="tutorial-Other.html">Other</a></div></div><div class="sidebar-section-title with-arrow" data-isopen="false" id="zT62BMhamVKWgfbTSJUzF"><div>Global</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="global.html#%2522on:begin%2522">"on:begin"</a></div><div class="sidebar-section-children"><a href="global.html#%2522on:begin%2522">"on:begin"</a></div><div class="sidebar-section-children"><a href="global.html#%2522on:end%2522">"on:end"</a></div><div class="sidebar-section-children"><a href="global.html#EnergyUnit">EnergyUnit</a></div><div class="sidebar-section-children"><a href="global.html#EnvironmentConfiguration">EnvironmentConfiguration</a></div><div class="sidebar-section-children"><a href="global.html#Renderer">Renderer</a></div><div class="sidebar-section-children"><a href="global.html#SqlJs">SqlJs</a></div><div class="sidebar-section-children"><a href="global.html#SqlJsConfig">SqlJsConfig</a></div><div class="sidebar-section-children"><a href="global.html#copy">copy</a></div><div class="sidebar-section-children"><a href="global.html#e">e</a></div><div class="sidebar-section-children"><a href="global.html#fibonacci">fibonacci</a></div><div class="sidebar-section-children"><a href="global.html#getAccordionIdsFromLocalStorage">getAccordionIdsFromLocalStorage</a></div><div class="sidebar-section-children"><a href="global.html#initSqlJs">initSqlJs</a></div><div class="sidebar-section-children"><a href="global.html#removeAccordionIdFromLocalStorage">removeAccordionIdFromLocalStorage</a></div><div class="sidebar-section-children"><a href="global.html#setAccordionIdToLocalStorage">setAccordionIdToLocalStorage</a></div></div></div><div class="mobile-navbar-actions"><div class="navbar-right-item"><button class="icon-button search-button" aria-label="open-search"><svg><use xlink:href="#search-icon"></use></svg></button></div><div class="navbar-right-item"><button class="icon-button theme-toggle" aria-label="toggle-theme"><svg><use class="theme-svg-use" xlink:href="#light-theme-icon"></use></svg></button></div><div class="navbar-right-item"><button class="icon-button font-size" aria-label="change-font-size"><svg><use xlink:href="#font-size-icon"></use></svg></button></div></div></div></div><script type="text/javascript" src="scripts/core.min.js"></script><script src="scripts/search.min.js" defer="defer"></script><script src="scripts/third-party/fuse.js" defer="defer"></script><script type="text/javascript">var tocbotInstance=tocbot.init({tocSelector:"#eed4d2a0bfd64539bb9df78095dec881",contentSelector:".main-content",headingSelector:"h1, h2, h3",hasInnerContainers:!0,scrollContainer:".main-content",headingsOffset:130,onClick:bringLinkToView})</script></body></html>
