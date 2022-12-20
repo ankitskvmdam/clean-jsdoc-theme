@@ -1,7 +1,7 @@
 const _ = require('lodash');
 const commonPathPrefix = require('common-path-prefix');
 const env = require('jsdoc/env');
-const fs = require('jsdoc/fs');
+const fs = require('fs-extra');
 const helper = require('jsdoc/util/templateHelper');
 const logger = require('jsdoc/util/logger');
 const path = require('jsdoc/path');
@@ -27,6 +27,7 @@ const {
     returnPathOfStyleSrc,
     copyStaticFolder,
     getProcessedYield,
+    lsSync,
 } = require('./clean-jsdoc-theme-helper');
 
 const {
@@ -49,10 +50,17 @@ const hasSearch =
     themeOpts.search === undefined ? true : Boolean(themeOpts.search);
 
 // eslint-disable-next-line no-restricted-globals
-let outdir = path.normalize(env.opts.destination);
+let outdir = path.resolve(path.normalize(env.opts.destination));
 
-// copy static folders
-copyStaticFolder(themeOpts, outdir);
+function mkdirSync(filepath) {
+    return fs.mkdirSync(filepath, { recursive: true });
+}
+
+function sourceToDestination(parentDir, sourcePath, destDir) {
+    const relativeSource = path.relative(parentDir, sourcePath);
+
+    return path.resolve(path.join(destDir, relativeSource));
+}
 
 function find(spec) {
     return helper.find(data, spec);
@@ -729,17 +737,21 @@ exports.publish = function (taffyData, opts, tutorials) {
     if (packageInfo && packageInfo.name) {
         outdir = path.join(outdir, packageInfo.name, packageInfo.version || '');
     }
-    fs.mkPath(outdir);
+    mkdirSync(outdir);
+
+
+    // copy external static folders
+    copyStaticFolder(themeOpts, outdir);
 
     // copy the template's static files to outdir
     fromDir = path.join(templatePath, 'static');
-    staticFiles = fs.ls(fromDir, 3);
+    staticFiles = lsSync(fromDir);
 
     staticFiles.forEach((fileName) => {
-        const toDir = fs.toDir(fileName.replace(fromDir, outdir));
+        const toPath = sourceToDestination(fromDir, fileName, outdir);
 
-        fs.mkPath(toDir);
-        fs.copyFileSync(fileName, toDir);
+        mkdirSync(path.dirname(toPath));
+        fs.copyFileSync(fileName, toPath);
     });
 
     // copy user-specified static files to outdir
@@ -764,11 +776,10 @@ exports.publish = function (taffyData, opts, tutorials) {
             );
 
             extraStaticFiles.forEach((fileName) => {
-                const sourcePath = fs.toDir(filePath);
-                const toDir = fs.toDir(fileName.replace(sourcePath, outdir));
+                const toPath = sourceToDestination(fromDir, fileName, outdir);
 
-                fs.mkPath(toDir);
-                fs.copyFileSync(fileName, toDir);
+                mkdirSync(path.dirname(toPath));
+                fs.copyFileSync(fileName, toPath);
             });
         });
     }
@@ -869,7 +880,7 @@ exports.publish = function (taffyData, opts, tutorials) {
     // added by clean-jsdoc-theme-devs
     // output search file if search
     if (hasSearch) {
-        fs.mkPath(path.join(outdir, 'data'));
+        mkdirSync(path.join(outdir, 'data'));
         fs.writeFileSync(
             path.join(outdir, 'data', 'search.json'),
             JSON.stringify({
