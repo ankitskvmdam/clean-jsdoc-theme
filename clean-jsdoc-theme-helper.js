@@ -1,25 +1,38 @@
+const has = require('lodash/has');
+const klawSync = require('klaw-sync');
 const path = require('path')
-const fs = require('fs')
 const fse = require('fs-extra')
 const showdown = require('showdown');
 
-
 const mdToHTMLConverter = new showdown.Converter();
 
-function copyToOutputFolder(filePath, outdir) {
-    var filePathNormalized = path.normalize(filePath);
+function lsSync(dir, opts = {}) {
+    const depth = has(opts, 'depth') ? opts.depth : -1;
 
-    fs.copyFileSync(filePathNormalized, outdir);
+    const files = klawSync(dir, {
+        depthLimit: depth,
+        filter: (f) => !path.basename(f.path).startsWith('.'),
+        nodir: true,
+    });
+
+    return files.map((f) => f.path);
+};
+
+function copyToOutputFolder(filePath, outdir) {
+    const resolvedPath = path.resolve(filePath);
+    const filename = path.basename(resolvedPath);
+    const out = path.join(outdir, filename);
+
+    fse.copyFileSync(resolvedPath, out);
 }
 
 function copyToOutputFolderFromArray(filePathArray, outdir) {
-    var i = 0;
-    var outputList = [];
+    const outputList = [];
 
     if (Array.isArray(filePathArray)) {
-        for (; i < filePathArray.length; i++) {
-            copyToOutputFolder(filePathArray[i], outdir);
-            outputList.push(path.basename(filePathArray[i]));
+        for (const filePath of filePathArray) {
+            copyToOutputFolder(filePath, outdir);
+            outputList.push(path.basename(filePath));
         }
     }
 
@@ -119,13 +132,13 @@ function getBaseURL(themeOpts) {
 }
 
 function copyStaticFolder(themeOpts, outdir) {
-    var staticDir = themeOpts.static_dir || undefined;
+    const staticDir = themeOpts.static_dir || undefined;
 
     if (staticDir) {
-        for (var i = 0; i < staticDir.length; i++) {
-            var output = path.join(outdir, staticDir[i]);
+        for (const dir of staticDir) {
+            const output = path.join(outdir, dir);
 
-            fse.copySync(staticDir[i], output);
+            fse.copySync(dir, output);
         }
     }
 }
@@ -164,4 +177,5 @@ module.exports = {
     returnPathOfStyleSrc,
     copyStaticFolder,
     getProcessedYield,
+    lsSync
 }
