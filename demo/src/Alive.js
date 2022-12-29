@@ -33,6 +33,14 @@ class Alive {
         }
     }
     /**
+     * A constant.
+     * @readonly
+     * @deprecated This is no longer used
+     * @const {number}
+     */
+    FOO = 1;
+
+    /**
      * @param {array<object|function|array|number|string|undefined|null|Symbol|boolean|Energy>} life This is an array of many things.
      * @return {Energy} the energy wasted in this surviving instance
      * @link https://developer.mozilla.org/en-US/docs/Web/API/Element/contextmenu_event context-menu
@@ -58,3 +66,21 @@ class Alive {
         return null;
     }
 }
+
+/**
+ * Options for ordering a delicious slice of pie.
+ * @namespace
+ */
+var pieOptions = {
+    /**
+     * Plain.
+     */
+    plain: 'pie',
+    /**
+     * A la mode.
+     * @readonly
+     */
+    get aLaMode() {
+        return this.plain + ' with ice cream';
+    }
+};
