@@ -101,7 +101,7 @@ function needsSignature({ kind, type, meta }) {
 
     // typedefs that contain functions get a signature, too
     else if (kind === 'typedef' && type && type.names && type.names.length) {
-        for (var i = 0, l = type.names.length; i < l; i++) {
+        for (let i = 0, l = type.names.length; i < l; i++) {
             if (type.names[i].toLowerCase() === 'function') {
                 needsSig = true;
                 break;
@@ -179,7 +179,7 @@ function buildAttribsString(attribs) {
     let attribsString = '';
 
     if (attribs && attribs.length) {
-        htmlsafe(`(${attribs.join(', ')}) `);
+        attribsString = htmlsafe(`(${attribs.join(', ')}) `);
     }
 
     return attribsString;
@@ -232,7 +232,8 @@ function addSignatureReturns(f) {
         )}}`;
     }
 
-    var signatureOutput = '';
+
+    let signatureOutput = '';
 
     if (f.signature) {
         signatureOutput =
@@ -244,6 +245,7 @@ function addSignatureReturns(f) {
     }
 
     f.signature = signatureOutput;
+
 }
 
 function addSignatureTypes(f) {
@@ -409,7 +411,7 @@ function buildSidebarMembers({
                 children: [],
             };
 
-            var methods =
+            const methods =
                 sectionName === SECTION_TYPE.Tutorials ||
                     sectionName === SECTION_TYPE.Global
                     ? []
@@ -444,11 +446,11 @@ function buildSidebarMembers({
 
                         currentItem.children.push(itemChild);
 
-                        var name = method.longname.split(
+                        let name = method.longname.split(
                             method.scope === 'static' ? '.' : '#'
                         );
-                        var first = name[0];
-                        var last = name[1];
+                        const first = name[0];
+                        const last = name[1];
 
                         name = first + ' &rtrif; ' + last;
 
@@ -510,11 +512,11 @@ function buildNavbar() {
  * @return {string} The HTML for the navigation sidebar.
  */
 function buildSidebar(members) {
-    var title = themeOpts.title || 'Home';
+    const title = themeOpts.title || 'Home';
 
-    var isHTML = RegExp.prototype.test.bind(/(<([^>]+)>)/i);
+    const isHTML = RegExp.prototype.test.bind(/(<([^>]+)>)/i);
 
-    var nav = {
+    const nav = {
         sections: [],
     };
 
@@ -530,13 +532,13 @@ function buildSidebar(members) {
         };
     }
 
-    var seen = {};
-    var seenTutorials = {};
-    var seenGlobal = {};
+    const seen = {};
+    const seenTutorials = {};
+    const seenGlobal = {};
 
-    var sectionsOrder = themeOpts.sections || defaultSections;
+    const sectionsOrder = themeOpts.sections || defaultSections;
 
-    var sections = {
+    const sections = {
         [SECTION_TYPE.Modules]: buildSidebarMembers({
             itemHeading: 'Modules',
             items: members.modules,
@@ -614,7 +616,7 @@ function buildSidebar(members) {
         if (SECTION_TYPE[section] !== undefined) {
             nav.sections.push(sections[section]);
         } else {
-            var errorMsg = `While building nav. Section name: ${section} is not recognized.
+            const errorMsg = `While building nav. Section name: ${section} is not recognized.
             Accepted sections are: ${defaultSections.join(', ')} 
             `;
 
