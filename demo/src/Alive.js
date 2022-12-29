@@ -36,7 +36,6 @@ class Alive {
      * A constant.
      * @readonly
      * @deprecated This is no longer used
-     * @const {number}
      */
     FOO = 1;
 
