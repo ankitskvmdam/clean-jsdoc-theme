@@ -1,4 +1,19 @@
 /**
+* This object represents one size of a photo or a [file](https://core.telegram.org/bots/api/#document)
+* / [sticker](https://core.telegram.org/bots/api/#sticker)
+* thumbnail.
+
+* @typedef {object} PhotoSize
+* @property {string} file_id Identifier for this file, which can be used to download or reuse the file
+* @property {string} file_unique_id Unique identifier for this file, which is supposed to be the same over time and
+*   for different bots. Can't be used to download or reuse the file.
+* @property {number} width Photo width
+* @property {number} height Photo height
+* @property {number} [file_size] *Optional*. File size in bytes
+* @see https://core.telegram.org/bots/api/#photosize
+*/
+
+/**
  * @summary
  * This is a short summary of the `Alive` class. These texts are just acting
  * as filler texts for summary.
