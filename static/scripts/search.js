@@ -105,16 +105,19 @@ function onClickSearchItem(event) {
 
 function buildSearchResult(result) {
   let output = '';
-
+  const removeHTMLTagsRegExp = /(<([^>]+)>)/ig;
+  
   for (const res of result) {
-    const { title, description } = res.item;
+    const { title = '', description = '' } = res.item;
 
-    const link = res.item.link.replace('<a href="', '').replace(/">.*/, '');
+    const _link = res.item.link.replace('<a href="', '').replace(/">.*/, '');
+    const _title = title.replace(removeHTMLTagsRegExp, "");
+    const _description = description.replace(removeHTMLTagsRegExp, "");
 
     output += `
-    <a onclick="onClickSearchItem(event)" href="${link}" class="search-result-item">
-      <div class="search-result-item-title">${title}</div>
-      <div class="search-result-item-p">${description || 'No description available.'}</div>
+    <a onclick="onClickSearchItem(event)" href="${_link}" class="search-result-item">
+      <div class="search-result-item-title">${_title}</div>
+      <div class="search-result-item-p">${_description || 'No description available.'}</div>
     </a>
     `;
   }
