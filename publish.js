@@ -778,7 +778,7 @@ exports.publish = function (taffyData, opts, tutorials) {
             );
 
             extraStaticFiles.forEach((fileName) => {
-                const toPath = sourceToDestination(fromDir, fileName, outdir);
+                const toPath = sourceToDestination(filePath, fileName, outdir);
 
                 mkdirSync(path.dirname(toPath));
                 fs.copyFileSync(fileName, toPath);
