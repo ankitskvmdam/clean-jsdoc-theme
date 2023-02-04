@@ -45,7 +45,10 @@ const themeOpts = (env && env.opts && env.opts.theme_opts) || {};
 
 let data;
 let view;
-const searchListArray = [];
+/**
+ * @type {Array<{title: string, link: string, description: string}>}
+ */
+const searchList = [];
 const hasSearch =
     themeOpts.search === undefined ? true : Boolean(themeOpts.search);
 
@@ -232,7 +235,6 @@ function addSignatureReturns(f) {
         )}}`;
     }
 
-
     let signatureOutput = '';
 
     if (f.signature) {
@@ -245,7 +247,6 @@ function addSignatureReturns(f) {
     }
 
     f.signature = signatureOutput;
-
 }
 
 function addSignatureTypes(f) {
@@ -413,29 +414,21 @@ function buildSidebarMembers({
 
             const methods =
                 sectionName === SECTION_TYPE.Tutorials ||
-                    sectionName === SECTION_TYPE.Global
+                sectionName === SECTION_TYPE.Global
                     ? []
                     : find({
-                        kind: 'function',
-                        memberof: item.longname,
-                        inherited: {
-                            '!is': Boolean(themeOpts.exclude_inherited),
-                        },
-                    });
+                          kind: 'function',
+                          memberof: item.longname,
+                          inherited: {
+                              '!is': Boolean(themeOpts.exclude_inherited),
+                          },
+                      });
 
             if (!hasOwnProp.call(itemsSeen, item.longname)) {
                 currentItem.anchor = linktoFn(
                     item.longname,
                     item.name.replace(/^module:/, '')
                 );
-
-                if (hasSearch) {
-                    searchListArray.push({
-                        title: item.name,
-                        link: linktoFn(item.longname, item.name),
-                        description: item.description,
-                    });
-                }
 
                 if (methods.length) {
                     methods.forEach(function (method) {
@@ -445,22 +438,6 @@ function buildSidebarMembers({
                         };
 
                         currentItem.children.push(itemChild);
-
-                        let name = method.longname.split(
-                            method.scope === 'static' ? '.' : '#'
-                        );
-                        const first = name[0];
-                        const last = name[1];
-
-                        name = first + ' &rtrif; ' + last;
-
-                        if (hasSearch) {
-                            searchListArray.push({
-                                title: method.longname,
-                                link: linktoFn(method.longname, name),
-                                description: item.classdesc,
-                            });
-                        }
                     });
                 }
                 itemsSeen[item.longname] = true;
@@ -471,6 +448,20 @@ function buildSidebarMembers({
     }
 
     return navProps;
+}
+
+function buildSearchListForData() {
+    data().each((item) => {
+        if (item.kind !== 'package' && !item.inherited) {
+            const description = (item.description || '').substr(0, 100)
+
+            searchList.push({
+                title: item.longname,
+                link: linkto(item.longname, item.name),
+                description
+            })
+        }
+    });
 }
 
 function linktoTutorial(longName, name) {
@@ -741,7 +732,6 @@ exports.publish = function (taffyData, opts, tutorials) {
     }
     mkdirSync(outdir);
 
-
     // copy external static folders
     copyStaticFolder(themeOpts, outdir);
 
@@ -879,18 +869,6 @@ exports.publish = function (taffyData, opts, tutorials) {
         members.modules
     );
 
-    // added by clean-jsdoc-theme-devs
-    // output search file if search
-    if (hasSearch) {
-        mkdirSync(path.join(outdir, 'data'));
-        fs.writeFileSync(
-            path.join(outdir, 'data', 'search.json'),
-            JSON.stringify({
-                list: searchListArray,
-            })
-        );
-    }
-
     // generate the pretty-printed source files first so other pages can link to them
     if (outputSourceFiles) {
         generateSourceFiles(sourceFiles, opts.encoding);
@@ -905,7 +883,8 @@ exports.publish = function (taffyData, opts, tutorials) {
     packages = find({ kind: 'package' });
     // added by clean-jsdoc-theme-devs
     const homepageTitle = themeOpts.homepageTitle || 'Home';
-    const includeFilesListInHomepage = themeOpts.includeFilesListInHomepage || false
+    const includeFilesListInHomepage =
+        themeOpts.includeFilesListInHomepage || false;
 
     generate(
         homepageTitle,
@@ -1008,6 +987,45 @@ exports.publish = function (taffyData, opts, tutorials) {
             htmlMinify.minify(html, HTML_MINIFY_OPTIONS),
             'utf8'
         );
+
+        // added by clean-jsdoc-theme-devs
+        // adding support for tutorial
+        if(!hasSearch) return
+
+        try{
+            const baseName = path.basename(tutorialPath)
+            let body = /<body.*?>([\s\S]*)<\/body>/.exec(tutorialData.content)
+            let description = ''
+
+            if(!Array.isArray(body)) {
+                body = /<article.*?>([\s\S]*)<\/article>/.exec(tutorialData.content)
+            }
+
+            if(Array.isArray(body) && typeof body[1] === 'string') {
+                description = body[1]
+                // Replacing all html tags
+                .replace(/(<([^>]+)>)/g, '')
+                // Replacing all kind of line breaks
+                .replace(/(\r\n|\n|\r)/gm, " ")
+                // Replacing all multi spaces with single space
+                .replace(/\s+/gm, ' ')
+                // Taking only first 100 characters
+                .substring(0, 100)
+            }
+
+            if(typeof baseName === 'string' && baseName) {
+                searchList.push({
+                    title: tutorialData.header,
+                    link: `<a href="${baseName}">${baseName}</a>`,
+                    description,
+                })
+            }
+
+
+        } catch(error) {
+            console.error('There was some error while creating search array for tutorial.')
+            console.error(error)
+        }
     }
 
     // tutorials can have only one parent so there is no risk for loops
@@ -1023,4 +1041,17 @@ exports.publish = function (taffyData, opts, tutorials) {
     }
 
     saveChildren(tutorials);
+
+    // added by clean-jsdoc-theme-devs
+    // output search file if search
+    if (hasSearch) {
+        buildSearchListForData()
+        mkdirSync(path.join(outdir, 'data'));
+        fs.writeFileSync(
+            path.join(outdir, 'data', 'search.json'),
+            JSON.stringify({
+                list: searchList,
+            })
+        );
+    }
 };
