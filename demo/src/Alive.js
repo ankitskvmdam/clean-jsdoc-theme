@@ -96,5 +96,13 @@ var pieOptions = {
      */
     get aLaMode() {
         return this.plain + ' with ice cream';
+    },
+
+    /**
+     * This is just a namespace functions.
+     * @param {number} args 
+     */
+    aNamespaceFunction(args) {
+
     }
 };
