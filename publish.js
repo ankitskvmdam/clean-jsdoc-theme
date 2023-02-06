@@ -270,6 +270,13 @@ function shortenPaths(files, commonPrefix) {
             .replace(commonPrefix, '')
             // always use forward slashes
             .replace(/\\/g, '/');
+
+        // attempt to shorten even if the common prefix is not available
+        if (commonPathPrefix === '') {
+            const attempt = files[file].shortened.split('/').pop();
+
+            if (attempt) files[file].shortened = attempt;
+        }
     });
 
     return files;
@@ -453,13 +460,13 @@ function buildSidebarMembers({
 function buildSearchListForData() {
     data().each((item) => {
         if (item.kind !== 'package' && !item.inherited) {
-            const description = (item.description || '').substr(0, 100)
+            const description = (item.description || '').substr(0, 100);
 
             searchList.push({
                 title: item.longname,
                 link: linkto(item.longname, item.name),
-                description
-            })
+                description,
+            });
         }
     });
 }
@@ -990,41 +997,43 @@ exports.publish = function (taffyData, opts, tutorials) {
 
         // added by clean-jsdoc-theme-devs
         // adding support for tutorial
-        if(!hasSearch) return
+        if (!hasSearch) return;
 
-        try{
-            const baseName = path.basename(tutorialPath)
-            let body = /<body.*?>([\s\S]*)<\/body>/.exec(tutorialData.content)
-            let description = ''
+        try {
+            const baseName = path.basename(tutorialPath);
+            let body = /<body.*?>([\s\S]*)<\/body>/.exec(tutorialData.content);
+            let description = '';
 
-            if(!Array.isArray(body)) {
-                body = /<article.*?>([\s\S]*)<\/article>/.exec(tutorialData.content)
+            if (!Array.isArray(body)) {
+                body = /<article.*?>([\s\S]*)<\/article>/.exec(
+                    tutorialData.content
+                );
             }
 
-            if(Array.isArray(body) && typeof body[1] === 'string') {
+            if (Array.isArray(body) && typeof body[1] === 'string') {
                 description = body[1]
-                // Replacing all html tags
-                .replace(/(<([^>]+)>)/g, '')
-                // Replacing all kind of line breaks
-                .replace(/(\r\n|\n|\r)/gm, " ")
-                // Replacing all multi spaces with single space
-                .replace(/\s+/gm, ' ')
-                // Taking only first 100 characters
-                .substring(0, 100)
+                    // Replacing all html tags
+                    .replace(/(<([^>]+)>)/g, '')
+                    // Replacing all kind of line breaks
+                    .replace(/(\r\n|\n|\r)/gm, ' ')
+                    // Replacing all multi spaces with single space
+                    .replace(/\s+/gm, ' ')
+                    // Taking only first 100 characters
+                    .substring(0, 100);
             }
 
-            if(typeof baseName === 'string' && baseName) {
+            if (typeof baseName === 'string' && baseName) {
                 searchList.push({
                     title: tutorialData.header,
                     link: `<a href="${baseName}">${baseName}</a>`,
                     description,
-                })
+                });
             }
-
-
-        } catch(error) {
-            console.error('There was some error while creating search array for tutorial.')
-            console.error(error)
+        } catch (error) {
+            console.error(
+                'There was some error while creating search array for tutorial.'
+            );
+            console.error(error);
         }
     }
 
@@ -1045,7 +1054,7 @@ exports.publish = function (taffyData, opts, tutorials) {
     // added by clean-jsdoc-theme-devs
     // output search file if search
     if (hasSearch) {
-        buildSearchListForData()
+        buildSearchListForData();
         mkdirSync(path.join(outdir, 'data'));
         fs.writeFileSync(
             path.join(outdir, 'data', 'search.json'),
@@ -1055,3 +1064,4 @@ exports.publish = function (taffyData, opts, tutorials) {
         );
     }
 };
+
