@@ -46,7 +46,6 @@
     },
     "dependencies": {
         "@jsdoc/salty": "^0.2.2",
-        "common-path-prefix": "^3.0.0",
         "fs-extra": "^10.1.0",
         "html-minifier": "^4.0.0",
         "klaw-sync": "^6.0.0",

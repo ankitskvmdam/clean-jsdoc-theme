@@ -1,5 +1,4 @@
 const _ = require('lodash');
-const commonPathPrefix = require('common-path-prefix');
 const env = require('jsdoc/env');
 const fs = require('fs-extra');
 const helper = require('jsdoc/util/templateHelper');
@@ -779,7 +778,7 @@ exports.publish = function (taffyData, opts, tutorials) {
     if (sourceFilePaths.length) {
         sourceFiles = shortenPaths(
             sourceFiles,
-            commonPathPrefix(sourceFilePaths)
+            path.commonPrefix(sourceFilePaths)
         );
     }
 
