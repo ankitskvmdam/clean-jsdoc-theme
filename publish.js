@@ -452,12 +452,10 @@ function buildSidebarMembers({
 function buildSearchListForData() {
     data().each((item) => {
         if (item.kind !== 'package' && !item.inherited) {
-            const description = (item.description || '').substr(0, 100)
-
             searchList.push({
                 title: item.longname,
                 link: linkto(item.longname, item.name),
-                description
+                description: item.description
             })
         }
     });
