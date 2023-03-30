@@ -417,6 +417,17 @@ To include js files. Example:
 It will include the js files to the output dir and also attach a script tag to the html pointing to the included js
 file.
 
+### To ignore sorting
+
+To ignore the sorting of members/methods/event in the navbar and in the page. If it is `false` then the order of
+members/methods/events will be in the order they are in code/source.
+
+```json
+"theme_opts": {
+  "sort": false
+}
+```
+
 ### Footer
 
 ```json
@@ -459,6 +470,7 @@ This will remove all symbols (members, methods ...) that come from inherited par
 | `sections`                   | `["Modules", "Classes", "Externals", "Events", "Namespaces", "Mixins", "Tutorials", "Interfaces", "Global"]` | To order navbar/sidebar sections or to hide/remove navbar/sidebar sections | `Array<SECTION_TYPE>` |
 | `displayModuleHeader`        | `false`                                                                                                      | If you want the module name to appear on its page                          | `boolean`             |
 | `includeFilesListInHomepage` | `false`                                                                                                      | If you want to add or remove the list of files in homepage                 | `boolean`             |
+| `sort`                       | `true`                                                                                                       | To sort the output members/methods/events                                  | `boolean`             |
 
 Don't forget to add the following in your jsdoc config file, otherwise toc will not work on some pages.
 

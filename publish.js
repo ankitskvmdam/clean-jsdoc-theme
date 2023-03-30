@@ -669,7 +669,12 @@ exports.publish = function (taffyData, opts, tutorials) {
     helper.setTutorials(tutorials);
 
     data = helper.prune(data);
-    data.sort('longname, version, since');
+
+    // eslint-disable-next-line no-extra-boolean-cast, no-implicit-coercion
+    if(themeOpts.sort !== false ) {
+        data.sort('longname, version, since');
+    }
+    
     helper.addEventListeners(data);
 
     data().each((doclet) => {
