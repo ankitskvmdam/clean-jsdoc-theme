@@ -419,7 +419,7 @@ file.
 
 ### To ignore sorting
 
-To ignore the sorting of members/methods/event in the navbar and in the page. If it is `false` then the order of
+To ignore the sorting of members/methods/event in the page. If it is `false` then the order of
 members/methods/events will be in the order they are in code/source.
 
 ```json

@@ -34,6 +34,7 @@ class Alive {
          * function test() {
          *  return world
          * }
+         * @alias AliveEnergy
          */
         this.energy = null;
         /**
