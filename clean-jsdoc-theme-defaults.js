@@ -7,7 +7,8 @@ const SECTION_TYPE = {
     Mixins: 'Mixins',
     Tutorials: 'Tutorials',
     Interfaces: 'Interfaces',
-    Global: 'Global',
+    Globals: 'Globals',
+    __unknown: '__unknown'
 };
 
 const defaultSections = [
@@ -19,7 +20,7 @@ const defaultSections = [
     SECTION_TYPE.Mixins,
     SECTION_TYPE.Tutorials,
     SECTION_TYPE.Interfaces,
-    SECTION_TYPE.Global,
+    SECTION_TYPE.Globals,
 ];
 
 const HTML_MINIFY_OPTIONS = {

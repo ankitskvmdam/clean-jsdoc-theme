@@ -48,6 +48,10 @@ let view;
  * @type {Array<{title: string, link: string, description: string}>}
  */
 const searchList = [];
+/**
+ * @type {Array<any>}
+ */
+const sectionsOrder = themeOpts.sections || defaultSections;
 const hasSearch =
     themeOpts.search === undefined ? true : Boolean(themeOpts.search);
 
@@ -449,14 +453,53 @@ function buildSidebarMembers({
     return navProps;
 }
 
+function convertItemKindToSectionType(item) {
+    const { kind, scope, memberof } = item
+
+    
+    switch (kind) {
+        case 'class':
+            return SECTION_TYPE.Classes;
+            
+        case 'external':
+            return SECTION_TYPE.Externals;
+
+        case 'event':
+            return SECTION_TYPE.Events;
+            
+        case 'mixin':
+            return SECTION_TYPE.Mixins;
+
+        case 'module':
+            return SECTION_TYPE.Modules;
+
+        case 'namespace':
+            return SECTION_TYPE.Namespaces;
+
+        case 'interface':
+            return SECTION_TYPE.Interfaces;
+
+        default:
+            if (!memberof) return SECTION_TYPE.Globals;
+            if(memberof && scope === 'instance') return SECTION_TYPE.Classes
+            if(memberof && kind === "typedef" && scope === 'static') return SECTION_TYPE.Namespaces
+            if(memberof && scope === 'static') return SECTION_TYPE.Namespaces
+
+            return SECTION_TYPE.__unknown;
+    }
+}
+
 function buildSearchListForData() {
     data().each((item) => {
         if (item.kind !== 'package' && !item.inherited) {
-            searchList.push({
-                title: item.longname,
-                link: linkto(item.longname, item.name),
-                description: item.description
-            })
+            const type = convertItemKindToSectionType(item);
+
+            if (sectionsOrder.includes(type))
+                searchList.push({
+                    title: item.longname,
+                    link: linkto(item.longname, item.name),
+                    description: item.description,
+                });
         }
     });
 }
@@ -524,8 +567,6 @@ function buildSidebar(members) {
     const seenTutorials = {};
     const seenGlobal = {};
 
-    const sectionsOrder = themeOpts.sections || defaultSections;
-
     const sections = {
         [SECTION_TYPE.Modules]: buildSidebarMembers({
             itemHeading: 'Modules',
@@ -591,8 +632,8 @@ function buildSidebar(members) {
             sectionName: SECTION_TYPE.Interfaces,
         }),
 
-        [SECTION_TYPE.Global]: buildSidebarMembers({
-            itemHeading: 'Global',
+        [SECTION_TYPE.Globals]: buildSidebarMembers({
+            itemHeading: 'Globals',
             items: members.globals,
             itemsSeen: seenGlobal,
             linktoFn: linkto,
@@ -604,8 +645,13 @@ function buildSidebar(members) {
         if (SECTION_TYPE[section] !== undefined) {
             nav.sections.push(sections[section]);
         } else {
+            if (section === 'Global') {
+                throw new Error(
+                    '"Global" is renamed to "Globals". Please use "Globals" in section list in you config.'
+                );
+            }
             const errorMsg = `While building nav. Section name: ${section} is not recognized.
-            Accepted sections are: ${defaultSections.join(', ')} 
+            Accepted sections are: ${defaultSections.join(', ')}
             `;
 
             throw new Error(errorMsg);
@@ -671,10 +717,10 @@ exports.publish = function (taffyData, opts, tutorials) {
     data = helper.prune(data);
 
     // eslint-disable-next-line no-extra-boolean-cast, no-implicit-coercion
-    if(themeOpts.sort !== false ) {
+    if (themeOpts.sort !== false) {
         data.sort('longname, version, since');
     }
-    
+
     helper.addEventListeners(data);
 
     data().each((doclet) => {
@@ -992,41 +1038,43 @@ exports.publish = function (taffyData, opts, tutorials) {
 
         // added by clean-jsdoc-theme-devs
         // adding support for tutorial
-        if(!hasSearch) return
+        if (!hasSearch) return;
 
-        try{
-            const baseName = path.basename(tutorialPath)
-            let body = /<body.*?>([\s\S]*)<\/body>/.exec(tutorialData.content)
-            let description = ''
+        try {
+            const baseName = path.basename(tutorialPath);
+            let body = /<body.*?>([\s\S]*)<\/body>/.exec(tutorialData.content);
+            let description = '';
 
-            if(!Array.isArray(body)) {
-                body = /<article.*?>([\s\S]*)<\/article>/.exec(tutorialData.content)
+            if (!Array.isArray(body)) {
+                body = /<article.*?>([\s\S]*)<\/article>/.exec(
+                    tutorialData.content
+                );
             }
 
-            if(Array.isArray(body) && typeof body[1] === 'string') {
+            if (Array.isArray(body) && typeof body[1] === 'string') {
                 description = body[1]
-                // Replacing all html tags
-                .replace(/(<([^>]+)>)/g, '')
-                // Replacing all kind of line breaks
-                .replace(/(\r\n|\n|\r)/gm, " ")
-                // Replacing all multi spaces with single space
-                .replace(/\s+/gm, ' ')
-                // Taking only first 100 characters
-                .substring(0, 100)
+                    // Replacing all html tags
+                    .replace(/(<([^>]+)>)/g, '')
+                    // Replacing all kind of line breaks
+                    .replace(/(\r\n|\n|\r)/gm, ' ')
+                    // Replacing all multi spaces with single space
+                    .replace(/\s+/gm, ' ')
+                    // Taking only first 100 characters
+                    .substring(0, 100);
             }
 
-            if(typeof baseName === 'string' && baseName) {
+            if (typeof baseName === 'string' && baseName) {
                 searchList.push({
                     title: tutorialData.header,
                     link: `<a href="${baseName}">${baseName}</a>`,
                     description,
-                })
+                });
             }
-
-
-        } catch(error) {
-            console.error('There was some error while creating search array for tutorial.')
-            console.error(error)
+        } catch (error) {
+            console.error(
+                'There was some error while creating search array for tutorial.'
+            );
+            console.error(error);
         }
     }
 
@@ -1042,18 +1090,18 @@ exports.publish = function (taffyData, opts, tutorials) {
         });
     }
 
-    saveChildren(tutorials);
+    if (sectionsOrder.includes(SECTION_TYPE.Tutorials)) {
+        saveChildren(tutorials);
+    }
 
     // added by clean-jsdoc-theme-devs
     // output search file if search
     if (hasSearch) {
-        buildSearchListForData()
+        buildSearchListForData();
         mkdirSync(path.join(outdir, 'data'));
         fs.writeFileSync(
             path.join(outdir, 'data', 'search.json'),
-            JSON.stringify({
-                list: searchList,
-            })
+            JSON.stringify(data())
         );
     }
 };
