@@ -284,6 +284,30 @@ function getPathFromDoclet({ meta }) {
         : meta.filename;
 }
 
+function createPrettyAnchor(elementType, ancestor, name, href) {
+    return `<${elementType} ${href ? `href="${href}"` : ''} class="has-anchor">
+        <span class="ancestors">
+            ${ancestor}~
+        </span>
+        ${name}
+    </${elementType}>`;
+}
+
+function completeAnchorFromItem(item) {
+    let { anchor } = item;
+
+    let anchorLink = anchor.split('href="')[1].split('"')[0]
+    let cleanLink = anchorLink.replace(/.html$/, '');
+
+    let prettyAnchor;
+
+    cleanLink.replace(/module-([^-]+)-(.*)/, (_match, modulename, methodname) => {
+        prettyAnchor = createPrettyAnchor('a', modulename, methodname, anchorLink);
+    });
+
+    return prettyAnchor || anchor;
+}
+
 function generate(title, docs, filename, resolveLinks) {
     let docData;
     let html;
@@ -870,6 +894,16 @@ exports.publish = function (taffyData, opts, tutorials) {
         find({ longname: { left: 'module:' } }),
         members.modules
     );
+
+    if (themeOpts.experimentPrettySidebar) {
+        view.sidebar.sections.forEach((section, i) => {
+            view.sidebar.sections[i].items = section.items.map(item => {
+                item.anchor = completeAnchorFromItem(item);
+
+                return item;
+            });
+        });
+     }
 
     // generate the pretty-printed source files first so other pages can link to them
     if (outputSourceFiles) {
