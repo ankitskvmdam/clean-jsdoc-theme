@@ -293,11 +293,11 @@ function createPrettyAnchor(elementType, ancestor, name, href) {
     </${elementType}>`;
 }
 
-function completeAnchorFromItem(item) {
+function prefixModuleToItemAnchor(item) {
     let { anchor } = item;
 
     let anchorLink = anchor.split('href="')[1].split('"')[0]
-    let cleanLink = anchorLink.replace(/.html$/, '');
+    let cleanLink = anchorLink.replace(/\.html$/, '');
 
     let prettyAnchor;
 
@@ -629,7 +629,7 @@ function buildSidebar(members) {
             nav.sections.push(sections[section]);
         } else {
             const errorMsg = `While building nav. Section name: ${section} is not recognized.
-            Accepted sections are: ${defaultSections.join(', ')} 
+            Accepted sections are: ${defaultSections.join(', ')}
             `;
 
             throw new Error(errorMsg);
@@ -698,7 +698,7 @@ exports.publish = function (taffyData, opts, tutorials) {
     if(themeOpts.sort !== false ) {
         data.sort('longname, version, since');
     }
-    
+
     helper.addEventListeners(data);
 
     data().each((doclet) => {
@@ -895,10 +895,10 @@ exports.publish = function (taffyData, opts, tutorials) {
         members.modules
     );
 
-    if (themeOpts.experimentPrettySidebar) {
+    if (themeOpts.prefixModuleToSidebarItems_experimental) {
         view.sidebar.sections.forEach((section, i) => {
             view.sidebar.sections[i].items = section.items.map(item => {
-                item.anchor = completeAnchorFromItem(item);
+                item.anchor = prefixModuleToItemAnchor(item);
 
                 return item;
             });
