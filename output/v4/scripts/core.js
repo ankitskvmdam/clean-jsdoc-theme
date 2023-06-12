@@ -32,7 +32,6 @@ function localUpdateTheme(theme) {
 
 function updateTheme(theme) {
     localUpdateTheme(theme);
-
     localStorage.setItem(themeLocalStorageKey, theme);
 }
 
@@ -665,8 +664,9 @@ window.addEventListener('hashchange', (event) => {
 
 // eslint-disable-next-line no-undef
 window.addEventListener('storage', event => {
-    console.log(event);
     if (event.newValue === 'undefined') return;
+
+    initTooltip();
 
     if (event.key === themeLocalStorageKey)
         localUpdateTheme(event.newValue);
