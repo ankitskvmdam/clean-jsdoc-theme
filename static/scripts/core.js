@@ -666,6 +666,8 @@ window.addEventListener('hashchange', (event) => {
 window.addEventListener('storage', event => {
     if (event.newValue === 'undefined') return;
 
+    initTooltip();
+
     if (event.key === themeLocalStorageKey)
         localUpdateTheme(event.newValue);
     if (event.key === fontSizeLocalStorageKey)
