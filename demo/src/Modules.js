@@ -8,6 +8,15 @@ module.exports = {
     fib: function* gen() { }
 };
 
+/** Class that represents a colour */
+class Colour {
+    /** Create colour from rgb */
+    constructor(red, green, blue) {
+        let hex = n => n.toString(16).padStart(2, '0');
+        this.hex = '#' + [red, green, blue].map(hex).join('');
+    }
+}
+
 /** Darkens a color. */
 exports.darken = function (color, shade) { };
 
