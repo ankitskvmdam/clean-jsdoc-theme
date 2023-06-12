@@ -16,7 +16,7 @@ function getTheme() {
     return body.getAttribute('data-theme');
 }
 
-function updateTheme(theme) {
+function localUpdateTheme(theme) {
     var body = document.body;
     var svgUse = document.querySelectorAll('.theme-svg-use');
     var iconID = theme === 'dark' ? '#light-theme-icon' : '#dark-theme-icon';
@@ -28,7 +28,10 @@ function updateTheme(theme) {
     svgUse.forEach(function (svg) {
         svg.setAttribute('xlink:href', iconID);
     });
+}
 
+function updateTheme(theme) {
+    localUpdateTheme(theme);
     localStorage.setItem(themeLocalStorageKey, theme);
 }
 
@@ -145,7 +148,7 @@ function bringElementIntoView(element, updateHistory = true) {
     /**
      * tocbotInstance is defined in layout.tmpl
      * It is defined when we are initializing tocbot.
-     *  
+     *
      */
     // eslint-disable-next-line no-undef
     if (tocbotInstance) {
@@ -401,9 +404,9 @@ function getFontSize() {
     return currentFontSize;
 }
 
-function updateFontSize(fontSize) {
+function localUpdateFontSize(fontSize) {
     html.style.fontSize = fontSize + 'px';
-    localStorage.setItem(fontSizeLocalStorageKey, fontSize);
+
     var fontSizeText = document.querySelector(
         '#b77a68a492f343baabea06fad81f651e'
     );
@@ -411,6 +414,11 @@ function updateFontSize(fontSize) {
     if (fontSizeText) {
         fontSizeText.innerHTML = fontSize;
     }
+}
+
+function updateFontSize(fontSize) {
+    localUpdateFontSize(fontSize);
+    localStorage.setItem(fontSizeLocalStorageKey, fontSize);
 }
 
 (function () {
@@ -652,4 +660,16 @@ window.addEventListener('hashchange', (event) => {
     if (url.hash !== '') {
         bringIdToViewOnMount(url.hash);
     }
+});
+
+// eslint-disable-next-line no-undef
+window.addEventListener('storage', event => {
+    if (event.newValue === 'undefined') return;
+
+    initTooltip();
+
+    if (event.key === themeLocalStorageKey)
+        localUpdateTheme(event.newValue);
+    if (event.key === fontSizeLocalStorageKey)
+        localUpdateFontSize(event.newValue);
 });
