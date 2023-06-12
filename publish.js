@@ -301,7 +301,7 @@ function prefixModuleToItemAnchor(item) {
 
     let prettyAnchor;
 
-    cleanLink.replace(/module-([^-]+)-(.*)/, (_match, modulename, methodname) => {
+    cleanLink.replace(/module-([^-]+)(?:-|\.)(.*)/, (_match, modulename, methodname) => {
         prettyAnchor = createPrettyAnchor('a', modulename, methodname, anchorLink);
     });
 
