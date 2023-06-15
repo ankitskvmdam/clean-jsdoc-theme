@@ -7,7 +7,7 @@ const path = require('jsdoc/path');
 const { taffy } = require('@jsdoc/salty');
 const template = require('jsdoc/template');
 const nanoid = require('nanoid').nanoid;
-const htmlMinify = require('html-minifier');
+const htmlMinify = require('html-minifier-terser');
 
 const {
     buildFooter,
@@ -284,7 +284,39 @@ function getPathFromDoclet({ meta }) {
         : meta.filename;
 }
 
-function generate(title, docs, filename, resolveLinks) {
+function createPrettyAnchor(elementType, ancestor, name, href) {
+    return `<${elementType} ${href ? `href="${href}"` : ''} class="has-anchor">
+        <span class="ancestors">
+            ${ancestor}~
+        </span>
+        ${name}
+    </${elementType}>`;
+}
+
+function prefixModuleToItemAnchor(item) {
+    let { anchor } = item;
+
+    let anchorLink = anchor.split('href="')[1].split('"')[0];
+    let cleanLink = anchorLink.replace(/\.html$/, '');
+
+    let prettyAnchor;
+
+    cleanLink.replace(
+        /module-([^-]+)(?:-|\.)(.*)/,
+        (_match, modulename, methodname) => {
+            prettyAnchor = createPrettyAnchor(
+                'a',
+                modulename,
+                methodname,
+                anchorLink
+            );
+        }
+    );
+
+    return prettyAnchor || anchor;
+}
+
+async function generate(title, docs, filename, resolveLinks) {
     let docData;
     let html;
     let outpath;
@@ -302,11 +334,9 @@ function generate(title, docs, filename, resolveLinks) {
         html = helper.resolveLinks(html); // turn {@link foo} into <a href="foodoc.html">foo</a>
     }
 
-    fs.writeFileSync(
-        outpath,
-        htmlMinify.minify(html, HTML_MINIFY_OPTIONS),
-        'utf8'
-    );
+    const minifiedHtml = await htmlMinify.minify(html, HTML_MINIFY_OPTIONS);
+
+    fs.writeFileSync(outpath, minifiedHtml, 'utf8');
 }
 
 function generateSourceFiles(sourceFiles, encoding = 'utf8') {
@@ -455,8 +485,8 @@ function buildSearchListForData() {
             searchList.push({
                 title: item.longname,
                 link: linkto(item.longname, item.name),
-                description: item.description
-            })
+                description: item.description,
+            });
         }
     });
 }
@@ -605,7 +635,7 @@ function buildSidebar(members) {
             nav.sections.push(sections[section]);
         } else {
             const errorMsg = `While building nav. Section name: ${section} is not recognized.
-            Accepted sections are: ${defaultSections.join(', ')} 
+            Accepted sections are: ${defaultSections.join(', ')}
             `;
 
             throw new Error(errorMsg);
@@ -620,7 +650,7 @@ function buildSidebar(members) {
     @param {object} opts
     @param {Tutorial} tutorials
  */
-exports.publish = function (taffyData, opts, tutorials) {
+exports.publish = async function (taffyData, opts, tutorials) {
     let classes;
     let conf;
     let externals;
@@ -671,10 +701,10 @@ exports.publish = function (taffyData, opts, tutorials) {
     data = helper.prune(data);
 
     // eslint-disable-next-line no-extra-boolean-cast, no-implicit-coercion
-    if(themeOpts.sort !== false ) {
+    if (themeOpts.sort !== false) {
         data.sort('longname, version, since');
     }
-    
+
     helper.addEventListeners(data);
 
     data().each((doclet) => {
@@ -871,13 +901,23 @@ exports.publish = function (taffyData, opts, tutorials) {
         members.modules
     );
 
+    if (themeOpts.prefixModuleToSidebarItems_experimental) {
+        view.sidebar.sections.forEach((section, i) => {
+            view.sidebar.sections[i].items = section.items.map((item) => {
+                item.anchor = prefixModuleToItemAnchor(item);
+
+                return item;
+            });
+        });
+    }
+
     // generate the pretty-printed source files first so other pages can link to them
     if (outputSourceFiles) {
         generateSourceFiles(sourceFiles, opts.encoding);
     }
 
     if (members.globals.length) {
-        generate('Global', [{ kind: 'globalobj' }], globalUrl);
+        await generate('Global', [{ kind: 'globalobj' }], globalUrl);
     }
 
     // index page displays information from package.json and lists files
@@ -888,7 +928,7 @@ exports.publish = function (taffyData, opts, tutorials) {
     const includeFilesListInHomepage =
         themeOpts.includeFilesListInHomepage || false;
 
-    generate(
+    await generate(
         homepageTitle,
         packages
             .concat([
@@ -912,7 +952,7 @@ exports.publish = function (taffyData, opts, tutorials) {
     externals = taffy(members.externals);
     interfaces = taffy(members.interfaces);
 
-    Object.keys(helper.longnameToUrl).forEach(function (longname) {
+    Object.keys(helper.longnameToUrl).forEach(async function (longname) {
         const myClasses = helper.find(classes, { longname: longname });
         const myExternals = helper.find(externals, { longname: longname });
         const myInterfaces = helper.find(interfaces, { longname: longname });
@@ -921,7 +961,7 @@ exports.publish = function (taffyData, opts, tutorials) {
         const myNamespaces = helper.find(namespaces, { longname: longname });
 
         if (myModules.length) {
-            generate(
+            await generate(
                 `Module: ${myModules[0].name}`,
                 myModules,
                 helper.longnameToUrl[longname]
@@ -929,7 +969,7 @@ exports.publish = function (taffyData, opts, tutorials) {
         }
 
         if (myClasses.length) {
-            generate(
+            await generate(
                 `Class: ${myClasses[0].name}`,
                 myClasses,
                 helper.longnameToUrl[longname]
@@ -937,7 +977,7 @@ exports.publish = function (taffyData, opts, tutorials) {
         }
 
         if (myNamespaces.length) {
-            generate(
+            await generate(
                 `Namespace: ${myNamespaces[0].name}`,
                 myNamespaces,
                 helper.longnameToUrl[longname]
@@ -945,7 +985,7 @@ exports.publish = function (taffyData, opts, tutorials) {
         }
 
         if (myMixins.length) {
-            generate(
+            await generate(
                 `Mixin: ${myMixins[0].name}`,
                 myMixins,
                 helper.longnameToUrl[longname]
@@ -953,7 +993,7 @@ exports.publish = function (taffyData, opts, tutorials) {
         }
 
         if (myExternals.length) {
-            generate(
+            await generate(
                 `External: ${myExternals[0].name}`,
                 myExternals,
                 helper.longnameToUrl[longname]
@@ -961,7 +1001,7 @@ exports.publish = function (taffyData, opts, tutorials) {
         }
 
         if (myInterfaces.length) {
-            generate(
+            await generate(
                 `Interface: ${myInterfaces[0].name}`,
                 myInterfaces,
                 helper.longnameToUrl[longname]
@@ -970,7 +1010,7 @@ exports.publish = function (taffyData, opts, tutorials) {
     });
 
     // TODO: move the tutorial functions to templateHelper.js
-    function generateTutorial(title, tutorial, filename) {
+    async function generateTutorial(title, tutorial, filename) {
         const tutorialData = {
             title: title,
             header: tutorial.title,
@@ -984,49 +1024,49 @@ exports.publish = function (taffyData, opts, tutorials) {
         // yes, you can use {@link} in tutorials too!
         html = helper.resolveLinks(html); // turn {@link foo} into <a href="foodoc.html">foo</a>
 
-        fs.writeFileSync(
-            tutorialPath,
-            htmlMinify.minify(html, HTML_MINIFY_OPTIONS),
-            'utf8'
-        );
+        const minifiedHTML = await htmlMinify.minify(html, HTML_MINIFY_OPTIONS);
+
+        fs.writeFileSync(tutorialPath, minifiedHTML, 'utf8');
 
         // added by clean-jsdoc-theme-devs
         // adding support for tutorial
-        if(!hasSearch) return
+        if (!hasSearch) return;
 
-        try{
-            const baseName = path.basename(tutorialPath)
-            let body = /<body.*?>([\s\S]*)<\/body>/.exec(tutorialData.content)
-            let description = ''
+        try {
+            const baseName = path.basename(tutorialPath);
+            let body = /<body.*?>([\s\S]*)<\/body>/.exec(tutorialData.content);
+            let description = '';
 
-            if(!Array.isArray(body)) {
-                body = /<article.*?>([\s\S]*)<\/article>/.exec(tutorialData.content)
+            if (!Array.isArray(body)) {
+                body = /<article.*?>([\s\S]*)<\/article>/.exec(
+                    tutorialData.content
+                );
             }
 
-            if(Array.isArray(body) && typeof body[1] === 'string') {
+            if (Array.isArray(body) && typeof body[1] === 'string') {
                 description = body[1]
-                // Replacing all html tags
-                .replace(/(<([^>]+)>)/g, '')
-                // Replacing all kind of line breaks
-                .replace(/(\r\n|\n|\r)/gm, " ")
-                // Replacing all multi spaces with single space
-                .replace(/\s+/gm, ' ')
-                // Taking only first 100 characters
-                .substring(0, 100)
+                    // Replacing all html tags
+                    .replace(/(<([^>]+)>)/g, '')
+                    // Replacing all kind of line breaks
+                    .replace(/(\r\n|\n|\r)/gm, ' ')
+                    // Replacing all multi spaces with single space
+                    .replace(/\s+/gm, ' ')
+                    // Taking only first 100 characters
+                    .substring(0, 100);
             }
 
-            if(typeof baseName === 'string' && baseName) {
+            if (typeof baseName === 'string' && baseName) {
                 searchList.push({
                     title: tutorialData.header,
                     link: `<a href="${baseName}">${baseName}</a>`,
                     description,
-                })
+                });
             }
-
-
-        } catch(error) {
-            console.error('There was some error while creating search array for tutorial.')
-            console.error(error)
+        } catch (error) {
+            console.error(
+                'There was some error while creating search array for tutorial.'
+            );
+            console.error(error);
         }
     }
 
@@ -1047,7 +1087,7 @@ exports.publish = function (taffyData, opts, tutorials) {
     // added by clean-jsdoc-theme-devs
     // output search file if search
     if (hasSearch) {
-        buildSearchListForData()
+        buildSearchListForData();
         mkdirSync(path.join(outdir, 'data'));
         fs.writeFileSync(
             path.join(outdir, 'data', 'search.json'),
