@@ -34,7 +34,7 @@
         "concurrently": "^7.2.2",
         "csso": "^5.0.3",
         "eslint": "^8.19.0",
-        "eslint-config-prettier": "^8.5.0",
+        "eslint-config-prettier": "^9.0.0",
         "prettier": "^2.2.1",
         "stylelint": "^14.9.1",
         "stylelint-config-prettier": "^9.0.3",
