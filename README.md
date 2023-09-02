@@ -117,9 +117,13 @@ To set the default theme, add the following in your JSDoc config file:
 
 ```json
 "theme_opts": {
-  "default_theme": "dark" // or "light"
+  "default_theme": "dark" // "light", "fallback-dark", "fallback-light"
 }
 ```
+
+If you set default theme as `"fallback-dark"`, then `clean-jsdoc-theme` will try to detect user's preferred color scheme. If it will detect successfully then it will set user's preferred theme else fallback to dark theme.
+
+Same if you set default theme as `"fallback-light"`, it will try to detect user's preferred theme. If not then fallback to light theme.
 
 ### Set base url
 
@@ -448,29 +452,29 @@ This will remove all symbols (members, methods ...) that come from inherited par
 
 ## Cheat sheet
 
-| name                         | default                                                                                                      | use case                                                                   | expected value(s)     |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- | --------------------- |
-| `default_theme`              | `"dark"`                                                                                                     | To set the default theme                                                   | `"light" or "dark"`   |
-| `homepageTitle`              | "Home"                                                                                                       | To set the title of homepage                                               | `string`              |
-| `title`                      | `null`                                                                                                       | To set the title                                                           | `HTML` or `string`    |
-| `base_url`                   | `/`                                                                                                          | To set the base URL                                                        | `string`              |
-| `menu`                       | `null`                                                                                                       | To render extra link in navbar                                             | Array of Object(s)    |
-| `meta`                       | `null`                                                                                                       | Meta tag attributes                                                        | Array of Object(s)    |
-| `search`                     | `true`                                                                                                       | To render search or not                                                    | `true` or `false`     |
-| `codepen`                    | `{}`                                                                                                         | To open code in codepen                                                    | `Object`              |
-| `static_dir`                 | `null`                                                                                                       | To include static dir                                                      | Array of string       |
-| `create_style`               | `null`                                                                                                       | To create custom style rules                                               | `string`              |
-| `add_style_path`             | `null`                                                                                                       | To add external css libraries/files                                        | Array of Object(s)    |
-| `include_css`                | `null`                                                                                                       | To include css files                                                       | Array of string       |
-| `add_scripts`                | `null`                                                                                                       | To create custom script                                                    | `string`              |
-| `add_script_path`            | `null`                                                                                                       | To add external js libraries/files                                         | Array of Object(s)    |
-| `include_js`                 | `null`                                                                                                       | To include js files                                                        | `string`              |
-| `footer`                     | `null`                                                                                                       | To render footer                                                           | `HTML` or `string`    |
-| `exclude_inherited`          | `false`                                                                                                      | To exclude inherited symbols                                               | `boolean`             |
-| `sections`                   | `["Modules", "Classes", "Externals", "Events", "Namespaces", "Mixins", "Tutorials", "Interfaces", "Global"]` | To order navbar/sidebar sections or to hide/remove navbar/sidebar sections | `Array<SECTION_TYPE>` |
-| `displayModuleHeader`        | `false`                                                                                                      | If you want the module name to appear on its page                          | `boolean`             |
-| `includeFilesListInHomepage` | `false`                                                                                                      | If you want to add or remove the list of files in homepage                 | `boolean`             |
-| `sort`                       | `true`                                                                                                       | To sort the output members/methods/events                                  | `boolean`             |
+| name                         | default                                                                                                      | use case                                                                   | expected value(s)                                          |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `default_theme`              | `"dark"`                                                                                                     | To set the default theme                                                   | `"light", "dark"`, `"fallback-light"` or `"fallback-dark"` |
+| `homepageTitle`              | "Home"                                                                                                       | To set the title of homepage                                               | `string`                                                   |
+| `title`                      | `null`                                                                                                       | To set the title                                                           | `HTML` or `string`                                         |
+| `base_url`                   | `/`                                                                                                          | To set the base URL                                                        | `string`                                                   |
+| `menu`                       | `null`                                                                                                       | To render extra link in navbar                                             | Array of Object(s)                                         |
+| `meta`                       | `null`                                                                                                       | Meta tag attributes                                                        | Array of Object(s)                                         |
+| `search`                     | `true`                                                                                                       | To render search or not                                                    | `true` or `false`                                          |
+| `codepen`                    | `{}`                                                                                                         | To open code in codepen                                                    | `Object`                                                   |
+| `static_dir`                 | `null`                                                                                                       | To include static dir                                                      | Array of string                                            |
+| `create_style`               | `null`                                                                                                       | To create custom style rules                                               | `string`                                                   |
+| `add_style_path`             | `null`                                                                                                       | To add external css libraries/files                                        | Array of Object(s)                                         |
+| `include_css`                | `null`                                                                                                       | To include css files                                                       | Array of string                                            |
+| `add_scripts`                | `null`                                                                                                       | To create custom script                                                    | `string`                                                   |
+| `add_script_path`            | `null`                                                                                                       | To add external js libraries/files                                         | Array of Object(s)                                         |
+| `include_js`                 | `null`                                                                                                       | To include js files                                                        | `string`                                                   |
+| `footer`                     | `null`                                                                                                       | To render footer                                                           | `HTML` or `string`                                         |
+| `exclude_inherited`          | `false`                                                                                                      | To exclude inherited symbols                                               | `boolean`                                                  |
+| `sections`                   | `["Modules", "Classes", "Externals", "Events", "Namespaces", "Mixins", "Tutorials", "Interfaces", "Global"]` | To order navbar/sidebar sections or to hide/remove navbar/sidebar sections | `Array<SECTION_TYPE>`                                      |
+| `displayModuleHeader`        | `false`                                                                                                      | If you want the module name to appear on its page                          | `boolean`                                                  |
+| `includeFilesListInHomepage` | `false`                                                                                                      | If you want to add or remove the list of files in homepage                 | `boolean`                                                  |
+| `sort`                       | `true`                                                                                                       | To sort the output members/methods/events                                  | `boolean`                                                  |
 
 Don't forget to add the following in your jsdoc config file, otherwise toc will not work on some pages.
 
