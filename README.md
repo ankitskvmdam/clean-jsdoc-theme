@@ -406,13 +406,15 @@ file.
 
 ### Add scripts
 
-To create custom scripts. Example:
+If you wish to incorporate JavaScript functions that execute when a user accesses a webpage, you can utilize the add_scripts option for this purpose. For instance, suppose you want to display a notification dialog when a user visits the webpage located at https://place-where-my-docs-are/SomeClass.html. You want to notify users that they should refrain from utilizing this class. To accomplish this, you can proceed as follows:
 
 ```json
 "theme_opts": {
-  "add_scripts": "function foo(){console.log('foo')} function bar() {console.log('bar')}"
+  "add_scripts": "function showAlert(){ if (window.location.pathname === '/SomeClass.html') { alert('Do not use this class') } } showAlert();",
 }
 ```
+
+Writing js code like above can get tricky and complex. You can consider `include_js`.
 
 ### Add script paths
 
@@ -442,11 +444,33 @@ This will not flatten the directory. Directory structure will be kept as it is.
 
 ### Add custom script files
 
-To include js files. Example:
+If you wish to run some local/custom javascript then you can include them via `include_js`.
+
+Lets say you want to show some custom message depending on url. You can create a js file as follows:
+
+```js
+// static/showAlert.js
+function showCustomAlertMessage() {
+    const pathname = window.location.pathname;
+
+    switch (pathname) {
+        case '/SomeClass.html':
+            return alert("Please don't use this class");
+        case '/OtherPage.html':
+            return alert('Wonderful!');
+        default:
+            return;
+    }
+}
+
+showCustomAlert();
+```
+
+Assuming the above js file is stored in `./static/showAlert.js`. To include you can do:
 
 ```json
 "theme_opts": {
-  "include_js": ["./static/index.js", "./src/docs/index.js"]
+  "include_js": ["./static/showAlert.js"]
 }
 ```
 
