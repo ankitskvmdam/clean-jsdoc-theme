@@ -324,6 +324,7 @@ If you want to add some js in the beginning of your example then you can use `js
     "enable_for": ["examples"],
     "options": {
       "js_external": "https://code.jquery.com/jquery-3.6.0.min.js",
+      "js_pre_processor": "babel"
       "js": "import Something from 'some-package'"
     }
   }
@@ -375,7 +376,7 @@ To create custom style rules. Example:
 Use this option to add third party css library. If you want to add your own custom css file then consider
 using [Add custom css files](#add-custom-css-files)
 
-> Note: you have to pass an array of objects. Each object key will be an attribute inside the generated script tag.
+> Note: you have to pass an array of objects. Each object key will be an attribute inside the generated style tag.
 
 Example:
 
