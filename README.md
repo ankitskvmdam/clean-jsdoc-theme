@@ -440,16 +440,6 @@ members/methods/events will be in the order they are in code/source.
 }
 ```
 
-### To exclude inherited
-
-To exclude inherited symbols. Example:
-
-```json
-"exclude_inherited": true
-```
-
-This will remove all symbols (members, methods ...) that come from inherited parents.
-
 ## Cheat sheet
 
 | name                         | default                                                                                                      | use case                                                                   | expected value(s)                                          |
@@ -470,7 +460,6 @@ This will remove all symbols (members, methods ...) that come from inherited par
 | `add_script_path`            | `null`                                                                                                       | To add external js libraries/files                                         | Array of Object(s)                                         |
 | `include_js`                 | `null`                                                                                                       | To include js files                                                        | `string`                                                   |
 | `footer`                     | `null`                                                                                                       | To render footer                                                           | `HTML` or `string`                                         |
-| `exclude_inherited`          | `false`                                                                                                      | To exclude inherited symbols                                               | `boolean`                                                  |
 | `sections`                   | `["Modules", "Classes", "Externals", "Events", "Namespaces", "Mixins", "Tutorials", "Interfaces", "Global"]` | To order navbar/sidebar sections or to hide/remove navbar/sidebar sections | `Array<SECTION_TYPE>`                                      |
 | `displayModuleHeader`        | `false`                                                                                                      | If you want the module name to appear on its page                          | `boolean`                                                  |
 | `includeFilesListInHomepage` | `false`                                                                                                      | If you want to add or remove the list of files in homepage                 | `boolean`                                                  |
