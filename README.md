@@ -316,6 +316,40 @@ only loaded if user wants to search anything.
 `options` can be any valid CodePen option. For more
 visit: [Codepen Prefill options](https://blog.codepen.io/documentation/prefill/#all-the-json-options-0)
 
+If you want to add some js in the beginning of your example then you can use `js` option.
+
+```json
+"theme_opts": {
+  "codepen": {
+    "enable_for": ["examples"],
+    "options": {
+      "js_external": "https://code.jquery.com/jquery-3.6.0.min.js",
+      "js": "import Something from 'some-package'"
+    }
+  }
+}
+```
+
+Let say you have an example as follows:
+
+```js
+/**
+ * @example
+ * let a = Something.fn()
+ * console.log(a) // Return value of something
+ */
+const a;
+```
+
+In codepen the above `@example` will look like:
+
+```js
+import Something from 'some-package';
+
+let a = Something.fn();
+console.log(a); // Return value of something
+```
+
 ### Add static dir
 
 To include static files:
