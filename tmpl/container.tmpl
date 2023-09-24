@@ -103,7 +103,7 @@
     <?js } ?>
 
     <?js
-        var interfaces = self.find({kind: 'interface', memberof: doc.longname});
+        var interfaces = self.find({kind: 'interface', memberof: doc.longname, inherited: {'!is': self.excludeInherited}});
         if (!isGlobalPage && interfaces && interfaces.length) {
     ?>
         <h2 id="interfaces" class="subsection-title has-anchor">Interfaces</h2>
