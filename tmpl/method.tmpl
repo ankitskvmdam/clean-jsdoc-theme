@@ -49,7 +49,7 @@ var self = this;
     </div>
 <?js } ?>
 
-<?js if (data.params && params.length) { ?>
+<?js if (data.params && params.length && !data.hideconstructor) { ?>
     <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
         <strong>Parameters:</strong>
         <?js= this.partial('params.tmpl', params) ?>
