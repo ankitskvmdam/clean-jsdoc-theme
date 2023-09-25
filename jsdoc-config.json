@@ -3,7 +3,7 @@
         "allowUnknownTags": true
     },
     "source": {
-        "include": ["./demo/src", "./README.md", "package.json"]
+        "include": ["./demo/src", "./README.md"]
     },
     "plugins": ["plugins/markdown"],
     "opts": {
@@ -17,7 +17,7 @@
             "search": true,
             "homepageTitle": "Clean JSDoc Theme",
             "default_theme": "dark",
-            "exclude_inherited": false,
+            "exclude_inherited": true,
             "include_css": ["./demo/src/assets/style.css"],
             "include_js": ["./demo/src/assets/script.js"],
             "static_dir": ["./demo/src/assets/png", "./example"],
