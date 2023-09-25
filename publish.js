@@ -894,6 +894,7 @@ exports.publish = async function (taffyData, opts, tutorials) {
     view.navbar = buildNavbar(themeOpts);
     view.resizeable = resizeable(themeOpts);
     view.codepen = codepen(themeOpts);
+    view.excludeInherited = Boolean(themeOpts.exclude_inherited);
     view.baseURL = getBaseURL(themeOpts);
     attachModuleSymbols(
         find({ longname: { left: 'module:' } }),
