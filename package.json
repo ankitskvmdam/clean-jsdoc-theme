@@ -1,6 +1,6 @@
 {
     "name": "clean-jsdoc-theme",
-    "version": "4.2.2",
+    "version": "4.2.11",
     "description": "A beautifully crafted theme/template for JSDoc 3. This theme/template looks and feels like a premium theme/template. This is a fully mobile responsive theme and also fully customizable theme.",
     "main": "publish.js",
     "scripts": {
@@ -45,10 +45,9 @@
         "uglify-js": "^3.16.0"
     },
     "dependencies": {
-        "@jsdoc/salty": "^0.2.2",
-        "common-path-prefix": "^3.0.0",
+        "@jsdoc/salty": "^0.2.4",
         "fs-extra": "^10.1.0",
-        "html-minifier": "^4.0.0",
+        "html-minifier-terser": "^7.2.0",
         "klaw-sync": "^6.0.0",
         "lodash": "^4.17.21",
         "nanoid": "^3.3.4",

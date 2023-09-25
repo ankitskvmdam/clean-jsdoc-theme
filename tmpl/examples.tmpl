@@ -6,9 +6,6 @@
 
     data.forEach(function(example) {
 
-        var jsonString = JSON.stringify(example.code)
-                                    .replace(/"/g, "&quot;")
-                                    .replace(/'/g, "&apos;");
         if (example.caption) {
     ?>
         <p class="code-caption"><?js= example.caption ?></p>
@@ -20,13 +17,23 @@
         if(enable_for.findIndex(function (val) { return val === "examples"}) !== -1) { 
             var options = codepen.options || {};
             var optionsString = '';
-            var optionsKey = Object.keys(options)
+            
+            var code = `${options.js}
+${example.code}
+            `
+
+            var jsonString = JSON.stringify(code)
+                                    .replace(/"/g, "&quot;")
+                                    .replace(/'/g, "&apos;");
+
+            var optionsKey = Object.keys(options).filter((key) => key !== 'js' )
             optionsKey.map((key, idx) => {
                 optionsString += '"' + key +'": "' + options[key].replace(/"/g, "&quot;").replace(/'/g, "&apos;") + '"';
                 if(idx !== optionsKey.length - 1) {
                     optionsString += ','
                 }
             })
+
     ?>
         <form action="https://codepen.io/pen/define" method="POST" target="_blank" class="codepen-form">
             <input type="hidden" name="data" value='{"title": "<?js= example.caption || 'Example' ?>", "js": <?js= jsonString ?>, <?js= optionsString ?> }' />

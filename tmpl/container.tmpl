@@ -1,7 +1,6 @@
 <?js
     var self = this;
     var isGlobalPage;
-
     docs.forEach(function(doc, i) {
 ?>
 
@@ -92,7 +91,7 @@
     <?js } ?>
 
     <?js
-        var classes = self.find({kind: 'class', memberof: doc.longname});
+        var classes = self.find({kind: 'class', memberof: doc.longname, inherited: {'!is': self.excludeInherited}});
         if (!isGlobalPage && classes && classes.length) {
     ?>
         <h2 id="classes" class="subsection-title has-anchor">Classes</h2>
@@ -104,7 +103,7 @@
     <?js } ?>
 
     <?js
-        var interfaces = self.find({kind: 'interface', memberof: doc.longname});
+        var interfaces = self.find({kind: 'interface', memberof: doc.longname, inherited: {'!is': self.excludeInherited}});
         if (!isGlobalPage && interfaces && interfaces.length) {
     ?>
         <h2 id="interfaces" class="subsection-title has-anchor">Interfaces</h2>
@@ -116,7 +115,7 @@
     <?js } ?>
 
     <?js
-        var mixins = self.find({kind: 'mixin', memberof: doc.longname});
+        var mixins = self.find({kind: 'mixin', memberof: doc.longname, inherited: {'!is': self.excludeInherited}});
         if (!isGlobalPage && mixins && mixins.length) {
     ?>
         <h2 id="mixins" class="subsection-title has-anchor">Mixins</h2>
@@ -128,7 +127,7 @@
     <?js } ?>
 
     <?js
-        var namespaces = self.find({kind: 'namespace', memberof: doc.longname});
+        var namespaces = self.find({kind: 'namespace', memberof: doc.longname, inherited: {'!is': self.excludeInherited}});
         if (!isGlobalPage && namespaces && namespaces.length) {
     ?>
         <h2 id="namespaces" class="subsection-title has-anchor">Namespaces</h2>
@@ -140,7 +139,7 @@
     <?js } ?>
 
     <?js
-        var members = self.find({kind: 'member', memberof: isGlobalPage ? {isUndefined: true} : doc.longname});
+        var members = self.find({kind: 'member', memberof: isGlobalPage ? {isUndefined: true} : doc.longname, inherited: {'!is': self.excludeInherited}});
 
         // symbols that are assigned to module.exports are not globals, even though they're not a memberof anything
         if (isGlobalPage && members && members.length && members.forEach) {
@@ -158,7 +157,7 @@
     <?js } ?>
 
     <?js
-        var methods = self.find({kind: 'function', memberof: isGlobalPage ? {isUndefined: true} : doc.longname});
+        var methods = self.find({kind: 'function', memberof: isGlobalPage ? {isUndefined: true} : doc.longname, inherited: {'!is': self.excludeInherited}});
         if (methods && methods.length && methods.forEach) {
     ?>
         <h2 id="methods" class="subsection-title has-anchor">Methods</h2>
@@ -169,7 +168,7 @@
     <?js } ?>
 
     <?js
-        var typedefs = self.find({kind: 'typedef', memberof: isGlobalPage ? {isUndefined: true} : doc.longname});
+        var typedefs = self.find({kind: 'typedef', memberof: isGlobalPage ? {isUndefined: true} : doc.longname, inherited: {'!is': self.excludeInherited}});
         if (typedefs && typedefs.length && typedefs.forEach) {
     ?>
         <h2 id="type-definitions" class="subsection-title has-anchor">Type Definitions</h2>
@@ -189,7 +188,7 @@
     <?js } ?>
 
     <?js
-        var events = self.find({kind: 'event', memberof: isGlobalPage ? {isUndefined: true} : doc.longname});
+        var events = self.find({kind: 'event', memberof: isGlobalPage ? {isUndefined: true} : doc.longname, inherited: {'!is': self.excludeInherited}});
         if (events && events.length && events.forEach) {
     ?>
         <h2 id="events" class="subsection-title has-anchor">Events</h2>
