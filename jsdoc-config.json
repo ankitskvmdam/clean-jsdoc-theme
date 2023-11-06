@@ -3,9 +3,14 @@
         "allowUnknownTags": true
     },
     "source": {
-        "include": ["./demo/src", "./README.md"]
+        "include": [
+            "./demo/src",
+            "./README.md"
+        ]
     },
-    "plugins": ["plugins/markdown"],
+    "plugins": [
+        "plugins/markdown"
+    ],
     "opts": {
         "encoding": "utf8",
         "destination": "output/v4",
@@ -18,9 +23,16 @@
             "homepageTitle": "Clean JSDoc Theme",
             "default_theme": "dark",
             "exclude_inherited": false,
-            "include_css": ["./demo/src/assets/style.css"],
-            "include_js": ["./demo/src/assets/script.js"],
-            "static_dir": ["./demo/src/assets/png", "./example"],
+            "include_css": [
+                "./demo/src/assets/style.css"
+            ],
+            "include_js": [
+                "./demo/src/assets/script.js"
+            ],
+            "static_dir": [
+                "./demo/src/assets/png",
+                "./example"
+            ],
             "add_scripts": "function foo(){console.log('foo')} function bar() {console.log('bar')} bar(); foo();",
             "create_style": ".test-create-style{ background: red}",
             "displayModuleHeader": true,
@@ -49,7 +61,9 @@
                 }
             ],
             "codepen": {
-                "enable_for": ["examples"],
+                "enable_for": [
+                    "examples"
+                ],
                 "options": {
                     "js_external": "https://code.jquery.com/jquery-3.6.0.min.js",
                     "js_pre_processor": "babel"
@@ -61,7 +75,9 @@
     "templates": {
         "default": {
             "staticFiles": {
-                "include": ["./example"]
+                "include": [
+                    "./example"
+                ]
             }
         }
     },
