@@ -15,9 +15,6 @@ runSomeScript()
 
 function addLiveCodeExampleForAgentArrayPage() {
   if (!window.location.pathname.toLocaleLowerCase().includes("agentarray.html")) {
-    /**
-     * 
-     */
     return
   }
 
