@@ -27,7 +27,8 @@
                 "./demo/src/assets/style.css"
             ],
             "include_js": [
-                "./demo/src/assets/script.js"
+                "./demo/src/assets/script.js",
+                "./demo/src/assets/run-only-for-agentscript.js"
             ],
             "static_dir": [
                 "./demo/src/assets/png",
