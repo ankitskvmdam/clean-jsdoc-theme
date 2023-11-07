@@ -34,14 +34,18 @@
     <!-- Adding scripts-->
     <?js if(this.includeScript != undefined) { ?>
     <?js this.includeScript.forEach(function(source){ ?>
-    <script src="<?js= source ?>"></script>
+      <?js if(typeof source === 'string') { ?>
+        <script src="<?js= source ?>"></script>
+      <?js } ?>
     <?js }) ?>
     <?js } ?>
 
     <!-- Adding style-->
     <?js if(this.includeCss != undefined) { ?>
     <?js this.includeCss.forEach(function(source){ ?>
-    <link type="text/css" rel="stylesheet" href="<?js= source ?>">
+      <?js if(typeof source === 'string') { ?>
+        <link type="text/css" rel="stylesheet" href="<?js= source ?>">
+      <?js } ?>
     <?js }) ?>
     <?js } ?>
 
