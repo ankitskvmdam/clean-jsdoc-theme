@@ -24,11 +24,22 @@
             "default_theme": "dark",
             "exclude_inherited": false,
             "include_css": [
-                "./demo/src/assets/style.css"
+                {
+                    "filepath": "./demo/src/assets/style.css",
+                    "targets": [
+                        "AgentArray"
+                    ]
+                }
             ],
             "include_js": [
                 "./demo/src/assets/script.js",
-                "./demo/src/assets/run-only-for-agentscript.js"
+                {
+                    "filepath": "./demo/src/assets/agentarray.js",
+                    "targets": [
+                        "AgentArray",
+                        "tutorial-AgentArray_"
+                    ]
+                }
             ],
             "static_dir": [
                 "./demo/src/assets/png",
