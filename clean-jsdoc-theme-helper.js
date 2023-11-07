@@ -1,7 +1,7 @@
 const has = require('lodash/has');
 const klawSync = require('klaw-sync');
-const path = require('path')
-const fse = require('fs-extra')
+const path = require('path');
+const fse = require('fs-extra');
 const showdown = require('showdown');
 
 const mdToHTMLConverter = new showdown.Converter();
@@ -16,7 +16,7 @@ function lsSync(dir, opts = {}) {
     });
 
     return files.map((f) => f.path);
-};
+}
 
 function copyToOutputFolder(filePath, outdir) {
     const resolvedPath = path.resolve(filePath);
@@ -31,8 +31,15 @@ function copyToOutputFolderFromArray(filePathArray, outdir) {
 
     if (Array.isArray(filePathArray)) {
         for (const filePath of filePathArray) {
-            copyToOutputFolder(filePath, outdir);
-            outputList.push(path.basename(filePath));
+            if (typeof filePath === 'string') {
+                copyToOutputFolder(filePath, outdir);
+                outputList.push(path.basename(filePath));
+            } else if (typeof filePath === 'object') {
+                const { filepath, targets } = filePath;
+
+                copyToOutputFolder(filepath, outdir);
+                outputList.push({ filepath: path.basename(filepath), targets });
+            }
         }
     }
 
@@ -158,8 +165,6 @@ function getProcessedYield(yields) {
     }));
 }
 
-
-
 module.exports = {
     buildFooter,
     moduleHeader,
@@ -177,5 +182,5 @@ module.exports = {
     returnPathOfStyleSrc,
     copyStaticFolder,
     getProcessedYield,
-    lsSync
-}
+    lsSync,
+};

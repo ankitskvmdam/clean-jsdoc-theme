@@ -1,6 +1,6 @@
 # clean-jsdoc-theme
 
-[![Stars](https://img.shields.io/github/stars/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme) [![Fork](https://img.shields.io/github/forks/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/fork) ![Version](https://img.shields.io/badge/version-4.2.14-005bff) [![Issues Open](https://img.shields.io/github/issues/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues) [![Contributors](https://img.shields.io/github/contributors/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors) [![Build Status](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme.svg?branch=production)](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme) [![license](https://img.shields.io/github/license/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/LICENSE)
+[![Stars](https://img.shields.io/github/stars/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme) [![Fork](https://img.shields.io/github/forks/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/fork) ![Version](https://img.shields.io/badge/version-4.2.15-005bff) [![Issues Open](https://img.shields.io/github/issues/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues) [![Contributors](https://img.shields.io/github/contributors/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors) [![Build Status](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme.svg?branch=production)](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme) [![license](https://img.shields.io/github/license/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/LICENSE)
 <br>
 
 `clean-jsdoc-theme` is a beautifully crafted theme for JSDoc 3/JSDoc 4. It is a clean and fully responsive theme with loads of
@@ -479,6 +479,34 @@ Assuming the above js file is stored in `./static/showAlert.js`. To include you 
 
 It will include the js files to the output dir and also attach a script tag to the html pointing to the included js
 file.
+
+If you want to add some script for some pages then you can do the following:
+
+```json
+"include_js": [
+    "./demo/src/assets/script.js",
+    {
+        "filepath": "./demo/src/assets/random.js",
+        "targets": [
+            "MyClass",
+            "tutorial-MyClassTutorial"
+        ]
+    }
+],
+```
+
+Here target is the name of the generated html file (don't include `.html`).
+
+The above config will add `./demo/src/assets/script.js` to all the generated html files. However, it will
+add `./demo/src/assets/random.js` only to `MyClass.html` and `tutorial-MyClassTutorial.html` files.
+
+The file name of the generated html generally follows the following convention:
+
+-   Class: class's name + `.html`. Ex `Alive.html`
+-   Module: `module-` + module's name + `.html`. Ex: `module-SqlJs.html`
+-   Tutorials: `tutorial-` + tutorial's filename + `.html`
+
+If you are not sure about the target name, then generate html for the first time, then look at the urls.
 
 ### To ignore sorting
 

@@ -325,6 +325,7 @@ async function generate(title, docs, filename, resolveLinks) {
         env: env,
         title: title,
         docs: docs,
+        filename,
     };
 
     outpath = path.join(outdir, filename);
@@ -1016,6 +1017,7 @@ exports.publish = async function (taffyData, opts, tutorials) {
             header: tutorial.title,
             content: tutorial.parse(),
             children: tutorial.children,
+            filename,
         };
 
         const tutorialPath = path.join(outdir, filename);
