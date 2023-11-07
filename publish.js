@@ -6,7 +6,6 @@ const logger = require('jsdoc/util/logger');
 const path = require('jsdoc/path');
 const { taffy } = require('@jsdoc/salty');
 const template = require('jsdoc/template');
-const nanoid = require('nanoid').nanoid;
 const htmlMinify = require('html-minifier-terser');
 
 const {
@@ -429,7 +428,7 @@ function buildSidebarMembers({
     const navProps = {
         name: itemHeading,
         items: [],
-        id: nanoid(),
+        id: `sidebar-${itemHeading.toLowerCase()}`,
     };
 
     if (items.length) {
