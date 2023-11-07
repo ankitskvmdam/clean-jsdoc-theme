@@ -5,24 +5,28 @@ const scripts = []
 const styles = []
 
 
-for (const script of this.includeScript) {
-    if(typeof script === 'object') {
-        for (const target of script.targets) {
-            if(filename === target) {
-                scripts.push(script.filepath)
+if(Array.isArray(this.includeScript)) {
+    for (const script of this.includeScript) {
+        if(typeof script === 'object') {
+            for (const target of script.targets) {
+                if(filename === target) {
+                    scripts.push(script.filepath)
+                }
             }
-        }
-    }    
+        }    
+    }
 }
 
-for (const style of this.includeCss) {
-    if(typeof style === 'object') {
-        for (const target of style.targets) {
-            if(filename === target) {
-                styles.push(style.filepath)
+if(Array.isArray(this.includeCss)) {
+    for (const style of this.includeCss) {
+        if(typeof style === 'object') {
+            for (const target of style.targets) {
+                if(filename === target) {
+                    styles.push(style.filepath)
+                }
             }
-        }
-    }    
+        }    
+    }
 }
 
 
