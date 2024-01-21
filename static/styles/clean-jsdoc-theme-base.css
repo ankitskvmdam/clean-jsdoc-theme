@@ -973,3 +973,21 @@ pre {
         visibility: hidden;
     }
 }
+
+.child-tutorial-container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.child-tutorial {
+    border: 1px solid;
+    padding: 10px 16px;
+    border-radius: 10px;
+    margin: 5px;
+    display: block;
+}
+
+.child-tutorial:hover {
+    text-decoration: none;
+}

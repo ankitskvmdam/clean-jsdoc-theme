@@ -386,3 +386,12 @@ body.light {
     background: #aaa;
     outline: 0.06125rem solid #aaa;
 }
+
+.light .child-tutorial {
+    border-color: #aaa;
+    color: #222;
+}
+
+.light .child-tutorial:hover {
+    background: #ccc;
+}

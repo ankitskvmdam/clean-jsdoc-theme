@@ -732,6 +732,7 @@ exports.publish = async function (taffyData, opts, tutorials) {
                 };
             });
         }
+
         if (doclet.see) {
             doclet.see.forEach(function (seeItem, i) {
                 doclet.see[i] = hashToLink(doclet, seeItem);

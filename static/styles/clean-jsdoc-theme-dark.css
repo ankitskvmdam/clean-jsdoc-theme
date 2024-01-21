@@ -405,3 +405,12 @@ blockquote {
     background: #555;
     outline: 0.06125rem solid #555;
 }
+
+.child-tutorial {
+    border-color: #555;
+    color: #f3f3f3;
+}
+
+.child-tutorial:hover {
+    background: #222;
+}

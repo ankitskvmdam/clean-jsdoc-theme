@@ -1,14 +1,21 @@
 {
-    "Alive": {
-        "title": "Alive"
+    "z": {
+        "title": "Alive Tutorial",
+        "children": [
+            "b",
+            "z"
+        ]
     },
-    "Apple": {
-        "title": "Apple"
+    "b": {
+        "title": "Apple Tutorial"
     },
-    "Environment": {
-        "title": "Environment"
+    "a": {
+        "title": "Environment Tutorial",
+        "children": [
+            "za"
+        ]
     },
-    "Other": {
+    "za": {
         "title": "Other"
     }
 }
