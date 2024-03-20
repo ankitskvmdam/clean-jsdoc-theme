@@ -897,6 +897,9 @@ exports.publish = async function (taffyData, opts, tutorials) {
     view.codepen = codepen(themeOpts);
     view.excludeInherited = Boolean(themeOpts.exclude_inherited);
     view.baseURL = getBaseURL(themeOpts);
+    view.shouldRemoveScrollbarStyle = Boolean(
+        themeOpts.shouldRemoveScrollbarStyle
+    );
     attachModuleSymbols(
         find({ longname: { left: 'module:' } }),
         members.modules

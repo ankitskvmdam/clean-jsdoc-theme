@@ -250,7 +250,7 @@ of `meta` tags into `head`.
     'Mixins',
     'Tutorials',
     'Interfaces',
-    'Global'
+    'Global',
 ];
 ```
 
@@ -537,6 +537,20 @@ To exclude inherited symbols. Example:
 
 This will remove all symbols (members, methods ...) that come from inherited parents.
 
+### To remove styled applied to scrollbar
+
+By default `clean-jsdoc-theme` applies some styles to browser's scroll bar. However if you want to remove this style do the following
+
+```json
+{
+    "theme_opts": {
+        "shouldRemoveScrollbarStyle": false
+    }
+}
+```
+
+This will remove all symbols (members, methods ...) that come from inherited parents.
+
 ## Cheat sheet
 
 | name                         | default                                                                                                      | use case                                                                   | expected value(s)                                          |
@@ -562,6 +576,7 @@ This will remove all symbols (members, methods ...) that come from inherited par
 | `displayModuleHeader`        | `false`                                                                                                      | If you want the module name to appear on its page                          | `boolean`                                                  |
 | `includeFilesListInHomepage` | `false`                                                                                                      | If you want to add or remove the list of files in homepage                 | `boolean`                                                  |
 | `sort`                       | `true`                                                                                                       | To sort the output members/methods/events                                  | `boolean`                                                  |
+| `shouldRemoveScrollbarStyle` | `false`                                                                                                      | To remove styles applied to browser's scrollbar                            | `boolean`                                                  |
 
 Don't forget to add the following in your jsdoc config file, otherwise toc will not work on some pages.
 

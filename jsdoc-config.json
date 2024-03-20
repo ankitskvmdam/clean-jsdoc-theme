@@ -18,6 +18,7 @@
         "template": "./",
         "tutorials": "./demo/src/tutorials",
         "theme_opts": {
+            "shouldRemoveScrollbarStyle": false,
             "includeFilesListInHomepage": true,
             "search": true,
             "homepageTitle": "Clean JSDoc Theme",

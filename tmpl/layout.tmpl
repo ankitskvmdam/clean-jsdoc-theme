@@ -79,8 +79,14 @@
       <?js } ?>
 
     </script>
+    
+    <!-- clean jsdoc theme -->
+    <?js if (this.shouldRemoveScrollbarStyle) { ?>
+      <link rel="stylesheet" href="styles/clean-jsdoc-theme-without-scrollbar.min.css">
+    <?js } else { ?>
+      <link rel="stylesheet" href="styles/clean-jsdoc-theme.min.css">
+    <?js } ?>
 
-    <link rel="stylesheet" href="styles/clean-jsdoc-theme.min.css">
     <?js if(this.dynamicStyle != undefined ) { ?>
     <style>
       <?js= this.dynamicStyle ?>
