@@ -1031,20 +1031,6 @@ pre {
 
 }
 
-/* scroll bar */
-
-::-webkit-scrollbar {
-	height: 0.3125rem;
-	width: 0.3125rem;
-
-}
-
-::-webkit-scrollbar-thumb,
-::-webkit-scrollbar-track {
-	border-radius: 1rem;
-
-}
-
 @media screen and (max-width: 100em) {
 
 	.toc-container {

@@ -395,15 +395,6 @@ blockquote {
     background: #222;
 }
 
-/* scroll bar */
-::-webkit-scrollbar-track {
-    background: #333;
-}
-
-::-webkit-scrollbar-thumb {
-    background: #555;
-    outline: 0.06125rem solid #555;
-}
 
 .child-tutorial {
     border-color: #555;
