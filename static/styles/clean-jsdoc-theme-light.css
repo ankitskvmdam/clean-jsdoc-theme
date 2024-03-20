@@ -48,10 +48,11 @@ body.light {
 
 }
 
-.light .sidebar-section-title:hover {
+.light .sidebar-section-title:hover,
+.light .sidebar-section-title.active {
 	background: #eee;
-
 }
+
 
 .light .with-arrow {
 	fill: #111;
@@ -60,8 +61,14 @@ body.light {
 
 .light .sidebar-section-children-container {
 	background: #eee;
-
 }
+
+.light .sidebar-section-children.active {
+	background: #ccc;
+}
+
+
+
 
 .light .sidebar-section-children a:hover {
 	background: #e0e0e0;
