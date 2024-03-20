@@ -43,12 +43,18 @@ h6 {
     background: #252525;
 }
 
+
+
 .with-arrow {
     fill: #999;
 }
 
 .sidebar-section-children-container {
     background: #292929;
+}
+
+.sidebar-section-children.active {
+    background: #444;
 }
 
 .sidebar-section-children a:hover {
