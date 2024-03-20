@@ -10,7 +10,7 @@ body {
 
 a,
 a:active {
-    color: #00bbff;
+    color: #0bf;
 }
 
 hr {
@@ -86,8 +86,8 @@ h6 {
 }
 
 .navbar-item a:active {
-    color: #aaa;
     background-color: #222;
+    color: #aaa;
 }
 
 .navbar-item:hover {
@@ -105,8 +105,8 @@ h6 {
 
 .toc-link {
     color: #777;
-    transition: color 0.3s;
     font-size: 0.875rem;
+    transition: color 0.3s;
 }
 
 .toc-link.is-active-link {
@@ -193,7 +193,6 @@ samp {
     color: #eee;
 }
 
-/* stylelint-enable */
 
 table .name,
 .params .name,
