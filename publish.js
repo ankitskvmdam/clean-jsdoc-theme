@@ -530,7 +530,7 @@ function buildNavbar() {
  * @return {string} The HTML for the navigation sidebar.
  */
 function buildSidebar(members) {
-    const title = themeOpts.title || 'Home';
+    const title = themeOpts.title;
 
     const isHTML = RegExp.prototype.test.bind(/(<([^>]+)>)/i);
 
