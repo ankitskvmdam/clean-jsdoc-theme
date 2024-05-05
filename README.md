@@ -3,23 +3,18 @@
 [![Stars](https://img.shields.io/github/stars/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme) [![Fork](https://img.shields.io/github/forks/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/fork) ![Version](https://img.shields.io/badge/version-4.2.18-005bff) [![Issues Open](https://img.shields.io/github/issues/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues) [![Contributors](https://img.shields.io/github/contributors/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors) [![Build Status](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme.svg?branch=production)](https://travis-ci.org/ankitskvmdam/clean-jsdoc-theme) [![license](https://img.shields.io/github/license/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/LICENSE)
 <br>
 
-`clean-jsdoc-theme` is a beautifully crafted theme for JSDoc 3/JSDoc 4. It is a clean and fully responsive theme with loads of
-customisation features.
+`clean-jsdoc-theme` enhances your JSDoc 3 or 4 documentation with a beautiful and responsive design. It offers a variety of customization options to tailor the look and feel to your preferences.
 
-Some salient features:
+## Key Features
 
-1. It supports most screens, i.e. desktops, laptops, iPad and mobile devices.
-2. It has a premium-looking dark and light theme.
-3. It minifies all the output HTML files (this helps in saving a few KBs).
-4. It has search support. The search feature doesn't increase the size of output HTML files.
-5. It is regularly updated.
-6. It is highly
-   performant. [Check lighthouse report here](https://googlechrome.github.io/lighthouse/viewer/?psiurl=https%3A%2F%2Fankdev.me%2Fclean-jsdoc-theme%2Fv4%2Findex.html&strategy=desktop&category=performance&category=accessibility&category=best-practices&category=seo&category=pwa&utm_source=lh-chrome-ext)
-   .
+- **Widespread Device Compatibility:** `clean-jsdoc-theme` adapts seamlessly to desktops, laptops, tablets, and mobile devices, ensuring a smooth user experience across all platforms.
+- **Premium Aesthetics:** Choose between a sleek dark theme or a bright light theme, both designed to deliver a high-quality appearance for your documentation.
+- **Optimized File Size:** `clean-jsdoc-theme` automatically minifies the generated HTML files, reducing their overall size by several kilobytes without compromising functionality.
+- **Robust Search Functionality:** The built-in search feature allows users to quickly find specific information within your documentation, and it does so without adding extra weight to the output files.
+- **Regular Updates:** We actively maintain `clean-jsdoc-theme`, ensuring it remains up-to-date and compatible with the latest technologies.
+- **Exceptional Performance:** `clean-jsdoc-theme` prioritizes performance, delivering a fast and responsive user experience for your documentation consumers. You can view the [Lighthouse report](https://googlechrome.github.io/lighthouse/viewer/?psiurl=https%3A%2F%2Fankdev.me%2Fclean-jsdoc-theme%2Fv4%2Findex.html&strategy=desktop&category=performance&category=accessibility&category=best-practices&category=seo&category=pwa&utm_source=lh-chrome-ext#) for a detailed performance analysis.
+- **Open Communication:** The `clean-jsdoc-theme` team acknowledges that continuous improvement is essential. We welcome feedback from the community, so feel free to share your suggestions, questions, or bug reports by creating an issue on [GitHub](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues).
 
-We know that no library is perfect. That's why we are open to hearing from the community about the theme. For any
-suggestions, questions or bugs, feel free to create
-an <a href="https://github.com/ankitskvmdam/clean-jsdoc-theme/issues">issue</a>.
 
 ## Demo
 
@@ -556,8 +551,8 @@ This will remove all symbols (members, methods ...) that come from inherited par
 | name                         | default                                                                                                      | use case                                                                   | expected value(s)                                          |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- | ---------------------------------------------------------- |
 | `default_theme`              | `"dark"`                                                                                                     | To set the default theme                                                   | `"light", "dark"`, `"fallback-light"` or `"fallback-dark"` |
-| `homepageTitle`              | "Home"                                                                                                       | To set the title of homepage                                               | `string`                                                   |
-| `title`                      | `null`                                                                                                       | To set the title                                                           | `HTML` or `string`                                         |
+| `homepageTitle`              | "Home"                                                                                                       | To set the title of homepage. This will update HTML `<title>`.             | `string`                                                   |
+| `title`                      | `null`                                                                                                       | To set the title of the sidebar.                                                           | `HTML` or `string`                                         |
 | `base_url`                   | `/`                                                                                                          | To set the base URL                                                        | `string`                                                   |
 | `menu`                       | `null`                                                                                                       | To render extra link in navbar                                             | Array of Object(s)                                         |
 | `meta`                       | `null`                                                                                                       | Meta tag attributes                                                        | Array of Object(s)                                         |
