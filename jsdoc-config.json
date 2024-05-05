@@ -22,6 +22,7 @@
             "includeFilesListInHomepage": true,
             "search": true,
             "homepageTitle": "Clean JSDoc Theme",
+            "title": "Clean JSDoc Theme",
             "default_theme": "dark",
             "exclude_inherited": false,
             "include_css": [
@@ -49,7 +50,6 @@
             "add_scripts": "function foo(){console.log('foo')} function bar() {console.log('bar')} bar(); foo();",
             "create_style": ".test-create-style{ background: red}",
             "displayModuleHeader": true,
-            "title": "clean-jsdoc-theme",
             "footer": "<div style='margin-bottom: 0.5rem;'>clean-jsdoc-theme</div> Fork: <a href='https://github.com/ankitskvmdam/clean-jsdoc-theme'>https://github.com/ankitskvmdam/clean-jsdoc-theme</a>",
             "meta": [
                 {
