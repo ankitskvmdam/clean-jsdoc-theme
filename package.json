@@ -49,7 +49,7 @@
         "fs-extra": "^10.1.0",
         "html-minifier-terser": "^7.2.0",
         "klaw-sync": "^6.0.0",
-        "lodash": "^4.17.21",
+        "lodash": "^4.17.23",
         "showdown": "^2.1.0"
     }
 }
