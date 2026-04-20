@@ -1,6 +1,6 @@
 /**
- * @clean-jsdoc-theme/astro
+ * @clean-jsdoc-theme/dwar
  *
  * Astro integration. Phase 1: placeholder. Real integration in Phase 2.
  */
-export const ASTRO_PACKAGE_VERSION = '5.0.0-alpha.0';
+export const DWAR_PACKAGE_VERSION = '5.0.0-alpha.0';

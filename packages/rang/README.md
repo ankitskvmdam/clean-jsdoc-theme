@@ -1,4 +1,4 @@
-# @clean-jsdoc-theme/ui
+# @clean-jsdoc-theme/rang
 
 Internal: Astro components for clean-jsdoc-theme v5.
 

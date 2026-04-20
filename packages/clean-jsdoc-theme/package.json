@@ -24,8 +24,8 @@
   "dependencies": {
     "@clean-jsdoc-theme/core": "workspace:^",
     "@clean-jsdoc-theme/i18n": "workspace:^",
-    "@clean-jsdoc-theme/astro": "workspace:^",
-    "@clean-jsdoc-theme/ui": "workspace:^"
+    "@clean-jsdoc-theme/dwar": "workspace:^",
+    "@clean-jsdoc-theme/rang": "workspace:^"
   },
   "devDependencies": {
     "tsup": "^8.0.0",

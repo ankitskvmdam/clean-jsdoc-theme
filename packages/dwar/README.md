@@ -1,4 +1,4 @@
-# @clean-jsdoc-theme/astro
+# @clean-jsdoc-theme/dwar
 
 Internal: Astro theme integration for clean-jsdoc-theme v5.
 
