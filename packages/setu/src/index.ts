@@ -1,36 +1,6 @@
 /* eslint-disable */
-/**
- * @clean-jsdoc-theme/setu
- *
- * Doclet processing and MDX generation.
- * Phase 1: type stubs only. Real implementation in Phase 2.
- */
-
-export interface Doclet {
-  kind: string;
-  name: string;
-  longname: string;
-  memberof?: string;
-  description?: string;
-  classdesc?: string;
-  params?: DocletParam[];
-  returns?: DocletReturn[];
-  examples?: string[];
-}
-
-export interface DocletParam {
-  name: string;
-  type?: { names: string[] };
-  description?: string;
-  optional?: boolean;
-}
-
-export interface DocletReturn {
-  type?: { names: string[] };
-  description?: string;
-}
-
-export function generateMdx(_doclets: Doclet[]): string[] {
+import type { TDocletList } from './doclet-schema';
+export function generateMdx(_doclets: TDocletList): string[] {
   // stub
   return [];
 }
