@@ -1,0 +1,23 @@
+# Monorepo
+node_modules
+dist
+.turbo
+.astro
+*.tsbuildinfo
+
+# Local
+.DS_Store
+.vscode/*
+!.vscode/settings.json
+
+# OS
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Env
+.env
+.env.local

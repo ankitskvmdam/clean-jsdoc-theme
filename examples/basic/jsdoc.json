@@ -1,0 +1,10 @@
+{
+  "source": {
+    "include": ["src"],
+    "includePattern": ".+\\.js$"
+  },
+  "opts": {
+    "destination": "docs/",
+    "template": "clean-jsdoc-theme"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "example-basic",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "docs": "jsdoc -c jsdoc.json",
+    "clean-node-modules": "node ../../scripts/clean.mjs node_modules"
+  },
+  "devDependencies": {
+    "clean-jsdoc-theme": "workspace:^",
+    "jsdoc": "^4.0.0"
+  }
+}

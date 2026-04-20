@@ -1,0 +1,38 @@
+{
+  "name": "clean-jsdoc-theme",
+  "version": "5.0.0-alpha.0",
+  "description": "A modern, markdown-first JSDoc theme with i18n support",
+  "main": "./publish.js",
+  "types": "./dist/index.d.ts",
+  "files": ["publish.js", "dist", "README.md"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ankitskvmdam/clean-jsdoc-theme.git"
+  },
+  "author": "Ankit Kumar (hello@ankdev.me)",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "node ../../scripts/clean.mjs dist .turbo",
+    "clean-node-modules": "node ../../scripts/clean.mjs node_modules"
+  },
+  "peerDependencies": {
+    "jsdoc": ">=3.x <=4.x"
+  },
+  "dependencies": {
+    "@clean-jsdoc-theme/core": "workspace:^",
+    "@clean-jsdoc-theme/i18n": "workspace:^",
+    "@clean-jsdoc-theme/astro": "workspace:^",
+    "@clean-jsdoc-theme/ui": "workspace:^"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.5.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": ["jsdoc", "jsdoc-template", "jsdoc-theme", "documentation"]
+}

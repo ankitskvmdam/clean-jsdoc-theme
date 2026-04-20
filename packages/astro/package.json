@@ -1,0 +1,35 @@
+{
+  "name": "@clean-jsdoc-theme/astro",
+  "version": "5.0.0-alpha.0",
+  "description": "Astro theme integration for clean-jsdoc-theme",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ankitskvmdam/clean-jsdoc-theme.git"
+  },
+  "author": "Ankit Kumar (hello@ankdev.me)",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "node ../../scripts/clean.mjs dist .turbo",
+    "clean-node-modules": "node ../../scripts/clean.mjs node_modules"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.5.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
