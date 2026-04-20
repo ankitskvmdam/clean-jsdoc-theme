@@ -1,4 +1,4 @@
-# @clean-jsdoc-theme/core
+# @clean-jsdoc-theme/setu
 
 Internal: doclet processing and MDX generation for clean-jsdoc-theme v5.
 

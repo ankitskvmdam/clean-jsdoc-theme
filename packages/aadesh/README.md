@@ -1,4 +1,4 @@
-# @clean-jsdoc-theme/cli
+# @clean-jsdoc-theme/aadesh
 
 CLI for clean-jsdoc-theme i18n and build workflows.
 

@@ -1,4 +1,4 @@
-# @clean-jsdoc-theme/i18n
+# @clean-jsdoc-theme/bhasha
 
 Internal: localization tooling for clean-jsdoc-theme v5.
 

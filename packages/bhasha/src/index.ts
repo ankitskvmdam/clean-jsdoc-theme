@@ -1,6 +1,6 @@
 /* eslint-disable */
 /**
- * @clean-jsdoc-theme/i18n
+ * @clean-jsdoc-theme/bhasha
  *
  * Extract/translate/build i18n pipeline. Phase 1: type stubs.
  */

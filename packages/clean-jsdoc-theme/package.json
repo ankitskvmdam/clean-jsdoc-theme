@@ -39,8 +39,8 @@
     "jsdoc": ">=4.x"
   },
   "dependencies": {
-    "@clean-jsdoc-theme/core": "workspace:^",
-    "@clean-jsdoc-theme/i18n": "workspace:^",
+    "@clean-jsdoc-theme/setu": "workspace:^",
+    "@clean-jsdoc-theme/bhasha": "workspace:^",
     "@clean-jsdoc-theme/dwar": "workspace:^",
     "@clean-jsdoc-theme/rang": "workspace:^"
   },

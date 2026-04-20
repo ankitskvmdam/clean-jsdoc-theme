@@ -1,6 +1,6 @@
 /* eslint-disable */
 /**
- * @clean-jsdoc-theme/core
+ * @clean-jsdoc-theme/setu
  *
  * Doclet processing and MDX generation.
  * Phase 1: type stubs only. Real implementation in Phase 2.

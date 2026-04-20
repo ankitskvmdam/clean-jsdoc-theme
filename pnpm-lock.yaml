@@ -69,39 +69,14 @@ importers:
         specifier: ^14.0.0
         version: 14.2.6
 
-  packages/clean-jsdoc-theme:
+  packages/aadesh:
     dependencies:
-      '@clean-jsdoc-theme/core':
+      '@clean-jsdoc-theme/bhasha':
         specifier: workspace:^
-        version: link:../core
-      '@clean-jsdoc-theme/dwar':
+        version: link:../bhasha
+      '@clean-jsdoc-theme/setu':
         specifier: workspace:^
-        version: link:../dwar
-      '@clean-jsdoc-theme/i18n':
-        specifier: workspace:^
-        version: link:../i18n
-      '@clean-jsdoc-theme/rang':
-        specifier: workspace:^
-        version: link:../rang
-      jsdoc:
-        specifier: '>=3.x <=4.x'
-        version: 4.0.5
-    devDependencies:
-      tsup:
-        specifier: ^8.0.0
-        version: 8.5.1(postcss@8.5.10)(typescript@5.9.3)
-      typescript:
-        specifier: ^5.5.0
-        version: 5.9.3
-
-  packages/cli:
-    dependencies:
-      '@clean-jsdoc-theme/core':
-        specifier: workspace:^
-        version: link:../core
-      '@clean-jsdoc-theme/i18n':
-        specifier: workspace:^
-        version: link:../i18n
+        version: link:../setu
       commander:
         specifier: 14.0.3
         version: 14.0.3
@@ -116,31 +91,41 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
-  packages/core:
+  packages/bhasha:
     devDependencies:
-      '@types/node':
-        specifier: ^22.0.0
-        version: 22.19.17
       tsup:
         specifier: ^8.0.0
         version: 8.5.1(postcss@8.5.10)(typescript@5.9.3)
       typescript:
         specifier: ^5.5.0
         version: 5.9.3
-      vitest:
-        specifier: ^2.0.0
-        version: 2.1.9(@types/node@22.19.17)(lightningcss@1.32.0)
+
+  packages/clean-jsdoc-theme:
+    dependencies:
+      '@clean-jsdoc-theme/bhasha':
+        specifier: workspace:^
+        version: link:../bhasha
+      '@clean-jsdoc-theme/dwar':
+        specifier: workspace:^
+        version: link:../dwar
+      '@clean-jsdoc-theme/rang':
+        specifier: workspace:^
+        version: link:../rang
+      '@clean-jsdoc-theme/setu':
+        specifier: workspace:^
+        version: link:../setu
+      jsdoc:
+        specifier: '>=4.x'
+        version: 4.0.5
+    devDependencies:
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.1(postcss@8.5.10)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
 
   packages/dwar:
-    devDependencies:
-      tsup:
-        specifier: ^8.0.0
-        version: 8.5.1(postcss@8.5.10)(typescript@5.9.3)
-      typescript:
-        specifier: ^5.5.0
-        version: 5.9.3
-
-  packages/i18n:
     devDependencies:
       tsup:
         specifier: ^8.0.0
@@ -157,6 +142,21 @@ importers:
       typescript:
         specifier: ^5.5.0
         version: 5.9.3
+
+  packages/setu:
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.17
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.1(postcss@8.5.10)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@22.19.17)(lightningcss@1.32.0)
 
 packages:
 

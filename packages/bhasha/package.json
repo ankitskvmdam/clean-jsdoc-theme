@@ -1,13 +1,22 @@
 {
-  "name": "@clean-jsdoc-theme/cli",
+  "name": "@clean-jsdoc-theme/bhasha",
   "version": "5.0.0-alpha.0",
-  "description": "CLI for clean-jsdoc-theme i18n and build workflows",
+  "description": "Localization tooling for clean-jsdoc-theme",
   "type": "module",
-  "bin": {
-    "clean-jsdoc": "./dist/cli.js"
-  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ankitskvmdam/clean-jsdoc-theme.git"
+  },
+  "author": "Ankit Kumar (hello@ankdev.me)",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "files": [
     "dist",
     "README.md"
@@ -19,18 +28,6 @@
     "typecheck": "tsc --noEmit",
     "clean": "node ../../scripts/clean.mjs dist .turbo",
     "clean-node-modules": "node ../../scripts/clean.mjs node_modules"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ankitskvmdam/clean-jsdoc-theme.git"
-  },
-  "author": "Ankit Kumar (hello@ankdev.me)",
-  "license": "MIT",
-  "dependencies": {
-    "@clean-jsdoc-theme/core": "workspace:^",
-    "@clean-jsdoc-theme/i18n": "workspace:^",
-    "commander": "14.0.3",
-    "ora": "9.3.0"
   },
   "devDependencies": {
     "tsup": "^8.0.0",

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cmd //c \"move C:\\\\\\\\Users\\\\\\\\ankit\\\\\\\\projects\\\\\\\\github\\\\\\\\clean-jsdoc-theme\\\\\\\\packages\\\\\\\\core C:\\\\\\\\Users\\\\\\\\ankit\\\\\\\\projects\\\\\\\\github\\\\\\\\clean-jsdoc-theme\\\\\\\\packages\\\\\\\\setu\")",
+      "Bash(cmd //c \"move C:\\\\\\\\Users\\\\\\\\ankit\\\\\\\\projects\\\\\\\\github\\\\\\\\clean-jsdoc-theme\\\\\\\\packages\\\\\\\\i18n C:\\\\\\\\Users\\\\\\\\ankit\\\\\\\\projects\\\\\\\\github\\\\\\\\clean-jsdoc-theme\\\\\\\\packages\\\\\\\\bhasha\")",
+      "Bash(node *)"
+    ]
+  }
+}
