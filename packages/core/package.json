@@ -17,11 +17,15 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "vitest run",
+    "lint": "eslint src",
     "typecheck": "tsc --noEmit",
     "clean": "node ../../scripts/clean.mjs dist .turbo",
     "clean-node-modules": "node ../../scripts/clean.mjs node_modules"

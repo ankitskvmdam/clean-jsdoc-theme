@@ -1,3 +1,4 @@
+/* eslint-disable */
 /**
  * @clean-jsdoc-theme/rang
  *

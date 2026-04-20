@@ -1,10 +1,15 @@
 {
-  "source": {
-    "include": ["src"],
-    "includePattern": ".+\\.js$"
+  "tags": {
+    "allowUnknownTags": true
   },
+  "source": {
+    "include": ["./src", "./README.md"]
+  },
+  "plugins": ["plugins/markdown"],
   "opts": {
-    "destination": "docs/",
-    "template": "clean-jsdoc-theme"
+    "encoding": "utf8",
+    "destination": "dist",
+    "recurse": true,
+    "template": "node_modules/clean-jsdoc-theme"
   }
 }

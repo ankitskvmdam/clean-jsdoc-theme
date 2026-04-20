@@ -1,0 +1,5 @@
+{
+  "watch": ["src", "jsdoc.json", "../../packages/clean-jsdoc-theme/dist"],
+  "ext": "js,cjs,mjs,json",
+  "exec": "jsdoc -c jsdoc.json"
+}

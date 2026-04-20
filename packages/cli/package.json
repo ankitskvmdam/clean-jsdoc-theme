@@ -8,10 +8,14 @@
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
+    "lint": "eslint src",
     "typecheck": "tsc --noEmit",
     "clean": "node ../../scripts/clean.mjs dist .turbo",
     "clean-node-modules": "node ../../scripts/clean.mjs node_modules"

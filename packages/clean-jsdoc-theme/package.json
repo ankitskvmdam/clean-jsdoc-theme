@@ -2,9 +2,25 @@
   "name": "clean-jsdoc-theme",
   "version": "5.0.0-alpha.0",
   "description": "A modern, markdown-first JSDoc theme with i18n support",
-  "main": "./publish.js",
-  "types": "./dist/index.d.ts",
-  "files": ["publish.js", "dist", "README.md"],
+  "main": "./dist/publish.js",
+  "types": "./dist/publish.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/publish.js",
+      "types": "./dist/publish.d.ts",
+      "import": "./dist/publish.mjs"
+    },
+    "./publish": {
+      "require": "./dist/publish.js",
+      "types": "./dist/publish.d.ts",
+      "import": "./dist/publish.mjs"
+    }
+  },
+  "files": [
+    "publish.js",
+    "dist",
+    "README.md"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ankitskvmdam/clean-jsdoc-theme.git"
@@ -14,12 +30,13 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
+    "lint": "eslint src",
     "typecheck": "tsc --noEmit",
     "clean": "node ../../scripts/clean.mjs dist .turbo",
     "clean-node-modules": "node ../../scripts/clean.mjs node_modules"
   },
   "peerDependencies": {
-    "jsdoc": ">=3.x <=4.x"
+    "jsdoc": ">=4.x"
   },
   "dependencies": {
     "@clean-jsdoc-theme/core": "workspace:^",
@@ -34,5 +51,10 @@
   "publishConfig": {
     "access": "public"
   },
-  "keywords": ["jsdoc", "jsdoc-template", "jsdoc-theme", "documentation"]
+  "keywords": [
+    "jsdoc",
+    "jsdoc-template",
+    "jsdoc-theme",
+    "documentation"
+  ]
 }

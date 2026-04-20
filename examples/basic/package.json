@@ -4,10 +4,14 @@
   "private": true,
   "scripts": {
     "docs": "jsdoc -c jsdoc.json",
+    "dev": "jsdoc -c jsdoc.json && concurrently \"nodemon\" \"serve dist\"",
     "clean-node-modules": "node ../../scripts/clean.mjs node_modules"
   },
   "devDependencies": {
     "clean-jsdoc-theme": "workspace:^",
-    "jsdoc": "^4.0.0"
+    "concurrently": "^9.0.0",
+    "jsdoc": "^4.0.0",
+    "nodemon": "^3.0.0",
+    "serve": "^14.0.0"
   }
 }
