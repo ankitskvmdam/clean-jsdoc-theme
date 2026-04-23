@@ -1,9 +1,21 @@
 /**
- * Greets a name.
- * @param {string} name - The name to greet.
- * @author Ankit Kumar.
- * @returns {string} The greeting.
+ * Entry point
+ * @exports App
  */
-export function greet(name) {
-  return `Hello, ${name}!`;
+
+import { createUser } from './services/UserService.js';
+
+/**
+ * Initialize app
+ * See {@link createUser}
+ *
+ * Example:
+ * {@code
+ * createUser({ name: "Ank" });
+ * }
+ *
+ * {@tutorial getting-started}
+ */
+export function init() {
+  console.log('App initialized');
 }
