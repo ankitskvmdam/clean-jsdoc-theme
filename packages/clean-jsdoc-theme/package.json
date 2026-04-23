@@ -39,12 +39,13 @@
     "jsdoc": ">=4.x"
   },
   "dependencies": {
-    "@clean-jsdoc-theme/setu": "workspace:^",
     "@clean-jsdoc-theme/bhasha": "workspace:^",
     "@clean-jsdoc-theme/dwar": "workspace:^",
-    "@clean-jsdoc-theme/rang": "workspace:^"
+    "@clean-jsdoc-theme/rang": "workspace:^",
+    "@clean-jsdoc-theme/setu": "workspace:^"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "tsup": "^8.0.0",
     "typescript": "^5.5.0"
   },
