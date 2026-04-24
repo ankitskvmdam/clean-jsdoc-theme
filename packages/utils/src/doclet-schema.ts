@@ -19,7 +19,7 @@ export const DocletMetaCodeSchema = z.object({
   funcscope: z.string().optional(),
   id: z.string().optional(),
   name: z.unknown().optional(),
-  node: z.record(z.string(), z.unknown()).optional(),
+  node: z.object().optional(),
   paramnames: z.array(z.string()).optional(),
   type: z.string().optional(),
   value: z.unknown().optional(),
@@ -33,7 +33,7 @@ export const DocletMetaSchema = z.object({
   lineno: z.number().optional(),
   path: z.string().optional(),
   range: z.tuple([z.number(), z.number()]).optional(),
-  vars: z.record(z.string(), z.unknown()).optional(),
+  vars: z.object().optional(),
 });
 export type TDocletMeta = z.infer<typeof DocletMetaSchema>;
 
@@ -208,14 +208,14 @@ export const TBugsInfoSchema = z.object({
 
 export type TBugsInfo = z.infer<typeof TBugsInfoSchema>;
 
-export const TPackageDocletSchema = z.object({
+export const PackageDocletSchema = z.object({
   author: z.union([z.string(), TContactInfoSchema]).optional(),
   bugs: z.union([z.string(), TBugsInfoSchema]).optional(),
   contributors: z.array(z.union([z.string(), TContactInfoSchema])).optional(),
-  dependencies: z.record(z.string(), z.string()).optional(),
+  dependencies: z.object().optional(),
   description: z.string().optional(),
-  devDependencies: z.record(z.string(), z.string()).optional(),
-  engines: z.record(z.string(), z.string()).optional(),
+  devDependencies: z.object().optional(),
+  engines: z.object().optional(),
   files: z.array(z.string()).optional(),
   homepage: z.string().optional(),
   keywords: z.array(z.string()).optional(),
@@ -240,10 +240,20 @@ export const TPackageDocletSchema = z.object({
   version: z.string().optional(),
 });
 
-export type TPackageDoclet = z.infer<typeof TPackageDocletSchema>;
+export type TPackageDoclet = z.infer<typeof PackageDocletSchema>;
 
 // ── DOCLETS LIST ─────────────────────────────────────────────────────────────
 
-export const DocletListSchema = z.array(z.union([DocletSchema, TPackageDocletSchema]));
+export const DocletListSchema = z.array(z.union([DocletSchema, PackageDocletSchema]));
 
 export type TDocletList = z.infer<typeof DocletListSchema>;
+
+export function isPackageDoclet(doclet: unknown): doclet is TPackageDoclet {
+  if (!PackageDocletSchema.safeParse(doclet).success) return true;
+  return (doclet as TPackageDoclet).kind === 'package';
+}
+
+export function isDoclet(doclet: unknown): doclet is TDoclet {
+  if (!DocletSchema.safeParse(doclet).success) return false;
+  return (doclet as TDoclet).kind !== 'package';
+}

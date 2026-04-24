@@ -1,4 +1,5 @@
-import { taffy } from '@jsdoc/salty';
+// import { TDocletList } from '@clean-jsdoc-theme/utils';
+import { default as salty } from '@jsdoc/salty';
 
 export const data = {
   _items: [
@@ -3825,3 +3826,5 @@ export const data = {
     },
   ],
 };
+
+export const jsdocTaffyData = salty.taffy(data._items);
