@@ -1,5 +1,4 @@
-import { TDoclet } from './doclet-schema';
-import { TJSDocSaltyCollection } from './types';
+import { TDoclet, TJSDocSaltyCollection } from '@clean-jsdoc-theme/utils';
 import { isDocletList } from './util';
 
 export function generateMdx(jsdocSaltyDB: TJSDocSaltyCollection<TDoclet>): string[] {

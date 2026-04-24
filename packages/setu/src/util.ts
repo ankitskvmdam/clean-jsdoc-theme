@@ -5,7 +5,7 @@ import {
   TPackageDoclet,
   DocletListSchema,
   TDocletList,
-} from './doclet-schema';
+} from '@clean-jsdoc-theme/utils';
 
 export function isPackageDoclet(doclet: unknown): doclet is TPackageDoclet {
   if (!PackageRefSchema.safeParse(doclet).success) return true;

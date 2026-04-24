@@ -105,6 +105,7 @@ export type TDocletScope = z.infer<typeof DocletScopeSchema>;
 
 export const DocletAccessSchema = z.enum(['package', 'private', 'protected', 'public']);
 export type TDocletAccess = z.infer<typeof DocletAccessSchema>;
+
 // ── TAG ─────────────────────────────────────────────────────────────────────
 
 export const DocletTagSchema = z.object({
