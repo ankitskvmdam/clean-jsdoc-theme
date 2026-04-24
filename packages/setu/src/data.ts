@@ -1,4 +1,3 @@
-// import { TDocletList } from '@clean-jsdoc-theme/utils';
 import { default as salty } from '@jsdoc/salty';
 
 export const data = {
