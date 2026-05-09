@@ -1,17 +1,17 @@
 import { DocletListSchema, TDoclet, TJSDocSaltyCollection } from '@clean-jsdoc-theme/utils';
 
-export function validateJSDocSaltyDBOrThrow(
-  jsdocSaltyDB: unknown
-): jsdocSaltyDB is TJSDocSaltyCollection<TDoclet> {
-  if (typeof jsdocSaltyDB !== 'function') {
-    throw new Error('Invalid jsdocSaltyDB: expected a function, got ' + typeof jsdocSaltyDB);
+export function validateCollectionOrThrow(
+  collection: unknown
+): asserts collection is TJSDocSaltyCollection<TDoclet> {
+  if (typeof collection !== 'function') {
+    throw new Error('Invalid collection: expected a function, got ' + typeof collection);
   }
 
   let data: unknown;
   try {
-    data = jsdocSaltyDB().get();
+    data = collection().get();
   } catch {
-    throw new Error('jsdocSaltyDB is not a valid @jsdoc/salty DB ');
+    throw new Error('collection is not a valid @jsdoc/salty DB ');
   }
 
   const docletListSchemaResult = DocletListSchema.safeParse(data);
@@ -26,6 +26,4 @@ export function validateJSDocSaltyDBOrThrow(
       ].join('\n')
     );
   }
-
-  return true;
 }

@@ -1,6 +1,4 @@
-import { default as salty } from '@jsdoc/salty';
-
-export const data = {
+export const raw = {
   _items: [
     {
       comment: '/**\n * User roles\n * @readonly\n * @enum {string}\n */',
@@ -3825,5 +3823,3 @@ export const data = {
     },
   ],
 };
-
-export const jsdocTaffyData = salty.taffy(data._items);

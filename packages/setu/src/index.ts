@@ -1,7 +1,7 @@
-import { validateJSDocSaltyDBOrThrow } from './validate';
+import { validateCollectionOrThrow } from './validate';
 
-export function generateMdx(jsdocSaltyDB: unknown): string[] {
-  validateJSDocSaltyDBOrThrow(jsdocSaltyDB);
+export function generateMdx(collection: unknown): string[] {
+  validateCollectionOrThrow(collection);
 
   // At this point we have a valid doclet DB.
   console.log('Good to go!');
