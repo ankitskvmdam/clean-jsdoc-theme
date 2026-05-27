@@ -4,6 +4,7 @@ dist
 .turbo
 .astro
 *.tsbuildinfo
+preview
 
 # Local
 .DS_Store

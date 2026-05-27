@@ -2,8 +2,8 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": "src",
-    "types": ["./@types/jsdoc-salty"],
+    "rootDir": ".",
+    "types": ["node", "./@types/jsdoc-salty"],
   },
-  "include": ["src"],
+  "include": ["src", "scripts"],
 }
