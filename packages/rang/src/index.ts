@@ -1,67 +1,48 @@
 /**
  * @clean-jsdoc-theme/rang
  *
- * Preact component library + MDX component map + island registry. Phase 1
- * ships type-correct placeholders so dwar can import them without crashing
- * its build; real implementations land in Phase 3.
+ * Preact component library + MDX component map + island registry. Provides
+ * the typed components that dwar bundles for SSR and hydration.
+ *
+ * Components are styled with Tailwind utility classes that reference CSS
+ * variables (e.g. `bg-[var(--clean-bg)]`). dwar's Phase 4 work plumbs the
+ * ThemeTokens values into those variables on `:root`.
  */
-
-// Phase 1 placeholders use ComponentType<any> intentionally — Phase 3 replaces
-// each with its real typed signature.
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-import type { ComponentType } from 'preact';
-import type { IslandName } from '@clean-jsdoc-theme/utils';
 
 export const RANG_PACKAGE_VERSION = '5.0.0-alpha.0';
 
-// --- Layout / chrome components -----------------------------------------
+export { Layout } from './components/Layout';
+export type { LayoutProps, LayoutPkg } from './components/Layout';
 
-/** Page layout that wraps every rendered page. */
-export const Layout: ComponentType<any> = null as unknown as ComponentType<any>;
+export { Header } from './components/Header';
+export type { HeaderProps, HeaderPkg } from './components/Header';
 
-/** Sidebar (nav tree). */
-export const Sidebar: ComponentType<any> = null as unknown as ComponentType<any>;
+export { Footer } from './components/Footer';
+export type { FooterProps, FooterPkg } from './components/Footer';
 
-/** Table-of-contents column. */
-export const TOC: ComponentType<any> = null as unknown as ComponentType<any>;
+export { Sidebar } from './components/Sidebar';
+export type { SidebarProps } from './components/Sidebar';
 
-/** Site header. */
-export const Header: ComponentType<any> = null as unknown as ComponentType<any>;
+export { TOC } from './components/TOC';
+export type { TOCProps } from './components/TOC';
 
-/** Site footer. */
-export const Footer: ComponentType<any> = null as unknown as ComponentType<any>;
+export { CodeBlock } from './components/CodeBlock';
+export type { CodeBlockProps } from './components/CodeBlock';
 
-// --- Code / interactive primitives --------------------------------------
+export { CodeTabs } from './components/CodeTabs';
+export type { CodeTabsProps, CodeTab } from './components/CodeTabs';
 
-/** Syntax-highlighted code block (Shiki). */
-export const CodeBlock: ComponentType<any> = null as unknown as ComponentType<any>;
+export { CopyBtn } from './components/CopyBtn';
+export type { CopyBtnProps } from './components/CopyBtn';
 
-/** Tabbed code blocks (e.g. JS / TS variants). */
-export const CodeTabs: ComponentType<any> = null as unknown as ComponentType<any>;
+export { ThemeToggle } from './components/ThemeToggle';
+export type { ThemeToggleProps } from './components/ThemeToggle';
 
-/** Copy-to-clipboard button. */
-export const CopyBtn: ComponentType<any> = null as unknown as ComponentType<any>;
+export { CmdK } from './components/CmdK';
+export type { CmdKProps } from './components/CmdK';
 
-/** Light/dark theme toggle. */
-export const ThemeToggle: ComponentType<any> = null as unknown as ComponentType<any>;
+export { MobileNav } from './components/MobileNav';
+export type { MobileNavProps } from './components/MobileNav';
 
-/** Cmd-K command palette. */
-export const CmdK: ComponentType<any> = null as unknown as ComponentType<any>;
-
-// --- MDX + island wiring -------------------------------------------------
-
-/**
- * Default MDX element-name → component map. Consumers can spread + override
- * via `ThemeConfig.components.mdxComponents`.
- */
-export const defaultMdxComponents: Record<string, ComponentType<any>> =
-  null as unknown as Record<string, ComponentType<any>>;
-
-/**
- * Registry mapping every `IslandName` to the component that renders it
- * (both for SSR and hydration). Phase 3 will populate this with real
- * components; Phase 1 keeps the shape so dwar's bundler entry points compile.
- */
-export const ISLAND_REGISTRY: Record<IslandName, ComponentType<any>> =
-  null as unknown as Record<IslandName, ComponentType<any>>;
+export { defaultMdxComponents } from './mdx-components';
+export { ISLAND_REGISTRY } from './islands';

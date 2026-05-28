@@ -1,0 +1,23 @@
+import type { ComponentType } from 'preact';
+import type { IslandName } from '@clean-jsdoc-theme/utils';
+
+import { Sidebar } from './components/Sidebar';
+import { TOC } from './components/TOC';
+import { CmdK } from './components/CmdK';
+import { CodeTabs } from './components/CodeTabs';
+import { CopyBtn } from './components/CopyBtn';
+import { ThemeToggle } from './components/ThemeToggle';
+import { MobileNav } from './components/MobileNav';
+
+// Island registry is intentionally heterogeneous across IslandName keys; per-key
+// prop shapes are recovered at call sites via IslandPropsMap[K].
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const ISLAND_REGISTRY: Record<IslandName, ComponentType<any>> = {
+  sidebar: Sidebar,
+  toc: TOC,
+  cmdk: CmdK,
+  'code-tabs': CodeTabs,
+  'copy-btn': CopyBtn,
+  'theme-toggle': ThemeToggle,
+  'mobile-nav': MobileNav,
+};
