@@ -1,0 +1,175 @@
+import { describe, it, expect } from 'vitest';
+import { render } from '../index';
+import { makeManifest, minimalTheme } from './fixtures';
+import type { OutputFile } from '@clean-jsdoc-theme/utils';
+
+function asString(file: OutputFile): string {
+  return typeof file.contents === 'string'
+    ? file.contents
+    : new TextDecoder().decode(file.contents);
+}
+
+describe('render() — smoke', () => {
+  it('emits an HTML file per page', async () => {
+    const manifest = makeManifest();
+    const result = await render(manifest, { theme: minimalTheme });
+
+    const paths = result.files.map((f) => f.path);
+    expect(paths).toContain('index.html');
+    expect(paths).toContain('guide/intro/index.html');
+  });
+
+  it('renders the page title into HTML', async () => {
+    const manifest = makeManifest();
+    const result = await render(manifest, { theme: minimalTheme });
+    const home = result.files.find((f) => f.path === 'index.html')!;
+    const html = asString(home);
+    // siteName from tokens takes precedence over pkg.name.
+    expect(html).toContain('<title>Home | Test Site</title>');
+    // MDX body rendered:
+    expect(html).toContain('Welcome');
+    expect(html).toContain('home');
+  });
+
+  it('emits a sidebar island marker on each page', async () => {
+    const manifest = makeManifest();
+    const result = await render(manifest, { theme: minimalTheme });
+    for (const path of ['index.html', 'guide/intro/index.html']) {
+      const html = asString(result.files.find((f) => f.path === path)!);
+      expect(html).toContain('data-island="sidebar"');
+      expect(html).toMatch(/data-island-id="i\d+"/);
+    }
+  });
+
+  it('links the buildId-suffixed stylesheet', async () => {
+    const manifest = makeManifest();
+    const result = await render(manifest, { theme: minimalTheme });
+    const home = asString(result.files.find((f) => f.path === 'index.html')!);
+    expect(home).toContain(`href="/_assets/styles.${manifest.buildId}.css"`);
+  });
+
+  it('inlines the pre-hydration theme script', async () => {
+    const manifest = makeManifest();
+    const result = await render(manifest, { theme: minimalTheme });
+    const home = asString(result.files.find((f) => f.path === 'index.html')!);
+    expect(home).toContain(`localStorage.getItem('theme')`);
+    expect(home).toContain(`prefers-color-scheme: dark`);
+  });
+
+  it('emits seven non-empty island chunks', async () => {
+    const manifest = makeManifest();
+    const result = await render(manifest, { theme: minimalTheme });
+    const expected = [
+      '_islands/sidebar.js',
+      '_islands/toc.js',
+      '_islands/cmdk.js',
+      '_islands/code-tabs.js',
+      '_islands/copy-btn.js',
+      '_islands/theme-toggle.js',
+      '_islands/mobile-nav.js',
+    ];
+    for (const path of expected) {
+      const chunk = result.files.find((f) => f.path === path);
+      expect(chunk, `missing chunk ${path}`).toBeDefined();
+      expect(asString(chunk!).length).toBeGreaterThan(0);
+    }
+  });
+
+  it('emits a CSS file with theme variables on :root', async () => {
+    const manifest = makeManifest();
+    const result = await render(manifest, { theme: minimalTheme });
+    const css = result.files.find((f) =>
+      f.path.startsWith('_assets/styles.') && f.path.endsWith('.css'),
+    );
+    expect(css).toBeDefined();
+    const text = asString(css!);
+    expect(text).toContain(':root');
+    expect(text).toContain('--clean-bg: #ffffff;');
+    expect(text).toContain('--clean-fg: #111827;');
+  });
+
+  it('produces a search entry per non-hidden page', async () => {
+    const manifest = makeManifest();
+    const result = await render(manifest, { theme: minimalTheme });
+    expect(result.search).toBeDefined();
+    expect(result.search!.length).toBe(2);
+    const titles = result.search!.map((s) => s.title).sort();
+    expect(titles).toEqual(['Home', 'Introduction']);
+    for (const entry of result.search!) {
+      expect(entry.excerpt).toBeTruthy();
+      expect(entry.excerpt!.length).toBeLessThanOrEqual(201);
+    }
+  });
+
+  it('populates the stats block', async () => {
+    const manifest = makeManifest();
+    const result = await render(manifest, { theme: minimalTheme });
+    expect(result.stats.pageCount).toBe(2);
+    expect(result.stats.assetCount).toBeGreaterThanOrEqual(8); // 1 css + 7 islands
+    expect(result.stats.cssBytes).toBeGreaterThan(0);
+    expect(result.stats.jsBytes).toBeGreaterThan(0);
+    expect(result.stats.durationMs).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe('render() — pre-hydration ordering', () => {
+  it('places the inline theme script before the stylesheet link', async () => {
+    const result = await render(makeManifest(), { theme: minimalTheme });
+    const home = asString(result.files.find((f) => f.path === 'index.html')!);
+    const scriptIdx = home.indexOf(`localStorage.getItem('theme')`);
+    const linkIdx = home.indexOf('<link rel="stylesheet"');
+    expect(scriptIdx).toBeGreaterThanOrEqual(0);
+    expect(linkIdx).toBeGreaterThanOrEqual(0);
+    expect(scriptIdx).toBeLessThan(linkIdx);
+  });
+});
+
+describe('render() — island loader + payload', () => {
+  it('references every island chunk path from the loader', async () => {
+    const result = await render(makeManifest(), { theme: minimalTheme });
+    const home = asString(result.files.find((f) => f.path === 'index.html')!);
+    for (const name of [
+      'sidebar',
+      'toc',
+      'cmdk',
+      'code-tabs',
+      'copy-btn',
+      'theme-toggle',
+      'mobile-nav',
+    ]) {
+      expect(home).toContain(`/_islands/${name}.js`);
+    }
+  });
+
+  it('emits a data-island-props JSON payload on each page', async () => {
+    const result = await render(makeManifest(), { theme: minimalTheme });
+    const home = asString(result.files.find((f) => f.path === 'index.html')!);
+    expect(home).toMatch(
+      /<script type="application\/json" data-island-props>\{.*\}<\/script>/u,
+    );
+  });
+});
+
+describe('render() — CSS variable mapping', () => {
+  it('maps token colors to --clean-* custom properties', async () => {
+    const customTheme = {
+      ...minimalTheme,
+      tokens: {
+        ...minimalTheme.tokens,
+        colors: {
+          ...minimalTheme.tokens.colors,
+          bg: '#ff00ff',
+          accent: '#abcdef',
+        },
+      },
+    };
+    const result = await render(makeManifest(), { theme: customTheme });
+    const css = asString(
+      result.files.find((f) =>
+        f.path.startsWith('_assets/styles.') && f.path.endsWith('.css'),
+      )!,
+    );
+    expect(css).toContain('--clean-bg: #ff00ff;');
+    expect(css).toContain('--clean-accent: #abcdef;');
+  });
+});

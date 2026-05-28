@@ -1,44 +1,173 @@
 /**
  * @clean-jsdoc-theme/dwar
  *
- * Renders a SiteManifest into HTML/CSS/JS files (Preact + MDX + Tailwind v4 +
+ * Renders a SiteManifest into HTML/CSS/JS files (Preact + MDX + utility CSS +
  * esbuild islands), and provides a separate post-write hook for Pagefind.
  *
- * Phase 1: types + stubs. Real rendering lands in Phase 4.
+ * `render()` is pure: it returns an in-memory RenderResult. Callers write the
+ * files themselves and then optionally call `runPagefindAgainstDir`.
  */
 
+import { h } from 'preact';
+import { render as renderToString } from 'preact-render-to-string';
+import { defaultMdxComponents } from '@clean-jsdoc-theme/rang';
 import type {
+  OutputFile,
+  Page,
   RenderOptions,
   RenderResult,
+  SearchEntry,
   SiteManifest,
+  IslandName,
 } from '@clean-jsdoc-theme/utils';
 
+import { compileMdxToComponent, type MdxComponentMap } from './mdx';
+import { SsrLayout, type IslandRecord } from './layout';
+import { renderHtmlDocument, htmlPathFor, extractExcerpt } from './html';
+import { bundleIslands, ALL_ISLANDS } from './islands-bundle';
+import { buildCss } from './css';
+
 export const DWAR_PACKAGE_VERSION = '5.0.0-alpha.0';
+
+function mergeMdxComponents(
+  override?: Record<string, unknown>,
+): MdxComponentMap {
+  if (!override) return { ...defaultMdxComponents };
+  // ComponentOverrides.mdxComponents is typed `ComponentType<any>`; the cast is safe.
+  return { ...defaultMdxComponents, ...(override as MdxComponentMap) };
+}
+
+async function renderPage(
+  page: Page,
+  manifest: SiteManifest,
+  components: MdxComponentMap,
+  basePath: string,
+  cssHref: string,
+  islandsBase: string,
+  siteName: string | undefined,
+): Promise<{ file: OutputFile; search: SearchEntry; islands: IslandRecord[] }> {
+  const { Component: MdxComponent } = await compileMdxToComponent(page.body, components);
+
+  const islands: IslandRecord[] = [];
+  const layoutVNode = h(
+    SsrLayout,
+    {
+      nav: manifest.nav,
+      currentSlug: page.slug,
+      headings: page.headings ?? [],
+      pkg: manifest.pkg,
+      siteName,
+      basePath,
+      islands,
+    },
+    h(MdxComponent, {}),
+  );
+
+  const bodyHtml = renderToString(layoutVNode);
+
+  const html = renderHtmlDocument({
+    page,
+    bodyHtml,
+    islands,
+    cssHref,
+    siteName: siteName ?? manifest.pkg?.name,
+    islandsBase,
+  });
+
+  const file: OutputFile = {
+    path: htmlPathFor(page.slug),
+    contents: html,
+  };
+
+  const search: SearchEntry = {
+    slug: page.slug,
+    title: page.frontmatter.title,
+    excerpt: extractExcerpt(page.body),
+  };
+
+  return { file, search, islands };
+}
 
 /**
  * Render a SiteManifest to in-memory output files. Pure: dwar does not write
  * to disk. Callers persist `result.files` themselves, then optionally call
  * `runPagefindAgainstDir` against the destination.
- *
- * Phase 1: stub.
  */
 export async function render(
-  _manifest: SiteManifest,
-  _opts: RenderOptions,
+  manifest: SiteManifest,
+  opts: RenderOptions,
 ): Promise<RenderResult> {
-  throw new Error('Not implemented — Phase 4');
+  const start = Date.now();
+  const theme = opts.theme;
+  const basePath = theme.basePath ?? '/';
+  const siteName = theme.tokens.siteName;
+  const components = mergeMdxComponents(
+    theme.components?.mdxComponents as Record<string, unknown> | undefined,
+  );
+
+  // Determine islands used across the build so we only bundle what's referenced.
+  // For Phase 4, every page goes through SsrLayout which always emits the same
+  // five island markers (mobile-nav, cmdk, theme-toggle, sidebar, toc). The
+  // remaining two (`code-tabs`, `copy-btn`) are MDX-embedded — Phase 4 still
+  // bundles them so the chunks are available if/when MDX content uses them.
+  const islandSet = new Set<IslandName>(ALL_ISLANDS);
+
+  const css = buildCss(theme.tokens, manifest.buildId);
+  const cssHref = `/${css.path}`;
+  const islandsBase = `/_islands`;
+
+  const files: OutputFile[] = [];
+  const search: SearchEntry[] = [];
+
+  // Render pages.
+  for (const page of manifest.pages) {
+    const { file, search: entry } = await renderPage(
+      page,
+      manifest,
+      components,
+      basePath,
+      cssHref,
+      islandsBase,
+      siteName,
+    );
+    files.push(file);
+    if (!page.frontmatter.hidden) search.push(entry);
+  }
+
+  // CSS file.
+  files.push({ path: css.path, contents: css.contents });
+
+  // Island chunks.
+  const chunks = await bundleIslands({
+    outDir: '_islands',
+    islands: [...islandSet],
+  });
+  let jsBytes = 0;
+  for (const chunk of chunks) {
+    files.push({ path: chunk.path, contents: chunk.contents });
+    jsBytes += chunk.byteSize;
+  }
+
+  const cssBytes = Buffer.byteLength(css.contents, 'utf8');
+  const durationMs = Date.now() - start;
+
+  // assetCount counts non-HTML files (CSS + JS chunks today).
+  const assetCount = files.length - manifest.pages.length;
+
+  return {
+    files,
+    search,
+    stats: {
+      pageCount: manifest.pages.length,
+      assetCount,
+      cssBytes,
+      jsBytes,
+      durationMs,
+    },
+  };
 }
 
-/**
- * Run Pagefind against an already-written site directory. Separated from
- * `render` per Q5 so the search index is always built against the real
- * on-disk artifacts (post-write, never against in-memory drafts).
- *
- * Phase 1: stub.
- */
-export async function runPagefindAgainstDir(_destination: string): Promise<void> {
-  throw new Error('Not implemented — Phase 4');
-}
+export { runPagefindAgainstDir } from './pagefind';
 
 // Re-export boundary types so consumers (e.g. publish.ts) can pull them from
 // dwar alone without also importing from utils.

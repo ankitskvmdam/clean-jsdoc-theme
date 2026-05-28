@@ -25,19 +25,29 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "lint": "eslint src",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit",
+    "smoke": "tsx scripts/smoke.ts",
     "clean": "node ../../scripts/clean.mjs dist .turbo",
     "clean-node-modules": "node ../../scripts/clean.mjs node_modules"
   },
   "devDependencies": {
-    "@mdx-js/mdx": "^3.0.0",
-    "preact": "^10.22.0",
+    "@types/node": "^22.0.0",
+    "happy-dom": "^15.11.0",
     "tsup": "^8.0.0",
-    "typescript": "^5.5.0"
+    "tsx": "^4.22.3",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
   },
   "dependencies": {
     "@clean-jsdoc-theme/rang": "workspace:^",
-    "@clean-jsdoc-theme/utils": "workspace:^"
+    "@clean-jsdoc-theme/setu": "workspace:^",
+    "@clean-jsdoc-theme/utils": "workspace:^",
+    "@mdx-js/mdx": "^3.0.0",
+    "esbuild": "^0.21.5",
+    "pagefind": "^1.1.0",
+    "preact": "^10.22.0",
+    "preact-render-to-string": "^6.5.13"
   },
   "publishConfig": {
     "access": "public"
