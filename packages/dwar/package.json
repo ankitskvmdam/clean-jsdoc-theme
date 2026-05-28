@@ -30,8 +30,14 @@
     "clean-node-modules": "node ../../scripts/clean.mjs node_modules"
   },
   "devDependencies": {
+    "@mdx-js/mdx": "^3.0.0",
+    "preact": "^10.22.0",
     "tsup": "^8.0.0",
     "typescript": "^5.5.0"
+  },
+  "dependencies": {
+    "@clean-jsdoc-theme/rang": "workspace:^",
+    "@clean-jsdoc-theme/utils": "workspace:^"
   },
   "publishConfig": {
     "access": "public"

@@ -30,8 +30,13 @@
     "clean-node-modules": "node ../../scripts/clean.mjs node_modules"
   },
   "devDependencies": {
+    "@types/mdx": "^2.0.13",
     "tsup": "^8.0.0",
     "typescript": "^5.5.0"
+  },
+  "dependencies": {
+    "@clean-jsdoc-theme/utils": "workspace:^",
+    "preact": "^10.22.0"
   },
   "publishConfig": {
     "access": "public"

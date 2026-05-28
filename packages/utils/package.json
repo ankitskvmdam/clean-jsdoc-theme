@@ -25,15 +25,19 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
+    "test": "vitest run",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
     "clean": "node ../../scripts/clean.mjs dist .turbo",
     "clean-node-modules": "node ../../scripts/clean.mjs node_modules"
   },
   "devDependencies": {
+    "@types/mdast": "^4.0.4",
     "@types/node": "^22.0.0",
+    "preact": "^10.22.0",
     "tsup": "^8.0.0",
-    "typescript": "^5.5.0"
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
   },
   "dependencies": {
     "zod": "^4.3.6"
