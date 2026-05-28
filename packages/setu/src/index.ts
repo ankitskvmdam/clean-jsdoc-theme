@@ -1,7 +1,13 @@
 import { validateCollectionOrThrow } from './validate';
-import type { SiteManifest } from '@clean-jsdoc-theme/utils';
+import {
+  buildClassPage,
+  buildNav,
+  computeBuildId,
+  enumerateClassLongnames,
+} from './generate-site';
+import type { Page, SiteManifest } from '@clean-jsdoc-theme/utils';
 
-/** Build-side options. Phase 1 is types-only; concrete options come in Phase 2. */
+/** Build-side options. */
 export interface GenerateSiteOptions {
   /** Optional package metadata to embed in the manifest. */
   pkg?: SiteManifest['pkg'];
@@ -9,16 +15,28 @@ export interface GenerateSiteOptions {
 
 /**
  * Build a `SiteManifest` from a JSDoc salty collection. This is the boundary
- * setu→dwar entry point.
- *
- * Phase 1: stub. Phase 2 will replace the body with the real implementation.
+ * setu→dwar entry point. Only `kind: 'class'` doclets are rendered today;
+ * other kinds are deferred (see architecture's "What's next").
  */
 export function generateSite(
   collection: unknown,
   _opts?: GenerateSiteOptions,
 ): SiteManifest {
   validateCollectionOrThrow(collection);
-  throw new Error('Not implemented — Phase 2');
+
+  const pages: Page[] = [];
+  for (const longname of enumerateClassLongnames(collection)) {
+    const page = buildClassPage(collection, longname);
+    if (page) pages.push(page);
+  }
+
+  const manifest: SiteManifest = {
+    pages,
+    nav: buildNav(pages),
+    buildId: computeBuildId(pages),
+  };
+  if (_opts?.pkg) manifest.pkg = _opts.pkg;
+  return manifest;
 }
 
 /**
@@ -29,3 +47,12 @@ export function generateSite(
 export function generateMdx(collection: unknown): string[] {
   return generateSite(collection).pages.map((p) => p.body);
 }
+
+export {
+  buildClassPage,
+  buildNav,
+  computeBuildId,
+  enumerateClassLongnames,
+  extractHeadings,
+  splitLongnameForSlug,
+} from './generate-site';
