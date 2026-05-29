@@ -11,9 +11,16 @@
  * and `preact` from the host's node_modules without writing files to disk.
  */
 
+import { fileURLToPath } from 'node:url';
+import { dirname } from 'node:path';
 import { build } from 'esbuild';
 import type { IslandName } from '@clean-jsdoc-theme/utils';
 import { getIslandChunkEntrySource } from './islands-loader';
+
+// Anchor esbuild's module resolution at dwar's own package directory so it
+// walks dwar's node_modules tree — preact and @clean-jsdoc-theme/rang are
+// dwar's deps, not the consumer's, so they live here regardless of cwd.
+const DWAR_PACKAGE_DIR = dirname(fileURLToPath(import.meta.url));
 
 const ALL_ISLANDS: IslandName[] = [
   'sidebar',
@@ -36,7 +43,7 @@ export interface IslandBundleResult {
 export interface BundleIslandsOptions {
   /** Path prefix for emitted chunks (default `_islands`). */
   outDir?: string;
-  /** Host project root, used as esbuild's resolve base. Defaults to CWD. */
+  /** esbuild's resolve base. Defaults to dwar's own package directory. */
   resolveDir?: string;
   /** Restrict bundling to the islands actually used (optimization). */
   islands?: IslandName[];
@@ -46,7 +53,7 @@ export async function bundleIslands(
   opts: BundleIslandsOptions = {},
 ): Promise<IslandBundleResult[]> {
   const outDir = (opts.outDir ?? '_islands').replace(/\/$/, '');
-  const resolveDir = opts.resolveDir ?? process.cwd();
+  const resolveDir = opts.resolveDir ?? DWAR_PACKAGE_DIR;
   const names = opts.islands ?? ALL_ISLANDS;
 
   const results: IslandBundleResult[] = [];

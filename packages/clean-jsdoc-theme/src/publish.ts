@@ -223,26 +223,11 @@ export async function publish(
 
   const manifest = generateSite(data, pkg ? { pkg } : undefined);
 
-  // dwar's island bundler invokes esbuild without an explicit `resolveDir`,
-  // so it defaults to `process.cwd()`. When JSDoc runs from the consumer's
-  // project root, that cwd doesn't see the dwar transitive deps (`preact`,
-  // `@clean-jsdoc-theme/rang`). Briefly chdir to dwar's own directory while
-  // `render()` runs so the bundler walks dwar's `node_modules` instead.
-  // Resolve `destination` to an absolute path first so the chdir doesn't
-  // affect where output files land.
   const absoluteDestination = resolvePath(destination);
-  const dwarDir = resolvePackageDir('@clean-jsdoc-theme/dwar');
-  const prevCwd = process.cwd();
-  let result;
-  try {
-    process.chdir(dwarDir);
-    result = await render(manifest, {
-      theme: defaultTheme,
-      destination: absoluteDestination,
-    });
-  } finally {
-    process.chdir(prevCwd);
-  }
+  const result = await render(manifest, {
+    theme: defaultTheme,
+    destination: absoluteDestination,
+  });
 
   await writeOutputFiles(absoluteDestination, result.files);
 
