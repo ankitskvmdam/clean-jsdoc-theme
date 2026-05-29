@@ -10,6 +10,6 @@
     "encoding": "utf8",
     "destination": "dist",
     "recurse": true,
-    "template": "node_modules/clean-jsdoc-theme/dist"
+    "template": "./node_modules/clean-jsdoc-theme/dist"
   }
 }
