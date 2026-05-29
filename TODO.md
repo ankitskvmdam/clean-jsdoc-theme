@@ -17,6 +17,28 @@ For architecture context, see [`packages/setu/docs/architecture.md`](./packages/
 
 ---
 
+## UI / theming follow-ups (from the post-Phase-4 visual pass)
+
+These came out of the Claude-Code-docs-style pass (fonts + navbar). See the "UI / theming pass" section in [`DONE_SO_FAR.md`](./DONE_SO_FAR.md). The changes are in the working tree but **not yet committed**.
+
+### U1. Fix `MobileNav` — completely broken
+
+Deferred deliberately. A stray `return null;` that was disabling it has been removed (so tests pass), but the drawer itself is still broken and needs a real fix. Until then it renders the hamburger but the behavior is not trusted. Owner-flagged as "don't deal with it now."
+
+### U2. Re-add search (CmdK) + theme (ThemeToggle) to the navbar
+
+Both were temporarily removed from the header during the restyle. The island chunks still build, so re-adding is markup-only — do it once the navbar design settles.
+
+### U3. Reconcile sidebar/TOC sticky offset with the new header height
+
+The header is now `h-16` (4rem) but the sidebar/TOC `<aside>` sticky wrappers still use `top-20` (5rem) from the old taller header. Align them so the rails sit flush under the header.
+
+### U4. Commit the UI / theming working-tree changes
+
+Fonts contract + navbar restyle + new CSS utilities are uncommitted. Commit once MobileNav's state is settled (U1/U2) so the commit isn't split awkwardly.
+
+---
+
 ## P1 — Quality + CI
 
 ### 1. Add CI

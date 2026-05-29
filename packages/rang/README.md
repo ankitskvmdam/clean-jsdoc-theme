@@ -40,7 +40,7 @@ Components are styled with Tailwind utility classes that reference CSS custom pr
 --clean-fg          --clean-fg-muted
 --clean-accent      --clean-accent-fg
 --clean-border
---clean-font-sans   --clean-font-mono
+--clean-font-heading   --clean-font-body   --clean-font-mono
 ```
 
 dwar's CSS pipeline plumbs `ThemeTokens` into these variables automatically. Standalone consumers need to define them themselves.

@@ -39,7 +39,8 @@ export function buildThemeVariableCss(tokens: ThemeTokens): string {
     `  --clean-accent: ${colors.accent};\n` +
     `  --clean-accent-fg: ${colors.accentFg};\n` +
     `  --clean-border: ${colors.border};\n` +
-    `  --clean-font-sans: ${fonts.sans};\n` +
+    `  --clean-font-heading: '${fonts.heading}', Georgia, serif;\n` +
+    `  --clean-font-body: '${fonts.body}', system-ui, sans-serif;\n` +
     `  --clean-font-mono: ${fonts.mono};\n` +
     `}\n`;
 
@@ -63,7 +64,8 @@ export function buildThemeVariableCss(tokens: ThemeTokens): string {
 function buildUtilityCss(): string {
   return `
 *,*::before,*::after{box-sizing:border-box}
-html,body{margin:0;padding:0;font-family:var(--clean-font-sans);background:var(--clean-bg);color:var(--clean-fg);line-height:1.5}
+html,body{margin:0;padding:0;font-family:var(--clean-font-body);background:var(--clean-bg);color:var(--clean-fg);line-height:1.5}
+main h1,main h2,main h3,main h4,main h5,main h6{font-family:var(--clean-font-heading)}
 a{color:var(--clean-accent);text-decoration:none}
 button{background:transparent;border:0;cursor:pointer;color:inherit;font:inherit}
 code,pre{font-family:var(--clean-font-mono)}
@@ -83,6 +85,7 @@ code,pre{font-family:var(--clean-font-mono)}
 .mb-2{margin-bottom:.5rem}
 .mb-3{margin-bottom:.75rem}
 .mb-4{margin-bottom:1rem}
+.ml-auto{margin-left:auto}
 .my-0\\.5{margin-top:.125rem;margin-bottom:.125rem}
 .my-1{margin-top:.25rem;margin-bottom:.25rem}
 .my-3{margin-top:.75rem;margin-bottom:.75rem}
@@ -107,9 +110,11 @@ code,pre{font-family:var(--clean-font-mono)}
 .gap-1{gap:.25rem}
 .gap-2{gap:.5rem}
 .gap-3{gap:.75rem}
+.gap-4{gap:1rem}
 .gap-6{gap:1.5rem}
 
 .flex{display:flex}
+.flex-1{flex:1 1 0%}
 .inline-flex{display:inline-flex}
 .grid{display:grid}
 .block{display:block}
@@ -134,6 +139,8 @@ code,pre{font-family:var(--clean-font-mono)}
 .w-5{width:1.25rem}
 .w-full{width:100%}
 .h-5{height:1.25rem}
+.h-16{height:4rem}
+.h-full{height:100%}
 .max-w-screen-2xl{max-width:1536px}
 .min-w-0{min-width:0}
 .max-h-\\[calc\\(100vh-6rem\\)\\]{max-height:calc(100vh - 6rem)}
@@ -201,6 +208,7 @@ code,pre{font-family:var(--clean-font-mono)}
 }
 @media (min-width:1024px){
   .lg\\:block{display:block}
+  .lg\\:px-12{padding-left:3rem;padding-right:3rem}
   .lg\\:grid-cols-\\[16rem_minmax\\(0\\,1fr\\)_14rem\\]{grid-template-columns:16rem minmax(0,1fr) 14rem}
 }
 

@@ -30,6 +30,31 @@ export interface HtmlDocumentOptions {
   islandsBase: string;
   /** Optional base path. */
   basePath?: string;
+  /** Google Fonts family names to load for headings + body text. */
+  fonts?: { heading: string; body: string };
+}
+
+/**
+ * Build the Google Fonts `<link>` block for the configured heading/body
+ * families. Families are deduped (heading === body emits one) and requested
+ * at the weights the theme uses (400–700). Returns '' when no fonts are set.
+ */
+function buildGoogleFontsLinks(fonts?: { heading: string; body: string }): string {
+  if (!fonts) return '';
+  const families = [...new Set([fonts.heading, fonts.body])].filter(Boolean);
+  if (families.length === 0) return '';
+  const params = families
+    .map(
+      (family) =>
+        `family=${encodeURIComponent(family).replace(/%20/g, '+')}:wght@400;500;600;700`,
+    )
+    .join('&');
+  const href = `https://fonts.googleapis.com/css2?${params}&display=swap`;
+  return (
+    `<link rel="preconnect" href="https://fonts.googleapis.com" />\n` +
+    `<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />\n` +
+    `<link rel="stylesheet" href="${escapeHtml(href)}" />\n`
+  );
 }
 
 function escapeHtml(text: string): string {
@@ -70,7 +95,7 @@ export function collectIslandNamesOnPage(islands: IslandRecord[]): IslandName[] 
 }
 
 export function renderHtmlDocument(opts: HtmlDocumentOptions): string {
-  const { page, bodyHtml, islands, cssHref, siteName, islandsBase } = opts;
+  const { page, bodyHtml, islands, cssHref, siteName, islandsBase, fonts } = opts;
   const titleSuffix = siteName ? ` | ${escapeHtml(siteName)}` : '';
   const title = `${escapeHtml(page.frontmatter.title)}${titleSuffix}`;
   const description = escapeHtml(page.frontmatter.description ?? '');
@@ -88,6 +113,7 @@ export function renderHtmlDocument(opts: HtmlDocumentOptions): string {
     `<title>${title}</title>\n` +
     (description ? `<meta name="description" content="${description}" />\n` : '') +
     `<script>${themeScript}</script>\n` +
+    buildGoogleFontsLinks(fonts) +
     `<link rel="stylesheet" href="${escapeHtml(cssHref)}" />\n` +
     `</head>\n` +
     `<body>\n` +

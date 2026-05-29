@@ -1,6 +1,4 @@
 import type { ComponentChildren } from 'preact';
-import { ThemeToggle } from './ThemeToggle';
-import { CmdK } from './CmdK';
 
 export interface HeaderPkg {
   name?: string;
@@ -19,8 +17,8 @@ export interface HeaderProps {
 export function Header({ siteName, pkg, basePath = '/', children }: HeaderProps) {
   const name = siteName ?? pkg?.name ?? 'Documentation';
   return (
-    <header class="sticky top-0 z-30 flex items-center justify-between border-b border-[var(--clean-border)] bg-[var(--clean-bg)] px-4 py-3">
-      <div class="flex items-center gap-3">
+    <header class="sticky top-0 z-30 flex h-16 min-w-0 items-center bg-[var(--clean-bg)] px-4 lg:px-12">
+      <div class="relative flex h-full min-w-0 flex-1 items-center gap-4 border-b border-[var(--clean-border)]">
         <a href={basePath} class="text-base font-semibold text-[var(--clean-fg)] no-underline">
           {name}
         </a>
@@ -29,11 +27,7 @@ export function Header({ siteName, pkg, basePath = '/', children }: HeaderProps)
             v{pkg.version}
           </span>
         )}
-      </div>
-      <div class="flex items-center gap-2">
-        {children}
-        <CmdK basePath={basePath} />
-        <ThemeToggle />
+        {children && <div class="ml-auto">{children}</div>}
       </div>
     </header>
   );

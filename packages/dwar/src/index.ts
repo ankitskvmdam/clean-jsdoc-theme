@@ -45,6 +45,7 @@ async function renderPage(
   cssHref: string,
   islandsBase: string,
   siteName: string | undefined,
+  fonts: { heading: string; body: string },
 ): Promise<{ file: OutputFile; search: SearchEntry; islands: IslandRecord[] }> {
   const { Component: MdxComponent } = await compileMdxToComponent(page.body, components);
 
@@ -72,6 +73,7 @@ async function renderPage(
     cssHref,
     siteName: siteName ?? manifest.pkg?.name,
     islandsBase,
+    fonts,
   });
 
   const file: OutputFile = {
@@ -129,6 +131,7 @@ export async function render(
       cssHref,
       islandsBase,
       siteName,
+      theme.tokens.fonts,
     );
     files.push(file);
     if (!page.frontmatter.hidden) search.push(entry);

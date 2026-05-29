@@ -15,7 +15,8 @@ export const minimalTokens: ThemeTokens = {
     border: '#e5e7eb',
   },
   fonts: {
-    sans: 'system-ui, sans-serif',
+    heading: 'IBM Plex Serif',
+    body: 'IBM Plex Sans',
     mono: 'ui-monospace, SFMono-Regular, monospace',
   },
   shiki: {

@@ -41,9 +41,19 @@ function NavItem({ node, currentSlug, depth }: NavItemProps) {
               width="10"
               height="10"
               viewBox="0 0 10 10"
-              style={{ transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.15s' }}
+              style={{
+                transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                transition: 'transform 0.15s',
+              }}
             >
-              <path d="M3 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+              <path
+                d="M3 1l4 4-4 4"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
             </svg>
           </button>
           {node.slug ? (
@@ -51,19 +61,28 @@ function NavItem({ node, currentSlug, depth }: NavItemProps) {
               href={`/${node.slug}`}
               aria-current={isCurrent ? 'page' : undefined}
               class={`flex-1 rounded px-2 py-1 text-sm hover:bg-[var(--clean-bg-muted)] ${
-                isCurrent ? 'bg-[var(--clean-bg-muted)] font-semibold text-[var(--clean-accent)]' : 'text-[var(--clean-fg)]'
+                isCurrent
+                  ? 'bg-[var(--clean-bg-muted)] font-semibold text-[var(--clean-accent)]'
+                  : 'text-[var(--clean-fg)]'
               }`}
             >
               {node.label}
             </a>
           ) : (
-            <span class="flex-1 px-2 py-1 text-sm font-semibold text-[var(--clean-fg)]">{node.label}</span>
+            <span class="flex-1 px-2 py-1 text-sm font-semibold text-[var(--clean-fg)]">
+              {node.label}
+            </span>
           )}
         </div>
         {expanded && (
           <ul class="ml-4 border-l border-[var(--clean-border)] pl-2" role="group">
             {node.children!.map((child) => (
-              <NavItem key={(child.slug ?? child.label) + depth} node={child} currentSlug={currentSlug} depth={depth + 1} />
+              <NavItem
+                key={(child.slug ?? child.label) + depth}
+                node={child}
+                currentSlug={currentSlug}
+                depth={depth + 1}
+              />
             ))}
           </ul>
         )}
@@ -78,7 +97,9 @@ function NavItem({ node, currentSlug, depth }: NavItemProps) {
           href={`/${node.slug}`}
           aria-current={isCurrent ? 'page' : undefined}
           class={`block rounded px-2 py-1 text-sm hover:bg-[var(--clean-bg-muted)] ${
-            isCurrent ? 'bg-[var(--clean-bg-muted)] font-semibold text-[var(--clean-accent)]' : 'text-[var(--clean-fg)]'
+            isCurrent
+              ? 'bg-[var(--clean-bg-muted)] font-semibold text-[var(--clean-accent)]'
+              : 'text-[var(--clean-fg)]'
           }`}
         >
           {node.label}

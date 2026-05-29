@@ -3,28 +3,22 @@
  * `<div data-island="...">` envelope.
  *
  * We can't use rang's `Layout` directly because it embeds island components
- * (Sidebar, TOC, CmdK, ThemeToggle, MobileNav) opaquely — there's no seam
- * inside Layout where we can wrap them. Rather than modifying rang, we
- * mirror Layout's outer structure here and re-use the island and chrome
- * components (Header, Footer) as building blocks. This is the cleanest way
- * to keep dwar's island-marker concern out of rang.
+ * (Sidebar, TOC, MobileNav) opaquely — there's no seam inside Layout where we
+ * can wrap them. Rather than modifying rang, we mirror Layout's outer
+ * structure here and re-use the island and chrome components (Header, Footer)
+ * as building blocks. This is the cleanest way to keep dwar's island-marker
+ * concern out of rang.
  *
  * Per-page id allocation: islands appear at most once each in this layout
- * (sidebar, mobile-nav, theme-toggle, cmdk, toc), so an ascending counter is
- * sufficient. Mdx-embedded islands (code-tabs, copy-btn) flow through the
+ * (sidebar, mobile-nav, toc), so an ascending counter is sufficient. The cmdk
+ * and theme-toggle islands are temporarily removed from the header. Mdx-embedded
+ * islands (code-tabs, copy-btn) flow through the
  * MDX component map and are NOT marked here — Phase 4 keeps those un-islanded
  * since they aren't part of the Layout.
  */
 
 import type { ComponentChildren, ComponentType, VNode } from 'preact';
-import {
-  Footer,
-  Sidebar,
-  TOC,
-  CmdK,
-  ThemeToggle,
-  MobileNav,
-} from '@clean-jsdoc-theme/rang';
+import { Footer, Sidebar, TOC, MobileNav } from '@clean-jsdoc-theme/rang';
 import type { Heading, IslandName, NavNode } from '@clean-jsdoc-theme/utils';
 
 export interface IslandRecord {
@@ -91,8 +85,8 @@ export function SsrLayout({
   const name = siteName ?? pkg?.name ?? 'Documentation';
   return (
     <div class="min-h-screen bg-[var(--clean-bg)] text-[var(--clean-fg)]">
-      <header class="sticky top-0 z-30 flex items-center justify-between border-b border-[var(--clean-border)] bg-[var(--clean-bg)] px-4 py-3">
-        <div class="flex items-center gap-3">
+      <header class="sticky top-0 z-30 flex h-16 min-w-0 items-center bg-[var(--clean-bg)] px-4 lg:px-12">
+        <div class="relative flex h-full min-w-0 flex-1 items-center gap-4 border-b border-[var(--clean-border)]">
           <a href={basePath} class="text-base font-semibold text-[var(--clean-fg)] no-underline">
             {name}
           </a>
@@ -101,30 +95,16 @@ export function SsrLayout({
               v{pkg.version}
             </span>
           )}
-        </div>
-        <div class="flex items-center gap-2">
           {nav.length > 0 && (
-            <Island
-              name="mobile-nav"
-              islands={islands}
-              Component={MobileNav}
-              props={{ nav, currentSlug }}
-            />
+            <div class="ml-auto">
+              <Island
+                name="mobile-nav"
+                islands={islands}
+                Component={MobileNav}
+                props={{ nav, currentSlug }}
+              />
+            </div>
           )}
-          <Island
-            name="cmdk"
-            islands={islands}
-            Component={CmdK}
-            props={{ basePath }}
-          />
-          <Island
-            name="theme-toggle"
-            islands={islands}
-            // Cast: ThemeToggleProps is `Record<string, never>` which fights
-            // Preact's standard `Attributes & { children?, ref? }` augmentation.
-            Component={ThemeToggle as unknown as ComponentType<Record<string, never>>}
-            props={{}}
-          />
         </div>
       </header>
       <div class="mx-auto grid w-full max-w-screen-2xl grid-cols-1 gap-6 px-4 py-6 md:grid-cols-[16rem_minmax(0,1fr)] lg:grid-cols-[16rem_minmax(0,1fr)_14rem]">

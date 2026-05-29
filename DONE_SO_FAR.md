@@ -98,7 +98,7 @@ Workspace ESLint config gained `argsIgnorePattern: '^_'` so the `_opts`-style st
 
 **`ISLAND_REGISTRY`** — `Record<IslandName, ComponentType>` keyed by all seven `IslandName` values.
 
-**Styling contract** — components reference CSS variables on `:root`: `--clean-bg`, `--clean-bg-muted`, `--clean-fg`, `--clean-fg-muted`, `--clean-accent`, `--clean-accent-fg`, `--clean-border`, `--clean-font-sans`, `--clean-font-mono`. dwar plumbs `ThemeTokens` values into these in Phase 4.
+**Styling contract** — components reference CSS variables on `:root`: `--clean-bg`, `--clean-bg-muted`, `--clean-fg`, `--clean-fg-muted`, `--clean-accent`, `--clean-accent-fg`, `--clean-border`, `--clean-font-heading`, `--clean-font-body`, `--clean-font-mono`. dwar plumbs `ThemeTokens` values into these in Phase 4. (The font variables were `--clean-font-sans` here originally — see the "UI / theming pass" section below for the heading/body split.)
 
 **Tests:** 30 new component tests across 8 files (SSR via `preact-render-to-string` + interactive via `happy-dom` + `@testing-library/preact`).
 
@@ -146,6 +146,31 @@ Workspace ESLint config gained `argsIgnorePattern: '^_'` so the `_opts`-style st
 The CJS bundle dynamic-`import()`s setu and dwar by `file://` URL (they're ESM-only with `"type":"module"`; JSDoc 4 uses `require()`). The specifier funnels through a variable so tsup/esbuild don't rewrite it back to `require()`. `loadDep` checks the imported module exposes its expected exports so misresolution surfaces with a clear message.
 
 **`src/write-output-files.ts`** — small `mkdir -p` + `writeFile` loop that translates dwar's forward-slash `OutputFile.path` strings to Windows separators via `node:path.join`.
+
+---
+
+## UI / theming pass (post-Phase-4 — working tree, not yet committed)
+
+Visual work toward a Claude-Code-docs-style look. Confined to `rang` + `dwar` (plus the one fonts contract change in `utils`); no other boundary-type churn.
+
+### Fonts — Google Fonts + heading/body split
+
+- **`utils/src/site/theme.ts`** — `ThemeTokens.fonts` changed from `{ sans, mono }` to `{ heading, body, mono }`. `heading`/`body` are bare Google Fonts family names; `mono` stays a full CSS stack.
+- **`dwar/src/html.ts`** — `buildGoogleFontsLinks()` injects a Google Fonts block into `<head>` (preconnect ×2 + `css2?family=…&display=swap`, weights 400–700, families deduped) right before the theme stylesheet. Threaded through `render` → `renderPage` → `renderHtmlDocument` via `theme.tokens.fonts`.
+- **`dwar/src/css.ts`** — emits `--clean-font-heading` / `--clean-font-body` / `--clean-font-mono`. Body font applies to `html,body`; the heading font is scoped to **content** headings only (`main h1…h6`) so UI chrome (header, footer, sidebar, TOC) stays on the sans body font.
+- **Defaults:** IBM Plex Serif (heading) + IBM Plex Sans (body). Overridable from `jsdoc.json` via `opts.fonts.{heading,body,mono}` — `publish.ts` gained a `resolveTheme(opts)` merge over `defaultTheme`.
+
+### Navbar restyle + search/theme removal
+
+- **`dwar/src/layout.tsx`** (the rendered `SsrLayout` header) and **`rang/src/components/Header.tsx`** (standalone component, kept in sync) both reshaped to mimic the Claude docs navbar: an `h-16` bar with `px-4 lg:px-12`, and a `flex-1` inner wrapper that carries the bottom border (inset from the screen edges) instead of a full-width header border.
+- **Search (CmdK) and ThemeToggle removed from the navbar for now.** Their island chunks still build (unreferenced — 0 markers emitted), so re-adding is just markup. Only the mobile-nav trigger remains, pushed right with `ml-auto`.
+- New classes added to dwar's hand-rolled utility CSS dictionary (required — unknown classes are inert): `.h-16`, `.h-full`, `.flex-1`, `.gap-4`, `.ml-auto`, `.lg:px-12`.
+
+### MobileNav — deferred (known broken)
+
+A stray `return null;` at the top of `MobileNav`'s render was disabling the component entirely (rendered nothing; failed its 3 tests). Removed so the suite is green, but **MobileNav itself is still broken and intentionally deferred** — see `TODO.md`.
+
+**State after this pass:** rang 30/30 + dwar 24/24 tests pass; typecheck clean for utils/rang/dwar/clean-jsdoc-theme; smoke build renders the new navbar and Google Fonts `<head>`.
 
 **`examples/basic/jsdoc.json`** — `opts.template` points at `./node_modules/clean-jsdoc-theme/dist` so `jsdoc -c jsdoc.json` builds the example end-to-end against the workspace package.
 

@@ -16,7 +16,7 @@ function anchorPath(): string {
   if (typeof __filename === 'string') return __filename;
   try {
     const getEsmUrl = new Function(
-      'try { return import.meta && import.meta.url; } catch { return undefined; }',
+      'try { return import.meta && import.meta.url; } catch { return undefined; }'
     ) as () => string | undefined;
     const url = getEsmUrl();
     if (typeof url === 'string' && url.startsWith('file://')) {
@@ -27,7 +27,7 @@ function anchorPath(): string {
   }
   throw new Error(
     'clean-jsdoc-theme: could not determine the running module path ' +
-      '(neither __filename nor import.meta.url resolved).',
+      '(neither __filename nor import.meta.url resolved).'
   );
 }
 
@@ -46,9 +46,7 @@ function resolvePackageDir(name: string): string {
     prev = dir;
     dir = dirname(dir);
   }
-  throw new Error(
-    `clean-jsdoc-theme: could not locate '${name}' on disk starting from ${start}.`,
-  );
+  throw new Error(`clean-jsdoc-theme: could not locate '${name}' on disk starting from ${start}.`);
 }
 
 interface MinimalPkgJson {
@@ -69,7 +67,7 @@ interface MinimalPkgJson {
 function resolveEsmEntry(name: string): string {
   const pkgRoot = resolvePackageDir(name);
   const pkg = JSON.parse(
-    readFileSync(resolvePath(pkgRoot, 'package.json'), 'utf8'),
+    readFileSync(resolvePath(pkgRoot, 'package.json'), 'utf8')
   ) as MinimalPkgJson;
 
   const exp = pkg.exports;
@@ -91,7 +89,7 @@ function resolveEsmEntry(name: string): string {
   if (typeof pkg.main === 'string') return resolvePath(pkgRoot, pkg.main);
 
   throw new Error(
-    `clean-jsdoc-theme: could not determine ESM entry file for '${name}' (no exports/module/main).`,
+    `clean-jsdoc-theme: could not determine ESM entry file for '${name}' (no exports/module/main).`
   );
 }
 
@@ -99,10 +97,7 @@ function resolveEsmEntry(name: string): string {
 // CJS bundle here can't `require()` them. Dynamic-import a `file://` URL
 // instead. The specifier is funneled through a variable so tsup/esbuild don't
 // rewrite the dynamic import into a static `require()` during CJS bundling.
-async function loadDep<T>(
-  name: string,
-  requiredExports: readonly string[],
-): Promise<T> {
+async function loadDep<T>(name: string, requiredExports: readonly string[]): Promise<T> {
   const entry = resolveEsmEntry(name);
   const id = pathToFileURL(entry).href;
   const mod = (await import(id)) as Record<string, unknown>;
@@ -110,9 +105,7 @@ async function loadDep<T>(
     if (typeof mod[key] !== 'function') {
       throw new Error(
         `clean-jsdoc-theme: '${name}' did not export a '${key}' function ` +
-          `(resolved from ${entry}; got keys: ${
-            Object.keys(mod).join(', ') || '(none)'
-          }).`,
+          `(resolved from ${entry}; got keys: ${Object.keys(mod).join(', ') || '(none)'}).`
       );
     }
   }
@@ -126,6 +119,11 @@ const loadDwar = (): Promise<typeof import('@clean-jsdoc-theme/dwar')> =>
 interface JSDocOpts {
   destination?: string;
   package?: string;
+  /**
+   * Font overrides from `jsdoc.json` (`"opts": { "fonts": { ... } }`). Values
+   * are Google Fonts family names for `heading`/`body`; `mono` is a CSS stack.
+   */
+  fonts?: { heading?: string; body?: string; mono?: string };
   [key: string]: unknown;
 }
 
@@ -141,7 +139,8 @@ const defaultTheme: ThemeConfig = {
       border: '#e5e7eb',
     },
     fonts: {
-      sans: 'system-ui, -apple-system, sans-serif',
+      heading: 'IBM Plex Serif',
+      body: 'IBM Plex Sans',
       mono: 'ui-monospace, SFMono-Regular, Menlo, monospace',
     },
     shiki: { light: 'github-light', dark: 'github-dark' },
@@ -149,10 +148,30 @@ const defaultTheme: ThemeConfig = {
   basePath: '/',
 };
 
+/**
+ * Merge user font overrides from `jsdoc.json` over the defaults. Only the keys
+ * the user supplies are overridden; everything else keeps the default theme.
+ */
+function resolveTheme(opts: JSDocOpts): ThemeConfig {
+  const f = opts.fonts;
+  if (!f) return defaultTheme;
+  return {
+    ...defaultTheme,
+    tokens: {
+      ...defaultTheme.tokens,
+      fonts: {
+        heading: f.heading ?? defaultTheme.tokens.fonts.heading,
+        body: f.body ?? defaultTheme.tokens.fonts.body,
+        mono: f.mono ?? defaultTheme.tokens.fonts.mono,
+      },
+    },
+  };
+}
+
 // Priority: opts.package file → taffy `kind:'package'` doclet → undefined.
 async function resolvePkg(
   data: unknown,
-  opts: JSDocOpts,
+  opts: JSDocOpts
 ): Promise<SiteManifest['pkg'] | undefined> {
   if (typeof opts.package === 'string' && opts.package.length > 0) {
     try {
@@ -168,9 +187,7 @@ async function resolvePkg(
   // taking a hard dependency on the salty API surface here.
   if (typeof data === 'function') {
     try {
-      const pkgDoclets = (
-        data as (q: unknown) => { get(): unknown[] }
-      )({ kind: 'package' }).get();
+      const pkgDoclets = (data as (q: unknown) => { get(): unknown[] })({ kind: 'package' }).get();
       if (Array.isArray(pkgDoclets) && pkgDoclets.length > 0) {
         return pickPkgFields(pkgDoclets[0] as Record<string, unknown>);
       }
@@ -201,16 +218,12 @@ function pickPkgFields(raw: Record<string, unknown>): SiteManifest['pkg'] {
   return pkg;
 }
 
-export async function publish(
-  data: unknown,
-  opts: JSDocOpts,
-  _tutorials?: unknown,
-): Promise<void> {
+export async function publish(data: unknown, opts: JSDocOpts, _tutorials?: unknown): Promise<void> {
   const destination = opts.destination;
   if (!destination || typeof destination !== 'string') {
     throw new Error(
       'clean-jsdoc-theme publish: opts.destination is required ' +
-        '(set "opts.destination" in your jsdoc.json).',
+        '(set "opts.destination" in your jsdoc.json).'
     );
   }
 
@@ -225,7 +238,7 @@ export async function publish(
 
   const absoluteDestination = resolvePath(destination);
   const result = await render(manifest, {
-    theme: defaultTheme,
+    theme: resolveTheme(opts),
     destination: absoluteDestination,
   });
 
@@ -236,8 +249,6 @@ export async function publish(
   try {
     await runPagefindAgainstDir(absoluteDestination);
   } catch (err) {
-    console.warn(
-      `clean-jsdoc-theme: pagefind step skipped — ${(err as Error).message}`,
-    );
+    console.warn(`clean-jsdoc-theme: pagefind step skipped — ${(err as Error).message}`);
   }
 }

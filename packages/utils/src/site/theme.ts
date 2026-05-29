@@ -20,7 +20,11 @@ export interface ThemeTokens {
     border: string;
   };
   fonts: {
-    sans: string;
+    /** Google Fonts family name for headings, e.g. `"IBM Plex Serif"`. */
+    heading: string;
+    /** Google Fonts family name for body text, e.g. `"IBM Plex Sans"`. */
+    body: string;
+    /** Monospace font-family stack. Not loaded from Google Fonts. */
     mono: string;
   };
   shiki: {
