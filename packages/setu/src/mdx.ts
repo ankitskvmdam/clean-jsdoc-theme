@@ -63,7 +63,7 @@ function formatYamlScalar(v: unknown): string {
 function needsYamlQuote(s: string): boolean {
   if (s.length === 0) return true;
   // Leading char that would be interpreted by YAML as a structure indicator.
-  if (/^[\s\-?:,\[\]{}#&*!|>'"%@`]/.test(s)) return true;
+  if (/^[\s\-?:,[\]{}#&*!|>'"%@`]/.test(s)) return true;
   // `: ` mid-string would split into key/value.
   if (/:\s/.test(s)) return true;
   // Multiline scalars need quoting.
