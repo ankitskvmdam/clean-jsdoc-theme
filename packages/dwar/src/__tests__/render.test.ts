@@ -150,6 +150,27 @@ describe('render() — island loader + payload', () => {
   });
 });
 
+describe('render() — frontmatter handling', () => {
+  it('strips setu-emitted YAML frontmatter from the rendered body', async () => {
+    const manifest = makeManifest();
+    manifest.pages[0].body =
+      `---\ntitle: Home\nkind: class\nlongname: Home\n---\n\n# Welcome\n\nReal body content.\n`;
+    const result = await render(manifest, { theme: minimalTheme });
+    const home = asString(result.files.find((f) => f.path === 'index.html')!);
+
+    // The real body still renders.
+    expect(home).toContain('Welcome');
+    expect(home).toContain('Real body content.');
+
+    // The YAML key lines do not leak into the rendered HTML body.
+    const bodyMatch = home.match(/<body[^>]*>([\s\S]*)<\/body>/u);
+    expect(bodyMatch).not.toBeNull();
+    const body = bodyMatch![1];
+    expect(body).not.toMatch(/\bkind:\s*class\b/);
+    expect(body).not.toMatch(/\blongname:\s*Home\b/);
+  });
+});
+
 describe('render() — CSS variable mapping', () => {
   it('maps token colors to --clean-* custom properties', async () => {
     const customTheme = {

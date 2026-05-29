@@ -10,6 +10,7 @@ import { evaluate } from '@mdx-js/mdx';
 import type { ComponentType } from 'preact';
 import { h, Fragment } from 'preact';
 import { jsx, jsxs } from 'preact/jsx-runtime';
+import remarkFrontmatter from 'remark-frontmatter';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyComponent = ComponentType<any>;
@@ -56,6 +57,10 @@ export async function compileMdxToComponent(
     development: false,
     // No provider: we pass components directly to MDXContent below.
     useMDXComponents: undefined,
+    // Setu prepends YAML frontmatter to the body string. Without this plugin,
+    // MDX parses the `---` lines as thematic breaks and the YAML keys as
+    // paragraph text, leaking raw frontmatter into the rendered output.
+    remarkPlugins: [remarkFrontmatter],
   });
 
   const MDXContent = mod.default as AnyComponent;
