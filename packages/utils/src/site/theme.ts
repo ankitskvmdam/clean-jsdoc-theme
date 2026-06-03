@@ -8,17 +8,27 @@
 
 import type { ComponentType } from 'preact';
 
+/** A single color palette. Values may be any CSS color (the theme uses oklch). */
+export interface ThemeColors {
+  bg: string;
+  bgMuted: string;
+  fg: string;
+  fgMuted: string;
+  accent: string;
+  accentFg: string;
+  border: string;
+}
+
 /** Visual design tokens consumed by both Tailwind generation and runtime themes. */
 export interface ThemeTokens {
-  colors: {
-    bg: string;
-    bgMuted: string;
-    fg: string;
-    fgMuted: string;
-    accent: string;
-    accentFg: string;
-    border: string;
-  };
+  /** The light-mode palette (also the `:root` default). */
+  colors: ThemeColors;
+  /**
+   * Explicit dark-mode palette, emitted under `[data-theme="dark"]`. Any omitted
+   * key falls back to the corresponding `colors` value. When absent entirely,
+   * dark mode falls back to a bg/fg swap of `colors`.
+   */
+  darkColors?: Partial<ThemeColors>;
   fonts: {
     /** Google Fonts family name for headings, e.g. `"IBM Plex Serif"`. */
     heading: string;

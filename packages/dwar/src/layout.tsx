@@ -83,7 +83,7 @@ export function SsrLayout({
   const name = siteName ?? pkg?.name ?? 'Documentation';
   return (
     <div class="min-h-screen bg-[var(--clean-bg)] text-[var(--clean-fg)]">
-      <header class="sticky top-0 z-30 bg-[var(--clean-bg)]">
+      <header class="sticky top-0 z-30 border-b border-[var(--clean-border)] bg-[var(--clean-bg)]">
         <div class="mx-auto flex h-16 w-full min-w-0 max-w-screen-2xl items-center gap-4 px-4">
           <a href={basePath} class="text-base font-semibold text-[var(--clean-fg)] no-underline">
             {name}

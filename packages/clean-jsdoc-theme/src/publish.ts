@@ -129,14 +129,27 @@ interface JSDocOpts {
 
 const defaultTheme: ThemeConfig = {
   tokens: {
+    // Light palette (oklch). bg #fdfdf7 · fg #3e3e3e · border #eeeeee;
+    // muted/accent derived to harmonize.
     colors: {
-      bg: '#ffffff',
-      bgMuted: '#f3f4f6',
-      fg: '#0f172a',
-      fgMuted: '#475569',
-      accent: '#2563eb',
-      accentFg: '#ffffff',
-      border: '#e5e7eb',
+      bg: 'oklch(0.9924 0.0079 106.54)',
+      bgMuted: 'oklch(0.9595 0.0079 106.55)',
+      fg: 'oklch(0.3639 0 0)',
+      fgMuted: 'oklch(0.5278 0 0)',
+      accent: 'oklch(0.5461 0.2152 262.88)',
+      accentFg: 'oklch(1 0 0)',
+      border: 'oklch(0.9761 0 0)',
+    },
+    // Dark palette (oklch). bg #09090b · fg #9e9e9e · border #141416;
+    // muted/accent derived to harmonize.
+    darkColors: {
+      bg: 'oklch(0.1408 0.0044 285.82)',
+      bgMuted: 'oklch(0.2103 0.0059 285.89)',
+      fg: 'oklch(0.6993 0 0)',
+      fgMuted: 'oklch(0.5382 0 0)',
+      accent: 'oklch(0.5461 0.2152 262.88)',
+      accentFg: 'oklch(1 0 0)',
+      border: 'oklch(0.1921 0.004 286.02)',
     },
     fonts: {
       heading: 'IBM Plex Serif',

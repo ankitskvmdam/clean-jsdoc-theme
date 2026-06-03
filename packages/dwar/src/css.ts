@@ -25,7 +25,7 @@ export interface CssBuildResult {
 }
 
 export function buildThemeVariableCss(tokens: ThemeTokens): string {
-  const { colors, fonts } = tokens;
+  const { colors, fonts, darkColors } = tokens;
   const root =
     `:root {\n` +
     `  --clean-bg: ${colors.bg};\n` +
@@ -40,15 +40,30 @@ export function buildThemeVariableCss(tokens: ThemeTokens): string {
     `  --clean-font-mono: ${fonts.mono};\n` +
     `}\n`;
 
-  // ThemeTokens carries a single palette. Dark mode flips bg/fg and
-  // bgMuted/fgMuted; the rest stays.
-  const dark =
-    `[data-theme="dark"] {\n` +
-    `  --clean-bg: ${colors.fg};\n` +
-    `  --clean-bg-muted: ${colors.fgMuted};\n` +
-    `  --clean-fg: ${colors.bg};\n` +
-    `  --clean-fg-muted: ${colors.bgMuted};\n` +
-    `}\n`;
+  let dark: string;
+  if (darkColors) {
+    // Explicit dark palette: any omitted key falls back to the light value.
+    const d = { ...colors, ...darkColors };
+    dark =
+      `[data-theme="dark"] {\n` +
+      `  --clean-bg: ${d.bg};\n` +
+      `  --clean-bg-muted: ${d.bgMuted};\n` +
+      `  --clean-fg: ${d.fg};\n` +
+      `  --clean-fg-muted: ${d.fgMuted};\n` +
+      `  --clean-accent: ${d.accent};\n` +
+      `  --clean-accent-fg: ${d.accentFg};\n` +
+      `  --clean-border: ${d.border};\n` +
+      `}\n`;
+  } else {
+    // No explicit dark palette: fall back to a bg/fg swap of the light palette.
+    dark =
+      `[data-theme="dark"] {\n` +
+      `  --clean-bg: ${colors.fg};\n` +
+      `  --clean-bg-muted: ${colors.fgMuted};\n` +
+      `  --clean-fg: ${colors.bg};\n` +
+      `  --clean-fg-muted: ${colors.bgMuted};\n` +
+      `}\n`;
+  }
 
   return `${root}${dark}`;
 }
