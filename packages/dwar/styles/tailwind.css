@@ -18,6 +18,36 @@
 @import 'tailwindcss/theme.css' layer(theme);
 @import 'tailwindcss/utilities.css' layer(utilities);
 
+/* Enter/exit animation utilities (animate-in, fade-in-0, zoom-in-95, …) used by
+ * the shadcn-style Dialog. v4 successor to tailwindcss-animate. */
+@import 'tw-animate-css';
+
+/*
+ * shadcn-style semantic color vocabulary, mapped onto our `--clean-*` tokens
+ * (which buildThemeVariableCss() plumbs from the user's ThemeConfig at render
+ * time, incl. the dark-mode swap). This lets ported shadcn components use
+ * `bg-primary`, `text-muted-foreground`, `border-border`, `ring-ring`, etc.
+ * while the user's theme still drives the actual colors.
+ *
+ * Naming note: shadcn `primary` = the brand/accent color, while shadcn `accent`
+ * = the subtle hover surface. Mapped accordingly below.
+ */
+@theme inline {
+  --color-background: var(--clean-bg);
+  --color-foreground: var(--clean-fg);
+  --color-muted: var(--clean-bg-muted);
+  --color-muted-foreground: var(--clean-fg-muted);
+  --color-accent: var(--clean-bg-muted);
+  --color-accent-foreground: var(--clean-fg);
+  --color-primary: var(--clean-accent);
+  --color-primary-foreground: var(--clean-accent-fg);
+  --color-secondary: var(--clean-bg-muted);
+  --color-secondary-foreground: var(--clean-fg);
+  --color-border: var(--clean-border);
+  --color-input: var(--clean-border);
+  --color-ring: var(--clean-accent);
+}
+
 /* Scan rang's components + dwar's own source for the utility classes in use. */
 @source '../../rang/src/**/*.{ts,tsx}';
 @source '../src/**/*.{ts,tsx}';

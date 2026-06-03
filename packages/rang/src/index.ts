@@ -11,6 +11,20 @@
 
 export const RANG_PACKAGE_VERSION = '5.0.0-alpha.0';
 
+export { Button, buttonVariants } from './components/Button';
+export type { ButtonProps } from './components/Button';
+
+export {
+  Dialog,
+  DialogHeader,
+  DialogTitle,
+  DialogBody,
+  DialogFooter,
+} from './components/Dialog';
+export type { DialogProps } from './components/Dialog';
+
+export { cn } from './lib/cn';
+
 export { Layout } from './components/Layout';
 export type { LayoutProps, LayoutPkg } from './components/Layout';
 

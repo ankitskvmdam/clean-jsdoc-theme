@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import { Sun, Moon, Monitor } from 'lucide-preact';
+import { Button } from './Button';
 
 type Mode = 'light' | 'dark' | 'system';
 
@@ -59,14 +60,15 @@ export function ThemeToggle(_props: ThemeToggleProps = {}) {
   const Icon = current === 'light' ? Sun : current === 'dark' ? Moon : Monitor;
 
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      size="icon"
       onClick={cycle}
       aria-label={`Theme: ${current}`}
       title="Toggle theme"
-      class="inline-flex h-9 w-9 items-center justify-center rounded-md text-[var(--clean-fg-muted)] hover:bg-[var(--clean-bg-muted)] hover:text-[var(--clean-fg)]"
     >
       <Icon size={18} aria-hidden="true" />
-    </button>
+    </Button>
   );
 }

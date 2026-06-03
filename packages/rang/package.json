@@ -41,8 +41,11 @@
   },
   "dependencies": {
     "@clean-jsdoc-theme/utils": "workspace:^",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "lucide-preact": "^1.17.0",
-    "preact": "^10.22.0"
+    "preact": "^10.22.0",
+    "tailwind-merge": "^3.6.0"
   },
   "publishConfig": {
     "access": "public"

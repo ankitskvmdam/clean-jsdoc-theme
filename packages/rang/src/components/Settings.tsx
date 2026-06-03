@@ -1,5 +1,8 @@
-import { useEffect, useRef, useState } from 'preact/hooks';
-import { Settings as SettingsIcon, X } from 'lucide-preact';
+import { useEffect, useState } from 'preact/hooks';
+import { Settings as SettingsIcon } from 'lucide-preact';
+import { Button } from './Button';
+import { Dialog, DialogHeader, DialogTitle, DialogBody } from './Dialog';
+import { cn } from '../lib/cn';
 
 // Empty by design — the island takes no server props; all state is read from
 // localStorage on the client. Kept as a typed alias so the shape can grow.
@@ -70,7 +73,7 @@ function SegmentedControl<T extends string>({
     <div
       role="group"
       aria-label={label}
-      class="inline-flex items-center gap-1 rounded-md border border-[var(--clean-border)] p-1"
+      class="inline-flex items-center gap-1 rounded-md border border-border p-1"
     >
       {options.map((o) => (
         <button
@@ -78,7 +81,10 @@ function SegmentedControl<T extends string>({
           type="button"
           aria-pressed={value === o.value}
           onClick={() => onChange(o.value)}
-          class="rounded px-3 py-1 text-sm text-[var(--clean-fg)] aria-pressed:bg-[var(--clean-accent)] aria-pressed:text-[var(--clean-accent-fg)]"
+          class={cn(
+            'rounded px-3 py-1 text-sm text-foreground transition-colors hover:bg-accent',
+            'aria-pressed:bg-primary aria-pressed:text-primary-foreground aria-pressed:hover:bg-primary',
+          )}
         >
           {o.label}
         </button>
@@ -91,8 +97,6 @@ export function Settings(_props: SettingsProps = {}) {
   const [open, setOpen] = useState(false);
   const [fontSize, setFontSize] = useState<FontSize>('md');
   const [lineSpacing, setLineSpacing] = useState<LineSpacing>('default');
-  const dialogRef = useRef<HTMLDivElement | null>(null);
-  const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   // Reconcile state from storage on mount (dwar's pre-hydration script already
   // applied the visual values; this syncs the controls to match).
@@ -115,91 +119,45 @@ export function Settings(_props: SettingsProps = {}) {
     applyLineSpacing(next);
   };
 
-  // Close on Escape while open.
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        setOpen(false);
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open]);
-
-  // Move focus into the dialog on open; restore it to the trigger on close.
-  useEffect(() => {
-    if (open) {
-      window.requestAnimationFrame(() => dialogRef.current?.focus());
-    } else {
-      triggerRef.current?.focus();
-    }
-  }, [open]);
-
   return (
     <>
-      <button
-        ref={triggerRef}
+      <Button
         type="button"
+        variant="ghost"
+        size="icon"
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label="Settings"
         title="Settings"
-        class="inline-flex h-9 w-9 items-center justify-center rounded-md text-[var(--clean-fg-muted)] hover:bg-[var(--clean-bg-muted)] hover:text-[var(--clean-fg)]"
       >
         <SettingsIcon size={18} aria-hidden="true" />
-      </button>
-      {open && (
-        <div
-          class="fixed inset-0 z-50 flex items-start justify-center bg-black/40 pt-24"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setOpen(false);
-          }}
-        >
-          <div
-            ref={dialogRef}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Settings"
-            tabIndex={-1}
-            class="w-full max-w-lg rounded-lg border border-[var(--clean-border)] bg-[var(--clean-bg)] shadow-xl outline-none"
-          >
-            <div class="flex items-center justify-between border-b border-[var(--clean-border)] p-4">
-              <h2 class="m-0 text-base font-semibold text-[var(--clean-fg)]">Settings</h2>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                aria-label="Close settings"
-                class="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--clean-fg-muted)] hover:bg-[var(--clean-bg-muted)] hover:text-[var(--clean-fg)]"
-              >
-                <X size={16} aria-hidden="true" />
-              </button>
-            </div>
-            <div class="p-4">
-              <div class="mb-4">
-                <div class="mb-2 text-sm font-semibold text-[var(--clean-fg)]">Font size</div>
-                <SegmentedControl
-                  label="Font size"
-                  value={fontSize}
-                  options={FONT_SIZE_OPTIONS}
-                  onChange={selectFontSize}
-                />
-              </div>
-              <div>
-                <div class="mb-2 text-sm font-semibold text-[var(--clean-fg)]">Line spacing</div>
-                <SegmentedControl
-                  label="Line spacing"
-                  value={lineSpacing}
-                  options={LINE_SPACING_OPTIONS}
-                  onChange={selectLineSpacing}
-                />
-              </div>
-            </div>
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen} label="Settings">
+        <DialogHeader>
+          <DialogTitle>Settings</DialogTitle>
+        </DialogHeader>
+        <DialogBody>
+          <div class="mb-4">
+            <div class="mb-2 text-sm font-semibold text-foreground">Font size</div>
+            <SegmentedControl
+              label="Font size"
+              value={fontSize}
+              options={FONT_SIZE_OPTIONS}
+              onChange={selectFontSize}
+            />
           </div>
-        </div>
-      )}
+          <div>
+            <div class="mb-2 text-sm font-semibold text-foreground">Line spacing</div>
+            <SegmentedControl
+              label="Line spacing"
+              value={lineSpacing}
+              options={LINE_SPACING_OPTIONS}
+              onChange={selectLineSpacing}
+            />
+          </div>
+        </DialogBody>
+      </Dialog>
     </>
   );
 }

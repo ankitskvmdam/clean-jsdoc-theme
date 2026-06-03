@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { Search } from 'lucide-preact';
+import { Button } from './Button';
+import { Dialog } from './Dialog';
 
 export interface CmdKProps {
   basePath: string;
@@ -15,8 +17,6 @@ export function CmdK({ basePath: _basePath }: CmdKProps) {
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const dialogRef = useRef<HTMLDivElement | null>(null);
-  const openerRef = useRef<HTMLElement | null>(null);
   const openRef = useRef(open);
   const activeRef = useRef(active);
 
@@ -28,20 +28,18 @@ export function CmdK({ basePath: _basePath }: CmdKProps) {
   activeRef.current = active;
   resultsRef.current = results;
 
+  // Global shortcuts: Cmd/Ctrl+K toggles; arrows + Enter drive the result list
+  // while open. (Escape, focus trap, and focus restore are handled by Dialog.)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const isToggle = (e.key === 'k' || e.key === 'K') && (e.metaKey || e.ctrlKey);
       if (isToggle) {
         e.preventDefault();
-        openerRef.current = (document.activeElement as HTMLElement | null) ?? null;
         setOpen((v) => !v);
         return;
       }
       if (!openRef.current) return;
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        setOpen(false);
-      } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         if (resultsRef.current.length === 0) return;
         e.preventDefault();
         setActive((prev) => {
@@ -59,111 +57,69 @@ export function CmdK({ basePath: _basePath }: CmdKProps) {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
+  // Focus the search input once the dialog has mounted (Dialog focuses the panel
+  // first; this rAF runs after, so the input ends up focused).
   useEffect(() => {
     if (open) {
-      // Focus the input on the next tick so the dialog has mounted.
       window.requestAnimationFrame(() => inputRef.current?.focus());
-    } else if (openerRef.current) {
-      openerRef.current.focus();
     }
   }, [open]);
 
-  // Trap focus inside the dialog while it's open. Tabbing past the last
-  // focusable wraps to the first, and vice-versa.
-  const onTrapKey = (e: KeyboardEvent) => {
-    if (e.key !== 'Tab' || !dialogRef.current) return;
-    const focusables = dialogRef.current.querySelectorAll<HTMLElement>(
-      'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
-    );
-    if (focusables.length === 0) return;
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
-    if (e.shiftKey && document.activeElement === first) {
-      e.preventDefault();
-      last.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
-      e.preventDefault();
-      first.focus();
-    }
-  };
-
   return (
     <>
-      <button
+      <Button
         type="button"
-        onClick={() => {
-          openerRef.current = (document.activeElement as HTMLElement | null) ?? null;
-          setOpen(true);
-        }}
-        class="inline-flex h-9 w-9 items-center justify-center rounded-md text-[var(--clean-fg-muted)] hover:bg-[var(--clean-bg-muted)] hover:text-[var(--clean-fg)]"
+        variant="ghost"
+        size="icon"
+        onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label="Search"
         title="Search (Ctrl K)"
       >
         <Search size={18} aria-hidden="true" />
-      </button>
-      {open && (
-        <div
-          class="fixed inset-0 z-50 flex items-start justify-center bg-black/40 pt-24"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setOpen(false);
-          }}
-        >
-          <div
-            ref={dialogRef}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Search"
-            onKeyDown={onTrapKey}
-            class="w-full max-w-lg rounded-lg border border-[var(--clean-border)] bg-[var(--clean-bg)] shadow-xl"
-          >
-            <div class="border-b border-[var(--clean-border)] p-3">
-              <input
-                ref={inputRef}
-                type="search"
-                value={query}
-                onInput={(e) => {
-                  setQuery((e.currentTarget as HTMLInputElement).value);
-                  setActive(0);
-                }}
-                placeholder="Search docs..."
-                class="w-full rounded border border-[var(--clean-border)] bg-[var(--clean-bg-muted)] px-3 py-2 text-sm text-[var(--clean-fg)] outline-none focus:border-[var(--clean-accent)]"
-                aria-label="Search query"
-              />
-            </div>
-            <ul role="listbox" class="m-0 max-h-80 list-none overflow-y-auto p-2">
-              {results.length === 0 ? (
-                <li class="px-2 py-4 text-center text-sm text-[var(--clean-fg-muted)]">
-                  No results — search is wired in Phase 4
-                </li>
-              ) : (
-                results.map((r, i) => (
-                  <li
-                    key={r.slug}
-                    role="option"
-                    aria-selected={i === active}
-                    class={`rounded px-3 py-2 text-sm ${i === active ? 'bg-[var(--clean-bg-muted)]' : ''}`}
-                  >
-                    <a href={`/${r.slug}`} class="block text-[var(--clean-fg)]">
-                      {r.title}
-                    </a>
-                  </li>
-                ))
-              )}
-            </ul>
-            <div class="flex justify-end border-t border-[var(--clean-border)] p-2">
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                class="rounded px-2 py-1 text-xs text-[var(--clean-fg-muted)] hover:bg-[var(--clean-bg-muted)]"
-              >
-                Close (Esc)
-              </button>
-            </div>
-          </div>
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen} align="top" showClose={false} label="Search">
+        <div class="border-b border-border p-3">
+          <input
+            ref={inputRef}
+            type="search"
+            value={query}
+            onInput={(e) => {
+              setQuery((e.currentTarget as HTMLInputElement).value);
+              setActive(0);
+            }}
+            placeholder="Search docs..."
+            class="w-full rounded-md border border-input bg-muted px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label="Search query"
+          />
         </div>
-      )}
+        <ul role="listbox" class="m-0 max-h-80 list-none overflow-y-auto p-2">
+          {results.length === 0 ? (
+            <li class="px-2 py-4 text-center text-sm text-muted-foreground">
+              No results — search is wired in Phase 4
+            </li>
+          ) : (
+            results.map((r, i) => (
+              <li
+                key={r.slug}
+                role="option"
+                aria-selected={i === active}
+                class={`rounded px-3 py-2 text-sm ${i === active ? 'bg-accent' : ''}`}
+              >
+                <a href={`/${r.slug}`} class="block text-foreground">
+                  {r.title}
+                </a>
+              </li>
+            ))
+          )}
+        </ul>
+        <div class="flex justify-end border-t border-border p-2">
+          <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>
+            Close (Esc)
+          </Button>
+        </div>
+      </Dialog>
     </>
   );
 }
