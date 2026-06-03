@@ -51,18 +51,23 @@ interface AnchorProps extends BaseProps {
   href?: string;
 }
 
+// Content links: bold, pure black (light) / white (dark) via --clean-link, with
+// a matching underline (currentColor) that thickens slightly on hover.
+const MDX_LINK_CLASS =
+  'font-bold text-[var(--clean-link)] underline decoration-1 underline-offset-2 hover:decoration-2';
+
 function MdxA({ href, children, ...rest }: AnchorProps) {
   // Simple heuristic for external links: protocol-prefixed URLs target a new tab.
   const isExternal = !!href && /^https?:\/\//i.test(href);
   if (isExternal) {
     return (
-      <a href={href} target="_blank" rel="noreferrer noopener" class="text-[var(--clean-accent)] underline" {...rest}>
+      <a href={href} target="_blank" rel="noreferrer noopener" class={MDX_LINK_CLASS} {...rest}>
         {children}
       </a>
     );
   }
   return (
-    <a href={href} class="text-[var(--clean-accent)] underline" {...rest}>
+    <a href={href} class={MDX_LINK_CLASS} {...rest}>
       {children}
     </a>
   );

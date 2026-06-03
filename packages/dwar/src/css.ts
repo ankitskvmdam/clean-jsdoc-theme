@@ -35,6 +35,9 @@ export function buildThemeVariableCss(tokens: ThemeTokens): string {
     `  --clean-accent: ${colors.accent};\n` +
     `  --clean-accent-fg: ${colors.accentFg};\n` +
     `  --clean-border: ${colors.border};\n` +
+    // Content links are pure black (light) / white (dark) by design — not the
+    // grey fg. The underline inherits this via currentColor.
+    `  --clean-link: oklch(0 0 0);\n` +
     `  --clean-font-heading: '${fonts.heading}', Georgia, serif;\n` +
     `  --clean-font-body: '${fonts.body}', system-ui, sans-serif;\n` +
     `  --clean-font-mono: ${fonts.mono};\n` +
@@ -53,6 +56,7 @@ export function buildThemeVariableCss(tokens: ThemeTokens): string {
       `  --clean-accent: ${d.accent};\n` +
       `  --clean-accent-fg: ${d.accentFg};\n` +
       `  --clean-border: ${d.border};\n` +
+      `  --clean-link: oklch(1 0 0);\n` +
       `}\n`;
   } else {
     // No explicit dark palette: fall back to a bg/fg swap of the light palette.
@@ -62,6 +66,7 @@ export function buildThemeVariableCss(tokens: ThemeTokens): string {
       `  --clean-bg-muted: ${colors.fgMuted};\n` +
       `  --clean-fg: ${colors.bg};\n` +
       `  --clean-fg-muted: ${colors.bgMuted};\n` +
+      `  --clean-link: oklch(1 0 0);\n` +
       `}\n`;
   }
 
