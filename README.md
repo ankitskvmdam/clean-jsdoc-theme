@@ -1,6 +1,6 @@
 # clean-jsdoc-theme
 
-> **v5 alpha.** A ground-up rewrite of the theme on a Preact + MDX + esbuild + Pagefind pipeline. See [`DONE_SO_FAR.md`](./DONE_SO_FAR.md) for the current state and [`TODO.md`](./TODO.md) for what's left.
+> **v5 alpha.** A ground-up rewrite of the theme on a Preact + MDX + esbuild + Pagefind pipeline. See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the full project structure.
 >
 > To stay on v4, pin `"clean-jsdoc-theme": "^4"` in your `package.json`. v4 lives on the `v4-maintenance` branch and continues to receive security patches.
 
@@ -75,7 +75,7 @@ The working example lives in [`examples/basic/`](./examples/basic) — `pnpm ins
 - 🚧 Theme tokens are fixed at a sensible default; configurable token / component overrides land before stable.
 - 🚧 CLI (`@clean-jsdoc-theme/aadesh`), i18n (`@clean-jsdoc-theme/bhasha`), and the dogfood docs site (`docs-site/`) are stubbed.
 
-See [`TODO.md`](./TODO.md) for the prioritized work plan and known follow-ups.
+See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the full project structure.
 
 ---
 
@@ -94,10 +94,9 @@ clean-jsdoc-theme/
 ├── examples/
 │   └── basic/                 # Working JSDoc fixture
 ├── docs-site/                 # Dogfood site (stub)
-├── DONE_SO_FAR.md             # Status snapshot of v5 work
-├── TODO.md                    # Prioritized work plan
-├── MIGRATION.md               # v4 → v5 migration guide (P3)
-└── BREAKING_CHANGES.md        # (P3)
+├── ARCHITECTURE.md            # Full project structure
+├── MIGRATION.md               # v4 → v5 migration guide
+└── BREAKING_CHANGES.md
 ```
 
 Pnpm workspace, Turborepo for task orchestration, tsup for builds, vitest for tests.

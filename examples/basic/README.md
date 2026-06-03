@@ -51,4 +51,4 @@ pnpm run dev
 ## Notes
 
 - `jsdoc.json` uses `"template": "./node_modules/clean-jsdoc-theme/dist"` (path-relative) so JSDoc's `require()` resolves the workspace symlink correctly on Windows. The bare package name also works on POSIX.
-- One known content-quality issue: each class page renders a duplicate `## Other` section at the bottom that re-renders the class doclet itself as if it were a member of the class. Pipeline issue is in setu's class-view, not the bridge — tracked in [`../../TODO.md`](../../TODO.md) (P2.3).
+- One known content-quality issue: each class page renders a duplicate `## Other` section at the bottom that re-renders the class doclet itself as if it were a member of the class. The pipeline issue is in setu's `class-view`, not the bridge.
