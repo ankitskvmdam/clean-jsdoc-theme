@@ -41,6 +41,7 @@
   },
   "dependencies": {
     "@clean-jsdoc-theme/utils": "workspace:^",
+    "lucide-preact": "^1.17.0",
     "preact": "^10.22.0"
   },
   "publishConfig": {

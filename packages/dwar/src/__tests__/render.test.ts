@@ -66,7 +66,7 @@ describe('render() — smoke', () => {
       '_islands/code-tabs.js',
       '_islands/copy-btn.js',
       '_islands/theme-toggle.js',
-      '_islands/mobile-nav.js',
+      '_islands/settings.js',
     ];
     for (const path of expected) {
       const chunk = result.files.find((f) => f.path === path);
@@ -135,7 +135,7 @@ describe('render() — island loader + payload', () => {
       'code-tabs',
       'copy-btn',
       'theme-toggle',
-      'mobile-nav',
+      'settings',
     ]) {
       expect(home).toContain(`/_islands/${name}.js`);
     }

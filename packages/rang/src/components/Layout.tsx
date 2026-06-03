@@ -4,7 +4,6 @@ import { Header } from './Header';
 import { Footer } from './Footer';
 import { Sidebar } from './Sidebar';
 import { TOC } from './TOC';
-import { MobileNav } from './MobileNav';
 
 export interface LayoutPkg {
   name?: string;
@@ -34,9 +33,7 @@ export function Layout({
 }: LayoutProps) {
   return (
     <div class="min-h-screen bg-[var(--clean-bg)] text-[var(--clean-fg)]">
-      <Header siteName={siteName} pkg={pkg} basePath={basePath}>
-        {nav.length > 0 && <MobileNav nav={nav} currentSlug={currentSlug} />}
-      </Header>
+      <Header siteName={siteName} pkg={pkg} basePath={basePath} />
       <div class="mx-auto grid w-full max-w-screen-2xl grid-cols-1 gap-6 px-4 py-6 md:grid-cols-[16rem_minmax(0,1fr)] lg:grid-cols-[16rem_minmax(0,1fr)_14rem]">
         {nav.length > 0 && (
           <aside class="hidden md:block">

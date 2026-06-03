@@ -12,26 +12,37 @@ describe('ThemeToggle', () => {
     cleanup();
   });
 
-  it('defaults to System after hydration', async () => {
-    const { findByText } = render(<ThemeToggle />);
-    const systemBtn = await findByText('System');
+  it('defaults to system after hydration', async () => {
+    const { findByRole } = render(<ThemeToggle />);
+    const btn = await findByRole('button');
     await Promise.resolve();
-    expect(systemBtn.getAttribute('aria-pressed')).toBe('true');
+    expect(btn.getAttribute('aria-label')).toBe('Theme: system');
   });
 
-  it('clicking Dark updates dataset.theme and localStorage', async () => {
-    const { findByText } = render(<ThemeToggle />);
-    const darkBtn = await findByText('Dark');
-    fireEvent.click(darkBtn);
+  it('cycles system → light → dark, updating dataset.theme and localStorage', async () => {
+    const { findByRole } = render(<ThemeToggle />);
+    const btn = await findByRole('button');
+    await Promise.resolve();
+
+    fireEvent.click(btn); // system → light
+    expect(document.documentElement.dataset.theme).toBe('light');
+    expect(globalThis.localStorage.getItem('theme')).toBe('light');
+    expect(btn.getAttribute('aria-label')).toBe('Theme: light');
+
+    fireEvent.click(btn); // light → dark
     expect(document.documentElement.dataset.theme).toBe('dark');
     expect(globalThis.localStorage.getItem('theme')).toBe('dark');
-    expect(darkBtn.getAttribute('aria-pressed')).toBe('true');
+    expect(btn.getAttribute('aria-label')).toBe('Theme: dark');
   });
 
-  it('clicking System clears dataset.theme but persists the choice', async () => {
-    const { findByText } = render(<ThemeToggle />);
-    fireEvent.click(await findByText('Dark'));
-    fireEvent.click(await findByText('System'));
+  it('cycling back to system clears dataset.theme but persists the choice', async () => {
+    const { findByRole } = render(<ThemeToggle />);
+    const btn = await findByRole('button');
+    await Promise.resolve();
+
+    fireEvent.click(btn); // light
+    fireEvent.click(btn); // dark
+    fireEvent.click(btn); // system
     expect(document.documentElement.dataset.theme).toBe('');
     expect(globalThis.localStorage.getItem('theme')).toBe('system');
   });

@@ -7,7 +7,7 @@ import { CmdK } from './components/CmdK';
 import { CodeTabs } from './components/CodeTabs';
 import { CopyBtn } from './components/CopyBtn';
 import { ThemeToggle } from './components/ThemeToggle';
-import { MobileNav } from './components/MobileNav';
+import { Settings } from './components/Settings';
 
 // Island registry is intentionally heterogeneous across IslandName keys; per-key
 // prop shapes are recovered at call sites via IslandPropsMap[K].
@@ -19,5 +19,5 @@ export const ISLAND_REGISTRY: Record<IslandName, ComponentType<any>> = {
   'code-tabs': CodeTabs,
   'copy-btn': CopyBtn,
   'theme-toggle': ThemeToggle,
-  'mobile-nav': MobileNav,
+  settings: Settings,
 };

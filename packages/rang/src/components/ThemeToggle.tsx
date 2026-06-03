@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'preact/hooks';
+import { Sun, Moon, Monitor } from 'lucide-preact';
 
 type Mode = 'light' | 'dark' | 'system';
+
+const MODE_ORDER: Mode[] = ['light', 'dark', 'system'];
 
 // Empty by design — the island's prop bag in IslandPropsMap is Record<string, never>.
 export type ThemeToggleProps = Record<string, never>;
@@ -46,34 +49,24 @@ export function ThemeToggle(_props: ThemeToggleProps = {}) {
     applyMode(next);
   };
 
-  const isActive = (m: Mode) => mode === m;
+  // Pre-hydration `mode` is null; treat it as system so the icon is stable.
+  const current = mode ?? 'system';
+  const cycle = () => {
+    const next = MODE_ORDER[(MODE_ORDER.indexOf(current) + 1) % MODE_ORDER.length];
+    select(next);
+  };
+
+  const Icon = current === 'light' ? Sun : current === 'dark' ? Moon : Monitor;
 
   return (
-    <div role="group" aria-label="Theme" class="inline-flex items-center gap-1 rounded border border-[var(--clean-border)] p-1">
-      <button
-        type="button"
-        onClick={() => select('light')}
-        aria-pressed={isActive('light')}
-        class="rounded px-2 py-1 text-xs aria-pressed:bg-[var(--clean-accent)] aria-pressed:text-[var(--clean-accent-fg)]"
-      >
-        Light
-      </button>
-      <button
-        type="button"
-        onClick={() => select('dark')}
-        aria-pressed={isActive('dark')}
-        class="rounded px-2 py-1 text-xs aria-pressed:bg-[var(--clean-accent)] aria-pressed:text-[var(--clean-accent-fg)]"
-      >
-        Dark
-      </button>
-      <button
-        type="button"
-        onClick={() => select('system')}
-        aria-pressed={isActive('system')}
-        class="rounded px-2 py-1 text-xs aria-pressed:bg-[var(--clean-accent)] aria-pressed:text-[var(--clean-accent-fg)]"
-      >
-        System
-      </button>
-    </div>
+    <button
+      type="button"
+      onClick={cycle}
+      aria-label={`Theme: ${current}`}
+      title="Toggle theme"
+      class="inline-flex h-9 w-9 items-center justify-center rounded-md text-[var(--clean-fg-muted)] hover:bg-[var(--clean-bg-muted)] hover:text-[var(--clean-fg)]"
+    >
+      <Icon size={18} aria-hidden="true" />
+    </button>
   );
 }

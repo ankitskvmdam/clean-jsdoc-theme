@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
+import { Search } from 'lucide-preact';
 
 export interface CmdKProps {
   basePath: string;
@@ -94,16 +95,13 @@ export function CmdK({ basePath: _basePath }: CmdKProps) {
           openerRef.current = (document.activeElement as HTMLElement | null) ?? null;
           setOpen(true);
         }}
-        class="inline-flex items-center gap-2 rounded border border-[var(--clean-border)] bg-[var(--clean-bg-muted)] px-3 py-1 text-sm text-[var(--clean-fg-muted)] hover:bg-[var(--clean-bg)]"
+        class="inline-flex h-9 w-9 items-center justify-center rounded-md text-[var(--clean-fg-muted)] hover:bg-[var(--clean-bg-muted)] hover:text-[var(--clean-fg)]"
         aria-haspopup="dialog"
         aria-expanded={open}
+        aria-label="Search"
+        title="Search (Ctrl K)"
       >
-        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8" />
-          <path d="m21 21-4.3-4.3" />
-        </svg>
-        <span>Search</span>
-        <kbd class="hidden rounded border border-[var(--clean-border)] bg-[var(--clean-bg)] px-1 py-0.5 text-xs sm:inline">Ctrl K</kbd>
+        <Search size={18} aria-hidden="true" />
       </button>
       {open && (
         <div

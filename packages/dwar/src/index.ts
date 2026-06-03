@@ -108,10 +108,10 @@ export async function render(
   );
 
   // Determine islands used across the build so we only bundle what's referenced.
-  // For Phase 4, every page goes through SsrLayout which always emits the same
-  // five island markers (mobile-nav, cmdk, theme-toggle, sidebar, toc). The
-  // remaining two (`code-tabs`, `copy-btn`) are MDX-embedded — Phase 4 still
-  // bundles them so the chunks are available if/when MDX content uses them.
+  // Every page goes through SsrLayout, which emits the cmdk, theme-toggle, and
+  // settings markers in the header plus sidebar and toc in the body. The
+  // MDX-embedded islands (`code-tabs`, `copy-btn`) are still bundled so the
+  // chunks are available if/when MDX content uses them.
   const islandSet = new Set<IslandName>(ALL_ISLANDS);
 
   const css = buildCss(theme.tokens, manifest.buildId);

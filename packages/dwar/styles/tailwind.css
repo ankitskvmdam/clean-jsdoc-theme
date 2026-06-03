@@ -1,0 +1,85 @@
+/*
+ * Tailwind v4 input for dwar's static utility layer.
+ *
+ * This is compiled ONCE at dwar's own build time (scripts/build-css.mjs) and
+ * codegen'd into src/generated/utility-css.ts as an inlined string. It is NOT
+ * run at the consumer's `jsdoc` build — `render()` stays pure and users never
+ * configure Tailwind.
+ *
+ * Preflight is intentionally omitted for now to keep this a strict superset of
+ * the previous hand-rolled dictionary (minimal visual change). The base layer
+ * below ports the few resets dwar actually relied on. The dynamic theme tokens
+ * (`:root { --clean-* }` + dark override) are emitted separately at render time
+ * by buildThemeVariableCss() in src/css.ts.
+ */
+
+@layer theme, base, components, utilities;
+
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+/* Scan rang's components + dwar's own source for the utility classes in use. */
+@source '../../rang/src/**/*.{ts,tsx}';
+@source '../src/**/*.{ts,tsx}';
+/* The generated module is just a CSS string — don't feed it back to the scanner. */
+@source not '../src/generated/**/*';
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: var(--clean-font-body);
+    background: var(--clean-bg);
+    color: var(--clean-fg);
+    line-height: var(--clean-line-height, 1.5);
+  }
+
+  main h1,
+  main h2,
+  main h3,
+  main h4,
+  main h5,
+  main h6 {
+    font-family: var(--clean-font-heading);
+  }
+
+  a {
+    color: var(--clean-accent);
+    text-decoration: none;
+  }
+
+  button {
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    color: inherit;
+    font: inherit;
+  }
+
+  code,
+  pre {
+    font-family: var(--clean-font-mono);
+  }
+
+  table {
+    width: 100%;
+  }
+
+  th,
+  td {
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+  }
+
+  hr {
+    border: 0;
+    border-top: 1px solid var(--clean-border);
+  }
+}

@@ -41,8 +41,8 @@ export type { ThemeToggleProps } from './components/ThemeToggle';
 export { CmdK } from './components/CmdK';
 export type { CmdKProps } from './components/CmdK';
 
-export { MobileNav } from './components/MobileNav';
-export type { MobileNavProps } from './components/MobileNav';
+export { Settings } from './components/Settings';
+export type { SettingsProps } from './components/Settings';
 
 export { defaultMdxComponents } from './mdx-components';
 export { ISLAND_REGISTRY } from './islands';

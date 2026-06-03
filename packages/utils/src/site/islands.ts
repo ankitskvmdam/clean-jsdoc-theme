@@ -16,7 +16,7 @@ export type IslandName =
   | 'code-tabs'
   | 'copy-btn'
   | 'theme-toggle'
-  | 'mobile-nav';
+  | 'settings';
 
 /** Type-safe prop bag per island. Server-render and hydration share this map. */
 export interface IslandPropsMap {
@@ -26,5 +26,5 @@ export interface IslandPropsMap {
   'code-tabs': { tabs: Array<{ label: string; lang: string; code: string }> };
   'copy-btn': { text: string };
   'theme-toggle': Record<string, never>;
-  'mobile-nav': { nav: NavNode[]; currentSlug: string };
+  settings: Record<string, never>;
 }
