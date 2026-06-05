@@ -1,16 +1,7 @@
-import type { Blockquote, Code, List, ListItem, Paragraph, RootContent } from 'mdast';
+import type { Code, List, ListItem, Paragraph, RootContent } from 'mdast';
+import type { MdxJsxFlowElement } from 'mdast-util-mdx-jsx';
 import { TDoclet, TDocletParam, TDocletTypeProperty } from '@clean-jsdoc-theme/utils';
-import {
-  code,
-  emphasis,
-  inlineCode,
-  li,
-  link,
-  p,
-  strong,
-  text,
-  ul,
-} from './builders';
+import { callout, code, emphasis, inlineCode, li, link, p, strong, text, ul } from './builders';
 import { htmlToMdastBlocks, htmlToMdastInline } from './from-html';
 
 // ── Small extractors ────────────────────────────────────────────────────────
@@ -82,19 +73,17 @@ export function inheritedFromParagraph(
 // ── Deprecation ─────────────────────────────────────────────────────────────
 
 /**
- * `@deprecated` rendered as a blockquote. JSDoc stores it as either `true`
- * (just deprecated) or a reason string. Reason strings may contain HTML.
+ * `@deprecated` rendered as a `warning` callout blockquote. JSDoc stores it as
+ * either `true` (just deprecated) or a reason string. Reason strings may
+ * contain HTML.
  */
-export function deprecationBlock(doclet: TDoclet): Blockquote | null {
+export function deprecationBlock(doclet: TDoclet): MdxJsxFlowElement | null {
   if (!doclet.deprecated) return null;
   if (doclet.deprecated === true) {
-    return { type: 'blockquote', children: [p(strong(text('Deprecated')))] };
+    return callout('warning', [p(strong(text('Deprecated')))]);
   }
   const reason = htmlToMdastInline(doclet.deprecated);
-  return {
-    type: 'blockquote',
-    children: [p(strong(text('Deprecated:')), text(' '), ...reason)],
-  };
+  return callout('warning', [p(strong(text('Deprecated:')), text(' '), ...reason)]);
 }
 
 // ── Params (incl. nested object-destructured params) ────────────────────────
@@ -185,7 +174,8 @@ function paramListItem(param: TDocletParam): ListItem {
   const t = typeExpressionString(param.type);
   if (t) flags.push(t);
   if (param.optional) flags.push('optional');
-  if (param.defaultvalue !== undefined) flags.push(`default: ${JSON.stringify(param.defaultvalue)}`);
+  if (param.defaultvalue !== undefined)
+    flags.push(`default: ${JSON.stringify(param.defaultvalue)}`);
   if (flags.length > 0) {
     if (line.length > 0) line.push(text(' '));
     line.push(text(`(${flags.join(', ')})`));
@@ -356,10 +346,7 @@ export function docletBlocks(
   }
 
   if (!skip.has('fires') && doclet.fires && doclet.fires.length > 0) {
-    blocks.push(
-      p(strong(text('Fires'))),
-      ul(doclet.fires.map((f) => li(p(inlineCode(f)))))
-    );
+    blocks.push(p(strong(text('Fires'))), ul(doclet.fires.map((f) => li(p(inlineCode(f))))));
   }
 
   if (!skip.has('examples')) {

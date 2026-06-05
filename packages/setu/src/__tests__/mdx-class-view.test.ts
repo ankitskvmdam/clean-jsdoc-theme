@@ -158,10 +158,19 @@ describe('docletBlocks (per-member composer)', () => {
     expect(json).toContain('Since');
   });
 
-  it('emits the deprecation blockquote', () => {
+  it('emits the deprecation callout as a typed Callout JSX element', () => {
     const doc: TDoclet = { deprecated: 'use foo instead' };
     const blocks = docletBlocks(doc);
-    expect(blocks.some((b) => b.type === 'blockquote')).toBe(true);
+    const callout = blocks.find(
+      (b): b is import('mdast-util-mdx-jsx').MdxJsxFlowElement =>
+        b.type === 'mdxJsxFlowElement' && b.name === 'Callout'
+    );
+    expect(callout).toBeDefined();
+    expect(callout?.attributes).toContainEqual({
+      type: 'mdxJsxAttribute',
+      name: 'type',
+      value: 'warning',
+    });
   });
 });
 

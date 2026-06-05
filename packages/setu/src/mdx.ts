@@ -1,5 +1,6 @@
 import type { Root } from 'mdast';
 import { toMarkdown } from 'mdast-util-to-markdown';
+import { mdxJsxToMarkdown } from 'mdast-util-mdx-jsx';
 import { ClassView } from './class-view';
 import { classViewToMdast, ClassViewToMdastOptions } from './mdast/class-view';
 
@@ -18,6 +19,9 @@ export function toMdx(tree: Root, options: ToMdxOptions = {}): string {
     rule: '-',
     strong: '*',
     emphasis: '_',
+    // Serialize MDX JSX nodes (e.g. callout blockquotes carrying a `type`
+    // attribute) verbatim so their props survive into the compiled MDX.
+    extensions: [mdxJsxToMarkdown()],
   });
   const fm = options.frontmatter ? renderFrontmatter(options.frontmatter) : '';
   return fm + body;

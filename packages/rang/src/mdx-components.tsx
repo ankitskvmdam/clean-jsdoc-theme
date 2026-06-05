@@ -45,6 +45,10 @@ export const defaultMdxComponents: Record<string, ComponentType<any>> = {
   ol: MdxOl,
   li: MdxLi,
   blockquote: MdxBlockquote,
+  // setu emits typed callouts (e.g. `@deprecated`) as `<Callout type="…">`.
+  // Capitalized so MDX routes it through this map; same component as the plain
+  // markdown blockquote, which branches to callout styling when `type` is set.
+  Callout: MdxBlockquote,
   hr: MdxHr,
   table: MdxTable,
   thead: MdxThead,

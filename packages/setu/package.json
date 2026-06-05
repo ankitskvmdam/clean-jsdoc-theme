@@ -50,6 +50,7 @@
     "@clean-jsdoc-theme/utils": "workspace:^",
     "@jsdoc/salty": "^0.2.12",
     "mdast-util-from-markdown": "^2.0.3",
+    "mdast-util-mdx-jsx": "^3.2.0",
     "mdast-util-to-markdown": "^2.1.2",
     "turndown": "^7.2.4"
   }

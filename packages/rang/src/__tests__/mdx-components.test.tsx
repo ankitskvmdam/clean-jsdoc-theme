@@ -4,19 +4,23 @@ import { h } from 'preact';
 import { defaultMdxComponents } from '../mdx-components';
 
 describe('defaultMdxComponents', () => {
-  it('renders h2 with an anchor link to its id', () => {
+  it('renders h2 with its id and a hover anchor button (no <a> tag)', () => {
     const H2 = defaultMdxComponents.h2;
     const html = render(h(H2, { id: 'foo' }, 'Title'));
     expect(html).toContain('Title');
-    expect(html).toContain('href="#foo"');
+    expect(html).toContain('id="foo"');
+    // The anchor affordance is a button (clicks are handled by dwar's
+    // heading-anchors script via JS), not an <a href> — see mdx-utils.
+    expect(html).toContain('data-heading-anchor');
+    expect(html).not.toContain('href="#foo"');
     expect(html).toContain('aria-hidden="true"');
   });
 
-  it('h2 without id renders without an anchor link', () => {
+  it('h2 without id renders without an anchor button', () => {
     const H2 = defaultMdxComponents.h2;
     const html = render(h(H2, {}, 'Title'));
     expect(html).toContain('Title');
-    expect(html).not.toContain('aria-hidden="true"');
+    expect(html).not.toContain('data-heading-anchor');
   });
 
   it('external link renders target=_blank and rel', () => {
