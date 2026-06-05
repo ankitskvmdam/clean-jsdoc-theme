@@ -36,6 +36,9 @@ a Pagefind search index).
 - **dwar never re-reads doclets** — it consumes only a `SiteManifest`.
 - **`dwar.render()` is pure** — no `fs`, no `process.cwd`, no logging. The only
   disk touch is `runPagefindAgainstDir` (a separate post-write step).
+- **`dwar.render()` is resilient** — a single page that fails to compile (e.g.
+  MDX that won't parse) is skipped and reported in `RenderResult.errors`, never
+  thrown. One bad page can't abort the whole build; the bridge logs the skips.
 - **Slug rules live once** (`utils/.../slug-rules.ts`) — used by both setu (nav)
   and dwar (heading anchors).
 - **Chrome markup lives once, in rang.** rang's `Layout`/`Header`/`Footer` own
@@ -89,7 +92,7 @@ utils/src/
 ├── site/
 │   ├── page.ts           # Page, Frontmatter, Heading
 │   ├── manifest.ts       # SiteManifest, NavNode, SearchEntry
-│   ├── render.ts         # OutputFile, RenderOptions, RenderResult
+│   ├── render.ts         # OutputFile, RenderOptions, RenderResult, RenderError
 │   ├── theme.ts          # ThemeTokens, ThemeColors, ThemeConfig, ComponentOverrides
 │   ├── islands.ts        # IslandName union + IslandPropsMap
 │   ├── slug-rules.ts     # slugifyHeading, slugifyPath  (used by setu AND dwar)
@@ -182,7 +185,9 @@ emits CSS, and exposes a separate Pagefind step.
 
 ```
 dwar/src/
-├── index.ts              # render(manifest, opts) → RenderResult  (entry)
+├── index.ts              # render(manifest, opts) → RenderResult  (entry). Renders
+│                         #   each page in try/catch — a page that fails to compile
+│                         #   is skipped + reported in RenderResult.errors, not thrown
 ├── layout.tsx            # SsrLayout — island-seam adapter: wraps islands in
 │                         #   data-island markers, then composes rang's Layout
 │                         #   via its slots (emits no chrome of its own). Header
@@ -190,7 +195,9 @@ dwar/src/
 │                         #   mobile-nav is the only < md control
 ├── mdx.ts                # @mdx-js/mdx compile + run (Preact runtime, frontmatter,
 │                         #   + rehype slug pass giving headings ids that mirror
-│                         #   setu's TOC exactly — slugifyHeading + per-page registry)
+│                         #   setu's TOC exactly — slugifyHeading + per-page registry).
+│                         #   Pre-pass: {@link} → code spans + escapeStrayBraces (literal
+│                         #   {…} in JSDoc prose escaped so MDX won't read it as JS)
 ├── html.ts               # HTML document skeleton, slug→path, excerpt, payload escaping
 ├── css.ts                # buildThemeVariableCss (:root + [data-theme=dark] tokens)
 │                         #   + the prebuilt UTILITY_CSS  →  one stylesheet
@@ -238,8 +245,9 @@ The package JSDoc loads via `jsdoc -t clean-jsdoc-theme`. A thin orchestrator.
 clean-jsdoc-theme/src/
 ├── publish.ts            # publish(taffyData, opts, tutorials) — the entry.
 │                         #   resolves pkg + theme (opts.siteName / fonts → tokens),
-│                         #   calls setu → dwar, writes files,
-│                         #   runs Pagefind. Holds defaultTheme (OKLCH palette).
+│                         #   calls setu → dwar, writes files, runs Pagefind. Logs the
+│                         #   rendered-page count + any RenderResult.errors (skipped
+│                         #   pages). Holds defaultTheme (OKLCH palette).
 └── write-output-files.ts # mkdir -p + writeFile loop (forward-slash → OS path)
 ```
 
