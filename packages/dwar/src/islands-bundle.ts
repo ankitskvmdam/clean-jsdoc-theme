@@ -72,6 +72,7 @@ export async function bundleIslands(
       format: 'esm',
       target: 'es2022',
       minify: true,
+      legalComments: 'none',
       sourcemap: false,
       platform: 'browser',
       logLevel: 'silent',

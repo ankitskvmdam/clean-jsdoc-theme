@@ -26,56 +26,57 @@ export interface CssBuildResult {
 
 export function buildThemeVariableCss(tokens: ThemeTokens): string {
   const { colors, fonts, darkColors } = tokens;
+  // Emitted minified (no whitespace/comments) — the utility layer downstream is
+  // already minified, so the whole stylesheet ships compact.
   const root =
-    `:root {\n` +
-    `  --clean-bg: ${colors.bg};\n` +
-    `  --clean-bg-muted: ${colors.bgMuted};\n` +
-    `  --clean-fg: ${colors.fg};\n` +
-    `  --clean-fg-muted: ${colors.fgMuted};\n` +
-    `  --clean-accent: ${colors.accent};\n` +
-    `  --clean-accent-fg: ${colors.accentFg};\n` +
-    `  --clean-border: ${colors.border};\n` +
+    `:root{` +
+    `--clean-bg:${colors.bg};` +
+    `--clean-bg-muted:${colors.bgMuted};` +
+    `--clean-fg:${colors.fg};` +
+    `--clean-fg-muted:${colors.fgMuted};` +
+    `--clean-accent:${colors.accent};` +
+    `--clean-accent-fg:${colors.accentFg};` +
+    `--clean-border:${colors.border};` +
     // Content links are pure black (light) / white (dark) by design — not the
     // grey fg. The underline inherits this via currentColor.
-    `  --clean-link: oklch(0 0 0);\n` +
-    `  --clean-font-heading: '${fonts.heading}', Georgia, serif;\n` +
-    `  --clean-font-body: '${fonts.body}', system-ui, sans-serif;\n` +
-    `  --clean-font-mono: ${fonts.mono};\n` +
-    `}\n`;
+    `--clean-link:oklch(0 0 0);` +
+    `--clean-font-heading:'${fonts.heading}',Georgia,serif;` +
+    `--clean-font-body:'${fonts.body}',system-ui,sans-serif;` +
+    `--clean-font-mono:${fonts.mono};` +
+    `}`;
 
   let dark: string;
   if (darkColors) {
     // Explicit dark palette: any omitted key falls back to the light value.
     const d = { ...colors, ...darkColors };
     dark =
-      `[data-theme="dark"] {\n` +
-      `  --clean-bg: ${d.bg};\n` +
-      `  --clean-bg-muted: ${d.bgMuted};\n` +
-      `  --clean-fg: ${d.fg};\n` +
-      `  --clean-fg-muted: ${d.fgMuted};\n` +
-      `  --clean-accent: ${d.accent};\n` +
-      `  --clean-accent-fg: ${d.accentFg};\n` +
-      `  --clean-border: ${d.border};\n` +
-      `  --clean-link: oklch(1 0 0);\n` +
-      `}\n`;
+      `[data-theme="dark"]{` +
+      `--clean-bg:${d.bg};` +
+      `--clean-bg-muted:${d.bgMuted};` +
+      `--clean-fg:${d.fg};` +
+      `--clean-fg-muted:${d.fgMuted};` +
+      `--clean-accent:${d.accent};` +
+      `--clean-accent-fg:${d.accentFg};` +
+      `--clean-border:${d.border};` +
+      `--clean-link:oklch(1 0 0);` +
+      `}`;
   } else {
     // No explicit dark palette: fall back to a bg/fg swap of the light palette.
     dark =
-      `[data-theme="dark"] {\n` +
-      `  --clean-bg: ${colors.fg};\n` +
-      `  --clean-bg-muted: ${colors.fgMuted};\n` +
-      `  --clean-fg: ${colors.bg};\n` +
-      `  --clean-fg-muted: ${colors.bgMuted};\n` +
-      `  --clean-link: oklch(1 0 0);\n` +
-      `}\n`;
+      `[data-theme="dark"]{` +
+      `--clean-bg:${colors.fg};` +
+      `--clean-bg-muted:${colors.fgMuted};` +
+      `--clean-fg:${colors.bg};` +
+      `--clean-fg-muted:${colors.bgMuted};` +
+      `--clean-link:oklch(1 0 0);` +
+      `}`;
   }
 
   return `${root}${dark}`;
 }
 
 export function buildCss(tokens: ThemeTokens, buildId: string): CssBuildResult {
-  const head = `/* clean-jsdoc-theme/dwar — generated CSS, buildId=${buildId} */\n`;
-  const contents = `${head}${buildThemeVariableCss(tokens)}${UTILITY_CSS}\n`;
+  const contents = `${buildThemeVariableCss(tokens)}${UTILITY_CSS}`;
   return {
     path: `_assets/styles.${buildId}.css`,
     contents,

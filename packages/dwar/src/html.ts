@@ -52,9 +52,9 @@ function buildGoogleFontsLinks(fonts?: { heading: string; body: string }): strin
     .join('&');
   const href = `https://fonts.googleapis.com/css2?${params}&display=swap`;
   return (
-    `<link rel="preconnect" href="https://fonts.googleapis.com" />\n` +
-    `<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />\n` +
-    `<link rel="stylesheet" href="${escapeHtml(href)}" />\n`
+    `<link rel="preconnect" href="https://fonts.googleapis.com" />` +
+    `<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />` +
+    `<link rel="stylesheet" href="${escapeHtml(href)}" />`
   );
 }
 
@@ -106,24 +106,24 @@ export function renderHtmlDocument(opts: HtmlDocumentOptions): string {
   const themeScript = getPreHydrationThemeScript();
 
   return (
-    `<!doctype html>\n` +
-    `<html lang="en">\n` +
-    `<head>\n` +
-    `<meta charset="utf-8" />\n` +
-    `<meta name="viewport" content="width=device-width, initial-scale=1" />\n` +
-    `<title>${title}</title>\n` +
-    (description ? `<meta name="description" content="${description}" />\n` : '') +
-    `<script>${themeScript}</script>\n` +
+    `<!doctype html>` +
+    `<html lang="en">` +
+    `<head>` +
+    `<meta charset="utf-8" />` +
+    `<meta name="viewport" content="width=device-width, initial-scale=1" />` +
+    `<title>${title}</title>` +
+    (description ? `<meta name="description" content="${description}" />` : '') +
+    `<script>${themeScript}</script>` +
     buildGoogleFontsLinks(fonts) +
-    `<link rel="stylesheet" href="${escapeHtml(cssHref)}" />\n` +
-    `</head>\n` +
-    `<body>\n` +
+    `<link rel="stylesheet" href="${escapeHtml(cssHref)}" />` +
+    `</head>` +
+    `<body>` +
     bodyHtml +
-    `\n<script type="application/json" data-island-props>${propsPayload}</script>\n` +
-    `<script type="module">${loaderScript}</script>\n` +
-    `<script>${getHeadingAnchorsScript()}</script>\n` +
-    `</body>\n` +
-    `</html>\n`
+    `<script type="application/json" data-island-props>${propsPayload}</script>` +
+    `<script type="module">${loaderScript}</script>` +
+    `<script>${getHeadingAnchorsScript()}</script>` +
+    `</body>` +
+    `</html>`
   );
 }
 

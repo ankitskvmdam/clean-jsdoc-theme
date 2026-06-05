@@ -87,8 +87,8 @@ describe('render() — smoke', () => {
     expect(css).toBeDefined();
     const text = asString(css!);
     expect(text).toContain(':root');
-    expect(text).toContain('--clean-bg: #ffffff;');
-    expect(text).toContain('--clean-fg: #111827;');
+    expect(text).toContain('--clean-bg:#ffffff;');
+    expect(text).toContain('--clean-fg:#111827;');
   });
 
   it('produces a search entry per non-hidden page', async () => {
@@ -193,7 +193,7 @@ describe('render() — CSS variable mapping', () => {
         f.path.startsWith('_assets/styles.') && f.path.endsWith('.css'),
       )!,
     );
-    expect(css).toContain('--clean-bg: #ff00ff;');
-    expect(css).toContain('--clean-accent: #abcdef;');
+    expect(css).toContain('--clean-bg:#ff00ff;');
+    expect(css).toContain('--clean-accent:#abcdef;');
   });
 });
