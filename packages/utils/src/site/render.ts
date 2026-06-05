@@ -12,12 +12,27 @@ export interface OutputFile {
   contents: string | Uint8Array;
 }
 
+/** A page that failed to render and was skipped, with the reason. */
+export interface RenderError {
+  /** Slug of the page that failed. */
+  slug: string;
+  /** The error message (e.g. an MDX compile failure). */
+  message: string;
+}
+
 /** Aggregated result returned by `dwar.render`. Pure — no I/O is performed here. */
 export interface RenderResult {
   files: OutputFile[];
   /** Entries that callers should hand to Pagefind after writing files. */
   search?: SearchEntry[];
+  /**
+   * Pages that failed to render and were skipped. A single bad page (e.g. MDX
+   * that won't compile) must not abort the whole build — render() collects the
+   * failures here so the caller can surface them. Empty when all pages render.
+   */
+  errors?: RenderError[];
   stats: {
+    /** Pages successfully rendered (excludes any in `errors`). */
     pageCount: number;
     assetCount: number;
     cssBytes: number;

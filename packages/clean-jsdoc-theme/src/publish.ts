@@ -268,6 +268,19 @@ export async function publish(data: unknown, opts: JSDocOpts, _tutorials?: unkno
     destination: absoluteDestination,
   });
 
+  if (result.errors && result.errors.length > 0) {
+    console.warn(
+      `clean-jsdoc-theme: ${result.errors.length} page(s) failed to render and were skipped:`,
+    );
+    for (const e of result.errors) {
+      console.warn(`  - ${e.slug}: ${e.message}`);
+    }
+  }
+  console.log(
+    `clean-jsdoc-theme: rendered ${result.stats.pageCount} page(s), ` +
+      `${result.stats.assetCount} asset(s) → ${destination}`,
+  );
+
   await writeOutputFiles(absoluteDestination, result.files);
 
   // Pagefind is optional; if the user doesn't have it installed we don't

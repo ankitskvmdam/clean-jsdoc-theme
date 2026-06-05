@@ -14,6 +14,7 @@ import { defaultMdxComponents } from '@clean-jsdoc-theme/rang';
 import type {
   OutputFile,
   Page,
+  RenderError,
   RenderOptions,
   RenderResult,
   SearchEntry,
@@ -121,23 +122,36 @@ export async function render(
 
   const files: OutputFile[] = [];
   const search: SearchEntry[] = [];
+  const errors: RenderError[] = [];
 
-  // Render pages.
+  // Render pages. A single page that fails to compile (e.g. MDX that won't
+  // parse) must NOT abort the whole build — collect the failure and carry on so
+  // the rest of the site still renders. The caller surfaces `result.errors`.
   for (const page of manifest.pages) {
-    const { file, search: entry } = await renderPage(
-      page,
-      manifest,
-      components,
-      basePath,
-      cssHref,
-      islandsBase,
-      siteName,
-      theme.tokens.fonts,
-      theme.tokens.shiki,
-    );
-    files.push(file);
-    if (!page.frontmatter.hidden) search.push(entry);
+    try {
+      const { file, search: entry } = await renderPage(
+        page,
+        manifest,
+        components,
+        basePath,
+        cssHref,
+        islandsBase,
+        siteName,
+        theme.tokens.fonts,
+        theme.tokens.shiki,
+      );
+      files.push(file);
+      if (!page.frontmatter.hidden) search.push(entry);
+    } catch (err) {
+      errors.push({
+        slug: page.slug,
+        message: err instanceof Error ? err.message : String(err),
+      });
+    }
   }
+
+  // Number of HTML pages actually rendered (before assets are appended).
+  const renderedPageCount = files.length;
 
   // CSS file.
   files.push({ path: css.path, contents: css.contents });
@@ -157,13 +171,14 @@ export async function render(
   const durationMs = Date.now() - start;
 
   // assetCount counts non-HTML files (CSS + JS chunks today).
-  const assetCount = files.length - manifest.pages.length;
+  const assetCount = files.length - renderedPageCount;
 
   return {
     files,
     search,
+    ...(errors.length > 0 ? { errors } : {}),
     stats: {
-      pageCount: manifest.pages.length,
+      pageCount: renderedPageCount,
       assetCount,
       cssBytes,
       jsBytes,

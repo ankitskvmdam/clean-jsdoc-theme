@@ -50,6 +50,35 @@ export function preprocessJsdocInlineTags(source: string): string {
   });
 }
 
+/**
+ * Backslash-escape stray `{` / `}` so MDX doesn't treat them as JS expression
+ * delimiters. setu emits plain Markdown plus `<Callout>` JSX elements — it never
+ * emits real MDX `{expression}`s — but JSDoc content is full of literal braces
+ * (`{namepath}` in `@see`, Mongo-style `{$gt: 1}` operators, object literals in
+ * descriptions). Left raw, a single `{...}` aborts the whole page compile
+ * ("Could not parse expression with acorn" / "Unexpected lazy line in
+ * expression in container").
+ *
+ * Braces inside code (fenced blocks + inline spans) and the YAML frontmatter are
+ * left untouched — MDX doesn't parse expressions there, and escaping would leak
+ * visible backslashes. Run this AFTER {@link preprocessJsdocInlineTags} so the
+ * inline-code spans it produces for `{@link}` are protected here.
+ */
+export function escapeStrayBraces(source: string): string {
+  // Keep leading YAML frontmatter verbatim (braces there are YAML, not MDX).
+  const fm = /^---\n[\s\S]*?\n---\n/.exec(source);
+  const prefix = fm ? fm[0] : '';
+  const body = fm ? source.slice(fm[0].length) : source;
+
+  // Single scan: a fenced code block, OR an inline code span (matched backtick
+  // runs), OR a lone brace. Code matches pass through; lone braces get escaped.
+  const re = /(```[\s\S]*?```|~~~[\s\S]*?~~~)|(`+)(?:[\s\S]*?)\2|([{}])/g;
+  const escaped = body.replace(re, (m, _fence, _ticks, brace) =>
+    brace ? `\\${brace}` : m,
+  );
+  return prefix + escaped;
+}
+
 /** Minimal hast shape — enough to walk headings without pulling in @types/hast. */
 interface HastNode {
   type: string;
@@ -100,7 +129,7 @@ export async function compileMdxToComponent(
   components: MdxComponentMap,
   shiki: ShikiThemes,
 ): Promise<CompiledMdx> {
-  const cleaned = preprocessJsdocInlineTags(source);
+  const cleaned = escapeStrayBraces(preprocessJsdocInlineTags(source));
   // The MDX `evaluate` runtime types target the React jsx-runtime signature;
   // Preact's runtime is shape-compatible at runtime but the structural types
   // diverge enough that we use `unknown` plus a cast at the call site.
