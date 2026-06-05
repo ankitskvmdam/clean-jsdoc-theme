@@ -21,7 +21,7 @@ import type {
   IslandName,
 } from '@clean-jsdoc-theme/utils';
 
-import { compileMdxToComponent, type MdxComponentMap } from './mdx';
+import { compileMdxToComponent, type MdxComponentMap, type ShikiThemes } from './mdx';
 import { SsrLayout, type IslandRecord } from './layout';
 import { renderHtmlDocument, htmlPathFor, extractExcerpt } from './html';
 import { bundleIslands, ALL_ISLANDS } from './islands-bundle';
@@ -46,8 +46,9 @@ async function renderPage(
   islandsBase: string,
   siteName: string | undefined,
   fonts: { heading: string; body: string },
+  shiki: ShikiThemes,
 ): Promise<{ file: OutputFile; search: SearchEntry; islands: IslandRecord[] }> {
-  const { Component: MdxComponent } = await compileMdxToComponent(page.body, components);
+  const { Component: MdxComponent } = await compileMdxToComponent(page.body, components, shiki);
 
   const islands: IslandRecord[] = [];
   const layoutVNode = h(
@@ -132,6 +133,7 @@ export async function render(
       islandsBase,
       siteName,
       theme.tokens.fonts,
+      theme.tokens.shiki,
     );
     files.push(file);
     if (!page.frontmatter.hidden) search.push(entry);

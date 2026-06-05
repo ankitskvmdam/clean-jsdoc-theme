@@ -23,7 +23,7 @@ export function CopyBtn({ text }: CopyBtnProps) {
       type="button"
       onClick={handleClick}
       aria-label={copied ? 'Copied to clipboard' : 'Copy to clipboard'}
-      class="inline-flex items-center gap-1 rounded border border-[var(--clean-border)] bg-[var(--clean-bg-muted)] px-2 py-1 text-xs text-[var(--clean-fg)] hover:bg-[var(--clean-bg)]"
+      class="inline-flex items-center gap-1 rounded border border-(--clean-border) bg-(--clean-bg-muted) px-2 py-1 text-xs text-(--clean-fg) hover:bg-(--clean-bg)"
     >
       {copied ? (
         <span>Copied!</span>

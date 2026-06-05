@@ -1,4 +1,5 @@
 import { useRef, useState } from 'preact/hooks';
+import { CodeBlock } from './CodeBlock';
 
 export interface CodeTab {
   label: string;
@@ -45,8 +46,8 @@ export function CodeTabs({ tabs }: CodeTabsProps) {
   };
 
   return (
-    <div class="my-4 rounded border border-[var(--clean-border)]">
-      <div role="tablist" aria-label="Code variants" class="flex gap-1 border-b border-[var(--clean-border)] bg-[var(--clean-bg-muted)] px-2 pt-2">
+    <div class="my-4 rounded border border-(--clean-border)">
+      <div role="tablist" aria-label="Code variants" class="flex gap-1 border-b border-(--clean-border) bg-(--clean-bg-muted) px-2 pt-2">
         {tabs.map((tab, i) => {
           const id = `code-tab-${i}`;
           const panelId = `code-tab-panel-${i}`;
@@ -67,8 +68,8 @@ export function CodeTabs({ tabs }: CodeTabsProps) {
               onKeyDown={(e) => onKeyDown(e, i)}
               class={`rounded-t border border-b-0 px-3 py-1 text-sm ${
                 isActive
-                  ? 'border-[var(--clean-border)] bg-[var(--clean-bg)] text-[var(--clean-fg)]'
-                  : 'border-transparent text-[var(--clean-fg-muted)] hover:text-[var(--clean-fg)]'
+                  ? 'border-(--clean-border) bg-(--clean-bg) text-(--clean-fg)'
+                  : 'border-transparent text-(--clean-fg-muted) hover:text-(--clean-fg)'
               }`}
             >
               {tab.label}
@@ -87,9 +88,10 @@ export function CodeTabs({ tabs }: CodeTabsProps) {
             role="tabpanel"
             aria-labelledby={id}
             hidden={!isActive}
-            class="bg-[var(--clean-bg)] p-3"
+            class="bg-(--clean-bg)"
           >
-            <pre class="m-0 overflow-x-auto text-sm"><code class={`language-${tab.lang}`}>{tab.code}</code></pre>
+            {/* Outer tabs container already provides the border. */}
+            <CodeBlock code={tab.code} lang={tab.lang} bordered={false} />
           </div>
         );
       })}

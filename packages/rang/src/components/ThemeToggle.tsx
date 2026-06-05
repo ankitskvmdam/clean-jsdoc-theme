@@ -8,26 +8,20 @@ type Mode = 'light' | 'dark';
 export type ThemeToggleProps = Record<string, never>;
 
 const STORAGE_KEY = 'theme';
+const DEFAULT_MODE: Mode = 'light';
 
-function resolveSystemMode(): Mode {
-  if (typeof window === 'undefined') return 'light';
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-}
-
-// Stored preference wins; first-time visitors fall back to the system theme.
+// Stored preference wins; first-time visitors default to light. There is no
+// "system" mode — the theme is always an explicit light/dark choice.
 function readInitialMode(): Mode {
-  if (typeof window === 'undefined') return 'light';
+  if (typeof window === 'undefined') return DEFAULT_MODE;
   const stored = window.localStorage.getItem(STORAGE_KEY);
   if (stored === 'light' || stored === 'dark') return stored;
-  return resolveSystemMode();
+  return DEFAULT_MODE;
 }
 
 function applyMode(mode: Mode) {
   if (typeof document === 'undefined') return;
   document.documentElement.dataset.theme = mode;
-  // Now always equal to `data-theme` (no "system" pass-through). Kept for any
-  // CSS still keyed on `data-theme-resolved`; safe to drop if nothing reads it.
-  document.documentElement.dataset.themeResolved = mode;
 }
 
 export function ThemeToggle(_props: ThemeToggleProps = {}) {

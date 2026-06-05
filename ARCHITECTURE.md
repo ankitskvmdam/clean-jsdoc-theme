@@ -134,7 +134,8 @@ the shadcn semantic aliases).
 rang/src/
 ├── index.ts              # public exports
 ├── islands.ts            # ISLAND_REGISTRY: Record<IslandName, Component>
-├── mdx-components.tsx     # defaultMdxComponents — MDX element → component map
+├── mdx-components.tsx     # defaultMdxComponents — the MDX element → component
+│                         #   registry (wires up mdx-utils / mdx-tags / CodeBlock)
 ├── lib/
 │   └── cn.ts             # clsx + tailwind-merge (shadcn helper)
 └── components/
@@ -148,10 +149,13 @@ rang/src/
     ├── TOC.tsx           # island: page TOC (scroll-spy)│
     ├── CmdK.tsx          # island: command palette      │ islands
     ├── Settings.tsx      # island: settings dialog      │  (hydrated)
-    ├── ThemeToggle.tsx   # island: light/dark/system    │
+    ├── ThemeToggle.tsx   # island: light/dark          │
     ├── CodeTabs.tsx      # island: tabbed code          │
     ├── CopyBtn.tsx       # island: clipboard            ┘
-    └── CodeBlock.tsx     # MDX <pre> wrapper
+    ├── mdx-utils.tsx     # MDX shared utils: BaseProps, makeHeading, cx, textContent
+    ├── mdx-tags.tsx      # MDX tag renderers (headings, links, lists, tables, …)
+    └── CodeBlock.tsx     # block code (the MDX `pre`, used as MdxPre) + inline
+                          #   `Code` (MDX `code`); also serves CodeTabs + standalone
 ```
 
 **Islands** (`IslandName`): `sidebar`, `toc`, `cmdk`, `code-tabs`, `copy-btn`,

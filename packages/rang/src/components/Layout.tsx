@@ -40,7 +40,7 @@ export function Layout({
   basePath = '/',
 }: LayoutProps) {
   return (
-    <div class="min-h-screen bg-[var(--clean-bg)] text-[var(--clean-fg)]">
+    <div class="min-h-screen bg-background text-(--clean-fg)">
       <Header siteName={siteName} pkg={pkg} basePath={basePath}>
         {headerControls}
       </Header>
@@ -50,7 +50,7 @@ export function Layout({
             <div class="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto">{sidebar}</div>
           </aside>
         )}
-        <main class="min-w-0">{children}</main>
+        <main class="min-w-0 px-4 md:px-8 lg:px-12">{children}</main>
         {toc && (
           <aside class="hidden lg:block">
             <div class="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto">{toc}</div>

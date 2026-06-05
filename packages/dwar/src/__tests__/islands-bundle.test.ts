@@ -1,6 +1,7 @@
 import { tmpdir } from 'node:os';
 import { describe, it, expect } from 'vitest';
 import { bundleIslands } from '../islands-bundle';
+import { getIslandChunkEntrySource } from '../islands-loader';
 
 describe('bundleIslands() — resolveDir default', () => {
   it('bundles successfully even when cwd is unrelated to dwar', async () => {
@@ -17,5 +18,24 @@ describe('bundleIslands() — resolveDir default', () => {
     } finally {
       process.chdir(prevCwd);
     }
+  });
+});
+
+describe('getIslandChunkEntrySource() — copy-btn', () => {
+  // copy-btn is embedded in MDX content with no data-island-id / payload entry;
+  // its chunk must derive the text to copy from the sibling <pre> in the DOM.
+  // (Regression: the button used to render but never hydrate, so clicks did
+  // nothing.)
+  it('derives the text from the sibling <pre>, not the props payload', () => {
+    const src = getIslandChunkEntrySource('copy-btn');
+    expect(src).toContain("querySelector('pre')");
+    expect(src).toContain('hydrate(');
+    expect(src).not.toContain('data-island-props');
+  });
+
+  it('layout islands still read from the props payload', () => {
+    const src = getIslandChunkEntrySource('sidebar');
+    expect(src).toContain('data-island-props');
+    expect(src).toContain('data-island-id');
   });
 });

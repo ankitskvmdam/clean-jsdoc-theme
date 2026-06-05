@@ -38,6 +38,9 @@ describe('defaultMdxComponents', () => {
     const html = render(h(Pre, { children: child }));
     expect(html).toContain('console.log(1)');
     expect(html).toMatch(/aria-label="(Copy|Copied)/);
+    // The copy button must carry the island marker so dwar's loader hydrates it
+    // — without it the button renders but clicks do nothing.
+    expect(html).toContain('data-island="copy-btn"');
   });
 
   it('pre with non-code children renders without copy button', () => {

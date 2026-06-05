@@ -12,38 +12,39 @@ describe('ThemeToggle', () => {
     cleanup();
   });
 
-  it('defaults to system after hydration', async () => {
+  it('defaults to light after hydration', async () => {
     const { findByRole } = render(<ThemeToggle />);
     const btn = await findByRole('button');
     await Promise.resolve();
-    expect(btn.getAttribute('aria-label')).toBe('Theme: system');
+
+    expect(document.documentElement.dataset.theme).toBe('light');
+    // The label advertises the *next* mode you'd switch to.
+    expect(btn.getAttribute('aria-label')).toBe('Switch to dark theme');
   });
 
-  it('cycles system → light → dark, updating dataset.theme and localStorage', async () => {
+  it('toggles light → dark → light, updating dataset.theme and localStorage', async () => {
     const { findByRole } = render(<ThemeToggle />);
     const btn = await findByRole('button');
     await Promise.resolve();
-
-    fireEvent.click(btn); // system → light
-    expect(document.documentElement.dataset.theme).toBe('light');
-    expect(globalThis.localStorage.getItem('theme')).toBe('light');
-    expect(btn.getAttribute('aria-label')).toBe('Theme: light');
 
     fireEvent.click(btn); // light → dark
     expect(document.documentElement.dataset.theme).toBe('dark');
     expect(globalThis.localStorage.getItem('theme')).toBe('dark');
-    expect(btn.getAttribute('aria-label')).toBe('Theme: dark');
+    expect(btn.getAttribute('aria-label')).toBe('Switch to light theme');
+
+    fireEvent.click(btn); // dark → light
+    expect(document.documentElement.dataset.theme).toBe('light');
+    expect(globalThis.localStorage.getItem('theme')).toBe('light');
+    expect(btn.getAttribute('aria-label')).toBe('Switch to dark theme');
   });
 
-  it('cycling back to system clears dataset.theme but persists the choice', async () => {
+  it('honors a stored dark preference on hydration', async () => {
+    globalThis.localStorage.setItem('theme', 'dark');
     const { findByRole } = render(<ThemeToggle />);
     const btn = await findByRole('button');
     await Promise.resolve();
 
-    fireEvent.click(btn); // light
-    fireEvent.click(btn); // dark
-    fireEvent.click(btn); // system
-    expect(document.documentElement.dataset.theme).toBe('');
-    expect(globalThis.localStorage.getItem('theme')).toBe('system');
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(btn.getAttribute('aria-label')).toBe('Switch to light theme');
   });
 });

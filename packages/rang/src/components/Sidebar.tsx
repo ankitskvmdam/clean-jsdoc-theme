@@ -16,8 +16,7 @@ const ITEM_BASE =
 // Selected page: tinted surface + primary text, bold weight. The `dark:` variant
 // keys off [data-theme="dark"] (see the @custom-variant in tailwind.css).
 const ITEM_ACTIVE =
-  'bg-primary/10 text-primary font-bold ' +
-  'dark:bg-primary-light/10 dark:text-primary-light';
+  'bg-primary/10 text-primary font-bold ' + 'dark:bg-primary-light/10 dark:text-primary-light';
 
 const ITEM_INACTIVE = 'text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]';
 
@@ -47,10 +46,10 @@ function groupNav(nav: readonly NavNode[]): GroupedNav[] {
 function NavLink({ node, currentSlug }: { node: NavNode; currentSlug: string }) {
   const isCurrent = node.slug === currentSlug;
   // min-w-0 lets the label shrink below its content width so break-words can act.
-  const label = <span class="min-w-0 break-words">{node.label}</span>;
+  const label = <span class="min-w-0 wrap-break-words">{node.label}</span>;
 
   if (!node.slug) {
-    return <span class={`${ITEM_BASE} text-[var(--clean-fg-muted)]`}>{label}</span>;
+    return <span class={`${ITEM_BASE} text-muted-foreground`}>{label}</span>;
   }
   return (
     <a
@@ -66,11 +65,11 @@ function NavLink({ node, currentSlug }: { node: NavNode; currentSlug: string }) 
 export function Sidebar({ nav, currentSlug }: SidebarProps) {
   const groups = groupNav(nav);
   return (
-    <nav aria-label="Documentation navigation" class="text-[var(--clean-fg)]">
+    <nav aria-label="Documentation navigation" class="text-(--clean-fg)">
       {groups.map((g) => (
         <div key={g.group || '_ungrouped'} class="mt-4 first:mt-0">
           {g.group && (
-            <div class="mb-1 py-1.5 px-3 text-sm font-bold text-[var(--clean-fg)]">{g.group}</div>
+            <div class="mb-1 py-1.5 px-3 text-sm font-bold text-(--clean-fg)">{g.group}</div>
           )}
           <ul class="m-0 list-none p-0">
             {g.items.map((node) => (

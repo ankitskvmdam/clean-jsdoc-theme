@@ -53,7 +53,9 @@ describe('render() — smoke', () => {
     const result = await render(manifest, { theme: minimalTheme });
     const home = asString(result.files.find((f) => f.path === 'index.html')!);
     expect(home).toContain(`localStorage.getItem('theme')`);
-    expect(home).toContain(`prefers-color-scheme: dark`);
+    // No system mode: a stored 'dark' applies dark, everything else defaults to light.
+    expect(home).toContain(`d.dataset.theme='dark'`);
+    expect(home).toContain(`d.dataset.theme='light'`);
   });
 
   it('emits seven non-empty island chunks', async () => {

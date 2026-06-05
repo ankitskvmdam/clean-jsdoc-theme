@@ -47,7 +47,7 @@ dwar's CSS pipeline plumbs `ThemeTokens` into these variables automatically. Sta
 
 ## FOUC + theme
 
-`ThemeToggle` reads `localStorage` and `prefers-color-scheme` inside a `useEffect`, so a pre-hydration inline script is required to set `data-theme` on `<html>` before first paint. dwar inlines this script automatically. Standalone consumers should ship the equivalent.
+`ThemeToggle` reads the stored `localStorage` preference (light/dark, defaulting to light) inside a `useEffect`, so a pre-hydration inline script is required to set `data-theme` on `<html>` before first paint. dwar inlines this script automatically. Standalone consumers should ship the equivalent.
 
 ## License
 

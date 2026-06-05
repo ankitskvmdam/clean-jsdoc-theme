@@ -7,6 +7,7 @@
  */
 
 import { evaluate } from '@mdx-js/mdx';
+import rehypeShiki from '@shikijs/rehype';
 import type { ComponentType } from 'preact';
 import { h, Fragment } from 'preact';
 import { jsx, jsxs } from 'preact/jsx-runtime';
@@ -17,6 +18,12 @@ type AnyComponent = ComponentType<any>;
 
 export interface MdxComponentMap {
   [key: string]: AnyComponent;
+}
+
+/** Light/dark Shiki theme names, sourced from `ThemeTokens.shiki`. */
+export interface ShikiThemes {
+  light: string;
+  dark: string;
 }
 
 export interface CompiledMdx {
@@ -45,6 +52,7 @@ export function preprocessJsdocInlineTags(source: string): string {
 export async function compileMdxToComponent(
   source: string,
   components: MdxComponentMap,
+  shiki: ShikiThemes,
 ): Promise<CompiledMdx> {
   const cleaned = preprocessJsdocInlineTags(source);
   // The MDX `evaluate` runtime types target the React jsx-runtime signature;
@@ -61,6 +69,24 @@ export async function compileMdxToComponent(
     // MDX parses the `---` lines as thematic breaks and the YAML keys as
     // paragraph text, leaking raw frontmatter into the rendered output.
     remarkPlugins: [remarkFrontmatter],
+    // Syntax highlighting at compile time. Shiki keeps render() pure (it loads
+    // grammars/themes from bundled JS — no fs, no network) while emitting
+    // meaningful SSR HTML. Dual themes encode both palettes into CSS variables:
+    // light colors apply inline; `[data-theme="dark"]` CSS (see css.ts /
+    // tailwind.css base layer) swaps to the `--shiki-dark*` vars, staying in
+    // sync with the theme toggle. Unknown / langless fences fall back to plain
+    // text so an unrecognised `@example` language never throws mid-render.
+    rehypePlugins: [
+      [
+        rehypeShiki,
+        {
+          themes: { light: shiki.light, dark: shiki.dark },
+          defaultColor: 'light',
+          defaultLanguage: 'text',
+          fallbackLanguage: 'text',
+        },
+      ],
+    ],
   });
 
   const MDXContent = mod.default as AnyComponent;

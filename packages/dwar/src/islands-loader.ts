@@ -59,6 +59,33 @@ export function getIslandsLoaderScript(
  * Exported as a function so callers can inject the right import path per name.
  */
 export function getIslandChunkEntrySource(name: IslandName): string {
+  // copy-btn is special: it is embedded inline in MDX content (not in the
+  // layout), so it carries no `data-island-id` and has no entry in the per-page
+  // props payload. Its only prop — the code to copy — already lives in the DOM,
+  // in the sibling <pre>. The chunk reads it from there at hydration time.
+  if (name === 'copy-btn') {
+    return `import { hydrate, h } from 'preact';
+import { ISLAND_REGISTRY } from '@clean-jsdoc-theme/rang';
+
+function hydrateAll() {
+  const Component = ISLAND_REGISTRY['copy-btn'];
+  if (!Component) return;
+  document.querySelectorAll('[data-island="copy-btn"]').forEach((el) => {
+    const wrapper = el.parentElement;
+    const pre = wrapper && wrapper.querySelector('pre');
+    const text = pre ? pre.textContent || '' : '';
+    hydrate(h(Component, { text }), el);
+  });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', hydrateAll, { once: true });
+} else {
+  hydrateAll();
+}
+`;
+  }
+
   // The chunk reads the per-page props payload at runtime. Each marker carries
   // `data-island-id="iN"` — we look that key up in the JSON blob.
   return `import { hydrate, h } from 'preact';
