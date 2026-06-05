@@ -38,8 +38,8 @@ const theme: ThemeConfig = {
       border: '#e5e7eb',
     },
     fonts: {
-      heading: 'IBM Plex Serif',
-      body: 'IBM Plex Sans',
+      heading: 'Source Serif 4',
+      body: 'Roboto',
       mono: 'ui-monospace, SFMono-Regular, monospace',
     },
     shiki: { light: 'github-light', dark: 'github-dark' },
@@ -60,7 +60,7 @@ async function main() {
     `[smoke] render: ${result.stats.pageCount} pages, ` +
       `${result.stats.assetCount} assets, ` +
       `css=${result.stats.cssBytes}B, js=${result.stats.jsBytes}B, ` +
-      `${result.stats.durationMs}ms`,
+      `${result.stats.durationMs}ms`
   );
 
   // Fresh output dir.
@@ -73,7 +73,7 @@ async function main() {
     await mkdir(dirname(out), { recursive: true });
     await writeFile(
       out,
-      typeof file.contents === 'string' ? file.contents : Buffer.from(file.contents),
+      typeof file.contents === 'string' ? file.contents : Buffer.from(file.contents)
     );
     if (file.path.endsWith('.html')) htmlCount += 1;
   }

@@ -30,9 +30,9 @@ export interface ThemeTokens {
    */
   darkColors?: Partial<ThemeColors>;
   fonts: {
-    /** Google Fonts family name for headings, e.g. `"IBM Plex Serif"`. */
+    /** Google Fonts family name for headings, e.g. `"Source Serif 4"`. */
     heading: string;
-    /** Google Fonts family name for body text, e.g. `"IBM Plex Sans"`. */
+    /** Google Fonts family name for body text, e.g. `"Roboto"`. */
     body: string;
     /** Monospace font-family stack. Not loaded from Google Fonts. */
     mono: string;

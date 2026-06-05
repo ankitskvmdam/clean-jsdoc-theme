@@ -22,6 +22,12 @@
  * the shadcn-style Dialog. v4 successor to tailwindcss-animate. */
 @import 'tw-animate-css';
 
+/* Drive `dark:` utilities off the theme toggle's [data-theme="dark"] attribute
+ * instead of the OS `prefers-color-scheme`. The rest of the theme swaps via the
+ * [data-theme="dark"] CSS-variable block (see css.ts), so `dark:` must key off
+ * the same signal to stay in sync with the toggle. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /*
  * shadcn-style semantic color vocabulary, mapped onto our `--clean-*` tokens
  * (which buildThemeVariableCss() plumbs from the user's ThemeConfig at render
@@ -46,6 +52,10 @@
   --color-border: var(--clean-border);
   --color-input: var(--clean-border);
   --color-ring: var(--clean-accent);
+  /* Lighter accent for dark-mode emphasis (e.g. the selected sidebar item).
+   * Derived from the user's accent via relative oklch so it tracks theme
+   * changes without a separate token. */
+  --color-primary-light: oklch(from var(--clean-accent) 0.72 c h);
 }
 
 /* Scan rang's components + dwar's own source for the utility classes in use. */

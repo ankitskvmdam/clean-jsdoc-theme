@@ -38,6 +38,10 @@ a Pagefind search index).
   disk touch is `runPagefindAgainstDir` (a separate post-write step).
 - **Slug rules live once** (`utils/.../slug-rules.ts`) — used by both setu (nav)
   and dwar (heading anchors).
+- **Chrome markup lives once, in rang.** rang's `Layout`/`Header`/`Footer` own
+  every byte of page-shell HTML. dwar's `SsrLayout` adds no chrome — it only
+  wraps islands in `data-island` markers and passes them into rang's `Layout`
+  slots (`headerControls` / `sidebar` / `toc`).
 
 ---
 
@@ -103,7 +107,8 @@ each is a mechanical `*-view.ts` + `mdast/*-view.ts` addition).
 ```
 setu/src/
 ├── index.ts              # generateSite(collection, opts) → SiteManifest  (entry)
-├── generate-site.ts      # enumerate classes, build pages, nav, buildId
+├── generate-site.ts      # enumerate classes, build pages, nav (grouped by
+│                         #   page kind → Modules/Classes/…), buildId
 ├── validate.ts           # validateCollectionOrThrow
 ├── doclet.ts             # doclet access helpers
 ├── class-view.ts         # class doclet → structured view model
@@ -136,10 +141,10 @@ rang/src/
     ├── Button.tsx        # shadcn-style Button (cva variants/sizes) + buttonVariants
     ├── Dialog.tsx        # shadcn-style Dialog (Preact-native; overlay, focus trap,
     │                     #   scroll lock, presence/animation) + Header/Title/Body/Footer
-    ├── Layout.tsx        # page chrome (SSR)            ┐
+    ├── Layout.tsx        # slot-based page shell (SSR)  ┐
     ├── Header.tsx        # site header (SSR)            │ chrome
     ├── Footer.tsx        # site footer (SSR)            ┘
-    ├── Sidebar.tsx       # island: nav tree             ┐
+    ├── Sidebar.tsx       # island: grouped nav (by kind)┐
     ├── TOC.tsx           # island: page TOC (scroll-spy)│
     ├── CmdK.tsx          # island: command palette      │ islands
     ├── Settings.tsx      # island: settings dialog      │  (hydrated)
@@ -161,8 +166,9 @@ emits CSS, and exposes a separate Pagefind step.
 ```
 dwar/src/
 ├── index.ts              # render(manifest, opts) → RenderResult  (entry)
-├── layout.tsx            # SsrLayout — mirrors rang's Layout, wraps islands with
-│                         #   data-island markers; renders the header controls
+├── layout.tsx            # SsrLayout — island-seam adapter: wraps islands in
+│                         #   data-island markers, then composes rang's Layout
+│                         #   via its slots (emits no chrome of its own)
 ├── mdx.ts                # @mdx-js/mdx compile + run (Preact runtime, frontmatter)
 ├── html.ts               # HTML document skeleton, slug→path, excerpt, payload escaping
 ├── css.ts                # buildThemeVariableCss (:root + [data-theme=dark] tokens)
@@ -188,7 +194,10 @@ dwar's source; only the `:root` / `[data-theme="dark"]` token block is dynamic
 (emitted per `ThemeConfig` at render time). Shadcn semantic colors
 (`background`, `foreground`, `primary`, `muted`, `accent`, `border`, `ring`) are
 mapped onto `--clean-*` via `@theme`, and the palette ships explicit OKLCH light
-and dark values.
+and dark values. A `@custom-variant dark` rebinds the `dark:` utility variant to
+`[data-theme="dark"]` (the theme toggle's signal) instead of the OS
+`prefers-color-scheme`, and `--color-primary-light` derives a lighter accent via
+relative `oklch()` for dark-mode emphasis (e.g. the selected sidebar item).
 
 **`render()` emits:** `<slug>/index.html` per page (with a pre-hydration theme
 script before the stylesheet), `_assets/styles.<buildId>.css`,
@@ -202,7 +211,8 @@ The package JSDoc loads via `jsdoc -t clean-jsdoc-theme`. A thin orchestrator.
 ```
 clean-jsdoc-theme/src/
 ├── publish.ts            # publish(taffyData, opts, tutorials) — the entry.
-│                         #   resolves pkg + theme, calls setu → dwar, writes files,
+│                         #   resolves pkg + theme (opts.siteName / fonts → tokens),
+│                         #   calls setu → dwar, writes files,
 │                         #   runs Pagefind. Holds defaultTheme (OKLCH palette).
 └── write-output-files.ts # mkdir -p + writeFile loop (forward-slash → OS path)
 ```

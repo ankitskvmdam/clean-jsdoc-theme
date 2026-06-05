@@ -1,22 +1,22 @@
 /**
- * SSR Layout wrapper that marks each island invocation with a
- * `<div data-island="...">` envelope.
+ * SSR layout adapter. The chrome markup (header, grid shell, asides, footer)
+ * lives entirely in rang's `Layout`. dwar's only job here is hydration: it
+ * wraps each island component in a `<div data-island="...">` envelope, records
+ * its props for the per-page payload, and hands the wrapped nodes to rang's
+ * `Layout` via its `headerControls` / `sidebar` / `toc` slots.
  *
- * We can't use rang's `Layout` directly because it embeds island components
- * (Sidebar, TOC) opaquely — there's no seam inside Layout where we can wrap
- * them. Rather than modifying rang, we mirror Layout's outer structure here and
- * re-use the island and chrome components (Header, Footer) as building blocks.
- * This is the cleanest way to keep dwar's island-marker concern out of rang.
+ * This is the seam that lets rang own all markup while dwar owns the island
+ * markers — without either side duplicating the other's concern.
  *
- * Per-page id allocation: islands appear at most once each in this layout
- * (cmdk, theme-toggle, settings in the header; sidebar and toc in the body),
- * so an ascending counter is sufficient. Mdx-embedded islands (code-tabs,
- * copy-btn) flow through the MDX component map and are NOT marked here — they
- * aren't part of the Layout.
+ * Per-page id allocation: islands appear at most once each (cmdk, theme-toggle,
+ * settings in the header; sidebar and toc in the body), and `Island` allocates
+ * ids during render in tree order, so an ascending counter is sufficient.
+ * Mdx-embedded islands (code-tabs, copy-btn) flow through the MDX component map
+ * and are NOT marked here — they aren't part of the layout.
  */
 
 import type { ComponentChildren, ComponentType, VNode } from 'preact';
-import { Footer, Sidebar, TOC, CmdK, ThemeToggle, Settings } from '@clean-jsdoc-theme/rang';
+import { Layout, Sidebar, TOC, CmdK, ThemeToggle, Settings } from '@clean-jsdoc-theme/rang';
 import type { Heading, IslandName, NavNode } from '@clean-jsdoc-theme/utils';
 
 export interface IslandRecord {
@@ -47,7 +47,8 @@ export interface SsrLayoutProps {
 
 /**
  * Wrap a Preact element with a `data-island` marker and record its props for
- * the per-page payload script.
+ * the per-page payload script. Runs during render, so ids are allocated in
+ * document order.
  */
 function Island<P extends object>({
   name,
@@ -80,65 +81,44 @@ export function SsrLayout({
   basePath = '/',
   islands,
 }: SsrLayoutProps) {
-  const name = siteName ?? pkg?.name ?? 'Documentation';
+  const headerControls = (
+    <>
+      <Island name="cmdk" islands={islands} Component={CmdK} props={{ basePath }} />
+      <Island
+        name="theme-toggle"
+        islands={islands}
+        Component={ThemeToggle}
+        props={{} as Record<string, never>}
+      />
+      <Island
+        name="settings"
+        islands={islands}
+        Component={Settings}
+        props={{} as Record<string, never>}
+      />
+    </>
+  );
+
+  const sidebar =
+    nav.length > 0 ? (
+      <Island name="sidebar" islands={islands} Component={Sidebar} props={{ nav, currentSlug }} />
+    ) : undefined;
+
+  const toc =
+    headings.length > 0 ? (
+      <Island name="toc" islands={islands} Component={TOC} props={{ headings }} />
+    ) : undefined;
+
   return (
-    <div class="min-h-screen bg-[var(--clean-bg)] text-[var(--clean-fg)]">
-      <header class="sticky top-0 z-30 border-b border-[var(--clean-border)] bg-[var(--clean-bg)]">
-        <div class="mx-auto flex h-16 w-full min-w-0 max-w-screen-2xl items-center gap-4 px-4">
-          <a href={basePath} class="text-base font-semibold text-[var(--clean-fg)] no-underline">
-            {name}
-          </a>
-          {pkg?.version && (
-            <span class="rounded bg-[var(--clean-bg-muted)] px-2 py-0.5 text-xs text-[var(--clean-fg-muted)]">
-              v{pkg.version}
-            </span>
-          )}
-          <div class="ml-auto flex items-center gap-1">
-            <Island name="cmdk" islands={islands} Component={CmdK} props={{ basePath }} />
-            <Island
-              name="theme-toggle"
-              islands={islands}
-              Component={ThemeToggle}
-              props={{} as Record<string, never>}
-            />
-            <Island
-              name="settings"
-              islands={islands}
-              Component={Settings}
-              props={{} as Record<string, never>}
-            />
-          </div>
-        </div>
-      </header>
-      <div class="mx-auto grid w-full max-w-screen-2xl grid-cols-1 gap-6 px-4 py-6 md:grid-cols-[16rem_minmax(0,1fr)] lg:grid-cols-[16rem_minmax(0,1fr)_14rem]">
-        {nav.length > 0 && (
-          <aside class="hidden md:block">
-            <div class="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto">
-              <Island
-                name="sidebar"
-                islands={islands}
-                Component={Sidebar}
-                props={{ nav, currentSlug }}
-              />
-            </div>
-          </aside>
-        )}
-        <main class="min-w-0">{children}</main>
-        {headings.length > 0 && (
-          <aside class="hidden lg:block">
-            <div class="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto">
-              <Island
-                name="toc"
-                islands={islands}
-                Component={TOC}
-                props={{ headings }}
-              />
-            </div>
-          </aside>
-        )}
-      </div>
-      <Footer pkg={pkg} />
-    </div>
+    <Layout
+      siteName={siteName}
+      pkg={pkg}
+      basePath={basePath}
+      headerControls={headerControls}
+      sidebar={sidebar}
+      toc={toc}
+    >
+      {children}
+    </Layout>
   );
 }
-

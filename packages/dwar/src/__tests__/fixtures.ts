@@ -1,8 +1,4 @@
-import type {
-  SiteManifest,
-  ThemeConfig,
-  ThemeTokens,
-} from '@clean-jsdoc-theme/utils';
+import type { SiteManifest, ThemeConfig, ThemeTokens } from '@clean-jsdoc-theme/utils';
 
 export const minimalTokens: ThemeTokens = {
   colors: {
@@ -15,8 +11,8 @@ export const minimalTokens: ThemeTokens = {
     border: '#e5e7eb',
   },
   fonts: {
-    heading: 'IBM Plex Serif',
-    body: 'IBM Plex Sans',
+    heading: 'Source Serif 4',
+    body: 'Roboto',
     mono: 'ui-monospace, SFMono-Regular, monospace',
   },
   shiki: {
@@ -61,9 +57,7 @@ Hello from the guide.
 - First bullet
 - Second bullet
 `,
-        headings: [
-          { depth: 2, text: 'Section', id: 'section' },
-        ],
+        headings: [{ depth: 2, text: 'Section', id: 'section' }],
       },
     ],
     nav: [

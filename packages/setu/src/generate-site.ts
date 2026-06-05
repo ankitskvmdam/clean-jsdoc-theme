@@ -7,6 +7,7 @@ import {
   type Heading,
   type NavNode,
   type Page,
+  type PageKind,
 } from '@clean-jsdoc-theme/utils';
 import type { TDoclet, TJSDocSaltyCollection } from '@clean-jsdoc-theme/utils';
 import { getClassView } from './class-view';
@@ -112,11 +113,38 @@ export function buildClassPage(
   return { slug, frontmatter, body, mdast: tree, headings };
 }
 
-/** Flat alphabetical nav: one entry per page, label from frontmatter title. */
+/**
+ * Sidebar groups, in display order. Each page kind maps to a human-readable
+ * group label; kinds not listed fall into "Other" at the end.
+ */
+const KIND_GROUPS: { kind: PageKind; label: string }[] = [
+  { kind: 'module', label: 'Modules' },
+  { kind: 'namespace', label: 'Namespaces' },
+  { kind: 'class', label: 'Classes' },
+  { kind: 'interface', label: 'Interfaces' },
+  { kind: 'mixin', label: 'Mixins' },
+  { kind: 'typedef', label: 'Typedefs' },
+  { kind: 'global', label: 'Globals' },
+];
+
+const GROUP_LABEL = new Map<PageKind, string>(KIND_GROUPS.map((g) => [g.kind, g.label]));
+const GROUP_ORDER = new Map<PageKind, number>(KIND_GROUPS.map((g, i) => [g.kind, i]));
+const OTHER_GROUP = { label: 'Other', order: KIND_GROUPS.length };
+
+/**
+ * Nav grouped by page kind. Each entry carries its group label + a stable sort
+ * order; the sidebar buckets contiguous same-group entries under a group title.
+ * Groups follow {@link KIND_GROUPS}; entries are alphabetical within a group.
+ */
 export function buildNav(pages: readonly Page[]): NavNode[] {
   return pages
-    .map<NavNode>((p) => ({ label: p.frontmatter.title, slug: p.slug }))
-    .sort((a, b) => a.label.localeCompare(b.label));
+    .map<NavNode>((p) => ({
+      label: p.frontmatter.title,
+      slug: p.slug,
+      group: GROUP_LABEL.get(p.frontmatter.kind) ?? OTHER_GROUP.label,
+      order: GROUP_ORDER.get(p.frontmatter.kind) ?? OTHER_GROUP.order,
+    }))
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.label.localeCompare(b.label));
 }
 
 /**

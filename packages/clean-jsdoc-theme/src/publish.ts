@@ -120,6 +120,11 @@ interface JSDocOpts {
   destination?: string;
   package?: string;
   /**
+   * Site name from `jsdoc.json` (`"opts": { "siteName": "..." }`). Shown in the
+   * header and appended to each page's `<title>`. Falls back to `pkg.name`.
+   */
+  siteName?: string;
+  /**
    * Font overrides from `jsdoc.json` (`"opts": { "fonts": { ... } }`). Values
    * are Google Fonts family names for `heading`/`body`; `mono` is a CSS stack.
    */
@@ -136,7 +141,7 @@ const defaultTheme: ThemeConfig = {
       bgMuted: 'oklch(0.9595 0.0079 106.55)',
       fg: 'oklch(0.3639 0 0)',
       fgMuted: 'oklch(0.5278 0 0)',
-      accent: 'oklch(0.5461 0.2152 262.88)',
+      accent: 'oklch(0 0 0)',
       accentFg: 'oklch(1 0 0)',
       border: 'oklch(0.9761 0 0)',
     },
@@ -147,13 +152,13 @@ const defaultTheme: ThemeConfig = {
       bgMuted: 'oklch(0.2103 0.0059 285.89)',
       fg: 'oklch(0.6993 0 0)',
       fgMuted: 'oklch(0.5382 0 0)',
-      accent: 'oklch(0.5461 0.2152 262.88)',
-      accentFg: 'oklch(1 0 0)',
+      accent: 'oklch(1 0 0)',
+      accentFg: 'oklch(0 0 0)',
       border: 'oklch(0.1921 0.004 286.02)',
     },
     fonts: {
-      heading: 'IBM Plex Serif',
-      body: 'IBM Plex Sans',
+      heading: 'Source Serif 4',
+      body: 'Roboto',
       mono: 'ui-monospace, SFMono-Regular, Menlo, monospace',
     },
     shiki: { light: 'github-light', dark: 'github-dark' },
@@ -162,21 +167,29 @@ const defaultTheme: ThemeConfig = {
 };
 
 /**
- * Merge user font overrides from `jsdoc.json` over the defaults. Only the keys
- * the user supplies are overridden; everything else keeps the default theme.
+ * Merge user overrides from `jsdoc.json` (`siteName`, `fonts`) over the
+ * defaults. Only the keys the user supplies are overridden; everything else
+ * keeps the default theme.
  */
 function resolveTheme(opts: JSDocOpts): ThemeConfig {
   const f = opts.fonts;
-  if (!f) return defaultTheme;
+  const siteName =
+    typeof opts.siteName === 'string' && opts.siteName.trim().length > 0
+      ? opts.siteName
+      : undefined;
+
   return {
     ...defaultTheme,
     tokens: {
       ...defaultTheme.tokens,
-      fonts: {
-        heading: f.heading ?? defaultTheme.tokens.fonts.heading,
-        body: f.body ?? defaultTheme.tokens.fonts.body,
-        mono: f.mono ?? defaultTheme.tokens.fonts.mono,
-      },
+      fonts: f
+        ? {
+            heading: f.heading ?? defaultTheme.tokens.fonts.heading,
+            body: f.body ?? defaultTheme.tokens.fonts.body,
+            mono: f.mono ?? defaultTheme.tokens.fonts.mono,
+          }
+        : defaultTheme.tokens.fonts,
+      ...(siteName ? { siteName } : {}),
     },
   };
 }
