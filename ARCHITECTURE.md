@@ -197,7 +197,9 @@ mapped onto `--clean-*` via `@theme`, and the palette ships explicit OKLCH light
 and dark values. A `@custom-variant dark` rebinds the `dark:` utility variant to
 `[data-theme="dark"]` (the theme toggle's signal) instead of the OS
 `prefers-color-scheme`, and `--color-primary-light` derives a lighter accent via
-relative `oklch()` for dark-mode emphasis (e.g. the selected sidebar item).
+relative `oklch()` for dark-mode emphasis (e.g. the selected sidebar item). The
+heading/body/mono families are also exposed as `font-heading` / `font-body` /
+`font-mono` utilities (mapped onto the `--clean-font-*` vars).
 
 **`render()` emits:** `<slug>/index.html` per page (with a pre-hydration theme
 script before the stylesheet), `_assets/styles.<buildId>.css`,

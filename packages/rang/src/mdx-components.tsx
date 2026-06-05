@@ -15,12 +15,13 @@ interface HeadingProps extends BaseProps {
 
 function makeHeading(Tag: 'h2' | 'h3' | 'h4' | 'h5' | 'h6') {
   return function MdxHeading({ id, children, ...rest }: HeadingProps) {
+    // Headings render in the heading font at weight 500 (font-medium).
     const headingClass: Record<typeof Tag, string> = {
-      h2: 'mt-8 mb-3 text-2xl font-bold',
-      h3: 'mt-6 mb-2 text-xl font-semibold',
-      h4: 'mt-5 mb-2 text-lg font-semibold',
-      h5: 'mt-4 mb-1 text-base font-semibold',
-      h6: 'mt-4 mb-1 text-sm font-semibold uppercase tracking-wider',
+      h2: 'mt-8 mb-3 text-2xl font-medium',
+      h3: 'mt-6 mb-2 text-xl font-medium',
+      h4: 'mt-5 mb-2 text-lg font-medium',
+      h5: 'mt-4 mb-1 text-base font-medium',
+      h6: 'mt-4 mb-1 text-sm font-medium uppercase tracking-wider',
     };
     return (
       <Tag id={id} class={`group scroll-mt-20 ${headingClass[Tag]}`} {...rest}>
@@ -41,7 +42,7 @@ function makeHeading(Tag: 'h2' | 'h3' | 'h4' | 'h5' | 'h6') {
 
 function MdxH1({ id, children, ...rest }: HeadingProps) {
   return (
-    <h1 id={id} class="mt-2 mb-4 text-3xl font-bold" {...rest}>
+    <h1 id={id} class="mt-2 mb-4 text-3xl font-medium" {...rest}>
       {children}
     </h1>
   );

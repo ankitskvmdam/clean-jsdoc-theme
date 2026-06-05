@@ -56,6 +56,12 @@
    * Derived from the user's accent via relative oklch so it tracks theme
    * changes without a separate token. */
   --color-primary-light: oklch(from var(--clean-accent) 0.72 c h);
+  /* Font-family tokens → `font-heading` / `font-body` / `font-mono` utilities,
+   * mapped onto the --clean-* family vars (emitted per ThemeConfig at render
+   * time). `inline` keeps the utility referencing the runtime var. */
+  --font-heading: var(--clean-font-heading);
+  --font-body: var(--clean-font-body);
+  --font-mono: var(--clean-font-mono);
 }
 
 /* Scan rang's components + dwar's own source for the utility classes in use. */

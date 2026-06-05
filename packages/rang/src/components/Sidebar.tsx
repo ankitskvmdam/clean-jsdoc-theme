@@ -13,11 +13,10 @@ const ITEM_BASE =
   'group flex items-start gap-x-3 w-full px-3 py-1.5 text-left text-sm no-underline ' +
   'break-words hyphens-auto overflow-hidden rounded-xl outline-offset-[-1px] cursor-pointer';
 
-// Selected page: tinted surface + primary text, made to read as bold via a
-// text-shadow so there's no layout shift from a font-weight change. The `dark:`
-// variant keys off [data-theme="dark"] (see the @custom-variant in tailwind.css).
+// Selected page: tinted surface + primary text, bold weight. The `dark:` variant
+// keys off [data-theme="dark"] (see the @custom-variant in tailwind.css).
 const ITEM_ACTIVE =
-  'bg-primary/10 text-primary [text-shadow:-0.2px_0_0_currentColor,0.2px_0_0_currentColor] ' +
+  'bg-primary/10 text-primary font-bold ' +
   'dark:bg-primary-light/10 dark:text-primary-light';
 
 const ITEM_INACTIVE = 'text-[var(--clean-fg)] hover:bg-[var(--clean-bg-muted)]';

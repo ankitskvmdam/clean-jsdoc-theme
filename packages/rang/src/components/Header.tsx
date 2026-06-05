@@ -21,7 +21,7 @@ export function Header({ siteName, pkg, basePath = '/', children }: HeaderProps)
       <div class="mx-auto flex h-16 w-full min-w-0 max-w-screen-2xl items-center gap-4 px-4">
         <a
           href={basePath}
-          class="pl-3 text-lg font-heading font-semibold text-(--clean-fg) no-underline"
+          class="pl-3 text-lg font-heading font-bold text-(--clean-fg) no-underline"
         >
           {name}
         </a>

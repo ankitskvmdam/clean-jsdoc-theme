@@ -26,7 +26,7 @@ const result = await render(manifest, {
         accent: '#0070f3', accentFg: '#ffffff',
         border: '#e5e5e5',
       },
-      fonts: { heading: 'IBM Plex Serif', body: 'IBM Plex Sans', mono: 'ui-monospace' },
+      fonts: { heading: 'Source Serif 4', body: 'Roboto', mono: 'ui-monospace' },
       shiki: { light: 'github-light', dark: 'github-dark' },
       siteName: 'My Docs',
     },

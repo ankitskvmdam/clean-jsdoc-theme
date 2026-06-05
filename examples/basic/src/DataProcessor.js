@@ -42,8 +42,7 @@ class DataProcessor extends BaseEntity {
    * @since 1.2.0
    * @version 2.0.1
    * @deprecated Use the internal {@linkcode DataProcessor#streamEngine} instead.
-   * * @example
-   * const proc = new DataProcessor('main');
+   * @example const proc = new DataProcessor('main');
    * await proc.process(['a', 'b']);
    */
   async process(data) {
