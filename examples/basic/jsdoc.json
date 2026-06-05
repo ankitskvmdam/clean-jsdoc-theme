@@ -11,6 +11,6 @@
     "destination": "dist",
     "recurse": true,
     "template": "./node_modules/clean-jsdoc-theme/dist",
-    "siteName": "clean-jsdoc-theme Example Basic"
+    "siteName": "clean-jsdoc-theme"
   }
 }
