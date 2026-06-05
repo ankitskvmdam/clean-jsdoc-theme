@@ -11,6 +11,7 @@ import type { NavNode } from './manifest';
 /** Stable string IDs for each island. The string is used as the `data-island` attribute. */
 export type IslandName =
   | 'sidebar'
+  | 'mobile-nav'
   | 'toc'
   | 'cmdk'
   | 'code-tabs'
@@ -21,6 +22,7 @@ export type IslandName =
 /** Type-safe prop bag per island. Server-render and hydration share this map. */
 export interface IslandPropsMap {
   sidebar: { nav: NavNode[]; currentSlug: string };
+  'mobile-nav': { nav: NavNode[]; currentSlug: string; siteName?: string; basePath?: string };
   toc: { headings: Heading[] };
   cmdk: { basePath: string };
   'code-tabs': { tabs: Array<{ label: string; lang: string; code: string }> };

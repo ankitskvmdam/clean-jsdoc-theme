@@ -16,7 +16,15 @@
  */
 
 import type { ComponentChildren, ComponentType, VNode } from 'preact';
-import { Layout, Sidebar, TOC, CmdK, ThemeToggle, Settings } from '@clean-jsdoc-theme/rang';
+import {
+  Layout,
+  Sidebar,
+  MobileNav,
+  TOC,
+  CmdK,
+  ThemeToggle,
+  Settings,
+} from '@clean-jsdoc-theme/rang';
 import type { Heading, IslandName, NavNode } from '@clean-jsdoc-theme/utils';
 
 export interface IslandRecord {
@@ -83,19 +91,35 @@ export function SsrLayout({
 }: SsrLayoutProps) {
   const headerControls = (
     <>
-      <Island name="cmdk" islands={islands} Component={CmdK} props={{ basePath }} />
-      <Island
-        name="theme-toggle"
-        islands={islands}
-        Component={ThemeToggle}
-        props={{} as Record<string, never>}
-      />
-      <Island
-        name="settings"
-        islands={islands}
-        Component={Settings}
-        props={{} as Record<string, never>}
-      />
+      {/* Desktop controls: search + theme + settings. On mobile these all
+          collapse into the nav drawer trigger below — the mobile header keeps
+          only the panel-right button. */}
+      <div class="hidden items-center gap-1 md:flex">
+        <Island name="cmdk" islands={islands} Component={CmdK} props={{ basePath }} />
+        <Island
+          name="theme-toggle"
+          islands={islands}
+          Component={ThemeToggle}
+          props={{} as Record<string, never>}
+        />
+        <Island
+          name="settings"
+          islands={islands}
+          Component={Settings}
+          props={{} as Record<string, never>}
+        />
+      </div>
+      {/* Mobile-only drawer trigger; the drawer hosts theme/settings + the page list. */}
+      {nav.length > 0 && (
+        <div class="md:hidden">
+          <Island
+            name="mobile-nav"
+            islands={islands}
+            Component={MobileNav}
+            props={{ nav, currentSlug, siteName, basePath }}
+          />
+        </div>
+      )}
     </>
   );
 

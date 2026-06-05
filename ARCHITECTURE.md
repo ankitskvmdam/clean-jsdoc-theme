@@ -100,7 +100,13 @@ utils/src/
 ### `@clean-jsdoc-theme/setu` — JSDoc → `SiteManifest`
 
 Walks the salty doclet collection and produces one MDX page per documented
-class. No HTML, no JSX, no I/O. **Coverage today: `kind: 'class'` only**
+class. Emits Markdown/MDX only — no HTML, no I/O. The one bit of JSX it emits is
+MDX callout elements (`<Callout type="info|warning|error">`, e.g. for
+`@deprecated`): a plain `mdast` `data` field is dropped by `toMarkdown`, and
+lowercase literal JSX bypasses MDX's component map, so callouts are emitted as a
+capitalized MDX JSX node (wired via `mdxJsxToMarkdown`) that round-trips through
+serialization and arrives as a prop on rang's `MdxBlockquote`.
+**Coverage today: `kind: 'class'` only**
 (modules / mixins / namespaces / interfaces / typedefs / globals are deferred —
 each is a mechanical `*-view.ts` + `mdast/*-view.ts` addition).
 
@@ -140,27 +146,34 @@ rang/src/
 │   └── cn.ts             # clsx + tailwind-merge (shadcn helper)
 └── components/
     ├── Button.tsx        # shadcn-style Button (cva variants/sizes) + buttonVariants
-    ├── Dialog.tsx        # shadcn-style Dialog (Preact-native; overlay, focus trap,
-    │                     #   scroll lock, presence/animation) + Header/Title/Body/Footer
+    ├── Dialog.tsx        # shadcn-style Dialog (Preact-native; overlay+blur, focus trap,
+    │                     #   scroll lock, presence/animation) + Header/Title/Body/Footer.
+    │                     #   align: center/top modal OR left/right side-sheet (drawer)
     ├── Layout.tsx        # slot-based page shell (SSR)  ┐
     ├── Header.tsx        # site header (SSR)            │ chrome
     ├── Footer.tsx        # site footer (SSR)            ┘
-    ├── Sidebar.tsx       # island: grouped nav (by kind)┐
+    ├── Sidebar.tsx       # island: grouped nav (by kind)┐  (+ SidebarItem action row)
+    ├── MobileNav.tsx     # island: < md nav drawer      │  (reuses Dialog sheet +
+    │                     #   SidebarItem + useThemeMode + SettingsDialog + Sidebar)
     ├── TOC.tsx           # island: page TOC (scroll-spy)│
     ├── CmdK.tsx          # island: command palette      │ islands
-    ├── Settings.tsx      # island: settings dialog      │  (hydrated)
-    ├── ThemeToggle.tsx   # island: light/dark          │
+    ├── Settings.tsx      # island: settings (+ SettingsDialog, controlled) │ (hydrated)
+    ├── ThemeToggle.tsx   # island: light/dark (+ useThemeMode hook)        │
     ├── CodeTabs.tsx      # island: tabbed code          │
     ├── CopyBtn.tsx       # island: clipboard            ┘
-    ├── mdx-utils.tsx     # MDX shared utils: BaseProps, makeHeading, cx, textContent
+    ├── mdx-utils.tsx     # MDX shared utils: BaseProps, makeHeading, HeadingAnchor
+    │                     #   (hover link button), cx, textContent
     ├── mdx-tags.tsx      # MDX tag renderers (headings, links, lists, tables, …)
     └── CodeBlock.tsx     # block code (the MDX `pre`, used as MdxPre) + inline
                           #   `Code` (MDX `code`); also serves CodeTabs + standalone
 ```
 
-**Islands** (`IslandName`): `sidebar`, `toc`, `cmdk`, `code-tabs`, `copy-btn`,
-`theme-toggle`, `settings`. Each renders meaningful SSR HTML, then progressively
-enhances after hydration.
+**Islands** (`IslandName`): `sidebar`, `mobile-nav`, `toc`, `cmdk`, `code-tabs`,
+`copy-btn`, `theme-toggle`, `settings`. Each renders meaningful SSR HTML, then
+progressively enhances after hydration. The `mobile-nav` drawer composes the
+others (theme toggle, settings, sidebar) rather than duplicating them; it shows
+below `md`, where the header keeps only its trigger and the sidebar column is
+hidden.
 
 ### `@clean-jsdoc-theme/dwar` — `SiteManifest` → HTML/CSS/JS
 
@@ -172,8 +185,12 @@ dwar/src/
 ├── index.ts              # render(manifest, opts) → RenderResult  (entry)
 ├── layout.tsx            # SsrLayout — island-seam adapter: wraps islands in
 │                         #   data-island markers, then composes rang's Layout
-│                         #   via its slots (emits no chrome of its own)
-├── mdx.ts                # @mdx-js/mdx compile + run (Preact runtime, frontmatter)
+│                         #   via its slots (emits no chrome of its own). Header
+│                         #   controls are desktop-only (search/theme/settings);
+│                         #   mobile-nav is the only < md control
+├── mdx.ts                # @mdx-js/mdx compile + run (Preact runtime, frontmatter,
+│                         #   + rehype slug pass giving headings ids that mirror
+│                         #   setu's TOC exactly — slugifyHeading + per-page registry)
 ├── html.ts               # HTML document skeleton, slug→path, excerpt, payload escaping
 ├── css.ts                # buildThemeVariableCss (:root + [data-theme=dark] tokens)
 │                         #   + the prebuilt UTILITY_CSS  →  one stylesheet
@@ -182,6 +199,8 @@ dwar/src/
 ├── islands-bundle.ts     # esbuild: one ESM chunk per island (Preact inlined)
 ├── islands-loader.ts     # inline loader (lazy-imports only chunks present on page)
 ├── theme-script.ts       # pre-hydration <script>: theme + font-size/line-spacing
+├── heading-anchors.ts    # inline <script>: delegated heading clicks → hash +
+│                         #   copy link; sets data-copied 3s for the check-icon swap
 ├── pagefind.ts           # runPagefindAgainstDir(destination)  — the only fs touch
 styles/
 └── tailwind.css          # Tailwind v4 input: @theme tokens, tw-animate-css, base
@@ -206,9 +225,10 @@ heading/body/mono families are also exposed as `font-heading` / `font-body` /
 `font-mono` utilities (mapped onto the `--clean-font-*` vars).
 
 **`render()` emits:** `<slug>/index.html` per page (with a pre-hydration theme
-script before the stylesheet), `_assets/styles.<buildId>.css`,
-`_islands/<name>.js` per island, a per-page `data-island-props` JSON payload, and
-`RenderResult.search` (one `SearchEntry` per non-hidden page).
+script before the stylesheet and the inline heading-anchors script before
+`</body>`), `_assets/styles.<buildId>.css`, `_islands/<name>.js` per island, a
+per-page `data-island-props` JSON payload, and `RenderResult.search` (one
+`SearchEntry` per non-hidden page).
 
 ### `clean-jsdoc-theme` — the JSDoc theme entry
 
@@ -252,8 +272,20 @@ End-to-end check:
 
 ```sh
 cd examples/basic
-pnpm run docs            # jsdoc -c jsdoc.json → dist/
+pnpm run docs            # build:theme (turbo) → jsdoc -c jsdoc.json → dist/
 pnpm dlx serve dist
 ```
+
+`examples/basic` consumes the theme's **built `dist`** (`publish.ts` loads
+`setu`/`dwar`/`rang` from their `dist` at runtime; `jsdoc` never sees source).
+So `docs` first runs `build:theme` — `turbo run build --filter=clean-jsdoc-theme`
+— which rebuilds the whole upstream graph (`utils → setu/rang → dwar → theme`,
+incl. dwar's CSS regen) in topo order, cached so unchanged packages are skipped.
+Without this step a change in any package other than `clean-jsdoc-theme` would
+leave a stale `dist` and never reach the site.
+
+For a watch loop, `pnpm run dev` runs `turbo watch build` (cascades rebuilds on
+any package edit) alongside `nodemon` (watches every package's `dist` and
+re-runs `jsdoc`) and `serve`.
 
 Or render dwar in isolation against a fixture: `pnpm --filter @clean-jsdoc-theme/dwar run smoke` → `packages/dwar/preview/`.

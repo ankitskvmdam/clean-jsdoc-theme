@@ -24,7 +24,14 @@ function applyMode(mode: Mode) {
   document.documentElement.dataset.theme = mode;
 }
 
-export function ThemeToggle(_props: ThemeToggleProps = {}) {
+/**
+ * Theme mode state + toggle, factored out so multiple controls can drive the
+ * same light/dark preference without duplicating the storage/apply logic — the
+ * header's icon `ThemeToggle` and the mobile drawer's "Toggle theme" row both
+ * use it. `current` is the resolved mode (defaults to light pre-hydration);
+ * `next` is what `toggle()` switches to.
+ */
+export function useThemeMode() {
   // SSR renders an unknown state; the post-hydration effect reconciles.
   const [mode, setMode] = useState<Mode | null>(null);
 
@@ -42,11 +49,15 @@ export function ThemeToggle(_props: ThemeToggleProps = {}) {
     applyMode(next);
   };
 
-  // Pre-hydration `mode` is null; default the icon to light until the effect runs.
+  // Pre-hydration `mode` is null; default to light until the effect runs.
   const current = mode ?? 'light';
   const next: Mode = current === 'light' ? 'dark' : 'light';
 
-  const toggle = () => select(next);
+  return { current, next, toggle: () => select(next) };
+}
+
+export function ThemeToggle(_props: ThemeToggleProps = {}) {
+  const { current, next, toggle } = useThemeMode();
 
   const Icon = current === 'light' ? Sun : Moon;
 

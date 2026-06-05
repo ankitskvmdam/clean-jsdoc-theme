@@ -26,8 +26,13 @@ export interface DialogProps {
   onOpenChange: (open: boolean) => void;
   /** Accessible label for the dialog surface. */
   label?: string;
-  /** Vertical placement: centered (default) or top-anchored (command palette). */
-  align?: 'center' | 'top';
+  /**
+   * Placement of the surface:
+   *   - `center` (default) / `top` — a centered or top-anchored modal (zoom).
+   *   - `left` / `right` — a full-height side sheet that slides in from that
+   *     edge (used for the mobile nav drawer).
+   */
+  align?: 'center' | 'top' | 'left' | 'right';
   /** Render the built-in top-right close button (default true). */
   showClose?: boolean;
   /** Extra classes on the content panel. */
@@ -128,16 +133,21 @@ export function Dialog({
   if (!open && !mounted) return null;
 
   const state = open ? 'open' : 'closed';
+  const isSheet = align === 'left' || align === 'right';
 
   return (
     <div
       data-state={state}
       class={cn(
-        'fixed inset-0 z-50 flex justify-center bg-black/40 p-4',
+        'fixed inset-0 z-50 flex bg-black/40 backdrop-blur-sm',
         'duration-200 fill-mode-forwards',
         'data-[state=open]:animate-in data-[state=closed]:animate-out',
         'data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0',
-        align === 'top' ? 'items-start pt-24' : 'items-center',
+        isSheet
+          ? align === 'left'
+            ? 'justify-start'
+            : 'justify-end'
+          : cn('justify-center p-4', align === 'top' ? 'items-start pt-24' : 'items-center')
       )}
       onClick={(e) => {
         if (e.target === e.currentTarget) onOpenChange(false);
@@ -151,11 +161,21 @@ export function Dialog({
         data-state={state}
         tabIndex={-1}
         class={cn(
-          'relative w-full max-w-lg rounded-lg border border-border bg-background shadow-lg outline-none',
+          'relative bg-background shadow-lg outline-none border-border',
           'duration-200 fill-mode-forwards data-[state=open]:animate-in data-[state=closed]:animate-out',
-          'data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0',
-          'data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95',
-          cls,
+          isSheet
+            ? cn(
+                'flex h-full w-4/5 flex-col overflow-y-auto',
+                align === 'left'
+                  ? 'border-r data-[state=open]:slide-in-from-left data-[state=closed]:slide-out-to-left'
+                  : 'border-l data-[state=open]:slide-in-from-right data-[state=closed]:slide-out-to-right'
+              )
+            : cn(
+                'w-full max-w-lg rounded-2xl border',
+                'data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0',
+                'data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95'
+              ),
+          cls
         )}
       >
         {showClose && (

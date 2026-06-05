@@ -34,8 +34,11 @@ export type { HeaderProps, HeaderPkg } from './components/Header';
 export { Footer } from './components/Footer';
 export type { FooterProps, FooterPkg } from './components/Footer';
 
-export { Sidebar } from './components/Sidebar';
-export type { SidebarProps } from './components/Sidebar';
+export { Sidebar, SidebarItem } from './components/Sidebar';
+export type { SidebarProps, SidebarItemProps } from './components/Sidebar';
+
+export { MobileNav } from './components/MobileNav';
+export type { MobileNavProps } from './components/MobileNav';
 
 export { TOC } from './components/TOC';
 export type { TOCProps } from './components/TOC';
@@ -49,14 +52,14 @@ export type { CodeTabsProps, CodeTab } from './components/CodeTabs';
 export { CopyBtn } from './components/CopyBtn';
 export type { CopyBtnProps } from './components/CopyBtn';
 
-export { ThemeToggle } from './components/ThemeToggle';
+export { ThemeToggle, useThemeMode } from './components/ThemeToggle';
 export type { ThemeToggleProps } from './components/ThemeToggle';
 
 export { CmdK } from './components/CmdK';
 export type { CmdKProps } from './components/CmdK';
 
-export { Settings } from './components/Settings';
-export type { SettingsProps } from './components/Settings';
+export { Settings, SettingsDialog } from './components/Settings';
+export type { SettingsProps, SettingsDialogProps } from './components/Settings';
 
 export { defaultMdxComponents } from './mdx-components';
 export { ISLAND_REGISTRY } from './islands';

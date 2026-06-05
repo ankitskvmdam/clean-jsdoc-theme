@@ -18,6 +18,7 @@ import type { Page, IslandName } from '@clean-jsdoc-theme/utils';
 import type { IslandRecord } from './layout';
 import { getPreHydrationThemeScript } from './theme-script';
 import { getIslandsLoaderScript } from './islands-loader';
+import { getHeadingAnchorsScript } from './heading-anchors';
 
 export interface HtmlDocumentOptions {
   page: Page;
@@ -120,6 +121,7 @@ export function renderHtmlDocument(opts: HtmlDocumentOptions): string {
     bodyHtml +
     `\n<script type="application/json" data-island-props>${propsPayload}</script>\n` +
     `<script type="module">${loaderScript}</script>\n` +
+    `<script>${getHeadingAnchorsScript()}</script>\n` +
     `</body>\n` +
     `</html>\n`
   );

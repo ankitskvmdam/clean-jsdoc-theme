@@ -93,8 +93,18 @@ function SegmentedControl<T extends string>({
   );
 }
 
-export function Settings(_props: SettingsProps = {}) {
-  const [open, setOpen] = useState(false);
+export interface SettingsDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+/**
+ * The settings dialog itself (reading-preference controls), controlled by the
+ * caller. Split out from the trigger so it can be opened from anywhere — the
+ * header's icon `Settings` button and the mobile drawer's "Settings" row both
+ * drive this same dialog without duplicating the font-size / line-spacing logic.
+ */
+export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const [fontSize, setFontSize] = useState<FontSize>('md');
   const [lineSpacing, setLineSpacing] = useState<LineSpacing>('default');
 
@@ -120,6 +130,38 @@ export function Settings(_props: SettingsProps = {}) {
   };
 
   return (
+    <Dialog open={open} onOpenChange={onOpenChange} label="Settings">
+      <DialogHeader>
+        <DialogTitle>Settings</DialogTitle>
+      </DialogHeader>
+      <DialogBody>
+        <div class="mb-4">
+          <div class="mb-2 text-sm font-semibold text-foreground">Font size</div>
+          <SegmentedControl
+            label="Font size"
+            value={fontSize}
+            options={FONT_SIZE_OPTIONS}
+            onChange={selectFontSize}
+          />
+        </div>
+        <div>
+          <div class="mb-2 text-sm font-semibold text-foreground">Line spacing</div>
+          <SegmentedControl
+            label="Line spacing"
+            value={lineSpacing}
+            options={LINE_SPACING_OPTIONS}
+            onChange={selectLineSpacing}
+          />
+        </div>
+      </DialogBody>
+    </Dialog>
+  );
+}
+
+export function Settings(_props: SettingsProps = {}) {
+  const [open, setOpen] = useState(false);
+
+  return (
     <>
       <Button
         type="button"
@@ -133,31 +175,7 @@ export function Settings(_props: SettingsProps = {}) {
       >
         <SettingsIcon size={18} aria-hidden="true" />
       </Button>
-      <Dialog open={open} onOpenChange={setOpen} label="Settings">
-        <DialogHeader>
-          <DialogTitle>Settings</DialogTitle>
-        </DialogHeader>
-        <DialogBody>
-          <div class="mb-4">
-            <div class="mb-2 text-sm font-semibold text-foreground">Font size</div>
-            <SegmentedControl
-              label="Font size"
-              value={fontSize}
-              options={FONT_SIZE_OPTIONS}
-              onChange={selectFontSize}
-            />
-          </div>
-          <div>
-            <div class="mb-2 text-sm font-semibold text-foreground">Line spacing</div>
-            <SegmentedControl
-              label="Line spacing"
-              value={lineSpacing}
-              options={LINE_SPACING_OPTIONS}
-              onChange={selectLineSpacing}
-            />
-          </div>
-        </DialogBody>
-      </Dialog>
+      <SettingsDialog open={open} onOpenChange={setOpen} />
     </>
   );
 }

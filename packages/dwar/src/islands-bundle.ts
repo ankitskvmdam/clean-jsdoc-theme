@@ -1,7 +1,7 @@
 /**
  * Bundle each IslandName into its own ESM chunk via esbuild.
  *
- * Strategy: bundle Preact inline into each chunk (the seven chunks total
+ * Strategy: bundle Preact inline into each chunk (the chunks total
  * ~60–90 KB minified, which is acceptable). This avoids the coordination
  * problem of shipping a separate shared runtime that all chunks pin to the
  * same version of.
@@ -24,6 +24,7 @@ const DWAR_PACKAGE_DIR = dirname(fileURLToPath(import.meta.url));
 
 const ALL_ISLANDS: IslandName[] = [
   'sidebar',
+  'mobile-nav',
   'toc',
   'cmdk',
   'code-tabs',

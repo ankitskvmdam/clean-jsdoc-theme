@@ -58,11 +58,12 @@ describe('render() — smoke', () => {
     expect(home).toContain(`d.dataset.theme='light'`);
   });
 
-  it('emits seven non-empty island chunks', async () => {
+  it('emits eight non-empty island chunks', async () => {
     const manifest = makeManifest();
     const result = await render(manifest, { theme: minimalTheme });
     const expected = [
       '_islands/sidebar.js',
+      '_islands/mobile-nav.js',
       '_islands/toc.js',
       '_islands/cmdk.js',
       '_islands/code-tabs.js',
@@ -107,7 +108,7 @@ describe('render() — smoke', () => {
     const manifest = makeManifest();
     const result = await render(manifest, { theme: minimalTheme });
     expect(result.stats.pageCount).toBe(2);
-    expect(result.stats.assetCount).toBeGreaterThanOrEqual(8); // 1 css + 7 islands
+    expect(result.stats.assetCount).toBeGreaterThanOrEqual(9); // 1 css + 8 islands
     expect(result.stats.cssBytes).toBeGreaterThan(0);
     expect(result.stats.jsBytes).toBeGreaterThan(0);
     expect(result.stats.durationMs).toBeGreaterThanOrEqual(0);

@@ -3,8 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "docs": "jsdoc -c jsdoc.json",
-    "dev": "jsdoc -c jsdoc.json && concurrently \"nodemon\" \"serve dist\"",
+    "build:theme": "pnpm exec turbo run build --filter=clean-jsdoc-theme",
+    "docs": "pnpm run build:theme && jsdoc -c jsdoc.json",
+    "dev": "pnpm run build:theme && concurrently -k -n pkgs,docs,serve \"pnpm exec turbo watch build --filter=clean-jsdoc-theme\" \"nodemon\" \"serve dist\"",
     "clean-node-modules": "node ../../scripts/clean.mjs node_modules"
   },
   "devDependencies": {

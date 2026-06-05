@@ -44,11 +44,11 @@ export function HeadingAnchor() {
       aria-label="Copy link to this section"
       class="group/anchor anchor absolute top-1/2 -left-7 -translate-y-1/2 text-muted-foreground opacity-0 transition group-hover:opacity-100 data-[copied]:opacity-100"
     >
-      <Link size={16} aria-hidden="true" class="group-data-[copied]/anchor:hidden" />
+      <Link size={16} aria-hidden="true" class="group-data-copied/anchor:hidden" />
       <Check
         size={16}
         aria-hidden="true"
-        class="hidden text-(--clean-accent) group-data-[copied]/anchor:block"
+        class="hidden text-(--clean-accent) group-data-copied/anchor:block"
       />
     </Button>
   );

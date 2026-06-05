@@ -25,9 +25,9 @@ describe('TOC', () => {
     expect(fooIdx).toBeGreaterThan(-1);
     expect(barIdx).toBeGreaterThan(fooIdx);
     // The deeper heading appears inside a nested container after the parent
-    // anchor — `border-l` class delineates the nested list.
+    // anchor — the `ml-3 pl-2` indent delineates the nested list.
     const segment = html.slice(fooIdx, barIdx);
-    expect(segment).toContain('border-l');
+    expect(segment).toContain('ml-3');
   });
 
   it('returns nothing when there are no headings', () => {

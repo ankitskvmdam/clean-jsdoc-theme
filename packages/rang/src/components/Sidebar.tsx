@@ -1,4 +1,6 @@
+import type { ComponentChildren } from 'preact';
 import type { NavNode } from '@clean-jsdoc-theme/utils';
+import { cn } from '../lib/cn';
 
 export interface SidebarProps {
   nav: NavNode[];
@@ -41,6 +43,29 @@ function groupNav(nav: readonly NavNode[]): GroupedNav[] {
     bucket.items.push(node);
   }
   return groups;
+}
+
+export interface SidebarItemProps {
+  /** Leading icon node (e.g. a lucide icon element). */
+  icon: ComponentChildren;
+  label: string;
+  onClick: () => void;
+}
+
+/**
+ * A clickable sidebar row with a leading icon, styled like a nav entry. Used
+ * for the action items (theme toggle, settings) at the top of the mobile nav
+ * drawer — sharing `ITEM_BASE`/`ITEM_INACTIVE` so it matches the page links.
+ */
+export function SidebarItem({ icon, label, onClick }: SidebarItemProps) {
+  return (
+    <button type="button" onClick={onClick} class={cn(ITEM_BASE, ITEM_INACTIVE, 'items-center')}>
+      <span class="flex shrink-0 items-center" aria-hidden="true">
+        {icon}
+      </span>
+      <span class="min-w-0">{label}</span>
+    </button>
+  );
 }
 
 function NavLink({ node, currentSlug }: { node: NavNode; currentSlug: string }) {

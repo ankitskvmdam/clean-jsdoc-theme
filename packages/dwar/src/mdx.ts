@@ -12,6 +12,7 @@ import type { ComponentType } from 'preact';
 import { h, Fragment } from 'preact';
 import { jsx, jsxs } from 'preact/jsx-runtime';
 import remarkFrontmatter from 'remark-frontmatter';
+import { slugifyHeading } from '@clean-jsdoc-theme/utils';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyComponent = ComponentType<any>;
@@ -49,6 +50,51 @@ export function preprocessJsdocInlineTags(source: string): string {
   });
 }
 
+/** Minimal hast shape — enough to walk headings without pulling in @types/hast. */
+interface HastNode {
+  type: string;
+  tagName?: string;
+  value?: string;
+  properties?: Record<string, unknown>;
+  children?: HastNode[];
+}
+
+/** Concatenate the visible text of a hast node (recursively). */
+function hastText(node: HastNode): string {
+  if (node.type === 'text') return node.value ?? '';
+  if (!node.children) return '';
+  return node.children.map(hastText).join('');
+}
+
+/**
+ * Assign slugified `id`s to heading elements so the rendered anchors line up
+ * 1:1 with the TOC entries setu emitted. This MIRRORS setu's `extractHeadings`
+ * exactly: same `slugifyHeading`, same per-page registry, same top-level
+ * h2..h6 walk in document order — that identical sequence is what keeps the
+ * duplicate-dedup numbering (`-1`, `-2`, …) in sync, so every `#id` the TOC
+ * links to resolves to a real element.
+ *
+ * h1 (the page title) is not in the TOC; it gets a standalone slug that does
+ * NOT touch the shared registry, so the h2..h6 numbering stays identical to
+ * setu's. Headings that already carry an explicit `id` are left untouched.
+ */
+function rehypeSlugHeadings() {
+  return (tree: HastNode): void => {
+    const registry = new Map<string, number>();
+    for (const node of tree.children ?? []) {
+      if (node.type !== 'element' || !node.tagName) continue;
+      const match = /^h([1-6])$/.exec(node.tagName);
+      if (!match) continue;
+      const props = node.properties ?? (node.properties = {});
+      if (typeof props.id === 'string' && props.id) continue;
+      const text = hastText(node).trim();
+      if (!text) continue;
+      const depth = Number(match[1]);
+      props.id = depth >= 2 ? slugifyHeading(text, registry) : slugifyHeading(text);
+    }
+  };
+}
+
 export async function compileMdxToComponent(
   source: string,
   components: MdxComponentMap,
@@ -77,6 +123,9 @@ export async function compileMdxToComponent(
     // sync with the theme toggle. Unknown / langless fences fall back to plain
     // text so an unrecognised `@example` language never throws mid-render.
     rehypePlugins: [
+      // Heading ids first, so they're set before Shiki rewrites code subtrees
+      // (headings carry no code, but order keeps the pass independent).
+      rehypeSlugHeadings,
       [
         rehypeShiki,
         {
