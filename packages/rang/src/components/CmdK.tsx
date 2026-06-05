@@ -90,7 +90,7 @@ export function CmdK({ basePath: _basePath }: CmdKProps) {
               setActive(0);
             }}
             placeholder="Search docs..."
-            class="w-full rounded-md border border-input bg-muted px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            class="w-full rounded-lg border border-input bg-muted px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Search query"
           />
         </div>
