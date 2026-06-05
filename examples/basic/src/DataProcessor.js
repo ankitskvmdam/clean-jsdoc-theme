@@ -35,7 +35,7 @@ class DataProcessor extends BaseEntity {
 
   /**
    * Processes a data stream asynchronously.
-   * * @async
+   * @async
    * @param {string[]} data - Array of strings to process.
    * @returns {Promise<number>} The total count of processed items.
    * @fires DataProcessor#dataProcessed
