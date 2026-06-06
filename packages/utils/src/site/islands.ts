@@ -7,12 +7,14 @@
 
 import type { Heading } from './page';
 import type { NavNode } from './manifest';
+import type { SiteName } from './site-name';
 
 /** Stable string IDs for each island. The string is used as the `data-island` attribute. */
 export type IslandName =
   | 'sidebar'
   | 'mobile-nav'
   | 'toc'
+  | 'toc-mobile'
   | 'cmdk'
   | 'code-tabs'
   | 'copy-btn'
@@ -22,8 +24,9 @@ export type IslandName =
 /** Type-safe prop bag per island. Server-render and hydration share this map. */
 export interface IslandPropsMap {
   sidebar: { nav: NavNode[]; currentSlug: string };
-  'mobile-nav': { nav: NavNode[]; currentSlug: string; siteName?: string; basePath?: string };
+  'mobile-nav': { nav: NavNode[]; currentSlug: string; siteName?: SiteName; basePath?: string };
   toc: { headings: Heading[] };
+  'toc-mobile': { headings: Heading[] };
   cmdk: { basePath: string };
   'code-tabs': { tabs: Array<{ label: string; lang: string; code: string }> };
   'copy-btn': { text: string };

@@ -7,6 +7,7 @@
  */
 
 import type { ComponentType } from 'preact';
+import type { SiteName } from './site-name';
 
 /** A single color palette. Values may be any CSS color (the theme uses oklch). */
 export interface ThemeColors {
@@ -43,8 +44,11 @@ export interface ThemeTokens {
   };
   /** Path or URL to a logo image. */
   logo?: string;
-  /** Site name shown in header / page title suffix. */
-  siteName?: string;
+  /**
+   * Site identity shown in the header, footer, and `<title>` suffix. Either
+   * plain text, or a per-theme logo image set (`{ default, dark, light }`).
+   */
+  siteName?: SiteName;
 }
 
 /**
