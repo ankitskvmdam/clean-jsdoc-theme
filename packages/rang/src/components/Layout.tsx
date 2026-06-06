@@ -1,4 +1,5 @@
 import type { ComponentChildren } from 'preact';
+import type { SiteName } from '@clean-jsdoc-theme/utils';
 import { Header } from './Header';
 import { Footer } from './Footer';
 
@@ -17,8 +18,13 @@ export interface LayoutProps {
   sidebar?: ComponentChildren;
   /** Right table-of-contents slot. When omitted, the toc column is not rendered. */
   toc?: ComponentChildren;
+  /**
+   * Mobile table-of-contents slot — a bar shown below the header under `lg`,
+   * where the right-rail `toc` column is hidden. When omitted, nothing renders.
+   */
+  tocMobile?: ComponentChildren;
   pkg?: LayoutPkg;
-  siteName?: string;
+  siteName?: SiteName;
   basePath?: string;
 }
 
@@ -35,6 +41,7 @@ export function Layout({
   headerControls,
   sidebar,
   toc,
+  tocMobile,
   pkg,
   siteName,
   basePath = '/',
@@ -44,6 +51,13 @@ export function Layout({
       <Header siteName={siteName} pkg={pkg} basePath={basePath}>
         {headerControls}
       </Header>
+      {/* Mobile TOC bar: sticky just under the header (h-16 → top-16), below the
+          header's z-30. Hidden once the right rail takes over at `lg`. */}
+      {tocMobile && (
+        <div class="sticky top-16 z-20 border-b border-(--clean-border) bg-background/80 backdrop-blur-sm lg:hidden">
+          {tocMobile}
+        </div>
+      )}
       <div class="mx-auto grid w-full max-w-screen-2xl grid-cols-1 gap-6 px-4 py-6 md:grid-cols-[16rem_minmax(0,1fr)] lg:grid-cols-[16rem_minmax(0,1fr)_14rem]">
         {sidebar && (
           <aside class="hidden md:block">

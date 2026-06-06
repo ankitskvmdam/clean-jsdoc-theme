@@ -73,7 +73,9 @@ function NavLink({ node, currentSlug }: { node: NavNode; currentSlug: string }) 
   // min-w-0 lets the label shrink below its content width so break-words can act.
   const label = <span class="min-w-0 wrap-break-words">{node.label}</span>;
 
-  if (!node.slug) {
+  // `undefined` slug = a branch/group label (not navigable). An empty-string
+  // slug is the site root (home), which IS navigable → `/`.
+  if (node.slug === undefined) {
     return <span class={`${ITEM_BASE} text-muted-foreground`}>{label}</span>;
   }
   return (

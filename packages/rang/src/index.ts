@@ -34,6 +34,9 @@ export type { HeaderProps, HeaderPkg } from './components/Header';
 export { Footer } from './components/Footer';
 export type { FooterProps, FooterPkg } from './components/Footer';
 
+export { Brand } from './components/Brand';
+export type { BrandProps } from './components/Brand';
+
 export { Sidebar, SidebarItem } from './components/Sidebar';
 export type { SidebarProps, SidebarItemProps } from './components/Sidebar';
 
@@ -42,6 +45,9 @@ export type { MobileNavProps } from './components/MobileNav';
 
 export { TOC } from './components/TOC';
 export type { TOCProps } from './components/TOC';
+
+export { TocPopover } from './components/TocPopover';
+export type { TocPopoverProps } from './components/TocPopover';
 
 export { CodeBlock } from './components/CodeBlock';
 export type { CodeBlockProps } from './components/CodeBlock';

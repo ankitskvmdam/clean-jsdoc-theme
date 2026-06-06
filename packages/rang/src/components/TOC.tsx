@@ -1,33 +1,10 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { TextAlignStart } from 'lucide-preact';
 import type { Heading } from '@clean-jsdoc-theme/utils';
+import { getItemOffset, getLineOffset, useActiveHeadings } from './toc-utils';
 
 export interface TOCProps {
   headings: Heading[];
-}
-
-// Horizontal offsets by heading depth (ported from fumadocs' clerk TOC). The
-// line sits at `getLineOffset`; the text is indented to `getItemOffset` so the
-// rail has a gutter. Deeper headings shift right, which is what makes the rail
-// "dip" at sub-headings.
-const A = 8;
-function getItemOffset(depth: number): number {
-  if (depth <= 2) return 12 + A;
-  if (depth === 3) return 24 + A;
-  return 36 + A;
-}
-function getLineOffset(depth: number): number {
-  if (depth <= 2) return A;
-  if (depth === 3) return 8 + A;
-  return 16 + A;
-}
-
-/** Per-heading intersection record (ported from fumadocs' TOC observer). */
-interface TocItemState {
-  id: string;
-  active: boolean;
-  /** active by bottom-of-page fallback rather than real intersection */
-  fallback: boolean;
 }
 
 /** Geometry of the rail, recomputed from the live DOM on resize. */
@@ -43,64 +20,9 @@ interface RailGeometry {
 }
 
 export function TOC({ headings }: TOCProps) {
-  const [activeIds, setActiveIds] = useState<string[]>([]);
+  const activeIds = useActiveHeadings(headings);
   const [geo, setGeo] = useState<RailGeometry | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  // ── Scroll-spy ────────────────────────────────────────────────────────────
-  // Ported from fumadocs (packages/core/src/toc.tsx): track every heading's
-  // intersection; the active SET is every heading ≥90% visible. When nothing
-  // intersects (between sections / page bottom) fall back to the heading whose
-  // top is nearest the viewport top, so the last section stays highlighted.
-  useEffect(() => {
-    if (typeof window === 'undefined' || typeof IntersectionObserver === 'undefined') return;
-    const ids = headings.map((h) => h.id);
-    const observed = ids
-      .map((id) => document.getElementById(id))
-      .filter((el): el is HTMLElement => el !== null);
-    if (observed.length === 0) return;
-
-    let items: TocItemState[] = ids.map((id) => ({ id, active: false, fallback: false }));
-
-    const emit = () => setActiveIds(items.filter((it) => it.active).map((it) => it.id));
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.length === 0) return;
-        let hasActive = false;
-
-        items = items.map((item) => {
-          const entry = entries.find((e) => e.target.id === item.id);
-          const active = entry ? entry.isIntersecting : item.active && !item.fallback;
-          if (active) hasActive = true;
-          if (item.active !== active) return { ...item, active, fallback: false };
-          return item;
-        });
-
-        if (!hasActive && entries[0].rootBounds) {
-          const viewTop = entries[0].rootBounds.top;
-          let min = Number.MAX_VALUE;
-          let idx = -1;
-          for (let i = 0; i < items.length; i++) {
-            const el = document.getElementById(items[i].id);
-            if (!el) continue;
-            const d = Math.abs(viewTop - el.getBoundingClientRect().top);
-            if (d < min) {
-              min = d;
-              idx = i;
-            }
-          }
-          if (idx !== -1) items[idx] = { ...items[idx], active: true, fallback: true };
-        }
-
-        emit();
-      },
-      { threshold: 0.9 }
-    );
-
-    observed.forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
-  }, [headings]);
 
   // ── Rail geometry ───────────────────────────────────────────────────────--
   // Build the curved path from the live anchor positions (fumadocs' onPrint).
@@ -167,8 +89,8 @@ export function TOC({ headings }: TOCProps) {
   }
 
   return (
-    <nav aria-label="On this page" class="text-[var(--clean-fg)]">
-      <h2 class="mb-2 flex items-center gap-2 text-base font-semibold text-[var(--clean-fg-muted)]">
+    <nav aria-label="On this page" class="text-(--clean-fg)">
+      <h2 class="mb-2 flex items-center gap-2 text-base font-semibold text-muted-foreground">
         <TextAlignStart size={16} aria-hidden="true" />
         On this page
       </h2>

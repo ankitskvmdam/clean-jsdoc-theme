@@ -4,6 +4,7 @@ import type { IslandName } from '@clean-jsdoc-theme/utils';
 import { Sidebar } from './components/Sidebar';
 import { MobileNav } from './components/MobileNav';
 import { TOC } from './components/TOC';
+import { TocPopover } from './components/TocPopover';
 import { CmdK } from './components/CmdK';
 import { CodeTabs } from './components/CodeTabs';
 import { CopyBtn } from './components/CopyBtn';
@@ -17,6 +18,7 @@ export const ISLAND_REGISTRY: Record<IslandName, ComponentType<any>> = {
   sidebar: Sidebar,
   'mobile-nav': MobileNav,
   toc: TOC,
+  'toc-mobile': TocPopover,
   cmdk: CmdK,
   'code-tabs': CodeTabs,
   'copy-btn': CopyBtn,

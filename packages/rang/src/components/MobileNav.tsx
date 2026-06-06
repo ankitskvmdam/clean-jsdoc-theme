@@ -1,8 +1,9 @@
 import { useState } from 'preact/hooks';
 import { PanelRight, Sun, Moon, Settings as SettingsIcon } from 'lucide-preact';
-import type { NavNode } from '@clean-jsdoc-theme/utils';
+import type { NavNode, SiteName } from '@clean-jsdoc-theme/utils';
 import { Button } from './Button';
 import { Dialog } from './Dialog';
+import { Brand } from './Brand';
 import { Sidebar, SidebarItem } from './Sidebar';
 import { useThemeMode } from './ThemeToggle';
 import { SettingsDialog } from './Settings';
@@ -10,7 +11,7 @@ import { SettingsDialog } from './Settings';
 export interface MobileNavProps {
   nav: NavNode[];
   currentSlug: string;
-  siteName?: string;
+  siteName?: SiteName;
   basePath?: string;
 }
 
@@ -63,11 +64,12 @@ export function MobileNav({ nav, currentSlug, siteName, basePath = '/' }: Mobile
           }}
         >
           {siteName && (
-            <a
-              href={basePath}
-              class="mb-3 block px-3 font-heading text-lg font-bold text-(--clean-fg) no-underline"
-            >
-              {siteName}
+            <a href={basePath} class="mb-3 flex items-center px-3 no-underline">
+              <Brand
+                siteName={siteName}
+                textClass="font-heading text-lg font-bold text-(--clean-fg)"
+                logoClass="h-8 w-auto"
+              />
             </a>
           )}
           <div class="mb-2 border-b border-border pb-2">
