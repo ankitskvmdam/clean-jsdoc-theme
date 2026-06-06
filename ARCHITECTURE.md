@@ -90,13 +90,13 @@ utils/src/
 ├── doclet-schema.ts      # JSDoc doclet shape
 ├── salty.ts              # salty (taffy) collection helpers/types
 ├── site/
-│   ├── page.ts           # Page, Frontmatter, Heading
+│   ├── page.ts           # Page (+ 'source' kind & raw-source body), Frontmatter, Heading
 │   ├── manifest.ts       # SiteManifest, NavNode, SearchEntry
 │   ├── render.ts         # OutputFile, RenderOptions, RenderResult, RenderError
 │   ├── theme.ts          # ThemeTokens, ThemeColors, ThemeConfig, ComponentOverrides
 │   ├── site-name.ts      # SiteName (text | logo set) + siteNameText/resolveSiteLogo
 │   ├── islands.ts        # IslandName union + IslandPropsMap
-│   ├── slug-rules.ts     # slugifyHeading, slugifyPath  (used by setu AND dwar)
+│   ├── slug-rules.ts     # slugifyHeading, slugifyPath, slugifySourcePath  (setu AND dwar)
 │   └── index.ts          # barrel — the setu↔dwar boundary
 └── index.ts
 ```
@@ -129,13 +129,23 @@ images, tables — no raw HTML), and `toMdx` serializes links in resource form
 (`[text](url)`, never `<url>`) so nothing MDX-hostile survives. GFM (tables, task
 lists, strikethrough, footnotes) is preserved throughout.
 
+Source files are a third output, gated by the bridge's `outputSourceFiles` flag
+(default on). When enabled, every documented source file becomes a hidden
+`kind: 'source'` viewer Page (raw text on `Page.source`, no MDX body) plus a flat
+**"Source Files"** index page, and each class member gains a `Source: file:line`
+link — `source-view.ts` resolves the doclet `meta` (`path`/`filename`/`lineno`)
+to `/source/<file>/#L<n>`, with the page slug and the link target sharing
+`slugifySourcePath` so they always agree.
+
 ```
 setu/src/
 ├── index.ts              # generateSite(collection, opts) → SiteManifest  (entry;
-│                         #   opts carries pkg + readme HTML + tutorial tree)
+│                         #   opts carries pkg + readme HTML + tutorial tree + sources)
 ├── generate-site.ts      # enumerate classes, build pages, nav (grouped by
 │                         #   page kind → Modules/Classes/…), buildId
 ├── guide-view.ts         # README → home Page; tutorial tree → guide Pages + nav
+├── source-view.ts        # source files → hidden 'source' viewer Pages + "Source
+│                         #   Files" index + per-member meta→/source/…#L<n> resolver
 ├── validate.ts           # validateCollectionOrThrow
 ├── doclet.ts             # doclet access helpers
 ├── class-view.ts         # class doclet → structured view model
@@ -175,7 +185,7 @@ rang/src/
     ├── Dialog.tsx        # shadcn-style Dialog (Preact-native; overlay+blur, focus trap,
     │                     #   scroll lock, presence/animation) + Header/Title/Body/Footer.
     │                     #   align: center/top modal OR left/right side-sheet (drawer)
-    ├── Layout.tsx        # slot-based page shell (SSR)  ┐
+    ├── Layout.tsx        # slot page shell (SSR; toc rail only when toc slot set)┐
     ├── Header.tsx        # site header (SSR)            │ chrome
     ├── Footer.tsx        # site footer (SSR)            ┘
     ├── Sidebar.tsx       # island: grouped nav (by kind)┐  (+ SidebarItem action row)
@@ -191,7 +201,8 @@ rang/src/
     ├── Settings.tsx      # island: settings (+ SettingsDialog, controlled) │ (hydrated)
     ├── ThemeToggle.tsx   # island: light/dark (+ useThemeMode hook)        │
     ├── CodeTabs.tsx      # island: tabbed code          │
-    ├── CopyBtn.tsx       # island: clipboard            ┘
+    ├── CopyBtn.tsx       # island: clipboard            │
+    ├── CodeViewer.tsx    # island: read-only Monaco source viewer (CDN-loaded) ┘
     ├── mdx-utils.tsx     # MDX shared utils: BaseProps, makeHeading, HeadingAnchor
     │                     #   (hover link button), cx, textContent
     ├── mdx-tags.tsx      # MDX tag renderers (headings, links, lists, tables, …)
@@ -200,14 +211,20 @@ rang/src/
 ```
 
 **Islands** (`IslandName`): `sidebar`, `mobile-nav`, `toc`, `toc-mobile`, `cmdk`,
-`code-tabs`, `copy-btn`, `theme-toggle`, `settings`. Each renders meaningful SSR
+`code-tabs`, `copy-btn`, `theme-toggle`, `settings`, `code-viewer`. Each renders meaningful SSR
 HTML, then progressively enhances after hydration. The `mobile-nav` drawer
 composes the others (theme toggle, settings, sidebar) rather than duplicating
 them; it shows below `md`, where the header keeps only its trigger and the
 sidebar column is hidden. `toc` (the curved right rail) and `toc-mobile` (the
 `< lg` progress-bar popover, `TocPopover`) are two presentations of the same
 headings — both hydrate but only one is visible per breakpoint; they share their
-scroll-spy and indentation logic via `toc-utils`.
+scroll-spy and indentation logic via `toc-utils`. The `code-viewer` island
+(source pages only) renders a byte-exact `<pre>` fallback, then lazy-loads a
+read-only Monaco editor from the jsdelivr CDN (never bundled): it reads its code
+back from that `<pre>`, reveals the `#L<n>` deep-link line, and re-themes off the
+`<html data-theme>` attribute (a `MutationObserver`, since the toggle is a
+separate island) with custom themes whose background matches the site's pinned
+code surface.
 
 ### `@clean-jsdoc-theme/dwar` — `SiteManifest` → HTML/CSS/JS
 
@@ -218,12 +235,15 @@ emits CSS, and exposes a separate Pagefind step.
 dwar/src/
 ├── index.ts              # render(manifest, opts) → RenderResult  (entry). Renders
 │                         #   each page in try/catch — a page that fails to compile
-│                         #   is skipped + reported in RenderResult.errors, not thrown
+│                         #   is skipped + reported in RenderResult.errors, not thrown.
+│                         #   kind:'source' pages skip MDX and mount the code-viewer
+│                         #   island directly (code stays in the SSR <pre>, off the payload)
 ├── layout.tsx            # SsrLayout — island-seam adapter: wraps islands in
 │                         #   data-island markers, then composes rang's Layout
 │                         #   via its slots (emits no chrome of its own). Header
 │                         #   controls are desktop-only (search/theme/settings);
-│                         #   mobile-nav is the only < md control
+│                         #   mobile-nav is the only < md control. Exposes
+│                         #   renderIsland() (id alloc + marker), reused for source pages
 ├── mdx.ts                # @mdx-js/mdx compile + run (Preact runtime, frontmatter,
 │                         #   remark-gfm for tables/strikethrough/task-lists,
 │                         #   + rehype slug pass giving headings ids that mirror
@@ -236,7 +256,8 @@ dwar/src/
 ├── generated/
 │   └── utility-css.ts    # AUTOGENERATED Tailwind output (inlined string)
 ├── islands-bundle.ts     # esbuild: one ESM chunk per island (Preact inlined)
-├── islands-loader.ts     # inline loader (lazy-imports only chunks present on page)
+├── islands-loader.ts     # inline loader (lazy-imports only chunks present on page;
+│                         #   copy-btn + code-viewer read their text from the DOM <pre>)
 ├── theme-script.ts       # pre-hydration <script>: theme + font-size/line-spacing
 ├── heading-anchors.ts    # inline <script>: delegated heading clicks → hash +
 │                         #   copy link; sets data-copied 3s for the check-icon swap
@@ -282,6 +303,8 @@ clean-jsdoc-theme/src/
 │                         #   Pagefind. siteName is text OR a logo set — local logo
 │                         #   images are copied to _assets/logo-*. Logs the rendered-
 │                         #   page count + any RenderResult.errors (skipped pages).
+│                         #   Collects source files from doclet meta (gated by
+│                         #   templates.default.outputSourceFiles, default on) → setu.
 │                         #   Holds defaultTheme (OKLCH palette).
 └── write-output-files.ts # mkdir -p + writeFile loop (forward-slash → OS path)
 ```
