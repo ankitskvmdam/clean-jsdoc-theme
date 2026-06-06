@@ -13,6 +13,10 @@
     "template": "./node_modules/clean-jsdoc-theme/dist",
     "readme": "./README.md",
     "tutorials": "./tutorials",
-    "siteName": "clean-jsdoc-theme"
+    "siteName": {
+      "light": "./assets/clean-jsdoc-theme.svg",
+      "dark": "./assets/clean-jsdoc-theme-white.svg",
+      "alt": "clean-jsdoc-theme"
+    }
   }
 }

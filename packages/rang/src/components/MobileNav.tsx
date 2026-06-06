@@ -68,7 +68,7 @@ export function MobileNav({ nav, currentSlug, siteName, basePath = '/' }: Mobile
               <Brand
                 siteName={siteName}
                 textClass="font-heading text-lg font-bold text-(--clean-fg)"
-                logoClass="h-8 w-auto"
+                logoClass="h-6 w-auto"
               />
             </a>
           )}

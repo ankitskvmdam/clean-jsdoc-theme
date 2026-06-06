@@ -25,7 +25,11 @@ export function Header({ siteName, pkg, basePath = '/', children }: HeaderProps)
             siteName={siteName}
             fallback={pkg?.name}
             textClass="text-lg font-heading font-bold text-(--clean-fg)"
-            logoClass="h-8 w-auto"
+            logoClass="h-6 w-auto lg:h-8"
+            // Freeform Tailwind passthrough for the logo wrapper. Swap for any
+            // classes you like — rerun dwar's build-css so they land in the
+            // generated utility layer (it scans this source).
+            containerClass="flex items-center rounded-lg bg-(--clean-bg-muted) p-1.5"
           />
         </a>
         {pkg?.version && (
