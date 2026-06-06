@@ -53,6 +53,20 @@ async function main() {
   const manifest = generateSite(collection, {
     pkg: { name: 'clean-jsdoc-theme', version: '5.0.0-alpha.0' },
   });
+  // Append one `kind: 'source'` page so the smoke output exercises the
+  // code-viewer island path (whole-file viewer, hidden, empty body).
+  manifest.pages.push({
+    slug: 'source/example-js',
+    body: '',
+    headings: [],
+    frontmatter: { title: 'example.js', kind: 'source', hidden: true },
+    source: {
+      code: "export function add(a, b) {\n  return a + b;\n}\n",
+      language: 'javascript',
+      filename: 'example.js',
+    },
+  });
+
   console.log(`[smoke] manifest: ${manifest.pages.length} pages, ${manifest.nav.length} nav roots`);
 
   const result = await render(manifest, { theme });

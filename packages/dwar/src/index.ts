@@ -10,7 +10,7 @@
 
 import { h } from 'preact';
 import { render as renderToString } from 'preact-render-to-string';
-import { defaultMdxComponents } from '@clean-jsdoc-theme/rang';
+import { defaultMdxComponents, CodeViewer } from '@clean-jsdoc-theme/rang';
 import { siteNameText } from '@clean-jsdoc-theme/utils';
 import type {
   OutputFile,
@@ -25,7 +25,7 @@ import type {
 } from '@clean-jsdoc-theme/utils';
 
 import { compileMdxToComponent, type MdxComponentMap, type ShikiThemes } from './mdx';
-import { SsrLayout, type IslandRecord } from './layout';
+import { SsrLayout, renderIsland, type IslandRecord } from './layout';
 import { renderHtmlDocument, htmlPathFor, extractExcerpt } from './html';
 import { bundleIslands, ALL_ISLANDS } from './islands-bundle';
 import { buildCss } from './css';
@@ -51,9 +51,30 @@ async function renderPage(
   fonts: { heading: string; body: string },
   shiki: ShikiThemes,
 ): Promise<{ file: OutputFile; search: SearchEntry; islands: IslandRecord[] }> {
-  const { Component: MdxComponent } = await compileMdxToComponent(page.body, components, shiki);
-
   const islands: IslandRecord[] = [];
+
+  // `kind: 'source'` pages are whole-file viewers, not MDX. We skip the MDX
+  // compile entirely and render the file as a `code-viewer` island so it gets a
+  // real `data-island` marker. The SSR `<pre>` carries the file text (via
+  // `ssrProps.code`), while the JSON payload deliberately omits `code` — the
+  // hydration chunk reads it back from the DOM (see islands-loader.ts).
+  let mainContent: ReturnType<typeof h>;
+  if (page.frontmatter.kind === 'source' && page.source) {
+    const { code, language, filename } = page.source;
+    // No per-page highlight line for a whole-file view; the `#L42` deep-link is
+    // a browser-hash concern handled client-side, so leave highlightLine unset.
+    mainContent = renderIsland({
+      name: 'code-viewer',
+      islands,
+      Component: CodeViewer,
+      props: { language, filename, highlightLine: undefined },
+      ssrProps: { code, language, filename, highlightLine: undefined },
+    });
+  } else {
+    const { Component: MdxComponent } = await compileMdxToComponent(page.body, components, shiki);
+    mainContent = h(MdxComponent, {});
+  }
+
   const layoutVNode = h(
     SsrLayout,
     {
@@ -65,7 +86,7 @@ async function renderPage(
       basePath,
       islands,
     },
-    h(MdxComponent, {}),
+    mainContent,
   );
 
   const bodyHtml = renderToString(layoutVNode);
@@ -88,7 +109,9 @@ async function renderPage(
   const search: SearchEntry = {
     slug: page.slug,
     title: page.frontmatter.title,
-    excerpt: extractExcerpt(page.body),
+    // Source pages are `hidden` (render() skips search.push for them) and have
+    // an empty body, so there is nothing meaningful to excerpt.
+    excerpt: page.frontmatter.kind === 'source' ? '' : extractExcerpt(page.body),
   };
 
   return { file, search, islands };

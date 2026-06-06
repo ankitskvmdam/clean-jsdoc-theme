@@ -58,6 +58,41 @@ export interface SsrLayoutProps {
  * Wrap a Preact element with a `data-island` marker and record its props for
  * the per-page payload script. Runs during render, so ids are allocated in
  * document order.
+ *
+ * `props` is what lands in the per-page JSON payload (read by the hydration
+ * chunk). `ssrProps`, when given, is what the component is rendered with for
+ * SSR — letting the server-rendered markup carry data (e.g. a file body in a
+ * `<pre>`) that we deliberately keep OUT of the JSON payload. Defaults to
+ * `props` when omitted, which is the common case.
+ */
+export function renderIsland<S extends object, P extends object = S>({
+  name,
+  islands,
+  Component,
+  props,
+  ssrProps,
+}: {
+  name: IslandName;
+  islands: IslandRecord[];
+  // The component is rendered with the SSR props (`S`), which are a superset of
+  // the payload props (`P`) — e.g. CodeViewer's SSR shape adds `code`.
+  Component: ComponentType<S>;
+  props: P;
+  ssrProps?: S;
+}): VNode {
+  const id = `i${islands.length}`;
+  islands.push({ id, name, props });
+  // Preact JSX expects lowercase data-* keys; we use the proper kebab form.
+  return (
+    <div data-island={name} data-island-id={id}>
+      <Component {...(ssrProps ?? (props as unknown as S))} />
+    </div>
+  );
+}
+
+/**
+ * Thin wrapper around `renderIsland` for layout-chrome islands whose payload
+ * props and SSR props are identical. Keeps the existing call sites unchanged.
  */
 function Island<P extends object>({
   name,
@@ -70,14 +105,7 @@ function Island<P extends object>({
   Component: ComponentType<P>;
   props: P;
 }): VNode {
-  const id = `i${islands.length}`;
-  islands.push({ id, name, props });
-  // Preact JSX expects lowercase data-* keys; we use the proper kebab form.
-  return (
-    <div data-island={name} data-island-id={id}>
-      <Component {...props} />
-    </div>
-  );
+  return renderIsland({ name, islands, Component, props });
 }
 
 export function SsrLayout({

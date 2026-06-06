@@ -32,6 +32,7 @@ const ALL_ISLANDS: IslandName[] = [
   'copy-btn',
   'theme-toggle',
   'settings',
+  'code-viewer',
 ];
 
 export interface IslandBundleResult {

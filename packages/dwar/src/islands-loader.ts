@@ -16,6 +16,7 @@ import type { IslandName } from '@clean-jsdoc-theme/utils';
 const ALL_ISLAND_NAMES: IslandName[] = [
   'cmdk',
   'code-tabs',
+  'code-viewer',
   'copy-btn',
   'mobile-nav',
   'settings',
@@ -77,6 +78,42 @@ function hydrateAll() {
     const pre = wrapper && wrapper.querySelector('pre');
     const text = pre ? pre.textContent || '' : '';
     hydrate(h(Component, { text }), el);
+  });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', hydrateAll, { once: true });
+} else {
+  hydrateAll();
+}
+`;
+  }
+
+  // code-viewer is a hybrid: it DOES have a props-payload entry (language,
+  // filename, highlightLine keyed by data-island-id), but its `code` prop — the
+  // whole file body — lives in the SSR `<pre>` inside the marker. We read code
+  // back from the DOM and merge it with the payload props, so the (potentially
+  // large) file text is never duplicated into the JSON payload.
+  if (name === 'code-viewer') {
+    return `import { hydrate, h } from 'preact';
+import { ISLAND_REGISTRY } from '@clean-jsdoc-theme/rang';
+
+function readPayload() {
+  const el = document.querySelector('script[data-island-props]');
+  if (!el || !el.textContent) return {};
+  try { return JSON.parse(el.textContent); } catch (_) { return {}; }
+}
+
+function hydrateAll() {
+  const Component = ISLAND_REGISTRY['code-viewer'];
+  if (!Component) return;
+  const payload = readPayload();
+  document.querySelectorAll('[data-island="code-viewer"]').forEach((el) => {
+    const id = el.getAttribute('data-island-id');
+    const props = (id && payload[id]) || {};
+    const pre = el.querySelector('pre');
+    const code = pre ? pre.textContent || '' : '';
+    hydrate(h(Component, { ...props, code }), el);
   });
 }
 
