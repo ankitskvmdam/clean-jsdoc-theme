@@ -58,7 +58,15 @@ export function Layout({
           {tocMobile}
         </div>
       )}
-      <div class="mx-auto grid w-full max-w-screen-2xl grid-cols-1 gap-6 px-4 py-6 md:grid-cols-[16rem_minmax(0,1fr)] lg:grid-cols-[16rem_minmax(0,1fr)_14rem]">
+      {/* The right-rail track is only reserved when a `toc` is supplied — pages
+          without one (e.g. the source viewer) let `main` span that space. */}
+      <div
+        class={`mx-auto grid w-full max-w-screen-2xl grid-cols-1 gap-6 px-4 py-6 ${
+          toc
+            ? 'md:grid-cols-[16rem_minmax(0,1fr)] lg:grid-cols-[16rem_minmax(0,1fr)_14rem]'
+            : 'md:grid-cols-[16rem_minmax(0,1fr)]'
+        }`}
+      >
         {sidebar && (
           <aside class="hidden md:block">
             <div class="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto">{sidebar}</div>
