@@ -1,7 +1,11 @@
 import type { PhrasingContent, Root, RootContent } from 'mdast';
 import { fromHtml } from 'hast-util-from-html';
+import { toHtml } from 'hast-util-to-html';
 import { toMdast } from 'hast-util-to-mdast';
 import { fromMarkdown } from 'mdast-util-from-markdown';
+import { gfmFromMarkdown } from 'mdast-util-gfm';
+import { toHast } from 'mdast-util-to-hast';
+import { gfm } from 'micromark-extension-gfm';
 
 /**
  * Convert an HTML fragment (as emitted by JSDoc into `description`, `classdesc`,
@@ -25,6 +29,39 @@ export function htmlToMdastBlocks(html: string | null | undefined): RootContent[
   const hast = fromHtml(trimmed, { fragment: true });
   const mdast = toMdast(hast) as Root;
   return mdast.children;
+}
+
+/**
+ * Convert a raw Markdown document into block-level mdast nodes, routing through
+ * the same HTML normalization {@link htmlToMdastBlocks} uses.
+ *
+ * Path: Markdown → mdast (GFM) → hast → HTML string → {@link htmlToMdastBlocks}.
+ * The HTML round-trip is deliberate: Markdown tutorials are full of constructs
+ * that are valid GitHub-Flavored Markdown but NOT valid MDX — angle-bracket
+ * autolinks (`<https://…>`), void/unclosed raw HTML (`<img …>`), and inline HTML
+ * MDX would otherwise parse as JSX and reject. Re-parsing the rendered HTML with
+ * a lenient HTML parser (`fromHtml`) and lowering it through `hast-util-to-mdast`
+ * yields only structured mdast nodes (links, images, tables, …) — no raw HTML —
+ * which {@link import('../mdx').toMdx} can serialize into MDX-safe Markdown. This
+ * mirrors the README path exactly, so tutorials and the README render identically.
+ *
+ * GFM (tables, strikethrough, task lists, autolink literals, footnotes) is parsed
+ * via `micromark-extension-gfm`; without it those constructs would survive only
+ * as plain text once round-tripped.
+ */
+export function markdownToMdastBlocks(md: string | null | undefined): RootContent[] {
+  if (!md) return [];
+  const trimmed = md.trim();
+  if (trimmed.length === 0) return [];
+  const mdast = fromMarkdown(trimmed, {
+    extensions: [gfm()],
+    mdastExtensions: [gfmFromMarkdown()],
+  }) as Root;
+  // `allowDangerousHtml` keeps embedded raw HTML in the tree so the HTML parser
+  // downstream can normalize it (e.g. self-close `<img>`), rather than dropping it.
+  const hast = toHast(mdast, { allowDangerousHtml: true });
+  const html = toHtml(hast, { allowDangerousHtml: true });
+  return htmlToMdastBlocks(html);
 }
 
 /**

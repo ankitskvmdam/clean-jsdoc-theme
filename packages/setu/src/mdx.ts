@@ -1,9 +1,65 @@
+import type { Link, Parents } from 'mdast';
 import type { Root } from 'mdast';
 import { toMarkdown } from 'mdast-util-to-markdown';
+import type { Info, State } from 'mdast-util-to-markdown';
 import { mdxJsxToMarkdown } from 'mdast-util-mdx-jsx';
 import { gfmToMarkdown } from 'mdast-util-gfm';
 import { ClassView } from './class-view';
 import { classViewToMdast, ClassViewToMdastOptions } from './mdast/class-view';
+
+/**
+ * Link serializer that always emits the resource form `[label](url)`, never the
+ * autolink form `<url>`. mdast-util-to-markdown's default handler autolinks any
+ * link whose text equals its URL (e.g. a bare `https://…` or an
+ * `<https://…>`) — but MDX parses `<` as JSX, so an emitted `<url>` aborts the
+ * whole page compile downstream in dwar. This is a copy of the default handler's
+ * resource-form branch with the autolink branch removed, so every link we emit
+ * is MDX-safe. (Adapted from `mdast-util-to-markdown/lib/handle/link.js`.)
+ */
+function resourceLink(node: Link, _parent: Parents | undefined, state: State, info: Info): string {
+  const tracker = state.createTracker(info);
+  const exit = state.enter('link');
+  let subexit = state.enter('label');
+  let value = tracker.move('[');
+  value += tracker.move(
+    state.containerPhrasing(node, { before: value, after: '](', ...tracker.current() }),
+  );
+  value += tracker.move('](');
+  subexit();
+
+  if ((!node.url && node.title) || /[\0- ]/.test(node.url)) {
+    // URL has whitespace/control chars → angle-bracketed destination literal.
+    subexit = state.enter('destinationLiteral');
+    value += tracker.move('<');
+    value += tracker.move(state.safe(node.url, { before: value, after: '>', ...tracker.current() }));
+    value += tracker.move('>');
+  } else {
+    subexit = state.enter('destinationRaw');
+    value += tracker.move(
+      state.safe(node.url, {
+        before: value,
+        after: node.title ? ' ' : ')',
+        ...tracker.current(),
+      }),
+    );
+  }
+  subexit();
+
+  if (node.title) {
+    subexit = state.enter('titleQuote');
+    value += tracker.move(' "');
+    value += tracker.move(state.safe(node.title, { before: value, after: '"', ...tracker.current() }));
+    value += tracker.move('"');
+    subexit();
+  }
+
+  value += tracker.move(')');
+  exit();
+  return value;
+}
+// peek tells the phrasing serializer our first emitted char, so it can escape a
+// leading `[` if needed — always `[` since we never autolink.
+resourceLink.peek = (): string => '[';
 
 export interface ToMdxOptions {
   /** Optional YAML frontmatter object. Serialized at the top of the document. */
@@ -26,6 +82,8 @@ export function toMdx(tree: Root, options: ToMdxOptions = {}): string {
     // converted to mdast — back into the `| … |` Markdown that dwar's remark-gfm
     // re-parses and rang renders.
     extensions: [mdxJsxToMarkdown(), gfmToMarkdown()],
+    // Force resource-form links so no `<url>` autolink reaches dwar's MDX compile.
+    handlers: { link: resourceLink },
   });
   return withFrontmatter(body, options.frontmatter);
 }

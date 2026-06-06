@@ -118,9 +118,16 @@ API, two free-form prose sources are also rendered as pages: the project
 site **home page** (slug `''` → `index.html`), and **tutorials** (the
 `--tutorials` tree) become **guide pages** under `tutorials/<name>`, grouped as
 "Tutorials" in the nav with their resolved hierarchy flattened in order. Both
-flow through the same MDX → dwar path as class pages. Markdown tutorials pass
-through verbatim (preserving GFM); README + HTML tutorials are converted
-HTML → mdast → MDX via `mdast/from-html.ts`.
+flow through the same MDX → dwar path as class pages. Every prose source is
+normalized to structured mdast before serialization (README + HTML tutorials via
+`htmlToMdastBlocks`; Markdown tutorials via `markdownToMdastBlocks`, which routes
+Markdown → HTML → the same converter). This is deliberate: raw Markdown is GFM,
+not MDX, so passing it through verbatim lets MDX-hostile constructs — angle-bracket
+autolinks (`<https://…>`), void/unclosed raw HTML (`<img …>`) — abort the page
+compile in dwar. The HTML round-trip lowers everything to structured nodes (links,
+images, tables — no raw HTML), and `toMdx` serializes links in resource form
+(`[text](url)`, never `<url>`) so nothing MDX-hostile survives. GFM (tables, task
+lists, strikethrough, footnotes) is preserved throughout.
 
 ```
 setu/src/
@@ -134,12 +141,14 @@ setu/src/
 ├── class-view.ts         # class doclet → structured view model
 ├── name-registry.ts      # longname → slug/path resolution
 ├── helper.ts
-├── mdx.ts                # mdast → MDX string (+ withFrontmatter for raw bodies)
+├── mdx.ts                # mdast → MDX string (resource-form links only, so no
+│                         #   `<url>` autolink reaches dwar's MDX compile)
 └── mdast/
     ├── builders.ts       # mdast node builders
     ├── class-view.ts     # class view model → mdast
     ├── doclet.ts
-    └── from-html.ts      # JSDoc inline HTML → mdast
+    └── from-html.ts      # HTML / Markdown → structured mdast (the MDX-safe
+                          #   normalization shared by README + tutorials)
 docs/                     # architecture.md, how-jsdoc-works.md, …
 ```
 

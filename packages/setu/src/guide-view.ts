@@ -14,15 +14,14 @@
  */
 
 import type { Root } from 'mdast';
-import { fromMarkdown } from 'mdast-util-from-markdown';
 import {
   slugifyPath,
   type Frontmatter,
   type NavNode,
   type Page,
 } from '@clean-jsdoc-theme/utils';
-import { htmlToMdastBlocks } from './mdast/from-html';
-import { toMdx, withFrontmatter } from './mdx';
+import { htmlToMdastBlocks, markdownToMdastBlocks } from './mdast/from-html';
+import { toMdx } from './mdx';
 import { extractHeadings } from './generate-site';
 
 /**
@@ -48,12 +47,16 @@ export const TUTORIALS_GROUP = 'Tutorials';
 /** URL prefix for tutorial pages (`tutorials/<name>`). */
 const TUTORIAL_SLUG_PREFIX = 'tutorials';
 
-/** Parse raw content into an mdast tree per its source format. */
+/**
+ * Parse raw content into a structured mdast tree per its source format. Both
+ * formats normalize through HTML so the resulting tree carries only structured
+ * nodes (no raw HTML, no angle-bracket autolinks) — the prerequisite for
+ * serializing MDX-safe output downstream. See {@link markdownToMdastBlocks}.
+ */
 function contentToMdast(content: string, type: 'markdown' | 'html'): Root {
-  if (type === 'html') {
-    return { type: 'root', children: htmlToMdastBlocks(content) };
-  }
-  return fromMarkdown(content);
+  const children =
+    type === 'html' ? htmlToMdastBlocks(content) : markdownToMdastBlocks(content);
+  return { type: 'root', children };
 }
 
 /**
@@ -88,14 +91,12 @@ function buildTutorialPage(t: TutorialInput): Page | null {
   const slug = `${TUTORIAL_SLUG_PREFIX}/${slugifyPath([t.name])}`;
   const frontmatter: Frontmatter = { title, kind: 'guide' };
 
-  // Markdown passes through verbatim so dwar's MDX compiler (with GFM) sees the
-  // original source — round-tripping through the mdast serializer would drop
-  // tables and other GFM syntax. HTML has no Markdown source to preserve, so
-  // serialize its converted tree.
-  const body =
-    t.type === 'markdown'
-      ? withFrontmatter(content, frontmatter)
-      : toMdx(tree, { frontmatter });
+  // Both formats are normalized to structured mdast (see contentToMdast), then
+  // serialized to MDX-safe Markdown. Markdown is no longer passed through
+  // verbatim: GFM-but-not-MDX constructs (angle-bracket autolinks, raw/unclosed
+  // HTML) would otherwise abort the page compile in dwar. The GFM round-trip
+  // preserves tables, task lists, strikethrough, and footnotes.
+  const body = toMdx(tree, { frontmatter });
   const headings = extractHeadings(tree);
 
   return { slug, frontmatter, body, mdast: tree, headings };
