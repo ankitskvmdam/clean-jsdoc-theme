@@ -1,8 +1,8 @@
-import type { Code, List, ListItem, Paragraph, RootContent } from 'mdast';
+import type { List, ListItem, Paragraph, RootContent } from 'mdast';
 import type { MdxJsxFlowElement } from 'mdast-util-mdx-jsx';
 import { TDoclet, TDocletParam, TDocletTypeProperty } from '@clean-jsdoc-theme/utils';
 import { callout, code, emphasis, inlineCode, li, link, p, strong, text, ul } from './builders';
-import { htmlToMdastBlocks, htmlToMdastInline } from './from-html';
+import { htmlToMdastBlocks, htmlToMdastInline, markdownToMdastInline } from './from-html';
 
 // ── Small extractors ────────────────────────────────────────────────────────
 
@@ -46,12 +46,43 @@ export function summaryBlocks(doclet: TDoclet): RootContent[] {
 
 // ── Examples ────────────────────────────────────────────────────────────────
 
+/** Leading `<caption>…</caption>` JSDoc puts before an example's code. */
+const EXAMPLE_CAPTION_RE = /^\s*<caption>([\s\S]*?)<\/caption>\s*/i;
+/** JSDoc's `{@lang xxx}` directive that overrides an example's code language. */
+const EXAMPLE_LANG_RE = /\{@lang\s+([^}\s]+)\s*\}\s*/i;
+
 /**
- * One fenced code block per `@example`. Examples are emitted by JSDoc as raw
- * strings, not HTML — no turndown needed.
+ * Blocks for each `@example`. JSDoc emits examples as raw strings (the markdown
+ * plugin does NOT touch them), optionally prefixed with a `<caption>` label and
+ * a `{@lang xxx}` directive. The caption is rendered as a paragraph (supporting
+ * Markdown + inline HTML); `{@lang}` sets the fence language; the remaining body
+ * is a fenced code block. Falls back to `lang` when no `{@lang}` is given.
  */
-export function examplesBlocks(doclet: TDoclet, lang: string = 'js'): Code[] {
-  return (doclet.examples ?? []).map((src) => code(lang, src));
+export function examplesBlocks(doclet: TDoclet, lang: string = 'js'): RootContent[] {
+  const out: RootContent[] = [];
+  for (const raw of doclet.examples ?? []) {
+    let src = String(raw);
+
+    let caption: string | null = null;
+    const capMatch = EXAMPLE_CAPTION_RE.exec(src);
+    if (capMatch) {
+      caption = capMatch[1].trim();
+      src = src.slice(capMatch[0].length);
+    }
+
+    let exampleLang = lang;
+    const langMatch = EXAMPLE_LANG_RE.exec(src);
+    if (langMatch) {
+      exampleLang = langMatch[1];
+      src = src.replace(EXAMPLE_LANG_RE, '');
+    }
+
+    src = src.replace(/^\n+|\s+$/g, '');
+
+    if (caption) out.push(p(...markdownToMdastInline(caption)));
+    if (src.length > 0) out.push(code(exampleLang, src));
+  }
+  return out;
 }
 
 // ── Inheritance note ────────────────────────────────────────────────────────

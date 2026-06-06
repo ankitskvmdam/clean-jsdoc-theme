@@ -1,0 +1,132 @@
+/**
+ * README + tutorial pages.
+ *
+ * JSDoc surfaces two kinds of free-form prose alongside the API: the project
+ * README (`opts.readme`, already rendered to HTML by JSDoc's markdown plugin)
+ * and tutorials (the `--tutorials` directory, resolved into a tree of raw
+ * Markdown / HTML documents). Both become ordinary {@link Page}s so they flow
+ * through the same MDX → dwar render path as class pages — same chrome, TOC,
+ * heading anchors, and search indexing.
+ *
+ * The README becomes the site home page (slug `''` → `index.html`); tutorials
+ * become guide pages under `tutorials/<name>`, grouped under "Tutorials" in the
+ * nav with their resolved hierarchy flattened in document order.
+ */
+
+import type { Root } from 'mdast';
+import { fromMarkdown } from 'mdast-util-from-markdown';
+import {
+  slugifyPath,
+  type Frontmatter,
+  type NavNode,
+  type Page,
+} from '@clean-jsdoc-theme/utils';
+import { htmlToMdastBlocks } from './mdast/from-html';
+import { toMdx, withFrontmatter } from './mdx';
+import { extractHeadings } from './generate-site';
+
+/**
+ * A tutorial, normalized away from JSDoc's `Tutorial` class so setu doesn't
+ * depend on JSDoc internals. The bridge walks JSDoc's resolver tree and hands
+ * setu this plain shape.
+ */
+export interface TutorialInput {
+  /** Identifier — the source filename without its extension. */
+  name: string;
+  /** Display title (from a `.json` config, else the file name). */
+  title: string;
+  /** Raw source content (Markdown or HTML, per `type`). */
+  content: string;
+  /** Source format. */
+  type: 'markdown' | 'html';
+  /** Child tutorials, in resolved order. */
+  children?: TutorialInput[];
+}
+
+/** Sidebar group label for tutorial pages. */
+export const TUTORIALS_GROUP = 'Tutorials';
+/** URL prefix for tutorial pages (`tutorials/<name>`). */
+const TUTORIAL_SLUG_PREFIX = 'tutorials';
+
+/** Parse raw content into an mdast tree per its source format. */
+function contentToMdast(content: string, type: 'markdown' | 'html'): Root {
+  if (type === 'html') {
+    return { type: 'root', children: htmlToMdastBlocks(content) };
+  }
+  return fromMarkdown(content);
+}
+
+/**
+ * Build the home page from the README HTML JSDoc provides in `opts.readme`.
+ * Returns `null` when the README has no renderable content. The page lives at
+ * the site root (slug `''`), so dwar writes it to `index.html`.
+ */
+export function buildReadmePage(
+  readmeHtml: string,
+  pkg?: { name?: string },
+): Page | null {
+  const tree: Root = { type: 'root', children: htmlToMdastBlocks(readmeHtml) };
+  if (tree.children.length === 0) return null;
+
+  const title = pkg?.name ?? 'Home';
+  const frontmatter: Frontmatter = { title, kind: 'index' };
+  // README arrives as HTML, so serialize the converted tree (no raw Markdown to
+  // preserve). dwar compiles the resulting MDX exactly like any other page.
+  const body = toMdx(tree, { frontmatter });
+  const headings = extractHeadings(tree);
+
+  return { slug: '', frontmatter, body, mdast: tree, headings };
+}
+
+/** Build a single tutorial page; returns `null` when it has no content. */
+function buildTutorialPage(t: TutorialInput): Page | null {
+  const content = typeof t.content === 'string' ? t.content : '';
+  const tree = contentToMdast(content, t.type);
+  if (tree.children.length === 0) return null;
+
+  const title = t.title?.trim() || t.name;
+  const slug = `${TUTORIAL_SLUG_PREFIX}/${slugifyPath([t.name])}`;
+  const frontmatter: Frontmatter = { title, kind: 'guide' };
+
+  // Markdown passes through verbatim so dwar's MDX compiler (with GFM) sees the
+  // original source — round-tripping through the mdast serializer would drop
+  // tables and other GFM syntax. HTML has no Markdown source to preserve, so
+  // serialize its converted tree.
+  const body =
+    t.type === 'markdown'
+      ? withFrontmatter(content, frontmatter)
+      : toMdx(tree, { frontmatter });
+  const headings = extractHeadings(tree);
+
+  return { slug, frontmatter, body, mdast: tree, headings };
+}
+
+/**
+ * Build guide pages + nav entries from the tutorial tree. The hierarchy is
+ * flattened depth-first into a single "Tutorials" group, preserving the order
+ * JSDoc resolved (parent before its children).
+ */
+export function buildTutorialPages(
+  tutorials: readonly TutorialInput[],
+): { pages: Page[]; nav: NavNode[] } {
+  const pages: Page[] = [];
+  const nav: NavNode[] = [];
+  let order = 0;
+
+  const walk = (t: TutorialInput): void => {
+    const page = buildTutorialPage(t);
+    if (page) {
+      pages.push(page);
+      nav.push({
+        label: page.frontmatter.title,
+        slug: page.slug,
+        group: TUTORIALS_GROUP,
+        order: order++,
+      });
+    }
+    for (const child of t.children ?? []) walk(child);
+  };
+
+  for (const t of tutorials) walk(t);
+  return { pages, nav };
+}

@@ -1,6 +1,7 @@
 import type { Root } from 'mdast';
 import { toMarkdown } from 'mdast-util-to-markdown';
 import { mdxJsxToMarkdown } from 'mdast-util-mdx-jsx';
+import { gfmToMarkdown } from 'mdast-util-gfm';
 import { ClassView } from './class-view';
 import { classViewToMdast, ClassViewToMdastOptions } from './mdast/class-view';
 
@@ -20,10 +21,26 @@ export function toMdx(tree: Root, options: ToMdxOptions = {}): string {
     strong: '*',
     emphasis: '_',
     // Serialize MDX JSX nodes (e.g. callout blockquotes carrying a `type`
-    // attribute) verbatim so their props survive into the compiled MDX.
-    extensions: [mdxJsxToMarkdown()],
+    // attribute) verbatim so their props survive into the compiled MDX, and GFM
+    // nodes (tables, strikethrough, task lists) — produced when JSDoc HTML is
+    // converted to mdast — back into the `| … |` Markdown that dwar's remark-gfm
+    // re-parses and rang renders.
+    extensions: [mdxJsxToMarkdown(), gfmToMarkdown()],
   });
-  const fm = options.frontmatter ? renderFrontmatter(options.frontmatter) : '';
+  return withFrontmatter(body, options.frontmatter);
+}
+
+/**
+ * Prepend serialized YAML frontmatter to an already-formed MDX/Markdown body.
+ * Use this for content that should NOT be re-serialized through mdast (e.g. raw
+ * Markdown tutorials, where round-tripping would drop GFM tables and other
+ * syntax the mdast serializer doesn't model).
+ */
+export function withFrontmatter(
+  body: string,
+  frontmatter?: Record<string, unknown>,
+): string {
+  const fm = frontmatter ? renderFrontmatter(frontmatter) : '';
   return fm + body;
 }
 
