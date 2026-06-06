@@ -14,7 +14,7 @@ import type {
   SiteName,
   ThemeConfig,
 } from '@clean-jsdoc-theme/dwar';
-import type { TutorialInput } from '@clean-jsdoc-theme/setu';
+import type { SourceFileInput, TutorialInput } from '@clean-jsdoc-theme/setu';
 import { writeOutputFiles } from './write-output-files';
 
 // JSDoc's tutorial source-type enum (jsdoc/lib/jsdoc/tutorial.js): HTML = 1,
@@ -152,6 +152,13 @@ interface JSDocOpts {
   readme?: string;
   /** Path to the tutorials directory (`-u`/`opts.tutorials`); resolved tree arrives as the 3rd `publish` arg. */
   tutorials?: string;
+  /**
+   * JSDoc's default-template source-output toggle. Read from
+   * `conf.templates.default.outputSourceFiles` (or, as a fallback, nested under
+   * `opts.templates`). Defaults to `true`; set it to `false` to suppress the
+   * per-file source viewer pages and the `Source: file:line` member links.
+   */
+  templates?: { default?: { outputSourceFiles?: unknown } };
   [key: string]: unknown;
 }
 
@@ -351,6 +358,134 @@ function normalizeTutorials(root: unknown): TutorialInput[] {
   return (children as JSDocTutorial[]).map(walk).filter((t): t is TutorialInput => t !== null);
 }
 
+/**
+ * Resolve JSDoc's `templates.default.outputSourceFiles` flag. The `opts` arg
+ * `publish` receives is `env.opts` — the `opts` block — which does NOT carry the
+ * root-level `templates` block, so we probe in priority order and default ON:
+ *   1. `require('jsdoc/env').conf.templates.default.outputSourceFiles` (the
+ *      canonical location at runtime; wrapped in try/catch so a missing
+ *      `jsdoc/env` — e.g. in unit tests — never throws the build).
+ *   2. `opts.templates.default.outputSourceFiles` (in case a user nests it
+ *      under `opts`).
+ * Resolves to `false` ONLY when one of those is exactly `=== false`; otherwise
+ * `true` (matching JSDoc's default-template default).
+ */
+export function outputSourceFilesEnabled(opts: JSDocOpts): boolean {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const env = require('jsdoc/env') as {
+      conf?: { templates?: { default?: { outputSourceFiles?: unknown } } };
+    };
+    if (env?.conf?.templates?.default?.outputSourceFiles === false) return false;
+  } catch {
+    // `jsdoc/env` isn't resolvable (e.g. unit tests) — fall back to opts.
+  }
+  if (opts?.templates?.default?.outputSourceFiles === false) return false;
+  return true;
+}
+
+/** Extensions we treat as "source" worth emitting a viewer page for. */
+const SOURCE_EXTENSIONS = new Set([
+  '.js', '.mjs', '.cjs', '.jsx',
+  '.ts', '.mts', '.cts', '.tsx',
+]);
+
+/**
+ * Compute project-relative paths for a set of absolute source paths by stripping
+ * their longest common directory prefix. Returns a `Map<absPath, relPath>` with
+ * `relPath` normalized to forward slashes. Pure + exported for testing.
+ *
+ * Windows-aware: paths are split on both `/` and `\\`, and segment comparison is
+ * case-insensitive (NTFS is case-insensitive, and JSDoc's `meta.path` casing can
+ * differ from disk). The single-file case yields just its basename. If the paths
+ * share no common leading segment (e.g. different drives / UNC vs. drive), each
+ * file falls back to its basename so the index stays sane.
+ */
+export function computeRelPaths(absPaths: readonly string[]): Map<string, string> {
+  const out = new Map<string, string>();
+  if (absPaths.length === 0) return out;
+
+  const split = (p: string): string[] => p.split(/[\\/]+/).filter((s) => s.length > 0);
+  const segLists = absPaths.map(split);
+
+  // Longest common directory prefix (exclude the basename from the prefix so a
+  // single file resolves to its own name, not the empty string).
+  let common = segLists[0].slice(0, -1);
+  for (let i = 1; i < segLists.length && common.length > 0; i++) {
+    const segs = segLists[i];
+    let j = 0;
+    const max = Math.min(common.length, segs.length - 1);
+    while (j < max && common[j].toLowerCase() === segs[j].toLowerCase()) j++;
+    common = common.slice(0, j);
+  }
+
+  for (let i = 0; i < absPaths.length; i++) {
+    const segs = segLists[i];
+    const rel =
+      common.length > 0 && segs.length > common.length
+        ? segs.slice(common.length).join('/')
+        : segs[segs.length - 1] ?? absPaths[i];
+    out.set(absPaths[i], rel);
+  }
+  return out;
+}
+
+/**
+ * Collect every source file referenced by a doclet's `meta` and read its
+ * contents, ready to hand to setu as {@link SourceFileInput}s. `absPath` is the
+ * exact `resolve(meta.path, meta.filename)` so setu's `Source: file:line`
+ * matching (which joins the same fields) lines up. Files that can't be read are
+ * warned about and skipped — never fatal. Returns sorted-by-`relPath` for
+ * stable output.
+ */
+async function collectSourceFiles(data: unknown): Promise<SourceFileInput[]> {
+  // Mirror resolvePkg's safe probe, but query ALL doclets (empty query).
+  let doclets: unknown[] = [];
+  if (typeof data === 'function') {
+    try {
+      doclets = (data as (q: unknown) => { get(): unknown[] })({}).get();
+    } catch {
+      try {
+        doclets = (data as () => { get(): unknown[] })().get();
+      } catch {
+        doclets = [];
+      }
+    }
+  }
+  if (!Array.isArray(doclets) || doclets.length === 0) return [];
+
+  // Unique absolute paths from doclet meta.
+  const absSet = new Set<string>();
+  for (const d of doclets) {
+    const meta = (d as { meta?: { path?: unknown; filename?: unknown } } | undefined)?.meta;
+    if (!meta || typeof meta.path !== 'string' || typeof meta.filename !== 'string') continue;
+    const filename = meta.filename;
+    // Skip obvious non-source by extension, but stay permissive (no ext → keep).
+    const ext = extname(filename).toLowerCase();
+    if (ext.length > 0 && !SOURCE_EXTENSIONS.has(ext)) continue;
+    absSet.add(resolvePath(meta.path, filename));
+  }
+  if (absSet.size === 0) return [];
+
+  const absPaths = [...absSet];
+  const relPaths = computeRelPaths(absPaths);
+
+  const inputs: SourceFileInput[] = [];
+  for (const abs of absPaths) {
+    try {
+      const content = await readFile(abs, 'utf8');
+      inputs.push({ absPath: abs, relPath: relPaths.get(abs) ?? abs, content });
+    } catch (err) {
+      console.warn(
+        `clean-jsdoc-theme: could not read source file '${abs}' — ${(err as Error).message}; skipping.`,
+      );
+    }
+  }
+
+  inputs.sort((a, b) => a.relPath.localeCompare(b.relPath));
+  return inputs;
+}
+
 export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknown): Promise<void> {
   const destination = opts.destination;
   if (!destination || typeof destination !== 'string') {
@@ -374,10 +509,16 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   const readme = typeof opts.readme === 'string' && opts.readme.length > 0 ? opts.readme : undefined;
   const tutorialTree = normalizeTutorials(tutorials);
 
+  // Source viewer pages + `Source: file:line` member links. Gated behind
+  // JSDoc's `templates.default.outputSourceFiles` (default ON); reading files
+  // is optional and self-skips on error, so this never aborts the build.
+  const sources = outputSourceFilesEnabled(opts) ? await collectSourceFiles(data) : [];
+
   const manifest = generateSite(data, {
     ...(pkg ? { pkg } : {}),
     ...(readme ? { readme } : {}),
     ...(tutorialTree.length > 0 ? { tutorials: tutorialTree } : {}),
+    ...(sources.length > 0 ? { sources } : {}),
   });
 
   // Resolve siteName (text or logo set) and copy any local logo images into the
@@ -400,7 +541,9 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   }
   console.log(
     `clean-jsdoc-theme: rendered ${result.stats.pageCount} page(s), ` +
-      `${result.stats.assetCount} asset(s) → ${destination}`,
+      `${result.stats.assetCount} asset(s)` +
+      (sources.length > 0 ? `, ${sources.length} source file(s)` : '') +
+      ` → ${destination}`,
   );
 
   await writeOutputFiles(absoluteDestination, [...result.files, ...logoFiles]);
