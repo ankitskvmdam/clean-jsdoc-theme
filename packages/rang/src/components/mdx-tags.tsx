@@ -141,10 +141,19 @@ export function MdxHr(props: BaseProps) {
   return <hr class="my-6 border-t border-(--clean-border)" {...props} />;
 }
 
+/*
+ * Borderless, row-divider tables (close to the Claude Code docs): no cell grid,
+ * the header separated by a single rule, comfortable padding, top-aligned cells
+ * so multi-line rows read cleanly, and horizontal scroll for wide tables. A
+ * `min-width` per cell keeps columns from collapsing on narrow content.
+ */
 export function MdxTable({ children, ...rest }: BaseProps) {
   return (
-    <div class="my-4 overflow-x-auto">
-      <table class="w-full border-collapse border border-(--clean-border) text-sm" {...rest}>
+    <div class="my-6 overflow-x-auto">
+      <table
+        class="w-full min-w-full border-collapse text-sm [&_td]:min-w-[150px]"
+        {...rest}
+      >
         {children}
       </table>
     </div>
@@ -152,11 +161,7 @@ export function MdxTable({ children, ...rest }: BaseProps) {
 }
 
 export function MdxThead({ children, ...rest }: BaseProps) {
-  return (
-    <thead class="bg-(--clean-bg-muted)" {...rest}>
-      {children}
-    </thead>
-  );
+  return <thead {...rest}>{children}</thead>;
 }
 
 export function MdxTbody({ children, ...rest }: BaseProps) {
@@ -173,7 +178,7 @@ export function MdxTr({ children, ...rest }: BaseProps) {
 
 export function MdxTh({ children, ...rest }: BaseProps) {
   return (
-    <th class="border border-(--clean-border) px-3 py-2 text-left font-semibold" {...rest}>
+    <th class="px-4 py-3 text-left align-top font-semibold text-(--clean-fg)" {...rest}>
       {children}
     </th>
   );
@@ -181,7 +186,7 @@ export function MdxTh({ children, ...rest }: BaseProps) {
 
 export function MdxTd({ children, ...rest }: BaseProps) {
   return (
-    <td class="border border-(--clean-border) px-3 py-2" {...rest}>
+    <td class="px-4 py-3 align-top leading-relaxed text-(--clean-fg-muted)" {...rest}>
       {children}
     </td>
   );

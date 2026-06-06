@@ -166,7 +166,7 @@ const defaultTheme: ThemeConfig = {
       fgMuted: 'oklch(0.5278 0 0)',
       accent: 'oklch(0 0 0)',
       accentFg: 'oklch(1 0 0)',
-      border: 'oklch(0.9761 0 0)',
+      border: 'oklch(0.9561 0 0)',
     },
     // Dark palette (oklch). bg #09090b · fg #9e9e9e · border #141416;
     // muted/accent derived to harmonize.
@@ -177,7 +177,7 @@ const defaultTheme: ThemeConfig = {
       fgMuted: 'oklch(0.5382 0 0)',
       accent: 'oklch(1 0 0)',
       accentFg: 'oklch(0 0 0)',
-      border: 'oklch(0.1921 0.004 286.02)',
+      border: 'oklch(0.2321 0.004 286.02)',
     },
     fonts: {
       heading: 'Source Serif 4',
