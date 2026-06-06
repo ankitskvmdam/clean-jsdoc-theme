@@ -5,10 +5,22 @@
 
 import { readFile } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
-import { dirname, resolve as resolvePath } from 'node:path';
+import { dirname, extname, resolve as resolvePath } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
-import type { SiteManifest, ThemeConfig } from '@clean-jsdoc-theme/dwar';
+import type {
+  OutputFile,
+  SiteLogo,
+  SiteManifest,
+  SiteName,
+  ThemeConfig,
+} from '@clean-jsdoc-theme/dwar';
+import type { TutorialInput } from '@clean-jsdoc-theme/setu';
 import { writeOutputFiles } from './write-output-files';
+
+// JSDoc's tutorial source-type enum (jsdoc/lib/jsdoc/tutorial.js): HTML = 1,
+// MARKDOWN = 2. A tutorial's `.content` is the RAW source; `.type` says how to
+// read it.
+const JSDOC_TUTORIAL_TYPE_MARKDOWN = 2;
 
 // Absolute path of the running module. The `new Function` wrapper around
 // `import.meta` keeps the CJS parser from rejecting it.
@@ -120,15 +132,26 @@ interface JSDocOpts {
   destination?: string;
   package?: string;
   /**
-   * Site name from `jsdoc.json` (`"opts": { "siteName": "..." }`). Shown in the
-   * header and appended to each page's `<title>`. Falls back to `pkg.name`.
+   * Site identity from `jsdoc.json` (`"opts": { "siteName": ... }`). Either a
+   * string (shown in the header/footer and appended to each page's `<title>`),
+   * or a logo image set `{ default, dark, light, alt }`. Local image paths are
+   * copied into the output; `http(s)://` and `data:` values pass through. The
+   * `alt` text (or `pkg.name`) is used for the `<title>` suffix and image alt.
    */
-  siteName?: string;
+  siteName?: string | SiteLogo;
   /**
    * Font overrides from `jsdoc.json` (`"opts": { "fonts": { ... } }`). Values
    * are Google Fonts family names for `heading`/`body`; `mono` is a CSS stack.
    */
   fonts?: { heading?: string; body?: string; mono?: string };
+  /**
+   * Project README as HTML. JSDoc renders the Markdown README (`-R`/`opts.readme`
+   * or one found in the source paths) and replaces this with the resulting HTML
+   * before calling `publish`. Rendered as the site home page.
+   */
+  readme?: string;
+  /** Path to the tutorials directory (`-u`/`opts.tutorials`); resolved tree arrives as the 3rd `publish` arg. */
+  tutorials?: string;
   [key: string]: unknown;
 }
 
@@ -169,14 +192,10 @@ const defaultTheme: ThemeConfig = {
 /**
  * Merge user overrides from `jsdoc.json` (`siteName`, `fonts`) over the
  * defaults. Only the keys the user supplies are overridden; everything else
- * keeps the default theme.
+ * keeps the default theme. `siteName` is pre-resolved by `prepareSiteName`.
  */
-function resolveTheme(opts: JSDocOpts): ThemeConfig {
+function resolveTheme(opts: JSDocOpts, siteName: SiteName | undefined): ThemeConfig {
   const f = opts.fonts;
-  const siteName =
-    typeof opts.siteName === 'string' && opts.siteName.trim().length > 0
-      ? opts.siteName
-      : undefined;
 
   return {
     ...defaultTheme,
@@ -192,6 +211,60 @@ function resolveTheme(opts: JSDocOpts): ThemeConfig {
       ...(siteName ? { siteName } : {}),
     },
   };
+}
+
+/** A logo value that's already a servable URL/URI needs no copying. */
+function isServableUrl(value: string): boolean {
+  return /^(https?:)?\/\//i.test(value) || /^data:/i.test(value);
+}
+
+/**
+ * Resolve `opts.siteName` into a render-ready value plus any image files to
+ * write. A string passes through (trimmed). For a logo set, each local image
+ * path is read and emitted as an output asset (`_assets/logo-<key><ext>`) with
+ * its value rewritten to the served path; `http(s)://` / `data:` values pass
+ * through untouched, and the `alt` label is preserved. A path that can't be
+ * read is left verbatim with a warning rather than aborting the build.
+ */
+async function prepareSiteName(
+  raw: string | SiteLogo | undefined,
+): Promise<{ siteName: SiteName | undefined; files: OutputFile[] }> {
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    return { siteName: trimmed.length > 0 ? trimmed : undefined, files: [] };
+  }
+  if (!raw || typeof raw !== 'object') return { siteName: undefined, files: [] };
+
+  const files: OutputFile[] = [];
+  const out: SiteLogo = {};
+  if (typeof raw.alt === 'string' && raw.alt.trim().length > 0) out.alt = raw.alt.trim();
+
+  for (const key of ['default', 'dark', 'light'] as const) {
+    const value = raw[key];
+    if (typeof value !== 'string' || value.trim().length === 0) continue;
+    const v = value.trim();
+
+    if (isServableUrl(v)) {
+      out[key] = v;
+      continue;
+    }
+
+    try {
+      const abs = resolvePath(v);
+      const buf = await readFile(abs);
+      const served = `_assets/logo-${key}${extname(abs)}`;
+      files.push({ path: served, contents: buf });
+      out[key] = `/${served}`;
+    } catch {
+      console.warn(
+        `clean-jsdoc-theme: could not read logo image for siteName.${key} ('${v}'); using it verbatim.`,
+      );
+      out[key] = v;
+    }
+  }
+
+  const hasContent = out.default || out.dark || out.light || out.alt;
+  return { siteName: hasContent ? out : undefined, files };
 }
 
 // Priority: opts.package file → taffy `kind:'package'` doclet → undefined.
@@ -244,7 +317,41 @@ function pickPkgFields(raw: Record<string, unknown>): SiteManifest['pkg'] {
   return pkg;
 }
 
-export async function publish(data: unknown, opts: JSDocOpts, _tutorials?: unknown): Promise<void> {
+/** Minimal view of JSDoc's `Tutorial` (jsdoc/lib/jsdoc/tutorial.js). */
+interface JSDocTutorial {
+  name?: unknown;
+  title?: unknown;
+  content?: unknown;
+  type?: unknown;
+  children?: unknown;
+}
+
+/**
+ * Normalize JSDoc's tutorial resolver tree (the `tutorials` arg to `publish`)
+ * into setu's plain {@link TutorialInput} shape. The root's `children` are the
+ * top-level tutorials; each child carries its own `children`, so a depth-first
+ * walk preserves the resolved hierarchy. Content is taken raw (`.content`);
+ * `.type === 2` (MARKDOWN) is markdown, everything else is treated as HTML.
+ */
+function normalizeTutorials(root: unknown): TutorialInput[] {
+  const walk = (node: JSDocTutorial): TutorialInput | null => {
+    const name = typeof node.name === 'string' ? node.name : '';
+    if (!name) return null;
+    const title = typeof node.title === 'string' && node.title.length > 0 ? node.title : name;
+    const content = typeof node.content === 'string' ? node.content : '';
+    const type = node.type === JSDOC_TUTORIAL_TYPE_MARKDOWN ? 'markdown' : 'html';
+    const children = Array.isArray(node.children)
+      ? (node.children as JSDocTutorial[]).map(walk).filter((t): t is TutorialInput => t !== null)
+      : [];
+    return { name, title, content, type, children };
+  };
+
+  const children = (root as JSDocTutorial | undefined)?.children;
+  if (!Array.isArray(children)) return [];
+  return (children as JSDocTutorial[]).map(walk).filter((t): t is TutorialInput => t !== null);
+}
+
+export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknown): Promise<void> {
   const destination = opts.destination;
   if (!destination || typeof destination !== 'string') {
     throw new Error(
@@ -260,11 +367,26 @@ export async function publish(data: unknown, opts: JSDocOpts, _tutorials?: unkno
 
   const pkg = await resolvePkg(data, opts);
 
-  const manifest = generateSite(data, pkg ? { pkg } : undefined);
+  // README (rendered to HTML by JSDoc into `opts.readme`) → home page; the
+  // tutorials resolver tree → guide pages. Both flow through setu as ordinary
+  // pages. Note: local images referenced by README/tutorial Markdown are NOT
+  // copied into the output — use absolute/served URLs for those.
+  const readme = typeof opts.readme === 'string' && opts.readme.length > 0 ? opts.readme : undefined;
+  const tutorialTree = normalizeTutorials(tutorials);
+
+  const manifest = generateSite(data, {
+    ...(pkg ? { pkg } : {}),
+    ...(readme ? { readme } : {}),
+    ...(tutorialTree.length > 0 ? { tutorials: tutorialTree } : {}),
+  });
+
+  // Resolve siteName (text or logo set) and copy any local logo images into the
+  // output before render, so the served paths are baked into the markup.
+  const { siteName, files: logoFiles } = await prepareSiteName(opts.siteName);
 
   const absoluteDestination = resolvePath(destination);
   const result = await render(manifest, {
-    theme: resolveTheme(opts),
+    theme: resolveTheme(opts, siteName),
     destination: absoluteDestination,
   });
 
@@ -281,7 +403,7 @@ export async function publish(data: unknown, opts: JSDocOpts, _tutorials?: unkno
       `${result.stats.assetCount} asset(s) → ${destination}`,
   );
 
-  await writeOutputFiles(absoluteDestination, result.files);
+  await writeOutputFiles(absoluteDestination, [...result.files, ...logoFiles]);
 
   // Pagefind is optional; if the user doesn't have it installed we don't
   // want to fail the whole build. Surface the failure as a warning.

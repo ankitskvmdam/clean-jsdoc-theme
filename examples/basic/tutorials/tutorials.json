@@ -1,0 +1,12 @@
+{
+  "getting-started": {
+    "title": "Getting Started"
+  },
+  "configuration": {
+    "title": "Configuration",
+    "children": ["advanced-usage"]
+  },
+  "advanced-usage": {
+    "title": "Advanced Usage"
+  }
+}

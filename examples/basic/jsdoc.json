@@ -11,6 +11,8 @@
     "destination": "dist",
     "recurse": true,
     "template": "./node_modules/clean-jsdoc-theme/dist",
+    "readme": "./README.md",
+    "tutorials": "./tutorials",
     "siteName": "clean-jsdoc-theme"
   }
 }
