@@ -29,7 +29,7 @@ export function Header({ siteName, pkg, basePath = '/', children }: HeaderProps)
             // Freeform Tailwind passthrough for the logo wrapper. Swap for any
             // classes you like — rerun dwar's build-css so they land in the
             // generated utility layer (it scans this source).
-            containerClass="flex items-center rounded-lg bg-(--clean-bg-muted) p-1.5"
+            containerClass="flex items-center rounded-lg p-1.5"
           />
         </a>
         {pkg?.version && (
