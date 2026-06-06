@@ -94,6 +94,7 @@ utils/src/
 │   ├── manifest.ts       # SiteManifest, NavNode, SearchEntry
 │   ├── render.ts         # OutputFile, RenderOptions, RenderResult, RenderError
 │   ├── theme.ts          # ThemeTokens, ThemeColors, ThemeConfig, ComponentOverrides
+│   ├── site-name.ts      # SiteName (text | logo set) + siteNameText/resolveSiteLogo
 │   ├── islands.ts        # IslandName union + IslandPropsMap
 │   ├── slug-rules.ts     # slugifyHeading, slugifyPath  (used by setu AND dwar)
 │   └── index.ts          # barrel — the setu↔dwar boundary
@@ -109,21 +110,31 @@ MDX callout elements (`<Callout type="info|warning|error">`, e.g. for
 lowercase literal JSX bypasses MDX's component map, so callouts are emitted as a
 capitalized MDX JSX node (wired via `mdxJsxToMarkdown`) that round-trips through
 serialization and arrives as a prop on rang's `MdxBlockquote`.
-**Coverage today: `kind: 'class'` only**
+**API coverage today: `kind: 'class'` only**
 (modules / mixins / namespaces / interfaces / typedefs / globals are deferred —
-each is a mechanical `*-view.ts` + `mdast/*-view.ts` addition).
+each is a mechanical `*-view.ts` + `mdast/*-view.ts` addition). Alongside the
+API, two free-form prose sources are also rendered as pages: the project
+**README** (`opts.readme`, which JSDoc has already rendered to HTML) becomes the
+site **home page** (slug `''` → `index.html`), and **tutorials** (the
+`--tutorials` tree) become **guide pages** under `tutorials/<name>`, grouped as
+"Tutorials" in the nav with their resolved hierarchy flattened in order. Both
+flow through the same MDX → dwar path as class pages. Markdown tutorials pass
+through verbatim (preserving GFM); README + HTML tutorials are converted
+HTML → mdast → MDX via `mdast/from-html.ts`.
 
 ```
 setu/src/
-├── index.ts              # generateSite(collection, opts) → SiteManifest  (entry)
+├── index.ts              # generateSite(collection, opts) → SiteManifest  (entry;
+│                         #   opts carries pkg + readme HTML + tutorial tree)
 ├── generate-site.ts      # enumerate classes, build pages, nav (grouped by
 │                         #   page kind → Modules/Classes/…), buildId
+├── guide-view.ts         # README → home Page; tutorial tree → guide Pages + nav
 ├── validate.ts           # validateCollectionOrThrow
 ├── doclet.ts             # doclet access helpers
 ├── class-view.ts         # class doclet → structured view model
 ├── name-registry.ts      # longname → slug/path resolution
 ├── helper.ts
-├── mdx.ts                # mdast → MDX string
+├── mdx.ts                # mdast → MDX string (+ withFrontmatter for raw bodies)
 └── mdast/
     ├── builders.ts       # mdast node builders
     ├── class-view.ts     # class view model → mdast
@@ -148,6 +159,9 @@ rang/src/
 ├── lib/
 │   └── cn.ts             # clsx + tailwind-merge (shadcn helper)
 └── components/
+    ├── Brand.tsx        # site identity: renders siteName as text OR a per-theme
+    │                     #   logo image (dark/light swap via CSS only). Shared by
+    │                     #   Header / Footer / MobileNav
     ├── Button.tsx        # shadcn-style Button (cva variants/sizes) + buttonVariants
     ├── Dialog.tsx        # shadcn-style Dialog (Preact-native; overlay+blur, focus trap,
     │                     #   scroll lock, presence/animation) + Header/Title/Body/Footer.
@@ -158,7 +172,12 @@ rang/src/
     ├── Sidebar.tsx       # island: grouped nav (by kind)┐  (+ SidebarItem action row)
     ├── MobileNav.tsx     # island: < md nav drawer      │  (reuses Dialog sheet +
     │                     #   SidebarItem + useThemeMode + SettingsDialog + Sidebar)
-    ├── TOC.tsx           # island: page TOC (scroll-spy)│
+    ├── TOC.tsx           # island: curved right-rail TOC │
+    ├── TocPopover.tsx    # island: < lg mobile TOC bar   │  (progress ring +
+    │                     #   expandable list; shares toc-utils with TOC)         │
+    ├── toc-utils.ts      # shared scroll-spy: useActiveHeadings (rail set),       │
+    │                     #   useTocProgress / getActiveHeadingIndex (mobile),     │
+    │                     #   getItemOffset / getLineOffset (depth indentation)    │
     ├── CmdK.tsx          # island: command palette      │ islands
     ├── Settings.tsx      # island: settings (+ SettingsDialog, controlled) │ (hydrated)
     ├── ThemeToggle.tsx   # island: light/dark (+ useThemeMode hook)        │
@@ -171,12 +190,15 @@ rang/src/
                           #   `Code` (MDX `code`); also serves CodeTabs + standalone
 ```
 
-**Islands** (`IslandName`): `sidebar`, `mobile-nav`, `toc`, `cmdk`, `code-tabs`,
-`copy-btn`, `theme-toggle`, `settings`. Each renders meaningful SSR HTML, then
-progressively enhances after hydration. The `mobile-nav` drawer composes the
-others (theme toggle, settings, sidebar) rather than duplicating them; it shows
-below `md`, where the header keeps only its trigger and the sidebar column is
-hidden.
+**Islands** (`IslandName`): `sidebar`, `mobile-nav`, `toc`, `toc-mobile`, `cmdk`,
+`code-tabs`, `copy-btn`, `theme-toggle`, `settings`. Each renders meaningful SSR
+HTML, then progressively enhances after hydration. The `mobile-nav` drawer
+composes the others (theme toggle, settings, sidebar) rather than duplicating
+them; it shows below `md`, where the header keeps only its trigger and the
+sidebar column is hidden. `toc` (the curved right rail) and `toc-mobile` (the
+`< lg` progress-bar popover, `TocPopover`) are two presentations of the same
+headings — both hydrate but only one is visible per breakpoint; they share their
+scroll-spy and indentation logic via `toc-utils`.
 
 ### `@clean-jsdoc-theme/dwar` — `SiteManifest` → HTML/CSS/JS
 
@@ -194,6 +216,7 @@ dwar/src/
 │                         #   controls are desktop-only (search/theme/settings);
 │                         #   mobile-nav is the only < md control
 ├── mdx.ts                # @mdx-js/mdx compile + run (Preact runtime, frontmatter,
+│                         #   remark-gfm for tables/strikethrough/task-lists,
 │                         #   + rehype slug pass giving headings ids that mirror
 │                         #   setu's TOC exactly — slugifyHeading + per-page registry).
 │                         #   Pre-pass: {@link} → code spans + escapeStrayBraces (literal
@@ -245,9 +268,12 @@ The package JSDoc loads via `jsdoc -t clean-jsdoc-theme`. A thin orchestrator.
 clean-jsdoc-theme/src/
 ├── publish.ts            # publish(taffyData, opts, tutorials) — the entry.
 │                         #   resolves pkg + theme (opts.siteName / fonts → tokens),
-│                         #   calls setu → dwar, writes files, runs Pagefind. Logs the
-│                         #   rendered-page count + any RenderResult.errors (skipped
-│                         #   pages). Holds defaultTheme (OKLCH palette).
+│                         #   normalizes the README (→ home) + tutorial tree (→ guides)
+│                         #   into setu opts, calls setu → dwar, writes files, runs
+│                         #   Pagefind. siteName is text OR a logo set — local logo
+│                         #   images are copied to _assets/logo-*. Logs the rendered-
+│                         #   page count + any RenderResult.errors (skipped pages).
+│                         #   Holds defaultTheme (OKLCH palette).
 └── write-output-files.ts # mkdir -p + writeFile loop (forward-slash → OS path)
 ```
 
