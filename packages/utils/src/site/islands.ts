@@ -19,7 +19,8 @@ export type IslandName =
   | 'code-tabs'
   | 'copy-btn'
   | 'theme-toggle'
-  | 'settings';
+  | 'settings'
+  | 'code-viewer';
 
 /** Type-safe prop bag per island. Server-render and hydration share this map. */
 export interface IslandPropsMap {
@@ -32,4 +33,7 @@ export interface IslandPropsMap {
   'copy-btn': { text: string };
   'theme-toggle': Record<string, never>;
   settings: Record<string, never>;
+  // No `code` field: the source body is read from the DOM `<pre>` at hydration
+  // time rather than passed through the JSON props payload.
+  'code-viewer': { language: string; filename?: string; highlightLine?: number };
 }

@@ -13,7 +13,8 @@ export type PageKind =
   | 'typedef'
   | 'global'
   | 'index'
-  | 'guide';
+  | 'guide'
+  | 'source'; // read-only source-file viewer page
 
 /**
  * YAML-style frontmatter for an MDX page. Open-ended via the index signature so
@@ -53,4 +54,10 @@ export interface Page {
   mdast?: import('mdast').Root;
   /** Pre-extracted headings so dwar can render a TOC without re-parsing. */
   headings?: Heading[];
+  /**
+   * Raw source for a `kind: 'source'` viewer page. When present, dwar renders
+   * this file in a read-only editor island instead of compiling `body` as MDX
+   * (so `body` is `''` for these pages).
+   */
+  source?: { code: string; language: string; filename: string };
 }

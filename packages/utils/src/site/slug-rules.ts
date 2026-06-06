@@ -64,3 +64,29 @@ export function slugifyPath(parts: string[]): string {
     .filter((part) => part.length > 0)
     .join('/');
 }
+
+/**
+ * Slug for a project-relative source file path. Used BOTH for the source
+ * viewer page slug and the in-doc "Source: file:line" link target so the two
+ * always agree. Normalizes backslashes to `/`, then per segment lowercases and
+ * replaces any run of non-alphanumeric characters (including dots) with `-`,
+ * trimming hyphens; empty segments are dropped. The extension is folded into
+ * the segment (not stripped) so `foo.js` and `foo.ts` stay distinct.
+ *
+ * @example
+ *   slugifySourcePath('src/Foo.js');        // 'src/foo-js'
+ *   slugifySourcePath('lib\\util\\index.ts'); // 'lib/util/index-ts'
+ */
+export function slugifySourcePath(relPath: string): string {
+  return String(relPath ?? '')
+    .replace(/\\/g, '/')
+    .split('/')
+    .map((segment) =>
+      segment
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, ''),
+    )
+    .filter((segment) => segment.length > 0)
+    .join('/');
+}
