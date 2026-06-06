@@ -12,6 +12,7 @@ import {
 import type { TDoclet, TJSDocSaltyCollection } from '@clean-jsdoc-theme/utils';
 import { getClassView } from './class-view';
 import { classViewToMdast } from './mdast/class-view';
+import type { DocletBlocksOptions } from './mdast/doclet';
 import { toMdx } from './mdx';
 
 /** JSDoc separator characters that delimit name parts in a longname. */
@@ -87,11 +88,12 @@ export function enumerateClassLongnames(collection: TJSDocSaltyCollection<TDocle
 export function buildClassPage(
   collection: TJSDocSaltyCollection<TDoclet>,
   longname: string,
+  sourceLink?: DocletBlocksOptions['sourceLink'],
 ): Page | null {
   const view = getClassView(collection, longname);
   if (!view) return null;
 
-  const tree = classViewToMdast(view);
+  const tree = classViewToMdast(view, { sourceLink });
   const title = view.doclet.name ?? view.doclet.longname ?? longname;
   const description = view.doclet.classdesc
     ? stripHtml(view.doclet.classdesc)

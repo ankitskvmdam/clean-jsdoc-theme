@@ -10,7 +10,8 @@ import {
   buildTutorialPages,
   type TutorialInput,
 } from './guide-view';
-import type { NavNode, Page, SiteManifest } from '@clean-jsdoc-theme/utils';
+import { buildSourceModel, type SourceFileInput } from './source-view';
+import type { NavNode, Page, SiteManifest, TDoclet } from '@clean-jsdoc-theme/utils';
 
 /** Build-side options. */
 export interface GenerateSiteOptions {
@@ -26,6 +27,12 @@ export interface GenerateSiteOptions {
    * guide pages under "Tutorials", preserving the resolved order.
    */
   tutorials?: TutorialInput[];
+  /**
+   * Project source files to render as read-only `kind: 'source'` viewer pages.
+   * When supplied, each class member + the class itself gets a "Source:
+   * file:line" link resolved against these files.
+   */
+  sources?: SourceFileInput[];
 }
 
 /**
@@ -40,9 +47,18 @@ export function generateSite(
 ): SiteManifest {
   validateCollectionOrThrow(collection);
 
+  // Source viewer model (pages + nav + the doclet→source link resolver). Built
+  // first so its `resolve` can be threaded into each class page's mdast.
+  const sourceModel = opts?.sources?.length ? buildSourceModel(opts.sources) : null;
+  // `resolve` keys off a doclet's `meta`; adapt it to the `(doclet) => link`
+  // shape `sourceLink` expects.
+  const sourceLink = sourceModel
+    ? (doclet: TDoclet) => sourceModel.resolve(doclet.meta)
+    : undefined;
+
   const classPages: Page[] = [];
   for (const longname of enumerateClassLongnames(collection)) {
-    const page = buildClassPage(collection, longname);
+    const page = buildClassPage(collection, longname, sourceLink);
     if (page) classPages.push(page);
   }
 
@@ -65,6 +81,12 @@ export function generateSite(
     const { pages: tutorialPages, nav: tutorialNav } = buildTutorialPages(opts.tutorials);
     pages.push(...tutorialPages);
     nav.push(...tutorialNav);
+  }
+
+  // Source files → hidden viewer pages + a "Source Files" index in the nav.
+  if (sourceModel) {
+    pages.push(...sourceModel.pages, sourceModel.indexPage);
+    nav.push(sourceModel.navNode);
   }
 
   const manifest: SiteManifest = {
@@ -100,3 +122,10 @@ export {
   TUTORIALS_GROUP,
   type TutorialInput,
 } from './guide-view';
+
+export {
+  buildSourceModel,
+  detectLanguage,
+  type SourceFileInput,
+  type SourceModel,
+} from './source-view';

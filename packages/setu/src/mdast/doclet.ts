@@ -299,6 +299,22 @@ function interleave<T, S>(items: T[], sep: () => S): (T | S)[] {
   return out;
 }
 
+// ── Source link ─────────────────────────────────────────────────────────────
+
+/**
+ * "Source: file:line" caption for a doclet, when `options.sourceLink` resolves
+ * it. Rendered as an emphasized `Source: ` label followed by a link whose child
+ * is the inline-coded `file:line` label. Returns `null` when unresolved.
+ */
+export function sourceLinkBlock(
+  doclet: TDoclet,
+  options: DocletBlocksOptions = {}
+): Paragraph | null {
+  const resolved = options.sourceLink?.(doclet);
+  if (!resolved) return null;
+  return p(emphasis(text('Source: ')), link(resolved.href, inlineCode(resolved.label)));
+}
+
 // ── Composer: full per-doclet block ─────────────────────────────────────────
 
 export type DocletSection =
@@ -323,6 +339,8 @@ export interface DocletBlocksOptions {
    * dedicated section elsewhere on the page (e.g. constructor params).
    */
   skip?: readonly DocletSection[];
+  /** When set, emits a "Source: file:line" link for a doclet that resolves. */
+  sourceLink?: (doclet: TDoclet) => { href: string; label: string } | null;
 }
 
 /**

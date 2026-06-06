@@ -1,7 +1,7 @@
 import type { Root, RootContent } from 'mdast';
 import { ClassMember, ClassView, MemberBuckets } from '../class-view';
 import { h, hr, inlineCode, p, root, strong, text } from './builders';
-import { docletBlocks, DocletBlocksOptions, paramsList } from './doclet';
+import { docletBlocks, DocletBlocksOptions, paramsList, sourceLinkBlock } from './doclet';
 
 export interface ClassViewToMdastOptions extends DocletBlocksOptions {
   /** Heading level for the class title. Default: 1. */
@@ -41,10 +41,11 @@ export function memberBlocks(
   options: DocletBlocksOptions = {},
   headingLevel: 2 | 3 | 4 = 3
 ): RootContent[] {
-  return [
-    h(headingLevel, inlineCode(member.name ?? '(anonymous)')),
-    ...docletBlocks(member, options),
-  ];
+  const out: RootContent[] = [h(headingLevel, inlineCode(member.name ?? '(anonymous)'))];
+  const src = sourceLinkBlock(member, options);
+  if (src) out.push(src);
+  out.push(...docletBlocks(member, options));
+  return out;
 }
 
 /**
@@ -108,6 +109,10 @@ export function classViewToMdast(
 
   // Extends/Implements/Mixes
   blocks.push(...classRelationsBlocks(view.doclet));
+
+  // Source link for the class declaration itself, when it resolves.
+  const classSource = sourceLinkBlock(view.doclet, options);
+  if (classSource) blocks.push(classSource);
 
   // Class-level body: description, deprecation, examples, metadata. Params /
   // returns / throws are surfaced in the Constructor section below — skip
