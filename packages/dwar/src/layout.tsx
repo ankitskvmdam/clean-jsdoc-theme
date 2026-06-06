@@ -21,11 +21,12 @@ import {
   Sidebar,
   MobileNav,
   TOC,
+  TocPopover,
   CmdK,
   ThemeToggle,
   Settings,
 } from '@clean-jsdoc-theme/rang';
-import type { Heading, IslandName, NavNode } from '@clean-jsdoc-theme/utils';
+import type { Heading, IslandName, NavNode, SiteName } from '@clean-jsdoc-theme/utils';
 
 export interface IslandRecord {
   /** `i0`, `i1`, ... — referenced by the loader's data-island-id attribute. */
@@ -47,7 +48,7 @@ export interface SsrLayoutProps {
     repository?: string;
     homepage?: string;
   };
-  siteName?: string;
+  siteName?: SiteName;
   basePath?: string;
   /** Mutated as islands are encountered so the caller can emit the props JSON. */
   islands: IslandRecord[];
@@ -133,6 +134,12 @@ export function SsrLayout({
       <Island name="toc" islands={islands} Component={TOC} props={{ headings }} />
     ) : undefined;
 
+  // The `< lg` counterpart to the rail, mounted in the Layout's mobile bar slot.
+  const tocMobile =
+    headings.length > 0 ? (
+      <Island name="toc-mobile" islands={islands} Component={TocPopover} props={{ headings }} />
+    ) : undefined;
+
   return (
     <Layout
       siteName={siteName}
@@ -141,6 +148,7 @@ export function SsrLayout({
       headerControls={headerControls}
       sidebar={sidebar}
       toc={toc}
+      tocMobile={tocMobile}
     >
       {children}
     </Layout>

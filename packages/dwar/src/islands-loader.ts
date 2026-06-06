@@ -22,6 +22,7 @@ const ALL_ISLAND_NAMES: IslandName[] = [
   'sidebar',
   'theme-toggle',
   'toc',
+  'toc-mobile',
 ];
 
 /**

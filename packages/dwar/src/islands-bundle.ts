@@ -26,6 +26,7 @@ const ALL_ISLANDS: IslandName[] = [
   'sidebar',
   'mobile-nav',
   'toc',
+  'toc-mobile',
   'cmdk',
   'code-tabs',
   'copy-btn',

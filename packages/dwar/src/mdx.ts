@@ -12,6 +12,7 @@ import type { ComponentType } from 'preact';
 import { h, Fragment } from 'preact';
 import { jsx, jsxs } from 'preact/jsx-runtime';
 import remarkFrontmatter from 'remark-frontmatter';
+import remarkGfm from 'remark-gfm';
 import { slugifyHeading } from '@clean-jsdoc-theme/utils';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -140,10 +141,12 @@ export async function compileMdxToComponent(
     development: false,
     // No provider: we pass components directly to MDXContent below.
     useMDXComponents: undefined,
-    // Setu prepends YAML frontmatter to the body string. Without this plugin,
+    // Setu prepends YAML frontmatter to the body string. Without remarkFrontmatter,
     // MDX parses the `---` lines as thematic breaks and the YAML keys as
-    // paragraph text, leaking raw frontmatter into the rendered output.
-    remarkPlugins: [remarkFrontmatter],
+    // paragraph text, leaking raw frontmatter into the rendered output. remarkGfm
+    // adds tables / strikethrough / task-lists / autolinks — common in README and
+    // tutorial Markdown, and rendered by rang's MDX component map.
+    remarkPlugins: [remarkFrontmatter, remarkGfm],
     // Syntax highlighting at compile time. Shiki keeps render() pure (it loads
     // grammars/themes from bundled JS — no fs, no network) while emitting
     // meaningful SSR HTML. Dual themes encode both palettes into CSS variables:

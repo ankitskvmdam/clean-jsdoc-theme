@@ -58,13 +58,14 @@ describe('render() — smoke', () => {
     expect(home).toContain(`d.dataset.theme='light'`);
   });
 
-  it('emits eight non-empty island chunks', async () => {
+  it('emits nine non-empty island chunks', async () => {
     const manifest = makeManifest();
     const result = await render(manifest, { theme: minimalTheme });
     const expected = [
       '_islands/sidebar.js',
       '_islands/mobile-nav.js',
       '_islands/toc.js',
+      '_islands/toc-mobile.js',
       '_islands/cmdk.js',
       '_islands/code-tabs.js',
       '_islands/copy-btn.js',

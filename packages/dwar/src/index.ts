@@ -11,6 +11,7 @@
 import { h } from 'preact';
 import { render as renderToString } from 'preact-render-to-string';
 import { defaultMdxComponents } from '@clean-jsdoc-theme/rang';
+import { siteNameText } from '@clean-jsdoc-theme/utils';
 import type {
   OutputFile,
   Page,
@@ -19,6 +20,7 @@ import type {
   RenderResult,
   SearchEntry,
   SiteManifest,
+  SiteName,
   IslandName,
 } from '@clean-jsdoc-theme/utils';
 
@@ -45,7 +47,7 @@ async function renderPage(
   basePath: string,
   cssHref: string,
   islandsBase: string,
-  siteName: string | undefined,
+  siteName: SiteName | undefined,
   fonts: { heading: string; body: string },
   shiki: ShikiThemes,
 ): Promise<{ file: OutputFile; search: SearchEntry; islands: IslandRecord[] }> {
@@ -73,7 +75,7 @@ async function renderPage(
     bodyHtml,
     islands,
     cssHref,
-    siteName: siteName ?? manifest.pkg?.name,
+    siteName: siteNameText(siteName, manifest.pkg?.name),
     islandsBase,
     fonts,
   });
@@ -204,6 +206,8 @@ export type {
   SearchEntry,
   ThemeConfig,
   ThemeTokens,
+  SiteName,
+  SiteLogo,
   ComponentOverrides,
   Override,
   IslandName,
