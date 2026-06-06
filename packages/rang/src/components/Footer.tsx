@@ -29,8 +29,8 @@ export function Footer({ pkg, siteName, year }: FooterProps) {
     <footer class="border-t border-[var(--clean-border)] bg-[var(--clean-bg)] py-6 text-sm text-[var(--clean-fg-muted)]">
       <div class="mx-auto flex w-full max-w-screen-2xl flex-col items-start justify-between gap-2 px-4 md:flex-row md:items-center">
         <div class="flex items-center gap-1.5">
-          &copy; {y}{' '}
           <Brand siteName={siteName} fallback={pkg?.name} logoClass="h-5 w-auto" />
+          <span>&copy; {y}</span>
         </div>
         {repoUrl && (
           <a href={repoUrl} target="_blank" rel="noreferrer noopener" class="text-[var(--clean-fg-muted)] hover:text-[var(--clean-accent)]">
