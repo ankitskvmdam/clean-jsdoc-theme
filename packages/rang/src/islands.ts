@@ -7,6 +7,7 @@ import { TOC } from './components/TOC';
 import { TocPopover } from './components/TocPopover';
 import { CmdK } from './components/CmdK';
 import { CodeTabs } from './components/CodeTabs';
+import { CodeViewer } from './components/CodeViewer';
 import { CopyBtn } from './components/CopyBtn';
 import { ThemeToggle } from './components/ThemeToggle';
 import { Settings } from './components/Settings';
@@ -21,6 +22,7 @@ export const ISLAND_REGISTRY: Record<IslandName, ComponentType<any>> = {
   'toc-mobile': TocPopover,
   cmdk: CmdK,
   'code-tabs': CodeTabs,
+  'code-viewer': CodeViewer,
   'copy-btn': CopyBtn,
   'theme-toggle': ThemeToggle,
   settings: Settings,

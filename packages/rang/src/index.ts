@@ -55,6 +55,9 @@ export type { CodeBlockProps } from './components/CodeBlock';
 export { CodeTabs } from './components/CodeTabs';
 export type { CodeTabsProps, CodeTab } from './components/CodeTabs';
 
+export { CodeViewer } from './components/CodeViewer';
+export type { CodeViewerProps } from './components/CodeViewer';
+
 export { CopyBtn } from './components/CopyBtn';
 export type { CopyBtnProps } from './components/CopyBtn';
 
