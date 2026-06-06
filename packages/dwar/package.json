@@ -54,6 +54,7 @@
     "preact": "^10.22.0",
     "preact-render-to-string": "^6.5.13",
     "remark-frontmatter": "^5",
+    "remark-gfm": "^4",
     "shiki": "^4.2.0"
   },
   "publishConfig": {
