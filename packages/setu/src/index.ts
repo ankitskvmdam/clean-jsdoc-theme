@@ -1,9 +1,10 @@
 import { validateCollectionOrThrow } from './validate';
 import {
-  buildClassPage,
+  buildContainerPage,
+  buildGlobalsPage,
   buildNav,
   computeBuildId,
-  enumerateClassLongnames,
+  enumerateLongnamesByKind,
 } from './generate-site';
 import {
   buildReadmePage,
@@ -11,7 +12,26 @@ import {
   type TutorialInput,
 } from './guide-view';
 import { buildSourceModel, type SourceFileInput } from './source-view';
-import type { NavNode, Page, SiteManifest, TDoclet } from '@clean-jsdoc-theme/utils';
+import type { NavNode, Page, PageKind, SiteManifest, TDoclet } from '@clean-jsdoc-theme/utils';
+
+/**
+ * API container kinds that each get a standalone page, in nav display order.
+ * Iterating module→namespace→class→interface→mixin→typedef means a documented
+ * container (e.g. a module) wins a slug collision over a later kind. Typedefs
+ * are mechanically identical to other containers: they go through the same
+ * `buildContainerPage`/`getContainerView` path. A typedef's body (its `@type`,
+ * `@property` list, and `@param`/`@returns` for function-signature typedefs)
+ * renders via `containerViewToMdast`'s class-level `docletBlocks` call, which
+ * only skips params/returns for the `class` kind.
+ */
+const CONTAINER_KINDS: readonly PageKind[] = [
+  'module',
+  'namespace',
+  'class',
+  'interface',
+  'mixin',
+  'typedef',
+];
 
 /** Build-side options. */
 export interface GenerateSiteOptions {
@@ -37,9 +57,11 @@ export interface GenerateSiteOptions {
 
 /**
  * Build a `SiteManifest` from a JSDoc salty collection. This is the boundary
- * setu→dwar entry point. API pages cover `kind: 'class'` only today (other
- * kinds are deferred); the README (home page) and tutorials are rendered when
- * supplied via {@link GenerateSiteOptions}.
+ * setu→dwar entry point. API pages cover the container kinds in
+ * {@link CONTAINER_KINDS} (module/namespace/class/interface/mixin/typedef) plus
+ * one aggregated "Globals" page for global-scope symbols that don't get their
+ * own page; the README (home page) and tutorials are rendered when supplied via
+ * {@link GenerateSiteOptions}.
  */
 export function generateSite(
   collection: unknown,
@@ -56,10 +78,34 @@ export function generateSite(
     ? (doclet: TDoclet) => sourceModel.resolve(doclet.meta)
     : undefined;
 
-  const classPages: Page[] = [];
-  for (const longname of enumerateClassLongnames(collection)) {
-    const page = buildClassPage(collection, longname, sourceLink);
-    if (page) classPages.push(page);
+  // Container API pages, one per documented container symbol. Kinds are
+  // iterated in CONTAINER_KINDS order; a `seenSlugs` guard skips later pages
+  // that collide on slug (e.g. a module that also surfaces as a class for the
+  // same symbol), so the earlier — documented-container — kind wins.
+  const apiPages: Page[] = [];
+  const seenSlugs = new Set<string>();
+  for (const kind of CONTAINER_KINDS) {
+    for (const longname of enumerateLongnamesByKind(collection, kind)) {
+      const page = buildContainerPage(collection, longname, kind, sourceLink);
+      if (!page) continue;
+      if (seenSlugs.has(page.slug)) {
+        console.warn(
+          `[setu] skipping duplicate page slug "${page.slug}" (${kind} ${longname})`,
+        );
+        continue;
+      }
+      seenSlugs.add(page.slug);
+      apiPages.push(page);
+    }
+  }
+
+  // One aggregated "Globals" page: every global-scope symbol that doesn't get
+  // its own container/typedef page, each rendered as a member section. Added
+  // before buildNav so it groups under "Globals" alongside the container pages.
+  const globalsPage = buildGlobalsPage(collection);
+  if (globalsPage && !seenSlugs.has(globalsPage.slug)) {
+    seenSlugs.add(globalsPage.slug);
+    apiPages.push(globalsPage);
   }
 
   const pages: Page[] = [];
@@ -72,9 +118,9 @@ export function generateSite(
     nav.push({ label: 'Home', slug: home.slug });
   }
 
-  // API pages, grouped by kind (Classes, …).
-  pages.push(...classPages);
-  nav.push(...buildNav(classPages));
+  // API pages, grouped by kind (Modules, Namespaces, Classes, …).
+  pages.push(...apiPages);
+  nav.push(...buildNav(apiPages));
 
   // Tutorials → guide pages under "Tutorials".
   if (opts?.tutorials && opts.tutorials.length > 0) {
@@ -109,9 +155,12 @@ export function generateMdx(collection: unknown): string[] {
 
 export {
   buildClassPage,
+  buildContainerPage,
+  buildGlobalsPage,
   buildNav,
   computeBuildId,
   enumerateClassLongnames,
+  enumerateLongnamesByKind,
   extractHeadings,
   splitLongnameForSlug,
 } from './generate-site';

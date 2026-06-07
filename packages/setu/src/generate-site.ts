@@ -10,8 +10,9 @@ import {
   type PageKind,
 } from '@clean-jsdoc-theme/utils';
 import type { TDoclet, TJSDocSaltyCollection } from '@clean-jsdoc-theme/utils';
-import { getClassView } from './class-view';
-import { classViewToMdast } from './mdast/class-view';
+import { bucketClassMembers, getContainerView, type ContainerView } from './class-view';
+import { filterDoclets } from './doclet';
+import { containerViewToMdast } from './mdast/class-view';
 import type { DocletBlocksOptions } from './mdast/doclet';
 import { toMdx } from './mdx';
 
@@ -70,12 +71,18 @@ function stripHtml(html: string): string {
     .trim();
 }
 
-/** Returns the unique class longnames in the collection that have a canonical doclet. */
-export function enumerateClassLongnames(collection: TJSDocSaltyCollection<TDoclet>): string[] {
-  const classes = collection({ kind: 'class' }).get();
+/**
+ * Returns the unique longnames of the given `kind` in the collection that have
+ * a documented doclet. Dedupes on longname and skips undocumented doclets.
+ */
+export function enumerateLongnamesByKind(
+  collection: TJSDocSaltyCollection<TDoclet>,
+  kind: PageKind,
+): string[] {
+  const doclets = collection({ kind }).get();
   const seen = new Set<string>();
   const out: string[] = [];
-  for (const d of classes) {
+  for (const d of doclets) {
     if (!d.longname || seen.has(d.longname)) continue;
     if (d.undocumented) continue;
     seen.add(d.longname);
@@ -84,16 +91,25 @@ export function enumerateClassLongnames(collection: TJSDocSaltyCollection<TDocle
   return out;
 }
 
-/** Build a single class page; returns null if the class view cannot be built. */
-export function buildClassPage(
+/** Returns the unique class longnames in the collection that have a canonical doclet. */
+export function enumerateClassLongnames(collection: TJSDocSaltyCollection<TDoclet>): string[] {
+  return enumerateLongnamesByKind(collection, 'class');
+}
+
+/**
+ * Build a single container page (class/interface/mixin/module/namespace);
+ * returns null if no container view of `kind` can be built for `longname`.
+ */
+export function buildContainerPage(
   collection: TJSDocSaltyCollection<TDoclet>,
   longname: string,
+  kind: PageKind,
   sourceLink?: DocletBlocksOptions['sourceLink'],
 ): Page | null {
-  const view = getClassView(collection, longname);
+  const view = getContainerView(collection, longname, kind);
   if (!view) return null;
 
-  const tree = classViewToMdast(view, { sourceLink });
+  const tree = containerViewToMdast(view, { sourceLink });
   const title = view.doclet.name ?? view.doclet.longname ?? longname;
   const description = view.doclet.classdesc
     ? stripHtml(view.doclet.classdesc)
@@ -103,7 +119,7 @@ export function buildClassPage(
 
   const frontmatter: Frontmatter = {
     title,
-    kind: 'class',
+    kind,
     longname: view.doclet.longname ?? longname,
     ...(description ? { description } : {}),
   };
@@ -113,6 +129,58 @@ export function buildClassPage(
   const headings = extractHeadings(tree);
 
   return { slug, frontmatter, body, mdast: tree, headings };
+}
+
+/**
+ * Build a single class page; returns null if the class view cannot be built.
+ * Thin alias over {@link buildContainerPage} with `kind: 'class'`.
+ */
+export function buildClassPage(
+  collection: TJSDocSaltyCollection<TDoclet>,
+  longname: string,
+  sourceLink?: DocletBlocksOptions['sourceLink'],
+): Page | null {
+  return buildContainerPage(collection, longname, 'class', sourceLink);
+}
+
+/** Kinds that already render as their own standalone page, excluded from the globals page. */
+const GLOBALS_EXCLUDED_KINDS = new Set([
+  'class',
+  'interface',
+  'mixin',
+  'module',
+  'namespace',
+  'typedef',
+]);
+
+/**
+ * Build the single aggregated "Globals" page: every global-scope symbol that
+ * does not already get its own page (functions, members, constants, enums,
+ * events) rendered as a member section on one synthetic container. Returns
+ * `null` when there are no qualifying globals.
+ */
+export function buildGlobalsPage(
+  collection: TJSDocSaltyCollection<TDoclet>,
+): Page | null {
+  const globals = filterDoclets(collection({ scope: 'global' }).get());
+  const remainder = globals.filter((d) => !GLOBALS_EXCLUDED_KINDS.has(d.kind ?? ''));
+  if (remainder.length === 0) return null;
+
+  const buckets = bucketClassMembers(remainder);
+  const view: ContainerView = {
+    doclet: { kind: 'global', name: 'Globals' } as unknown as TDoclet,
+    kind: 'global',
+    augments: [],
+    constructorParams: [],
+    ...buckets,
+  };
+
+  const tree = containerViewToMdast(view, {});
+  const frontmatter: Frontmatter = { title: 'Globals', kind: 'global' };
+  const body = toMdx(tree, { frontmatter });
+  const headings = extractHeadings(tree);
+
+  return { slug: 'global', frontmatter, body, mdast: tree, headings };
 }
 
 /**

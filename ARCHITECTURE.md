@@ -104,15 +104,21 @@ utils/src/
 ### `@clean-jsdoc-theme/setu` — JSDoc → `SiteManifest`
 
 Walks the salty doclet collection and produces one MDX page per documented
-class. Emits Markdown/MDX only — no HTML, no I/O. The one bit of JSX it emits is
-MDX callout elements (`<Callout type="info|warning|error">`, e.g. for
+container symbol. Emits Markdown/MDX only — no HTML, no I/O. The one bit of JSX it
+emits is MDX callout elements (`<Callout type="info|warning|error">`, e.g. for
 `@deprecated`): a plain `mdast` `data` field is dropped by `toMarkdown`, and
 lowercase literal JSX bypasses MDX's component map, so callouts are emitted as a
 capitalized MDX JSX node (wired via `mdxJsxToMarkdown`) that round-trips through
 serialization and arrives as a prop on rang's `MdxBlockquote`.
-**API coverage today: `kind: 'class'` only**
-(modules / mixins / namespaces / interfaces / typedefs / globals are deferred —
-each is a mechanical `*-view.ts` + `mdast/*-view.ts` addition). Alongside the
+**API coverage.** The five container kinds — class, interface, mixin, module,
+namespace — render through one kind-parametric path (`getContainerView` →
+`containerViewToMdast`): class keeps its constructor-params special case, and
+class/interface additionally walk the `@augments`/`@extends` inheritance chain to
+fold in inherited members. **Typedefs** get their own pages, and every
+**global**-scope symbol that doesn't already own a page is collected onto a single
+aggregated **"Globals"** page (each symbol a section; one nav entry). **events**,
+**enums**, and **constants** are not standalone — they render as member sections
+within their parent container's page. Alongside the
 API, two free-form prose sources are also rendered as pages: the project
 **README** (`opts.readme`, which JSDoc has already rendered to HTML) becomes the
 site **home page** (slug `''` → `index.html`), and **tutorials** (the
@@ -141,21 +147,23 @@ to `/source/<file>/#L<n>`, with the page slug and the link target sharing
 setu/src/
 ├── index.ts              # generateSite(collection, opts) → SiteManifest  (entry;
 │                         #   opts carries pkg + readme HTML + tutorial tree + sources)
-├── generate-site.ts      # enumerate classes, build pages, nav (grouped by
-│                         #   page kind → Modules/Classes/…), buildId
+├── generate-site.ts      # enumerate containers by kind, build container/
+│                         #   typedef/globals pages, nav (grouped by page kind →
+│                         #   Modules/Classes/…), buildId
 ├── guide-view.ts         # README → home Page; tutorial tree → guide Pages + nav
 ├── source-view.ts        # source files → hidden 'source' viewer Pages + "Source
 │                         #   Files" index + per-member meta→/source/…#L<n> resolver
 ├── validate.ts           # validateCollectionOrThrow
 ├── doclet.ts             # doclet access helpers
-├── class-view.ts         # class doclet → structured view model
+├── class-view.ts         # container doclet → structured view model
+│                         #   (getContainerView, kind-parametric; getClassView alias)
 ├── name-registry.ts      # longname → slug/path resolution
 ├── helper.ts
 ├── mdx.ts                # mdast → MDX string (resource-form links only, so no
 │                         #   `<url>` autolink reaches dwar's MDX compile)
 └── mdast/
     ├── builders.ts       # mdast node builders
-    ├── class-view.ts     # class view model → mdast
+    ├── class-view.ts     # container view model → mdast (containerViewToMdast)
     ├── doclet.ts
     └── from-html.ts      # HTML / Markdown → structured mdast (the MDX-safe
                           #   normalization shared by README + tutorials)
