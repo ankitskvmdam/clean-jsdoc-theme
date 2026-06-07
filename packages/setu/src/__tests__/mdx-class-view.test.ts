@@ -3,6 +3,8 @@ import { TDoclet } from '@clean-jsdoc-theme/utils';
 import { getClassView } from '../class-view';
 import { classViewToMdx } from '../mdx';
 import {
+  defaultDeprecationText,
+  deprecationBlock,
   descriptionBlocks,
   docletBlocks,
   examplesBlocks,
@@ -171,6 +173,35 @@ describe('docletBlocks (per-member composer)', () => {
       name: 'type',
       value: 'warning',
     });
+  });
+
+  it('falls back to kind-aware default text when @deprecated has no reason', () => {
+    expect(defaultDeprecationText({ kind: 'class' })).toBe(
+      'This class is deprecated and should not be used.'
+    );
+    expect(defaultDeprecationText({ kind: 'function', memberof: 'Foo' })).toBe(
+      'This method is deprecated and should not be used.'
+    );
+    expect(defaultDeprecationText({ kind: 'function' })).toBe(
+      'This function is deprecated and should not be used.'
+    );
+    expect(defaultDeprecationText({ kind: 'member', memberof: 'Foo' })).toBe(
+      'This property is deprecated and should not be used.'
+    );
+    expect(defaultDeprecationText({ kind: 'typedef' })).toBe(
+      'This type definition is deprecated and should not be used.'
+    );
+    // Unknown / synthetic kind degrades to a neutral noun.
+    expect(defaultDeprecationText({})).toBe(
+      'This symbol is deprecated and should not be used.'
+    );
+  });
+
+  it('renders the default sentence inside the callout for `deprecated: true`', () => {
+    const block = deprecationBlock({ deprecated: true, kind: 'module' });
+    expect(block).not.toBeNull();
+    const json = JSON.stringify(block);
+    expect(json).toContain('This module is deprecated and should not be used.');
   });
 });
 

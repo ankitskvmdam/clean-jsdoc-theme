@@ -103,15 +103,63 @@ export function inheritedFromParagraph(
 
 // ── Deprecation ─────────────────────────────────────────────────────────────
 
+/** Human-readable noun for a doclet's kind, used in default messages. */
+function kindNoun(doclet: TDoclet): string {
+  switch (doclet.kind) {
+    case 'class':
+      return 'class';
+    case 'constant':
+      return 'constant';
+    case 'enum':
+      return 'enumeration';
+    case 'event':
+      return 'event';
+    case 'external':
+      return 'external';
+    case 'file':
+      return 'file';
+    case 'function':
+      return doclet.memberof ? 'method' : 'function';
+    case 'interface':
+      return 'interface';
+    case 'member':
+      return doclet.memberof ? 'property' : 'member';
+    case 'mixin':
+      return 'mixin';
+    case 'module':
+      return 'module';
+    case 'namespace':
+      return 'namespace';
+    case 'package':
+      return 'package';
+    case 'typedef':
+      return 'type definition';
+    default:
+      return 'symbol';
+  }
+}
+
+/**
+ * Default deprecation message used when `@deprecated` carries no reason — the
+ * wording adapts to the doclet's kind (e.g. "This class is deprecated…",
+ * "This method is deprecated…").
+ */
+export function defaultDeprecationText(doclet: TDoclet): string {
+  return `This ${kindNoun(doclet)} is deprecated and should not be used.`;
+}
+
 /**
  * `@deprecated` rendered as a `warning` callout blockquote. JSDoc stores it as
- * either `true` (just deprecated) or a reason string. Reason strings may
- * contain HTML.
+ * either `true` (just deprecated) or a reason string. When it's `true` we fall
+ * back to a kind-aware default sentence ({@link defaultDeprecationText}) so the
+ * callout is never blank. Reason strings may contain HTML.
  */
 export function deprecationBlock(doclet: TDoclet): MdxJsxFlowElement | null {
   if (!doclet.deprecated) return null;
   if (doclet.deprecated === true) {
-    return callout('warning', [p(strong(text('Deprecated')))]);
+    return callout('warning', [
+      p(strong(text('Deprecated:')), text(' '), text(defaultDeprecationText(doclet))),
+    ]);
   }
   const reason = htmlToMdastInline(doclet.deprecated);
   return callout('warning', [p(strong(text('Deprecated:')), text(' '), ...reason)]);
