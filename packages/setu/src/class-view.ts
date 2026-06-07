@@ -207,6 +207,110 @@ export function getContainerView(
   };
 }
 
+/** First non-empty array, base first; falls back to whichever is defined. */
+function pickArr<T>(a: readonly T[] | undefined, b: readonly T[] | undefined): T[] | undefined {
+  if (a && a.length) return a as T[];
+  if (b && b.length) return b as T[];
+  return (a ?? b) as T[] | undefined;
+}
+
+/** First defined scalar, base first. */
+function pickScalar<T>(a: T | undefined, b: T | undefined): T | undefined {
+  return a ?? b;
+}
+
+/**
+ * Union the seven member buckets of two view, base-first, deduped by
+ * {@link shadowKey} so a member present in both sides (e.g. an inherited member
+ * that both doclets surface) appears once, keeping the base occurrence.
+ */
+function mergeMemberBuckets(a: MemberBuckets, b: MemberBuckets): MemberBuckets {
+  const keys: (keyof MemberBuckets)[] = [
+    'instanceMethods',
+    'staticMethods',
+    'instanceFields',
+    'staticFields',
+    'enums',
+    'events',
+    'other',
+  ];
+  const out = {} as MemberBuckets;
+  for (const k of keys) {
+    const seen = new Set<string>();
+    const merged: ClassMember[] = [];
+    for (const m of [...a[k], ...b[k]]) {
+      const key = shadowKey(m);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      merged.push(m);
+    }
+    out[k] = merged;
+  }
+  return out;
+}
+
+/**
+ * Merge two container views that collapsed onto the same page slug.
+ *
+ * A single `@module` symbol is frequently emitted by JSDoc as two `kind:'class'`
+ * doclets that slugify identically — e.g. `module:queue/Queue~Queue` (carries the
+ * `classdesc`, `@augments`/`@implements`/`@mixes`, metadata, and instance
+ * members) and `module:queue/Queue.Queue` (carries the constructor `@param`s and
+ * possibly other members). The dedup pass would otherwise keep one and drop the
+ * other, silently losing whichever fields lived only on the dropped doclet — the
+ * surviving page would be missing its Constructor/Parameters section AND any
+ * members under the dropped longname. Merging recovers both so neither doclet's
+ * classdesc, params, relations, nor members are lost.
+ *
+ * Deterministic: `base` is the first-seen view, `extra` the colliding one. `base`
+ * wins for any field it actually carries; `extra` only fills gaps (empty/absent
+ * scalars, empty/absent arrays). Members are unioned and deduped by
+ * {@link shadowKey}.
+ */
+export function mergeContainerViews(base: ContainerView, extra: ContainerView): ContainerView {
+  // Start from extra, let base override field-by-field, then patch the fields
+  // where base may hold an empty value that extra can fill.
+  const doclet: TDoclet = { ...extra.doclet, ...base.doclet };
+
+  // Scalars: first defined, base first.
+  doclet.classdesc = pickScalar(base.doclet.classdesc, extra.doclet.classdesc);
+  doclet.description = pickScalar(base.doclet.description, extra.doclet.description);
+  doclet.summary = pickScalar(base.doclet.summary, extra.doclet.summary);
+  doclet.deprecated = pickScalar(base.doclet.deprecated, extra.doclet.deprecated);
+  doclet.since = pickScalar(base.doclet.since, extra.doclet.since);
+  doclet.version = pickScalar(base.doclet.version, extra.doclet.version);
+  doclet.license = pickScalar(base.doclet.license, extra.doclet.license);
+  doclet.copyright = pickScalar(base.doclet.copyright, extra.doclet.copyright);
+  doclet.this = pickScalar(base.doclet.this, extra.doclet.this);
+  doclet.alias = pickScalar(base.doclet.alias, extra.doclet.alias);
+
+  // Arrays: first non-empty, base first. `params` is the critical one — the
+  // classdesc doclet usually has none, the constructor doclet has them.
+  doclet.params = pickArr(base.doclet.params, extra.doclet.params);
+  doclet.augments = pickArr(base.doclet.augments, extra.doclet.augments);
+  doclet.implements = pickArr(base.doclet.implements, extra.doclet.implements);
+  doclet.mixes = pickArr(base.doclet.mixes, extra.doclet.mixes);
+  doclet.examples = pickArr(base.doclet.examples, extra.doclet.examples);
+  doclet.properties = pickArr(base.doclet.properties, extra.doclet.properties);
+  doclet.fires = pickArr(base.doclet.fires, extra.doclet.fires);
+  doclet.listens = pickArr(base.doclet.listens, extra.doclet.listens);
+  doclet.see = pickArr(base.doclet.see, extra.doclet.see);
+  doclet.todo = pickArr(base.doclet.todo, extra.doclet.todo);
+  doclet.author = pickArr(base.doclet.author, extra.doclet.author);
+  doclet.requires = pickArr(base.doclet.requires, extra.doclet.requires);
+  doclet.tutorials = pickArr(base.doclet.tutorials, extra.doclet.tutorials);
+
+  return {
+    doclet,
+    kind: base.kind,
+    augments: pickArr(base.augments, extra.augments) ?? [],
+    constructorParams: base.constructorParams.length
+      ? base.constructorParams
+      : extra.constructorParams,
+    ...mergeMemberBuckets(base, extra),
+  };
+}
+
 /**
  * Composes the building blocks into a class view ready for the renderer.
  * Returns `null` if no class doclet matches `longname`. Thin alias over

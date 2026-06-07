@@ -4,10 +4,12 @@ import { TDoclet, TJSDocSaltyCollection } from '@clean-jsdoc-theme/utils';
 import {
   bucketClassMembers,
   ClassMember,
+  ContainerView,
   getClassView,
   getContainerView,
   getInheritedMembers,
   getOwnClassMembers,
+  mergeContainerViews,
   shadowKey,
   walkAugmentsChain,
 } from '../class-view';
@@ -300,5 +302,94 @@ describe('getContainerView (non-class kinds)', () => {
     expect(v.kind).toBe('mixin');
     expect(v.constructorParams).toEqual([]);
     expect(names(v.staticMethods)).toContain('log');
+  });
+});
+
+describe('mergeContainerViews', () => {
+  const emptyBuckets = () => ({
+    instanceMethods: [] as ClassMember[],
+    staticMethods: [] as ClassMember[],
+    instanceFields: [] as ClassMember[],
+    staticFields: [] as ClassMember[],
+    enums: [] as ClassMember[],
+    events: [] as ClassMember[],
+    other: [] as ClassMember[],
+  });
+
+  // The `~Name` doclet: classdesc + implements + an instance method, no params.
+  const baseView = (): ContainerView => ({
+    doclet: {
+      kind: 'class',
+      name: 'Queue',
+      longname: 'module:queue/Queue~Queue',
+      classdesc: 'A FIFO queue.',
+      implements: ['module:queue~IQueue'],
+    },
+    kind: 'class',
+    augments: [],
+    constructorParams: [],
+    ...emptyBuckets(),
+    instanceMethods: [
+      { kind: 'function', scope: 'instance', name: 'push', longname: 'module:queue/Queue~Queue#push' },
+    ],
+  });
+
+  // The `.Name` doclet: constructor params + a static member, no classdesc.
+  const extraView = (): ContainerView => ({
+    doclet: {
+      kind: 'class',
+      name: 'Queue',
+      longname: 'module:queue/Queue.Queue',
+      params: [{ name: 'capacity', type: { names: ['number'] } }],
+    },
+    kind: 'class',
+    augments: [],
+    constructorParams: [{ name: 'capacity', type: { names: ['number'] } }],
+    ...emptyBuckets(),
+    staticMethods: [
+      { kind: 'function', scope: 'static', name: 'from', longname: 'module:queue/Queue.Queue.from' },
+    ],
+  });
+
+  it('keeps base classdesc + implements and adopts extra constructor params', () => {
+    const merged = mergeContainerViews(baseView(), extraView());
+    expect(merged.doclet.classdesc).toBe('A FIFO queue.');
+    expect(merged.doclet.implements).toEqual(['module:queue~IQueue']);
+    expect(merged.constructorParams.length).toBeGreaterThan(0);
+    expect(merged.doclet.params).toEqual([{ name: 'capacity', type: { names: ['number'] } }]);
+    expect(merged.kind).toBe('class');
+  });
+
+  it('unions members from both views', () => {
+    const merged = mergeContainerViews(baseView(), extraView());
+    expect(merged.instanceMethods.map((m) => m.name)).toEqual(['push']);
+    expect(merged.staticMethods.map((m) => m.name)).toEqual(['from']);
+  });
+
+  it('content survives even when it lives only on extra (order-independent completeness)', () => {
+    // Swap roles: classdesc only on `extra`. The merged view must still carry it,
+    // filling the gap base left empty.
+    const base = baseView();
+    base.doclet.classdesc = undefined;
+    const extra = extraView();
+    extra.doclet.classdesc = 'A FIFO queue.';
+    const merged = mergeContainerViews(base, extra);
+    expect(merged.doclet.classdesc).toBe('A FIFO queue.');
+  });
+
+  it('dedupes members present in both views by shadowKey (no dupes)', () => {
+    const shared: ClassMember = {
+      kind: 'function',
+      scope: 'instance',
+      name: 'push',
+      longname: 'module:queue/Queue~Queue#push',
+    };
+    const a = baseView();
+    a.instanceMethods = [shared];
+    const b = extraView();
+    b.instanceMethods = [{ ...shared }]; // same shadow surface
+    const merged = mergeContainerViews(a, b);
+    expect(merged.instanceMethods).toHaveLength(1);
+    expect(merged.instanceMethods[0].name).toBe('push');
   });
 });

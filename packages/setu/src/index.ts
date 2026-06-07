@@ -7,7 +7,7 @@ import {
   renderContainerPage,
   splitLongnameForSlug,
 } from './generate-site';
-import { getContainerView, type ContainerView } from './class-view';
+import { getContainerView, mergeContainerViews, type ContainerView } from './class-view';
 import { slugifyPath } from '@clean-jsdoc-theme/utils';
 import { makeLinkResolver, registerContainerView, type LinkRegistry } from './link-registry';
 import {
@@ -48,6 +48,12 @@ interface ContainerSpec {
   longname: string;
   view: ContainerView;
   slug: string;
+  /**
+   * Longnames of later same-slug containers whose views were merged into this
+   * one. Registered as aliases so the merged-away namepath still resolves to
+   * this page (see the registry pass).
+   */
+  aliases: string[];
 }
 
 /** Build-side options. */
@@ -98,37 +104,51 @@ export function generateSite(
   // --- Pass 1: collect specs (single dedup pass) ---------------------------
   //
   // Iterate CONTAINER_KINDS in order, building each container's view + slug.
-  // A `seenSlugs` guard skips later pages that collide on slug (e.g. a module
-  // that also surfaces as a class for the same symbol), so the earlier —
-  // documented-container — kind wins. This is the ONE place dedup happens: the
-  // surviving specs drive both the registry build and the render pass, so the
-  // registry's slugs can never diverge from the emitted pages.
+  // When a later container collides on slug with one already seen (e.g. a
+  // `@module` symbol JSDoc emits as both `~Name` and `.Name` class doclets), we
+  // MERGE the colliding view into the existing spec instead of dropping it (see
+  // `mergeContainerViews`) — so neither doclet's classdesc, constructor params,
+  // relations, nor members are lost. The first-seen kind/slug/longname win; the
+  // merged-away longname is recorded in `aliases` for registry aliasing. This is
+  // the ONE place dedup happens: the surviving specs drive both the registry
+  // build and the render pass, so the registry's slugs can never diverge from
+  // the emitted pages.
   const specs: ContainerSpec[] = [];
-  const seenSlugs = new Set<string>();
+  const specsBySlug = new Map<string, ContainerSpec>();
   for (const kind of CONTAINER_KINDS) {
     for (const longname of enumerateLongnamesByKind(collection, kind)) {
       const view = getContainerView(collection, longname, kind);
       if (!view) continue;
       const slug = slugifyPath(splitLongnameForSlug(longname));
-      if (seenSlugs.has(slug)) {
-        console.warn(
-          `[setu] skipping duplicate page slug "${slug}" (${kind} ${longname})`,
-        );
+      const existing = specsBySlug.get(slug);
+      if (existing) {
+        // Merge into the existing page (mutated in place so both `specs` and
+        // `specsBySlug` see it); record the merged-away longname as an alias.
+        existing.view = mergeContainerViews(existing.view, view);
+        existing.aliases.push(longname);
         continue;
       }
-      seenSlugs.add(slug);
-      specs.push({ kind, longname, view, slug });
+      const spec: ContainerSpec = { kind, longname, view, slug, aliases: [] };
+      specsBySlug.set(slug, spec);
+      specs.push(spec);
     }
   }
 
   // One aggregated "Globals" page: every global-scope symbol that doesn't get
   // its own container/typedef page, each rendered as a member section. Appended
-  // to the spec list (guarded by the same `seenSlugs`) so it groups under
-  // "Globals" alongside the container pages.
+  // to the spec list. Globals is synthetic, so it must NOT merge into a real
+  // container — if its slug ('global') somehow collides with one, skip it.
   const globals = buildGlobalsView(collection);
-  if (globals && !seenSlugs.has(globals.slug)) {
-    seenSlugs.add(globals.slug);
-    specs.push({ kind: 'global', longname: 'Globals', view: globals.view, slug: globals.slug });
+  if (globals && !specsBySlug.has(globals.slug)) {
+    const spec: ContainerSpec = {
+      kind: 'global',
+      longname: 'Globals',
+      view: globals.view,
+      slug: globals.slug,
+      aliases: [],
+    };
+    specsBySlug.set(globals.slug, spec);
+    specs.push(spec);
   }
 
   // --- Pass 2: registry, then resolver -------------------------------------
@@ -139,7 +159,11 @@ export function generateSite(
   // → symbol B enumerated after A) resolve. Mirrors how `sourceLink` is built
   // first and threaded into pages.
   const registry: LinkRegistry = new Map();
-  for (const s of specs) registerContainerView(registry, s.view, s.slug);
+  for (const s of specs) {
+    registerContainerView(registry, s.view, s.slug);
+    // Merged-away longnames resolve to the surviving page (first-wins guard).
+    for (const alias of s.aliases) if (!registry.has(alias)) registry.set(alias, { slug: s.slug });
+  }
   const resolveLink = makeLinkResolver(registry);
 
   // --- Pass 3: render -------------------------------------------------------

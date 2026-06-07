@@ -380,9 +380,10 @@ describe('generateSite', () => {
     expect(globalNav!.group).toBe('Globals');
   });
 
-  it('dedupes pages that collide on slug, keeping the first kind in CONTAINER_KINDS order', () => {
+  it('merges pages that collide on slug, keeping the first kind and recovering both bodies (no warning)', () => {
     // Synthesize a collision: a `namespace` and a `class` whose longnames slug
-    // identically ("Widget"). namespace is iterated before class, so it wins.
+    // identically ("Widget"). namespace is iterated before class, so it is the
+    // merge base — its kind wins, but the class's body merges in (no drop).
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const collection = makeCollection([
       {
@@ -407,8 +408,9 @@ describe('generateSite', () => {
     const widgets = manifest.pages.filter((p) => p.slug === 'widget');
     expect(widgets.length).toBe(1);
     expect(widgets[0].frontmatter.kind).toBe('namespace');
-    expect(warn).toHaveBeenCalledWith(
-      expect.stringContaining('skipping duplicate page slug "widget"'),
+    // Merge, not skip: no "skipping duplicate page slug" warning is emitted.
+    expect(warn).not.toHaveBeenCalledWith(
+      expect.stringContaining('skipping duplicate page slug'),
     );
     // No duplicate slugs across the whole manifest.
     const slugs = manifest.pages.map((p) => p.slug);

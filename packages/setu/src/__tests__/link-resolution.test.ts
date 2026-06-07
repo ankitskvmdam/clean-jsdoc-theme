@@ -147,3 +147,97 @@ describe('link resolution — registry slugs match emitted pages after dedup', (
     expect(widgets[0].frontmatter.kind).toBe('namespace');
   });
 });
+
+describe('container merge — same-slug class doclets are merged, not dropped', () => {
+  /**
+   * A `@module` symbol JSDoc emits as two same-slug class doclets:
+   *  - `module:queue/Queue~Queue`: classdesc + an instance method, no params.
+   *  - `module:queue/Queue.Queue`: constructor params + a static method.
+   * Plus a referrer page that `{@link}`s the `.Queue` longname, to exercise the
+   * alias registration.
+   */
+  function mergeCollection(): TJSDocSaltyCollection<TDoclet> {
+    return makeCollection([
+      {
+        kind: 'class',
+        name: 'Queue',
+        longname: 'module:queue/Queue~Queue',
+        memberof: 'module:queue/Queue',
+        scope: 'static',
+        comment: '/** A FIFO queue. */',
+        classdesc: 'A FIFO queue for jobs.',
+      },
+      {
+        kind: 'function',
+        name: 'push',
+        longname: 'module:queue/Queue~Queue#push',
+        memberof: 'module:queue/Queue~Queue',
+        scope: 'instance',
+        comment: '/** Push a job. */',
+        description: 'Push a job onto the queue.',
+      },
+      {
+        kind: 'class',
+        name: 'Queue',
+        longname: 'module:queue/Queue.Queue',
+        memberof: 'module:queue/Queue',
+        scope: 'static',
+        comment: '/** @param {number} capacity Max size. */',
+        params: [{ name: 'capacity', type: { names: ['number'] }, description: 'Max size.' }],
+      },
+      {
+        kind: 'function',
+        name: 'fromArray',
+        longname: 'module:queue/Queue.Queue.fromArray',
+        memberof: 'module:queue/Queue.Queue',
+        scope: 'static',
+        comment: '/** Build from array. */',
+        description: 'Build a queue from an array.',
+      },
+      {
+        kind: 'class',
+        name: 'Worker',
+        longname: 'Worker',
+        scope: 'global',
+        comment: '/** A worker. @see module:queue/Queue.Queue */',
+        classdesc: 'A worker.',
+        see: ['module:queue/Queue.Queue'],
+      },
+    ]);
+  }
+
+  // The surviving page is keyed by the first-seen (`~Queue`) longname.
+  const QUEUE_LONGNAME = 'module:queue/Queue~Queue';
+  const queuePage = (manifest: ReturnType<typeof generateSite>) =>
+    manifest.pages.find((p) => p.frontmatter.longname === QUEUE_LONGNAME)!;
+
+  it('emits exactly one page for the colliding slug', () => {
+    const manifest = generateSite(mergeCollection());
+    const page = queuePage(manifest);
+    const slug = page.slug;
+    const pages = manifest.pages.filter((p) => p.slug === slug);
+    expect(pages).toHaveLength(1);
+    // Only one nav entry references that slug.
+    const occurrences = JSON.stringify(manifest.nav).split(`"${slug}"`).length - 1;
+    expect(occurrences).toBe(1);
+  });
+
+  it('merged page carries classdesc, the Constructor section, AND members from both doclets', () => {
+    const manifest = generateSite(mergeCollection());
+    const body = queuePage(manifest).body;
+    expect(body).toContain('A FIFO queue for jobs.'); // classdesc from `~Queue`
+    expect(body).toContain('## Constructor'); // params from `.Queue`
+    expect(body).toContain('capacity');
+    expect(body).toContain('push'); // member from `~Queue`
+    expect(body).toContain('fromArray'); // member from `.Queue`
+  });
+
+  it('the merged-away longname resolves to the surviving page (alias registration)', () => {
+    const manifest = generateSite(mergeCollection());
+    // Worker `@see module:queue/Queue.Queue` — the `.Queue` longname was merged
+    // away; its alias must resolve to the surviving Queue page's slug.
+    const slug = queuePage(manifest).slug;
+    const workerBody = bodyOf(manifest, 'Worker');
+    expect(workerBody).toContain(`(/${slug})`);
+  });
+});
