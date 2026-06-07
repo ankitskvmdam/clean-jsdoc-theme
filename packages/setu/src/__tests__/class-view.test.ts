@@ -5,6 +5,7 @@ import {
   bucketClassMembers,
   ClassMember,
   getClassView,
+  getContainerView,
   getInheritedMembers,
   getOwnClassMembers,
   shadowKey,
@@ -252,5 +253,52 @@ describe('getClassView', () => {
     expect(byName.fromParent.inheritedFrom).toBeUndefined(); // child's own override
     expect(byName.fromGrandParent.inheritedFrom).toBe('GrandParent');
     expect(byName.shared.inheritedFrom).toBe('Parent');
+  });
+});
+
+describe('getContainerView (non-class kinds)', () => {
+  const names = (xs: ClassMember[]) => xs.map((m) => m.name);
+
+  it('returns null when no doclet of the kind matches', () => {
+    expect(getContainerView(getJSDocTaffyData(), 'NoSuch', 'module')).toBeNull();
+    // A real class longname queried as the wrong kind resolves to nothing.
+    expect(getContainerView(getJSDocTaffyData(), 'DataProcessor', 'module')).toBeNull();
+  });
+
+  it('builds a module view with empty constructorParams and bucketed members', () => {
+    const v = getContainerView(getJSDocTaffyData(), 'module:UserService', 'module')!;
+    expect(v.kind).toBe('module');
+    expect(v.constructorParams).toEqual([]);
+    // The module exposes a factory function plus inner typedef/callback symbols.
+    expect(names(v.instanceMethods)).toContain('createUser');
+    expect(names(v.other)).toEqual(
+      expect.arrayContaining(['CreateUserPayload', 'CreateUserCallback']),
+    );
+  });
+
+  it('builds a namespace view with own members only and no constructorParams', () => {
+    const v = getContainerView(getJSDocTaffyData(), 'Utils', 'namespace')!;
+    expect(v.kind).toBe('namespace');
+    expect(v.constructorParams).toEqual([]);
+    // API_VERSION is a `kind: 'constant'`, which falls into the `other` bucket.
+    expect(names(v.other)).toContain('API_VERSION');
+  });
+
+  it('builds an interface view; constructorParams empty, instance method bucketed', () => {
+    const v = getContainerView(
+      getJSDocTaffyData(),
+      'module:CoreSchema~ISerializable',
+      'interface',
+    )!;
+    expect(v.kind).toBe('interface');
+    expect(v.constructorParams).toEqual([]);
+    expect(names(v.instanceMethods)).toContain('serialize');
+  });
+
+  it('builds a mixin view; constructorParams empty, static method bucketed', () => {
+    const v = getContainerView(getJSDocTaffyData(), 'LoggerMixin', 'mixin')!;
+    expect(v.kind).toBe('mixin');
+    expect(v.constructorParams).toEqual([]);
+    expect(names(v.staticMethods)).toContain('log');
   });
 });

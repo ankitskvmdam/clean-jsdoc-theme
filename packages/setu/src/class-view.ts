@@ -1,9 +1,15 @@
-import { TDoclet, TDocletParam, TJSDocSaltyCollection } from '@clean-jsdoc-theme/utils';
+import {
+  PageKind,
+  TDoclet,
+  TDocletParam,
+  TJSDocSaltyCollection,
+} from '@clean-jsdoc-theme/utils';
 import {
   FilterDocletsOptions,
   filterDoclets,
   getAllMembersOfClass,
   getCanonicalClassDoclet,
+  getCanonicalDoclet,
 } from './doclet';
 
 export type GetClassViewOptions = FilterDocletsOptions;
@@ -30,6 +36,22 @@ export interface ClassView extends MemberBuckets {
   /** Parent class longnames in declaration order. Empty if this class extends nothing. */
   augments: string[];
   /** Constructor params, surfaced for convenience. Also present on `doclet.params`. */
+  constructorParams: TDocletParam[];
+}
+
+/**
+ * Kind-parametric superset of {@link ClassView}: the same shape plus the page
+ * `kind`. Covers any container (class/interface/mixin/module/namespace). A
+ * {@link ClassView} is just a `ContainerView` with `kind: 'class'`.
+ */
+export interface ContainerView extends MemberBuckets {
+  /** Canonical container doclet — see {@link getCanonicalDoclet}. */
+  doclet: TDoclet;
+  /** The page kind this container renders as. */
+  kind: PageKind;
+  /** Parent longnames in declaration order. Empty if this container extends nothing. */
+  augments: string[];
+  /** Constructor params, surfaced for convenience. Empty for non-class kinds. */
   constructorParams: TDocletParam[];
 }
 
@@ -146,25 +168,54 @@ export function getOwnClassMembers(
 }
 
 /**
+ * Composes the building blocks into a container view ready for the renderer.
+ * Returns `null` if no doclet of `kind` matches `longname`.
+ *
+ * - Own members are kind-agnostic (via {@link getOwnClassMembers}).
+ * - The inheritance walk ({@link getInheritedMembers}) runs only for `class`
+ *   and `interface` — the kinds that `@augments`/`@extends`. Other containers
+ *   use own members only.
+ * - `constructorParams` is populated only for `class` (`canonical.params`);
+ *   empty for every other kind.
+ */
+export function getContainerView(
+  collection: TJSDocSaltyCollection<TDoclet>,
+  longname: string,
+  kind: PageKind,
+  options: GetClassViewOptions = {}
+): ContainerView | null {
+  const canonical = getCanonicalDoclet(collection, longname, kind);
+  if (!canonical) return null;
+
+  const own = getOwnClassMembers(collection, longname, options);
+
+  const walksInheritance = kind === 'class' || kind === 'interface';
+  let inherited: ClassMember[] = [];
+  if (walksInheritance) {
+    const ownKeys = new Set(own.map(shadowKey));
+    inherited = getInheritedMembers(collection, longname, options, ownKeys);
+  }
+
+  const constructorParams = kind === 'class' ? canonical.params ?? [] : [];
+
+  return {
+    doclet: canonical,
+    kind,
+    augments: canonical.augments ?? [],
+    constructorParams,
+    ...bucketClassMembers([...own, ...inherited]),
+  };
+}
+
+/**
  * Composes the building blocks into a class view ready for the renderer.
- * Returns `null` if no class doclet matches `longname`.
+ * Returns `null` if no class doclet matches `longname`. Thin alias over
+ * {@link getContainerView} with `kind: 'class'`.
  */
 export function getClassView(
   collection: TJSDocSaltyCollection<TDoclet>,
   longname: string,
   options: GetClassViewOptions = {}
 ): ClassView | null {
-  const canonical = getCanonicalClassDoclet(collection, longname);
-  if (!canonical) return null;
-
-  const own = getOwnClassMembers(collection, longname, options);
-  const ownKeys = new Set(own.map(shadowKey));
-  const inherited = getInheritedMembers(collection, longname, options, ownKeys);
-
-  return {
-    doclet: canonical,
-    augments: canonical.augments ?? [],
-    constructorParams: canonical.params ?? [],
-    ...bucketClassMembers([...own, ...inherited]),
-  };
+  return getContainerView(collection, longname, 'class', options);
 }

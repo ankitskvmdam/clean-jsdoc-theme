@@ -1,5 +1,5 @@
 import type { Root, RootContent } from 'mdast';
-import { ClassMember, ClassView, MemberBuckets } from '../class-view';
+import { ClassMember, ClassView, ContainerView, MemberBuckets } from '../class-view';
 import { h, hr, inlineCode, p, root, strong, text } from './builders';
 import { docletBlocks, DocletBlocksOptions, paramsList, sourceLinkBlock } from './doclet';
 
@@ -94,11 +94,14 @@ export function classRelationsBlocks(doclet: ClassView['doclet']): RootContent[]
 }
 
 /**
- * Top-level: turn a ClassView into a complete mdast Root tree. Frontmatter is
- * NOT added here — that's the MDX serialization layer's job.
+ * Top-level: turn a ContainerView into a complete mdast Root tree. Frontmatter
+ * is NOT added here — that's the MDX serialization layer's job. Kind-parametric:
+ * the Constructor section only appears for classes (other kinds carry no
+ * `constructorParams`), and empty relations/member sections drop out via
+ * `hideEmptySections`.
  */
-export function classViewToMdast(
-  view: ClassView,
+export function containerViewToMdast(
+  view: ContainerView,
   options: ClassViewToMdastOptions = {}
 ): Root {
   const pageLevel = options.pageHeadingLevel ?? 1;
@@ -114,15 +117,19 @@ export function classViewToMdast(
   const classSource = sourceLinkBlock(view.doclet, options);
   if (classSource) blocks.push(classSource);
 
-  // Class-level body: description, deprecation, examples, metadata. Params /
-  // returns / throws are surfaced in the Constructor section below — skip
-  // them here to avoid duplication.
-  blocks.push(
-    ...docletBlocks(view.doclet, {
-      ...options,
-      skip: [...(options.skip ?? []), 'params', 'returns', 'yields', 'throws'],
-    })
-  );
+  // Class-level body: description, deprecation, examples, metadata. Relations
+  // (extends/implements/mixes) are already rendered above via
+  // classRelationsBlocks — skip them for every kind. Params/returns/yields/
+  // throws are skipped *only for classes*, where they're surfaced in the
+  // Constructor section below to avoid duplication. Other kinds (typedef,
+  // module, namespace, interface, mixin) have no Constructor section, so a
+  // function-signature typedef's params/returns (and any container doclet's
+  // own params/returns) must render here in the body.
+  const skip: DocletBlocksOptions['skip'] =
+    view.kind === 'class'
+      ? [...(options.skip ?? []), 'params', 'returns', 'yields', 'throws', 'relations']
+      : [...(options.skip ?? []), 'relations'];
+  blocks.push(...docletBlocks(view.doclet, { ...options, skip }));
 
   // Constructor: if the class doclet carries params, surface them in their
   // own section so the class description and constructor signature don't run
@@ -138,4 +145,16 @@ export function classViewToMdast(
   blocks.push(...memberSections(sections, options));
 
   return root(...blocks);
+}
+
+/**
+ * Turn a ClassView into a complete mdast Root tree. Thin alias over
+ * {@link containerViewToMdast} — a ClassView is a `ContainerView` with
+ * `kind: 'class'`.
+ */
+export function classViewToMdast(
+  view: ClassView,
+  options: ClassViewToMdastOptions = {}
+): Root {
+  return containerViewToMdast(view as ContainerView, options);
 }
