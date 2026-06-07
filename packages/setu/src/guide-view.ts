@@ -22,7 +22,7 @@ import {
 } from '@clean-jsdoc-theme/utils';
 import { htmlToMdastBlocks, markdownToMdastBlocks } from './mdast/from-html';
 import { resolveLinkTags } from './mdast/link-tags';
-import type { ResolvedLink } from './link-registry';
+import { hrefFor, type ResolvedLink } from './link-registry';
 import { toMdx } from './mdx';
 import { extractHeadings } from './generate-site';
 
@@ -108,6 +108,36 @@ function buildTutorialPage(
   const headings = extractHeadings(tree);
 
   return { slug, frontmatter, body, mdast: tree, headings };
+}
+
+/** A resolved `@tutorial` cross-reference: its guide page href + display title. */
+export interface ResolvedTutorial {
+  href: string;
+  title: string;
+}
+
+/**
+ * Build a `resolveTutorial(name)` over the tutorial tree, so a `@tutorial <name>`
+ * tag links to the guide page setu generates for it. Walks the same hierarchy
+ * {@link buildTutorialPages} flattens, keying each tutorial by its `name` (the
+ * identifier the tag references) to `{ href, title }`. The href and slug share
+ * `slugifyPath`, so they always agree with the emitted page. Returns `null` for
+ * an unknown name so the caller falls back to plain text — never a broken
+ * anchor. First registration wins on a duplicate name.
+ */
+export function makeTutorialResolver(
+  tutorials: readonly TutorialInput[],
+): (name: string) => ResolvedTutorial | null {
+  const byName = new Map<string, ResolvedTutorial>();
+  const walk = (t: TutorialInput): void => {
+    if (t.name && !byName.has(t.name)) {
+      const slug = `${TUTORIAL_SLUG_PREFIX}/${slugifyPath([t.name])}`;
+      byName.set(t.name, { href: hrefFor(slug), title: t.title?.trim() || t.name });
+    }
+    for (const child of t.children ?? []) walk(child);
+  };
+  for (const t of tutorials) walk(t);
+  return (name: string) => byName.get(name.trim()) ?? null;
 }
 
 /**

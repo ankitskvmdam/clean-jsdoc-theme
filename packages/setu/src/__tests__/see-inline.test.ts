@@ -145,3 +145,44 @@ describe('metadataList — resolveLink threading', () => {
     expect(links).toHaveLength(0);
   });
 });
+
+describe('metadataList — resolveTutorial threading', () => {
+  const collectLinks = (node: unknown, links: Link[]): void => {
+    if (node && typeof node === 'object') {
+      if ((node as { type?: string }).type === 'link') links.push(node as Link);
+      const children = (node as { children?: unknown[] }).children;
+      if (Array.isArray(children)) children.forEach((c) => collectLinks(c, links));
+    }
+  };
+
+  it('renders a Tutorials row with a titled link when the resolver resolves', () => {
+    const resolveTutorial = (name: string) =>
+      name === 'getting-started'
+        ? { href: '/tutorials/getting-started', title: 'Getting Started' }
+        : null;
+    const doclet = { tutorials: ['getting-started'] } as unknown as TDoclet;
+    const list = metadataList(doclet, { resolveTutorial }) as List;
+    const links: Link[] = [];
+    collectLinks(list, links);
+    expect(links).toHaveLength(1);
+    expect(links[0].url).toBe('/tutorials/getting-started');
+    expect((links[0].children[0] as Text).value).toBe('Getting Started');
+  });
+
+  it('falls back to plain text for an unknown tutorial name', () => {
+    const resolveTutorial = () => null;
+    const doclet = { tutorials: ['nope'] } as unknown as TDoclet;
+    const list = metadataList(doclet, { resolveTutorial }) as List;
+    const links: Link[] = [];
+    collectLinks(list, links);
+    expect(links).toHaveLength(0);
+  });
+
+  it('renders a Tutorials row as plain text when no resolver is passed', () => {
+    const doclet = { tutorials: ['getting-started'] } as unknown as TDoclet;
+    const list = metadataList(doclet) as List;
+    const links: Link[] = [];
+    collectLinks(list, links);
+    expect(links).toHaveLength(0);
+  });
+});

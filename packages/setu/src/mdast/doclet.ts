@@ -387,13 +387,17 @@ export function metadataList(doclet: TDoclet, options?: DocletBlocksOptions): Li
     );
   }
   if (doclet.tutorials && doclet.tutorials.length > 0) {
+    const resolveTutorial = options?.resolveTutorial;
     rows.push(
       li(
         p(
           strong(text('Tutorials:')),
           text(' '),
           ...interleave(
-            doclet.tutorials.map((t) => text(t)),
+            doclet.tutorials.map((t) => {
+              const resolved = resolveTutorial?.(t);
+              return resolved ? link(resolved.href, text(resolved.title)) : text(t);
+            }),
             () => text(', ')
           )
         )
@@ -553,6 +557,8 @@ export interface DocletBlocksOptions {
   sourceLink?: (doclet: TDoclet) => { href: string; label: string } | null;
   /** Resolves a {@link}/@see namepath or URL to an href. Mirrors sourceLink. */
   resolveLink?: (target: string) => ResolvedLink | null;
+  /** Resolves a `@tutorial` name to its guide page href + display title. */
+  resolveTutorial?: (name: string) => { href: string; title: string } | null;
 }
 
 /**
