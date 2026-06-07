@@ -117,6 +117,76 @@ export function deprecationBlock(doclet: TDoclet): MdxJsxFlowElement | null {
   return callout('warning', [p(strong(text('Deprecated:')), text(' '), ...reason)]);
 }
 
+// ── Modifiers (abstract / async / generator / readonly / override / access) ──
+
+/**
+ * Boolean/scalar modifier flags collapsed into a single "Modifiers:" line:
+ * `@abstract` (→ `virtual`), `@async`, `@generator`, `@readonly`, a bare
+ * `@override` (no resolved parent — the resolved form is a relation line, see
+ * {@link relationsBlocks}) and `@access` (private/protected/package/public).
+ * Returns `null` when none apply.
+ */
+export function modifiersBlock(doclet: TDoclet): Paragraph | null {
+  const mods: string[] = [];
+  if (doclet.virtual) mods.push('abstract');
+  if (doclet.async) mods.push('async');
+  if (doclet.generator) mods.push('generator');
+  if (doclet.readonly) mods.push('readonly');
+  if (doclet.override && !doclet.overrides) mods.push('override');
+  if (doclet.access) mods.push(doclet.access);
+  if (mods.length === 0) return null;
+  return p(
+    strong(text('Modifiers:')),
+    text(' '),
+    ...interleave(
+      mods.map((m) => inlineCode(m)),
+      () => text(', ')
+    )
+  );
+}
+
+// ── Relations (extends / implements / mixes / overrides / borrows) ──────────
+
+/**
+ * Inheritance & composition links for a doclet, each on its own line:
+ * `@augments`/`@extends`, `@implements`, `@mixes`, the resolved `@override`
+ * target (`overrides`), and `@borrows` (`borrowed`). Mirrors the class-level
+ * `classRelationsBlocks` but works for any member doclet. Empty if none apply.
+ */
+export function relationsBlocks(doclet: TDoclet): RootContent[] {
+  const out: RootContent[] = [];
+
+  const refLine = (label: string, refs: readonly string[] | undefined) => {
+    if (!refs || refs.length === 0) return;
+    out.push(
+      p(
+        strong(text(`${label}: `)),
+        ...interleave(
+          refs.map((r) => inlineCode(r)),
+          () => text(', ')
+        )
+      )
+    );
+  };
+
+  refLine('Extends', doclet.augments);
+  refLine('Implements', doclet.implements);
+  refLine('Mixes', doclet.mixes);
+
+  if (doclet.overrides) {
+    out.push(p(strong(text('Overrides: ')), inlineCode(doclet.overrides)));
+  }
+
+  for (const b of doclet.borrowed ?? []) {
+    const children: Paragraph['children'] = [strong(text('Borrows: '))];
+    if (b.from) children.push(inlineCode(b.from));
+    if (b.as) children.push(text(' as '), inlineCode(b.as));
+    out.push(p(...children));
+  }
+
+  return out;
+}
+
 // ── Params (incl. nested object-destructured params) ────────────────────────
 
 /**
@@ -128,6 +198,18 @@ export function deprecationBlock(doclet: TDoclet): MdxJsxFlowElement | null {
 export function paramsList(params: readonly TDocletParam[] | undefined): List | null {
   if (!params || params.length === 0) return null;
   return ul(nestParamItems(params));
+}
+
+/**
+ * `@property` list. Same nested shape as {@link paramsList} — object-property
+ * entries (`options.timeout`) nest under their parent. `properties` carries the
+ * param-compatible fields (name/type/optional/defaultvalue/description), so it
+ * reuses the same item builder.
+ */
+export function propertiesList(
+  properties: readonly TDocletParam[] | undefined
+): List | null {
+  return paramsList(properties);
 }
 
 /**
@@ -234,6 +316,10 @@ export function metadataList(doclet: TDoclet): List | null {
 
   if (doclet.since) rows.push(li(p(strong(text('Since:')), text(' '), text(doclet.since))));
   if (doclet.version) rows.push(li(p(strong(text('Version:')), text(' '), text(doclet.version))));
+  if (doclet.license) rows.push(li(p(strong(text('License:')), text(' '), text(doclet.license))));
+  if (doclet.copyright) {
+    rows.push(li(p(strong(text('Copyright:')), text(' '), text(doclet.copyright))));
+  }
   if (doclet.author && doclet.author.length > 0) {
     rows.push(li(p(strong(text('Author:')), text(' '), text(doclet.author.join(', ')))));
   }
@@ -318,12 +404,20 @@ export function sourceLinkBlock(
 // ── Composer: full per-doclet block ─────────────────────────────────────────
 
 export type DocletSection =
+  | 'summary'
+  | 'modifiers'
+  | 'relations'
+  | 'this'
+  | 'alias'
   | 'params'
+  | 'properties'
   | 'returns'
   | 'yields'
   | 'throws'
   | 'type'
+  | 'default'
   | 'fires'
+  | 'listens'
   | 'examples'
   | 'metadata'
   | 'deprecation'
@@ -362,6 +456,19 @@ export function docletBlocks(
     if (inherited) blocks.push(inherited);
   }
 
+  if (!skip.has('modifiers')) {
+    const mods = modifiersBlock(doclet);
+    if (mods) blocks.push(mods);
+  }
+
+  if (!skip.has('relations')) {
+    blocks.push(...relationsBlocks(doclet));
+  }
+
+  if (!skip.has('summary')) {
+    blocks.push(...summaryBlocks(doclet));
+  }
+
   blocks.push(...descriptionBlocks(doclet));
 
   if (!skip.has('deprecation')) {
@@ -369,9 +476,22 @@ export function docletBlocks(
     if (dep) blocks.push(dep);
   }
 
+  if (!skip.has('this') && doclet.this) {
+    blocks.push(p(strong(text('This:')), text(' '), inlineCode(doclet.this)));
+  }
+
+  if (!skip.has('alias') && doclet.alias) {
+    blocks.push(p(strong(text('Alias:')), text(' '), inlineCode(doclet.alias)));
+  }
+
   if (!skip.has('params')) {
     const list = paramsList(doclet.params);
     if (list) blocks.push(p(strong(text('Parameters'))), list);
+  }
+
+  if (!skip.has('properties')) {
+    const list = propertiesList(doclet.properties as readonly TDocletParam[] | undefined);
+    if (list) blocks.push(p(strong(text('Properties'))), list);
   }
 
   if (!skip.has('returns')) {
@@ -394,8 +514,18 @@ export function docletBlocks(
     blocks.push(p(strong(text('Type'))), p(inlineCode(doclet.type.names.join(' | '))));
   }
 
+  if (!skip.has('default') && doclet.defaultvalue !== undefined) {
+    const dv = doclet.defaultvalue;
+    const label = typeof dv === 'string' ? dv : JSON.stringify(dv);
+    blocks.push(p(strong(text('Default:')), text(' '), inlineCode(label)));
+  }
+
   if (!skip.has('fires') && doclet.fires && doclet.fires.length > 0) {
     blocks.push(p(strong(text('Fires'))), ul(doclet.fires.map((f) => li(p(inlineCode(f))))));
+  }
+
+  if (!skip.has('listens') && doclet.listens && doclet.listens.length > 0) {
+    blocks.push(p(strong(text('Listens'))), ul(doclet.listens.map((l) => li(p(inlineCode(l))))));
   }
 
   if (!skip.has('examples')) {
