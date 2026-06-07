@@ -86,12 +86,36 @@ export function markdownToMdastInline(md: string | null | undefined): PhrasingCo
   return blocksToInline(fromMarkdown(trimmed).children);
 }
 
-/** Flatten block content to inline by unwrapping paragraphs. */
+/** mdast phrasing (inline) node types that can sit directly among `blocks`. */
+const PHRASING_TYPES = new Set<string>([
+  'text',
+  'emphasis',
+  'strong',
+  'inlineCode',
+  'delete',
+  'link',
+  'linkReference',
+  'image',
+  'imageReference',
+  'break',
+  'html',
+  'footnoteReference',
+]);
+
+/**
+ * Flatten block content to inline: unwrap paragraphs, and pass through any
+ * phrasing node that the conversion left at the top level. A short HTML/text
+ * fragment (e.g. a bare `@deprecated` reason like `use foo instead`) lowers to
+ * a root-level `text` node rather than a paragraph — without this it would be
+ * silently dropped. Genuine block nodes (tables, lists) are still skipped.
+ */
 function blocksToInline(blocks: RootContent[]): PhrasingContent[] {
   const out: PhrasingContent[] = [];
   for (const block of blocks) {
     if (block.type === 'paragraph') {
       out.push(...block.children);
+    } else if (PHRASING_TYPES.has(block.type)) {
+      out.push(block as PhrasingContent);
     }
   }
   return out;

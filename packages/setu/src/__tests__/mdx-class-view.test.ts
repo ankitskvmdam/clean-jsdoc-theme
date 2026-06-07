@@ -173,6 +173,10 @@ describe('docletBlocks (per-member composer)', () => {
       name: 'type',
       value: 'warning',
     });
+    // The supplied reason wins over the kind-aware default.
+    const json = JSON.stringify(callout);
+    expect(json).toContain('use foo instead');
+    expect(json).not.toContain('is deprecated and should not be used');
   });
 
   it('falls back to kind-aware default text when @deprecated has no reason', () => {
