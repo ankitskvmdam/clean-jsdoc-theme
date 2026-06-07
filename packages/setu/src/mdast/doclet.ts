@@ -1,6 +1,7 @@
-import type { List, ListItem, Paragraph, RootContent } from 'mdast';
+import type { List, ListItem, Paragraph, PhrasingContent, RootContent } from 'mdast';
 import type { MdxJsxFlowElement } from 'mdast-util-mdx-jsx';
 import { TDoclet, TDocletParam, TDocletTypeProperty } from '@clean-jsdoc-theme/utils';
+import type { ResolvedLink } from '../link-registry';
 import { callout, code, emphasis, inlineCode, li, link, p, strong, text, ul } from './builders';
 import { htmlToMdastBlocks, htmlToMdastInline, markdownToMdastInline } from './from-html';
 
@@ -359,7 +360,7 @@ function paramListItem(param: TDocletParam): ListItem {
  *
  * Order is fixed for deterministic output.
  */
-export function metadataList(doclet: TDoclet): List | null {
+export function metadataList(doclet: TDoclet, options?: DocletBlocksOptions): List | null {
   const rows: ListItem[] = [];
 
   if (doclet.since) rows.push(li(p(strong(text('Since:')), text(' '), text(doclet.since))));
@@ -400,7 +401,12 @@ export function metadataList(doclet: TDoclet): List | null {
     );
   }
   if (doclet.see && doclet.see.length > 0) {
-    rows.push(li(p(strong(text('See:'))), ul(doclet.see.map((s) => li(p(...seeInline(s)))))));
+    rows.push(
+      li(
+        p(strong(text('See:'))),
+        ul(doclet.see.map((s) => li(p(...seeInline(s, options?.resolveLink)))))
+      )
+    );
   }
   if (doclet.todo && doclet.todo.length > 0) {
     rows.push(li(p(strong(text('TODO:'))), ul(doclet.todo.map((t) => li(p(text(t)))))));
@@ -409,7 +415,69 @@ export function metadataList(doclet: TDoclet): List | null {
   return rows.length === 0 ? null : ul(rows);
 }
 
-function seeInline(see: string) {
+/**
+ * Render one `@see` entry as phrasing content.
+ *
+ * Without a `resolve` function this preserves the original legacy behavior
+ * byte-for-byte: a `{@link URL|label}` tag or a bare `https?://` string becomes
+ * a `link`, anything else becomes plain `text`. Existing callers/tests that
+ * pass no resolver are therefore unaffected.
+ *
+ * With a `resolve` function the entry becomes a real cross-reference:
+ * - A single wrapping brace pair (`@see {namepath}`) is stripped first.
+ * - A `{@link …}` / `{@linkcode …}` / `{@linkplain …}` tag is parsed into
+ *   `(target, label)` (target first, optional label after `|` or whitespace,
+ *   label defaulting to target). A bare value is treated as a namepath-or-URL
+ *   with `target = label = value`.
+ * - `resolve(target)` hit → a `link` (monospaced child for `@linkcode`, plain
+ *   text otherwise). Miss → `text(see)` fallback, so nothing renders as a
+ *   broken anchor.
+ *
+ * `{@link …} prose` case (a tag followed by trailing prose, e.g.
+ * `@see {@link Queue} for the main engine.`): we resolve the leading tag and
+ * append the remaining prose as a trailing `text` node (option (a)). If the tag
+ * itself doesn't resolve we fall back to plain `text(see)`.
+ */
+export function seeInline(see: string, resolve?: (t: string) => ResolvedLink | null) {
+  if (resolve) {
+    const trimmed = see.trim();
+    // `@see {namepath}` — strip exactly one wrapping brace pair, but only when
+    // the inner value is NOT itself a `{@link …}` tag (those start with `{@`).
+    const value =
+      trimmed.startsWith('{') && trimmed.endsWith('}') && !trimmed.startsWith('{@')
+        ? trimmed.slice(1, -1).trim()
+        : trimmed;
+
+    // A `{@link|linkcode|linkplain target( |\|)label?}` tag, possibly followed
+    // by trailing prose. We anchor at the start so a leading tag is detected
+    // even when prose follows.
+    const tagRe = /^\{@(link|linkcode|linkplain)\s+([^}|]+?)(?:[|\s]([^}]*))?\}/;
+    const m = value.match(tagRe);
+    if (m) {
+      const tag = m[1];
+      const target = (m[2] ?? '').trim();
+      const label = (m[3] ?? '').trim() || target;
+      const resolved = resolve(target);
+      if (resolved) {
+        const child = tag === 'linkcode' ? inlineCode(label) : text(label);
+        const out: PhrasingContent[] = [link(resolved.href, child)];
+        const rest = value.slice(m[0].length);
+        if (rest.length > 0) out.push(text(rest));
+        return out;
+      }
+      // Tag present but unresolved → preserve original text.
+      return [text(see)];
+    }
+
+    // Bare namepath-or-URL: the whole value is both target and label.
+    const resolved = resolve(value);
+    if (resolved) {
+      return [link(resolved.href, text(value))];
+    }
+    return [text(see)];
+  }
+
+  // ── Legacy behavior (no resolver) — must stay byte-identical ──────────────
   // Common form: `{@link URL|label}` or a bare URL or just text. Keep simple:
   // detect a leading URL pattern and emit a real link; otherwise raw text.
   const linkMatch = see.match(/^\{@link\s+([^|}\s]+)(?:\|([^}]+))?\}$/);
@@ -483,6 +551,8 @@ export interface DocletBlocksOptions {
   skip?: readonly DocletSection[];
   /** When set, emits a "Source: file:line" link for a doclet that resolves. */
   sourceLink?: (doclet: TDoclet) => { href: string; label: string } | null;
+  /** Resolves a {@link}/@see namepath or URL to an href. Mirrors sourceLink. */
+  resolveLink?: (target: string) => ResolvedLink | null;
 }
 
 /**
@@ -585,7 +655,7 @@ export function docletBlocks(
   }
 
   if (!skip.has('metadata')) {
-    const meta = metadataList(doclet);
+    const meta = metadataList(doclet, options);
     if (meta) blocks.push(meta);
   }
 
