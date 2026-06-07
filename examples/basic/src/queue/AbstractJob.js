@@ -11,15 +11,12 @@
  * @class AbstractJob
  * @abstract
  * @implements {Serializable}
+ * @param {string} id - Unique identifier for this job.
+ * @param {number} [maxRetries=0] - Allowed retry attempts on failure.
  * @since 1.0.0
  * @author Ankit Kumar <ankit@example.com>
  */
 export class AbstractJob {
-  /**
-   * @constructs AbstractJob
-   * @param {string} id - Unique identifier for this job.
-   * @param {number} [maxRetries=0] - Allowed retry attempts on failure.
-   */
   constructor(id, maxRetries = 0) {
     /**
      * The stable job identifier.
