@@ -135,6 +135,24 @@ images, tables — no raw HTML), and `toMdx` serializes links in resource form
 (`[text](url)`, never `<url>`) so nothing MDX-hostile survives. GFM (tables, task
 lists, strikethrough, footnotes) is preserved throughout.
 
+**Link resolution.** `{@link}`/`{@linkcode}`/`{@linkplain}` inline tags and `@see`
+block tags become real anchors. setu builds a link registry (`link-registry.ts`)
+from the page set it actually generates — a two-pass build: pass 1 populates the
+registry (`longname → {slug, #anchor}`) for every page-level symbol and member
+heading; pass 2 renders each page with a resolver closed over the full registry,
+so forward references resolve. `resolveLinkTags` (`mdast/link-tags.ts`) and the
+`@see` handler in `mdast/doclet.ts` then rewrite namepaths into page-slug +
+`#member` heading anchors. External URLs (`http(s)://`, `mailto:`) link directly
+(rang's `MdxA` opens `^https?://` in a new tab); unresolved namepaths fall back to
+inline code, the look JSDoc text had before, and dwar's `preprocessJsdocInlineTags`
+stays as a final safety net so any tag that still reaches MDX compile can't break
+the page. The resolver also has a **unique short-name fallback**: a bare authored
+name (`{@link BaseEntity}`) resolves to its symbol only when that short name is
+unambiguous across the whole registry — ambiguous names refuse to resolve rather
+than guess. Known v1 limitation (see `docs/plan-link-resolution.md`): member
+anchors are bare `slugifyHeading(name)` without the per-page dedup counter, so a
+member whose heading slug collides on its page may get a slightly-off anchor.
+
 Source files are a third output, gated by the bridge's `outputSourceFiles` flag
 (default on). When enabled, every documented source file becomes a hidden
 `kind: 'source'` viewer Page (raw text on `Page.source`, no MDX body) plus a flat
@@ -147,9 +165,10 @@ to `/source/<file>/#L<n>`, with the page slug and the link target sharing
 setu/src/
 ├── index.ts              # generateSite(collection, opts) → SiteManifest  (entry;
 │                         #   opts carries pkg + readme HTML + tutorial tree + sources)
-├── generate-site.ts      # enumerate containers by kind, build container/
-│                         #   typedef/globals pages, nav (grouped by page kind →
-│                         #   Modules/Classes/…), buildId
+├── generate-site.ts      # enumerate containers by kind, two-pass build (link
+│                         #   registry before render), container/typedef/globals
+│                         #   pages, nav (grouped by page kind → Modules/Classes/…),
+│                         #   buildId
 ├── guide-view.ts         # README → home Page; tutorial tree → guide Pages + nav
 ├── source-view.ts        # source files → hidden 'source' viewer Pages + "Source
 │                         #   Files" index + per-member meta→/source/…#L<n> resolver
@@ -158,6 +177,8 @@ setu/src/
 ├── class-view.ts         # container doclet → structured view model
 │                         #   (getContainerView, kind-parametric; getClassView alias)
 ├── name-registry.ts      # longname → slug/path resolution
+├── link-registry.ts      # longname → {slug,#anchor} registry + makeLinkResolver
+│                         #   ({@link}/@see → href; unique short-name fallback)
 ├── helper.ts
 ├── mdx.ts                # mdast → MDX string (resource-form links only, so no
 │                         #   `<url>` autolink reaches dwar's MDX compile)
@@ -165,6 +186,8 @@ setu/src/
     ├── builders.ts       # mdast node builders
     ├── class-view.ts     # container view model → mdast (containerViewToMdast)
     ├── doclet.ts
+    ├── link-tags.ts      # resolveLinkTags: rewrite {@link}/{@linkcode}/
+    │                     #   {@linkplain} text nodes → anchors (skips code spans)
     └── from-html.ts      # HTML / Markdown → structured mdast (the MDX-safe
                           #   normalization shared by README + tutorials)
 docs/                     # architecture.md, how-jsdoc-works.md, …
