@@ -164,11 +164,13 @@ to `/source/<file>/#L<n>`, with the page slug and the link target sharing
 ```
 setu/src/
 ├── index.ts              # generateSite(collection, opts) → SiteManifest  (entry;
-│                         #   opts carries pkg + readme HTML + tutorial tree + sources)
+│                         #   opts carries pkg + readme HTML + tutorial tree + sources
+│                         #   + sectionOrder + menu)
 ├── generate-site.ts      # enumerate containers by kind, two-pass build (link
 │                         #   registry before render), container/typedef/globals
-│                         #   pages, nav (grouped by page kind → Modules/Classes/…),
-│                         #   buildId
+│                         #   pages, assembleNav (sidebar: optional `menu` top
+│                         #   region → divider → API sections ordered/filtered by
+│                         #   `sectionOrder`), buildId
 ├── guide-view.ts         # README → home Page; tutorial tree → guide Pages + nav
 ├── source-view.ts        # source files → hidden 'source' viewer Pages + "Source
 │                         #   Files" index + per-member meta→/source/…#L<n> resolver
@@ -219,7 +221,8 @@ rang/src/
     ├── Layout.tsx        # slot page shell (SSR; toc rail only when toc slot set)┐
     ├── Header.tsx        # site header (SSR)            │ chrome
     ├── Footer.tsx        # site footer (SSR)            ┘
-    ├── Sidebar.tsx       # island: grouped nav (by kind)┐  (+ SidebarItem action row)
+    ├── Sidebar.tsx       # island: menu region (icon links: lucide/┐ (+ SidebarItem
+    │                     #   simpleicons CDN) + divider + grouped nav │  action row)
     ├── MobileNav.tsx     # island: < md nav drawer      │  (reuses Dialog sheet +
     │                     #   SidebarItem + useThemeMode + SettingsDialog + Sidebar)
     ├── TOC.tsx           # island: curved right-rail TOC │
@@ -336,6 +339,7 @@ clean-jsdoc-theme/src/
 │                         #   page count + any RenderResult.errors (skipped pages).
 │                         #   Collects source files from doclet meta (gated by
 │                         #   templates.default.outputSourceFiles, default on) → setu.
+│                         #   Normalizes opts.sectionOrder + opts.menu → setu.
 │                         #   Holds defaultTheme (OKLCH palette).
 └── write-output-files.ts # mkdir -p + writeFile loop (forward-slash → OS path)
 ```

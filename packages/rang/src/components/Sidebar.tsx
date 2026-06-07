@@ -1,4 +1,5 @@
 import type { ComponentChildren } from 'preact';
+import { House, CodeXml, Globe, Mail, ExternalLink } from 'lucide-preact';
 import type { NavNode } from '@clean-jsdoc-theme/utils';
 import { cn } from '../lib/cn';
 
@@ -28,21 +29,76 @@ interface GroupedNav {
   items: NavNode[];
 }
 
-/** Bucket nodes by their `group` label, preserving the order setu emits. */
+/**
+ * Bucket nodes into CONTIGUOUS runs of the same `group` label, preserving the
+ * exact order setu emits. A new bucket starts whenever the group changes — so
+ * interleaved ungrouped entries (e.g. external menu links sitting between
+ * sections) keep their position instead of collapsing into one bucket.
+ */
 function groupNav(nav: readonly NavNode[]): GroupedNav[] {
   const groups: GroupedNav[] = [];
-  const byLabel = new Map<string, GroupedNav>();
+  let current: GroupedNav | null = null;
   for (const node of nav) {
     const label = node.group ?? '';
-    let bucket = byLabel.get(label);
-    if (!bucket) {
-      bucket = { group: label, items: [] };
-      byLabel.set(label, bucket);
-      groups.push(bucket);
+    if (!current || current.group !== label) {
+      current = { group: label, items: [] };
+      groups.push(current);
     }
-    bucket.items.push(node);
+    current.items.push(node);
   }
   return groups;
+}
+
+// Simple Icons CDN glyph colors: a dark glyph for the light theme, a light
+// glyph for the dark theme (the pair is CSS-swapped like the site logo).
+const SI_LIGHT_COLOR = '232323';
+const SI_DARK_COLOR = 'e6e6e6';
+
+/**
+ * The bundled lucide icon set. A `lucide:<name>` icon outside this set falls
+ * back to `external-link`. Kept small on purpose — arbitrary glyphs come from
+ * the Simple Icons CDN (`simpleicons:<slug>`) so we never bundle all of lucide.
+ */
+const LUCIDE_ICONS: Record<string, typeof House> = {
+  home: House,
+  'code-xml': CodeXml,
+  globe: Globe,
+  mail: Mail,
+  'external-link': ExternalLink,
+};
+
+/**
+ * Leading icon for a menu entry. The icon is a `source:code` string:
+ *  - `simpleicons:<slug>` → a themed Simple Icons CDN image pair (dark glyph on
+ *    the light theme, light glyph on dark — CSS-swapped like the site logo).
+ *  - `lucide:<name>` → a bundled lucide icon; an unknown name → `external-link`.
+ *  - anything else (no/unknown prefix) → the `external-link` lucide icon.
+ * Returns `null` for entries with no icon (regular page/section links).
+ */
+function NavIcon({ icon }: { icon?: string }) {
+  if (!icon) return null;
+  const sep = icon.indexOf(':');
+  const source = sep === -1 ? '' : icon.slice(0, sep);
+  const code = sep === -1 ? icon : icon.slice(sep + 1);
+
+  if (source === 'simpleicons' && code) {
+    const base = `https://cdn.simpleicons.org/${encodeURIComponent(code)}`;
+    return (
+      <>
+        <img src={`${base}/${SI_LIGHT_COLOR}`} alt="" aria-hidden="true" class="h-4 w-4 shrink-0 dark:hidden" />
+        <img
+          src={`${base}/${SI_DARK_COLOR}`}
+          alt=""
+          aria-hidden="true"
+          class="hidden h-4 w-4 shrink-0 dark:inline-block"
+        />
+      </>
+    );
+  }
+
+  // lucide (or any unrecognized prefix): bundled set, unknown → external-link.
+  const Icon = LUCIDE_ICONS[code] ?? ExternalLink;
+  return <Icon size={16} class="shrink-0" aria-hidden="true" />;
 }
 
 export interface SidebarItemProps {
@@ -69,38 +125,73 @@ export function SidebarItem({ icon, label, onClick }: SidebarItemProps) {
 }
 
 function NavLink({ node, currentSlug }: { node: NavNode; currentSlug: string }) {
-  const isCurrent = node.slug === currentSlug;
   // min-w-0 lets the label shrink below its content width so break-words can act.
   const label = <span class="min-w-0 wrap-break-words">{node.label}</span>;
+  const icon = <NavIcon icon={node.icon} />;
+  // An icon row centers its content; a bare text link keeps the top alignment so
+  // long wrapped labels read correctly.
+  const align = node.icon ? 'items-center' : '';
+
+  // External menu link (carries an absolute `href`): open in a new tab.
+  if (node.external && node.href) {
+    return (
+      <a
+        href={node.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        class={cn(ITEM_BASE, ITEM_INACTIVE, align)}
+      >
+        {icon}
+        {label}
+      </a>
+    );
+  }
 
   // `undefined` slug = a branch/group label (not navigable). An empty-string
   // slug is the site root (home), which IS navigable → `/`.
   if (node.slug === undefined) {
-    return <span class={`${ITEM_BASE} text-muted-foreground`}>{label}</span>;
+    return <span class={cn(ITEM_BASE, 'text-muted-foreground', align)}>{icon}{label}</span>;
   }
+  const isCurrent = node.slug === currentSlug;
   return (
     <a
       href={`/${node.slug}`}
       aria-current={isCurrent ? 'page' : undefined}
-      class={`${ITEM_BASE} ${isCurrent ? ITEM_ACTIVE : ITEM_INACTIVE}`}
+      class={cn(ITEM_BASE, align, isCurrent ? ITEM_ACTIVE : ITEM_INACTIVE)}
     >
+      {icon}
       {label}
     </a>
   );
 }
 
 export function Sidebar({ nav, currentSlug }: SidebarProps) {
-  const groups = groupNav(nav);
+  // Menu entries form a top region (icon links); the rest are grouped sections.
+  const menuItems = nav.filter((n) => n.menu);
+  const sectionNodes = nav.filter((n) => !n.menu);
+  const groups = groupNav(sectionNodes);
   return (
     <nav aria-label="Documentation navigation" class="text-(--clean-fg)">
-      {groups.map((g) => (
-        <div key={g.group || '_ungrouped'} class="mt-4 first:mt-0">
+      {menuItems.length > 0 && (
+        <ul class="m-0 list-none p-0">
+          {menuItems.map((node, ni) => (
+            <li key={node.slug ?? node.href ?? `${node.label}-${ni}`} class="my-0.5">
+              <NavLink node={node} currentSlug={currentSlug} />
+            </li>
+          ))}
+        </ul>
+      )}
+      {menuItems.length > 0 && groups.length > 0 && (
+        <hr class="my-3 border-(--clean-border)" />
+      )}
+      {groups.map((g, gi) => (
+        <div key={g.group ? `g-${g.group}` : `_ungrouped-${gi}`} class="mt-4 first:mt-0">
           {g.group && (
             <div class="mb-1 py-1.5 px-3 text-sm font-bold text-(--clean-fg)">{g.group}</div>
           )}
           <ul class="m-0 list-none p-0">
-            {g.items.map((node) => (
-              <li key={node.slug ?? node.label} class="my-0.5">
+            {g.items.map((node, ni) => (
+              <li key={node.slug ?? node.href ?? `${node.label}-${ni}`} class="my-0.5">
                 <NavLink node={node} currentSlug={currentSlug} />
               </li>
             ))}

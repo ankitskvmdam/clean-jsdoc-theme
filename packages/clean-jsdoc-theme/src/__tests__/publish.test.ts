@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { computeRelPaths, outputSourceFilesEnabled } from '../publish';
+import {
+  computeRelPaths,
+  normalizeMenu,
+  normalizeSectionOrder,
+  outputSourceFilesEnabled,
+} from '../publish';
 
 describe('outputSourceFilesEnabled', () => {
   it('defaults to true when nothing disables it', () => {
@@ -74,5 +79,49 @@ describe('computeRelPaths', () => {
     ]);
     expect(m.get('C:\\projA\\Foo.js')).toBe('Foo.js');
     expect(m.get('D:\\projB\\Bar.js')).toBe('Bar.js');
+  });
+});
+
+describe('normalizeSectionOrder', () => {
+  it('returns undefined for non-arrays', () => {
+    expect(normalizeSectionOrder(undefined)).toBeUndefined();
+    expect(normalizeSectionOrder('Classes')).toBeUndefined();
+    expect(normalizeSectionOrder({})).toBeUndefined();
+  });
+
+  it('trims strings and drops non-strings / empties', () => {
+    expect(normalizeSectionOrder([' Classes ', 'Tutorials', 2, '', null])).toEqual([
+      'Classes',
+      'Tutorials',
+    ]);
+  });
+
+  it('returns undefined when nothing usable remains', () => {
+    expect(normalizeSectionOrder(['', '   ', 5])).toBeUndefined();
+  });
+});
+
+describe('normalizeMenu', () => {
+  it('returns undefined for non-arrays', () => {
+    expect(normalizeMenu(undefined)).toBeUndefined();
+    expect(normalizeMenu('x')).toBeUndefined();
+  });
+
+  it('keeps id/title/link/icon (trimmed) and reads the link from `link` or `href`', () => {
+    expect(
+      normalizeMenu([
+        { id: ' home ', title: ' Start ' },
+        { id: 'github', link: ' https://x.y ', icon: ' github ' },
+        { id: 'npm', href: 'https://npmjs.com/p' }, // href accepted as alias
+      ]),
+    ).toEqual([
+      { id: 'home', title: 'Start' },
+      { id: 'github', link: 'https://x.y', icon: 'github' },
+      { id: 'npm', link: 'https://npmjs.com/p' },
+    ]);
+  });
+
+  it('drops entries with neither id nor link, and non-objects', () => {
+    expect(normalizeMenu([{ title: 'orphan' }, 'nope', null, { icon: 'github' }])).toBeUndefined();
   });
 });

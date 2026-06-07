@@ -14,7 +14,7 @@ import type {
   SiteName,
   ThemeConfig,
 } from '@clean-jsdoc-theme/dwar';
-import type { SourceFileInput, TutorialInput } from '@clean-jsdoc-theme/setu';
+import type { MenuItem, SourceFileInput, TutorialInput } from '@clean-jsdoc-theme/setu';
 import { writeOutputFiles } from './write-output-files';
 
 // JSDoc's tutorial source-type enum (jsdoc/lib/jsdoc/tutorial.js): HTML = 1,
@@ -152,6 +152,20 @@ interface JSDocOpts {
   readme?: string;
   /** Path to the tutorials directory (`-u`/`opts.tutorials`); resolved tree arrives as the 3rd `publish` arg. */
   tutorials?: string;
+  /**
+   * Sidebar section order from `jsdoc.json` (`"opts": { "sectionOrder": [...] }`).
+   * An ordered list of section labels (e.g. `["Classes", "Tutorials"]`) that both
+   * filters and orders the sidebar sections; "Home" and "Source Files" are always
+   * shown regardless. Omit (or leave empty) for the default order.
+   */
+  sectionOrder?: unknown;
+  /**
+   * Full sidebar menu from `jsdoc.json` (`"opts": { "menu": [...] }`). An ordered
+   * list of `{ id, title, href, icon }` entries. When present it takes precedence
+   * over `sectionOrder` and controls the entire sidebar (built-ins, sections, and
+   * external links). See setu's {@link MenuItem}.
+   */
+  menu?: unknown;
   /**
    * JSDoc's default-template source-output toggle. Read from
    * `conf.templates.default.outputSourceFiles` (or, as a fallback, nested under
@@ -384,6 +398,45 @@ export function outputSourceFilesEnabled(opts: JSDocOpts): boolean {
   return true;
 }
 
+/**
+ * Validate `opts.sectionOrder` into a clean `string[]`, or `undefined` to fall
+ * back to setu's default order. Accepts only an array; trims string entries and
+ * drops non-strings/empties. An array that yields no usable labels → `undefined`.
+ */
+export function normalizeSectionOrder(raw: unknown): string[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const out = raw
+    .filter((s): s is string => typeof s === 'string')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  return out.length > 0 ? out : undefined;
+}
+
+/**
+ * Validate `opts.menu` into a clean `MenuItem[]`, or `undefined` when there's no
+ * usable menu. Accepts only an array of objects; trims string fields. The link
+ * URL is read from `link` (preferred) or `href`. Keeps only actionable entries —
+ * a built-in (`id`) or an external link (`link`/`href`).
+ */
+export function normalizeMenu(raw: unknown): MenuItem[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const out: MenuItem[] = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== 'object') continue;
+    const o = entry as Record<string, unknown>;
+    const item: MenuItem = {};
+    if (typeof o.id === 'string' && o.id.trim()) item.id = o.id.trim();
+    if (typeof o.title === 'string' && o.title.trim()) item.title = o.title.trim();
+    const link = typeof o.link === 'string' && o.link.trim() ? o.link.trim()
+      : typeof o.href === 'string' && o.href.trim() ? o.href.trim()
+      : undefined;
+    if (link) item.link = link;
+    if (typeof o.icon === 'string' && o.icon.trim()) item.icon = o.icon.trim();
+    if (item.id || item.link) out.push(item);
+  }
+  return out.length > 0 ? out : undefined;
+}
+
 /** Extensions we treat as "source" worth emitting a viewer page for. */
 const SOURCE_EXTENSIONS = new Set([
   '.js', '.mjs', '.cjs', '.jsx',
@@ -514,11 +567,18 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   // is optional and self-skips on error, so this never aborts the build.
   const sources = outputSourceFilesEnabled(opts) ? await collectSourceFiles(data) : [];
 
+  // Sidebar config: `menu` (full control) takes precedence over `sectionOrder`.
+  // Each accepts only well-formed input; anything else falls back to defaults.
+  const sectionOrder = normalizeSectionOrder(opts.sectionOrder);
+  const menu = normalizeMenu(opts.menu);
+
   const manifest = generateSite(data, {
     ...(pkg ? { pkg } : {}),
     ...(readme ? { readme } : {}),
     ...(tutorialTree.length > 0 ? { tutorials: tutorialTree } : {}),
     ...(sources.length > 0 ? { sources } : {}),
+    ...(sectionOrder ? { sectionOrder } : {}),
+    ...(menu ? { menu } : {}),
   });
 
   // Resolve siteName (text or logo set) and copy any local logo images into the

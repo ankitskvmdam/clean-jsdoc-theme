@@ -1,11 +1,12 @@
 import { validateCollectionOrThrow } from './validate';
 import {
+  assembleNav,
   buildGlobalsView,
-  buildNav,
   computeBuildId,
   enumerateLongnamesByKind,
   renderContainerPage,
   splitLongnameForSlug,
+  type MenuItem,
 } from './generate-site';
 import { getContainerView, mergeContainerViews, type ContainerView } from './class-view';
 import { slugifyPath } from '@clean-jsdoc-theme/utils';
@@ -13,6 +14,7 @@ import { makeLinkResolver, registerContainerView, type LinkRegistry } from './li
 import {
   buildReadmePage,
   buildTutorialPages,
+  makeTutorialResolver,
   type TutorialInput,
 } from './guide-view';
 import { buildSourceModel, type SourceFileInput } from './source-view';
@@ -76,6 +78,22 @@ export interface GenerateSiteOptions {
    * file:line" link resolved against these files.
    */
   sources?: SourceFileInput[];
+  /**
+   * Sidebar sections to render, in order (e.g. `["Classes", "Tutorials"]`).
+   * Acts as BOTH a filter and an ordering — a section omitted here is dropped
+   * from the sidebar. "Home" (when a README exists) and "Source Files" (when
+   * source pages are emitted) are always present and not controlled by this.
+   * Defaults to `DEFAULT_SECTION_ORDER` when absent or empty. Ignored when
+   * `menu` is set.
+   */
+  sectionOrder?: string[];
+  /**
+   * Full sidebar menu, in order. When set, takes precedence over `sectionOrder`
+   * and controls the entire sidebar: Home / Source Files appear only if their
+   * ids (`home` / `sourceFile`) are listed, sections only if named, and external
+   * links render inline. Each entry can carry an icon. See {@link MenuItem}.
+   */
+  menu?: MenuItem[];
 }
 
 /**
@@ -166,44 +184,66 @@ export function generateSite(
   }
   const resolveLink = makeLinkResolver(registry);
 
+  // `@tutorial <name>` resolver, derived from the tutorial tree (name → guide
+  // page). Built here so it threads into every API page's render alongside
+  // `resolveLink`; the guide pages themselves are built further below.
+  const resolveTutorial = opts?.tutorials?.length
+    ? makeTutorialResolver(opts.tutorials)
+    : undefined;
+
   // --- Pass 3: render -------------------------------------------------------
   //
   // Render each surviving spec from its already-built view (views are not
-  // rebuilt), threading both `sourceLink` and the registry-backed `resolveLink`.
+  // rebuilt), threading `sourceLink`, the registry-backed `resolveLink`, and the
+  // `@tutorial` resolver.
   const apiPages: Page[] = specs.map((s) =>
-    renderContainerPage(s.view, s.kind, s.longname, s.slug, { sourceLink, resolveLink }),
+    renderContainerPage(s.view, s.kind, s.longname, s.slug, {
+      sourceLink,
+      resolveLink,
+      resolveTutorial,
+    }),
   );
 
   const pages: Page[] = [];
-  const nav: NavNode[] = [];
 
-  // README → home page (slug ''), listed first as an ungrouped "Home" link.
+  // README → home page (slug ''), the always-first ungrouped "Home" link.
   // Rendered with the same resolver so prose cross-references resolve too.
   const home = opts?.readme ? buildReadmePage(opts.readme, opts.pkg, resolveLink) : null;
+  let homeNav: NavNode | undefined;
   if (home) {
     pages.push(home);
-    nav.push({ label: 'Home', slug: home.slug });
+    homeNav = { label: 'Home', slug: home.slug };
   }
 
-  // API pages, grouped by kind (Modules, Namespaces, Classes, …).
+  // API pages, grouped into sidebar sections by kind.
   pages.push(...apiPages);
-  nav.push(...buildNav(apiPages));
 
   // Tutorials → guide pages under "Tutorials". Same resolver for cross-refs.
+  let tutorialNav: NavNode[] = [];
   if (opts?.tutorials && opts.tutorials.length > 0) {
-    const { pages: tutorialPages, nav: tutorialNav } = buildTutorialPages(
-      opts.tutorials,
-      resolveLink,
-    );
-    pages.push(...tutorialPages);
-    nav.push(...tutorialNav);
+    const built = buildTutorialPages(opts.tutorials, resolveLink);
+    pages.push(...built.pages);
+    tutorialNav = built.nav;
   }
 
   // Source files → hidden viewer pages + a "Source Files" index in the nav.
+  let sourceNav: NavNode | undefined;
   if (sourceModel) {
     pages.push(...sourceModel.pages, sourceModel.indexPage);
-    nav.push(sourceModel.navNode);
+    sourceNav = sourceModel.navNode;
   }
+
+  // Assemble the sidebar: Home first, then the API/Tutorials sections in the
+  // configured (or default) order, then Source Files last. `sectionOrder` both
+  // filters and orders the sections in between.
+  const nav = assembleNav({
+    apiPages,
+    tutorials: tutorialNav,
+    home: homeNav,
+    source: sourceNav,
+    sectionOrder: opts?.sectionOrder,
+    menu: opts?.menu,
+  });
 
   const manifest: SiteManifest = {
     pages,
@@ -224,23 +264,32 @@ export function generateMdx(collection: unknown): string[] {
 }
 
 export {
+  assembleNav,
   buildClassPage,
   buildContainerPage,
   buildGlobalsPage,
   buildGlobalsView,
   buildNav,
   computeBuildId,
+  DEFAULT_SECTION_ORDER,
   enumerateClassLongnames,
   enumerateLongnamesByKind,
   extractHeadings,
+  HOME_MENU_ID,
   renderContainerPage,
+  SOURCE_MENU_IDS,
   splitLongnameForSlug,
+  TUTORIALS_SECTION,
+  type AssembleNavOptions,
+  type MenuItem,
 } from './generate-site';
 
 export {
   buildReadmePage,
   buildTutorialPages,
+  makeTutorialResolver,
   TUTORIALS_GROUP,
+  type ResolvedTutorial,
   type TutorialInput,
 } from './guide-view';
 

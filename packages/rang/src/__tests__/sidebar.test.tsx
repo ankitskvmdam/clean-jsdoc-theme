@@ -37,3 +37,53 @@ describe('Sidebar', () => {
     expect(active.length).toBe(1);
   });
 });
+
+describe('Sidebar — menu region (icons + external links)', () => {
+  // The menu top region as setu emits it: each entry flagged `menu: true`,
+  // icons as prefixed `source:code` strings.
+  const menuNav: NavNode[] = [
+    { label: 'Home', slug: '', icon: 'lucide:home', menu: true },
+    { label: 'GitHub', href: 'https://github.com/x/y', external: true, icon: 'simpleicons:github', menu: true },
+    { label: 'Source files', slug: 'source', icon: 'lucide:code-xml', menu: true },
+    { label: 'BaseEntity', slug: 'baseentity', group: 'Classes' },
+  ];
+
+  it('renders an external link with target=_blank and rel', () => {
+    const html = render(<Sidebar nav={menuNav} currentSlug="" />);
+    expect(html).toContain('href="https://github.com/x/y"');
+    expect(html).toContain('target="_blank"');
+    expect(html).toContain('rel="noopener noreferrer"');
+  });
+
+  it('renders a Simple Icons CDN image pair for a simpleicons: icon', () => {
+    const html = render(<Sidebar nav={menuNav} currentSlug="" />);
+    expect(html).toContain('cdn.simpleicons.org/github/232323');
+    expect(html).toContain('cdn.simpleicons.org/github/e6e6e6');
+    // The pair is CSS-swapped per theme.
+    expect(html).toContain('dark:hidden');
+    expect(html).toContain('dark:inline-block');
+  });
+
+  it('renders a bundled lucide icon for a lucide: icon, not a CDN image', () => {
+    const html = render(<Sidebar nav={[{ label: 'Home', slug: '', icon: 'lucide:home', menu: true }]} currentSlug="" />);
+    expect(html).toContain('lucide-house'); // lucide `home` maps to the House glyph
+    expect(html).not.toContain('cdn.simpleicons.org');
+  });
+
+  it('falls back to external-link for an unknown lucide: icon', () => {
+    const html = render(
+      <Sidebar nav={[{ label: 'X', href: 'https://x.y', external: true, icon: 'lucide:nope', menu: true }]} currentSlug="" />,
+    );
+    expect(html).toContain('lucide-external-link');
+    expect(html).not.toContain('cdn.simpleicons.org');
+  });
+
+  it('renders the menu region above the sections, separated by a divider', () => {
+    const html = render(<Sidebar nav={menuNav} currentSlug="" />);
+    // A horizontal rule divides the menu region from the Classes section.
+    expect(html).toContain('<hr');
+    // Menu entries precede the section entry; the divider sits between them.
+    expect(html.indexOf('Source files')).toBeLessThan(html.indexOf('<hr'));
+    expect(html.indexOf('<hr')).toBeLessThan(html.indexOf('BaseEntity'));
+  });
+});

@@ -101,6 +101,7 @@ export function enumerateClassLongnames(collection: TJSDocSaltyCollection<TDocle
 interface RenderOptions {
   sourceLink?: DocletBlocksOptions['sourceLink'];
   resolveLink?: DocletBlocksOptions['resolveLink'];
+  resolveTutorial?: DocletBlocksOptions['resolveTutorial'];
 }
 
 /**
@@ -117,9 +118,9 @@ export function renderContainerPage(
   kind: PageKind,
   longname: string,
   slug: string,
-  { sourceLink, resolveLink }: RenderOptions = {},
+  { sourceLink, resolveLink, resolveTutorial }: RenderOptions = {},
 ): Page {
-  const tree = containerViewToMdast(view, { sourceLink, resolveLink });
+  const tree = containerViewToMdast(view, { sourceLink, resolveLink, resolveTutorial });
   if (resolveLink) resolveLinkTags(tree, resolveLink);
 
   const title = view.doclet.name ?? view.doclet.longname ?? longname;
@@ -235,37 +236,257 @@ export function buildGlobalsPage(
 }
 
 /**
- * Sidebar groups, in display order. Each page kind maps to a human-readable
- * group label; kinds not listed fall into "Other" at the end.
+ * API page kind → sidebar section label. Kinds without a mapping fall into the
+ * "Other" section ({@link OTHER_SECTION}), appended after the ordered sections.
  */
-const KIND_GROUPS: { kind: PageKind; label: string }[] = [
-  { kind: 'module', label: 'Modules' },
-  { kind: 'namespace', label: 'Namespaces' },
-  { kind: 'class', label: 'Classes' },
-  { kind: 'interface', label: 'Interfaces' },
-  { kind: 'mixin', label: 'Mixins' },
-  { kind: 'typedef', label: 'Typedefs' },
-  { kind: 'global', label: 'Globals' },
-];
+const SECTION_FOR_KIND: Partial<Record<PageKind, string>> = {
+  class: 'Classes',
+  module: 'Modules',
+  namespace: 'Namespaces',
+  mixin: 'Mixins',
+  interface: 'Interfaces',
+  typedef: 'Typedefs',
+  global: 'Globals',
+};
 
-const GROUP_LABEL = new Map<PageKind, string>(KIND_GROUPS.map((g) => [g.kind, g.label]));
-const GROUP_ORDER = new Map<PageKind, number>(KIND_GROUPS.map((g, i) => [g.kind, i]));
-const OTHER_GROUP = { label: 'Other', order: KIND_GROUPS.length };
+/** Catch-all section label for page kinds with no explicit mapping. */
+const OTHER_SECTION = 'Other';
+
+/** Section label tutorial/guide nav entries are grouped under. */
+export const TUTORIALS_SECTION = 'Tutorials';
 
 /**
- * Nav grouped by page kind. Each entry carries its group label + a stable sort
- * order; the sidebar buckets contiguous same-group entries under a group title.
- * Groups follow {@link KIND_GROUPS}; entries are alphabetical within a group.
+ * Default sidebar section order, used when the consumer supplies no
+ * `sectionOrder`. Includes forward-looking sections (Externals, Events) that
+ * have no pages yet; empty sections are simply skipped. A section absent from
+ * the effective order is omitted from the sidebar entirely.
+ */
+export const DEFAULT_SECTION_ORDER: readonly string[] = [
+  'Classes',
+  'Modules',
+  'Externals',
+  'Events',
+  'Namespaces',
+  'Mixins',
+  'Interfaces',
+  'Typedefs',
+  'Globals',
+  'Tutorials',
+];
+
+/** The sidebar section a page belongs to, by its kind. */
+function sectionForPage(page: Page): string {
+  return SECTION_FOR_KIND[page.frontmatter.kind] ?? OTHER_SECTION;
+}
+
+/** Built-in `id` for the home menu entry (resolved against the README home page). */
+export const HOME_MENU_ID = 'home';
+/** Built-in `id`s for the source-files menu entry (`source` preferred, `sourceFile` accepted). */
+export const SOURCE_MENU_IDS = ['source', 'sourceFile'] as const;
+
+// Default icons (prefixed `source:code`) when a menu entry supplies none.
+const HOME_ICON = 'lucide:home';
+const SOURCE_ICON = 'lucide:code-xml';
+const EXTERNAL_ICON = 'lucide:external-link';
+
+/**
+ * A single sidebar **menu** entry from the consumer's `menu` config. The menu is
+ * a top region above the API sections (see {@link assembleNav}); each entry is a
+ * built-in link (`home` / `source`) or an external link, and renders with an
+ * icon.
+ *
+ * - `id === 'home'` → the README home page (icon defaults to `house`).
+ * - `id === 'source'` (or `sourceFile`) → the Source Files index (icon defaults
+ *   to `code-xml`).
+ * - otherwise → an external link to `link` (or `href`), opening in a new tab.
+ *
+ * `icon` is a prefixed `source:code` string — `simpleicons:<slug>` (CDN) or
+ * `lucide:<name>` (bundled set), see {@link NavNode.icon}. When omitted it
+ * defaults by role: home→`lucide:home`, source→`lucide:code-xml`,
+ * external→`lucide:external-link`.
+ */
+export interface MenuItem {
+  /** Built-in id (`home` / `source`), or — for an external link — its Simple Icons slug. */
+  id?: string;
+  /** Display text. Defaults to the built-in label or the link URL. */
+  title?: string;
+  /** External link URL. */
+  link?: string;
+  /** External link URL — accepted as an alias for {@link MenuItem.link}. */
+  href?: string;
+  /** Icon name/slug for the entry. */
+  icon?: string;
+}
+
+/** Inputs for {@link assembleNav}: the per-source nav pieces + the section order. */
+export interface AssembleNavOptions {
+  /** API pages, grouped into sections by kind and alphabetized within each. */
+  apiPages?: readonly Page[];
+  /** Tutorial nav entries (kept in tree order under "Tutorials"). */
+  tutorials?: readonly NavNode[];
+  /** Home nav entry — always first, ungrouped, regardless of `sectionOrder`. */
+  home?: NavNode;
+  /** "Source Files" nav entry — always last, ungrouped, regardless of `sectionOrder`. */
+  source?: NavNode;
+  /**
+   * Section labels to render, in order. Acts as BOTH a filter and an ordering:
+   * a section absent here is dropped from the sidebar. Defaults to
+   * {@link DEFAULT_SECTION_ORDER}. Ignored when {@link AssembleNavOptions.menu}
+   * is set.
+   */
+  sectionOrder?: readonly string[];
+  /**
+   * Top-region sidebar menu, in order — rendered above the API sections, with a
+   * divider between. When set, it OWNS the home/source links: the auto Home
+   * (first) and Source Files (last) entries are suppressed and render only if
+   * listed here (`id: 'home'` / `id: 'source'`). External links appear inline.
+   * The API sections below are still ordered by `sectionOrder`. Each entry
+   * carries an icon. See {@link MenuItem}.
+   */
+  menu?: readonly MenuItem[];
+}
+
+/**
+ * Assemble the final sidebar nav from its parts, honoring `sectionOrder`.
+ *
+ * Home (if any) is always emitted first and Source Files (if any) always last;
+ * neither is controlled by `sectionOrder`. The sections in between follow the
+ * effective order exactly — a label not listed is omitted, so passing
+ * `["Classes", "Tutorials"]` renders only those two sections. API entries are
+ * sorted alphabetically within their section; tutorial entries keep their tree
+ * order. Any page kind with no section mapping is collected under "Other" and
+ * appended after the ordered sections (a safety net; in practice empty).
+ *
+ * Each node's `order` mirrors its emission position (section index), so the
+ * monotonic-order invariant holds; the sidebar itself renders in array order.
+ */
+export function assembleNav({
+  apiPages = [],
+  tutorials = [],
+  home,
+  source,
+  sectionOrder,
+  menu,
+}: AssembleNavOptions): NavNode[] {
+  // Bucket every section's entries by label.
+  const bySection = new Map<string, NavNode[]>();
+  const push = (label: string, node: NavNode): void => {
+    const bucket = bySection.get(label);
+    if (bucket) bucket.push(node);
+    else bySection.set(label, [node]);
+  };
+
+  for (const p of apiPages) {
+    const label = sectionForPage(p);
+    push(label, { label: p.frontmatter.title, slug: p.slug, group: label });
+  }
+  for (const t of tutorials) push(TUTORIALS_SECTION, { ...t, group: TUTORIALS_SECTION });
+
+  // API sections are alphabetized within the section; tutorials keep tree order.
+  for (const [label, items] of bySection) {
+    if (label !== TUTORIALS_SECTION) items.sort((a, b) => a.label.localeCompare(b.label));
+  }
+
+  const order =
+    sectionOrder && sectionOrder.length > 0 ? sectionOrder : DEFAULT_SECTION_ORDER;
+  const out: NavNode[] = [];
+
+  if (menu && menu.length > 0) {
+    // Menu mode: the menu items form the top region (home/source/externals);
+    // they OWN the home/source links (auto Home/Source are suppressed). The API
+    // sections still follow `sectionOrder`, below a divider the sidebar draws.
+    menu.forEach((item, i) => {
+      const node = resolveMenuItem(item, home, source, i);
+      if (node) out.push(node);
+    });
+    appendSections(out, bySection, order);
+    return out;
+  }
+
+  // Section mode: Home first, ordered sections, Source Files last (no icons).
+  if (home) out.push({ ...home, order: -1 });
+  appendSections(out, bySection, order);
+  if (source) out.push({ ...source, order: order.length + 1 });
+  return out;
+}
+
+/**
+ * Append the API/Tutorials section entries to `out`, in `order`. Sections absent
+ * from `order` are dropped — EXCEPT the catch-all "Other" bucket (unmapped
+ * kinds), appended last so content never vanishes silently. Mutates `out`.
+ */
+function appendSections(
+  out: NavNode[],
+  bySection: Map<string, NavNode[]>,
+  order: readonly string[]
+): void {
+  const seen = new Set<string>();
+  order.forEach((label, i) => {
+    const items = bySection.get(label);
+    if (!items || items.length === 0) return;
+    for (const item of items) out.push({ ...item, order: i });
+    seen.add(label);
+  });
+
+  if (!seen.has(OTHER_SECTION)) {
+    const other = bySection.get(OTHER_SECTION);
+    if (other && other.length > 0) {
+      for (const item of other) out.push({ ...item, order: order.length });
+    }
+  }
+}
+
+/**
+ * Resolve one {@link MenuItem} into a top-region nav node, or `null` to skip it.
+ *
+ * `id: 'home'` / `id: 'source'` (or `sourceFile`) resolve to the built-in home /
+ * source link — skipped when that target doesn't exist. Everything else is an
+ * external link to `link` (or `href`); an entry with neither a built-in id nor a
+ * link is skipped. Icons: an explicit `icon` always wins; home/source fall back
+ * to `house` / `code-xml`; an external link falls back to its `id` as a Simple
+ * Icons slug, then to `external-link`. Each node is flagged `menu: true`.
+ */
+function resolveMenuItem(
+  item: MenuItem,
+  home: NavNode | undefined,
+  source: NavNode | undefined,
+  order: number
+): NavNode | null {
+  const title = item.title?.trim();
+  const id = item.id?.trim();
+  const icon = item.icon?.trim();
+
+  if (id === HOME_MENU_ID) {
+    if (!home) return null;
+    return { ...home, label: title || home.label, icon: icon || HOME_ICON, menu: true, order };
+  }
+  if (id && (SOURCE_MENU_IDS as readonly string[]).includes(id)) {
+    if (!source) return null;
+    return { ...source, label: title || source.label, icon: icon || SOURCE_ICON, menu: true, order };
+  }
+
+  // External link.
+  const link = (item.link ?? item.href)?.trim();
+  if (link) {
+    return {
+      label: title || link,
+      href: link,
+      external: true,
+      icon: icon || EXTERNAL_ICON,
+      menu: true,
+      order,
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Nav grouped by page kind in the default section order. Thin wrapper over
+ * {@link assembleNav} kept for callers that only need the API section nav.
  */
 export function buildNav(pages: readonly Page[]): NavNode[] {
-  return pages
-    .map<NavNode>((p) => ({
-      label: p.frontmatter.title,
-      slug: p.slug,
-      group: GROUP_LABEL.get(p.frontmatter.kind) ?? OTHER_GROUP.label,
-      order: GROUP_ORDER.get(p.frontmatter.kind) ?? OTHER_GROUP.order,
-    }))
-    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.label.localeCompare(b.label));
+  return assembleNav({ apiPages: pages });
 }
 
 /**

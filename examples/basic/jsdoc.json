@@ -17,6 +17,44 @@
       "light": "./assets/clean-jsdoc-theme.svg",
       "dark": "./assets/clean-jsdoc-theme-white.svg",
       "alt": "clean-jsdoc-theme"
-    }
+    },
+    "sectionOrder": [
+      "Classes",
+      "Modules",
+      "Externals",
+      "Events",
+      "Namespaces",
+      "Mixins",
+      "Interfaces",
+      "Typedefs",
+      "Globals",
+      "Tutorials"
+    ],
+    "menu": [
+      {
+        "title": "Home",
+        "link": "/",
+        "id": "home",
+        "icon": "lucide:home"
+      },
+      {
+        "title": "Github",
+        "link": "https://github.com/ankitskvmdam/clean-jsdoc-theme",
+        "id": "github",
+        "icon": "simpleicons:github"
+      },
+      {
+        "title": "NPM",
+        "link": "https://www.npmjs.com/package/clean-jsdoc-theme",
+        "id": "npm",
+        "icon": "simpleicons:npm"
+      },
+      {
+        "title": "Source files",
+        "link": "/source",
+        "id": "source",
+        "icon": "lucide:code-xml"
+      }
+    ]
   }
 }
