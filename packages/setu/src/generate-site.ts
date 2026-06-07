@@ -14,6 +14,7 @@ import { bucketClassMembers, getContainerView, type ContainerView } from './clas
 import { filterDoclets } from './doclet';
 import { containerViewToMdast } from './mdast/class-view';
 import type { DocletBlocksOptions } from './mdast/doclet';
+import { resolveLinkTags } from './mdast/link-tags';
 import { toMdx } from './mdx';
 
 /** JSDoc separator characters that delimit name parts in a longname. */
@@ -96,20 +97,31 @@ export function enumerateClassLongnames(collection: TJSDocSaltyCollection<TDocle
   return enumerateLongnamesByKind(collection, 'class');
 }
 
-/**
- * Build a single container page (class/interface/mixin/module/namespace);
- * returns null if no container view of `kind` can be built for `longname`.
- */
-export function buildContainerPage(
-  collection: TJSDocSaltyCollection<TDoclet>,
-  longname: string,
-  kind: PageKind,
-  sourceLink?: DocletBlocksOptions['sourceLink'],
-): Page | null {
-  const view = getContainerView(collection, longname, kind);
-  if (!view) return null;
+/** Per-render threading options shared by every container/globals page. */
+interface RenderOptions {
+  sourceLink?: DocletBlocksOptions['sourceLink'];
+  resolveLink?: DocletBlocksOptions['resolveLink'];
+}
 
-  const tree = containerViewToMdast(view, { sourceLink });
+/**
+ * Render an already-built {@link ContainerView} into a {@link Page}. This is the
+ * one place a container's mdast is assembled → link tags resolved → serialized,
+ * so the two-pass build in `generateSite` can reuse the view from its dedup pass
+ * (rather than rebuilding it). When `resolveLink` is provided, every `{@link}` /
+ * `@see` reference in the tree is rewritten to a real anchor before `toMdx`;
+ * without a resolver the output is byte-identical to the pre-link-resolution
+ * builder.
+ */
+export function renderContainerPage(
+  view: ContainerView,
+  kind: PageKind,
+  longname: string,
+  slug: string,
+  { sourceLink, resolveLink }: RenderOptions = {},
+): Page {
+  const tree = containerViewToMdast(view, { sourceLink, resolveLink });
+  if (resolveLink) resolveLinkTags(tree, resolveLink);
+
   const title = view.doclet.name ?? view.doclet.longname ?? longname;
   const description = view.doclet.classdesc
     ? stripHtml(view.doclet.classdesc)
@@ -125,10 +137,28 @@ export function buildContainerPage(
   };
 
   const body = toMdx(tree, { frontmatter });
-  const slug = slugifyPath(splitLongnameForSlug(longname));
   const headings = extractHeadings(tree);
 
   return { slug, frontmatter, body, mdast: tree, headings };
+}
+
+/**
+ * Build a single container page (class/interface/mixin/module/namespace);
+ * returns null if no container view of `kind` can be built for `longname`.
+ * Delegates to {@link renderContainerPage}. The optional `resolveLink` resolves
+ * cross-references; omit it for byte-identical legacy output.
+ */
+export function buildContainerPage(
+  collection: TJSDocSaltyCollection<TDoclet>,
+  longname: string,
+  kind: PageKind,
+  sourceLink?: DocletBlocksOptions['sourceLink'],
+  resolveLink?: DocletBlocksOptions['resolveLink'],
+): Page | null {
+  const view = getContainerView(collection, longname, kind);
+  if (!view) return null;
+  const slug = slugifyPath(splitLongnameForSlug(longname));
+  return renderContainerPage(view, kind, longname, slug, { sourceLink, resolveLink });
 }
 
 /**
@@ -153,15 +183,18 @@ const GLOBALS_EXCLUDED_KINDS = new Set([
   'typedef',
 ]);
 
+/** Stable slug for the aggregated globals page. */
+const GLOBALS_SLUG = 'global';
+
 /**
- * Build the single aggregated "Globals" page: every global-scope symbol that
- * does not already get its own page (functions, members, constants, enums,
- * events) rendered as a member section on one synthetic container. Returns
- * `null` when there are no qualifying globals.
+ * Build the synthetic "Globals" {@link ContainerView} + its slug, or `null` when
+ * there are no qualifying global-scope symbols. This is the view-building half of
+ * {@link buildGlobalsPage}, split out so `generateSite` can register the globals
+ * page into the link registry during its dedup pass before any body is rendered.
  */
-export function buildGlobalsPage(
+export function buildGlobalsView(
   collection: TJSDocSaltyCollection<TDoclet>,
-): Page | null {
+): { view: ContainerView; slug: string } | null {
   const globals = filterDoclets(collection({ scope: 'global' }).get());
   const remainder = globals.filter((d) => !GLOBALS_EXCLUDED_KINDS.has(d.kind ?? ''));
   if (remainder.length === 0) return null;
@@ -174,13 +207,31 @@ export function buildGlobalsPage(
     constructorParams: [],
     ...buckets,
   };
+  return { view, slug: GLOBALS_SLUG };
+}
 
-  const tree = containerViewToMdast(view, {});
-  const frontmatter: Frontmatter = { title: 'Globals', kind: 'global' };
-  const body = toMdx(tree, { frontmatter });
-  const headings = extractHeadings(tree);
-
-  return { slug: 'global', frontmatter, body, mdast: tree, headings };
+/**
+ * Build the single aggregated "Globals" page: every global-scope symbol that
+ * does not already get its own page (functions, members, constants, enums,
+ * events) rendered as a member section on one synthetic container. Returns
+ * `null` when there are no qualifying globals. Renders through
+ * {@link renderContainerPage}; pass `resolveLink` to resolve cross-references in
+ * the globals' prose.
+ */
+export function buildGlobalsPage(
+  collection: TJSDocSaltyCollection<TDoclet>,
+  sourceLink?: DocletBlocksOptions['sourceLink'],
+  resolveLink?: DocletBlocksOptions['resolveLink'],
+): Page | null {
+  const built = buildGlobalsView(collection);
+  if (!built) return null;
+  const page = renderContainerPage(built.view, 'global', 'Globals', built.slug, {
+    sourceLink,
+    resolveLink,
+  });
+  // The globals page carries no per-symbol longname in its frontmatter.
+  delete page.frontmatter.longname;
+  return page;
 }
 
 /**

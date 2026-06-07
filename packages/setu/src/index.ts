@@ -1,11 +1,15 @@
 import { validateCollectionOrThrow } from './validate';
 import {
-  buildContainerPage,
-  buildGlobalsPage,
+  buildGlobalsView,
   buildNav,
   computeBuildId,
   enumerateLongnamesByKind,
+  renderContainerPage,
+  splitLongnameForSlug,
 } from './generate-site';
+import { getContainerView, type ContainerView } from './class-view';
+import { slugifyPath } from '@clean-jsdoc-theme/utils';
+import { makeLinkResolver, registerContainerView, type LinkRegistry } from './link-registry';
 import {
   buildReadmePage,
   buildTutorialPages,
@@ -32,6 +36,19 @@ const CONTAINER_KINDS: readonly PageKind[] = [
   'mixin',
   'typedef',
 ];
+
+/**
+ * A surviving container page from the dedup pass: its kind, source longname, the
+ * already-built {@link ContainerView}, and its computed slug. Carried from pass 1
+ * (dedup + registry) into pass 3 (render) so the view is built exactly once and
+ * the registry's slugs always match the emitted pages.
+ */
+interface ContainerSpec {
+  kind: PageKind;
+  longname: string;
+  view: ContainerView;
+  slug: string;
+}
 
 /** Build-side options. */
 export interface GenerateSiteOptions {
@@ -78,41 +95,67 @@ export function generateSite(
     ? (doclet: TDoclet) => sourceModel.resolve(doclet.meta)
     : undefined;
 
-  // Container API pages, one per documented container symbol. Kinds are
-  // iterated in CONTAINER_KINDS order; a `seenSlugs` guard skips later pages
-  // that collide on slug (e.g. a module that also surfaces as a class for the
-  // same symbol), so the earlier — documented-container — kind wins.
-  const apiPages: Page[] = [];
+  // --- Pass 1: collect specs (single dedup pass) ---------------------------
+  //
+  // Iterate CONTAINER_KINDS in order, building each container's view + slug.
+  // A `seenSlugs` guard skips later pages that collide on slug (e.g. a module
+  // that also surfaces as a class for the same symbol), so the earlier —
+  // documented-container — kind wins. This is the ONE place dedup happens: the
+  // surviving specs drive both the registry build and the render pass, so the
+  // registry's slugs can never diverge from the emitted pages.
+  const specs: ContainerSpec[] = [];
   const seenSlugs = new Set<string>();
   for (const kind of CONTAINER_KINDS) {
     for (const longname of enumerateLongnamesByKind(collection, kind)) {
-      const page = buildContainerPage(collection, longname, kind, sourceLink);
-      if (!page) continue;
-      if (seenSlugs.has(page.slug)) {
+      const view = getContainerView(collection, longname, kind);
+      if (!view) continue;
+      const slug = slugifyPath(splitLongnameForSlug(longname));
+      if (seenSlugs.has(slug)) {
         console.warn(
-          `[setu] skipping duplicate page slug "${page.slug}" (${kind} ${longname})`,
+          `[setu] skipping duplicate page slug "${slug}" (${kind} ${longname})`,
         );
         continue;
       }
-      seenSlugs.add(page.slug);
-      apiPages.push(page);
+      seenSlugs.add(slug);
+      specs.push({ kind, longname, view, slug });
     }
   }
 
   // One aggregated "Globals" page: every global-scope symbol that doesn't get
-  // its own container/typedef page, each rendered as a member section. Added
-  // before buildNav so it groups under "Globals" alongside the container pages.
-  const globalsPage = buildGlobalsPage(collection);
-  if (globalsPage && !seenSlugs.has(globalsPage.slug)) {
-    seenSlugs.add(globalsPage.slug);
-    apiPages.push(globalsPage);
+  // its own container/typedef page, each rendered as a member section. Appended
+  // to the spec list (guarded by the same `seenSlugs`) so it groups under
+  // "Globals" alongside the container pages.
+  const globals = buildGlobalsView(collection);
+  if (globals && !seenSlugs.has(globals.slug)) {
+    seenSlugs.add(globals.slug);
+    specs.push({ kind: 'global', longname: 'Globals', view: globals.view, slug: globals.slug });
   }
+
+  // --- Pass 2: registry, then resolver -------------------------------------
+  //
+  // Populate the link registry from the EXACT surviving spec set (so registry
+  // slugs always match real output), THEN build the resolver. The registry is
+  // fully populated before any page body renders, so forward references (page A
+  // → symbol B enumerated after A) resolve. Mirrors how `sourceLink` is built
+  // first and threaded into pages.
+  const registry: LinkRegistry = new Map();
+  for (const s of specs) registerContainerView(registry, s.view, s.slug);
+  const resolveLink = makeLinkResolver(registry);
+
+  // --- Pass 3: render -------------------------------------------------------
+  //
+  // Render each surviving spec from its already-built view (views are not
+  // rebuilt), threading both `sourceLink` and the registry-backed `resolveLink`.
+  const apiPages: Page[] = specs.map((s) =>
+    renderContainerPage(s.view, s.kind, s.longname, s.slug, { sourceLink, resolveLink }),
+  );
 
   const pages: Page[] = [];
   const nav: NavNode[] = [];
 
   // README → home page (slug ''), listed first as an ungrouped "Home" link.
-  const home = opts?.readme ? buildReadmePage(opts.readme, opts.pkg) : null;
+  // Rendered with the same resolver so prose cross-references resolve too.
+  const home = opts?.readme ? buildReadmePage(opts.readme, opts.pkg, resolveLink) : null;
   if (home) {
     pages.push(home);
     nav.push({ label: 'Home', slug: home.slug });
@@ -122,9 +165,12 @@ export function generateSite(
   pages.push(...apiPages);
   nav.push(...buildNav(apiPages));
 
-  // Tutorials → guide pages under "Tutorials".
+  // Tutorials → guide pages under "Tutorials". Same resolver for cross-refs.
   if (opts?.tutorials && opts.tutorials.length > 0) {
-    const { pages: tutorialPages, nav: tutorialNav } = buildTutorialPages(opts.tutorials);
+    const { pages: tutorialPages, nav: tutorialNav } = buildTutorialPages(
+      opts.tutorials,
+      resolveLink,
+    );
     pages.push(...tutorialPages);
     nav.push(...tutorialNav);
   }
@@ -157,11 +203,13 @@ export {
   buildClassPage,
   buildContainerPage,
   buildGlobalsPage,
+  buildGlobalsView,
   buildNav,
   computeBuildId,
   enumerateClassLongnames,
   enumerateLongnamesByKind,
   extractHeadings,
+  renderContainerPage,
   splitLongnameForSlug,
 } from './generate-site';
 

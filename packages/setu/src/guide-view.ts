@@ -21,6 +21,8 @@ import {
   type Page,
 } from '@clean-jsdoc-theme/utils';
 import { htmlToMdastBlocks, markdownToMdastBlocks } from './mdast/from-html';
+import { resolveLinkTags } from './mdast/link-tags';
+import type { ResolvedLink } from './link-registry';
 import { toMdx } from './mdx';
 import { extractHeadings } from './generate-site';
 
@@ -67,9 +69,11 @@ function contentToMdast(content: string, type: 'markdown' | 'html'): Root {
 export function buildReadmePage(
   readmeHtml: string,
   pkg?: { name?: string },
+  resolveLink?: (target: string) => ResolvedLink | null,
 ): Page | null {
   const tree: Root = { type: 'root', children: htmlToMdastBlocks(readmeHtml) };
   if (tree.children.length === 0) return null;
+  if (resolveLink) resolveLinkTags(tree, resolveLink);
 
   const title = pkg?.name ?? 'Home';
   const frontmatter: Frontmatter = { title, kind: 'index' };
@@ -82,10 +86,14 @@ export function buildReadmePage(
 }
 
 /** Build a single tutorial page; returns `null` when it has no content. */
-function buildTutorialPage(t: TutorialInput): Page | null {
+function buildTutorialPage(
+  t: TutorialInput,
+  resolveLink?: (target: string) => ResolvedLink | null,
+): Page | null {
   const content = typeof t.content === 'string' ? t.content : '';
   const tree = contentToMdast(content, t.type);
   if (tree.children.length === 0) return null;
+  if (resolveLink) resolveLinkTags(tree, resolveLink);
 
   const title = t.title?.trim() || t.name;
   const slug = `${TUTORIAL_SLUG_PREFIX}/${slugifyPath([t.name])}`;
@@ -109,13 +117,14 @@ function buildTutorialPage(t: TutorialInput): Page | null {
  */
 export function buildTutorialPages(
   tutorials: readonly TutorialInput[],
+  resolveLink?: (target: string) => ResolvedLink | null,
 ): { pages: Page[]; nav: NavNode[] } {
   const pages: Page[] = [];
   const nav: NavNode[] = [];
   let order = 0;
 
   const walk = (t: TutorialInput): void => {
-    const page = buildTutorialPage(t);
+    const page = buildTutorialPage(t, resolveLink);
     if (page) {
       pages.push(page);
       nav.push({
