@@ -1,6 +1,24 @@
 # @clean-jsdoc-theme/bhasha
 
-Internal: localization tooling for clean-jsdoc-theme v5.
+> **Stub — scoped to v5.1+.** Type surface only; no extraction or translation yet.
 
-The localization tooling. Everything translation-related in one place: the .po-style JSON schema (strings + orphaned + @meta), the extractor that walks doclets and produces locale files, the translator function that build-time code uses to look up strings with graceful English fallback, and the orphan-handling logic that preserves old translations when English evolves.
-Also exposes hooks for optional LLM-assisted translation (Claude/DeepL providers) and drift detection reports. Works standalone — someone could use it to localize any markdown-producing pipeline, not just JSDoc.
+The reserved internationalization surface for clean-jsdoc-theme. The intended
+shape is a `.po`-style locale file (`strings` + `orphaned` + `@meta`), an
+extractor that walks doclets into locale files, and a build-time translator with
+graceful fallback to the source language.
+
+## Current contents
+
+```ts
+import { createEmptyLocale, type LocaleFile } from '@clean-jsdoc-theme/bhasha';
+
+const locale = createEmptyLocale('fr'); // { '@meta': { version, locale, fallback }, strings: {}, orphaned: {} }
+```
+
+`LocaleFile` is the locale schema; `createEmptyLocale(locale, fallback = 'en')`
+returns an empty one. Everything else (the doclet extractor, the translator, and
+any optional machine-translation hooks) is future work and not implemented.
+
+## License
+
+MIT.

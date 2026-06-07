@@ -1,8 +1,14 @@
 # examples/basic
 
-Minimal end-to-end fixture for `clean-jsdoc-theme` v5. Eight JSDoc-annotated source files in [`src/`](./src) (three documented classes — `User`, `DataProcessor`, `BaseEntity` — plus modules, typedefs, constants, and utilities) and a minimal [`jsdoc.json`](./jsdoc.json) that points `opts.template` at the workspace `clean-jsdoc-theme` package.
+End-to-end fixture for `clean-jsdoc-theme` v5. 28 JSDoc-annotated source files in
+[`src/`](./src) — exercising modules, namespaces, classes, interfaces, mixins,
+typedefs, constants/enums, and globals, plus tutorials and a README — and a
+minimal [`jsdoc.json`](./jsdoc.json) that points `opts.template` at the workspace
+`clean-jsdoc-theme` package.
 
-This is also the integration test for the publish bridge in `packages/clean-jsdoc-theme/src/publish.ts`. If something regresses across setu, rang, dwar, or the bridge itself, `pnpm run docs` will be the loudest first signal.
+This is also the integration test for the publish bridge in
+`packages/clean-jsdoc-theme/src/publish.ts`. If something regresses across setu,
+rang, dwar, or the bridge itself, `pnpm run docs` will be the loudest first signal.
 
 ## Run
 
@@ -11,19 +17,25 @@ pnpm install
 pnpm run docs
 ```
 
-That runs `jsdoc -c jsdoc.json` and produces a 27-file `dist/`:
+That runs `build:theme` (turbo rebuilds the upstream packages) then
+`jsdoc -c jsdoc.json`, logging something like `rendered 95 page(s), 11 asset(s),
+28 source file(s) → dist`:
 
 ```
 dist/
 ├── _assets/styles.<buildId>.css
-├── _islands/{sidebar,toc,cmdk,code-tabs,copy-btn,theme-toggle,mobile-nav}.js
-├── pagefind/…              # Pagefind search index + UI assets
-├── dataprocessor/index.html
-├── module/coreschema/baseentity/index.html
-└── user/index.html
+├── _islands/<name>.js          # one ESM chunk per island present on a page
+├── pagefind/…                  # Pagefind search index + UI assets
+├── index.html                  # the README, rendered as the home page
+├── module/…                    # module / namespace / interface / typedef pages
+├── <class>/…                   # class & mixin pages (e.g. user/, loggermixin/)
+├── global/index.html           # the aggregated globals page
+├── tutorials/…                 # guide pages from the --tutorials tree
+└── source/…                    # read-only source-file viewer pages
 ```
 
-Three class pages match the three `@class` doclets in `src/`. Modules, typedefs, and utility globals are intentionally not rendered yet — see the architecture doc's "What's next" section.
+Pages are grouped in the sidebar by kind (Modules → Namespaces → Classes →
+Interfaces → Mixins → Typedefs → Globals), with Tutorials and Source Files below.
 
 ## Inspect visually
 
@@ -41,14 +53,17 @@ pnpm run dev
 
 ## What the example is exercising
 
-- **Real JSDoc input** — taffy collection produced by `jsdoc -c jsdoc.json` against eight files, not a hand-rolled fixture.
-- **Class-only page emission** — confirms setu's `generateSite` correctly enumerates `kind: 'class'` doclets and dedupes JSDoc's multi-doclet quirks.
-- **Slug separation** — `BaseEntity` lives at `module/coreschema/baseentity/` (because the doclet's longname embeds the module), while `User` and `DataProcessor` are at the root.
+- **Real JSDoc input** — a taffy collection produced by `jsdoc` against 28 files, not a hand-rolled fixture.
+- **All documentable kinds** — container kinds, typedefs, and an aggregated globals page, with events/enums/constants rendered as member sections.
+- **Slug separation + dedup** — `BaseEntity` lives under `module/coreschema/…` (its longname embeds the module); the module-exports-a-class overlaps (`Queue`, `RetryJob`) collapse to a single page via setu's slug-dedup guard (logged as a skip).
+- **Link resolution** — `{@link}` / `@see` cross-references (e.g. `@see base/chains#open`) become real anchors to the target page + member hash; external URLs open in a new tab.
+- **Prose surfaces** — the project README becomes the home page; the `--tutorials` tree becomes guide pages.
+- **Source viewer** — each documented source file gets a `kind: 'source'` page with a CDN-loaded Monaco viewer, and members link back to `source/<file>#L<n>`.
 - **Pre-hydration theme script** — every page sets `data-theme` on `<html>` before the stylesheet link to avoid FOUC.
-- **Five SSR island markers per page** — `mobile-nav`, `cmdk`, `theme-toggle`, `sidebar`, `toc`. The lazy loader at the bottom of each page imports only the chunks whose markers are present.
-- **Real Pagefind index** — search across all three pages with metadata exposed via `pagefind/pagefind-entry.json`.
+- **Per-page island markers** — the lazy loader at the bottom of each page imports only the chunks whose markers are present (content pages get sidebar/mobile-nav/toc/cmdk/theme-toggle/settings; code blocks add copy-btn/code-tabs; source pages get code-viewer).
+- **Real Pagefind index** — search across all rendered pages, with metadata in `pagefind/pagefind-entry.json`.
 
 ## Notes
 
 - `jsdoc.json` uses `"template": "./node_modules/clean-jsdoc-theme/dist"` (path-relative) so JSDoc's `require()` resolves the workspace symlink correctly on Windows. The bare package name also works on POSIX.
-- One known content-quality issue: each class page renders a duplicate `## Other` section at the bottom that re-renders the class doclet itself as if it were a member of the class. The pipeline issue is in setu's `class-view`, not the bridge.
+- `examples/basic` consumes the theme's **built `dist`**, so `docs` runs `build:theme` first — a change in any upstream package (utils / setu / rang / dwar) won't reach the site without it.

@@ -1,6 +1,29 @@
 # @clean-jsdoc-theme/aadesh
 
-CLI for clean-jsdoc-theme i18n and build workflows.
+> **Stub — reserved for a future v5.x.** Not a usable CLI yet.
 
-The command-line interface. Provides the clean-jsdoc binary with subcommands for workflows that live outside jsdoc -c — primarily the i18n cycle (extract, translate, report) and a few maintenance utilities (doctor for config validation, scaffold for generating example projects).
-Importantly, the CLI doesn't re-implement anything — it's a thin wrapper over core and i18n. Users who prefer programmatic access import those packages directly.
+The reserved command-line surface for clean-jsdoc-theme — the eventual home of a
+`clean-jsdoc` binary for workflows that live outside `jsdoc -c` (scaffolding,
+config validation, and driving the i18n cycle in
+[`@clean-jsdoc-theme/bhasha`](../bhasha)).
+
+The supported way to build docs today is JSDoc's own template flag:
+
+```sh
+jsdoc -t clean-jsdoc-theme -c jsdoc.json
+```
+
+## Current contents
+
+```ts
+import { AADESH_PACKAGE_VERSION } from '@clean-jsdoc-theme/aadesh';
+```
+
+`src/cli.ts` is a placeholder entry that prints a stub banner. When the CLI
+lands it will be a thin wrapper over the boundary packages — it won't
+re-implement generation or rendering, so programmatic users can keep importing
+[`setu`](../setu) / [`dwar`](../dwar) directly.
+
+## License
+
+MIT.

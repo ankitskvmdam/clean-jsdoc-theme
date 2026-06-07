@@ -1,10 +1,13 @@
 # @clean-jsdoc-theme/dwar
 
-Pure SiteManifest → HTML/CSS/JS renderer. Compiles MDX through Preact components from `@clean-jsdoc-theme/rang`, server-renders each page, bundles the seven islands as ESM chunks via esbuild, emits CSS, and provides a separate post-write Pagefind step.
+Pure SiteManifest → HTML/CSS/JS renderer. Compiles MDX through Preact components
+from `@clean-jsdoc-theme/rang`, server-renders each page, bundles each island as
+its own ESM chunk via esbuild, emits CSS, and provides a separate post-write
+Pagefind step.
 
 ## Public API
 
-- `render(manifest, opts): Promise<RenderResult>` — pure async function returning an in-memory `RenderResult` (`OutputFile[]`, `SearchEntry[]`, `stats`). Callers persist the files themselves.
+- `render(manifest, opts): Promise<RenderResult>` — pure async function returning an in-memory `RenderResult` (`OutputFile[]`, `SearchEntry[]`, `errors`, `stats`). Callers persist the files themselves. A page that fails to compile is skipped and reported in `RenderResult.errors`, never thrown.
 - `runPagefindAgainstDir(destination): Promise<void>` — post-write step that builds the Pagefind search index against the on-disk HTML output.
 
 ## Usage
@@ -46,11 +49,15 @@ await runPagefindAgainstDir(outDir);
 
 ## What `render()` emits
 
-- `<slug>/index.html` per `Page`. Each `<head>` includes a pre-hydration theme script (before the stylesheet link) to prevent FOUC, plus the inline islands loader.
-- `_assets/styles.${buildId}.css` — combined theme-variable layer (from `ThemeTokens`) + static utility layer covering rang's class surface.
+- `<slug>/index.html` per `Page`. Each `<head>` includes a pre-hydration theme script (before the stylesheet link) to prevent FOUC; the inline heading-anchors + islands loader scripts run before `</body>`.
+- `_assets/styles.${buildId}.css` — the per-theme `:root` / `[data-theme="dark"]` token block plus the prebuilt static utility layer.
 - `_islands/<name>.js` per `IslandName` — esbuild-bundled ESM chunks (Preact inlined per chunk).
 - Per-page `<script data-island-props>{ "i0": …, "i1": …, … }</script>` carrying serialized island props.
 - `RenderResult.search` — one `SearchEntry` per non-hidden page, ready for downstream indexing.
+
+`kind: 'source'` pages skip MDX entirely: the raw source stays in the SSR `<pre>`
+(off the JSON payload) and the `code-viewer` island lazy-loads Monaco from a CDN
+to enhance it.
 
 ## Pipeline placement
 
@@ -60,15 +67,15 @@ SiteManifest ──► dwar.render ──► OutputFile[] ──► caller write
                      ├── MDX via @mdx-js/mdx + rang.defaultMdxComponents
                      ├── SSR via preact-render-to-string + rang.Layout
                      ├── Island markers wrapping rang.ISLAND_REGISTRY entries
-                     ├── Islands bundle via esbuild
-                     └── CSS variables from ThemeTokens + static utility layer
+                     ├── Islands bundled via esbuild (one ESM chunk per island)
+                     └── CSS: per-theme token block + prebuilt utility layer
 ```
 
 ## Notes
 
 - `render()` is **pure**: no `fs`, no `process.cwd`, no logging. Persistence is the caller's responsibility; `runPagefindAgainstDir` is the only function in this package that touches disk.
-- The CSS layer is a static, hand-rolled utility set rather than full Tailwind v4. The rationale and the path to a future `compileStylesForDir` post-write step (mirroring the Pagefind pattern) are documented in `src/css.ts`.
-- A defensive `{@link Foo}` → ``` `@link Foo` ``` preprocessor in `src/mdx.ts` shields the MDX parser until setu lands its URL-resolution pass; remove once that pass exists.
+- **CSS is compiled once at dwar's own build time.** `scripts/build-css.mjs` runs the Tailwind v4 CLI over rang's + dwar's source and inlines the result into `src/generated/utility-css.ts`. Tailwind never runs at the consumer's `jsdoc` build, so `render()` stays pure and users need no Tailwind config; only the `:root` / `[data-theme="dark"]` token block is emitted per `ThemeConfig` at render time.
+- A defensive `{@link Foo}` → `` `@link Foo` `` preprocessor in `src/mdx.ts` is kept as a safety net. setu now resolves links upstream, so only genuinely-unresolvable tags reach this code, where the inline-code fallback keeps the page compiling.
 
 ## License
 

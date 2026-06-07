@@ -4,7 +4,7 @@
 >
 > To stay on v4, pin `"clean-jsdoc-theme": "^4"` in your `package.json`. v4 lives on the `v4-maintenance` branch and continues to receive security patches.
 
-A clean, responsive, and customizable theme for JSDoc. v5 emits a static site with SSR-rendered chrome, lazy-hydrated Preact islands (sidebar, TOC, command palette, theme toggle, mobile nav, copy button, tabbed code blocks), a built-in Pagefind search index, and an Astro-free, framework-free build.
+A clean, responsive, and customizable theme for JSDoc. v5 emits a static site with SSR-rendered chrome, lazy-hydrated Preact islands (sidebar, TOC, command palette, theme toggle, settings, mobile nav, copy button, tabbed code blocks, a Monaco source viewer), a built-in Pagefind search index, and an Astro-free, framework-free build.
 
 ---
 
@@ -25,11 +25,11 @@ Four boundary packages, each independently testable, glued together by a thin JS
 | Package | What it does |
 |---|---|
 | [`@clean-jsdoc-theme/utils`](./packages/utils) | Shared type contracts (`SiteManifest`, `Page`, `RenderOptions`, `IslandName`, …) and slug rules used by both setu and dwar. |
-| [`@clean-jsdoc-theme/setu`](./packages/setu) | JSDoc → `SiteManifest`. Walks the salty doclet collection, produces one MDX page per documented class. No HTML, no JSX, no I/O. |
-| [`@clean-jsdoc-theme/rang`](./packages/rang) | Preact component library: chrome (`Layout`, `Header`, `Footer`), seven hydratable islands, MDX element map, `ISLAND_REGISTRY`. |
+| [`@clean-jsdoc-theme/setu`](./packages/setu) | JSDoc → `SiteManifest`. Walks the salty doclet collection into one MDX page per documented symbol (classes, interfaces, mixins, modules, namespaces, typedefs, globals) plus README/tutorials/source pages, and resolves `{@link}`/`@see` cross-references. No HTML, no JSX, no I/O. |
+| [`@clean-jsdoc-theme/rang`](./packages/rang) | Preact component library: chrome (`Layout`, `Header`, `Footer`, `Brand`), ten hydratable islands, shadcn-style primitives, MDX element map, `ISLAND_REGISTRY`. |
 | [`@clean-jsdoc-theme/dwar`](./packages/dwar) | Pure `SiteManifest` → HTML/CSS/JS renderer. Server-renders pages, bundles each island as its own ESM chunk via esbuild, emits CSS, exposes a separate Pagefind post-write step. |
 | [`clean-jsdoc-theme`](./packages/clean-jsdoc-theme) | The JSDoc theme entry. A thin `publish.ts` bridge that wires the four packages together and is what `jsdoc -t clean-jsdoc-theme` actually invokes. |
-| [`@clean-jsdoc-theme/aadesh`](./packages/aadesh) | Reserved CLI surface — `clean-jsdoc build`. Stub today; JSDoc's own `-t` is the supported entry. |
+| [`@clean-jsdoc-theme/aadesh`](./packages/aadesh) | Reserved CLI surface — `clean-jsdoc`. Stub today; JSDoc's own `-t` is the supported entry. |
 | [`@clean-jsdoc-theme/bhasha`](./packages/bhasha) | Reserved i18n surface. Stub today; scoped to v5.1+. |
 
 ---
@@ -62,16 +62,17 @@ jsdoc -c jsdoc.json
 pnpm dlx serve dist
 ```
 
-The working example lives in [`examples/basic/`](./examples/basic) — `pnpm install && pnpm run docs` against eight source files produces a 27-file `dist/` (3 class pages, CSS, 7 island chunks, Pagefind index).
+The working example lives in [`examples/basic/`](./examples/basic) — `pnpm install && pnpm run docs` against 28 source files produces a static `dist/` covering every documentable kind, source-file viewers, tutorials, a README home page, the per-island ESM chunks, and a Pagefind index.
 
 ---
 
 ## Status
 
 - ✅ End-to-end JSDoc → HTML pipeline works against real source.
-- ✅ 170 tests across the four boundary packages.
-- ✅ Lint and typecheck clean.
-- 🚧 Page coverage is **classes only** today. Modules / mixins / namespaces / interfaces / typedefs / globals are deferred (each becomes a mechanical `*-view.ts` + `mdast/*-view.ts` addition in setu).
+- ✅ Page coverage for **all documentable kinds** — classes, interfaces, mixins, modules, namespaces, typedefs, and an aggregated globals page (events/enums/constants render as member sections).
+- ✅ README → home page, `--tutorials` → guide pages, documented source files → read-only Monaco viewer pages.
+- ✅ `{@link}` / `@see` cross-references resolved to real anchors (slug + member hash); external URLs open in a new tab.
+- ✅ 292 tests across utils / setu / rang / dwar / bridge. Lint and typecheck clean.
 - 🚧 Theme tokens are fixed at a sensible default; configurable token / component overrides land before stable.
 - 🚧 CLI (`@clean-jsdoc-theme/aadesh`), i18n (`@clean-jsdoc-theme/bhasha`), and the dogfood docs site (`docs-site/`) are stubbed.
 
@@ -108,7 +109,7 @@ Pnpm workspace, Turborepo for task orchestration, tsup for builds, vitest for te
 ```sh
 pnpm install
 pnpm build         # build all packages
-pnpm test          # 170 tests across utils / setu / rang / dwar
+pnpm test          # 292 tests across utils / setu / rang / dwar / bridge
 pnpm typecheck
 pnpm lint
 ```
@@ -117,7 +118,7 @@ To iterate on the example end-to-end:
 
 ```sh
 cd examples/basic
-pnpm run docs      # jsdoc -c jsdoc.json → dist/
+pnpm run docs      # build:theme (turbo) → jsdoc -c jsdoc.json → dist/
 pnpm dlx serve dist
 ```
 
