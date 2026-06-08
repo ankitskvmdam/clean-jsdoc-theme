@@ -36,6 +36,28 @@ describe('Sidebar', () => {
     const active = html.match(/bg-primary\/10/g) ?? [];
     expect(active.length).toBe(1);
   });
+
+  it('renders a clubbed parent as a label with its children as nested links', () => {
+    const clubbed: NavNode[] = [
+      {
+        label: 'queue',
+        group: 'Modules',
+        children: [
+          { label: 'index', slug: 'module/queue', group: 'Modules' },
+          { label: 'Queue', slug: 'module/queue-queue', group: 'Modules' },
+        ],
+      },
+    ];
+    const html = render(<Sidebar nav={clubbed} currentSlug="module/queue-queue" />);
+    // The parent label appears, but is NOT a link (no href to itself).
+    expect(html).toContain('queue');
+    expect(html).not.toContain('href="/queue"');
+    // Children render as real links under it.
+    expect(html).toContain('href="/module/queue"');
+    expect(html).toContain('href="/module/queue-queue"');
+    // The active child still carries aria-current.
+    expect(html).toMatch(/aria-current="page"[^>]*>(?:<[^>]*>)*Queue/);
+  });
 });
 
 describe('Sidebar — menu region (icons + external links)', () => {

@@ -166,6 +166,40 @@ function NavLink({ node, currentSlug }: { node: NavNode; currentSlug: string }) 
   );
 }
 
+/**
+ * A single sidebar row plus, when the node is a clubbed parent, its indented
+ * child list. A parent (carries `children`) renders a non-navigable group label
+ * and recurses; a leaf renders a {@link NavLink}. Owns its own `<li>` so the
+ * section map can place it directly.
+ */
+function NavEntry({ node, currentSlug }: { node: NavNode; currentSlug: string }) {
+  const children = node.children;
+  if (children && children.length > 0) {
+    return (
+      <li class="my-0.5">
+        <span class={cn(ITEM_BASE, 'items-center font-medium text-muted-foreground')}>
+          <span class="min-w-0 wrap-break-words">{node.label}</span>
+        </span>
+        {/* Children indented with a guide rail, mirroring the section nesting. */}
+        <ul class="m-0 mt-0.5 ml-4 list-none border-l border-(--clean-border) p-0 pl-2">
+          {children.map((child, ci) => (
+            <NavEntry
+              key={child.slug ?? child.href ?? `${child.label}-${ci}`}
+              node={child}
+              currentSlug={currentSlug}
+            />
+          ))}
+        </ul>
+      </li>
+    );
+  }
+  return (
+    <li class="my-0.5">
+      <NavLink node={node} currentSlug={currentSlug} />
+    </li>
+  );
+}
+
 /** Find the nearest ancestor that actually scrolls vertically. */
 function scrollParent(el: HTMLElement): HTMLElement | null {
   let p = el.parentElement;
@@ -223,9 +257,11 @@ export function Sidebar({ nav, currentSlug }: SidebarProps) {
           )}
           <ul class="m-0 list-none p-0">
             {g.items.map((node, ni) => (
-              <li key={node.slug ?? node.href ?? `${node.label}-${ni}`} class="my-0.5">
-                <NavLink node={node} currentSlug={currentSlug} />
-              </li>
+              <NavEntry
+                key={node.slug ?? node.href ?? `${node.label}-${ni}`}
+                node={node}
+                currentSlug={currentSlug}
+              />
             ))}
           </ul>
         </div>
