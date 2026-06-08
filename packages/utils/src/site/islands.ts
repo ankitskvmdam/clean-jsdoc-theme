@@ -28,7 +28,7 @@ export interface IslandPropsMap {
   'mobile-nav': { nav: NavNode[]; currentSlug: string; siteName?: SiteName; basePath?: string };
   toc: { headings: Heading[] };
   'toc-mobile': { headings: Heading[] };
-  cmdk: { basePath: string };
+  cmdk: { basePath: string; searchIndexUrl?: string };
   'code-tabs': { tabs: Array<{ label: string; lang: string; code: string }> };
   'copy-btn': { text: string };
   'theme-toggle': Record<string, never>;

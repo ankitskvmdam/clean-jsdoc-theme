@@ -47,6 +47,7 @@ async function renderPage(
   basePath: string,
   cssHref: string,
   islandsBase: string,
+  searchIndexUrl: string,
   siteName: SiteName | undefined,
   fonts: { heading: string; body: string },
   shiki: ShikiThemes,
@@ -84,6 +85,7 @@ async function renderPage(
       pkg: manifest.pkg,
       siteName,
       basePath,
+      searchIndexUrl,
       islands,
     },
     mainContent,
@@ -144,6 +146,10 @@ export async function render(
   const css = buildCss(theme.tokens, manifest.buildId);
   const cssHref = `/${css.path}`;
   const islandsBase = `/_islands`;
+  // The fuzzy-search index the cmdk island fetches. Build-id stamped so it
+  // cache-busts alongside the stylesheet/chunks.
+  const searchIndexPath = `_assets/search-index.${manifest.buildId}.json`;
+  const searchIndexUrl = `/${searchIndexPath}`;
 
   const files: OutputFile[] = [];
   const search: SearchEntry[] = [];
@@ -161,6 +167,7 @@ export async function render(
         basePath,
         cssHref,
         islandsBase,
+        searchIndexUrl,
         siteName,
         theme.tokens.fonts,
         theme.tokens.shiki,
@@ -180,6 +187,10 @@ export async function render(
 
   // CSS file.
   files.push({ path: css.path, contents: css.contents });
+
+  // Fuzzy-search index: the non-hidden pages' SearchEntry list, fetched by the
+  // cmdk island at runtime. (Pagefind's full-text bundle is a separate concern.)
+  files.push({ path: searchIndexPath, contents: JSON.stringify(search) });
 
   // Island chunks.
   const chunks = await bundleIslands({

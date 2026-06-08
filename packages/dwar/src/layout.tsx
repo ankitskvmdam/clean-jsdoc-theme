@@ -50,6 +50,8 @@ export interface SsrLayoutProps {
   };
   siteName?: SiteName;
   basePath?: string;
+  /** URL of the JSON search index, handed to the cmdk island for fuzzy search. */
+  searchIndexUrl?: string;
   /** Mutated as islands are encountered so the caller can emit the props JSON. */
   islands: IslandRecord[];
 }
@@ -116,6 +118,7 @@ export function SsrLayout({
   pkg,
   siteName,
   basePath = '/',
+  searchIndexUrl,
   islands,
 }: SsrLayoutProps) {
   const headerControls = (
@@ -124,7 +127,12 @@ export function SsrLayout({
           collapse into the nav drawer trigger below — the mobile header keeps
           only the panel-right button. */}
       <div class="hidden items-center gap-1 md:flex">
-        <Island name="cmdk" islands={islands} Component={CmdK} props={{ basePath }} />
+        <Island
+          name="cmdk"
+          islands={islands}
+          Component={CmdK}
+          props={{ basePath, ...(searchIndexUrl ? { searchIndexUrl } : {}) }}
+        />
         <Island
           name="theme-toggle"
           islands={islands}
