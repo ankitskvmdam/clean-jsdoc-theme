@@ -25,7 +25,7 @@ export function MdxH1({ id, children, ...rest }: HeadingProps) {
   );
   if (!slot) return heading;
   return (
-    <HeaderRow marginClass="h1:mb-4" slot={slot}>
+    <HeaderRow marginClass="[&_h1]:mb-4" slot={slot}>
       {heading}
     </HeaderRow>
   );
