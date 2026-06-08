@@ -4,7 +4,7 @@
 >
 > To stay on v4, pin `"clean-jsdoc-theme": "^4"` in your `package.json`. v4 lives on the `v4-maintenance` branch and continues to receive security patches.
 
-A clean, responsive, and customizable theme for JSDoc. v5 emits a static site with SSR-rendered chrome, lazy-hydrated Preact islands (sidebar, TOC, command palette, theme toggle, settings, mobile nav, copy button, tabbed code blocks, a Monaco source viewer), a built-in Pagefind search index, and an Astro-free, framework-free build.
+A clean, responsive, and customizable theme for JSDoc. v5 emits a static site with SSR-rendered chrome, lazy-hydrated Preact islands (sidebar, TOC, fuzzy command palette, theme toggle, settings, mobile nav, copy-page button, code-block copy, tabbed code blocks, a Monaco source viewer), a co-located `.md` per page for LLMs, a built-in fuzzy search index (plus an optional Pagefind full-text index), and an Astro-free, framework-free build.
 
 ---
 
@@ -26,7 +26,7 @@ Four boundary packages, each independently testable, glued together by a thin JS
 |---|---|
 | [`@clean-jsdoc-theme/utils`](./packages/utils) | Shared type contracts (`SiteManifest`, `Page`, `RenderOptions`, `IslandName`, …) and slug rules used by both setu and dwar. |
 | [`@clean-jsdoc-theme/setu`](./packages/setu) | JSDoc → `SiteManifest`. Walks the salty doclet collection into one MDX page per documented symbol (classes, interfaces, mixins, modules, namespaces, typedefs, globals) plus README/tutorials/source pages, and resolves `{@link}`/`@see` cross-references. No HTML, no JSX, no I/O. |
-| [`@clean-jsdoc-theme/rang`](./packages/rang) | Preact component library: chrome (`Layout`, `Header`, `Footer`, `Brand`), ten hydratable islands, shadcn-style primitives, MDX element map, `ISLAND_REGISTRY`. |
+| [`@clean-jsdoc-theme/rang`](./packages/rang) | Preact component library: chrome (`Layout`, `Header`, `Footer`, `Brand`), eleven hydratable islands, shadcn-style primitives (`Button`, `ButtonGroup`, `Dialog`, `DropdownMenu`), MDX element map, `ISLAND_REGISTRY`. |
 | [`@clean-jsdoc-theme/dwar`](./packages/dwar) | Pure `SiteManifest` → HTML/CSS/JS renderer. Server-renders pages, bundles each island as its own ESM chunk via esbuild, emits CSS, exposes a separate Pagefind post-write step. |
 | [`clean-jsdoc-theme`](./packages/clean-jsdoc-theme) | The JSDoc theme entry. A thin `publish.ts` bridge that wires the four packages together and is what `jsdoc -t clean-jsdoc-theme` actually invokes. |
 | [`@clean-jsdoc-theme/aadesh`](./packages/aadesh) | Reserved CLI surface — `clean-jsdoc`. Stub today; JSDoc's own `-t` is the supported entry. |
@@ -72,7 +72,9 @@ The working example lives in [`examples/basic/`](./examples/basic) — `pnpm ins
 - ✅ Page coverage for **all documentable kinds** — classes, interfaces, mixins, modules, namespaces, typedefs, and an aggregated globals page (events/enums/constants render as member sections).
 - ✅ README → home page, `--tutorials` → guide pages, documented source files → read-only Monaco viewer pages.
 - ✅ `{@link}` / `@see` cross-references resolved to real anchors (slug + member hash); external URLs open in a new tab.
-- ✅ 292 tests across utils / setu / rang / dwar / bridge. Lint and typecheck clean.
+- ✅ Fuzzy command-palette search over a generated index; a co-located `.md` per page + a copy-page button (copy / view / open in Claude · ChatGPT · Perplexity).
+- ✅ Configurable sidebar — `sectionOrder` / `menu`, plus opt-in clubbing into collapsible, localStorage-persisted groups.
+- ✅ Tests across utils / setu / rang / dwar / bridge. Lint and typecheck clean.
 - 🚧 Theme tokens are fixed at a sensible default; configurable token / component overrides land before stable.
 - 🚧 CLI (`@clean-jsdoc-theme/aadesh`), i18n (`@clean-jsdoc-theme/bhasha`), and the dogfood docs site (`docs-site/`) are stubbed.
 

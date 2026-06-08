@@ -2,8 +2,9 @@
 
 `clean-jsdoc-theme` v5 is a pnpm + Turborepo monorepo. JSDoc invokes a thin
 bridge that wires four single-responsibility packages into a one-way pipeline,
-producing a static documentation site (SSR HTML + lazy-hydrated Preact islands +
-a Pagefind search index).
+producing a static documentation site (SSR HTML + a co-located `.md` per page for
+LLMs + lazy-hydrated Preact islands + a fuzzy search index, plus an optional
+Pagefind full-text index).
 
 ---
 
@@ -159,21 +160,34 @@ Source files are a third output, gated by the bridge's `outputSourceFiles` flag
 **"Source Files"** index page, and each class member gains a `Source: file:line`
 link — `source-view.ts` resolves the doclet `meta` (`path`/`filename`/`lineno`)
 to `/source/<file>/#L<n>`, with the page slug and the link target sharing
-`slugifySourcePath` so they always agree.
+`slugifySourcePath` so they always agree. By default the link lands on the first
+line of the **declaration**: a container's documented doclet points `lineno` at
+its doc-comment, so `firstCodeLine` skips past the comment block to the code (the
+`sourceLinkToComment` option opts back into the comment line).
+
+**Sidebar nav.** `assembleNav` groups pages into sections by kind (ordered/
+filtered by `sectionOrder`, or fully replaced by a `menu` top region). With
+`clubSidebarItems` on, `clubNavTree` additionally collapses each section's entries
+into a one-level parent/child tree by the path segment before the first `/`
+(`queue`, `queue/Queue`, `queue/types` → a `queue` parent; the bare `queue` module
+becomes an `index` child); a prefix used by a single entry stays flat. Applies
+uniformly to every section, tutorials included.
 
 ```
 setu/src/
 ├── index.ts              # generateSite(collection, opts) → SiteManifest  (entry;
 │                         #   opts carries pkg + readme HTML + tutorial tree + sources
-│                         #   + sectionOrder + menu)
+│                         #   + sectionOrder + menu + clubSidebarItems + sourceLinkToComment)
 ├── generate-site.ts      # enumerate containers by kind, two-pass build (link
 │                         #   registry before render), container/typedef/globals
 │                         #   pages, assembleNav (sidebar: optional `menu` top
 │                         #   region → divider → API sections ordered/filtered by
-│                         #   `sectionOrder`), buildId
+│                         #   `sectionOrder`; clubNavTree groups by path prefix when
+│                         #   clubSidebarItems is on), buildId
 ├── guide-view.ts         # README → home Page; tutorial tree → guide Pages + nav
 ├── source-view.ts        # source files → hidden 'source' viewer Pages + "Source
 │                         #   Files" index + per-member meta→/source/…#L<n> resolver
+│                         #   (firstCodeLine: land on the declaration, not the comment)
 ├── validate.ts           # validateCollectionOrThrow
 ├── doclet.ts             # doclet access helpers
 ├── class-view.ts         # container doclet → structured view model
@@ -215,14 +229,21 @@ rang/src/
     │                     #   logo image (dark/light swap via CSS only). Shared by
     │                     #   Header / Footer / MobileNav
     ├── Button.tsx        # shadcn-style Button (cva variants/sizes) + buttonVariants
+    ├── ButtonGroup.tsx   # shadcn-style segmented group: flattens adjacent buttons'
+    │                     #   inner corners + collapses their shared border (split button)
     ├── Dialog.tsx        # shadcn-style Dialog (Preact-native; overlay+blur, focus trap,
     │                     #   scroll lock, presence/animation) + Header/Title/Body/Footer.
     │                     #   align: center/top modal OR left/right side-sheet (drawer)
+    ├── DropdownMenu.tsx  # shadcn-style menu (Preact-native; compound root/trigger/
+    │                     #   content/item/separator/label; outside-click + Esc close,
+    │                     #   roving arrow-key focus)
     ├── Layout.tsx        # slot page shell (SSR; toc rail only when toc slot set)┐
     ├── Header.tsx        # site header (SSR)            │ chrome
     ├── Footer.tsx        # site footer (SSR)            ┘
     ├── Sidebar.tsx       # island: menu region (icon links: lucide/┐ (+ SidebarItem
-    │                     #   simpleicons CDN) + divider + grouped nav │  action row)
+    │                     #   simpleicons CDN) + divider + grouped nav │  action row);
+    │                     #   clubbed parents are collapsible (chevron, localStorage-
+    │                     #   persisted) and scroll the active item into view on load
     ├── MobileNav.tsx     # island: < md nav drawer      │  (reuses Dialog sheet +
     │                     #   SidebarItem + useThemeMode + SettingsDialog + Sidebar)
     ├── TOC.tsx           # island: curved right-rail TOC │
@@ -231,12 +252,19 @@ rang/src/
     ├── toc-utils.ts      # shared scroll-spy: useActiveHeadings (rail set),       │
     │                     #   useTocProgress / getActiveHeadingIndex (mobile),     │
     │                     #   getItemOffset / getLineOffset (depth indentation)    │
-    ├── CmdK.tsx          # island: command palette      │ islands
-    ├── Settings.tsx      # island: settings (+ SettingsDialog, controlled) │ (hydrated)
-    ├── ThemeToggle.tsx   # island: light/dark (+ useThemeMode hook)        │
-    ├── CodeTabs.tsx      # island: tabbed code          │
-    ├── CopyBtn.tsx       # island: clipboard            │
-    ├── CodeViewer.tsx    # island: read-only Monaco source viewer (CDN-loaded) ┘
+    ├── CmdK.tsx          # island: command palette — fuzzy search │ islands
+    │                     #   over the fetched search index (search-utils) (hydrated)
+    ├── search-utils.ts   # dependency-free fuzzy matcher (fuzzyMatch / fuzzySearch /
+    │                     #   highlightSegments) — fzf-style scoring for CmdK
+    ├── Settings.tsx      # island: settings (+ SettingsDialog, controlled)
+    ├── ThemeToggle.tsx   # island: light/dark (+ useThemeMode hook)
+    ├── CodeTabs.tsx      # island: tabbed code
+    ├── CopyBtn.tsx       # island: clipboard (code blocks)
+    ├── CopyPageButton.tsx # island: copy-page split button (ButtonGroup + DropdownMenu):
+    │                     #   copy the page .md, view it, or open in Claude/ChatGPT/
+    │                     #   Perplexity (prompt + .md link, never the page body)
+    ├── icons/            # inlined brand SVGs (ChatGptIcon ← chatgpt.svg)
+    ├── CodeViewer.tsx    # island: read-only Monaco source viewer (CDN-loaded)
     ├── mdx-utils.tsx     # MDX shared utils: BaseProps, makeHeading, HeadingAnchor
     │                     #   (hover link button), cx, textContent
     ├── mdx-tags.tsx      # MDX tag renderers (headings, links, lists, tables, …)
@@ -245,8 +273,13 @@ rang/src/
 ```
 
 **Islands** (`IslandName`): `sidebar`, `mobile-nav`, `toc`, `toc-mobile`, `cmdk`,
-`code-tabs`, `copy-btn`, `theme-toggle`, `settings`, `code-viewer`. Each renders meaningful SSR
-HTML, then progressively enhances after hydration. The `mobile-nav` drawer
+`code-tabs`, `copy-btn`, `copy-page`, `theme-toggle`, `settings`, `code-viewer`.
+Each renders meaningful SSR HTML, then progressively enhances after hydration.
+The `cmdk` palette lazily fetches the search index on first open and ranks page
+titles with a fuzzy matcher (`search-utils`). The `copy-page` split button
+(content pages only, not the source section) copies the page's companion `.md`,
+opens it, or hands its raw-Markdown link to an LLM — it's configurable via
+`ThemeConfig.copyPage` (`enabled` + which `actions`). The `mobile-nav` drawer
 composes the others (theme toggle, settings, sidebar) rather than duplicating
 them; it shows below `md`, where the header keeps only its trigger and the
 sidebar column is hidden. `toc` (the curved right rail) and `toc-mobile` (the
@@ -320,9 +353,14 @@ heading/body/mono families are also exposed as `font-heading` / `font-body` /
 
 **`render()` emits:** `<slug>/index.html` per page (with a pre-hydration theme
 script before the stylesheet and the inline heading-anchors script before
-`</body>`), `_assets/styles.<buildId>.css`, `_islands/<name>.js` per island, a
+`</body>`), a co-located `<slug>/index.md` per content page (the page's MDX body
+verbatim — for LLMs + the copy-page button; source-viewer pages have none),
+`_assets/styles.<buildId>.css`, `_assets/search-index.<buildId>.json` (the fuzzy
+search index the `cmdk` island fetches), `_islands/<name>.js` per island, a
 per-page `data-island-props` JSON payload, and `RenderResult.search` (one
-`SearchEntry` per non-hidden page).
+`SearchEntry` per non-hidden page). Content pages also mount the `copy-page`
+island above the body (gated by `ThemeConfig.copyPage`, never on the source
+section). The full-text Pagefind bundle is a separate post-write step.
 
 ### `clean-jsdoc-theme` — the JSDoc theme entry
 
@@ -338,8 +376,11 @@ clean-jsdoc-theme/src/
 │                         #   images are copied to _assets/logo-*. Logs the rendered-
 │                         #   page count + any RenderResult.errors (skipped pages).
 │                         #   Collects source files from doclet meta (gated by
-│                         #   templates.default.outputSourceFiles, default on) → setu.
-│                         #   Normalizes opts.sectionOrder + opts.menu → setu.
+│                         #   templates.default.outputSourceFiles, default on) → setu;
+│                         #   templates.default.sourceLinkToComment toggles whether a
+│                         #   Source: link lands on the declaration (default) or comment.
+│                         #   Normalizes opts.sectionOrder + opts.menu + opts.clubSidebarItems
+│                         #   → setu, and opts.aiPrompt + opts.copyPage → theme.
 │                         #   Holds defaultTheme (OKLCH palette).
 └── write-output-files.ts # mkdir -p + writeFile loop (forward-slash → OS path)
 ```

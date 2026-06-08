@@ -50,7 +50,9 @@ await runPagefindAgainstDir(outDir);
 ## What `render()` emits
 
 - `<slug>/index.html` per `Page`. Each `<head>` includes a pre-hydration theme script (before the stylesheet link) to prevent FOUC; the inline heading-anchors + islands loader scripts run before `</body>`.
+- `<slug>/index.md` per content page — the page's MDX body verbatim, co-located with the HTML (for LLMs + the copy-page button). Source-viewer pages emit none.
 - `_assets/styles.${buildId}.css` — the per-theme `:root` / `[data-theme="dark"]` token block plus the prebuilt static utility layer.
+- `_assets/search-index.${buildId}.json` — the fuzzy search index the `cmdk` island fetches.
 - `_islands/<name>.js` per `IslandName` — esbuild-bundled ESM chunks (Preact inlined per chunk).
 - Per-page `<script data-island-props>{ "i0": …, "i1": …, … }</script>` carrying serialized island props.
 - `RenderResult.search` — one `SearchEntry` per non-hidden page, ready for downstream indexing.
