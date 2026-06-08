@@ -1,4 +1,5 @@
 import type { ComponentChildren } from 'preact';
+import { useEffect, useRef } from 'preact/hooks';
 import { House, CodeXml, Globe, Mail, ExternalLink } from 'lucide-preact';
 import type { NavNode } from '@clean-jsdoc-theme/utils';
 import { cn } from '../lib/cn';
@@ -165,13 +166,46 @@ function NavLink({ node, currentSlug }: { node: NavNode; currentSlug: string }) 
   );
 }
 
+/** Find the nearest ancestor that actually scrolls vertically. */
+function scrollParent(el: HTMLElement): HTMLElement | null {
+  let p = el.parentElement;
+  while (p) {
+    const oy = getComputedStyle(p).overflowY;
+    if ((oy === 'auto' || oy === 'scroll') && p.scrollHeight > p.clientHeight) return p;
+    p = p.parentElement;
+  }
+  return null;
+}
+
+// Breathing room (px) left above the active item so the section label sitting
+// just above it stays visible when we scroll it toward the top.
+const ACTIVE_SCROLL_PADDING = 16;
+
 export function Sidebar({ nav, currentSlug }: SidebarProps) {
   // Menu entries form a top region (icon links); the rest are grouped sections.
   const menuItems = nav.filter((n) => n.menu);
   const sectionNodes = nav.filter((n) => !n.menu);
   const groups = groupNav(sectionNodes);
+
+  // Each page is a full reload, so the sidebar re-renders scrolled to the top —
+  // a deep active item ends up below the fold and the reader has to hunt for it.
+  // On hydration, bring the current page's entry up near the top of the sidebar's
+  // own scroll container (never the window). Only the container is scrolled, and
+  // only when the item isn't already at the desired position.
+  const navRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const active = navRef.current?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (!active) return;
+    const container = scrollParent(active);
+    if (!container) return;
+    const delta = active.getBoundingClientRect().top - container.getBoundingClientRect().top;
+    const target = delta - ACTIVE_SCROLL_PADDING;
+    if (Math.abs(target) < 2) return;
+    container.scrollTop += target;
+  }, [currentSlug]);
+
   return (
-    <nav aria-label="Documentation navigation" class="text-(--clean-fg)">
+    <nav ref={navRef} aria-label="Documentation navigation" class="text-(--clean-fg)">
       {menuItems.length > 0 && (
         <ul class="m-0 list-none p-0">
           {menuItems.map((node, ni) => (
