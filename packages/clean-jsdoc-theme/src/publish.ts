@@ -167,12 +167,15 @@ interface JSDocOpts {
    */
   menu?: unknown;
   /**
-   * JSDoc's default-template source-output toggle. Read from
-   * `conf.templates.default.outputSourceFiles` (or, as a fallback, nested under
-   * `opts.templates`). Defaults to `true`; set it to `false` to suppress the
-   * per-file source viewer pages and the `Source: file:line` member links.
+   * JSDoc's default-template source options, read from `conf.templates.default`
+   * (or, as a fallback, nested under `opts.templates`):
+   *  - `outputSourceFiles` — defaults to `true`; set `false` to suppress the
+   *    per-file source viewer pages and the `Source: file:line` member links.
+   *  - `sourceLinkToComment` — defaults to `false`. By default a `Source:`
+   *    link lands on the first line of the declaration; set `true` to point it
+   *    at the doclet's doc-comment line instead (the pre-v5 behavior).
    */
-  templates?: { default?: { outputSourceFiles?: unknown } };
+  templates?: { default?: { outputSourceFiles?: unknown; sourceLinkToComment?: unknown } };
   [key: string]: unknown;
 }
 
@@ -399,6 +402,26 @@ export function outputSourceFilesEnabled(opts: JSDocOpts): boolean {
 }
 
 /**
+ * Resolve `templates.default.sourceLinkToComment`. Probed in the same priority
+ * order as {@link outputSourceFilesEnabled} (canonical `jsdoc/env` conf, then a
+ * nested `opts.templates` fallback). Resolves to `true` ONLY when one of those
+ * is exactly `=== true`; otherwise `false` (the default: links jump to code).
+ */
+export function sourceLinkToCommentEnabled(opts: JSDocOpts): boolean {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const env = require('jsdoc/env') as {
+      conf?: { templates?: { default?: { sourceLinkToComment?: unknown } } };
+    };
+    if (env?.conf?.templates?.default?.sourceLinkToComment === true) return true;
+  } catch {
+    // `jsdoc/env` isn't resolvable (e.g. unit tests) — fall back to opts.
+  }
+  if (opts?.templates?.default?.sourceLinkToComment === true) return true;
+  return false;
+}
+
+/**
  * Validate `opts.sectionOrder` into a clean `string[]`, or `undefined` to fall
  * back to setu's default order. Accepts only an array; trims string entries and
  * drops non-strings/empties. An array that yields no usable labels → `undefined`.
@@ -566,6 +589,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   // JSDoc's `templates.default.outputSourceFiles` (default ON); reading files
   // is optional and self-skips on error, so this never aborts the build.
   const sources = outputSourceFilesEnabled(opts) ? await collectSourceFiles(data) : [];
+  const sourceLinkToComment = sourceLinkToCommentEnabled(opts);
 
   // Sidebar config: `menu` (full control) takes precedence over `sectionOrder`.
   // Each accepts only well-formed input; anything else falls back to defaults.
@@ -577,6 +601,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
     ...(readme ? { readme } : {}),
     ...(tutorialTree.length > 0 ? { tutorials: tutorialTree } : {}),
     ...(sources.length > 0 ? { sources } : {}),
+    ...(sources.length > 0 && sourceLinkToComment ? { sourceLinkToComment } : {}),
     ...(sectionOrder ? { sectionOrder } : {}),
     ...(menu ? { menu } : {}),
   });
