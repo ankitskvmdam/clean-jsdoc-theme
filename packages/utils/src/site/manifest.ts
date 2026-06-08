@@ -22,8 +22,9 @@ export interface NavNode {
   external?: boolean;
   /**
    * Icon for the entry (menu items only), as a prefixed `source:code` string:
-   * `simpleicons:<slug>` renders from `cdn.simpleicons.org` (CSS dark/light
-   * swap), and `lucide:<name>` renders from the bundled lucide set (`home`,
+   * `simpleicons:<slug>` renders the `cdn.simpleicons.org` glyph painted with
+   * the `fg` theme token (CSS-masked, so it swaps light/dark on its own), and
+   * `lucide:<name>` renders from the bundled lucide set (`home`,
    * `code-xml`, `globe`, `mail`, `external-link`; an unknown name →
    * `external-link`).
    */

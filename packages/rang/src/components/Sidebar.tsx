@@ -49,11 +49,6 @@ function groupNav(nav: readonly NavNode[]): GroupedNav[] {
   return groups;
 }
 
-// Simple Icons CDN glyph colors: a dark glyph for the light theme, a light
-// glyph for the dark theme (the pair is CSS-swapped like the site logo).
-const SI_LIGHT_COLOR = '232323';
-const SI_DARK_COLOR = 'e6e6e6';
-
 /**
  * The bundled lucide icon set. A `lucide:<name>` icon outside this set falls
  * back to `external-link`. Kept small on purpose — arbitrary glyphs come from
@@ -69,8 +64,11 @@ const LUCIDE_ICONS: Record<string, typeof House> = {
 
 /**
  * Leading icon for a menu entry. The icon is a `source:code` string:
- *  - `simpleicons:<slug>` → a themed Simple Icons CDN image pair (dark glyph on
- *    the light theme, light glyph on dark — CSS-swapped like the site logo).
+ *  - `simpleicons:<slug>` → the Simple Icons CDN glyph, painted with the `fg`
+ *    theme token. The silhouette SVG is used as a CSS mask over a
+ *    `var(--clean-fg)` fill, so it picks up the exact fg color and the
+ *    light/dark swap for free (the variable is rebound under
+ *    `[data-theme="dark"]`) — no per-theme image pair, no baked-in hex.
  *  - `lucide:<name>` → a bundled lucide icon; an unknown name → `external-link`.
  *  - anything else (no/unknown prefix) → the `external-link` lucide icon.
  * Returns `null` for entries with no icon (regular page/section links).
@@ -82,17 +80,14 @@ function NavIcon({ icon }: { icon?: string }) {
   const code = sep === -1 ? icon : icon.slice(sep + 1);
 
   if (source === 'simpleicons' && code) {
-    const base = `https://cdn.simpleicons.org/${encodeURIComponent(code)}`;
+    const url = `https://cdn.simpleicons.org/${encodeURIComponent(code)}`;
+    const mask = `url(${url}) center / contain no-repeat`;
     return (
-      <>
-        <img src={`${base}/${SI_LIGHT_COLOR}`} alt="" aria-hidden="true" class="h-4 w-4 shrink-0 dark:hidden" />
-        <img
-          src={`${base}/${SI_DARK_COLOR}`}
-          alt=""
-          aria-hidden="true"
-          class="hidden h-4 w-4 shrink-0 dark:inline-block"
-        />
-      </>
+      <span
+        aria-hidden="true"
+        class="inline-block h-4 w-4 shrink-0 bg-(--clean-fg)"
+        style={{ mask, WebkitMask: mask, opacity: 0.8 }}
+      />
     );
   }
 
@@ -150,7 +145,12 @@ function NavLink({ node, currentSlug }: { node: NavNode; currentSlug: string }) 
   // `undefined` slug = a branch/group label (not navigable). An empty-string
   // slug is the site root (home), which IS navigable → `/`.
   if (node.slug === undefined) {
-    return <span class={cn(ITEM_BASE, 'text-muted-foreground', align)}>{icon}{label}</span>;
+    return (
+      <span class={cn(ITEM_BASE, 'text-muted-foreground', align)}>
+        {icon}
+        {label}
+      </span>
+    );
   }
   const isCurrent = node.slug === currentSlug;
   return (
@@ -181,9 +181,7 @@ export function Sidebar({ nav, currentSlug }: SidebarProps) {
           ))}
         </ul>
       )}
-      {menuItems.length > 0 && groups.length > 0 && (
-        <hr class="my-3 border-(--clean-border)" />
-      )}
+      {menuItems.length > 0 && groups.length > 0 && <hr class="my-3 border-(--clean-border)" />}
       {groups.map((g, gi) => (
         <div key={g.group ? `g-${g.group}` : `_ungrouped-${gi}`} class="mt-4 first:mt-0">
           {g.group && (

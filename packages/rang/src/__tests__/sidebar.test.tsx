@@ -55,13 +55,14 @@ describe('Sidebar — menu region (icons + external links)', () => {
     expect(html).toContain('rel="noopener noreferrer"');
   });
 
-  it('renders a Simple Icons CDN image pair for a simpleicons: icon', () => {
+  it('paints a simpleicons: glyph with the fg token via a CSS mask', () => {
     const html = render(<Sidebar nav={menuNav} currentSlug="" />);
-    expect(html).toContain('cdn.simpleicons.org/github/232323');
-    expect(html).toContain('cdn.simpleicons.org/github/e6e6e6');
-    // The pair is CSS-swapped per theme.
-    expect(html).toContain('dark:hidden');
-    expect(html).toContain('dark:inline-block');
+    // Silhouette SVG used as a mask (no baked-in color in the URL)...
+    expect(html).toContain('cdn.simpleicons.org/github');
+    expect(html).not.toContain('cdn.simpleicons.org/github/');
+    // ...filled with the fg theme token, which swaps light/dark on its own.
+    expect(html).toContain('bg-(--clean-fg)');
+    expect(html).toContain('mask:url(https://cdn.simpleicons.org/github)');
   });
 
   it('renders a bundled lucide icon for a lucide: icon, not a CDN image', () => {
