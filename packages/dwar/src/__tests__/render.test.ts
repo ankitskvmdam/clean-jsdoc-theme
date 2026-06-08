@@ -19,6 +19,25 @@ describe('render() — smoke', () => {
     expect(paths).toContain('guide/intro/index.html');
   });
 
+  it('emits a verbatim .md companion alongside each page HTML', async () => {
+    const manifest = makeManifest();
+    const result = await render(manifest, { theme: minimalTheme });
+
+    const paths = result.files.map((f) => f.path);
+    expect(paths).toContain('index.md');
+    expect(paths).toContain('guide/intro/index.md');
+
+    // The .md is the page's MDX body written verbatim — no transformation.
+    for (const page of manifest.pages) {
+      const mdPath = (page.slug ? `${page.slug}/` : '') + 'index.md';
+      const md = result.files.find((f) => f.path === mdPath)!;
+      expect(asString(md)).toBe(page.body);
+    }
+
+    // The companion .md does not count as a page.
+    expect(result.stats.pageCount).toBe(2);
+  });
+
   it('renders the page title into HTML', async () => {
     const manifest = makeManifest();
     const result = await render(manifest, { theme: minimalTheme });

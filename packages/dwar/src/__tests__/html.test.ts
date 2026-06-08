@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { extractExcerpt, htmlPathFor } from '../html';
+import { extractExcerpt, htmlPathFor, mdPathFor } from '../html';
 
 describe('htmlPathFor', () => {
   it('returns index.html for an empty slug', () => {
@@ -13,6 +13,14 @@ describe('htmlPathFor', () => {
   });
   it('strips leading and trailing slashes', () => {
     expect(htmlPathFor('/foo/bar/')).toBe('foo/bar/index.html');
+  });
+});
+
+describe('mdPathFor', () => {
+  it('co-locates the .md next to the .html (index.html → index.md)', () => {
+    expect(mdPathFor('')).toBe('index.md');
+    expect(mdPathFor('guide/intro')).toBe('guide/intro/index.md');
+    expect(mdPathFor('/foo/bar/')).toBe('foo/bar/index.md');
   });
 });
 

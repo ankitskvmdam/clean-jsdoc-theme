@@ -26,7 +26,7 @@ import type {
 
 import { compileMdxToComponent, type MdxComponentMap, type ShikiThemes } from './mdx';
 import { SsrLayout, renderIsland, type IslandRecord } from './layout';
-import { renderHtmlDocument, htmlPathFor, extractExcerpt } from './html';
+import { renderHtmlDocument, htmlPathFor, mdPathFor, extractExcerpt } from './html';
 import { bundleIslands, ALL_ISLANDS } from './islands-bundle';
 import { buildCss } from './css';
 
@@ -154,6 +154,9 @@ export async function render(
   const files: OutputFile[] = [];
   const search: SearchEntry[] = [];
   const errors: RenderError[] = [];
+  // Count HTML pages explicitly: each page may also emit a companion .md, which
+  // must NOT inflate the page count (it's a per-page asset, not a page).
+  let renderedPageCount = 0;
 
   // Render pages. A single page that fails to compile (e.g. MDX that won't
   // parse) must NOT abort the whole build — collect the failure and carry on so
@@ -173,6 +176,11 @@ export async function render(
         theme.tokens.shiki,
       );
       files.push(file);
+      renderedPageCount++;
+      // Companion .md alongside the .html: the page's MDX body written verbatim
+      // (no transform), so LLMs and a future "copy page" button can fetch the
+      // markdown source for the current page. Source-viewer pages have no body.
+      if (page.body) files.push({ path: mdPathFor(page.slug), contents: page.body });
       if (!page.frontmatter.hidden) search.push(entry);
     } catch (err) {
       errors.push({
@@ -181,9 +189,6 @@ export async function render(
       });
     }
   }
-
-  // Number of HTML pages actually rendered (before assets are appended).
-  const renderedPageCount = files.length;
 
   // CSS file.
   files.push({ path: css.path, contents: css.contents });
