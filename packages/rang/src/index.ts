@@ -14,6 +14,24 @@ export const RANG_PACKAGE_VERSION = '5.0.0-alpha.0';
 export { Button, buttonVariants } from './components/Button';
 export type { ButtonProps } from './components/Button';
 
+export { ButtonGroup } from './components/ButtonGroup';
+export type { ButtonGroupProps } from './components/ButtonGroup';
+
+export {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from './components/DropdownMenu';
+export type {
+  DropdownMenuProps,
+  DropdownMenuTriggerProps,
+  DropdownMenuContentProps,
+  DropdownMenuItemProps,
+} from './components/DropdownMenu';
+
 export {
   Dialog,
   DialogHeader,
