@@ -344,6 +344,61 @@ export interface AssembleNavOptions {
    * carries an icon. See {@link MenuItem}.
    */
   menu?: readonly MenuItem[];
+  /**
+   * Club related entries within each section into a one-level parent/child tree,
+   * grouping by the path segment before the first `/` in their label (e.g.
+   * `queue`, `queue/Queue`, `queue/types` collapse under a `queue` parent). A
+   * prefix shared by only one entry is left flat (so a lone `strings/format`
+   * keeps its full label). See {@link clubNavTree}. Off by default.
+   */
+  clubSidebarItems?: boolean;
+}
+
+/** Child label for the entry that IS the bare prefix (e.g. the `queue` module). */
+const CLUB_ROOT_CHILD_LABEL = 'index';
+
+/**
+ * Club a section's entries into a one-level parent/child tree by the path
+ * segment before the first `/` in each label. A prefix shared by ≥2 entries
+ * becomes a non-navigable parent branch whose children are the entries with
+ * their prefix stripped (`queue/Queue` → `Queue`); the entry that IS the bare
+ * prefix (`queue`) becomes an `index` child, sorted first. A prefix with a
+ * single entry is NOT clubbed — it stays flat with its original label (so a lone
+ * `strings/format` is untouched). First-occurrence order of prefixes is
+ * preserved, so an already-sorted (or tree-ordered) section keeps its order.
+ */
+export function clubNavTree(nodes: readonly NavNode[]): NavNode[] {
+  const groups = new Map<string, NavNode[]>();
+  for (const node of nodes) {
+    const slash = node.label.indexOf('/');
+    const prefix = slash === -1 ? node.label : node.label.slice(0, slash);
+    const bucket = groups.get(prefix);
+    if (bucket) bucket.push(node);
+    else groups.set(prefix, [node]);
+  }
+
+  const out: NavNode[] = [];
+  for (const [prefix, members] of groups) {
+    if (members.length < 2) {
+      // Single entry under this prefix → never clubbed; keep it verbatim.
+      out.push(members[0]);
+      continue;
+    }
+    const children = members
+      .map((m) => ({
+        ...m,
+        label: m.label === prefix ? CLUB_ROOT_CHILD_LABEL : m.label.slice(prefix.length + 1),
+      }))
+      // The bare-prefix entry (`index`) leads; the rest stay alphabetized.
+      .sort((a, b) => {
+        if (a.label === CLUB_ROOT_CHILD_LABEL) return -1;
+        if (b.label === CLUB_ROOT_CHILD_LABEL) return 1;
+        return a.label.localeCompare(b.label);
+      });
+    // The parent is a label-only branch (no slug → not navigable).
+    out.push({ label: prefix, group: members[0].group, children });
+  }
+  return out;
 }
 
 /**
@@ -367,6 +422,7 @@ export function assembleNav({
   source,
   sectionOrder,
   menu,
+  clubSidebarItems = false,
 }: AssembleNavOptions): NavNode[] {
   // Bucket every section's entries by label.
   const bySection = new Map<string, NavNode[]>();
@@ -385,6 +441,13 @@ export function assembleNav({
   // API sections are alphabetized within the section; tutorials keep tree order.
   for (const [label, items] of bySection) {
     if (label !== TUTORIALS_SECTION) items.sort((a, b) => a.label.localeCompare(b.label));
+  }
+
+  // Optionally club each section's entries into prefix-grouped subtrees. Done
+  // after sorting so club order follows the section order; applies uniformly to
+  // every section (API + Tutorials), in both menu and section mode below.
+  if (clubSidebarItems) {
+    for (const [label, items] of bySection) bySection.set(label, clubNavTree(items));
   }
 
   const order =

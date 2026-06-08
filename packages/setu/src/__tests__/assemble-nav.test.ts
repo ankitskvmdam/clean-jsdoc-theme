@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { NavNode, Page } from '@clean-jsdoc-theme/utils';
-import { assembleNav, DEFAULT_SECTION_ORDER, type MenuItem } from '../generate-site';
+import { assembleNav, clubNavTree, DEFAULT_SECTION_ORDER, type MenuItem } from '../generate-site';
 
 /** Minimal API page stub: only the fields `assembleNav` reads. */
 function page(title: string, kind: Page['frontmatter']['kind'], slug: string): Page {
@@ -68,6 +68,68 @@ describe('assembleNav — sectionOrder (filter + order)', () => {
     expect(nav[0].label).toBe('Home');
     expect(nav[nav.length - 1].label).toBe('Source Files');
     expect(nav.some((n) => n.group === 'Modules')).toBe(false);
+  });
+});
+
+describe('clubNavTree', () => {
+  const node = (label: string, slug: string): NavNode => ({ label, slug, group: 'Modules' });
+
+  it('clubs a shared prefix into a parent branch, bare module → index child', () => {
+    const out = clubNavTree([node('base', 'module/base'), node('base/chains', 'module/base-chains')]);
+    expect(out).toHaveLength(1);
+    const parent = out[0];
+    expect(parent.label).toBe('base');
+    expect(parent.slug).toBeUndefined(); // non-navigable branch
+    expect(parent.group).toBe('Modules');
+    // `index` (the bare module) leads, then the rest; prefix stripped from labels.
+    expect(parent.children!.map((c) => c.label)).toEqual(['index', 'chains']);
+    // Children keep their original slugs.
+    expect(parent.children![0].slug).toBe('module/base');
+    expect(parent.children![1].slug).toBe('module/base-chains');
+  });
+
+  it('does NOT club a prefix used by a single entry', () => {
+    const out = clubNavTree([node('strings/format', 'module/strings-format')]);
+    expect(out).toHaveLength(1);
+    expect(out[0]).toEqual(node('strings/format', 'module/strings-format'));
+    expect(out[0].children).toBeUndefined();
+  });
+
+  it('alphabetizes club children (after the leading index) and preserves prefix order', () => {
+    const out = clubNavTree([
+      node('queue', 'module/queue'),
+      node('queue/Queue', 'module/queue-queue'),
+      node('queue/types', 'module/queue-types'),
+      node('queue/AbstractJob', 'module/queue-abstractjob'),
+      node('strings/format', 'module/strings-format'),
+    ]);
+    expect(out.map((n) => n.label)).toEqual(['queue', 'strings/format']); // prefix order kept
+    expect(out[0].children!.map((c) => c.label)).toEqual(['index', 'AbstractJob', 'Queue', 'types']);
+    expect(out[1].children).toBeUndefined(); // lone strings/format stays flat
+  });
+});
+
+describe('assembleNav — clubSidebarItems', () => {
+  const MODS = [
+    page('base', 'module', 'module/base'),
+    page('base/chains', 'module', 'module/base-chains'),
+    page('strings/format', 'module', 'module/strings-format'),
+  ];
+
+  it('clubs section entries when enabled, leaving singletons flat', () => {
+    const nav = assembleNav({ apiPages: MODS, clubSidebarItems: true });
+    const mods = nav.filter((n) => n.group === 'Modules');
+    expect(mods.map((n) => n.label)).toEqual(['base', 'strings/format']);
+    const base = mods.find((n) => n.label === 'base')!;
+    expect(base.children!.map((c) => c.label)).toEqual(['index', 'chains']);
+    expect(mods.find((n) => n.label === 'strings/format')!.children).toBeUndefined();
+  });
+
+  it('leaves entries flat when disabled (default)', () => {
+    const nav = assembleNav({ apiPages: MODS });
+    const labels = nav.filter((n) => n.group === 'Modules').map((n) => n.label);
+    expect(labels).toEqual(['base', 'base/chains', 'strings/format']);
+    expect(nav.every((n) => n.children === undefined)).toBe(true);
   });
 });
 

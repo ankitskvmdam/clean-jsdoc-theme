@@ -100,6 +100,14 @@ export interface GenerateSiteOptions {
    * links render inline. Each entry can carry an icon. See {@link MenuItem}.
    */
   menu?: MenuItem[];
+  /**
+   * Club related sidebar entries within each section into a one-level
+   * parent/child tree, grouping by the path segment before the first `/` (e.g.
+   * `queue`, `queue/Queue`, `queue/types` collapse under a `queue` parent). A
+   * prefix used by only one entry is left flat. Applies to every section,
+   * tutorials included. Off by default. See {@link clubNavTree}.
+   */
+  clubSidebarItems?: boolean;
 }
 
 /**
@@ -251,6 +259,7 @@ export function generateSite(
     source: sourceNav,
     sectionOrder: opts?.sectionOrder,
     menu: opts?.menu,
+    clubSidebarItems: opts?.clubSidebarItems ?? false,
   });
 
   const manifest: SiteManifest = {
@@ -278,6 +287,7 @@ export {
   buildGlobalsPage,
   buildGlobalsView,
   buildNav,
+  clubNavTree,
   computeBuildId,
   DEFAULT_SECTION_ORDER,
   enumerateClassLongnames,
