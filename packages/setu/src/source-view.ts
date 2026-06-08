@@ -79,6 +79,43 @@ export interface SourceLink {
   label: string;
 }
 
+/** Tuning for {@link buildSourceModel}. */
+export interface SourceModelOptions {
+  /**
+   * When `true`, a `Source: file:line` link points at the doclet's raw
+   * `meta.lineno` — which, for a container documented with a leading JSDoc
+   * block (class/interface/mixin/module/namespace/typedef), is the FIRST line of
+   * the doc comment. The default (`false`) instead lands on the first line of the
+   * actual declaration, skipping past the comment block, so readers see code
+   * rather than a long comment when they follow the link.
+   */
+  linkToComment?: boolean;
+}
+
+/**
+ * Given a file's content and a doclet's 1-based `lineno`, return the line of the
+ * actual declaration. JSDoc reports `meta.lineno` as the code line for most
+ * symbols (their doclet carries a real AST `range`), but for a container
+ * documented with a leading `/** … *\/` block the documented doclet points at
+ * the comment's opening line (and has no `range`). When `lineno` lands on a line
+ * that opens a block comment, advance past the closing `*\/` to the first
+ * non-blank line — the declaration. Any other line is already code, so it's
+ * returned unchanged. Out-of-range or unterminated input falls back to `lineno`.
+ */
+export function firstCodeLine(content: string, lineno: number): number {
+  if (!Number.isFinite(lineno) || lineno < 1) return lineno;
+  const lines = content.split('\n');
+  let i = lineno - 1;
+  if (i >= lines.length) return lineno;
+  // Only adjust when this line OPENS a block comment; code lines pass through.
+  if (!/^\s*\/\*/.test(lines[i])) return lineno;
+  while (i < lines.length && !lines[i].includes('*/')) i++;
+  if (i >= lines.length) return lineno; // unterminated — don't guess.
+  i++; // step past the line carrying the closing `*/`.
+  while (i < lines.length && lines[i].trim() === '') i++;
+  return i < lines.length ? i + 1 : lineno;
+}
+
 /** Result of building source pages: pages, index, nav node, and a resolver. */
 export interface SourceModel {
   /** One `kind: 'source'` page per input file. */
@@ -159,7 +196,11 @@ function buildIndexPage(sources: readonly SourceFileInput[]): Page {
  * Turn a set of source files into viewer pages, an index page, a nav node, and
  * a `resolve(meta)` that maps a doclet's declaration site back to its page.
  */
-export function buildSourceModel(sources: readonly SourceFileInput[]): SourceModel {
+export function buildSourceModel(
+  sources: readonly SourceFileInput[],
+  options: SourceModelOptions = {},
+): SourceModel {
+  const { linkToComment = false } = options;
   const pages = sources.map(buildSourcePage);
   const indexPage = buildIndexPage(sources);
   const navNode: NavNode = { label: SOURCE_FILES_LABEL, slug: SOURCE_SLUG_PREFIX };
@@ -189,7 +230,9 @@ export function buildSourceModel(sources: readonly SourceFileInput[]): SourceMod
     }
     if (!hit) return null;
 
-    const lineno = meta.lineno ?? 1;
+    const rawLine = meta.lineno ?? 1;
+    // Default: jump to the declaration, not the doc comment above it.
+    const lineno = linkToComment ? rawLine : firstCodeLine(hit.content, rawLine);
     return {
       href: `/${fileSlug(hit.relPath)}/#L${lineno}`,
       label: `${filename ?? hit.relPath}:${lineno}`,

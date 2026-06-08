@@ -79,6 +79,12 @@ export interface GenerateSiteOptions {
    */
   sources?: SourceFileInput[];
   /**
+   * When `true`, `Source: file:line` links point at the doclet's raw comment
+   * line instead of the first line of the declaration. Defaults to `false` (jump
+   * to the code). See {@link SourceModelOptions.linkToComment}.
+   */
+  sourceLinkToComment?: boolean;
+  /**
    * Sidebar sections to render, in order (e.g. `["Classes", "Tutorials"]`).
    * Acts as BOTH a filter and an ordering — a section omitted here is dropped
    * from the sidebar. "Home" (when a README exists) and "Source Files" (when
@@ -112,7 +118,9 @@ export function generateSite(
 
   // Source viewer model (pages + nav + the doclet→source link resolver). Built
   // first so its `resolve` can be threaded into each class page's mdast.
-  const sourceModel = opts?.sources?.length ? buildSourceModel(opts.sources) : null;
+  const sourceModel = opts?.sources?.length
+    ? buildSourceModel(opts.sources, { linkToComment: opts.sourceLinkToComment ?? false })
+    : null;
   // `resolve` keys off a doclet's `meta`; adapt it to the `(doclet) => link`
   // shape `sourceLink` expects.
   const sourceLink = sourceModel
@@ -296,6 +304,8 @@ export {
 export {
   buildSourceModel,
   detectLanguage,
+  firstCodeLine,
   type SourceFileInput,
   type SourceModel,
+  type SourceModelOptions,
 } from './source-view';

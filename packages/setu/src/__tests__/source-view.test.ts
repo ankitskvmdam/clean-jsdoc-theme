@@ -3,6 +3,7 @@ import { slugifySourcePath } from '@clean-jsdoc-theme/utils';
 import {
   buildSourceModel,
   detectLanguage,
+  firstCodeLine,
   type SourceFileInput,
 } from '../source-view';
 import { buildClassPage } from '../generate-site';
@@ -57,6 +58,34 @@ describe('detectLanguage', () => {
     expect(detectLanguage('a.unknownext')).toBe('plaintext');
     expect(detectLanguage('Makefile')).toBe('plaintext');
     expect(detectLanguage('.gitignore')).toBe('plaintext');
+  });
+});
+
+describe('firstCodeLine', () => {
+  // 1:/**  2:* doc  3:*/  4:export class Foo {  5:}
+  const withComment = ['/**', ' * doc', ' */', 'export class Foo {', '}'].join('\n');
+
+  it('skips a leading doc-comment block to the declaration', () => {
+    expect(firstCodeLine(withComment, 1)).toBe(4);
+  });
+
+  it('skips blank lines between the comment and the code', () => {
+    const src = ['/**', ' * doc', ' */', '', '', 'function f() {}'].join('\n');
+    expect(firstCodeLine(src, 1)).toBe(6);
+  });
+
+  it('leaves a line that is already code unchanged', () => {
+    expect(firstCodeLine(withComment, 4)).toBe(4);
+    expect(firstCodeLine('const a = 1;', 1)).toBe(1);
+  });
+
+  it('handles a single-line block comment', () => {
+    expect(firstCodeLine(['/** doc */', 'const a = 1;'].join('\n'), 1)).toBe(2);
+  });
+
+  it('falls back to lineno when out of range or unterminated', () => {
+    expect(firstCodeLine('const a = 1;', 99)).toBe(99);
+    expect(firstCodeLine(['/**', ' * never closes'].join('\n'), 1)).toBe(1);
   });
 });
 
@@ -134,6 +163,30 @@ describe('buildSourceModel', () => {
       expect(model.resolve({})).toBeNull();
       expect(model.resolve({ filename: 'nope.js' })).toBeNull();
       expect(model.resolve({ path: '/elsewhere', filename: 'Other.js' })).toBeNull();
+    });
+  });
+
+  describe('resolve(meta) — comment vs. code line', () => {
+    // A container whose documented doclet points at its comment's first line.
+    const DOCD: SourceFileInput[] = [
+      {
+        absPath: '/repo/src/Widget.js',
+        relPath: 'src/Widget.js',
+        // 1:/**  2:* doc  3:*/  4:export class Widget {  5:}
+        content: ['/**', ' * A widget.', ' */', 'export class Widget {', '}'].join('\n'),
+      },
+    ];
+
+    it('jumps to the declaration line by default (skips the comment)', () => {
+      const model = buildSourceModel(DOCD);
+      const link = model.resolve({ path: '/repo/src', filename: 'Widget.js', lineno: 1 });
+      expect(link).toEqual({ href: '/source/src/widget-js/#L4', label: 'Widget.js:4' });
+    });
+
+    it('keeps the comment line when linkToComment is set (opt-out)', () => {
+      const model = buildSourceModel(DOCD, { linkToComment: true });
+      const link = model.resolve({ path: '/repo/src', filename: 'Widget.js', lineno: 1 });
+      expect(link).toEqual({ href: '/source/src/widget-js/#L1', label: 'Widget.js:1' });
     });
   });
 });
