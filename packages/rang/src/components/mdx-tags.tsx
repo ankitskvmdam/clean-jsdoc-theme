@@ -25,7 +25,7 @@ export function MdxH1({ id, children, ...rest }: HeadingProps) {
   );
   if (!slot) return heading;
   return (
-    <HeaderRow marginClass="mb-4" slot={slot}>
+    <HeaderRow marginClass="h1:mb-4" slot={slot}>
       {heading}
     </HeaderRow>
   );
@@ -159,10 +159,7 @@ export function MdxHr(props: BaseProps) {
 export function MdxTable({ children, ...rest }: BaseProps) {
   return (
     <div class="my-6 overflow-x-auto">
-      <table
-        class="w-full min-w-full border-collapse text-sm [&_td]:min-w-[150px]"
-        {...rest}
-      >
+      <table class="w-full min-w-full border-collapse text-sm [&_td]:min-w-[150px]" {...rest}>
         {children}
       </table>
     </div>
