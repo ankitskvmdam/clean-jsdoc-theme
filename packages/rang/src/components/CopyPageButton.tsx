@@ -175,27 +175,23 @@ export function CopyPageButton({ mdUrl, siteName, prompt, actions }: CopyPageBut
     </Button>
   );
 
+  // No outer layout wrapper: the button is dropped into the first heading's row
+  // (dwar passes it via HeaderSlotContext), which owns alignment + wrapping.
+  if (items.length === 0) return primary; // no dropdown actions → primary only
   return (
-    <div class="mb-6 flex justify-end">
-      {items.length === 0 ? (
-        // No dropdown actions configured → just the primary copy button.
-        primary
-      ) : (
-        <DropdownMenu>
-          <ButtonGroup label="Copy page">
-            {primary}
-            <DropdownMenuTrigger
-              class={cn(buttonVariants({ variant: 'outline', size: 'icon-sm' }), 'px-1')}
-              aria-label="More copy options"
-            >
-              <ChevronDown size={16} aria-hidden="true" />
-            </DropdownMenuTrigger>
-          </ButtonGroup>
-          <DropdownMenuContent align="end" label="Copy page options" class="w-72">
-            {items.map(renderItem)}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
-    </div>
+    <DropdownMenu>
+      <ButtonGroup label="Copy page">
+        {primary}
+        <DropdownMenuTrigger
+          class={cn(buttonVariants({ variant: 'outline', size: 'icon-sm' }), 'px-1')}
+          aria-label="More copy options"
+        >
+          <ChevronDown size={16} aria-hidden="true" />
+        </DropdownMenuTrigger>
+      </ButtonGroup>
+      <DropdownMenuContent align="end" label="Copy page options" class="w-72">
+        {items.map(renderItem)}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

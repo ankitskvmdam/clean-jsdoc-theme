@@ -6,7 +6,8 @@
  */
 
 import type { ComponentChildren, VNode } from 'preact';
-import { isValidElement } from 'preact';
+import { createContext, isValidElement } from 'preact';
+import { useContext } from 'preact/hooks';
 import { Check, Link } from 'lucide-preact';
 import { Button } from './Button';
 
@@ -15,6 +16,53 @@ export interface BaseProps {
   // MDX passes through arbitrary HTML-style props; `unknown` at the registry
   // level absorbs that heterogeneity.
   [key: string]: unknown;
+}
+
+/**
+ * A node (e.g. the copy-page button) to drop into the first heading's row.
+ * `placed` guards against re-placement when a page has more than one heading.
+ * Mutating it during render is safe here: MDX content is server-rendered in a
+ * single top-down pass and never hydrated as a whole (only its island markers
+ * hydrate, independently), so the first heading rendered is the page's.
+ */
+export interface HeaderSlot {
+  node: ComponentChildren;
+  placed: boolean;
+}
+
+/** Provided by dwar around the MDX render; consumed by the first heading. */
+export const HeaderSlotContext = createContext<HeaderSlot | null>(null);
+
+/** Claim the header slot for the first heading rendered; returns its node once, else null. */
+export function useHeaderSlot(): ComponentChildren | null {
+  const slot = useContext(HeaderSlotContext);
+  if (!slot || slot.placed || slot.node == null) return null;
+  slot.placed = true;
+  return slot.node;
+}
+
+/**
+ * Lay a heading and the header-slot node out on one row: side by side with the
+ * node pushed right (`justify-between`), wrapping the node below — left-aligned —
+ * on a narrow screen or when the heading is too long to share the line.
+ */
+export function HeaderRow({
+  marginClass,
+  children,
+  slot,
+}: {
+  marginClass: string;
+  children: ComponentChildren;
+  slot: ComponentChildren;
+}) {
+  // gap-y-1 (4px) keeps the heading↔button spacing tight when the button wraps
+  // below on a narrow screen / long heading; gap-x-4 spaces them when side by side.
+  return (
+    <div class={`flex flex-wrap items-center justify-between gap-x-4 gap-y-1 ${marginClass}`}>
+      {children}
+      <div class="shrink-0">{slot}</div>
+    </div>
+  );
 }
 
 export interface HeadingProps extends BaseProps {

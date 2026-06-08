@@ -7,18 +7,27 @@
 
 import { CircleAlert, Info, TriangleAlert } from 'lucide-preact';
 import type { BaseProps, HeadingProps } from './mdx-utils';
-import { HeadingAnchor } from './mdx-utils';
+import { HeadingAnchor, HeaderRow, useHeaderSlot } from './mdx-utils';
 
 export function MdxH1({ id, children, ...rest }: HeadingProps) {
-  return (
+  // The first heading on the page claims the header slot (e.g. the copy-page
+  // button), which then sits in a row beside the title (see HeaderRow).
+  const slot = useHeaderSlot();
+  const heading = (
     <h1
       id={id}
-      class={`group relative mb-4 scroll-mt-20 text-3xl font-medium ${id ? 'cursor-pointer' : ''}`}
+      class={`group relative scroll-mt-20 text-3xl font-medium ${slot ? '' : 'mb-4'} ${id ? 'cursor-pointer' : ''}`}
       {...rest}
     >
       {id && <HeadingAnchor />}
       {children}
     </h1>
+  );
+  if (!slot) return heading;
+  return (
+    <HeaderRow marginClass="mb-4" slot={slot}>
+      {heading}
+    </HeaderRow>
   );
 }
 

@@ -92,4 +92,6 @@ export { Settings, SettingsDialog } from './components/Settings';
 export type { SettingsProps, SettingsDialogProps } from './components/Settings';
 
 export { defaultMdxComponents } from './mdx-components';
+export { HeaderSlotContext } from './components/mdx-utils';
+export type { HeaderSlot } from './components/mdx-utils';
 export { ISLAND_REGISTRY } from './islands';

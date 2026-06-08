@@ -8,9 +8,15 @@
  * files themselves and then optionally call `runPagefindAgainstDir`.
  */
 
-import { h, Fragment } from 'preact';
+import { h } from 'preact';
+import type { ComponentChildren } from 'preact';
 import { render as renderToString } from 'preact-render-to-string';
-import { defaultMdxComponents, CodeViewer, CopyPageButton } from '@clean-jsdoc-theme/rang';
+import {
+  defaultMdxComponents,
+  CodeViewer,
+  CopyPageButton,
+  HeaderSlotContext,
+} from '@clean-jsdoc-theme/rang';
 import { siteNameText } from '@clean-jsdoc-theme/utils';
 import type {
   OutputFile,
@@ -63,7 +69,7 @@ async function renderPage(
   // real `data-island` marker. The SSR `<pre>` carries the file text (via
   // `ssrProps.code`), while the JSON payload deliberately omits `code` — the
   // hydration chunk reads it back from the DOM (see islands-loader.ts).
-  let mainContent: ReturnType<typeof h>;
+  let mainContent: ComponentChildren;
   if (page.frontmatter.kind === 'source' && page.source) {
     const { code, language, filename } = page.source;
     // No per-page highlight line for a whole-file view; the `#L42` deep-link is
@@ -82,8 +88,9 @@ async function renderPage(
     // "Source Files" index lives at the `source` slug and is excluded here too).
     const inSourceSection = page.slug === 'source' || page.slug.startsWith('source/');
     if (copyPageEnabled && !inSourceSection) {
-      // Copy-page split button at the top of the content: copies the page's
-      // companion .md, or opens it / hands it to ChatGPT/Claude/Perplexity.
+      // Copy-page split button: copies the page's companion .md, or opens it /
+      // hands it to ChatGPT/Claude/Perplexity. It's handed to the MDX render via
+      // HeaderSlotContext so the first heading places it in a row beside the title.
       const resolvedSiteName = siteNameText(siteName, manifest.pkg?.name);
       const copyPage = renderIsland({
         name: 'copy-page',
@@ -96,7 +103,11 @@ async function renderPage(
           ...(copyPageActions ? { actions: copyPageActions } : {}),
         },
       });
-      mainContent = h(Fragment, null, copyPage, h(MdxComponent, {}));
+      mainContent = h(
+        HeaderSlotContext.Provider,
+        { value: { node: copyPage, placed: false } },
+        h(MdxComponent, {}),
+      );
     } else {
       mainContent = h(MdxComponent, {});
     }
