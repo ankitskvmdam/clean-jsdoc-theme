@@ -1,7 +1,20 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { render } from 'preact-render-to-string';
+import { render as mount, fireEvent, cleanup, waitFor } from '@testing-library/preact';
 import type { NavNode } from '@clean-jsdoc-theme/utils';
 import { Sidebar } from '../components/Sidebar';
+
+/** A two-child clubbed parent under "Modules" (as setu emits when clubbing). */
+const CLUB: NavNode[] = [
+  {
+    label: 'queue',
+    group: 'Modules',
+    children: [
+      { label: 'index', slug: 'module/queue', group: 'Modules' },
+      { label: 'Queue', slug: 'module/queue-queue', group: 'Modules' },
+    ],
+  },
+];
 
 // Flat, grouped nav — the shape setu's buildNav emits (group + order per entry).
 const fixture: NavNode[] = [
@@ -37,26 +50,53 @@ describe('Sidebar', () => {
     expect(active.length).toBe(1);
   });
 
-  it('renders a clubbed parent as a label with its children as nested links', () => {
-    const clubbed: NavNode[] = [
-      {
-        label: 'queue',
-        group: 'Modules',
-        children: [
-          { label: 'index', slug: 'module/queue', group: 'Modules' },
-          { label: 'Queue', slug: 'module/queue-queue', group: 'Modules' },
-        ],
-      },
-    ];
-    const html = render(<Sidebar nav={clubbed} currentSlug="module/queue-queue" />);
-    // The parent label appears, but is NOT a link (no href to itself).
+  it('auto-opens the club holding the current page, revealing its children', () => {
+    const html = render(<Sidebar nav={CLUB} currentSlug="module/queue-queue" />);
+    // The parent is a toggle button (no self-link), expanded since it holds active.
     expect(html).toContain('queue');
     expect(html).not.toContain('href="/queue"');
-    // Children render as real links under it.
+    expect(html).toContain('aria-expanded="true"');
+    // Children render as real links under it; the active child carries aria-current.
     expect(html).toContain('href="/module/queue"');
     expect(html).toContain('href="/module/queue-queue"');
-    // The active child still carries aria-current.
     expect(html).toMatch(/aria-current="page"[^>]*>(?:<[^>]*>)*Queue/);
+  });
+
+  it('collapses a club by default when it does not hold the current page', () => {
+    const html = render(<Sidebar nav={CLUB} currentSlug="" />);
+    expect(html).toContain('aria-expanded="false"');
+    // Children are not rendered while collapsed.
+    expect(html).not.toContain('href="/module/queue"');
+    expect(html).not.toContain('href="/module/queue-queue"');
+  });
+});
+
+describe('Sidebar — collapsible clubs (interactive)', () => {
+  afterEach(() => {
+    cleanup();
+    localStorage.clear();
+  });
+
+  it('reveals children on click and persists the open state', () => {
+    const { getByRole, queryByRole } = mount(<Sidebar nav={CLUB} currentSlug="" />);
+    // Collapsed by default: no child links yet.
+    expect(queryByRole('link', { name: 'index' })).toBeNull();
+
+    fireEvent.click(getByRole('button', { name: /queue/ }));
+
+    // Children appear, and the choice is persisted to localStorage.
+    expect(getByRole('link', { name: 'index' })).toBeTruthy();
+    const stored = JSON.parse(localStorage.getItem('clean-jsdoc-theme:sidebar-open') ?? '{}');
+    expect(stored['Modules::queue']).toBe(true);
+  });
+
+  it('restores a persisted collapsed state over the auto-open default', async () => {
+    // User previously collapsed the club that holds the current page.
+    localStorage.setItem('clean-jsdoc-theme:sidebar-open', JSON.stringify({ 'Modules::queue': false }));
+    const { queryByRole } = mount(<Sidebar nav={CLUB} currentSlug="module/queue-queue" />);
+    // Despite holding the active page, the stored `false` wins → collapsed once
+    // the persisted state loads on mount.
+    await waitFor(() => expect(queryByRole('link', { name: 'Queue' })).toBeNull());
   });
 });
 

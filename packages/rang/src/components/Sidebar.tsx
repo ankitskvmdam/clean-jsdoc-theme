@@ -1,6 +1,6 @@
 import type { ComponentChildren } from 'preact';
-import { useEffect, useRef } from 'preact/hooks';
-import { House, CodeXml, Globe, Mail, ExternalLink } from 'lucide-preact';
+import { useEffect, useRef, useState } from 'preact/hooks';
+import { House, CodeXml, Globe, Mail, ExternalLink, ChevronRight } from 'lucide-preact';
 import type { NavNode } from '@clean-jsdoc-theme/utils';
 import { cn } from '../lib/cn';
 
@@ -166,30 +166,88 @@ function NavLink({ node, currentSlug }: { node: NavNode; currentSlug: string }) 
   );
 }
 
+// Persisted per-club open/closed state, keyed by section + label. A `localStorage`
+// map of explicit user choices: an entry present means the user toggled it, so it
+// wins over the default; an absent entry falls back to the default (collapsed,
+// unless the club holds the current page).
+const OPEN_STATE_KEY = 'clean-jsdoc-theme:sidebar-open';
+
+function readOpenState(): Record<string, boolean> {
+  try {
+    const raw = localStorage.getItem(OPEN_STATE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as unknown;
+    return parsed && typeof parsed === 'object' ? (parsed as Record<string, boolean>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeOpenState(map: Record<string, boolean>): void {
+  try {
+    localStorage.setItem(OPEN_STATE_KEY, JSON.stringify(map));
+  } catch {
+    // Private mode / disabled storage — collapse state just isn't persisted.
+  }
+}
+
+/** Stable key for a club parent (section + label), used as its open-state id. */
+function clubKey(node: NavNode): string {
+  return `${node.group ?? ''}::${node.label}`;
+}
+
+interface NavEntryProps {
+  node: NavNode;
+  currentSlug: string;
+  /** Explicit per-club open/closed choices (absent → use the default). */
+  openMap: Record<string, boolean>;
+  /** Persist a club's new open state. */
+  onToggle: (key: string, open: boolean) => void;
+}
+
 /**
- * A single sidebar row plus, when the node is a clubbed parent, its indented
- * child list. A parent (carries `children`) renders a non-navigable group label
- * and recurses; a leaf renders a {@link NavLink}. Owns its own `<li>` so the
- * section map can place it directly.
+ * A single sidebar row plus, when the node is a clubbed parent, its collapsible
+ * child list. A parent (carries `children`) renders a toggle button with a
+ * chevron and reveals its children only when open; a leaf renders a
+ * {@link NavLink}. Clubs are collapsed by default, EXCEPT the one holding the
+ * current page (so you can always see where you are); an explicit user toggle
+ * (persisted in `openMap`) overrides that default. Owns its own `<li>`.
  */
-function NavEntry({ node, currentSlug }: { node: NavNode; currentSlug: string }) {
+function NavEntry({ node, currentSlug, openMap, onToggle }: NavEntryProps) {
   const children = node.children;
   if (children && children.length > 0) {
+    const key = clubKey(node);
+    const holdsActive = children.some((c) => c.slug !== undefined && c.slug === currentSlug);
+    const open = openMap[key] ?? holdsActive;
     return (
       <li class="my-0.5">
-        <span class={cn(ITEM_BASE, 'items-center font-medium text-muted-foreground')}>
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => onToggle(key, !open)}
+          class={cn(ITEM_BASE, ITEM_INACTIVE, 'items-center font-medium')}
+        >
           <span class="min-w-0 wrap-break-words">{node.label}</span>
-        </span>
-        {/* Children indented with a guide rail, mirroring the section nesting. */}
-        <ul class="m-0 mt-0.5 ml-4 list-none border-l border-(--clean-border) p-0 pl-2">
-          {children.map((child, ci) => (
-            <NavEntry
-              key={child.slug ?? child.href ?? `${child.label}-${ci}`}
-              node={child}
-              currentSlug={currentSlug}
-            />
-          ))}
-        </ul>
+          <ChevronRight
+            size={16}
+            aria-hidden="true"
+            class={cn('ml-auto shrink-0 transition-transform', open && 'rotate-90')}
+          />
+        </button>
+        {/* Children indented with a guide rail; only mounted while open. */}
+        {open && (
+          <ul class="m-0 mt-0.5 ml-4 list-none border-l border-(--clean-border) p-0 pl-2">
+            {children.map((child, ci) => (
+              <NavEntry
+                key={child.slug ?? child.href ?? `${child.label}-${ci}`}
+                node={child}
+                currentSlug={currentSlug}
+                openMap={openMap}
+                onToggle={onToggle}
+              />
+            ))}
+          </ul>
+        )}
       </li>
     );
   }
@@ -238,6 +296,21 @@ export function Sidebar({ nav, currentSlug }: SidebarProps) {
     container.scrollTop += target;
   }, [currentSlug]);
 
+  // Persisted club open/closed state. Starts empty so the SSR markup and the
+  // first client render agree (no hydration mismatch); the stored preferences
+  // load right after mount. Toggling updates state and persists immediately.
+  const [openMap, setOpenMap] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    setOpenMap(readOpenState());
+  }, []);
+  const handleToggle = (key: string, open: boolean): void => {
+    setOpenMap((prev) => {
+      const next = { ...prev, [key]: open };
+      writeOpenState(next);
+      return next;
+    });
+  };
+
   return (
     <nav ref={navRef} aria-label="Documentation navigation" class="text-(--clean-fg)">
       {menuItems.length > 0 && (
@@ -261,6 +334,8 @@ export function Sidebar({ nav, currentSlug }: SidebarProps) {
                 key={node.slug ?? node.href ?? `${node.label}-${ni}`}
                 node={node}
                 currentSlug={currentSlug}
+                openMap={openMap}
+                onToggle={handleToggle}
               />
             ))}
           </ul>
