@@ -167,6 +167,13 @@ interface JSDocOpts {
    */
   menu?: unknown;
   /**
+   * Club related sidebar entries into prefix-grouped subtrees (`jsdoc.json`
+   * `"opts": { "clubSidebarItems": true }`). Groups entries within each section
+   * by the path segment before the first `/` (e.g. `queue/*` under a `queue`
+   * parent); a prefix with a single entry is left flat. Off by default.
+   */
+  clubSidebarItems?: unknown;
+  /**
    * JSDoc's default-template source options, read from `conf.templates.default`
    * (or, as a fallback, nested under `opts.templates`):
    *  - `outputSourceFiles` — defaults to `true`; set `false` to suppress the
@@ -595,6 +602,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   // Each accepts only well-formed input; anything else falls back to defaults.
   const sectionOrder = normalizeSectionOrder(opts.sectionOrder);
   const menu = normalizeMenu(opts.menu);
+  const clubSidebarItems = opts.clubSidebarItems === true;
 
   const manifest = generateSite(data, {
     ...(pkg ? { pkg } : {}),
@@ -604,6 +612,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
     ...(sources.length > 0 && sourceLinkToComment ? { sourceLinkToComment } : {}),
     ...(sectionOrder ? { sectionOrder } : {}),
     ...(menu ? { menu } : {}),
+    ...(clubSidebarItems ? { clubSidebarItems } : {}),
   });
 
   // Resolve siteName (text or logo set) and copy any local logo images into the
