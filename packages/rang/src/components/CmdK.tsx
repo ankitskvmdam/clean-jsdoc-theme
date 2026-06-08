@@ -1,32 +1,79 @@
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { Search } from 'lucide-preact';
+import type { SearchEntry } from '@clean-jsdoc-theme/utils';
 import { Button } from './Button';
 import { Dialog } from './Dialog';
+import { fuzzySearch, highlightSegments, type FuzzyResult } from './search-utils';
 
 export interface CmdKProps {
   basePath: string;
+  /**
+   * URL of the JSON search index dwar emits (one {@link SearchEntry} per
+   * non-hidden page). Fetched lazily on first open. When omitted, the palette
+   * opens but reports an empty index.
+   */
+  searchIndexUrl?: string;
 }
 
-interface SearchResult {
-  slug: string;
-  title: string;
+/** Result-list cap — fuzzySearch already limits, this keeps the DOM small too. */
+const MAX_RESULTS = 25;
+
+/** Render a title with its fuzzy-matched characters emphasized. */
+function Highlighted({ text, positions }: { text: string; positions: number[] }) {
+  return (
+    <>
+      {highlightSegments(text, positions).map((seg, i) =>
+        seg.match ? (
+          <mark key={i} class="bg-transparent font-semibold text-primary">
+            {seg.text}
+          </mark>
+        ) : (
+          <span key={i}>{seg.text}</span>
+        ),
+      )}
+    </>
+  );
 }
 
-export function CmdK({ basePath: _basePath }: CmdKProps) {
+export function CmdK({ basePath: _basePath, searchIndexUrl }: CmdKProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
+  // Search index: `null` until fetched. Fetched once, lazily, on first open.
+  const [entries, setEntries] = useState<SearchEntry[] | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const listRef = useRef<HTMLUListElement | null>(null);
   const openRef = useRef(open);
   const activeRef = useRef(active);
 
-  // Phase 3 search is a stub — dwar's Phase 4 work wires Pagefind into this.
-  const results: SearchResult[] = [];
+  const results: FuzzyResult<SearchEntry>[] = useMemo(
+    () => (entries ? fuzzySearch(query, entries, (e) => e.title, MAX_RESULTS) : []),
+    [query, entries],
+  );
   const resultsRef = useRef(results);
 
   openRef.current = open;
   activeRef.current = active;
   resultsRef.current = results;
+
+  // Lazily load the index the first time the palette opens. A failed/missing
+  // fetch resolves to an empty index rather than throwing — search just shows
+  // "no results" instead of breaking the page.
+  useEffect(() => {
+    if (!open || entries !== null || !searchIndexUrl) return;
+    let cancelled = false;
+    fetch(searchIndexUrl)
+      .then((r) => (r.ok ? (r.json() as Promise<SearchEntry[]>) : []))
+      .then((data) => {
+        if (!cancelled) setEntries(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        if (!cancelled) setEntries([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, entries, searchIndexUrl]);
 
   // Global shortcuts: Cmd/Ctrl+K toggles; arrows + Enter drive the result list
   // while open. (Escape, focus trap, and focus restore are handled by Dialog.)
@@ -49,7 +96,7 @@ export function CmdK({ basePath: _basePath }: CmdKProps) {
       } else if (e.key === 'Enter') {
         const target = resultsRef.current[activeRef.current];
         if (target) {
-          window.location.href = `/${target.slug}`;
+          window.location.href = `/${target.item.slug}`;
         }
       }
     };
@@ -64,6 +111,14 @@ export function CmdK({ basePath: _basePath }: CmdKProps) {
       window.requestAnimationFrame(() => inputRef.current?.focus());
     }
   }, [open]);
+
+  // Keep the active row scrolled into view as arrow keys move it.
+  useEffect(() => {
+    const el = listRef.current?.querySelector<HTMLElement>('[aria-selected="true"]');
+    el?.scrollIntoView({ block: 'nearest' });
+  }, [active]);
+
+  const hasQuery = query.trim().length > 0;
 
   return (
     <>
@@ -94,29 +149,43 @@ export function CmdK({ basePath: _basePath }: CmdKProps) {
             aria-label="Search query"
           />
         </div>
-        <ul role="listbox" class="m-0 max-h-80 list-none overflow-y-auto p-2">
+        <ul
+          ref={listRef}
+          role="listbox"
+          aria-label="Search results"
+          class="m-0 max-h-80 list-none overflow-y-auto p-2"
+        >
           {results.length === 0 ? (
-            <li class="px-2 py-4 text-center text-sm text-muted-foreground">
-              No results — search is wired in Phase 4
+            <li class="px-2 py-6 text-center text-sm text-muted-foreground">
+              {hasQuery ? 'No matching pages' : 'Type to search the docs'}
             </li>
           ) : (
             results.map((r, i) => (
               <li
-                key={r.slug}
+                key={r.item.slug}
                 role="option"
                 aria-selected={i === active}
                 class={`rounded px-3 py-2 text-sm ${i === active ? 'bg-accent' : ''}`}
+                onMouseMove={() => setActive(i)}
               >
-                <a href={`/${r.slug}`} class="block text-foreground">
-                  {r.title}
+                <a href={`/${r.item.slug}`} class="block text-foreground no-underline">
+                  <span class="block">
+                    <Highlighted text={r.item.title} positions={r.match.positions} />
+                  </span>
+                  {r.item.excerpt ? (
+                    <span class="mt-0.5 block truncate text-xs text-muted-foreground">
+                      {r.item.excerpt}
+                    </span>
+                  ) : null}
                 </a>
               </li>
             ))
           )}
         </ul>
-        <div class="flex justify-end border-t border-border p-2">
+        <div class="flex items-center justify-between border-t border-border p-2 text-xs text-muted-foreground">
+          <span class="px-1">↑↓ to navigate · ↵ to open · esc to close</span>
           <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>
-            Close (Esc)
+            Close
           </Button>
         </div>
       </Dialog>
