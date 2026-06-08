@@ -9,6 +9,7 @@ import { CmdK } from './components/CmdK';
 import { CodeTabs } from './components/CodeTabs';
 import { CodeViewer } from './components/CodeViewer';
 import { CopyBtn } from './components/CopyBtn';
+import { CopyPageButton } from './components/CopyPageButton';
 import { ThemeToggle } from './components/ThemeToggle';
 import { Settings } from './components/Settings';
 
@@ -24,6 +25,7 @@ export const ISLAND_REGISTRY: Record<IslandName, ComponentType<any>> = {
   'code-tabs': CodeTabs,
   'code-viewer': CodeViewer,
   'copy-btn': CopyBtn,
+  'copy-page': CopyPageButton,
   'theme-toggle': ThemeToggle,
   settings: Settings,
 };

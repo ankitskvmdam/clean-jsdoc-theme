@@ -60,6 +60,45 @@ describe('render() — smoke', () => {
     }
   });
 
+  it('mounts the copy-page island with the page md url on content pages', async () => {
+    const manifest = makeManifest();
+    const result = await render(manifest, { theme: minimalTheme });
+    const home = asString(result.files.find((f) => f.path === 'index.html')!);
+    expect(home).toContain('data-island="copy-page"');
+    // Its props payload carries the companion .md url for this page.
+    expect(home).toContain('/index.md');
+    const guide = asString(result.files.find((f) => f.path === 'guide/intro/index.html')!);
+    expect(guide).toContain('guide/intro/index.md');
+  });
+
+  it('omits the copy-page button when disabled in the theme', async () => {
+    const manifest = makeManifest();
+    const result = await render(manifest, {
+      theme: { ...minimalTheme, copyPage: { enabled: false } },
+    });
+    const home = asString(result.files.find((f) => f.path === 'index.html')!);
+    expect(home).not.toContain('data-island="copy-page"');
+  });
+
+  it('omits the copy-page button on the source section', async () => {
+    const manifest = makeManifest();
+    manifest.pages = [
+      ...manifest.pages,
+      {
+        slug: 'source',
+        frontmatter: { title: 'Source Files', kind: 'guide' },
+        body: '# Source Files\n\n- a\n- b\n',
+        headings: [],
+      },
+    ];
+    const result = await render(manifest, { theme: minimalTheme });
+    const sourceIndex = asString(result.files.find((f) => f.path === 'source/index.html')!);
+    expect(sourceIndex).not.toContain('data-island="copy-page"');
+    // A normal content page still has it.
+    const home = asString(result.files.find((f) => f.path === 'index.html')!);
+    expect(home).toContain('data-island="copy-page"');
+  });
+
   it('links the buildId-suffixed stylesheet', async () => {
     const manifest = makeManifest();
     const result = await render(manifest, { theme: minimalTheme });
@@ -77,7 +116,7 @@ describe('render() — smoke', () => {
     expect(home).toContain(`d.dataset.theme='light'`);
   });
 
-  it('emits nine non-empty island chunks', async () => {
+  it('emits a non-empty chunk for each island', async () => {
     const manifest = makeManifest();
     const result = await render(manifest, { theme: minimalTheme });
     const expected = [
@@ -88,6 +127,7 @@ describe('render() — smoke', () => {
       '_islands/cmdk.js',
       '_islands/code-tabs.js',
       '_islands/copy-btn.js',
+      '_islands/copy-page.js',
       '_islands/theme-toggle.js',
       '_islands/settings.js',
     ];

@@ -79,6 +79,9 @@ export type { CodeViewerProps } from './components/CodeViewer';
 export { CopyBtn } from './components/CopyBtn';
 export type { CopyBtnProps } from './components/CopyBtn';
 
+export { CopyPageButton } from './components/CopyPageButton';
+export type { CopyPageButtonProps } from './components/CopyPageButton';
+
 export { ThemeToggle, useThemeMode } from './components/ThemeToggle';
 export type { ThemeToggleProps } from './components/ThemeToggle';
 

@@ -8,6 +8,7 @@
 import type { Heading } from './page';
 import type { NavNode } from './manifest';
 import type { SiteName } from './site-name';
+import type { CopyPageAction } from './theme';
 
 /** Stable string IDs for each island. The string is used as the `data-island` attribute. */
 export type IslandName =
@@ -18,6 +19,7 @@ export type IslandName =
   | 'cmdk'
   | 'code-tabs'
   | 'copy-btn'
+  | 'copy-page'
   | 'theme-toggle'
   | 'settings'
   | 'code-viewer';
@@ -31,6 +33,11 @@ export interface IslandPropsMap {
   cmdk: { basePath: string; searchIndexUrl?: string };
   'code-tabs': { tabs: Array<{ label: string; lang: string; code: string }> };
   'copy-btn': { text: string };
+  // The copy-page split button: `mdUrl` is the page's companion .md; `siteName`
+  // + `prompt` feed the "Open in ChatGPT/Claude" message ({siteName}/{url} are
+  // substituted at click time, the page markdown is appended after). `actions`
+  // picks which dropdown items appear (omit for all; `[]` for none).
+  'copy-page': { mdUrl: string; siteName?: string; prompt?: string; actions?: CopyPageAction[] };
   'theme-toggle': Record<string, never>;
   settings: Record<string, never>;
   // No `code` field: the source body is read from the DOM `<pre>` at hydration

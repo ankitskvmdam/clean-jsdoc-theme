@@ -8,9 +8,9 @@
  * files themselves and then optionally call `runPagefindAgainstDir`.
  */
 
-import { h } from 'preact';
+import { h, Fragment } from 'preact';
 import { render as renderToString } from 'preact-render-to-string';
-import { defaultMdxComponents, CodeViewer } from '@clean-jsdoc-theme/rang';
+import { defaultMdxComponents, CodeViewer, CopyPageButton } from '@clean-jsdoc-theme/rang';
 import { siteNameText } from '@clean-jsdoc-theme/utils';
 import type {
   OutputFile,
@@ -22,6 +22,7 @@ import type {
   SiteManifest,
   SiteName,
   IslandName,
+  CopyPageAction,
 } from '@clean-jsdoc-theme/utils';
 
 import { compileMdxToComponent, type MdxComponentMap, type ShikiThemes } from './mdx';
@@ -49,6 +50,9 @@ async function renderPage(
   islandsBase: string,
   searchIndexUrl: string,
   siteName: SiteName | undefined,
+  aiPrompt: string | undefined,
+  copyPageEnabled: boolean,
+  copyPageActions: CopyPageAction[] | undefined,
   fonts: { heading: string; body: string },
   shiki: ShikiThemes,
 ): Promise<{ file: OutputFile; search: SearchEntry; islands: IslandRecord[] }> {
@@ -73,7 +77,29 @@ async function renderPage(
     });
   } else {
     const { Component: MdxComponent } = await compileMdxToComponent(page.body, components, shiki);
-    mainContent = h(MdxComponent, {});
+    // The copy-page button is for documentation content only — never the source
+    // section (its viewer pages are `kind: 'source'` and skip this branch; the
+    // "Source Files" index lives at the `source` slug and is excluded here too).
+    const inSourceSection = page.slug === 'source' || page.slug.startsWith('source/');
+    if (copyPageEnabled && !inSourceSection) {
+      // Copy-page split button at the top of the content: copies the page's
+      // companion .md, or opens it / hands it to ChatGPT/Claude/Perplexity.
+      const resolvedSiteName = siteNameText(siteName, manifest.pkg?.name);
+      const copyPage = renderIsland({
+        name: 'copy-page',
+        islands,
+        Component: CopyPageButton,
+        props: {
+          mdUrl: `/${mdPathFor(page.slug)}`,
+          ...(resolvedSiteName ? { siteName: resolvedSiteName } : {}),
+          ...(aiPrompt ? { prompt: aiPrompt } : {}),
+          ...(copyPageActions ? { actions: copyPageActions } : {}),
+        },
+      });
+      mainContent = h(Fragment, null, copyPage, h(MdxComponent, {}));
+    } else {
+      mainContent = h(MdxComponent, {});
+    }
   }
 
   const layoutVNode = h(
@@ -143,6 +169,11 @@ export async function render(
   // chunks are available if/when MDX content uses them.
   const islandSet = new Set<IslandName>(ALL_ISLANDS);
 
+  // Copy-page button: on by default; `enabled: false` opts out entirely.
+  // `actions` (undefined → all) controls which dropdown items appear.
+  const copyPageEnabled = theme.copyPage?.enabled !== false;
+  const copyPageActions = theme.copyPage?.actions;
+
   const css = buildCss(theme.tokens, manifest.buildId);
   const cssHref = `/${css.path}`;
   const islandsBase = `/_islands`;
@@ -172,6 +203,9 @@ export async function render(
         islandsBase,
         searchIndexUrl,
         siteName,
+        theme.aiPrompt,
+        copyPageEnabled,
+        copyPageActions,
         theme.tokens.fonts,
         theme.tokens.shiki,
       );
@@ -245,6 +279,8 @@ export type {
   SearchEntry,
   ThemeConfig,
   ThemeTokens,
+  CopyPageConfig,
+  CopyPageAction,
   SiteName,
   SiteLogo,
   ComponentOverrides,

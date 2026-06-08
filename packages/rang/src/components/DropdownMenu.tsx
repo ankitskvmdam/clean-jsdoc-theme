@@ -196,7 +196,7 @@ export function DropdownMenuContent({
       data-state="open"
       onKeyDown={onKeyDown}
       class={cn(
-        'absolute z-50 mt-1 min-w-44 rounded-md border border-border bg-background p-1 shadow-lg outline-none',
+        'absolute z-50 mt-1 min-w-44 rounded-xl border border-border bg-background p-1 shadow-lg outline-none',
         'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
         align === 'end' ? 'right-0' : 'left-0',
         cls,
@@ -235,7 +235,7 @@ export function DropdownMenuItem({
     setOpen(false);
   };
   const shared = cn(
-    'flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-foreground no-underline outline-none',
+    'flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left text-sm text-foreground no-underline outline-none',
     'cursor-pointer hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground',
     disabled && 'pointer-events-none opacity-50',
     cls,

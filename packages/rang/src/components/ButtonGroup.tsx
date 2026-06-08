@@ -40,8 +40,8 @@ export function ButtonGroup({
         horizontal ? 'flex-row' : 'flex-col',
         '[&>*]:relative [&>*]:rounded-none [&>*:focus-visible]:z-10',
         horizontal
-          ? '[&>*:first-child]:rounded-l-md [&>*:last-child]:rounded-r-md [&>*:not(:first-child)]:-ml-px'
-          : '[&>*:first-child]:rounded-t-md [&>*:last-child]:rounded-b-md [&>*:not(:first-child)]:-mt-px',
+          ? '[&>*:first-child]:rounded-l-xl [&>*:last-child]:rounded-r-xl [&>*:not(:first-child)]:-ml-px'
+          : '[&>*:first-child]:rounded-t-xl [&>*:last-child]:rounded-b-xl [&>*:not(:first-child)]:-mt-px',
         cls,
       )}
     >

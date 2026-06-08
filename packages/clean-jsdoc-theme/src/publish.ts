@@ -8,6 +8,8 @@ import { readFileSync } from 'node:fs';
 import { dirname, extname, resolve as resolvePath } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import type {
+  CopyPageAction,
+  CopyPageConfig,
   OutputFile,
   SiteLogo,
   SiteManifest,
@@ -174,6 +176,22 @@ interface JSDocOpts {
    */
   clubSidebarItems?: unknown;
   /**
+   * Custom prompt for the copy-page button's "Open in ChatGPT/Claude/Perplexity"
+   * actions (`jsdoc.json` `"opts": { "aiPrompt": "…" }`). `{siteName}`, `{url}`,
+   * and `{mdUrl}` (the page's raw Markdown link) placeholders are substituted at
+   * click time. Only the prompt + links are sent (the AI fetches `{mdUrl}`), so
+   * the query stays short for long docs. Omit for a sensible default.
+   */
+  aiPrompt?: unknown;
+  /**
+   * Copy-page button config (`jsdoc.json` `"opts": { "copyPage": … }`). Either a
+   * boolean (`false` hides the button) or an object `{ enabled?, actions? }`,
+   * where `actions` is an ordered subset of
+   * `["copy","view","claude","chatgpt","perplexity"]` (`[]` shows just the
+   * primary copy button). Defaults to enabled with all actions.
+   */
+  copyPage?: unknown;
+  /**
    * JSDoc's default-template source options, read from `conf.templates.default`
    * (or, as a fallback, nested under `opts.templates`):
    *  - `outputSourceFiles` — defaults to `true`; set `false` to suppress the
@@ -227,9 +245,14 @@ const defaultTheme: ThemeConfig = {
  */
 function resolveTheme(opts: JSDocOpts, siteName: SiteName | undefined): ThemeConfig {
   const f = opts.fonts;
+  const aiPrompt =
+    typeof opts.aiPrompt === 'string' && opts.aiPrompt.trim() ? opts.aiPrompt.trim() : undefined;
+  const copyPage = normalizeCopyPage(opts.copyPage);
 
   return {
     ...defaultTheme,
+    ...(aiPrompt ? { aiPrompt } : {}),
+    ...(copyPage ? { copyPage } : {}),
     tokens: {
       ...defaultTheme.tokens,
       fonts: f
@@ -465,6 +488,43 @@ export function normalizeMenu(raw: unknown): MenuItem[] | undefined {
     if (item.id || item.link) out.push(item);
   }
   return out.length > 0 ? out : undefined;
+}
+
+/** Valid copy-page dropdown actions (mirrors setu/dwar's `CopyPageAction`). */
+const COPY_PAGE_ACTIONS: readonly CopyPageAction[] = [
+  'copy',
+  'view',
+  'claude',
+  'chatgpt',
+  'perplexity',
+];
+
+/**
+ * Validate `opts.copyPage` into a {@link CopyPageConfig}, or `undefined` to use
+ * the defaults (enabled, all actions). Accepts a boolean shorthand (`false`
+ * hides the button) or an object: `enabled` is read if boolean; `actions`, if an
+ * array, is filtered to the known action ids (preserving order, dropping
+ * unknowns/dupes) — an empty/all-invalid array still yields `[]` (primary button
+ * only), which is meaningful and kept.
+ */
+export function normalizeCopyPage(raw: unknown): CopyPageConfig | undefined {
+  if (raw === false) return { enabled: false };
+  if (raw === true || raw == null) return undefined;
+  if (typeof raw !== 'object') return undefined;
+
+  const o = raw as Record<string, unknown>;
+  const config: CopyPageConfig = {};
+  if (typeof o.enabled === 'boolean') config.enabled = o.enabled;
+  if (Array.isArray(o.actions)) {
+    const seen = new Set<CopyPageAction>();
+    for (const a of o.actions) {
+      if (typeof a === 'string' && (COPY_PAGE_ACTIONS as readonly string[]).includes(a)) {
+        seen.add(a as CopyPageAction);
+      }
+    }
+    config.actions = COPY_PAGE_ACTIONS.filter((a) => seen.has(a));
+  }
+  return Object.keys(config).length > 0 ? config : undefined;
 }
 
 /** Extensions we treat as "source" worth emitting a viewer page for. */

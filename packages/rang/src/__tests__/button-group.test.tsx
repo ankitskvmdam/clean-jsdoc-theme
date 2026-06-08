@@ -29,7 +29,7 @@ describe('ButtonGroup', () => {
     expect(group.getAttribute('data-orientation')).toBe('horizontal');
     // className is the unescaped class attribute (SSR escapes the `&` in `[&>*]`).
     expect(group.className).toContain('[&>*]:rounded-none');
-    expect(group.className).toContain('[&>*:first-child]:rounded-l-md');
+    expect(group.className).toContain('[&>*:first-child]:rounded-l-xl');
     expect(group.className).toContain('[&>*:not(:first-child)]:-ml-px');
   });
 

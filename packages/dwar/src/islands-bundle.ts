@@ -30,6 +30,7 @@ const ALL_ISLANDS: IslandName[] = [
   'cmdk',
   'code-tabs',
   'copy-btn',
+  'copy-page',
   'theme-toggle',
   'settings',
   'code-viewer',

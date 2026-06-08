@@ -52,6 +52,24 @@ export interface ThemeTokens {
 }
 
 /**
+ * One selectable action in the copy-page button's dropdown, in render order:
+ * `copy` (copy markdown), `view` (open the .md), and the "Open in …" links.
+ */
+export type CopyPageAction = 'copy' | 'view' | 'claude' | 'chatgpt' | 'perplexity';
+
+/** Copy-page button configuration. */
+export interface CopyPageConfig {
+  /** Whether to render the button at all. Defaults to `true`. */
+  enabled?: boolean;
+  /**
+   * Which dropdown actions to show, in order. Omit for all of them; pass a
+   * subset to trim the menu (e.g. drop `view` or `claude`); pass `[]` to show
+   * just the primary "Copy page" button with no dropdown.
+   */
+  actions?: CopyPageAction[];
+}
+
+/**
  * Component override: either a Preact component, or a file path (string) that
  * dwar will compile + import at render time. See Q8.
  */
@@ -78,4 +96,13 @@ export interface ThemeConfig {
   sidebarLayout?: 'tree' | 'flat';
   /** Base path under which the site is served (e.g. `/docs/`). */
   basePath?: string;
+  /**
+   * Custom prompt for the copy-page button's "Open in ChatGPT/Claude/Perplexity"
+   * actions. `{siteName}`, `{url}`, and `{mdUrl}` (the page's raw Markdown link)
+   * placeholders are substituted at click time. Only the prompt + links are sent
+   * (never the page body — the AI fetches `{mdUrl}`). Omit for a sensible default.
+   */
+  aiPrompt?: string;
+  /** Copy-page button config (enabled + which dropdown actions). Defaults to on, all actions. */
+  copyPage?: CopyPageConfig;
 }

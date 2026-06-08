@@ -18,6 +18,7 @@ const ALL_ISLAND_NAMES: IslandName[] = [
   'code-tabs',
   'code-viewer',
   'copy-btn',
+  'copy-page',
   'mobile-nav',
   'settings',
   'sidebar',
