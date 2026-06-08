@@ -30,6 +30,7 @@
       "Globals",
       "Tutorials"
     ],
+    "clubSidebarItems": true,
     "menu": [
       {
         "title": "Home",
