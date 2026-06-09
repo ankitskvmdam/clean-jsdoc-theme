@@ -140,3 +140,20 @@ export const embed = (spec: EmbedSpec): MdxJsxFlowElement => {
     children: [],
   };
 };
+
+/**
+ * A source-location caption — rang's `SourceLink` emitted as a self-closing MDX
+ * JSX element (`<SourceLink href="…" label="…" />`). Capitalized so MDX routes
+ * it through the `components` map (same round-trip as `callout`/`embed`); the
+ * component owns the markup — a small 12px caption with a `file:line` link —
+ * rather than a full-size markdown paragraph.
+ */
+export const sourceLink = (href: string, label: string): MdxJsxFlowElement => ({
+  type: 'mdxJsxFlowElement',
+  name: 'SourceLink',
+  attributes: [
+    { type: 'mdxJsxAttribute', name: 'href', value: href },
+    { type: 'mdxJsxAttribute', name: 'label', value: label },
+  ],
+  children: [],
+});

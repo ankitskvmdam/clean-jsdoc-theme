@@ -3,7 +3,7 @@ import type { MdxJsxFlowElement } from 'mdast-util-mdx-jsx';
 import { TDoclet, TDocletParam, TDocletTypeProperty } from '@clean-jsdoc-theme/utils';
 import type { ResolvedLink } from '../link-registry';
 import { parseEmbedConfig } from '../embed';
-import { callout, code, embed, emphasis, inlineCode, li, link, p, strong, text, ul } from './builders';
+import { callout, code, embed, emphasis, inlineCode, li, link, p, sourceLink, strong, text, ul } from './builders';
 import { htmlToMdastBlocks, htmlToMdastInline, markdownToMdastInline } from './from-html';
 
 // ── Small extractors ────────────────────────────────────────────────────────
@@ -531,16 +531,17 @@ function interleave<T, S>(items: T[], sep: () => S): (T | S)[] {
 
 /**
  * "Source: file:line" caption for a doclet, when `options.sourceLink` resolves
- * it. Rendered as an emphasized `Source: ` label followed by a link whose child
- * is the inline-coded `file:line` label. Returns `null` when unresolved.
+ * it. Emitted as a `<SourceLink href label />` MDX JSX node so rang owns the
+ * markup (a small 12px caption) rather than a full-size paragraph. Returns
+ * `null` when unresolved.
  */
 export function sourceLinkBlock(
   doclet: TDoclet,
   options: DocletBlocksOptions = {}
-): Paragraph | null {
+): MdxJsxFlowElement | null {
   const resolved = options.sourceLink?.(doclet);
   if (!resolved) return null;
-  return p(emphasis(text('Source: ')), link(resolved.href, inlineCode(resolved.label)));
+  return sourceLink(resolved.href, resolved.label);
 }
 
 // ── Composer: full per-doclet block ─────────────────────────────────────────

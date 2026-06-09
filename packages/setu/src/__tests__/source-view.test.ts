@@ -195,10 +195,11 @@ describe('buildClassPage sourceLink injection', () => {
   it('injects a Source link into the body when a resolver is given', () => {
     const sourceLink = () => ({ href: '/source/x/#L1', label: 'x.js:1' });
     const page = buildClassPage(getJSDocTaffyData(), 'DataProcessor', sourceLink)!;
-    // The trailing space in "Source: " is serialized as an entity inside the
-    // emphasis caption; the link node round-trips as a resource-form link.
-    expect(page.body).toMatch(/_Source:(?:&#x20;| )?_/);
-    expect(page.body).toContain('[`x.js:1`](/source/x/#L1)');
+    // Emitted as a <SourceLink> MDX JSX node so rang owns the (12px) caption
+    // markup; the href + label round-trip verbatim as attributes.
+    expect(page.body).toContain('<SourceLink');
+    expect(page.body).toContain('href="/source/x/#L1"');
+    expect(page.body).toContain('label="x.js:1"');
   });
 
   it('omits the Source link when no resolver is given', () => {

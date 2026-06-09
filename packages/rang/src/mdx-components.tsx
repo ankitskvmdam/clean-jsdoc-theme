@@ -27,6 +27,7 @@ import {
   MdxTr,
   MdxTh,
   MdxTd,
+  SourceLink,
 } from './components/mdx-tags';
 
 // MDX is a heterogeneous element-name → component map; per-key prop shapes vary.
@@ -54,6 +55,10 @@ export const defaultMdxComponents: Record<string, ComponentType<any>> = {
   // self-closing `<Embed src="…" …/>`. Capitalized so MDX routes it here; the
   // component renders the `data-island="embed"` marker dwar's loader hydrates.
   Embed,
+  // setu emits the per-member/class "Source: file:line" caption as
+  // `<SourceLink href="…" label="…" />`. Capitalized so MDX routes it here; the
+  // component renders a small 12px muted caption with a `file:line` link.
+  SourceLink,
   hr: MdxHr,
   table: MdxTable,
   thead: MdxThead,

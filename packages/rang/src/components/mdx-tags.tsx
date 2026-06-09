@@ -8,6 +8,7 @@
 import { CircleAlert, Info, TriangleAlert } from 'lucide-preact';
 import type { BaseProps, HeadingProps } from './mdx-utils';
 import { HeadingAnchor, HeaderRow, useHeaderSlot } from './mdx-utils';
+import { Code } from './CodeBlock';
 
 export function MdxH1({ id, children, ...rest }: HeadingProps) {
   // The first heading on the page claims the header slot (e.g. the copy-page
@@ -61,6 +62,29 @@ export function MdxP({ children, ...rest }: BaseProps) {
   return (
     <p class="my-3 leading-relaxed" {...rest}>
       {children}
+    </p>
+  );
+}
+
+interface SourceLinkProps {
+  href?: string;
+  label?: string;
+}
+
+/**
+ * Source-location caption. setu emits `<SourceLink href="…" label="…" />` — the
+ * `Source: file:line` link under a member/class heading — as a capitalized MDX
+ * JSX node so it routes through the components map and we own its markup: a
+ * small 12px muted caption rather than a full-size body paragraph.
+ */
+export function SourceLink({ href, label }: SourceLinkProps) {
+  if (!href || !label) return null;
+  return (
+    <p class="my-3 text-xs text-muted-foreground">
+      Source:{' '}
+      <a href={href} class={MDX_LINK_CLASS}>
+        <Code>{label}</Code>
+      </a>
     </p>
   );
 }
