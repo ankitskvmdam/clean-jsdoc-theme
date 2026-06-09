@@ -17,7 +17,8 @@ import type {
   Text,
   ThematicBreak,
 } from 'mdast';
-import type { MdxJsxFlowElement } from 'mdast-util-mdx-jsx';
+import type { MdxJsxAttribute, MdxJsxFlowElement } from 'mdast-util-mdx-jsx';
+import type { EmbedSpec } from '../embed';
 
 export const text = (value: string): Text => ({ type: 'text', value });
 
@@ -104,3 +105,38 @@ export const callout = (
   attributes: [{ type: 'mdxJsxAttribute', name: 'type', value: variant }],
   children,
 });
+
+/**
+ * An embed — rang's `Embed` island emitted as an MDX JSX element
+ * (`<Embed src="…" />`). Like `callout`, the capitalized name routes it through
+ * the `components` map, and `mdxJsxToMarkdown` (wired in `mdx.ts`) serializes the
+ * attributes verbatim. Self-closing (no children).
+ *
+ * Each defined `EmbedSpec` field becomes one string-valued `mdxJsxAttribute`;
+ * numbers and booleans are stringified (`height="400"`, `clickToLoad="true"`),
+ * and `undefined` fields are omitted so the renderer can apply its defaults.
+ */
+export const embed = (spec: EmbedSpec): MdxJsxFlowElement => {
+  const attributes: MdxJsxAttribute[] = [];
+  const attr = (name: string, value: string | number | boolean | undefined): void => {
+    if (value === undefined) return;
+    attributes.push({ type: 'mdxJsxAttribute', name, value: String(value) });
+  };
+
+  attr('src', spec.src);
+  attr('title', spec.title);
+  attr('height', spec.height);
+  attr('width', spec.width);
+  attr('aspectRatio', spec.aspectRatio);
+  attr('allow', spec.allow);
+  attr('sandbox', spec.sandbox);
+  attr('clickToLoad', spec.clickToLoad);
+  attr('themed', spec.themed);
+
+  return {
+    type: 'mdxJsxFlowElement',
+    name: 'Embed',
+    attributes,
+    children: [],
+  };
+};
