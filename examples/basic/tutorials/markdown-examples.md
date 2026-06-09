@@ -34,7 +34,7 @@ Alt-H2
 
 ------
 
-# Emphasis
+## Emphasis
 
 ```
 Emphasis, aka italics, with *asterisks* or _underscores_.
@@ -76,7 +76,7 @@ _This is italic text_
 
 ------
 
-# Lists
+## Lists
 
 ```
 1. First ordered list item
@@ -152,7 +152,7 @@ _This is italic text_
 
 ------
 
-# Task lists
+## Task lists
 
 ```
 - [x] Finish my changes
@@ -174,7 +174,7 @@ _This is italic text_
 
 ------
 
-# Ignoring Markdown formatting
+## Ignoring Markdown formatting
 
 You can tell GitHub to ignore (or escape) Markdown formatting by using \ before the Markdown character.
 
@@ -186,7 +186,7 @@ Let's rename \*our-new-project\* to \*our-old-project\*.
 
 ------
 
-# Links
+## Links
 
 ```
 [I'm an inline-style link](https://www.google.com)
@@ -236,7 +236,7 @@ Some text to show that the reference links can follow later.
 
 ------
 
-# Images
+## Images
 
 ```
 Here's our logo (hover to see the title text):
@@ -284,7 +284,7 @@ With a reference later in the document defining the URL location:
 
 ------
 
-# [Footnotes](https://github.com/markdown-it/markdown-it-footnote)
+## [Footnotes](https://github.com/markdown-it/markdown-it-footnote)
 
 ```
 Footnote 1 link[^first].
@@ -318,7 +318,7 @@ Duplicated footnote reference[^second].
 
 ------
 
-# Code and Syntax Highlighting
+## Code and Syntax Highlighting
 
 ```
 Inline `code` has `back-ticks around` it.
@@ -438,7 +438,7 @@ datahere
 
 ------
 
-# Tables
+## Tables
 
 ```
 Colons can be used to align columns.
@@ -528,7 +528,7 @@ Markdown | Less | Pretty
 
 ------
 
-# Blockquotes
+## Blockquotes
 
 ```
 > Blockquotes are very handy in email to emulate reply text.
@@ -556,7 +556,7 @@ Quote break.
 
 ------
 
-# Inline HTML
+## Inline HTML
 
 ```
 <dl>
@@ -578,7 +578,7 @@ Quote break.
 
 ------
 
-# Horizontal Rules
+## Horizontal Rules
 
 ```
 Three or more...
@@ -612,7 +612,7 @@ Underscores
 
 ------
 
-# YouTube Videos
+## YouTube Videos
 
 ```
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=YOUTUBE_VIDEO_ID_HERE" target="_blank">
@@ -632,7 +632,7 @@ Underscores
 
 ------
 
-# Embeds
+## Embeds
 
 Use an ```` ```iframe ```` fenced block to embed live, sandboxed content
 (CodePen, demos, etc.) directly in prose:

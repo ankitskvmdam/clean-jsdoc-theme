@@ -44,6 +44,7 @@ class DataProcessor extends BaseEntity {
    * @since 1.2.0
    * @version 2.0.1
    * @deprecated Use the internal {@linkcode DataProcessor#streamEngine} instead.
+   * @iframe https://www.youtube.com/embed/Q9Ix1najiHI?si=2vA7GvwpHjDslEAS title="Bihar tourism" clickToLoad=true width=560 height=315
    * @example const proc = new DataProcessor('main');
    * await proc.process(['a', 'b']);
    */
