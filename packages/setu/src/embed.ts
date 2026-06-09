@@ -26,7 +26,12 @@ export interface EmbedSpec {
   sandbox?: string;
   /** poster until clicked. */
   clickToLoad?: boolean;
-  /** src contains a {theme} token to swap on theme change. */
+  /**
+   * Sync the embed to the active theme. On by default (rang appends
+   * `?theme-id=<theme>` / swaps a `{theme}` token); set `themed=false` to opt
+   * out. Omitted here means "use the default"; only an explicit `false` is
+   * emitted as an attribute.
+   */
   themed?: boolean;
 }
 

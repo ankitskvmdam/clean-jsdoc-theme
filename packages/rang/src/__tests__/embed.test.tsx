@@ -77,9 +77,22 @@ describe('Embed (SSR markup)', () => {
     const html = renderToString(
       <Embed src="https://example.com/{theme}" themed="true" />,
     );
-    expect(html).toContain('data-themed="true"');
+    // themed defaults ON, so the on-state writes no data-themed attr.
+    expect(html).not.toContain('data-themed');
     // SSR src is the literal token; the client resolves it post-hydration.
     expect(html).toContain('src="https://example.com/{theme}"');
+  });
+
+  it('themed defaults on: emits no data-themed attr when the prop is absent', () => {
+    const html = renderToString(<Embed src="https://example.com/widget" />);
+    expect(html).not.toContain('data-themed');
+  });
+
+  it('themed=false records the opt-out in the data channel', () => {
+    const html = renderToString(
+      <Embed src="https://example.com/widget" themed="false" />,
+    );
+    expect(html).toContain('data-themed="false"');
   });
 });
 
@@ -107,7 +120,7 @@ describe('EmbedBody (island hydration target)', () => {
 
   it('click-to-load body: poster click injects the live iframe in place', () => {
     const { container } = render(
-      <EmbedBody src="https://example.com/demo" title="Demo" clickToLoad="true" />,
+      <EmbedBody src="https://example.com/demo" title="Demo" clickToLoad="true" themed="false" />,
     );
     const poster = container.querySelector('button[data-embed-poster]');
     expect(poster).toBeTruthy();
@@ -124,7 +137,7 @@ describe('Embed (client hydration)', () => {
 
   it('click-to-load: clicking the poster injects the live iframe', () => {
     const { container } = render(
-      <Embed src="https://example.com/demo" title="Demo" clickToLoad="true" />,
+      <Embed src="https://example.com/demo" title="Demo" clickToLoad="true" themed="false" />,
     );
     const wrapper = container.querySelector('[data-island="embed"]')!;
     const poster = wrapper.querySelector('button[data-embed-poster]');
@@ -168,6 +181,79 @@ describe('Embed (client hydration)', () => {
       await vi.waitFor(() =>
         expect(iframe!.getAttribute('src')).toBe('https://example.com/light/embed'),
       );
+    } finally {
+      delete document.documentElement.dataset.theme;
+    }
+  });
+
+  it('themed: auto-appends ?theme-id=<theme> when the author declared no theme-id', async () => {
+    document.documentElement.dataset.theme = 'dark';
+    try {
+      const { container } = render(
+        <Embed src="https://example.com/embed" themed="true" />,
+      );
+      const iframe = container.querySelector('iframe');
+      expect(iframe).toBeTruthy();
+      expect(iframe!.getAttribute('src')).toBe('https://example.com/embed?theme-id=dark');
+
+      // Re-points on theme change just like the {theme} token form.
+      document.documentElement.dataset.theme = 'light';
+      await vi.waitFor(() =>
+        expect(iframe!.getAttribute('src')).toBe('https://example.com/embed?theme-id=light'),
+      );
+    } finally {
+      delete document.documentElement.dataset.theme;
+    }
+  });
+
+  it('themed: uses & when the URL already has a query string, and preserves the #fragment', () => {
+    document.documentElement.dataset.theme = 'dark';
+    try {
+      const { container } = render(
+        <Embed src="https://example.com/embed?foo=1#section" themed="true" />,
+      );
+      const iframe = container.querySelector('iframe');
+      expect(iframe!.getAttribute('src')).toBe(
+        'https://example.com/embed?foo=1&theme-id=dark#section',
+      );
+    } finally {
+      delete document.documentElement.dataset.theme;
+    }
+  });
+
+  it('themed: respects an author-declared theme-id and never overrides it', () => {
+    document.documentElement.dataset.theme = 'dark';
+    try {
+      const { container } = render(
+        <Embed src="https://example.com/embed?theme-id=light" themed="true" />,
+      );
+      const iframe = container.querySelector('iframe');
+      // Author pinned theme-id=light at declaration → stays light despite dark theme.
+      expect(iframe!.getAttribute('src')).toBe('https://example.com/embed?theme-id=light');
+    } finally {
+      delete document.documentElement.dataset.theme;
+    }
+  });
+
+  it('default on: a bare embed appends ?theme-id=<theme> (no opt-in needed)', () => {
+    document.documentElement.dataset.theme = 'dark';
+    try {
+      const { container } = render(<Embed src="https://example.com/embed" />);
+      const iframe = container.querySelector('iframe');
+      expect(iframe!.getAttribute('src')).toBe('https://example.com/embed?theme-id=dark');
+    } finally {
+      delete document.documentElement.dataset.theme;
+    }
+  });
+
+  it('themed=false opts out: leaves src untouched (no theme-id appended)', () => {
+    document.documentElement.dataset.theme = 'dark';
+    try {
+      const { container } = render(
+        <Embed src="https://example.com/embed" themed="false" />,
+      );
+      const iframe = container.querySelector('iframe');
+      expect(iframe!.getAttribute('src')).toBe('https://example.com/embed');
     } finally {
       delete document.documentElement.dataset.theme;
     }

@@ -117,7 +117,10 @@ function hydrateAll() {
     const sandbox = d('data-sandbox');
     if (sandbox != null) props.sandbox = sandbox;
     if (el.hasAttribute('data-click-to-load')) props.clickToLoad = 'true';
-    if (el.hasAttribute('data-themed')) props.themed = 'true';
+    // themed defaults ON: only the opt-out ("false") is written to the marker,
+    // so forward the raw value and let the component default an absent one to on.
+    const themed = d('data-themed');
+    if (themed != null) props.themed = themed;
     hydrate(h(Component, props), el);
   });
 }

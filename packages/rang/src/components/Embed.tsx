@@ -24,7 +24,11 @@ export interface EmbedProps {
   sandbox?: string;
   /** Stringy boolean `"true"`: render a click-to-load poster instead of a live iframe. */
   clickToLoad?: string;
-  /** Stringy boolean `"true"`: `{theme}` in `src` is swapped to `light`/`dark`. */
+  /**
+   * Theme sync, **on by default** — pass `"false"` to opt out. When on, any
+   * `{theme}` token in `src` is swapped to `light`/`dark`, and `?theme-id=<theme>`
+   * is appended unless the author already declared a `theme-id` query param.
+   */
   themed?: string;
 }
 
@@ -38,16 +42,58 @@ function isTrue(value: string | undefined): boolean {
   return typeof value === 'string' && value.trim().toLowerCase() === 'true';
 }
 
+/**
+ * `themed` defaults ON: an embed syncs to the active theme unless the author
+ * explicitly opts out with `themed=false`. Only a literal `"false"`
+ * (case-insensitive) disables it; anything else — including an absent prop —
+ * is on.
+ */
+function isThemedOn(value: string | undefined): boolean {
+  return value?.trim().toLowerCase() !== 'false';
+}
+
 /** Read the active theme from `<html data-theme>` (defaults to `light`). */
 function currentTheme(): 'light' | 'dark' {
   if (typeof document === 'undefined') return 'light';
   return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
 }
 
-/** Replace the literal `{theme}` token in a URL with the active theme. */
+/** Matches an author-declared `theme-id` query param (`?theme-id=…`/`&theme-id=…`). */
+const THEME_ID_RE = /[?&]theme-id=/;
+
+/**
+ * Does `src` change with the active theme? True when it carries a literal
+ * `{theme}` token, OR when we'd auto-append a `theme-id` query param (i.e. the
+ * author didn't already declare one). Drives whether the effects/observer below
+ * bother re-pointing the iframe.
+ */
+function isThemeDependent(src: string): boolean {
+  return src.includes('{theme}') || !THEME_ID_RE.test(src);
+}
+
+/** Append `theme-id=<theme>`, before any `#fragment`, picking `?` vs `&`. */
+function appendThemeId(url: string, theme: 'light' | 'dark'): string {
+  const hashIdx = url.indexOf('#');
+  const base = hashIdx === -1 ? url : url.slice(0, hashIdx);
+  const hash = hashIdx === -1 ? '' : url.slice(hashIdx);
+  const sep = base.includes('?') ? '&' : '?';
+  return `${base}${sep}theme-id=${theme}${hash}`;
+}
+
+/**
+ * Resolve a themed embed URL against the active theme. The author picks one
+ * mechanism, in priority order:
+ *   1. a literal `{theme}` token in `src` → swapped to `light`/`dark`;
+ *   2. an author-declared `theme-id` query param → left untouched (wins);
+ *   3. neither → `?theme-id=<theme>` is appended automatically.
+ * No-op when not themed.
+ */
 function resolveSrc(src: string, themed: boolean): string {
-  if (!themed || !src.includes('{theme}')) return src;
-  return src.replace(/\{theme\}/g, currentTheme());
+  if (!themed) return src;
+  const theme = currentTheme();
+  if (src.includes('{theme}')) return src.replace(/\{theme\}/g, theme);
+  if (THEME_ID_RE.test(src)) return src;
+  return appendThemeId(src, theme);
 }
 
 /**
@@ -75,7 +121,7 @@ export function EmbedBody({
   themed,
 }: EmbedProps) {
   const clickable = isTrue(clickToLoad);
-  const isThemed = isTrue(themed);
+  const isThemed = isThemedOn(themed);
   const sandboxValue = sandbox ?? DEFAULT_SANDBOX;
 
   const posterRef = useRef<HTMLButtonElement | null>(null);
@@ -116,25 +162,26 @@ export function EmbedBody({
     // src/title/etc. are static per render; the poster identity is what matters.
   }, [clickable, src, title, allow, sandboxValue, isThemed]);
 
-  // Non-click-to-load: resolve the initial `{theme}` token on the SSR iframe
-  // (the SSR src kept the literal token to match server output and avoid a
-  // hydration mismatch). `iframeRef` already points at it via the ref below.
+  // Non-click-to-load: resolve the theme on the SSR iframe (the SSR src kept the
+  // literal, un-themed URL to match server output and avoid a hydration
+  // mismatch). `iframeRef` already points at it via the ref below.
   useEffect(() => {
     if (clickable) return;
     const iframe = iframeRef.current;
     if (!iframe) return;
-    if (isThemed && src.includes('{theme}')) {
+    if (isThemed && isThemeDependent(src)) {
       iframe.src = resolveSrc(src, true);
     }
   }, [clickable, src, isThemed]);
 
-  // theme-sync: when themed and `src` carries a `{theme}` token, re-point the
-  // live iframe whenever `<html data-theme>` flips. Mirrors CodeViewer's
-  // observer (the toggle lives in a separate island, so hook state never sees
-  // the change). No-op when not themed / no token / no iframe yet.
+  // theme-sync: when themed and `src` is theme-dependent (a `{theme}` token or
+  // an auto-appended `theme-id`), re-point the live iframe whenever `<html
+  // data-theme>` flips. Mirrors CodeViewer's observer (the toggle lives in a
+  // separate island, so hook state never sees the change). No-op when not
+  // themed / not theme-dependent / no iframe yet.
   useEffect(() => {
     if (typeof document === 'undefined') return;
-    if (!isThemed || !src.includes('{theme}')) return;
+    if (!isThemed || !isThemeDependent(src)) return;
     const apply = () => {
       const iframe = iframeRef.current;
       if (iframe) iframe.src = resolveSrc(src, true);
@@ -214,7 +261,7 @@ export function EmbedBody({
 export function Embed(props: EmbedProps) {
   const { src, title, height, width, aspectRatio, allow, sandbox, clickToLoad, themed } = props;
   const clickable = isTrue(clickToLoad);
-  const isThemed = isTrue(themed);
+  const isThemed = isThemedOn(themed);
   const sandboxValue = sandbox ?? DEFAULT_SANDBOX;
 
   // Sizing: prefer aspect-ratio (responsive), else a fixed px height. Width
@@ -236,7 +283,8 @@ export function Embed(props: EmbedProps) {
   if (allow) dataAttrs['data-allow'] = allow;
   dataAttrs['data-sandbox'] = sandboxValue;
   if (clickable) dataAttrs['data-click-to-load'] = 'true';
-  if (isThemed) dataAttrs['data-themed'] = 'true';
+  // themed defaults ON, so only the opt-out is recorded; an absent attr = themed.
+  if (!isThemed) dataAttrs['data-themed'] = 'false';
 
   return (
     <div
