@@ -3,7 +3,20 @@ import type { MdxJsxFlowElement } from 'mdast-util-mdx-jsx';
 import { TDoclet, TDocletParam, TDocletTypeProperty } from '@clean-jsdoc-theme/utils';
 import type { ResolvedLink } from '../link-registry';
 import { parseEmbedConfig } from '../embed';
-import { callout, code, embed, emphasis, inlineCode, li, link, p, sourceLink, strong, text, ul } from './builders';
+import {
+  callout,
+  code,
+  embed,
+  emphasis,
+  inlineCode,
+  li,
+  link,
+  p,
+  sourceLink,
+  strong,
+  text,
+  ul,
+} from './builders';
 import { htmlToMdastBlocks, htmlToMdastInline, markdownToMdastInline } from './from-html';
 
 // ── Small extractors ────────────────────────────────────────────────────────
@@ -101,7 +114,7 @@ export function embedBlocks(doclet: TDoclet): RootContent[] {
   const out: RootContent[] = [];
   for (const tag of doclet.tags ?? []) {
     if (tag.title !== 'iframe') continue;
-    const raw = typeof tag.value === 'string' ? tag.value : tag.text ?? '';
+    const raw = typeof tag.value === 'string' ? tag.value : (tag.text ?? '');
     const spec = parseEmbedConfig(raw);
     if (spec) out.push(embed(spec));
   }
@@ -180,12 +193,10 @@ export function defaultDeprecationText(doclet: TDoclet): string {
 export function deprecationBlock(doclet: TDoclet): MdxJsxFlowElement | null {
   if (!doclet.deprecated) return null;
   if (doclet.deprecated === true) {
-    return callout('warning', [
-      p(strong(text('Deprecated:')), text(' '), text(defaultDeprecationText(doclet))),
-    ]);
+    return callout('error', [p(text(' '), text(defaultDeprecationText(doclet)))]);
   }
   const reason = htmlToMdastInline(doclet.deprecated);
-  return callout('warning', [p(strong(text('Deprecated:')), text(' '), ...reason)]);
+  return callout('error', [p(text(' '), ...reason)]);
 }
 
 // ── Modifiers (abstract / async / generator / readonly / override / access) ──
@@ -277,9 +288,7 @@ export function paramsList(params: readonly TDocletParam[] | undefined): List | 
  * param-compatible fields (name/type/optional/defaultvalue/description), so it
  * reuses the same item builder.
  */
-export function propertiesList(
-  properties: readonly TDocletParam[] | undefined
-): List | null {
+export function propertiesList(properties: readonly TDocletParam[] | undefined): List | null {
   return paramsList(properties);
 }
 
