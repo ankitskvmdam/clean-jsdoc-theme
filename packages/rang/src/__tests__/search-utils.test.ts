@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { fuzzyMatch, fuzzySearch, highlightSegments } from '../components/search-utils';
+import {
+  fuzzyMatch,
+  fuzzySearch,
+  fuzzySearchMulti,
+  highlightSegments,
+} from '../components/search-utils';
 
 describe('fuzzyMatch', () => {
   it('matches a case-insensitive subsequence and reports positions', () => {
@@ -60,6 +65,59 @@ describe('fuzzySearch', () => {
 
   it('honors the result limit', () => {
     expect(fuzzySearch('e', items, text, 1)).toHaveLength(1);
+  });
+});
+
+describe('fuzzySearchMulti', () => {
+  interface Entry {
+    title: string;
+    description?: string;
+    content?: string;
+    context?: string;
+  }
+  const fields = [
+    { get: (e: Entry) => e.title, weight: 1, highlight: true },
+    { get: (e: Entry) => e.context, weight: 0.6 },
+    { get: (e: Entry) => e.description, weight: 0.5 },
+    { get: (e: Entry) => e.content, weight: 0.35 },
+  ];
+
+  it('matches body content and descriptions, not just the title', () => {
+    const items: Entry[] = [
+      { title: 'Queue', content: 'a class for jobs' },
+      { title: 'Other', description: 'unrelated', content: 'nothing here' },
+      { title: 'Readme', content: 'install the package with npm install' },
+    ];
+    const out = fuzzySearchMulti('install', items, fields);
+    // "install" appears only in Readme's content — still found.
+    expect(out.map((r) => r.item.title)).toContain('Readme');
+    expect(out.some((r) => r.item.title === 'Queue')).toBe(false);
+  });
+
+  it('ranks a title hit above a content-only hit', () => {
+    const items: Entry[] = [
+      { title: 'Logger', content: 'misc' },
+      { title: 'Misc', content: 'the logger lives here' },
+    ];
+    const out = fuzzySearchMulti('logger', items, fields);
+    expect(out[0].item.title).toBe('Logger');
+  });
+
+  it('finds a member by name and surfaces its parent context', () => {
+    const items: Entry[] = [
+      { title: 'process', context: 'DataProcessor' },
+      { title: 'Home', content: 'welcome' },
+    ];
+    const out = fuzzySearchMulti('process', items, fields);
+    expect(out[0].item.title).toBe('process');
+    expect(out[0].item.context).toBe('DataProcessor');
+  });
+
+  it('highlights only the title field positions', () => {
+    const items: Entry[] = [{ title: 'Queue', content: 'queue queue queue' }];
+    const out = fuzzySearchMulti('queue', items, fields);
+    // Positions index into the title (length 5), never the longer content.
+    expect(out[0].match.positions.every((p) => p < 5)).toBe(true);
   });
 });
 

@@ -337,8 +337,13 @@ rang/src/
 `cmdk`, `code-tabs`, `copy-btn`, `copy-page`, `theme-toggle`, `settings`,
 `code-viewer`, `embed`.
 Each renders meaningful SSR HTML, then progressively enhances after hydration.
-The `cmdk` palette lazily fetches the search index on first open and ranks page
-titles with a fuzzy matcher (`search-utils`). The `copy-page` split button
+The `cmdk` palette lazily fetches the search index on first open and ranks hits
+with a fuzzy matcher (`search-utils`) across weighted fields — title (highest,
+and what's highlighted), then description and full page content — so README
+prose, member descriptions, and identifiers are all findable, not just titles.
+The index also carries a deep-link entry per member (each H3+ heading →
+`slug#anchor`), so a static field / method / property is found by name and the
+hit jumps straight to it. The `copy-page` split button
 (content pages only, not the source section) copies the page's companion `.md`,
 opens it, or hands its raw-Markdown link to an LLM — it's configurable via
 `ThemeConfig.copyPage` (`enabled` + which `actions`). The `mobile-nav` drawer
@@ -356,9 +361,11 @@ separate island) with custom themes whose background matches the site's pinned
 code surface. The `embed` island (in-content, no JSON payload — config rides on
 the marker's `data-*`, like `copy-btn`) renders a sandboxed `<iframe>` for
 `<Embed>` nodes: a live iframe by default (works with no JS), or a click-to-load
-poster `<button>` (+ `<noscript>` fallback) that swaps in the iframe on click;
-when `themed`, a `{theme}` token in the URL is re-resolved off `<html
-data-theme>` via the same `MutationObserver` pattern.
+poster `<button>` (+ `<noscript>` fallback) that swaps in the iframe on click.
+Theme sync is **on by default** (opt out with `themed=false`): the URL is
+re-resolved off `<html data-theme>` via the same `MutationObserver` pattern —
+a `{theme}` token is swapped, else `?theme-id=<theme>` is appended unless the
+author already declared a `theme-id` query param.
 
 ### `@clean-jsdoc-theme/dwar` — `SiteManifest` → HTML/CSS/JS
 
@@ -423,9 +430,12 @@ script before the stylesheet and the inline heading-anchors script before
 `</body>`), a co-located `<slug>/index.md` per content page (the page's MDX body
 verbatim — for LLMs + the copy-page button; source-viewer pages have none),
 `_assets/styles.<buildId>.css`, `_assets/search-index.<buildId>.json` (the fuzzy
-search index the `cmdk` island fetches), `_islands/<name>.js` per island, a
+search index the `cmdk` island fetches — a `SearchEntry` per non-hidden page,
+each carrying `title` + `description` + full-text `content`, plus a deep-link
+entry per member heading), `_islands/<name>.js` per island, a
 per-page `data-island-props` JSON payload, and `RenderResult.search` (one
-`SearchEntry` per non-hidden page). Content pages also mount the `copy-page`
+`SearchEntry` per non-hidden page; the on-disk index adds the member entries).
+Content pages also mount the `copy-page`
 island above the body (gated by `ThemeConfig.copyPage`, never on the source
 section). The full-text Pagefind bundle is a separate post-write step.
 

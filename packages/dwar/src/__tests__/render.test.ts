@@ -191,7 +191,38 @@ describe('render() — smoke', () => {
     for (const entry of result.search!) {
       expect(entry.excerpt).toBeTruthy();
       expect(entry.excerpt!.length).toBeLessThanOrEqual(201);
+      // Description + full content are indexed for matching (not just the title).
+      expect(entry.description).toBeTruthy();
+      expect(entry.content).toBeTruthy();
     }
+  });
+
+  it('indexes full page content with identifiers preserved', async () => {
+    const manifest = makeManifest();
+    const result = await render(manifest, { theme: minimalTheme });
+    const home = result.search!.find((s) => s.slug === '')!;
+    // `inline code` is unwrapped (kept), not stripped as it is from the excerpt.
+    expect(home.content).toContain('inline code');
+    expect(home.content).toContain('home page');
+  });
+
+  it('emits member deep-link entries (H3+ headings) into the search-index JSON', async () => {
+    const manifest = makeManifest();
+    const result = await render(manifest, { theme: minimalTheme });
+    const indexFile = result.files.find((f) => f.path.startsWith('_assets/search-index.'))!;
+    const entries = JSON.parse(asString(indexFile)) as Array<{
+      slug: string;
+      title: string;
+      context?: string;
+    }>;
+    const member = entries.find((e) => e.slug === 'guide/intro#dostuff');
+    expect(member).toBeDefined();
+    expect(member!.title).toBe('doStuff');
+    expect(member!.context).toBe('Introduction');
+    // The H2 section header is NOT indexed as a member (only H3+).
+    expect(entries.some((e) => e.slug === 'guide/intro#section')).toBe(false);
+    // The JSON index = page entries + member entries (2 pages + 1 member).
+    expect(entries.length).toBe(3);
   });
 
   it('populates the stats block', async () => {

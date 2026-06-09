@@ -150,6 +150,31 @@ export function extractExcerpt(mdxBody: string, max = 200): string {
   return text;
 }
 
+/**
+ * Full plain-text of an MDX body for the search index's `content` field — the
+ * whole page, not a 200-char snippet, so README prose and member descriptions
+ * are searchable. Differs from {@link extractExcerpt} in two ways that matter
+ * for code docs: inline code is **unwrapped** (`` `foo` `` → `foo`) rather than
+ * dropped, so member/field/method identifiers stay searchable; and there is no
+ * length cap. Fenced code blocks are still dropped (too noisy/large for fuzzy
+ * ranking). The result is capped at `max` to keep the index from ballooning on
+ * a pathologically long page.
+ */
+export function extractSearchText(mdxBody: string, max = 20000): string {
+  const text = mdxBody
+    .replace(/^---[\s\S]*?---\s*/u, '') // frontmatter
+    .replace(/```[\s\S]*?```/g, ' ') // fenced code (noisy/large)
+    .replace(/`([^`]*)`/g, '$1') // inline code → keep the identifier
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ') // images
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1') // links → label
+    .replace(/<[^>]+>/g, ' ') // raw HTML / JSX
+    .replace(/^#{1,6}\s+/gm, '') // ATX heading markers (keep the text)
+    .replace(/[*_~>#|]+/g, ' ') // emphasis / blockquote / table marks
+    .replace(/\s+/g, ' ')
+    .trim();
+  return text.length > max ? text.slice(0, max) : text;
+}
+
 /** Slug → output HTML path. Empty/root slug becomes `index.html`. */
 export function htmlPathFor(slug: string): string {
   const clean = slug.replace(/^\/+|\/+$/g, '');

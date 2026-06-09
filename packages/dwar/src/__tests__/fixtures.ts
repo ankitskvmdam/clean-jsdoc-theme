@@ -57,7 +57,10 @@ Hello from the guide.
 - First bullet
 - Second bullet
 `,
-        headings: [{ depth: 2, text: 'Section', id: 'section' }],
+        headings: [
+          { depth: 2, text: 'Section', id: 'section' },
+          { depth: 3, text: 'doStuff', id: 'dostuff' },
+        ],
       },
     ],
     nav: [

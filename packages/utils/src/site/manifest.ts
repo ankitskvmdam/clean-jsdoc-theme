@@ -36,11 +36,27 @@ export interface NavNode {
   menu?: boolean;
 }
 
-/** A single entry handed to Pagefind's index builder. */
+/**
+ * A single entry in the fuzzy search index the `cmdk` palette fetches.
+ *
+ * A page entry has `slug` = the page slug and `title` = the page title; a
+ * **member entry** has `slug` = `page#heading-anchor` (a deep link to a member /
+ * field / method heading), `title` = the member name, and `context` = the parent
+ * page title. `description` + `content` are matched (so README prose, member
+ * descriptions, and identifiers are all findable), not just the title; `excerpt`
+ * is shown under page hits.
+ */
 export interface SearchEntry {
   slug: string;
   title: string;
+  /** Short plain-text snippet shown under a page hit. */
   excerpt?: string;
+  /** Page/member description — matched, and used as a member hit's subtitle. */
+  description?: string;
+  /** Full plain-text body (identifiers preserved) — matched, never displayed. */
+  content?: string;
+  /** For a member entry, the parent page title (shown as the hit's context). */
+  context?: string;
 }
 
 /** What setu hands to dwar. Self-contained: dwar should not re-read the doclet DB. */

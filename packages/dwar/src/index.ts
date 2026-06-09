@@ -33,7 +33,7 @@ import type {
 
 import { compileMdxToComponent, type MdxComponentMap, type ShikiThemes } from './mdx';
 import { SsrLayout, renderIsland, type IslandRecord } from './layout';
-import { renderHtmlDocument, htmlPathFor, mdPathFor, extractExcerpt } from './html';
+import { renderHtmlDocument, htmlPathFor, mdPathFor, extractExcerpt, extractSearchText } from './html';
 import { bundleIslands, ALL_ISLANDS } from './islands-bundle';
 import { buildCss } from './css';
 
@@ -145,15 +145,40 @@ async function renderPage(
     contents: html,
   };
 
+  // Source pages are `hidden` (render() skips search.push for them) and have
+  // an empty body, so there is nothing meaningful to index.
+  const isSource = page.frontmatter.kind === 'source';
   const search: SearchEntry = {
     slug: page.slug,
     title: page.frontmatter.title,
-    // Source pages are `hidden` (render() skips search.push for them) and have
-    // an empty body, so there is nothing meaningful to excerpt.
-    excerpt: page.frontmatter.kind === 'source' ? '' : extractExcerpt(page.body),
+    excerpt: isSource ? '' : extractExcerpt(page.body),
+    // `description` + `content` are matched (not just the title), so README
+    // prose, member descriptions, and identifiers across the whole page are
+    // findable — not only what fits in the 200-char excerpt.
+    description: page.frontmatter.description,
+    content: isSource ? undefined : extractSearchText(page.body),
   };
 
   return { file, search, islands };
+}
+
+/**
+ * Deep-link search entries for a page's members. Members / fields / methods
+ * render as H3+ headings (H2 is a section header like "Methods"), so each H3+
+ * heading becomes its own entry pointing at `slug#anchor` — searching a member
+ * name jumps straight to it. `title` is the member name; `context` is the parent
+ * page title, shown beside the hit. Hidden pages and pages without pre-extracted
+ * headings contribute nothing.
+ */
+function memberSearchEntries(page: Page): SearchEntry[] {
+  if (page.frontmatter.hidden || !page.headings) return [];
+  return page.headings
+    .filter((heading) => heading.depth >= 3)
+    .map((heading) => ({
+      slug: `${page.slug}#${heading.id}`,
+      title: heading.text,
+      context: page.frontmatter.title,
+    }));
 }
 
 /**
@@ -195,6 +220,9 @@ export async function render(
 
   const files: OutputFile[] = [];
   const search: SearchEntry[] = [];
+  // Deep-link entries for members/fields/methods, kept separate from `search`
+  // (which stays one-per-page for RenderResult): both go into the JSON index.
+  const memberEntries: SearchEntry[] = [];
   const errors: RenderError[] = [];
   // Count HTML pages explicitly: each page may also emit a companion .md, which
   // must NOT inflate the page count (it's a per-page asset, not a page).
@@ -226,7 +254,10 @@ export async function render(
       // (no transform), so LLMs and a future "copy page" button can fetch the
       // markdown source for the current page. Source-viewer pages have no body.
       if (page.body) files.push({ path: mdPathFor(page.slug), contents: page.body });
-      if (!page.frontmatter.hidden) search.push(entry);
+      if (!page.frontmatter.hidden) {
+        search.push(entry);
+        memberEntries.push(...memberSearchEntries(page));
+      }
     } catch (err) {
       errors.push({
         slug: page.slug,
@@ -238,9 +269,9 @@ export async function render(
   // CSS file.
   files.push({ path: css.path, contents: css.contents });
 
-  // Fuzzy-search index: the non-hidden pages' SearchEntry list, fetched by the
-  // cmdk island at runtime. (Pagefind's full-text bundle is a separate concern.)
-  files.push({ path: searchIndexPath, contents: JSON.stringify(search) });
+  // Fuzzy-search index fetched by the cmdk island at runtime: page entries plus
+  // member deep-links. (Pagefind's full-text bundle is a separate concern.)
+  files.push({ path: searchIndexPath, contents: JSON.stringify([...search, ...memberEntries]) });
 
   // Island chunks.
   const chunks = await bundleIslands({

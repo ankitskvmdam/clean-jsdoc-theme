@@ -3,7 +3,7 @@ import { Search } from 'lucide-preact';
 import type { SearchEntry } from '@clean-jsdoc-theme/utils';
 import { Button } from './Button';
 import { Dialog } from './Dialog';
-import { fuzzySearch, highlightSegments, type FuzzyResult } from './search-utils';
+import { fuzzySearchMulti, highlightSegments, type FuzzyResult } from './search-utils';
 
 export interface CmdKProps {
   basePath: string;
@@ -46,8 +46,26 @@ export function CmdK({ basePath: _basePath, searchIndexUrl }: CmdKProps) {
   const openRef = useRef(open);
   const activeRef = useRef(active);
 
+  // Match across fields, not just the title: descriptions and full page content
+  // (member names, README prose) are searchable, with the title weighted highest
+  // so a title hit still ranks above a body-only hit. The title field drives
+  // highlighting. `context` (a member entry's parent page) is matched too, so
+  // typing the class name surfaces its members.
   const results: FuzzyResult<SearchEntry>[] = useMemo(
-    () => (entries ? fuzzySearch(query, entries, (e) => e.title, MAX_RESULTS) : []),
+    () =>
+      entries
+        ? fuzzySearchMulti(
+            query,
+            entries,
+            [
+              { get: (e) => e.title, weight: 1, highlight: true },
+              { get: (e) => e.context, weight: 0.6 },
+              { get: (e) => e.description, weight: 0.5 },
+              { get: (e) => e.content, weight: 0.35 },
+            ],
+            MAX_RESULTS,
+          )
+        : [],
     [query, entries],
   );
   const resultsRef = useRef(results);
@@ -171,10 +189,14 @@ export function CmdK({ basePath: _basePath, searchIndexUrl }: CmdKProps) {
                 <a href={`/${r.item.slug}`} class="block text-foreground no-underline">
                   <span class="block">
                     <Highlighted text={r.item.title} positions={r.match.positions} />
+                    {/* Member hits show their parent page as an inline crumb. */}
+                    {r.item.context ? (
+                      <span class="ml-2 text-xs text-muted-foreground">in {r.item.context}</span>
+                    ) : null}
                   </span>
-                  {r.item.excerpt ? (
+                  {!r.item.context && (r.item.excerpt || r.item.description) ? (
                     <span class="mt-0.5 block truncate text-xs text-muted-foreground">
-                      {r.item.excerpt}
+                      {r.item.excerpt || r.item.description}
                     </span>
                   ) : null}
                 </a>

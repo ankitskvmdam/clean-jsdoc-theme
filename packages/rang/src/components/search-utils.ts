@@ -100,6 +100,54 @@ export function fuzzySearch<T>(
   return hits.slice(0, limit);
 }
 
+/** One weighted field of an item to fuzzy-match against (see {@link fuzzySearchMulti}). */
+export interface FuzzyField<T> {
+  /** Extract the field's text; `undefined`/empty fields are skipped. */
+  get: (item: T) => string | undefined;
+  /** Score multiplier — a title typically outweighs body content. */
+  weight: number;
+  /** When this field matches, its positions drive highlighting (the title). */
+  highlight?: boolean;
+}
+
+/**
+ * Like {@link fuzzySearch} but scores each item across several weighted fields
+ * (e.g. title + description + full content) and keeps its best-scoring field.
+ * An item matches if *any* field matches; the score is the max weighted field
+ * score, so a title hit outranks a body-only hit. Highlight positions come from
+ * the `highlight` field when it matched, else none (the item still shows, just
+ * without emphasis). An empty query returns the first `limit` items unranked.
+ */
+export function fuzzySearchMulti<T>(
+  query: string,
+  items: readonly T[],
+  fields: readonly FuzzyField<T>[],
+  limit = 25,
+): FuzzyResult<T>[] {
+  if (query.trim().length === 0) {
+    return items.slice(0, limit).map((item) => ({ item, match: { score: 0, positions: [] } }));
+  }
+  const hits: FuzzyResult<T>[] = [];
+  for (const item of items) {
+    let best = -Infinity;
+    let positions: number[] = [];
+    let matched = false;
+    for (const field of fields) {
+      const text = field.get(item);
+      if (!text) continue;
+      const m = fuzzyMatch(query, text);
+      if (!m) continue;
+      matched = true;
+      if (field.highlight) positions = m.positions;
+      const weighted = m.score * field.weight;
+      if (weighted > best) best = weighted;
+    }
+    if (matched) hits.push({ item, match: { score: best, positions } });
+  }
+  hits.sort((a, b) => b.match.score - a.match.score);
+  return hits.slice(0, limit);
+}
+
 /** A run of text tagged as matched or not — for rendering highlighted titles. */
 export interface HighlightSegment {
   text: string;
