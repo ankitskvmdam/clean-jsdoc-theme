@@ -11,6 +11,7 @@
 import type { ComponentType } from 'preact';
 import { makeHeading } from './components/mdx-utils';
 import { CodeBlock as MdxPre, Code as MdxCode } from './components/CodeBlock';
+import { Embed } from './components/Embed';
 import {
   MdxH1,
   MdxA,
@@ -49,6 +50,10 @@ export const defaultMdxComponents: Record<string, ComponentType<any>> = {
   // Capitalized so MDX routes it through this map; same component as the plain
   // markdown blockquote, which branches to callout styling when `type` is set.
   Callout: MdxBlockquote,
+  // setu emits iframe embeds (`@iframe` tag / ```` ```iframe ```` fence) as a
+  // self-closing `<Embed src="…" …/>`. Capitalized so MDX routes it here; the
+  // component renders the `data-island="embed"` marker dwar's loader hydrates.
+  Embed,
   hr: MdxHr,
   table: MdxTable,
   thead: MdxThead,
