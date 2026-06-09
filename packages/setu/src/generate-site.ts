@@ -256,6 +256,13 @@ const OTHER_SECTION = 'Other';
 export const TUTORIALS_SECTION = 'Tutorials';
 
 /**
+ * Fallback section label for a doc page that carries no `group` (no frontmatter
+ * group, no directory group, no `defaultDocGroup`). Docs that DO carry a group
+ * become their own section under that group's label.
+ */
+export const DOCS_SECTION = 'Docs';
+
+/**
  * Default sidebar section order, used when the consumer supplies no
  * `sectionOrder`. Includes forward-looking sections (Externals, Events) that
  * have no pages yet; empty sections are simply skipped. A section absent from
@@ -324,6 +331,23 @@ export interface AssembleNavOptions {
   apiPages?: readonly Page[];
   /** Tutorial nav entries (kept in tree order under "Tutorials"). */
   tutorials?: readonly NavNode[];
+  /**
+   * Doc nav entries (the docs directory). Each is bucketed into a section by its
+   * OWN `group` (a doc with no group falls into {@link DOCS_SECTION}); entries
+   * keep their input order within a section (not alphabetized), like tutorials.
+   * The doc-group section labels render in {@link AssembleNavOptions.docGroups}
+   * order — after the API sections, before Source Files — when those labels are
+   * not already pinned by `sectionOrder`.
+   */
+  docs?: readonly NavNode[];
+  /**
+   * Top-level doc-group display order — the doc-group slice of the generalized
+   * sidebar `sectionOrder`. Doc-group section labels listed here render in this
+   * order; doc groups not listed are appended after them in first-seen order.
+   * Folded into the effective section order alongside `sectionOrder` (which
+   * stays the authority for any label it lists).
+   */
+  docGroups?: readonly string[];
   /** Home nav entry — always first, ungrouped, regardless of `sectionOrder`. */
   home?: NavNode;
   /** "Source Files" nav entry — always last, ungrouped, regardless of `sectionOrder`. */
@@ -418,6 +442,8 @@ export function clubNavTree(nodes: readonly NavNode[]): NavNode[] {
 export function assembleNav({
   apiPages = [],
   tutorials = [],
+  docs = [],
+  docGroups = [],
   home,
   source,
   sectionOrder,
@@ -438,9 +464,21 @@ export function assembleNav({
   }
   for (const t of tutorials) push(TUTORIALS_SECTION, { ...t, group: TUTORIALS_SECTION });
 
-  // API sections are alphabetized within the section; tutorials keep tree order.
+  // Doc entries section by their OWN group (fallback DOCS_SECTION). First-seen
+  // group order is captured so groups absent from `docGroups`/`sectionOrder`
+  // still render deterministically.
+  const docSectionOrder: string[] = [];
+  for (const d of docs) {
+    const label = d.group ?? DOCS_SECTION;
+    if (!bySection.has(label)) docSectionOrder.push(label);
+    push(label, { ...d, group: label });
+  }
+
+  // API sections are alphabetized within the section; tutorials + docs keep
+  // their input order (docs are pre-ordered by the builder).
+  const orderedSet = new Set<string>([TUTORIALS_SECTION, ...docSectionOrder]);
   for (const [label, items] of bySection) {
-    if (label !== TUTORIALS_SECTION) items.sort((a, b) => a.label.localeCompare(b.label));
+    if (!orderedSet.has(label)) items.sort((a, b) => a.label.localeCompare(b.label));
   }
 
   // Optionally club each section's entries into prefix-grouped subtrees. Done
@@ -450,8 +488,22 @@ export function assembleNav({
     for (const [label, items] of bySection) bySection.set(label, clubNavTree(items));
   }
 
-  const order =
+  const baseOrder =
     sectionOrder && sectionOrder.length > 0 ? sectionOrder : DEFAULT_SECTION_ORDER;
+  // Fold doc-group section labels into the effective order, AFTER the base
+  // (API) sections: `sectionOrder` stays authoritative for any label it already
+  // lists; doc groups it omits are appended in `docGroups` order, then any
+  // remaining groups in first-seen order. This keeps the no-docs path's order
+  // byte-identical (docExtras is empty when there are no docs).
+  const inBase = new Set(baseOrder);
+  const docExtras: string[] = [];
+  const seenExtra = new Set<string>();
+  for (const label of [...docGroups, ...docSectionOrder]) {
+    if (inBase.has(label) || seenExtra.has(label)) continue;
+    seenExtra.add(label);
+    docExtras.push(label);
+  }
+  const order = docExtras.length > 0 ? [...baseOrder, ...docExtras] : baseOrder;
   const out: NavNode[] = [];
 
   if (menu && menu.length > 0) {

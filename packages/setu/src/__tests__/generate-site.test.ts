@@ -430,6 +430,111 @@ describe('generateSite', () => {
   });
 });
 
+describe('generateSite — docs', () => {
+  it('emits doc pages at clean (unprefixed) slugs with their group + order', () => {
+    const manifest = generateSite(getJSDocTaffyData(), {
+      docs: [
+        { path: 'getting-started', content: '# Getting Started\n\nWelcome.', type: 'markdown' },
+        {
+          path: 'guides/advanced',
+          content: '---\ngroup: Guides\norder: 2\n---\n# Advanced\n\nDeep.',
+          type: 'markdown',
+        },
+      ],
+      defaultDocGroup: 'Docs',
+    });
+
+    const gs = manifest.pages.find((p) => p.slug === 'getting-started')!;
+    expect(gs).toBeDefined();
+    expect(gs.frontmatter.kind).toBe('guide');
+    // Root-level file with no frontmatter group → defaultDocGroup.
+    expect(gs.frontmatter.group).toBe('Docs');
+
+    const adv = manifest.pages.find((p) => p.slug === 'guides/advanced')!;
+    expect(adv).toBeDefined();
+    expect(adv.frontmatter.group).toBe('Guides');
+    expect(adv.frontmatter.order).toBe(2);
+
+    // Nav entries land in their own doc-group sections.
+    const gsNav = manifest.nav.find((n) => n.slug === 'getting-started')!;
+    expect(gsNav.group).toBe('Docs');
+    const advNav = manifest.nav.find((n) => n.slug === 'guides/advanced')!;
+    expect(advNav.group).toBe('Guides');
+  });
+
+  it('orders doc-group sidebar sections by docGroups (after the API sections)', () => {
+    const manifest = generateSite(getJSDocTaffyData(), {
+      docs: [
+        { path: 'a', content: '# A', type: 'markdown', group: 'Beta' },
+        { path: 'b', content: '# B', type: 'markdown', group: 'Alpha' },
+      ],
+      docGroups: ['Alpha', 'Beta'],
+    });
+    const groups = manifest.nav.map((n) => n.group);
+    expect(groups.indexOf('Alpha')).toBeLessThan(groups.indexOf('Beta'));
+    // Doc groups render after the API sections (e.g. Classes).
+    expect(groups.indexOf('Classes')).toBeLessThan(groups.indexOf('Alpha'));
+  });
+
+  it('makes a root index.md the home page, overriding the README home', () => {
+    const manifest = generateSite(getJSDocTaffyData(), {
+      readme: '<h1>Readme Home</h1><p>From README.</p>',
+      docs: [{ path: 'index', content: '# Doc Home\n\nFrom index.md.', type: 'markdown' }],
+    });
+    const homes = manifest.pages.filter((p) => p.slug === '');
+    // Exactly one home page survives.
+    expect(homes).toHaveLength(1);
+    expect(homes[0].frontmatter.kind).toBe('index');
+    // It is the doc home, not the README home.
+    expect(homes[0].body).toContain('Doc Home');
+    expect(homes[0].body).not.toContain('From README.');
+    // Home nav entry still present, exactly once.
+    expect(manifest.nav.filter((n) => n.slug === '')).toHaveLength(1);
+  });
+
+  it('falls back to the README home when there is no root index.md', () => {
+    const manifest = generateSite(getJSDocTaffyData(), {
+      readme: '<h1>Readme Home</h1><p>From README.</p>',
+      docs: [{ path: 'guide', content: '# Guide', type: 'markdown' }],
+    });
+    const homes = manifest.pages.filter((p) => p.slug === '');
+    expect(homes).toHaveLength(1);
+    expect(homes[0].body).toContain('From README.');
+  });
+
+  it('skips a doc whose slug collides with an existing API page (no throw, no dup)', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    // `global` is the globals page slug; a doc named `global` must be skipped.
+    const manifest = generateSite(getJSDocTaffyData(), {
+      docs: [
+        { path: 'global', content: '# Shadow', type: 'markdown' },
+        { path: 'safe-doc', content: '# Safe', type: 'markdown' },
+      ],
+    });
+    // The colliding doc did not replace the globals page.
+    const globalPages = manifest.pages.filter((p) => p.slug === 'global');
+    expect(globalPages).toHaveLength(1);
+    expect(globalPages[0].frontmatter.kind).toBe('global');
+    // The non-colliding doc survived.
+    expect(manifest.pages.some((p) => p.slug === 'safe-doc')).toBe(true);
+    // No nav entry for the skipped doc.
+    expect(manifest.nav.some((n) => n.slug === 'global' && n.group !== 'Globals')).toBe(false);
+    // Warned, did not throw; all slugs remain unique.
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('skipping doc page'));
+    const slugs = manifest.pages.map((p) => p.slug);
+    expect(new Set(slugs).size).toBe(slugs.length);
+    warn.mockRestore();
+  });
+
+  it('leaves the no-docs manifest byte-identical to a build with no docs option', () => {
+    const a = generateSite(getJSDocTaffyData());
+    const b = generateSite(getJSDocTaffyData(), { docs: [] });
+    expect(b.pages.map((p) => p.slug)).toEqual(a.pages.map((p) => p.slug));
+    expect(b.pages.map((p) => p.body)).toEqual(a.pages.map((p) => p.body));
+    expect(b.nav).toEqual(a.nav);
+  });
+});
+
 describe('generateMdx (legacy wrapper)', () => {
   it('returns one body string per page, matching generateSite', () => {
     const collection = getJSDocTaffyData();

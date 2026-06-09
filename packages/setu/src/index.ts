@@ -12,9 +12,11 @@ import { getContainerView, mergeContainerViews, type ContainerView } from './cla
 import { slugifyPath } from '@clean-jsdoc-theme/utils';
 import { makeLinkResolver, registerContainerView, type LinkRegistry } from './link-registry';
 import {
+  buildDocPages,
   buildReadmePage,
   buildTutorialPages,
   makeTutorialResolver,
+  type DocInput,
   type TutorialInput,
 } from './guide-view';
 import { buildSourceModel, type SourceFileInput } from './source-view';
@@ -72,6 +74,28 @@ export interface GenerateSiteOptions {
    * guide pages under "Tutorials", preserving the resolved order.
    */
   tutorials?: TutorialInput[];
+  /**
+   * Doc inputs from the bridge's docs-directory walk (already read off disk;
+   * setu does no I/O). Each becomes a prose page at its clean (unprefixed) slug
+   * via {@link buildDocPages}, grouped by its frontmatter/directory group. A root
+   * `index.md` (`path === 'index'`) becomes the home page, overriding the README
+   * home. A doc whose slug would shadow the home or an existing API/source/
+   * tutorial page is skipped (see the collision handling in `generateSite`).
+   */
+  docs?: DocInput[];
+  /**
+   * Top-level doc-group display order — the doc-group slice of the generalized
+   * sidebar `sectionOrder`. Threaded into {@link assembleNav} so the doc-group
+   * sidebar sections render in this order (after the API sections). The
+   * companion sidebar plan generalizes this; here it simply orders the doc
+   * groups consistently with how `sectionOrder` orders the rest.
+   */
+  docGroups?: string[];
+  /**
+   * Group label assigned to a doc page that carries no frontmatter/directory
+   * group. Forwarded to {@link buildDocPages}.
+   */
+  defaultDocGroup?: string;
   /**
    * Project source files to render as read-only `kind: 'source'` viewer pages.
    * When supplied, each class member + the class itself gets a "Source:
@@ -221,10 +245,56 @@ export function generateSite(
   );
 
   const pages: Page[] = [];
+  // Slugs already claimed by API + globals pages. Doc pages may not shadow these
+  // (nor the home slug, nor tutorial/source slugs added below). On a clash a doc
+  // is skipped — setu stays resilient and never throws (mirrors how a colliding
+  // synthetic globals page is skipped above, and how the bridge logs skips).
+  const claimedSlugs = new Set<string>(apiPages.map((p) => p.slug));
 
-  // README → home page (slug ''), the always-first ungrouped "Home" link.
+  // Build doc pages (the docs directory) up front — BEFORE choosing the home
+  // page — because a root `index.md` produces a `kind: 'index'` page at slug ''
+  // that overrides the README home. Built with the same resolver as tutorials/
+  // README so prose cross-references resolve. The home page (if any) is split out
+  // and handled alongside the README below; the rest are filtered for slug
+  // collisions and merged into the page set + a `docNav` for the sidebar.
+  let docHome: Page | undefined;
+  const docPages: Page[] = [];
+  let docNav: NavNode[] = [];
+  if (opts?.docs && opts.docs.length > 0) {
+    const built = buildDocPages(
+      opts.docs,
+      { defaultDocGroup: opts.defaultDocGroup },
+      resolveLink,
+    );
+    const droppedSlugs = new Set<string>();
+    for (const page of built.pages) {
+      if (page.slug === '' && page.frontmatter.kind === 'index') {
+        // Root index.md → the home page (overrides the README home, below).
+        docHome = page;
+        continue;
+      }
+      // A doc may not shadow the home or an already-claimed API/source slug.
+      if (page.slug === '' || claimedSlugs.has(page.slug)) {
+        droppedSlugs.add(page.slug);
+        // Non-fatal: skip deterministically and warn (the bridge surfaces logs).
+        console.warn(
+          `[setu] skipping doc page: slug "${page.slug}" collides with an existing page`,
+        );
+        continue;
+      }
+      claimedSlugs.add(page.slug);
+      docPages.push(page);
+    }
+    // Drop nav entries for the skipped doc pages so the sidebar matches the
+    // emitted pages (a dropped slug never reaches the manifest).
+    docNav = built.nav.filter((n) => n.slug !== undefined && !droppedSlugs.has(n.slug));
+  }
+
+  // README → home page (slug ''), the always-first ungrouped "Home" link. A root
+  // `index.md` (docHome) takes precedence over the README home when present.
   // Rendered with the same resolver so prose cross-references resolve too.
-  const home = opts?.readme ? buildReadmePage(opts.readme, opts.pkg, resolveLink) : null;
+  const readmeHome = opts?.readme ? buildReadmePage(opts.readme, opts.pkg, resolveLink) : null;
+  const home = docHome ?? readmeHome;
   let homeNav: NavNode | undefined;
   if (home) {
     pages.push(home);
@@ -238,9 +308,19 @@ export function generateSite(
   let tutorialNav: NavNode[] = [];
   if (opts?.tutorials && opts.tutorials.length > 0) {
     const built = buildTutorialPages(opts.tutorials, resolveLink);
-    pages.push(...built.pages);
-    tutorialNav = built.nav;
+    // Tutorials slug under `tutorials/<name>`; on the off chance one collides
+    // with an API/doc page, skip it (keep slugs unique across the manifest).
+    for (const page of built.pages) {
+      if (claimedSlugs.has(page.slug)) continue;
+      claimedSlugs.add(page.slug);
+      pages.push(page);
+    }
+    tutorialNav = built.nav.filter((n) => n.slug === undefined || claimedSlugs.has(n.slug));
   }
+
+  // Doc pages → prose pages grouped by their doc-group (added after tutorials,
+  // matching the prose-page ordering).
+  pages.push(...docPages);
 
   // Source files → hidden viewer pages + a "Source Files" index in the nav.
   let sourceNav: NavNode | undefined;
@@ -249,12 +329,15 @@ export function generateSite(
     sourceNav = sourceModel.navNode;
   }
 
-  // Assemble the sidebar: Home first, then the API/Tutorials sections in the
-  // configured (or default) order, then Source Files last. `sectionOrder` both
-  // filters and orders the sections in between.
+  // Assemble the sidebar: Home first, then the API/Tutorials/doc-group sections
+  // in the configured (or default) order, then Source Files last. `sectionOrder`
+  // both filters and orders the API/Tutorials sections; `docGroups` orders the
+  // doc-group sections (appended after the API sections).
   const nav = assembleNav({
     apiPages,
     tutorials: tutorialNav,
+    docs: docNav,
+    docGroups: opts?.docGroups,
     home: homeNav,
     source: sourceNav,
     sectionOrder: opts?.sectionOrder,
@@ -290,6 +373,7 @@ export {
   clubNavTree,
   computeBuildId,
   DEFAULT_SECTION_ORDER,
+  DOCS_SECTION,
   enumerateClassLongnames,
   enumerateLongnamesByKind,
   extractHeadings,
@@ -303,10 +387,15 @@ export {
 } from './generate-site';
 
 export {
+  buildDocPages,
   buildReadmePage,
   buildTutorialPages,
   makeTutorialResolver,
+  parseFrontmatter,
+  tutorialsToDocInputs,
   TUTORIALS_GROUP,
+  type BuildDocPagesOptions,
+  type DocInput,
   type ResolvedTutorial,
   type TutorialInput,
 } from './guide-view';
