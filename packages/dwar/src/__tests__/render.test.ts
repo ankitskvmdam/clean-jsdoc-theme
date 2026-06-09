@@ -130,12 +130,42 @@ describe('render() — smoke', () => {
       '_islands/copy-page.js',
       '_islands/theme-toggle.js',
       '_islands/settings.js',
+      '_islands/code-viewer.js',
+      '_islands/embed.js',
     ];
     for (const path of expected) {
       const chunk = result.files.find((f) => f.path === path);
       expect(chunk, `missing chunk ${path}`).toBeDefined();
       expect(asString(chunk!).length).toBeGreaterThan(0);
     }
+  });
+
+  it('compiles an <Embed> in MDX into a surviving data-island="embed" marker', async () => {
+    const manifest = makeManifest();
+    // setu emits iframe embeds as a self-closing <Embed …/> in the MDX body.
+    manifest.pages = [
+      ...manifest.pages,
+      {
+        slug: 'embed-page',
+        frontmatter: { title: 'Embed Page', kind: 'guide' },
+        body: '# Embed Page\n\n<Embed src="https://example.com/widget" title="Live demo" height="500" />\n',
+        headings: [],
+      },
+    ];
+    const result = await render(manifest, { theme: minimalTheme });
+
+    // The marker survives the MDX compile, with its data-* config channel.
+    const html = asString(result.files.find((f) => f.path === 'embed-page/index.html')!);
+    expect(html).toContain('data-island="embed"');
+    expect(html).toContain('data-src="https://example.com/widget"');
+    expect(html).toContain('data-title="Live demo"');
+    expect(html).toContain('<iframe');
+
+    // The page's loader references the embed chunk, and the chunk is emitted.
+    expect(html).toContain('/_islands/embed.js');
+    const chunk = result.files.find((f) => f.path === '_islands/embed.js');
+    expect(chunk, 'missing chunk _islands/embed.js').toBeDefined();
+    expect(asString(chunk!).length).toBeGreaterThan(0);
   });
 
   it('emits a CSS file with theme variables on :root', async () => {

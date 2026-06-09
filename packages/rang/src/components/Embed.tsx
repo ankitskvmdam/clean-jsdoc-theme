@@ -51,25 +51,24 @@ function resolveSrc(src: string, themed: boolean): string {
 }
 
 /**
- * An embeddable iframe. setu emits `<Embed …/>` (capitalized → routed through
- * the MDX components map). Two SSR shapes share one wrapper:
+ * The inner body of an embed: a live `<iframe>` (non-click-to-load) or a poster
+ * `<button>` + `<noscript>` fallback (click-to-load). Rendered as the children
+ * of the `data-island="embed"` marker — never as the marker itself.
  *
- *   <div data-island="embed" data-src data-title … data-click-to-load data-themed>
- *     — non-click-to-load → a live <iframe> (works with no JS)
- *     — click-to-load     → a poster <button> + <noscript><iframe></noscript>
- *
- * The wrapper's `data-*` attributes are the island's config channel (in-content
- * islands have no JSON props payload — see `CodeBlock`'s `copy-btn` marker). The
+ * SSR and the first client paint render identical markup (the `{theme}` token
+ * stays literal in `src` until post-mount) so hydration finds a match. The
  * client behavior (poster → iframe injection, `{theme}` swap on a `<html>`
- * `data-theme` MutationObserver) is added by the hooks below; SSR and the first
- * client paint render identical markup to avoid a hydration mismatch.
+ * `data-theme` MutationObserver) is wired up by the hooks below.
+ *
+ * This is the component dwar's island loader hydrates onto the marker (it reads
+ * the marker's `data-*` back into these props), mirroring how the `copy-btn`
+ * island mounts `CopyBtn` into its wrapper. Splitting the marker (`Embed`) from
+ * the body (`EmbedBody`) keeps the marker out of the hydration root, so the
+ * loader can `hydrate(h(EmbedBody, props), markerEl)` without double-wrapping.
  */
-export function Embed({
+export function EmbedBody({
   src,
   title,
-  height,
-  width,
-  aspectRatio,
   allow,
   sandbox,
   clickToLoad,
@@ -79,21 +78,9 @@ export function Embed({
   const isThemed = isTrue(themed);
   const sandboxValue = sandbox ?? DEFAULT_SANDBOX;
 
-  // Sizing: prefer aspect-ratio (responsive), else a fixed px height. Width
-  // defaults to 100% so the box fills the prose column.
-  const wrapperStyle: Record<string, string> = {
-    width: width ?? '100%',
-  };
-  if (aspectRatio) {
-    wrapperStyle.aspectRatio = aspectRatio;
-  } else {
-    wrapperStyle.height = `${height ?? DEFAULT_HEIGHT}px`;
-  }
-
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  // Whether the live iframe has been mounted (click-to-load: after a poster
-  // click; non-click-to-load: immediately). Tracked in a ref so the theme-sync
-  // observer can know whether there is an iframe to re-point.
+  const posterRef = useRef<HTMLButtonElement | null>(null);
+  // The live iframe: the SSR one (non-click-to-load) or the one injected on a
+  // poster click. Tracked in a ref so the theme-sync observer can re-point it.
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
   // Build a real <iframe> from the resolved config. Used by the click-to-load
@@ -116,9 +103,7 @@ export function Embed({
   // click-to-load: on poster click, replace the poster with the live iframe.
   useEffect(() => {
     if (!clickable) return;
-    const container = containerRef.current;
-    if (!container) return;
-    const poster = container.querySelector<HTMLButtonElement>('button[data-embed-poster]');
+    const poster = posterRef.current;
     if (!poster) return;
 
     const onClick = () => {
@@ -131,16 +116,13 @@ export function Embed({
     // src/title/etc. are static per render; the poster identity is what matters.
   }, [clickable, src, title, allow, sandboxValue, isThemed]);
 
-  // Non-click-to-load: adopt the SSR iframe so theme-sync can re-point it, and
-  // resolve the initial `{theme}` token (the SSR src kept the literal token to
-  // match the server output and avoid a hydration mismatch).
+  // Non-click-to-load: resolve the initial `{theme}` token on the SSR iframe
+  // (the SSR src kept the literal token to match server output and avoid a
+  // hydration mismatch). `iframeRef` already points at it via the ref below.
   useEffect(() => {
     if (clickable) return;
-    const container = containerRef.current;
-    if (!container) return;
-    const iframe = container.querySelector('iframe');
+    const iframe = iframeRef.current;
     if (!iframe) return;
-    iframeRef.current = iframe;
     if (isThemed && src.includes('{theme}')) {
       iframe.src = resolveSrc(src, true);
     }
@@ -169,6 +151,83 @@ export function Embed({
   // match; the effects above resolve it on the client.
   const ssrSrc = src;
 
+  if (clickable) {
+    return (
+      <>
+        <button
+          type="button"
+          ref={posterRef}
+          data-embed-poster
+          aria-label={title ? `Load embedded content: ${title}` : 'Load embedded content'}
+          class="flex h-full w-full cursor-pointer flex-col items-center justify-center gap-2 bg-(--clean-bg-muted) p-4 text-center text-(--clean-fg) transition-colors hover:bg-(--clean-bg)"
+        >
+          <span class="text-sm font-medium">{title ?? 'Embedded content'}</span>
+          <span class="inline-flex items-center gap-1 rounded-full border border-(--clean-border) bg-(--clean-bg) px-3 py-1 text-xs text-(--clean-fg-muted)">
+            Load
+          </span>
+        </button>
+        {/* No-JS fallback: the live embed still renders without hydration. */}
+        <noscript>
+          <iframe
+            src={ssrSrc}
+            title={title}
+            sandbox={sandboxValue}
+            allow={allow}
+            referrerpolicy={REFERRER_POLICY}
+            loading="lazy"
+            style="width:100%;height:100%;border:0;display:block"
+          />
+        </noscript>
+      </>
+    );
+  }
+
+  return (
+    <iframe
+      ref={iframeRef}
+      src={ssrSrc}
+      title={title}
+      sandbox={sandboxValue}
+      allow={allow}
+      referrerpolicy={REFERRER_POLICY}
+      loading="lazy"
+      style="width:100%;height:100%;border:0;display:block"
+    />
+  );
+}
+
+/**
+ * An embeddable iframe. setu emits `<Embed …/>` (capitalized → routed through
+ * the MDX components map). The component renders the `data-island="embed"`
+ * marker — the in-content island envelope — wrapping `EmbedBody`:
+ *
+ *   <div data-island="embed" data-src data-title … data-click-to-load data-themed>
+ *     — non-click-to-load → a live <iframe> (works with no JS)
+ *     — click-to-load     → a poster <button> + <noscript><iframe></noscript>
+ *
+ * The wrapper's `data-*` attributes are the island's config channel (in-content
+ * islands have no JSON props payload — see `CodeBlock`'s `copy-btn` marker).
+ * dwar's loader reads those `data-*` back into `EmbedProps` and hydrates
+ * `EmbedBody` onto this marker, so SSR and the first client paint stay
+ * identical.
+ */
+export function Embed(props: EmbedProps) {
+  const { src, title, height, width, aspectRatio, allow, sandbox, clickToLoad, themed } = props;
+  const clickable = isTrue(clickToLoad);
+  const isThemed = isTrue(themed);
+  const sandboxValue = sandbox ?? DEFAULT_SANDBOX;
+
+  // Sizing: prefer aspect-ratio (responsive), else a fixed px height. Width
+  // defaults to 100% so the box fills the prose column.
+  const wrapperStyle: Record<string, string> = {
+    width: width ?? '100%',
+  };
+  if (aspectRatio) {
+    wrapperStyle.aspectRatio = aspectRatio;
+  } else {
+    wrapperStyle.height = `${height ?? DEFAULT_HEIGHT}px`;
+  }
+
   // data-* config: the island's only config channel. Omit unset attrs.
   const dataAttrs: Record<string, string> = { 'data-src': src };
   if (title) dataAttrs['data-title'] = title;
@@ -181,49 +240,19 @@ export function Embed({
 
   return (
     <div
-      ref={containerRef}
       data-island="embed"
       {...dataAttrs}
       class="my-4 overflow-hidden rounded-2xl border border-(--clean-border) bg-(--clean-bg)"
       style={wrapperStyle as never}
     >
-      {clickable ? (
-        <>
-          <button
-            type="button"
-            data-embed-poster
-            aria-label={title ? `Load embedded content: ${title}` : 'Load embedded content'}
-            class="flex h-full w-full cursor-pointer flex-col items-center justify-center gap-2 bg-(--clean-bg-muted) p-4 text-center text-(--clean-fg) transition-colors hover:bg-(--clean-bg)"
-          >
-            <span class="text-sm font-medium">{title ?? 'Embedded content'}</span>
-            <span class="inline-flex items-center gap-1 rounded-full border border-(--clean-border) bg-(--clean-bg) px-3 py-1 text-xs text-(--clean-fg-muted)">
-              Load
-            </span>
-          </button>
-          {/* No-JS fallback: the live embed still renders without hydration. */}
-          <noscript>
-            <iframe
-              src={ssrSrc}
-              title={title}
-              sandbox={sandboxValue}
-              allow={allow}
-              referrerpolicy={REFERRER_POLICY}
-              loading="lazy"
-              style="width:100%;height:100%;border:0;display:block"
-            />
-          </noscript>
-        </>
-      ) : (
-        <iframe
-          src={ssrSrc}
-          title={title}
-          sandbox={sandboxValue}
-          allow={allow}
-          referrerpolicy={REFERRER_POLICY}
-          loading="lazy"
-          style="width:100%;height:100%;border:0;display:block"
-        />
-      )}
+      <EmbedBody
+        src={src}
+        title={title}
+        allow={allow}
+        sandbox={sandbox}
+        clickToLoad={clickToLoad}
+        themed={themed}
+      />
     </div>
   );
 }

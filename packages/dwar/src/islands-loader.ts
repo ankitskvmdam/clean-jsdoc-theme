@@ -19,6 +19,7 @@ const ALL_ISLAND_NAMES: IslandName[] = [
   'code-viewer',
   'copy-btn',
   'copy-page',
+  'embed',
   'mobile-nav',
   'settings',
   'sidebar',
@@ -79,6 +80,45 @@ function hydrateAll() {
     const pre = wrapper && wrapper.querySelector('pre');
     const text = pre ? pre.textContent || '' : '';
     hydrate(h(Component, { text }), el);
+  });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', hydrateAll, { once: true });
+} else {
+  hydrateAll();
+}
+`;
+  }
+
+  // embed is an in-content island like copy-btn: no JSON props-payload entry.
+  // Its whole config lives in the marker's `data-*` attributes (setu/the Embed
+  // component wrote them at SSR time). We read them back into the stringy
+  // `EmbedProps` the component expects and hydrate `EmbedBody` (the registry
+  // entry) onto the marker itself — the body reconciles against the marker's
+  // SSR children (iframe or poster+noscript), so the marker div (with its
+  // data-*, class, style) is left untouched and there is no double-wrapping.
+  if (name === 'embed') {
+    return `import { hydrate, h } from 'preact';
+import { ISLAND_REGISTRY } from '@clean-jsdoc-theme/rang';
+
+function hydrateAll() {
+  const Component = ISLAND_REGISTRY['embed'];
+  if (!Component) return;
+  document.querySelectorAll('[data-island="embed"]').forEach((el) => {
+    const d = el.getAttribute.bind(el);
+    const props = {};
+    const src = d('data-src');
+    if (src != null) props.src = src;
+    const title = d('data-title');
+    if (title != null) props.title = title;
+    const allow = d('data-allow');
+    if (allow != null) props.allow = allow;
+    const sandbox = d('data-sandbox');
+    if (sandbox != null) props.sandbox = sandbox;
+    if (el.hasAttribute('data-click-to-load')) props.clickToLoad = 'true';
+    if (el.hasAttribute('data-themed')) props.themed = 'true';
+    hydrate(h(Component, props), el);
   });
 }
 

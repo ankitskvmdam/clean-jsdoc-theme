@@ -1,8 +1,9 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render as renderToString } from 'preact-render-to-string';
 import { render, fireEvent, cleanup } from '@testing-library/preact';
-import { Embed } from '../components/Embed';
+import { Embed, EmbedBody } from '../components/Embed';
 import { defaultMdxComponents } from '../mdx-components';
+import { ISLAND_REGISTRY } from '../islands';
 
 describe('Embed (SSR markup)', () => {
   it('non-click-to-load: renders the island marker, data-* config, and a live iframe', () => {
@@ -85,6 +86,36 @@ describe('Embed (SSR markup)', () => {
 describe('Embed registration', () => {
   it('is registered in defaultMdxComponents under the capitalized key', () => {
     expect(defaultMdxComponents.Embed).toBe(Embed);
+  });
+
+  it('exposes the hydration body as the `embed` island in ISLAND_REGISTRY', () => {
+    expect(ISLAND_REGISTRY.embed).toBe(EmbedBody);
+  });
+});
+
+describe('EmbedBody (island hydration target)', () => {
+  afterEach(() => cleanup());
+
+  it('renders only the inner body (no data-island marker) so it can mount onto the marker', () => {
+    const html = renderToString(<EmbedBody src="https://example.com/widget" title="Live demo" />);
+    // The body is just the iframe — the marker/wrapper is owned by `Embed`.
+    expect(html).not.toContain('data-island');
+    expect(html.trimStart().startsWith('<iframe')).toBe(true);
+    expect(html).toContain('src="https://example.com/widget"');
+    expect(html).toContain('title="Live demo"');
+  });
+
+  it('click-to-load body: poster click injects the live iframe in place', () => {
+    const { container } = render(
+      <EmbedBody src="https://example.com/demo" title="Demo" clickToLoad="true" />,
+    );
+    const poster = container.querySelector('button[data-embed-poster]');
+    expect(poster).toBeTruthy();
+    fireEvent.click(poster!);
+    const iframe = container.querySelector('iframe');
+    expect(iframe).toBeTruthy();
+    expect(iframe!.getAttribute('src')).toBe('https://example.com/demo');
+    expect(container.querySelector('button[data-embed-poster]')).toBeNull();
   });
 });
 

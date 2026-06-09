@@ -22,7 +22,8 @@ export type IslandName =
   | 'copy-page'
   | 'theme-toggle'
   | 'settings'
-  | 'code-viewer';
+  | 'code-viewer'
+  | 'embed';
 
 /** Type-safe prop bag per island. Server-render and hydration share this map. */
 export interface IslandPropsMap {
@@ -43,4 +44,8 @@ export interface IslandPropsMap {
   // No `code` field: the source body is read from the DOM `<pre>` at hydration
   // time rather than passed through the JSON props payload.
   'code-viewer': { language: string; filename?: string; highlightLine?: number };
+  // In-content island (like `copy-btn`): the `<Embed>` config lives in the
+  // marker's `data-*` attributes, not the JSON props payload, so the prop bag
+  // is empty here. The loader reads `data-*` back into `EmbedProps` at hydrate.
+  embed: Record<string, never>;
 }

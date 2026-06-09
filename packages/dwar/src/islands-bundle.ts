@@ -34,6 +34,7 @@ const ALL_ISLANDS: IslandName[] = [
   'theme-toggle',
   'settings',
   'code-viewer',
+  'embed',
 ];
 
 export interface IslandBundleResult {

@@ -39,3 +39,25 @@ describe('getIslandChunkEntrySource() — copy-btn', () => {
     expect(src).toContain('data-island-id');
   });
 });
+
+describe('getIslandChunkEntrySource() — embed', () => {
+  // embed is an in-content island like copy-btn: no data-island-id / payload
+  // entry. Its config lives in the marker's data-* attributes, which the chunk
+  // reads back into EmbedProps and hydrates the body onto the marker itself.
+  it('reads config from the marker data-* (not the props payload)', () => {
+    const src = getIslandChunkEntrySource('embed');
+    expect(src).toContain("querySelectorAll('[data-island=\"embed\"]')");
+    expect(src).toContain("getAttribute");
+    expect(src).toContain("'data-src'");
+    expect(src).toContain('hydrate(');
+    expect(src).not.toContain('data-island-props');
+  });
+
+  it('bundles into a non-empty embed chunk', async () => {
+    const chunks = await bundleIslands({ islands: ['embed'] });
+    expect(chunks).toHaveLength(1);
+    expect(chunks[0].name).toBe('embed');
+    expect(chunks[0].path).toBe('_islands/embed.js');
+    expect(chunks[0].byteSize).toBeGreaterThan(0);
+  });
+});
