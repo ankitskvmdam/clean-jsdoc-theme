@@ -63,7 +63,7 @@ clean-jsdoc-theme/
 │   └── bhasha/                # @clean-jsdoc-theme/bhasha — i18n surface (stub)
 ├── examples/
 │   └── basic/                 # working JSDoc fixture: `pnpm run docs` → dist/
-├── docs-site/                 # dogfood docs site (stub)
+├── docs-site/                 # dogfood docs site: prose-first `opts.docs` build
 ├── ARCHITECTURE.md            # this file
 ├── MIGRATION.md               # v4 → v5 migration guide
 ├── BREAKING_CHANGES.md
@@ -136,6 +136,29 @@ images, tables — no raw HTML), and `toMdx` serializes links in resource form
 (`[text](url)`, never `<url>`) so nothing MDX-hostile survives. GFM (tables, task
 lists, strikethrough, footnotes) is preserved throughout.
 
+**Docs directory.** A prose-first **docs site** is built from a directory of
+Markdown/HTML files (`opts.docs`): the bridge walks it (it's the I/O layer; setu
+stays disk-free) and hands setu a flat `DocInput[]` — each a POSIX relative path
+(no extension), the raw content, and a `type`. `buildDocPages` then turns each
+into a page where the **filesystem layout drives the URL and the sidebar group**:
+the slug is the relative path with **no prefix** (`guides/advanced.md` →
+`/guides/advanced`), and the group is the humanized parent directory
+(`guides/` → "Guides"). A leading `---\n…\n---` YAML **frontmatter** block
+(`parseFrontmatter`, dependency-light) overrides per file — `title`, `group`,
+`order`, `slug`, `hidden` all win over the directory/humanized fallbacks; a
+file with no frontmatter falls back to its folder's group and a humanized
+filename title. A doc with no group at all lands in `opts.defaultDocGroup`. The
+root `index.md` (`path === 'index'`) becomes the **home page** (slug `''`,
+`kind: 'index'`), overriding the README home; otherwise the README still wins.
+Doc-group sidebar sections render in `opts.docGroups` order, after the API
+sections. A doc whose slug would shadow the home or an already-claimed
+API/source/tutorial slug is skipped + logged (never throws), mirroring the
+synthetic-globals skip. Tutorials and docs share **one** builder: legacy
+tutorials are routed through `tutorialsToDocInputs`, a thin adapter that
+synthesizes a `DocInput` per tutorial (`tutorials/<name>`, group "Tutorials",
+incrementing order) with frontmatter parsing disabled, so today's tutorial
+output stays byte-identical while flowing through the same path.
+
 **Link resolution.** `{@link}`/`{@linkcode}`/`{@linkplain}` inline tags and `@see`
 block tags become real anchors. setu builds a link registry (`link-registry.ts`)
 from the page set it actually generates — a two-pass build: pass 1 populates the
@@ -184,7 +207,10 @@ setu/src/
 │                         #   region → divider → API sections ordered/filtered by
 │                         #   `sectionOrder`; clubNavTree groups by path prefix when
 │                         #   clubSidebarItems is on), buildId
-├── guide-view.ts         # README → home Page; tutorial tree → guide Pages + nav
+├── guide-view.ts         # README → home Page; DocInput[] → guide Pages + nav
+│                         #   (buildDocPages: frontmatter/directory slugs+groups,
+│                         #   root index.md → home); tutorialsToDocInputs adapter
+│                         #   (legacy tutorials → DocInput[], byte-identical output)
 ├── source-view.ts        # source files → hidden 'source' viewer Pages + "Source
 │                         #   Files" index + per-member meta→/source/…#L<n> resolver
 │                         #   (firstCodeLine: land on the declaration, not the comment)
@@ -381,6 +407,10 @@ clean-jsdoc-theme/src/
 │                         #   Source: link lands on the declaration (default) or comment.
 │                         #   Normalizes opts.sectionOrder + opts.menu + opts.clubSidebarItems
 │                         #   → setu, and opts.aiPrompt + opts.copyPage → theme.
+│                         #   Walks opts.docs (collectDocs: recursive, *.md/*.markdown/
+│                         #   *.html → DocInput[] w/ POSIX rel path + raw content; the
+│                         #   only place the docs tree is read) and threads docs +
+│                         #   opts.docGroups + opts.defaultDocGroup → setu.
 │                         #   Holds defaultTheme (OKLCH palette).
 └── write-output-files.ts # mkdir -p + writeFile loop (forward-slash → OS path)
 ```
@@ -417,6 +447,13 @@ cd examples/basic
 pnpm run docs            # build:theme (turbo) → jsdoc -c jsdoc.json → dist/
 pnpm dlx serve dist
 ```
+
+The prose-first counterpart is **`docs-site/`** — a dogfood site driven by
+`opts.docs` + frontmatter (no `--tutorials`): `pnpm --filter
+@clean-jsdoc-theme/docs-site run docs` runs the same `build:theme` → `jsdoc`
+flow, emitting clean unprefixed doc slugs (`/getting-started`, `/guides/advanced`)
+grouped into the `opts.docGroups` sidebar sections, with `docs/index.md` as the
+home page.
 
 `examples/basic` consumes the theme's **built `dist`** (`publish.ts` loads
 `setu`/`dwar`/`rang` from their `dist` at runtime; `jsdoc` never sees source).
