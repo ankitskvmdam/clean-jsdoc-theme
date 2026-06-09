@@ -98,15 +98,71 @@ interface MemberMetaProps {
   sourceLabel?: string;
 }
 
-/** Per-badge color. Unlisted badges fall back to a neutral muted pill. */
-const BADGE_CLASS: Record<string, string> = {
-  deprecated: 'border-red-300 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300',
-  private: 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300',
-  protected: 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300',
-  static: 'border-(--clean-border) bg-(--clean-bg-muted) text-(--clean-link) font-semibold',
-  async: 'border-(--clean-border) bg-(--clean-bg-muted) text-(--clean-link) font-semibold',
+/**
+ * Single source of truth for chip color + stacking order. Two visual classes:
+ *
+ * - **Modifier / state chips** — filled, tinted, color-coded by meaning; several
+ *   can stack on one symbol. Recipe: `bg-{c}-50 text-{c}-700 border-{c}-200`
+ *   light, `dark:bg-{c}-950 dark:text-{c}-300 dark:border-{c}-800` dark
+ *   (`readonly` uses the neutral `slate` ramp at `100/600/200` ↔ `800/300/700`).
+ * - **Kind markers** (`enum`/`typedef`/`interface`) — neutral *outline* chips
+ *   (no fill); exactly one applies, signalling *what a symbol is* vs *how it
+ *   behaves*.
+ * - **`deprecated`** — a louder *solid red* chip, so it stays distinct even when
+ *   stacked beside the red-family `private` chip.
+ *
+ * Unlisted badges (e.g. `event`) fall back to a neutral muted pill. The
+ * `global` modifier is intentionally absent — it is filtered out before render,
+ * never chipped.
+ */
+const CHIP_TINTED: Record<string, string> = {
+  // behavior
+  async: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800',
+  generator:
+    'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950 dark:text-violet-300 dark:border-violet-800',
+  // binding
+  static: 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950 dark:text-teal-300 dark:border-teal-800',
+  // mutability (neutral slate ramp)
+  readonly:
+    'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
+  // inheritance
+  abstract:
+    'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200 dark:bg-fuchsia-950 dark:text-fuchsia-300 dark:border-fuchsia-800',
+  override: 'bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950 dark:text-cyan-300 dark:border-cyan-800',
+  // access
+  public:
+    'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800',
+  protected:
+    'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800',
+  private: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800',
 };
-const BADGE_FALLBACK = 'border-(--clean-border) bg-(--clean-bg-muted) text-(--clean-fg-muted)';
+const CHIP_DEPRECATED = 'bg-red-600 text-white border-red-600 dark:bg-red-600 dark:text-white dark:border-red-600';
+const CHIP_KIND = 'bg-transparent text-slate-600 border-slate-300 dark:text-slate-300 dark:border-slate-600';
+const CHIP_FALLBACK = 'border-(--clean-border) bg-(--clean-bg-muted) text-(--clean-fg-muted)';
+
+/** Kind markers — neutral outline chips; exactly one applies per symbol. */
+const KIND_MARKERS = new Set(['enum', 'typedef', 'interface']);
+/** Access modifiers, grouped together in render order. */
+const ACCESS = new Set(['public', 'protected', 'private']);
+
+/** Color classes for a badge, by category. */
+function chipClass(badge: string): string {
+  if (badge === 'deprecated') return CHIP_DEPRECATED;
+  if (KIND_MARKERS.has(badge)) return CHIP_KIND;
+  return CHIP_TINTED[badge] ?? CHIP_FALLBACK;
+}
+
+/**
+ * Stacking rank — kind marker first (outline), then access, then
+ * behavior/binding/mutability/inheritance, then `deprecated` last so the loud
+ * chip anchors the row. Ties keep input order via a stable sort.
+ */
+function chipRank(badge: string): number {
+  if (KIND_MARKERS.has(badge)) return 0;
+  if (ACCESS.has(badge)) return 1;
+  if (badge === 'deprecated') return 3;
+  return 2;
+}
 
 /**
  * Member meta row emitted by setu as `<MemberMeta badges sourceHref sourceLabel
@@ -118,7 +174,14 @@ const BADGE_FALLBACK = 'border-(--clean-border) bg-(--clean-bg-muted) text-(--cl
  * nothing only when it has neither badges nor a source.
  */
 export function MemberMeta({ badges, sourceHref, sourceLabel }: MemberMetaProps) {
-  const list = badges ? badges.split(',').filter(Boolean) : [];
+  // `global` is never chipped (filtered out, no map entry). Stable-sort the rest
+  // into category order so stacked chips read kind → access → behavior → deprecated.
+  const list = (badges ? badges.split(',') : [])
+    .map((b) => b.trim())
+    .filter((b) => b && b !== 'global')
+    .map((badge, i) => ({ badge, i }))
+    .sort((a, b) => chipRank(a.badge) - chipRank(b.badge) || a.i - b.i)
+    .map((x) => x.badge);
   if (list.length === 0 && !sourceHref) return null;
   return (
     <div class="mt-2 mb-3 flex flex-wrap items-center gap-2">
@@ -126,7 +189,8 @@ export function MemberMeta({ badges, sourceHref, sourceLabel }: MemberMetaProps)
         {list.map((badge) => (
           <span
             key={badge}
-            class={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${BADGE_CLASS[badge] ?? BADGE_FALLBACK}`}
+            aria-label={badge}
+            class={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${chipClass(badge)}`}
           >
             {badge}
           </span>
