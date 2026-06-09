@@ -29,6 +29,7 @@ import {
   MdxTd,
   SourceLink,
   MemberMeta,
+  MemberHeading,
 } from './components/mdx-tags';
 
 // MDX is a heterogeneous element-name → component map; per-key prop shapes vary.
@@ -64,6 +65,10 @@ export const defaultMdxComponents: Record<string, ComponentType<any>> = {
   // sourceLabel />` under the member's heading: chips left, filename:line
   // source pinned right. Capitalized so MDX routes it here.
   MemberMeta,
+  // setu emits each member heading as `<MemberHeading id depth name sig />` —
+  // an h{depth} whose content is one <code> showing the full signature, with an
+  // explicit id so the anchor stays clean. Capitalized so MDX routes it here.
+  MemberHeading,
   hr: MdxHr,
   table: MdxTable,
   thead: MdxThead,

@@ -89,6 +89,36 @@ export function SourceLink({ href, label }: SourceLinkProps) {
   );
 }
 
+/** Member-heading size classes by tag, mirroring `makeHeading` in mdx-utils. */
+const MEMBER_HEADING_CLASS: Record<string, string> = {
+  h2: 'mt-8 mb-3 text-2xl font-medium',
+  h3: 'mt-6 mb-2 text-xl font-medium',
+  h4: 'mt-5 mb-2 text-lg font-medium',
+};
+
+/**
+ * A member heading emitted by setu as `<MemberHeading id depth name sig />`. It
+ * renders an `h{depth}` whose entire content is a single `<code>` showing the
+ * full signature (e.g. `process(data) -> Promise.<number>`), so the name and its
+ * params/return read as one unit. The `id` is explicit — the displayed
+ * signature never feeds the anchor slug (stays `#name`) — and the hover anchor
+ * + scroll offset mirror `makeHeading`, so dwar's heading-anchors script and the
+ * TOC treat it like any other heading.
+ */
+export function MemberHeading({ id, depth, sig }: { id?: string; depth?: string; sig?: string }) {
+  const tag = depth === '2' ? 'h2' : depth === '4' ? 'h4' : 'h3';
+  const Tag = tag as 'h2' | 'h3' | 'h4';
+  return (
+    <Tag
+      id={id}
+      class={`group relative scroll-mt-20 ${id ? 'cursor-pointer' : ''} ${MEMBER_HEADING_CLASS[tag]}`}
+    >
+      {id ? <HeadingAnchor /> : null}
+      <Code>{sig}</Code>
+    </Tag>
+  );
+}
+
 interface MemberMetaProps {
   /** Comma-joined modifier/kind badges, e.g. `static,async,deprecated`. */
   badges?: string;

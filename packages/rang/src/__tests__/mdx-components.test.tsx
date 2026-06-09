@@ -112,4 +112,25 @@ describe('defaultMdxComponents', () => {
     const MemberMeta = defaultMdxComponents.MemberMeta;
     expect(render(h(MemberMeta, {}))).toBe('');
   });
+
+  it('MemberHeading renders the full signature in a single <code> with an explicit id', () => {
+    const MemberHeading = defaultMdxComponents.MemberHeading;
+    const html = render(
+      h(MemberHeading, { id: 'process', depth: '3', name: 'process', sig: 'process(data) -> Promise.<number>' }),
+    );
+    // h3 with the explicit (clean) id, the hover anchor, and ONE code element.
+    expect(html).toContain('<h3');
+    expect(html).toContain('id="process"');
+    expect(html).toContain('data-heading-anchor');
+    const codeCount = html.split('<code').length - 1;
+    expect(codeCount).toBe(1);
+    // The whole signature is inside that code element (only `<` is escaped).
+    expect(html).toMatch(/<code[^>]*>process\(data\) -> Promise\.&lt;number><\/code>/);
+  });
+
+  it('MemberHeading honors the depth attribute', () => {
+    const MemberHeading = defaultMdxComponents.MemberHeading;
+    expect(render(h(MemberHeading, { id: 'x', depth: '2', name: 'x', sig: 'x' }))).toContain('<h2');
+    expect(render(h(MemberHeading, { id: 'y', depth: '4', name: 'y', sig: 'y' }))).toContain('<h4');
+  });
 });
