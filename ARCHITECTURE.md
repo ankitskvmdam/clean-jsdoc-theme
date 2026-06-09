@@ -136,6 +136,17 @@ images, tables — no raw HTML), and `toMdx` serializes links in resource form
 (`[text](url)`, never `<url>`) so nothing MDX-hostile survives. GFM (tables, task
 lists, strikethrough, footnotes) is preserved throughout.
 
+**Embeds.** Sandboxed iframes (CodePen, live demos) lower to a capitalized
+`<Embed>` MDX JSX node — the same round-trip as callouts — from two sources:
+the `@iframe` **block tag** on any doclet (`@iframe <url> key=value …`, parsed by
+`embedBlocks` in `mdast/doclet.ts`, rendered after `@example`) and an
+```` ```iframe ```` **prose fence** in README/tutorial/doc Markdown (lowered in
+`guide-view.ts`). Both share one config grammar (`embed.ts` `parseEmbedConfig`:
+first token = URL, rest `key=value`; `https://`/protocol-relative only, else
+dropped with a warning). The `@iframe` tag requires `tags.allowUnknownTags: true`
+in `jsdoc.json` so the unknown tag survives into `doclet.tags`; the prose fence
+needs no config.
+
 **Docs directory.** A prose-first **docs site** is built from a directory of
 Markdown/HTML files (`opts.docs`): the bridge walks it (it's the I/O layer; setu
 stays disk-free) and hands setu a flat `DocInput[]` — each a POSIX relative path
@@ -313,6 +324,8 @@ rang/src/
     │                     #   Perplexity (prompt + .md link, never the page body)
     ├── icons/            # inlined brand SVGs (ChatGptIcon ← chatgpt.svg)
     ├── CodeViewer.tsx    # island: read-only Monaco source viewer (CDN-loaded)
+    ├── Embed.tsx         # island: sandboxed iframe (Embed marker + EmbedBody body);
+    │                     #   optional click-to-load poster + {theme}-token sync
     ├── mdx-utils.tsx     # MDX shared utils: BaseProps, makeHeading, HeadingAnchor
     │                     #   (hover link button), cx, textContent
     ├── mdx-tags.tsx      # MDX tag renderers (headings, links, lists, tables, …)
@@ -320,8 +333,9 @@ rang/src/
                           #   `Code` (MDX `code`); also serves CodeTabs + standalone
 ```
 
-**Islands** (`IslandName`): `sidebar`, `mobile-nav`, `toc`, `toc-mobile`, `cmdk`,
-`code-tabs`, `copy-btn`, `copy-page`, `theme-toggle`, `settings`, `code-viewer`.
+**Islands** (`IslandName`, 12): `sidebar`, `mobile-nav`, `toc`, `toc-mobile`,
+`cmdk`, `code-tabs`, `copy-btn`, `copy-page`, `theme-toggle`, `settings`,
+`code-viewer`, `embed`.
 Each renders meaningful SSR HTML, then progressively enhances after hydration.
 The `cmdk` palette lazily fetches the search index on first open and ranks page
 titles with a fuzzy matcher (`search-utils`). The `copy-page` split button
@@ -339,7 +353,12 @@ read-only Monaco editor from the jsdelivr CDN (never bundled): it reads its code
 back from that `<pre>`, reveals the `#L<n>` deep-link line, and re-themes off the
 `<html data-theme>` attribute (a `MutationObserver`, since the toggle is a
 separate island) with custom themes whose background matches the site's pinned
-code surface.
+code surface. The `embed` island (in-content, no JSON payload — config rides on
+the marker's `data-*`, like `copy-btn`) renders a sandboxed `<iframe>` for
+`<Embed>` nodes: a live iframe by default (works with no JS), or a click-to-load
+poster `<button>` (+ `<noscript>` fallback) that swaps in the iframe on click;
+when `themed`, a `{theme}` token in the URL is re-resolved off `<html
+data-theme>` via the same `MutationObserver` pattern.
 
 ### `@clean-jsdoc-theme/dwar` — `SiteManifest` → HTML/CSS/JS
 

@@ -629,3 +629,14 @@ Underscores
 ```
 
 [![IMAGE ALT TEXT HERE](https://upload.wikimedia.org/wikipedia/commons/thumb/e/ef/YouTube_logo_2015.svg/1200px-YouTube_logo_2015.svg.png)](https://www.youtube.com/watch?v=ciawICBvQoE)
+
+------
+
+# Embeds
+
+Use an ```` ```iframe ```` fenced block to embed live, sandboxed content
+(CodePen, demos, etc.) directly in prose:
+
+```iframe
+https://codepen.io/team/codepen/embed/PNaGbb height=400 title="Demo"
+```

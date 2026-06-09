@@ -34,6 +34,7 @@ export class User {
    * @throws {Error} If name is empty
    * @example
    * user.updateName("John Doe");
+   * @iframe https://codepen.io/team/codepen/embed/PNaGbb height=400 title="Live demo" clickToLoad=true
    */
   updateName(newName) {
     if (!newName) throw new Error('Invalid name');
