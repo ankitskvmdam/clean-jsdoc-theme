@@ -60,4 +60,43 @@ describe('defaultMdxComponents', () => {
     expect(html).toContain('overflow-x-auto');
     expect(html).toContain('<table');
   });
+
+  it('MemberMeta renders badges, a right-aligned source link, and a signature', () => {
+    const MemberMeta = defaultMdxComponents.MemberMeta;
+    const html = render(
+      h(MemberMeta, {
+        signature: 'process(items: string[]): Promise<Result[]>',
+        badges: 'static,async,deprecated',
+        sourceHref: '/source/x/#L1',
+        sourceLabel: 'x.js:1',
+      }),
+    );
+    expect(html).toContain('static');
+    expect(html).toContain('async');
+    expect(html).toContain('deprecated');
+    // Signature is rendered (generics survive as text, not parsed as JSX;
+    // only `<` needs escaping in HTML text content).
+    expect(html).toContain('process(items: string[]): Promise&lt;Result[]>');
+    expect(html).toContain('href="/source/x/#L1"');
+    expect(html).toContain('x.js:1');
+  });
+
+  it('MemberMeta renders nothing when it has no signature, badges, or source', () => {
+    const MemberMeta = defaultMdxComponents.MemberMeta;
+    expect(render(h(MemberMeta, {}))).toBe('');
+  });
+
+  it('MembersSummary renders a jump-link per name~anchor pair', () => {
+    const MembersSummary = defaultMdxComponents.MembersSummary;
+    const html = render(h(MembersSummary, { items: 'process~process|toJSON~tojson' }));
+    expect(html).toContain('href="#process"');
+    expect(html).toContain('>process<');
+    expect(html).toContain('href="#tojson"');
+    expect(html).toContain('>toJSON<');
+  });
+
+  it('MembersSummary renders nothing when items is empty', () => {
+    const MembersSummary = defaultMdxComponents.MembersSummary;
+    expect(render(h(MembersSummary, { items: '' }))).toBe('');
+  });
 });

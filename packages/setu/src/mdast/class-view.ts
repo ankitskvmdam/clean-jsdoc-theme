@@ -1,7 +1,14 @@
 import type { Root, RootContent } from 'mdast';
 import { ClassMember, ClassView, ContainerView, MemberBuckets } from '../class-view';
-import { h, hr, inlineCode, p, root, strong, text } from './builders';
-import { docletBlocks, DocletBlocksOptions, paramsList, sourceLinkBlock } from './doclet';
+import { slugifyHeading } from '@clean-jsdoc-theme/utils';
+import { h, hr, inlineCode, memberMeta, membersSummary, p, root, strong, text } from './builders';
+import {
+  docletBlocks,
+  DocletBlocksOptions,
+  paramsList,
+  sourceLinkBlock,
+  typeExpressionString,
+} from './doclet';
 
 export interface ClassViewToMdastOptions extends DocletBlocksOptions {
   /** Heading level for the class title. Default: 1. */
@@ -32,9 +39,58 @@ export function defaultSections(buckets: MemberBuckets): SectionSpec[] {
 }
 
 /**
- * Render one member as: heading with the member name (inline-coded) followed
- * by the doclet's body via {@link docletBlocks}. Reusable for any kind that
- * has named, headed members (modules, mixins, namespaces, …).
+ * A readable one-line signature for a member. Functions/methods render as
+ * `name(p1: T1, p2?: T2): ReturnType` (top-level params only — nested
+ * `options.timeout` entries are folded into the Parameters table, not the
+ * signature); fields/constants render as `name: Type`; anything else is just
+ * the bare name. Returns `undefined` for an anonymous member.
+ */
+export function memberSignature(member: ClassMember): string | undefined {
+  const name = member.name;
+  if (!name) return undefined;
+  if (member.kind === 'function') {
+    const params = (member.params ?? [])
+      .filter((param) => param.name && !param.name.includes('.'))
+      .map((param) => {
+        const t = typeExpressionString(param.type);
+        const optional = param.optional ? '?' : '';
+        return t ? `${param.name}${optional}: ${t}` : `${param.name}${optional}`;
+      })
+      .join(', ');
+    const ret = typeExpressionString(member.returns?.[0]?.type);
+    return `${name}(${params})${ret ? `: ${ret}` : ''}`;
+  }
+  const fieldType = typeExpressionString(member.type);
+  return fieldType ? `${name}: ${fieldType}` : name;
+}
+
+/**
+ * Modifier / kind badges for a member, in display order. Mirrors
+ * {@link modifiersBlock} but adds the scope (`static`) and `deprecated` flags,
+ * and drops the redundant `public` access (the default). Replaces the old
+ * "Modifiers:" paragraph — `memberBlocks` skips that section.
+ */
+export function memberBadges(member: ClassMember): string[] {
+  const badges: string[] = [];
+  if (member.scope === 'static') badges.push('static');
+  if (member.async) badges.push('async');
+  if (member.generator) badges.push('generator');
+  if (member.virtual) badges.push('abstract');
+  if (member.readonly) badges.push('readonly');
+  if (member.kind === 'event') badges.push('event');
+  if (member.isEnum) badges.push('enum');
+  if (member.access && member.access !== 'public') badges.push(member.access);
+  if (member.deprecated) badges.push('deprecated');
+  return badges;
+}
+
+/**
+ * Render one member as: an ATX heading with the member name (inline-coded), a
+ * `<MemberMeta>` block (badges + Source link + tinted signature), then the
+ * doclet's body via {@link docletBlocks}. The heading stays a real `###` so its
+ * anchor / TOC / search entry survive; the meta block carries the visual
+ * structure. The `modifiers` section is skipped — badges replace it. Reusable
+ * for any kind with named, headed members (modules, mixins, namespaces, …).
  */
 export function memberBlocks(
   member: ClassMember,
@@ -42,9 +98,22 @@ export function memberBlocks(
   headingLevel: 2 | 3 | 4 = 3
 ): RootContent[] {
   const out: RootContent[] = [h(headingLevel, inlineCode(member.name ?? '(anonymous)'))];
-  const src = sourceLinkBlock(member, options);
-  if (src) out.push(src);
-  out.push(...docletBlocks(member, options));
+
+  const signature = memberSignature(member);
+  const badges = memberBadges(member);
+  const resolved = options.sourceLink?.(member) ?? undefined;
+  if (signature || badges.length > 0 || resolved) {
+    out.push(
+      memberMeta({
+        signature,
+        badges,
+        sourceHref: resolved?.href,
+        sourceLabel: resolved?.label,
+      })
+    );
+  }
+
+  out.push(...docletBlocks(member, { ...options, skip: [...(options.skip ?? []), 'modifiers'] }));
   return out;
 }
 
@@ -141,7 +210,21 @@ export function containerViewToMdast(
 
   // Members, bucketed.
   const sections = defaultSections(view);
-  if (sections.some((s) => s.members.length > 0)) blocks.push(hr());
+  const hasMembers = sections.some((s) => s.members.length > 0);
+  if (hasMembers) blocks.push(hr());
+
+  // "Members at a glance": a jump-link grid above the detailed sections, in
+  // section order. Anchors are bare slugifyHeading(name) — the same slug the
+  // member's `###` heading gets (see the known dedup caveat in the link-
+  // resolution plan). Skipped for trivial classes (< 2 members) where it would
+  // just duplicate the sections right below.
+  const summaryMembers = sections
+    .flatMap((s) => s.members)
+    .map((m) => m.name)
+    .filter((name): name is string => typeof name === 'string' && name.length > 0)
+    .map((name) => ({ name, anchor: slugifyHeading(name) }));
+  if (summaryMembers.length >= 2) blocks.push(membersSummary(summaryMembers));
+
   blocks.push(...memberSections(sections, options));
 
   return root(...blocks);

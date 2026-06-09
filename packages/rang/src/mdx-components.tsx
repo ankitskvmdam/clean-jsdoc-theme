@@ -28,6 +28,8 @@ import {
   MdxTh,
   MdxTd,
   SourceLink,
+  MemberMeta,
+  MembersSummary,
 } from './components/mdx-tags';
 
 // MDX is a heterogeneous element-name → component map; per-key prop shapes vary.
@@ -59,6 +61,13 @@ export const defaultMdxComponents: Record<string, ComponentType<any>> = {
   // `<SourceLink href="…" label="…" />`. Capitalized so MDX routes it here; the
   // component renders a small 12px muted caption with a `file:line` link.
   SourceLink,
+  // setu emits per-member meta (badges + Source link + tinted signature) as
+  // `<MemberMeta signature badges sourceHref sourceLabel />`, under the member's
+  // heading. Capitalized so MDX routes it here.
+  MemberMeta,
+  // setu emits the "members at a glance" jump-link grid as
+  // `<MembersSummary items="name~anchor|…" />` above the member sections.
+  MembersSummary,
   hr: MdxHr,
   table: MdxTable,
   thead: MdxThead,

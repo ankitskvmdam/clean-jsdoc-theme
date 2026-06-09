@@ -157,3 +157,54 @@ export const sourceLink = (href: string, label: string): MdxJsxFlowElement => ({
   ],
   children: [],
 });
+
+/**
+ * A member meta block — rang's `MemberMeta` (modifier badges + Source link +
+ * tinted monospace signature) emitted as a self-closing MDX JSX element. Same
+ * capitalized-JSX round-trip as {@link callout}/{@link embed}/{@link sourceLink}.
+ * Sits directly under a member's `###` heading (the heading stays a real ATX
+ * heading so its anchor / TOC / search entry survive).
+ *
+ * The signature rides as an **attribute** (never JSX children): it carries
+ * generics like `Promise<Result[]>`, and a `<` in JSX text would be read as a
+ * tag and abort the page compile. Embedded `"` are downgraded to `'` so the
+ * attribute string can't be terminated early. Empty fields are omitted.
+ */
+export const memberMeta = (meta: {
+  signature?: string;
+  badges?: readonly string[];
+  sourceHref?: string;
+  sourceLabel?: string;
+}): MdxJsxFlowElement => {
+  const attributes: MdxJsxAttribute[] = [];
+  const attr = (name: string, value: string | undefined): void => {
+    if (value) attributes.push({ type: 'mdxJsxAttribute', name, value });
+  };
+  attr('signature', meta.signature?.replace(/"/g, "'"));
+  attr('badges', meta.badges && meta.badges.length ? meta.badges.join(',') : undefined);
+  attr('sourceHref', meta.sourceHref);
+  attr('sourceLabel', meta.sourceLabel);
+  return { type: 'mdxJsxFlowElement', name: 'MemberMeta', attributes, children: [] };
+};
+
+/**
+ * A "members at a glance" grid — rang's `MembersSummary` emitted as a self-
+ * closing MDX JSX element, placed above the detailed member sections. The list
+ * rides in one `items` attribute as `name~anchor` pairs joined by `|`: member
+ * names are identifiers and anchors are slugified, so neither `~` nor `|` can
+ * appear in either. Same capitalized-JSX round-trip as the other custom nodes.
+ */
+export const membersSummary = (
+  members: readonly { name: string; anchor: string }[]
+): MdxJsxFlowElement => ({
+  type: 'mdxJsxFlowElement',
+  name: 'MembersSummary',
+  attributes: [
+    {
+      type: 'mdxJsxAttribute',
+      name: 'items',
+      value: members.map((m) => `${m.name}~${m.anchor}`).join('|'),
+    },
+  ],
+  children: [],
+});
