@@ -51,6 +51,24 @@ importers:
         specifier: ^4.1.4
         version: 4.1.5(@types/node@22.19.17)(happy-dom@15.11.7)(vite@8.0.10(@types/node@22.19.17)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.22.3))
 
+  docs-site:
+    devDependencies:
+      clean-jsdoc-theme:
+        specifier: workspace:^
+        version: link:../packages/clean-jsdoc-theme
+      concurrently:
+        specifier: ^9.0.0
+        version: 9.2.1
+      jsdoc:
+        specifier: ^4.0.0
+        version: 4.0.5
+      nodemon:
+        specifier: ^3.0.0
+        version: 3.1.14
+      serve:
+        specifier: ^14.0.0
+        version: 14.2.6
+
   examples/basic:
     devDependencies:
       clean-jsdoc-theme:
@@ -5303,7 +5321,7 @@ snapshots:
     dependencies:
       ansi-align: 3.0.1
       camelcase: 7.0.1
-      chalk: 5.0.1
+      chalk: 5.6.2
       cli-boxes: 3.0.0
       string-width: 5.1.2
       type-fest: 2.19.0

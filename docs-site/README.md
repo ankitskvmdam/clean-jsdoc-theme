@@ -1,10 +1,16 @@
 # docs-site
 
-> **Stub.** Not wired up yet.
+The dogfood documentation site for `clean-jsdoc-theme`. It builds a **prose-first**
+docs site from `docs/` using the theme's new docs pipeline (`opts.docs` +
+frontmatter), so the published site doubles as a real-world regression check for
+the docs-directory feature.
 
-The dogfood documentation site for clean-jsdoc-theme — the plan is to build this
-project's own docs with the theme itself, so the published site doubles as a
-real-world regression check.
+Build it:
 
-Until it lands, the working end-to-end reference is
-[`examples/basic`](../examples/basic) (`pnpm run docs`).
+```sh
+pnpm --filter @clean-jsdoc-theme/docs-site run docs
+```
+
+This runs `build:theme` (turbo, rebuilding the upstream package graph) then
+`jsdoc -c jsdoc.json`, emitting the site to `dist/`. The root `docs/index.md`
+becomes the home page; `docs/*.md` become grouped, clean-slug pages.

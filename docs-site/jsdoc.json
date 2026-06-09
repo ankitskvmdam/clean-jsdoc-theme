@@ -1,0 +1,35 @@
+{
+  "tags": {
+    "allowUnknownTags": true
+  },
+  "source": {
+    "include": ["./src", "./README.md"]
+  },
+  "plugins": ["plugins/markdown"],
+  "opts": {
+    "encoding": "utf8",
+    "destination": "dist",
+    "recurse": true,
+    "template": "./node_modules/clean-jsdoc-theme/dist",
+    "readme": "./README.md",
+    "docs": "./docs",
+    "docGroups": ["Getting Started", "Guides", "Reference"],
+    "defaultDocGroup": "Docs",
+    "siteName": "clean-jsdoc-theme docs",
+    "clubSidebarItems": true,
+    "menu": [
+      {
+        "title": "Home",
+        "link": "/",
+        "id": "home",
+        "icon": "lucide:home"
+      },
+      {
+        "title": "Github",
+        "link": "https://github.com/ankitskvmdam/clean-jsdoc-theme",
+        "id": "github",
+        "icon": "simpleicons:github"
+      }
+    ]
+  }
+}
