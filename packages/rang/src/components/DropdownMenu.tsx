@@ -1,6 +1,6 @@
 import type { ComponentChildren, JSX, RefObject } from 'preact';
 import { createContext } from 'preact';
-import { useContext, useEffect, useId, useRef, useState } from 'preact/hooks';
+import { useContext, useEffect, useLayoutEffect, useId, useRef, useState } from 'preact/hooks';
 import { cn } from '../lib/cn';
 
 /**
@@ -149,6 +149,9 @@ export interface DropdownMenuContentProps {
   class?: string;
 }
 
+/** Viewport gutter (px) kept between the menu and the window edge when shifting. */
+const COLLISION_PADDING = 8;
+
 export function DropdownMenuContent({
   children,
   align = 'start',
@@ -156,11 +159,37 @@ export function DropdownMenuContent({
   class: cls,
 }: DropdownMenuContentProps) {
   const { open, contentRef, menuId, triggerId } = useDropdown('DropdownMenuContent');
+  // Outer positioning layer. The shift lives here (not on the animated content),
+  // so the enter zoom/fade transform and the collision transform don't collide.
+  const positionerRef = useRef<HTMLDivElement>(null);
 
   // Focus the first item when the menu opens (roving focus from there on).
   useEffect(() => {
     if (!open) return;
     contentRef.current?.querySelector<HTMLElement>(MENU_ITEM_SELECTOR)?.focus();
+  }, [open]);
+
+  // Collision-aware horizontal placement: align to the preferred edge, then —
+  // if the menu would spill past either viewport edge — nudge it back inside.
+  // Runs before paint (so there's no visible jump) and again on resize.
+  useLayoutEffect(() => {
+    if (!open) return;
+    const positioner = positionerRef.current;
+    if (!positioner) return;
+    const fit = (): void => {
+      positioner.style.transform = 'none';
+      const rect = positioner.getBoundingClientRect();
+      const viewport = document.documentElement.clientWidth;
+      let dx = 0;
+      if (rect.left < COLLISION_PADDING) dx = COLLISION_PADDING - rect.left;
+      else if (rect.right > viewport - COLLISION_PADDING) {
+        dx = viewport - COLLISION_PADDING - rect.right;
+      }
+      if (dx) positioner.style.transform = `translateX(${Math.round(dx)}px)`;
+    };
+    fit();
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
   }, [open]);
 
   if (!open) return null;
@@ -188,21 +217,25 @@ export function DropdownMenuContent({
 
   return (
     <div
-      ref={contentRef}
-      id={menuId}
-      role="menu"
-      aria-label={label}
-      aria-labelledby={label ? undefined : triggerId}
-      data-state="open"
-      onKeyDown={onKeyDown}
-      class={cn(
-        'absolute z-50 mt-1 min-w-44 rounded-xl border border-border bg-background p-1 shadow-lg outline-none',
-        'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
-        align === 'end' ? 'right-0' : 'left-0',
-        cls,
-      )}
+      ref={positionerRef}
+      class={cn('absolute z-50 mt-1', align === 'end' ? 'right-0' : 'left-0')}
     >
-      {children}
+      <div
+        ref={contentRef}
+        id={menuId}
+        role="menu"
+        aria-label={label}
+        aria-labelledby={label ? undefined : triggerId}
+        data-state="open"
+        onKeyDown={onKeyDown}
+        class={cn(
+          'min-w-44 rounded-xl border border-border bg-background p-1 shadow-lg outline-none',
+          'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
+          cls,
+        )}
+      >
+        {children}
+      </div>
     </div>
   );
 }
