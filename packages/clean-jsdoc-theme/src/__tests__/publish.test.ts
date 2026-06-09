@@ -1,6 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterAll, beforeAll, describe, it, expect } from 'vitest';
 import {
+  collectDocs,
   computeRelPaths,
+  normalizeDocGroups,
   normalizeMenu,
   normalizeSectionOrder,
   outputSourceFilesEnabled,
@@ -123,5 +128,74 @@ describe('normalizeMenu', () => {
 
   it('drops entries with neither id nor link, and non-objects', () => {
     expect(normalizeMenu([{ title: 'orphan' }, 'nope', null, { icon: 'github' }])).toBeUndefined();
+  });
+});
+
+describe('normalizeDocGroups', () => {
+  it('returns undefined for non-arrays', () => {
+    expect(normalizeDocGroups(undefined)).toBeUndefined();
+    expect(normalizeDocGroups('Guides')).toBeUndefined();
+  });
+
+  it('trims strings and drops non-strings / empties', () => {
+    expect(normalizeDocGroups([' Guides ', 'Reference', 3, ''])).toEqual([
+      'Guides',
+      'Reference',
+    ]);
+  });
+});
+
+describe('collectDocs', () => {
+  let dir: string;
+
+  beforeAll(async () => {
+    dir = await mkdtemp(join(tmpdir(), 'cjt-docs-'));
+    await writeFile(join(dir, 'index.md'), '# Home\n', 'utf8');
+    await writeFile(join(dir, 'getting-started.markdown'), '# Start\n', 'utf8');
+    await writeFile(join(dir, 'page.html'), '<h1>HTML</h1>', 'utf8');
+    await mkdir(join(dir, 'guides'), { recursive: true });
+    await writeFile(join(dir, 'guides', 'advanced.md'), '# Advanced\n', 'utf8');
+    // Noise that must be skipped.
+    await writeFile(join(dir, 'notes.txt'), 'ignored', 'utf8');
+    await writeFile(join(dir, '.hidden.md'), 'hidden', 'utf8');
+    await mkdir(join(dir, 'node_modules', 'pkg'), { recursive: true });
+    await writeFile(join(dir, 'node_modules', 'pkg', 'readme.md'), 'nope', 'utf8');
+  });
+
+  afterAll(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it('walks recursively producing POSIX, extension-stripped relative paths', async () => {
+    const docs = await collectDocs(dir);
+    expect(docs.map((d) => d.path)).toEqual([
+      'getting-started',
+      'guides/advanced',
+      'index',
+      'page',
+    ]);
+  });
+
+  it('maps md/markdown → markdown and html → html, with raw content', async () => {
+    const docs = await collectDocs(dir);
+    const byPath = Object.fromEntries(docs.map((d) => [d.path, d]));
+    expect(byPath['index'].type).toBe('markdown');
+    expect(byPath['getting-started'].type).toBe('markdown');
+    expect(byPath['guides/advanced'].type).toBe('markdown');
+    expect(byPath['page'].type).toBe('html');
+    expect(byPath['index'].content).toBe('# Home\n');
+  });
+
+  it('skips dotfiles, node_modules, and non-doc extensions', async () => {
+    const docs = await collectDocs(dir);
+    const paths = docs.map((d) => d.path);
+    expect(paths).not.toContain('notes');
+    expect(paths).not.toContain('.hidden');
+    expect(paths.some((p) => p.includes('node_modules'))).toBe(false);
+  });
+
+  it('returns [] for a missing directory (never throws)', async () => {
+    expect(await collectDocs(join(dir, 'does-not-exist'))).toEqual([]);
+    expect(await collectDocs('')).toEqual([]);
   });
 });

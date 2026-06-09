@@ -3,9 +3,9 @@
 // JSDoc 4 → setu → dwar bridge. `publish(taffyData, opts, tutorials)` is the
 // entry JSDoc invokes; everything below orchestrates the four phase packages.
 
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
-import { dirname, extname, resolve as resolvePath } from 'node:path';
+import { dirname, extname, join as joinPath, resolve as resolvePath } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import type {
   CopyPageAction,
@@ -16,7 +16,7 @@ import type {
   SiteName,
   ThemeConfig,
 } from '@clean-jsdoc-theme/dwar';
-import type { MenuItem, SourceFileInput, TutorialInput } from '@clean-jsdoc-theme/setu';
+import type { DocInput, MenuItem, SourceFileInput, TutorialInput } from '@clean-jsdoc-theme/setu';
 import { writeOutputFiles } from './write-output-files';
 
 // JSDoc's tutorial source-type enum (jsdoc/lib/jsdoc/tutorial.js): HTML = 1,
@@ -154,6 +154,26 @@ interface JSDocOpts {
   readme?: string;
   /** Path to the tutorials directory (`-u`/`opts.tutorials`); resolved tree arrives as the 3rd `publish` arg. */
   tutorials?: string;
+  /**
+   * Path to a docs content directory (`jsdoc.json` `"opts": { "docs": "docs/" }`),
+   * resolved relative to the cwd. The bridge walks it recursively; each
+   * `*.md`/`*.markdown` (and `*.html`) file becomes a prose page at its clean,
+   * unprefixed slug (the relative path), grouped by frontmatter/directory. A root
+   * `index.md` becomes the home page. Unset → no docs site (today's behavior).
+   */
+  docs?: unknown;
+  /**
+   * Top-level doc-group display order (`jsdoc.json` `"opts": { "docGroups": [...] }`).
+   * An ordered list of doc-group labels controlling how the doc-group sidebar
+   * sections render (after the API sections). Omit for the default order.
+   */
+  docGroups?: unknown;
+  /**
+   * Group label assigned to a doc page that carries no frontmatter/directory
+   * group (`jsdoc.json` `"opts": { "defaultDocGroup": "Docs" }`). Omit to leave
+   * such pages ungrouped.
+   */
+  defaultDocGroup?: unknown;
   /**
    * Sidebar section order from `jsdoc.json` (`"opts": { "sectionOrder": [...] }`).
    * An ordered list of section labels (e.g. `["Classes", "Tutorials"]`) that both
@@ -629,6 +649,93 @@ async function collectSourceFiles(data: unknown): Promise<SourceFileInput[]> {
   return inputs;
 }
 
+/** Doc-file extensions → `DocInput.type`. Markdown is the priority; html maps to 'html'. */
+const DOC_EXTENSIONS = new Map<string, DocInput['type']>([
+  ['.md', 'markdown'],
+  ['.markdown', 'markdown'],
+  ['.html', 'html'],
+  ['.htm', 'html'],
+]);
+
+/** Directory names skipped while walking a docs tree (build/vcs noise). */
+const DOC_DIR_SKIP = new Set(['node_modules', '.git', '.svn', '.hg']);
+
+/**
+ * Recursively walk a docs directory and read each Markdown/HTML file into a
+ * {@link DocInput} for setu's docs front-end. Mirrors {@link collectSourceFiles}'s
+ * safe-probe style:
+ *
+ * - `path` is the file path relative to `dir`, POSIX-normalized (forward slashes)
+ *   with the extension stripped (`<dir>/guides/advanced.md` → `'guides/advanced'`,
+ *   `<dir>/index.md` → `'index'`).
+ * - `content` is the raw UTF-8 text (frontmatter stays embedded — setu parses it).
+ * - `type` is `'markdown'` for `.md`/`.markdown`, `'html'` for `.html`/`.htm`.
+ *
+ * Resilient by design: a missing/unreadable directory yields `[]` (never throws);
+ * dotfiles/dot-dirs and `node_modules`-like noise are skipped; a single
+ * unreadable file is warned about and skipped. Results are sorted by `path` so
+ * the output is stable build-to-build. Setu does no I/O — this is the only place
+ * the docs tree is read.
+ */
+export async function collectDocs(dir: string): Promise<DocInput[]> {
+  if (typeof dir !== 'string' || dir.trim().length === 0) return [];
+  const root = resolvePath(dir);
+  const docs: DocInput[] = [];
+
+  const walk = async (absDir: string, relPrefix: string): Promise<void> => {
+    let entries: import('node:fs').Dirent[];
+    try {
+      entries = await readdir(absDir, { withFileTypes: true });
+    } catch {
+      // Missing/unreadable directory — skip leniently (root miss → []).
+      return;
+    }
+
+    for (const entry of entries) {
+      const name = entry.name;
+      // Skip dotfiles/dot-dirs and known build/vcs noise.
+      if (name.startsWith('.')) continue;
+      if (entry.isDirectory()) {
+        if (DOC_DIR_SKIP.has(name)) continue;
+        await walk(joinPath(absDir, name), relPrefix ? `${relPrefix}/${name}` : name);
+        continue;
+      }
+      if (!entry.isFile()) continue;
+
+      const ext = extname(name).toLowerCase();
+      const type = DOC_EXTENSIONS.get(ext);
+      if (!type) continue;
+
+      const abs = joinPath(absDir, name);
+      const stem = name.slice(0, name.length - ext.length);
+      const relPath = relPrefix ? `${relPrefix}/${stem}` : stem;
+      try {
+        const content = await readFile(abs, 'utf8');
+        docs.push({ path: relPath, content, type });
+      } catch (err) {
+        console.warn(
+          `clean-jsdoc-theme: could not read doc file '${abs}' — ${(err as Error).message}; skipping.`,
+        );
+      }
+    }
+  };
+
+  await walk(root, '');
+
+  // Deterministic order so the manifest is stable build-to-build.
+  docs.sort((a, b) => a.path.localeCompare(b.path));
+  return docs;
+}
+
+/**
+ * Validate `opts.docGroups` into a clean `string[]`, or `undefined` to fall back
+ * to setu's default doc-group order. Mirrors {@link normalizeSectionOrder}:
+ * accepts only an array; trims string entries and drops non-strings/empties.
+ */
+export function normalizeDocGroups(raw: unknown): string[] | undefined {
+  return normalizeSectionOrder(raw);
+}
+
 export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknown): Promise<void> {
   const destination = opts.destination;
   if (!destination || typeof destination !== 'string') {
@@ -658,6 +765,20 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   const sources = outputSourceFilesEnabled(opts) ? await collectSourceFiles(data) : [];
   const sourceLinkToComment = sourceLinkToCommentEnabled(opts);
 
+  // Docs directory → prose pages at clean (unprefixed) slugs. The bridge does the
+  // walking/reading (the sanctioned I/O layer); setu stays free of disk access.
+  // Unset / empty dir → `[]`, so behavior is identical to today. `docGroups`
+  // orders the doc-group sidebar sections; `defaultDocGroup` labels ungrouped docs.
+  const docsDir = typeof opts.docs === 'string' && opts.docs.trim().length > 0
+    ? opts.docs.trim()
+    : undefined;
+  const docs = docsDir ? await collectDocs(docsDir) : [];
+  const docGroups = normalizeDocGroups(opts.docGroups);
+  const defaultDocGroup =
+    typeof opts.defaultDocGroup === 'string' && opts.defaultDocGroup.trim().length > 0
+      ? opts.defaultDocGroup.trim()
+      : undefined;
+
   // Sidebar config: `menu` (full control) takes precedence over `sectionOrder`.
   // Each accepts only well-formed input; anything else falls back to defaults.
   const sectionOrder = normalizeSectionOrder(opts.sectionOrder);
@@ -670,6 +791,9 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
     ...(tutorialTree.length > 0 ? { tutorials: tutorialTree } : {}),
     ...(sources.length > 0 ? { sources } : {}),
     ...(sources.length > 0 && sourceLinkToComment ? { sourceLinkToComment } : {}),
+    ...(docs.length > 0 ? { docs } : {}),
+    ...(docGroups ? { docGroups } : {}),
+    ...(defaultDocGroup ? { defaultDocGroup } : {}),
     ...(sectionOrder ? { sectionOrder } : {}),
     ...(menu ? { menu } : {}),
     ...(clubSidebarItems ? { clubSidebarItems } : {}),
