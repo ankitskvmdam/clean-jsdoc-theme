@@ -2,7 +2,8 @@ import type { List, ListItem, Paragraph, PhrasingContent, RootContent } from 'md
 import type { MdxJsxFlowElement } from 'mdast-util-mdx-jsx';
 import { TDoclet, TDocletParam, TDocletTypeProperty } from '@clean-jsdoc-theme/utils';
 import type { ResolvedLink } from '../link-registry';
-import { callout, code, emphasis, inlineCode, li, link, p, strong, text, ul } from './builders';
+import { parseEmbedConfig } from '../embed';
+import { callout, code, embed, emphasis, inlineCode, li, link, p, strong, text, ul } from './builders';
 import { htmlToMdastBlocks, htmlToMdastInline, markdownToMdastInline } from './from-html';
 
 // ── Small extractors ────────────────────────────────────────────────────────
@@ -82,6 +83,27 @@ export function examplesBlocks(doclet: TDoclet, lang: string = 'js'): RootConten
 
     if (caption) out.push(p(...markdownToMdastInline(caption)));
     if (src.length > 0) out.push(code(exampleLang, src));
+  }
+  return out;
+}
+
+// ── Embeds (@iframe) ─────────────────────────────────────────────────────────
+
+/**
+ * Blocks for each `@iframe` block tag. JSDoc lands a `@iframe <config>` tag as
+ * `{ title: 'iframe', text: '<raw>', value: '<raw>' }`; we parse the raw config
+ * with {@link parseEmbedConfig} and, for each valid {@link EmbedSpec}, emit an
+ * `<Embed>` JSX element via the {@link embed} builder. Invalid configs (no URL,
+ * non-`https`/protocol-relative, empty) parse to `null` and are dropped (the
+ * parser already warns). Returns `[]` when the doclet has no `@iframe` tags.
+ */
+export function embedBlocks(doclet: TDoclet): RootContent[] {
+  const out: RootContent[] = [];
+  for (const tag of doclet.tags ?? []) {
+    if (tag.title !== 'iframe') continue;
+    const raw = typeof tag.value === 'string' ? tag.value : tag.text ?? '';
+    const spec = parseEmbedConfig(raw);
+    if (spec) out.push(embed(spec));
   }
   return out;
 }
@@ -539,6 +561,7 @@ export type DocletSection =
   | 'fires'
   | 'listens'
   | 'examples'
+  | 'iframes'
   | 'metadata'
   | 'deprecation'
   | 'inherited';
@@ -658,6 +681,10 @@ export function docletBlocks(
       blocks.push(p(strong(text('Example'))));
       blocks.push(...ex);
     }
+  }
+
+  if (!skip.has('iframes')) {
+    blocks.push(...embedBlocks(doclet));
   }
 
   if (!skip.has('metadata')) {
