@@ -188,13 +188,32 @@ line of the **declaration**: a container's documented doclet points `lineno` at
 its doc-comment, so `firstCodeLine` skips past the comment block to the code (the
 `sourceLinkToComment` option opts back into the comment line).
 
-**Sidebar nav.** `assembleNav` groups pages into sections by kind (ordered/
-filtered by `sectionOrder`, or fully replaced by a `menu` top region). With
-`clubSidebarItems` on, `clubNavTree` additionally collapses each section's entries
-into a one-level parent/child tree by the path segment before the first `/`
-(`queue`, `queue/Queue`, `queue/types` → a `queue` parent; the bare `queue` module
-becomes an `index` child); a prefix used by a single entry stays flat. Applies
-uniformly to every section, tutorials included.
+**Sidebar nav.** `assembleNav` gives every entry — API pages, docs, tutorials —
+one uniform `group` **path** and builds a nested sidebar from it. An API page's
+group comes from an `@category` doclet tag (`@category Core/Parsing` → group
+`Core/Parsing`; first tag wins, parsed in `renderContainerPage`), falling back to
+the kind label (Classes / Modules / …) for untagged symbols; doc/tutorial pages
+use their frontmatter group. The tag also accepts trailing `key=value` options:
+`@category Core/Parsing order=1` sets the page's `frontmatter.order` (the path is
+the leading tokens, options follow the first `=`). The path's **first segment** is the top-level group
+(a bold, non-collapsible title via rang's `groupNav`); deeper `/`-segments become
+nested, collapsible branch nodes (`buildGroupTree`) — so the renderer's existing
+arbitrary-depth `NavEntry` recursion handles nesting with no rang change. One
+generalized `sectionOrder` orders top-level groups: listed labels first (a *kind*
+label it omits is dropped — the legacy filter), then category/doc groups it
+doesn't list, appended alphabetically (doc groups pinned by `docGroups` keep that
+order). Within a deepest group, API and doc entries sort by `frontmatter.order`
+then title (tutorials keep their builder's tree order); and sibling **subgroups**
+(branch nodes) sort by the min `order` of the pages inside them, so `@category
+Core/Schema order=2` lands after `Core/Processing order=1`. The whole pass is
+backward compatible — an untagged collection with a kind-only `sectionOrder`
+yields byte-identical nav (unordered siblings keep leaves-before-branches,
+first-seen order). With `clubSidebarItems` on, `clubNavTree` additionally
+collapses a section's entries into a one-level parent/child tree by the path
+segment before the first `/` (`queue`, `queue/Queue`, `queue/types` → a `queue`
+parent; the bare `queue` module becomes an `index` child); a prefix used by a
+single entry stays flat. Clubbing applies ONLY to category-less buckets (a group
+built from `@category` paths is already nested and is not additionally clubbed).
 
 ```
 setu/src/
@@ -203,10 +222,13 @@ setu/src/
 │                         #   + sectionOrder + menu + clubSidebarItems + sourceLinkToComment)
 ├── generate-site.ts      # enumerate containers by kind, two-pass build (link
 │                         #   registry before render), container/typedef/globals
-│                         #   pages, assembleNav (sidebar: optional `menu` top
-│                         #   region → divider → API sections ordered/filtered by
-│                         #   `sectionOrder`; clubNavTree groups by path prefix when
-│                         #   clubSidebarItems is on), buildId
+│                         #   pages (parsing `@category [order=N]` →
+│                         #   frontmatter.group/order),
+│                         #   assembleNav (sidebar: optional `menu` top region →
+│                         #   divider → nested @category/group sections ordered by
+│                         #   the generalized `sectionOrder`; buildGroupTree nests
+│                         #   `/`-paths; clubNavTree groups category-less buckets
+│                         #   by path prefix when clubSidebarItems is on), buildId
 ├── guide-view.ts         # README → home Page; DocInput[] → guide Pages + nav
 │                         #   (buildDocPages: frontmatter/directory slugs+groups,
 │                         #   root index.md → home); tutorialsToDocInputs adapter
