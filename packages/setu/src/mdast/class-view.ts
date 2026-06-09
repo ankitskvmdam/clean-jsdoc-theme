@@ -1,7 +1,14 @@
 import type { Root, RootContent } from 'mdast';
 import { ClassMember, ClassView, ContainerView, MemberBuckets } from '../class-view';
-import { h, hr, inlineCode, memberMeta, p, root, strong, text } from './builders';
-import { docletBlocks, DocletBlocksOptions, paramsList, sourceLinkBlock } from './doclet';
+import { slugifyHeading } from '@clean-jsdoc-theme/utils';
+import { h, hr, inlineCode, memberHeading, memberMeta, p, root, strong, text } from './builders';
+import {
+  docletBlocks,
+  DocletBlocksOptions,
+  paramsList,
+  sourceLinkBlock,
+  typeExpressionString,
+} from './doclet';
 
 export interface ClassViewToMdastOptions extends DocletBlocksOptions {
   /** Heading level for the class title. Default: 1. */
@@ -32,6 +39,23 @@ export function defaultSections(buckets: MemberBuckets): SectionSpec[] {
 }
 
 /**
+ * Inline signature suffix shown after a method/function name in its heading,
+ * e.g. `(data) -> Promise.<number>`. Top-level params only (nested
+ * `options.timeout` entries live in the Parameters table), names only — no param
+ * types — matching the requested heading style; the return type follows ` -> `.
+ * Returns `undefined` for non-functions, so fields/constants keep a bare name.
+ */
+export function memberSignatureSuffix(member: ClassMember): string | undefined {
+  if (member.kind !== 'function') return undefined;
+  const params = (member.params ?? [])
+    .filter((param) => param.name && !param.name.includes('.'))
+    .map((param) => param.name)
+    .join(', ');
+  const ret = typeExpressionString(member.returns?.[0]?.type);
+  return `(${params})${ret ? ` -> ${ret}` : ''}`;
+}
+
+/**
  * Modifier / kind badges for a member, in display order. Mirrors
  * {@link modifiersBlock} but adds the scope (`static`) and `deprecated` flags,
  * and drops the redundant `public` access (the default). Replaces the old
@@ -52,20 +76,31 @@ export function memberBadges(member: ClassMember): string[] {
 }
 
 /**
- * Render one member as: an ATX heading with the member name (inline-coded), a
- * `<MemberMeta>` row (modifier/kind chips on the left, the `filename:line`
- * source link pinned right), then the doclet's body via {@link docletBlocks}.
- * The heading stays a real `###` so its anchor / TOC / search entry survive.
- * The `modifiers` section is skipped — the chips replace that paragraph; the
- * source is in the meta row, not a separate caption. Reusable for any kind with
- * named, headed members (modules, mixins, namespaces, …).
+ * Render one member as: a `<MemberHeading>` (an `h{depth}` whose content is one
+ * `<code>` showing the full signature — `process(data) -> Promise.<number>` for
+ * methods/functions, the bare name for fields — with an explicit id so the
+ * anchor stays `slugifyHeading(name)`); a `<MemberMeta>` row (modifier/kind
+ * chips on the left, the `filename:line` source link pinned right); then the
+ * doclet's body via {@link docletBlocks}. TOC / search / `{@link}` resolve to
+ * `#name` because the signature never feeds the slug (see {@link memberHeading}).
+ * The `modifiers` section is skipped — the chips replace that paragraph.
+ * Reusable for any kind with named, headed members.
  */
 export function memberBlocks(
   member: ClassMember,
   options: DocletBlocksOptions = {},
   headingLevel: 2 | 3 | 4 = 3
 ): RootContent[] {
-  const out: RootContent[] = [h(headingLevel, inlineCode(member.name ?? '(anonymous)'))];
+  const name = member.name ?? '(anonymous)';
+  const suffix = memberSignatureSuffix(member);
+  const out: RootContent[] = [
+    memberHeading({
+      id: slugifyHeading(name),
+      depth: headingLevel,
+      name,
+      sig: suffix ? `${name}${suffix}` : name,
+    }),
+  ];
 
   const badges = memberBadges(member);
   const resolved = options.sourceLink?.(member) ?? undefined;

@@ -15,7 +15,9 @@ import {
   typeExpressionString,
 } from '../mdast/doclet';
 import { htmlToMdastBlocks, htmlToMdastInline } from '../mdast/from-html';
-import { memberBadges, memberBlocks } from '../mdast/class-view';
+import { memberBadges, memberBlocks, memberSignatureSuffix } from '../mdast/class-view';
+import { extractHeadings } from '../generate-site';
+import { root } from '../mdast/builders';
 import type { ClassMember } from '../class-view';
 import { getJSDocTaffyData } from './factory';
 
@@ -211,6 +213,32 @@ describe('docletBlocks (per-member composer)', () => {
   });
 });
 
+describe('memberSignatureSuffix', () => {
+  it('builds (paramNames) -> ReturnType for a function (names only, no types)', () => {
+    const m = {
+      kind: 'function',
+      name: 'process',
+      params: [
+        { name: 'data', type: { names: ['string[]'] } },
+        { name: 'data.flag', type: { names: ['boolean'] } },
+      ],
+      returns: [{ type: { names: ['Promise.<number>'] } }],
+    } as unknown as ClassMember;
+    // Nested object-param entries (data.flag) are folded out of the signature.
+    expect(memberSignatureSuffix(m)).toBe('(data) -> Promise.<number>');
+  });
+
+  it('omits the arrow when there is no return type', () => {
+    const m = { kind: 'function', name: 'reset', params: [] } as unknown as ClassMember;
+    expect(memberSignatureSuffix(m)).toBe('()');
+  });
+
+  it('returns undefined for non-functions (fields keep a bare name)', () => {
+    const m = { kind: 'member', name: 'size', type: { names: ['number'] } } as unknown as ClassMember;
+    expect(memberSignatureSuffix(m)).toBeUndefined();
+  });
+});
+
 describe('memberBadges', () => {
   it('collects scope, async, and deprecated flags', () => {
     const m = {
@@ -230,7 +258,7 @@ describe('memberBadges', () => {
 });
 
 describe('memberBlocks', () => {
-  it('keeps the heading and emits a MemberMeta row with badges + source (no Modifiers paragraph)', () => {
+  it('emits a MemberHeading (single-code signature) + a MemberMeta row (no Modifiers paragraph)', () => {
     const m = {
       kind: 'function',
       name: 'process',
@@ -242,8 +270,25 @@ describe('memberBlocks', () => {
     const blocks = memberBlocks(m, {
       sourceLink: () => ({ href: '/source/x/#L1', label: 'x.js:1' }),
     });
-    // Heading stays a real ATX heading (anchor/TOC/search survive).
-    expect(blocks[0]).toMatchObject({ type: 'heading', depth: 3 });
+    // The heading is a MemberHeading JSX node carrying the full signature in one
+    // `sig` attribute, an explicit `id`, and the clean `name` for the TOC.
+    const heading = blocks[0] as {
+      type: string;
+      name?: string;
+      attributes: { name: string; value: string }[];
+    };
+    expect(heading.type).toBe('mdxJsxFlowElement');
+    expect(heading.name).toBe('MemberHeading');
+    const hattrs = Object.fromEntries(heading.attributes.map((a) => [a.name, a.value]));
+    expect(hattrs.id).toBe('process');
+    expect(hattrs.name).toBe('process');
+    expect(hattrs.depth).toBe('3');
+    expect(hattrs.sig).toBe('process(items) -> void');
+    // CRITICAL invariant: extractHeadings reads the explicit id + clean name, so
+    // the anchor stays `#process` despite the displayed signature — TOC / search
+    // / {@link} are unchanged.
+    const headings = extractHeadings(root(...blocks));
+    expect(headings[0]).toMatchObject({ depth: 3, text: 'process', id: 'process' });
     // One MemberMeta row carries both the chips and the source (same container).
     const meta = blocks.find(
       (b) => b.type === 'mdxJsxFlowElement' && (b as { name?: string }).name === 'MemberMeta'

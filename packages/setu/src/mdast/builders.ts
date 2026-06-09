@@ -180,3 +180,36 @@ export const memberMeta = (meta: {
   attr('sourceLabel', meta.sourceLabel);
   return { type: 'mdxJsxFlowElement', name: 'MemberMeta', attributes, children: [] };
 };
+
+/**
+ * A member heading — rang's `MemberHeading` emitted as a self-closing MDX JSX
+ * flow element instead of a markdown `###` heading. It renders an `h{depth}`
+ * whose entire content is one `<code>` element showing the full signature
+ * (`process(data) -> Promise.<number>`), with an **explicit `id`** so the anchor
+ * stays clean (`#process`) regardless of the displayed signature.
+ *
+ * Why a component, not a markdown heading: a markdown heading derives its slug
+ * from its visible text, so a signature heading would anchor as
+ * `#process-data-promise-number`. Here the `id` is set explicitly and the
+ * signature rides in the `sig` attribute (no text at rehype time), so dwar's
+ * slug pass skips it. `setu`'s `extractHeadings` recognises this node and emits
+ * a TOC/search entry from `name` + `id` (no dedup-registry touch, mirroring the
+ * slug pass), so TOC / search / `{@link}` keep resolving to `#name`. Embedded
+ * `"` in `sig` is downgraded to `'` so the attribute can't terminate early.
+ */
+export const memberHeading = (opts: {
+  id: string;
+  depth: number;
+  name: string;
+  sig: string;
+}): MdxJsxFlowElement => ({
+  type: 'mdxJsxFlowElement',
+  name: 'MemberHeading',
+  attributes: [
+    { type: 'mdxJsxAttribute', name: 'id', value: opts.id },
+    { type: 'mdxJsxAttribute', name: 'depth', value: String(opts.depth) },
+    { type: 'mdxJsxAttribute', name: 'name', value: opts.name },
+    { type: 'mdxJsxAttribute', name: 'sig', value: opts.sig.replace(/"/g, "'") },
+  ],
+  children: [],
+});

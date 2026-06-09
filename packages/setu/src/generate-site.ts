@@ -92,15 +92,36 @@ function headingText(node: MdastHeading): string {
   return out;
 }
 
+/** Read a string attribute off an mdast-mdx JSX element node. */
+function jsxAttr(node: { attributes?: { name?: string; value?: unknown }[] }, name: string): string | undefined {
+  const attr = node.attributes?.find((a) => a.name === name);
+  return typeof attr?.value === 'string' ? attr.value : undefined;
+}
+
 /**
  * Walk an mdast tree and emit a `Heading` per h2..h6 in document order, with
  * IDs slugified through a per-page registry so duplicates dedupe consistently
  * with what the renderer will produce. h1 (page title) is skipped.
+ *
+ * `<MemberHeading>` JSX nodes (setu's signature headings) are also picked up:
+ * their explicit `id`/`name`/`depth` attributes become the entry directly, and
+ * they do NOT touch the dedup registry — mirroring dwar's slug pass, which skips
+ * them (they carry an explicit id), so the `-1`/`-2` numbering of real markdown
+ * headings stays in sync between the two.
  */
 export function extractHeadings(tree: Root): Heading[] {
   const registry = new Map<string, number>();
   const out: Heading[] = [];
   for (const node of tree.children) {
+    if (node.type === 'mdxJsxFlowElement' && (node as { name?: string }).name === 'MemberHeading') {
+      const id = jsxAttr(node, 'id');
+      const text = jsxAttr(node, 'name');
+      const depth = Number(jsxAttr(node, 'depth'));
+      if (id && text && depth >= 2 && depth <= 6) {
+        out.push({ depth: depth as 2 | 3 | 4 | 5 | 6, text, id });
+      }
+      continue;
+    }
     if (node.type !== 'heading') continue;
     if (node.depth < 2 || node.depth > 6) continue;
     const t = headingText(node).trim();

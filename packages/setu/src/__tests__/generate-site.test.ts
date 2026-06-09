@@ -199,12 +199,13 @@ describe('buildGlobalsPage', () => {
     expect(page.body).toMatch(/^---\n/);
     // Page H1 is "Globals".
     expect(page.body).toContain('# Globals');
-    // Global functions and constants render as member sections.
-    expect(page.body).toContain('`init`');
-    expect(page.body).toContain('`sum`');
-    expect(page.body).toContain('`MAX_USERS`');
+    // Global functions and constants render as member sections — each a
+    // <MemberHeading> whose `name` attribute carries the symbol name.
+    expect(page.body).toContain('name="init"');
+    expect(page.body).toContain('name="sum"');
+    expect(page.body).toContain('name="MAX_USERS"');
     // The global enum constant renders too.
-    expect(page.body).toContain('`Roles`');
+    expect(page.body).toContain('name="Roles"');
   });
 
   it('does not pull global-scope container/typedef symbols into the globals page', () => {
@@ -240,7 +241,7 @@ describe('buildGlobalsPage', () => {
     ]);
     const page = buildGlobalsPage(collection)!;
     expect(page).not.toBeNull();
-    expect(page.body).toContain('`globalHelper`');
+    expect(page.body).toContain('name="globalHelper"');
     expect(page.body).not.toContain('GlobalWidget');
     expect(page.body).not.toContain('GlobalAlias');
   });
