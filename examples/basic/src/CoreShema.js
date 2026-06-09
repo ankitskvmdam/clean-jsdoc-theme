@@ -1,6 +1,7 @@
 /**
  * @file Project core schema definitions for the analytics engine.
  * @module CoreSchema
+ * @category Core/Schema order=2
  * @author Jane Doe <j.doe@example.com>
  * @copyright 2026 TechCorp
  * @license MIT

@@ -4,6 +4,7 @@
  * @description This class extends the {@link BaseEntity} to provide
  * async processing and event-driven updates.
  * @tutorial processing-guide
+ * @category Core/Processing order=1
  * @author Ankit Kumar <mailto:ankit@example.com>
  */
 class DataProcessor extends BaseEntity {

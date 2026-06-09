@@ -1,5 +1,6 @@
 /**
  * @module UserService
+ * @category Services
  */
 
 import { User } from '../models/User.js';

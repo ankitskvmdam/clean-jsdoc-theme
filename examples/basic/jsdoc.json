@@ -19,6 +19,9 @@
       "alt": "clean-jsdoc-theme"
     },
     "sectionOrder": [
+      "Core",
+      "Services",
+      "Utilities",
       "Classes",
       "Modules",
       "Externals",

@@ -3,6 +3,7 @@
  * @fileOverview String helper methods
  *
  * @module strings/format
+ * @category Utilities/Strings
  */
 
 /**

@@ -2,6 +2,7 @@
  * Math utilities
  * @file math.js
  * @namespace MathUtils
+ * @category Utilities/Math
  */
 
 /**
