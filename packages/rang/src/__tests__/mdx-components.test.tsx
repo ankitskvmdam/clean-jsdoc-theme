@@ -61,11 +61,10 @@ describe('defaultMdxComponents', () => {
     expect(html).toContain('<table');
   });
 
-  it('MemberMeta renders badges, a right-aligned source link, and a signature', () => {
+  it('MemberMeta renders chips on the left and the filename:line source on the right', () => {
     const MemberMeta = defaultMdxComponents.MemberMeta;
     const html = render(
       h(MemberMeta, {
-        signature: 'process(items: string[]): Promise<Result[]>',
         badges: 'static,async,deprecated',
         sourceHref: '/source/x/#L1',
         sourceLabel: 'x.js:1',
@@ -74,29 +73,29 @@ describe('defaultMdxComponents', () => {
     expect(html).toContain('static');
     expect(html).toContain('async');
     expect(html).toContain('deprecated');
-    // Signature is rendered (generics survive as text, not parsed as JSX;
-    // only `<` needs escaping in HTML text content).
-    expect(html).toContain('process(items: string[]): Promise&lt;Result[]>');
+    // Source link: filename:line only (no "Source:" word), pinned right (ml-auto).
     expect(html).toContain('href="/source/x/#L1"');
-    expect(html).toContain('x.js:1');
+    expect(html).toContain('>x.js:1<');
+    expect(html).not.toContain('Source:');
+    expect(html).toMatch(/ml-auto[^>]*>x\.js:1/);
   });
 
-  it('MemberMeta renders nothing when it has no signature, badges, or source', () => {
+  it('MemberMeta keeps the source on the right when chips are missing (empty left element)', () => {
+    const MemberMeta = defaultMdxComponents.MemberMeta;
+    const html = render(h(MemberMeta, { sourceHref: '/source/x/#L1', sourceLabel: 'x.js:1' }));
+    // The left chip group is still rendered (empty), source stays right.
+    expect(html).toMatch(/ml-auto[^>]*>x\.js:1/);
+  });
+
+  it('MemberMeta leaves the right empty when source is opted out', () => {
+    const MemberMeta = defaultMdxComponents.MemberMeta;
+    const html = render(h(MemberMeta, { badges: 'static' }));
+    expect(html).toContain('static');
+    expect(html).not.toContain('href=');
+  });
+
+  it('MemberMeta renders nothing when it has neither badges nor source', () => {
     const MemberMeta = defaultMdxComponents.MemberMeta;
     expect(render(h(MemberMeta, {}))).toBe('');
-  });
-
-  it('MembersSummary renders a jump-link per name~anchor pair', () => {
-    const MembersSummary = defaultMdxComponents.MembersSummary;
-    const html = render(h(MembersSummary, { items: 'process~process|toJSON~tojson' }));
-    expect(html).toContain('href="#process"');
-    expect(html).toContain('>process<');
-    expect(html).toContain('href="#tojson"');
-    expect(html).toContain('>toJSON<');
-  });
-
-  it('MembersSummary renders nothing when items is empty', () => {
-    const MembersSummary = defaultMdxComponents.MembersSummary;
-    expect(render(h(MembersSummary, { items: '' }))).toBe('');
   });
 });

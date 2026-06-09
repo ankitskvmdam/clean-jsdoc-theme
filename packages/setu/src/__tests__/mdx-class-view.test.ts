@@ -15,7 +15,7 @@ import {
   typeExpressionString,
 } from '../mdast/doclet';
 import { htmlToMdastBlocks, htmlToMdastInline } from '../mdast/from-html';
-import { memberBadges, memberBlocks, memberSignature } from '../mdast/class-view';
+import { memberBadges, memberBlocks } from '../mdast/class-view';
 import type { ClassMember } from '../class-view';
 import { getJSDocTaffyData } from './factory';
 
@@ -211,38 +211,6 @@ describe('docletBlocks (per-member composer)', () => {
   });
 });
 
-describe('memberSignature', () => {
-  it('builds a function signature with typed params and return type', () => {
-    const m = {
-      kind: 'function',
-      name: 'process',
-      params: [
-        { name: 'items', type: { names: ['string[]'] } },
-        { name: 'options', type: { names: ['ProcessOptions'] }, optional: true },
-      ],
-      returns: [{ type: { names: ['Promise<Result[]>'] } }],
-    } as unknown as ClassMember;
-    expect(memberSignature(m)).toBe('process(items: string[], options?: ProcessOptions): Promise<Result[]>');
-  });
-
-  it('folds nested object-param entries out of the signature', () => {
-    const m = {
-      kind: 'function',
-      name: 'connect',
-      params: [
-        { name: 'opts', type: { names: ['object'] } },
-        { name: 'opts.host', type: { names: ['string'] } },
-      ],
-    } as unknown as ClassMember;
-    expect(memberSignature(m)).toBe('connect(opts: object)');
-  });
-
-  it('renders a field as name: Type', () => {
-    const m = { kind: 'member', name: 'size', type: { names: ['number'] } } as unknown as ClassMember;
-    expect(memberSignature(m)).toBe('size: number');
-  });
-});
-
 describe('memberBadges', () => {
   it('collects scope, async, and deprecated flags', () => {
     const m = {
@@ -262,7 +230,7 @@ describe('memberBadges', () => {
 });
 
 describe('memberBlocks', () => {
-  it('keeps the heading and emits a MemberMeta JSX block (no Modifiers paragraph)', () => {
+  it('keeps the heading and emits a MemberMeta row with badges + source (no Modifiers paragraph)', () => {
     const m = {
       kind: 'function',
       name: 'process',
@@ -276,17 +244,30 @@ describe('memberBlocks', () => {
     });
     // Heading stays a real ATX heading (anchor/TOC/search survive).
     expect(blocks[0]).toMatchObject({ type: 'heading', depth: 3 });
-    // The meta block is an MDX JSX node carrying signature + badges + source.
+    // One MemberMeta row carries both the chips and the source (same container).
     const meta = blocks.find(
       (b) => b.type === 'mdxJsxFlowElement' && (b as { name?: string }).name === 'MemberMeta'
     ) as { attributes: { name: string; value: string }[] } | undefined;
     expect(meta).toBeDefined();
     const attrs = Object.fromEntries(meta!.attributes.map((a) => [a.name, a.value]));
-    expect(attrs.signature).toBe('process(items: string[]): void');
     expect(attrs.badges).toBe('static,async');
     expect(attrs.sourceHref).toBe('/source/x/#L1');
-    // The old "Modifiers:" paragraph is gone — badges replace it.
+    expect(attrs.sourceLabel).toBe('x.js:1');
+    // No separate SourceLink for the member, and the old "Modifiers:" paragraph is gone.
+    expect(JSON.stringify(blocks)).not.toContain('SourceLink');
     expect(JSON.stringify(blocks)).not.toContain('Modifiers');
+  });
+
+  it('still emits a MemberMeta row (badges only) when source is opted out', () => {
+    const m = { kind: 'function', name: 'process', async: true } as unknown as ClassMember;
+    const blocks = memberBlocks(m); // no sourceLink resolver
+    const meta = blocks.find(
+      (b) => b.type === 'mdxJsxFlowElement' && (b as { name?: string }).name === 'MemberMeta'
+    ) as { attributes: { name: string; value: string }[] } | undefined;
+    expect(meta).toBeDefined();
+    const attrs = Object.fromEntries(meta!.attributes.map((a) => [a.name, a.value]));
+    expect(attrs.badges).toBe('async');
+    expect(attrs.sourceHref).toBeUndefined();
   });
 });
 
@@ -315,10 +296,6 @@ describe('classViewToMdx (end-to-end on DataProcessor)', () => {
     expect(mdx).toContain('isValidId');
     expect(mdx).toContain('dataProcessed');
     expect(mdx).toContain('States');
-
-    // "Members at a glance" jump-link grid is emitted above the sections.
-    expect(mdx).toContain('<MembersSummary');
-    expect(mdx).toMatch(/items="[^"]*process~process/);
 
     // Constructor section appears because the class has params.
     expect(mdx).toMatch(/## Constructor/);

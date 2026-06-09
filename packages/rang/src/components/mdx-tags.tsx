@@ -90,11 +90,11 @@ export function SourceLink({ href, label }: SourceLinkProps) {
 }
 
 interface MemberMetaProps {
-  /** One-line signature, e.g. `process(items: string[]): Promise<Result[]>`. */
-  signature?: string;
   /** Comma-joined modifier/kind badges, e.g. `static,async,deprecated`. */
   badges?: string;
+  /** Source viewer href; absent when the consumer opted out of source files. */
   sourceHref?: string;
+  /** `filename:line` label for the source link. */
   sourceLabel?: string;
 }
 
@@ -109,79 +109,37 @@ const BADGE_CLASS: Record<string, string> = {
 const BADGE_FALLBACK = 'border-(--clean-border) bg-(--clean-bg-muted) text-(--clean-fg-muted)';
 
 /**
- * Member meta block emitted by setu as `<MemberMeta signature badges sourceHref
- * sourceLabel />`, rendered directly under a member's heading: a row of modifier
- * badges with the Source link pushed to the right, then a tinted monospace
- * signature line. Capitalized so MDX routes it through the components map.
+ * Member meta row emitted by setu as `<MemberMeta badges sourceHref sourceLabel
+ * />`, rendered directly under a member's heading: modifier/kind chips on the
+ * left, the `filename:line` source link pinned right. The left chip group is
+ * always rendered (empty when there are no badges) so the source stays
+ * right-aligned; the right stays empty when the consumer opted out of source
+ * files. Capitalized so MDX routes it through the components map. Renders
+ * nothing only when it has neither badges nor a source.
  */
-export function MemberMeta({ signature, badges, sourceHref, sourceLabel }: MemberMetaProps) {
+export function MemberMeta({ badges, sourceHref, sourceLabel }: MemberMetaProps) {
   const list = badges ? badges.split(',').filter(Boolean) : [];
-  if (!signature && list.length === 0 && !sourceHref) return null;
+  if (list.length === 0 && !sourceHref) return null;
   return (
-    <div class="-mt-1 mb-4">
-      {(list.length > 0 || sourceHref) && (
-        <div class="mb-2 flex flex-wrap items-center gap-2">
-          {list.map((badge) => (
-            <span
-              key={badge}
-              class={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${BADGE_CLASS[badge] ?? BADGE_FALLBACK}`}
-            >
-              {badge}
-            </span>
-          ))}
-          {sourceHref ? (
-            <a
-              href={sourceHref}
-              class="ml-auto text-xs text-(--clean-fg-muted) underline decoration-1 underline-offset-2 hover:text-(--clean-link)"
-            >
-              {sourceLabel ?? 'Source'}
-            </a>
-          ) : null}
-        </div>
-      )}
-      {signature ? (
-        <pre class="overflow-x-auto rounded-lg border border-(--clean-border) bg-(--clean-bg-muted) px-3 py-2">
-          <code class="font-mono text-sm text-(--clean-fg)">{signature}</code>
-        </pre>
-      ) : null}
-    </div>
-  );
-}
-
-/**
- * "Members at a glance" grid emitted by setu as `<MembersSummary items="..." />`
- * above the detailed member sections. `items` is `name~anchor` pairs joined by
- * `|`; each becomes a jump-link to the member's heading. Renders nothing when
- * empty. Responsive columns keep a long member list scannable.
- */
-export function MembersSummary({ items }: { items?: string }) {
-  const entries = (items ?? '')
-    .split('|')
-    .filter(Boolean)
-    .map((pair) => {
-      const sep = pair.indexOf('~');
-      return sep === -1
-        ? { name: pair, anchor: pair }
-        : { name: pair.slice(0, sep), anchor: pair.slice(sep + 1) };
-    });
-  if (entries.length === 0) return null;
-  return (
-    <div class="my-6 rounded-xl border border-(--clean-border) bg-(--clean-bg-muted)/40 p-4">
-      <div class="mb-3 text-xs font-semibold tracking-wide text-(--clean-fg-muted) uppercase">
-        Members
-      </div>
-      <div class="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-3 lg:grid-cols-4">
-        {entries.map((entry) => (
-          <a
-            key={entry.anchor}
-            href={`#${entry.anchor}`}
-            class="truncate font-mono text-sm text-(--clean-link) hover:underline"
-            title={entry.name}
+    <div class="mt-2 mb-3 flex flex-wrap items-center gap-2">
+      <div class="flex flex-wrap items-center gap-2">
+        {list.map((badge) => (
+          <span
+            key={badge}
+            class={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${BADGE_CLASS[badge] ?? BADGE_FALLBACK}`}
           >
-            {entry.name}
-          </a>
+            {badge}
+          </span>
         ))}
       </div>
+      {sourceHref ? (
+        <a
+          href={sourceHref}
+          class="ml-auto font-mono text-xs text-(--clean-fg-muted) underline decoration-1 underline-offset-2 hover:text-(--clean-link)"
+        >
+          {sourceLabel}
+        </a>
+      ) : null}
     </div>
   );
 }

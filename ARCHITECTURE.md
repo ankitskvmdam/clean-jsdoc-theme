@@ -329,9 +329,9 @@ rang/src/
     ├── mdx-utils.tsx     # MDX shared utils: BaseProps, makeHeading, HeadingAnchor
     │                     #   (hover link button), cx, textContent
     ├── mdx-tags.tsx      # MDX tag renderers (headings, links, lists, tables, …)
-    │                     #   + SourceLink, MemberMeta (badges + Source + tinted
-    │                     #   signature under a member heading), MembersSummary
-    │                     #   (the at-a-glance jump-link grid) — setu-emitted JSX
+    │                     #   + SourceLink (Source: file:line caption) and
+    │                     #   MemberMeta (member row: modifier/kind chips left,
+    │                     #   filename:line source pinned right)
     └── CodeBlock.tsx     # block code (the MDX `pre`, used as MdxPre) + inline
                           #   `Code` (MDX `code`); also serves CodeTabs + standalone
 ```
