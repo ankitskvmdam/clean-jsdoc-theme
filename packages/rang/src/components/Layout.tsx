@@ -47,7 +47,7 @@ export function Layout({
   basePath = '/',
 }: LayoutProps) {
   return (
-    <div class="min-h-screen bg-background text-(--clean-fg)">
+    <div class="flex min-h-screen flex-col bg-background text-(--clean-fg)">
       <Header siteName={siteName} pkg={pkg} basePath={basePath}>
         {headerControls}
       </Header>
@@ -59,9 +59,12 @@ export function Layout({
         </div>
       )}
       {/* The right-rail track is only reserved when a `toc` is supplied — pages
-          without one (e.g. the source viewer) let `main` span that space. */}
+          without one (e.g. the source viewer) let `main` span that space.
+          `flex-1` makes this region grow to fill the column, so a short page
+          still pushes the footer to the bottom and `main` spans the remaining
+          height (100vh − header − footer). */}
       <div
-        class={`mx-auto grid w-full max-w-screen-2xl grid-cols-1 gap-6 px-4 py-6 ${
+        class={`mx-auto grid w-full max-w-screen-2xl flex-1 grid-cols-1 gap-6 px-4 py-6 ${
           toc
             ? 'md:grid-cols-[16rem_minmax(0,1fr)] lg:grid-cols-[16rem_minmax(0,1fr)_14rem]'
             : 'md:grid-cols-[16rem_minmax(0,1fr)]'
