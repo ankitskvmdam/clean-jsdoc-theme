@@ -20,7 +20,7 @@
  * tutorial output stays byte-identical.
  */
 
-import type { Root } from 'mdast';
+import type { PhrasingContent, Root, RootContent } from 'mdast';
 import {
   slugifyPath,
   type Frontmatter,
@@ -29,6 +29,8 @@ import {
 } from '@clean-jsdoc-theme/utils';
 import { htmlToMdastBlocks, markdownToMdastBlocks } from './mdast/from-html';
 import { resolveLinkTags } from './mdast/link-tags';
+import { embed } from './mdast/builders';
+import { parseEmbedConfig } from './embed';
 import { hrefFor, type ResolvedLink } from './link-registry';
 import { toMdx } from './mdx';
 import { extractHeadings } from './generate-site';
@@ -98,6 +100,60 @@ function contentToMdast(content: string, type: 'markdown' | 'html'): Root {
   const children =
     type === 'html' ? htmlToMdastBlocks(content) : markdownToMdastBlocks(content);
   return { type: 'root', children };
+}
+
+/** A node that owns a `children` array we can walk/rewrite. */
+interface HasChildren {
+  children: (RootContent | PhrasingContent)[];
+}
+
+function hasChildren(node: unknown): node is HasChildren {
+  return (
+    typeof node === 'object' &&
+    node !== null &&
+    Array.isArray((node as { children?: unknown }).children)
+  );
+}
+
+/**
+ * Rewrite ```` ```iframe ```` fenced code blocks in `tree` in place — the prose
+ * counterpart to the doclet `@iframe` tag (Phase 2). The fence body uses the same
+ * grammar as the block tag (see {@link parseEmbedConfig}) and may span multiple
+ * lines.
+ *
+ * For each `code` node with `lang === 'iframe'`:
+ * - a valid config → replaced with the `<Embed …/>` JSX node ({@link embed});
+ * - an invalid config (e.g. non-https; `parseEmbedConfig` returns `null` and
+ *   warns) → dropped entirely.
+ *
+ * All other fences (`js`, `ts`, `bash`, …) and every non-`code` node are left
+ * untouched. Walks parents with a manual parent-aware recursion (matching
+ * {@link resolveLinkTags}), rebuilding each parent's `children` so replacement /
+ * removal never corrupts indices.
+ */
+export function resolveEmbedFences(tree: Root): void {
+  walkFences(tree);
+}
+
+function walkFences(parent: HasChildren): void {
+  const next: (RootContent | PhrasingContent)[] = [];
+
+  for (const child of parent.children) {
+    if (child.type === 'code' && child.lang === 'iframe') {
+      const spec = parseEmbedConfig(child.value);
+      // Valid → swap in the Embed JSX node; invalid → drop (parser already warned).
+      if (spec) next.push(embed(spec));
+      continue;
+    }
+    // Never descend into other code spans/blocks; recurse into real parents.
+    if (child.type !== 'code' && child.type !== 'inlineCode' && hasChildren(child)) {
+      walkFences(child);
+    }
+    next.push(child);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- mdast child unions are narrower than the rebuilt array; the contents are type-correct per branch above.
+  parent.children = next as any;
 }
 
 /** Coerce a scalar frontmatter token into a string, number, or boolean. */
@@ -235,6 +291,8 @@ export function buildReadmePage(
   const tree: Root = { type: 'root', children: htmlToMdastBlocks(readmeHtml) };
   if (tree.children.length === 0) return null;
   if (resolveLink) resolveLinkTags(tree, resolveLink);
+  // Prose `iframe` fences → <Embed/> (after normalization, before toMdx).
+  resolveEmbedFences(tree);
 
   const title = pkg?.name ?? 'Home';
   const frontmatter: Frontmatter = { title, kind: 'index' };
@@ -315,6 +373,8 @@ export function buildDocPages(
     const tree = contentToMdast(rawBody, input.type);
     if (tree.children.length === 0) continue;
     if (resolveLink) resolveLinkTags(tree, resolveLink);
+    // Prose `iframe` fences → <Embed/> (after normalization, before toMdx).
+    resolveEmbedFences(tree);
 
     const segments = pathSegments(input.path);
     const basename = segments.length > 0 ? segments[segments.length - 1] : input.path;
