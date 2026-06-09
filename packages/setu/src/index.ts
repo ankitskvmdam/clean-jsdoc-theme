@@ -109,12 +109,15 @@ export interface GenerateSiteOptions {
    */
   sourceLinkToComment?: boolean;
   /**
-   * Sidebar sections to render, in order (e.g. `["Classes", "Tutorials"]`).
-   * Acts as BOTH a filter and an ordering — a section omitted here is dropped
-   * from the sidebar. "Home" (when a README exists) and "Source Files" (when
-   * source pages are emitted) are always present and not controlled by this.
-   * Defaults to `DEFAULT_SECTION_ORDER` when absent or empty. Ignored when
-   * `menu` is set.
+   * Top-level sidebar group order — ONE unified list governing `@category`
+   * names, doc-group names, and kind labels together (e.g.
+   * `["Getting Started", "Core", "Classes", "Globals"]`). For *kind* labels it
+   * acts as both a filter and an ordering — a kind section omitted here is
+   * dropped. Category/doc groups it omits are not dropped; they render after the
+   * listed labels, alphabetically. "Home" (when a README exists) and "Source
+   * Files" (when source pages are emitted) are always present and not controlled
+   * by this. Defaults to `DEFAULT_SECTION_ORDER` when absent or empty. Ignored
+   * when `menu` is set.
    */
   sectionOrder?: string[];
   /**

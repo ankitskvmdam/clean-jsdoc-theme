@@ -31,6 +31,56 @@ export function splitLongnameForSlug(longname: string): string[] {
   return longname.replace(LONGNAME_SEPARATORS, ' ').split(/\s+/).filter((p) => p.length > 0);
 }
 
+/**
+ * Parse an API symbol's `@category` tag — the explicit sidebar group for its
+ * page, optionally with `key=value` options. `@category Core/Parsing order=1`
+ * arrives as `doclet.tags = [{ title:'category', text:'Core/Parsing order=1' }]`
+ * (JSDoc keeps unknown block tags); the first one wins.
+ *
+ * The leading whitespace-delimited tokens form the `group` path (a `/`-path that
+ * nests the symbol, `Core` ▸ `Parsing`); parsing switches to options at the first
+ * token containing `=`. Today the only option is `order` — the within-group sort
+ * key, mirroring a doc page's `frontmatter.order`: it positions the page among
+ * its sibling leaves AND its subgroup among sibling branches (a branch sorts by
+ * the min `order` of the pages inside it; see {@link buildGroupTree}).
+ *
+ * Returns `undefined` when the symbol carries no `@category` (the page then falls
+ * back to its kind section, see {@link sectionForPage}) or the path is empty; a
+ * missing/non-numeric `order` is left `undefined` (the page sorts last,
+ * alphabetically, exactly as an untagged one would).
+ */
+function parseCategory(
+  doclet: { tags?: { title?: string; text?: string }[] }
+): { group: string; order?: number } | undefined {
+  const tag = doclet.tags?.find((t) => t.title === 'category');
+  const text = tag?.text?.trim();
+  if (!text) return undefined;
+
+  const tokens = text.split(/\s+/);
+  const pathTokens: string[] = [];
+  const options = new Map<string, string>();
+  for (const token of tokens) {
+    const eq = token.indexOf('=');
+    // The path is the leading run of plain tokens; the first `key=value` token
+    // (and everything after it) is options. A space in a category name therefore
+    // stays part of the path — `@category Getting Started order=1` groups under
+    // "Getting Started" — as long as it precedes the first option.
+    if (eq > 0 && pathTokens.length > 0) {
+      options.set(token.slice(0, eq).toLowerCase(), token.slice(eq + 1));
+    } else {
+      pathTokens.push(token);
+    }
+  }
+
+  const group = pathTokens.join(' ').trim();
+  if (!group) return undefined;
+
+  const orderText = options.get('order');
+  const orderNum = orderText !== undefined ? Number(orderText) : NaN;
+  const order = Number.isFinite(orderNum) ? orderNum : undefined;
+  return order !== undefined ? { group, order } : { group };
+}
+
 /** Concatenate the text content of a heading node's inline children. */
 function headingText(node: MdastHeading): string {
   let out = '';
@@ -130,11 +180,20 @@ export function renderContainerPage(
       ? stripHtml(view.doclet.description)
       : undefined;
 
+  // `@category` (if any) becomes the sidebar group — possibly a `/`-path that
+  // nests the page (`Core/Parsing` → Core ▸ Parsing) — and its `order=` option
+  // (if any) the within-group sort key. Untagged symbols carry no group and fall
+  // back to their kind section in `sectionForPage`. The globals page's synthetic
+  // doclet has no tags, so it stays ungrouped as before.
+  const category = parseCategory(view.doclet);
+
   const frontmatter: Frontmatter = {
     title,
     kind,
     longname: view.doclet.longname ?? longname,
     ...(description ? { description } : {}),
+    ...(category ? { group: category.group } : {}),
+    ...(category?.order !== undefined ? { order: category.order } : {}),
   };
 
   const body = toMdx(tree, { frontmatter });
@@ -281,9 +340,16 @@ export const DEFAULT_SECTION_ORDER: readonly string[] = [
   'Tutorials',
 ];
 
-/** The sidebar section a page belongs to, by its kind. */
+/**
+ * The full `group` **path** a page belongs to. An explicit `frontmatter.group`
+ * (from an API `@category` tag, or a doc/tutorial page's frontmatter) wins and
+ * may be a `/`-path that nests the page; otherwise the page falls back to its
+ * kind section label (today's behavior for untagged API symbols). The first
+ * path segment is the top-level group (the bold sidebar title); see
+ * {@link buildGroupTree}.
+ */
 function sectionForPage(page: Page): string {
-  return SECTION_FOR_KIND[page.frontmatter.kind] ?? OTHER_SECTION;
+  return page.frontmatter.group ?? SECTION_FOR_KIND[page.frontmatter.kind] ?? OTHER_SECTION;
 }
 
 /** Built-in `id` for the home menu entry (resolved against the README home page). */
@@ -353,10 +419,14 @@ export interface AssembleNavOptions {
   /** "Source Files" nav entry — always last, ungrouped, regardless of `sectionOrder`. */
   source?: NavNode;
   /**
-   * Section labels to render, in order. Acts as BOTH a filter and an ordering:
-   * a section absent here is dropped from the sidebar. Defaults to
-   * {@link DEFAULT_SECTION_ORDER}. Ignored when {@link AssembleNavOptions.menu}
-   * is set.
+   * Top-level group labels to render, in order — one unified list mixing
+   * `@category` names, doc-group names, and kind labels (e.g.
+   * `["Getting Started", "Core", "Classes", "Globals"]`). For *kind* labels this
+   * acts as BOTH a filter and an ordering (a kind label absent here is dropped).
+   * Category/doc groups it omits are NOT dropped — they render after the listed
+   * labels, alphabetically (doc groups pinned by `docGroups` keep that order).
+   * Defaults to {@link DEFAULT_SECTION_ORDER}. Ignored when
+   * {@link AssembleNavOptions.menu} is set.
    */
   sectionOrder?: readonly string[];
   /**
@@ -380,6 +450,140 @@ export interface AssembleNavOptions {
 
 /** Child label for the entry that IS the bare prefix (e.g. the `queue` module). */
 const CLUB_ROOT_CHILD_LABEL = 'index';
+
+/**
+ * One flattened sidebar entry, before nested-group assembly. Carries the leaf
+ * {@link NavNode} (the navigable page link), its **full** `group` path (`/`
+ * separates nesting levels), and the within-bucket sort key. `path` drives both
+ * the top-level group (its first segment → the bold sidebar title) and any
+ * deeper branch nodes; `explicit` records whether the group came from an
+ * `@category`/frontmatter group (vs. a kind-label fallback) so clubbing can skip
+ * already-nested buckets (decision 6). `order` is `frontmatter.order` (sort key
+ * within the deepest group); `sort` chooses between alphabetical (API symbols)
+ * and input order (tutorials/docs, pre-ordered by their builder).
+ */
+interface GroupedEntry {
+  leaf: NavNode;
+  path: string;
+  explicit: boolean;
+  order?: number;
+  sort: 'alpha' | 'input';
+}
+
+/** Split a full `group` path into its non-empty `/`-separated segments. */
+function splitGroupPath(path: string): string[] {
+  return path.split('/').map((s) => s.trim()).filter((s) => s.length > 0);
+}
+
+/**
+ * Order the leaf entries of a single deepest bucket. Alphabetical buckets (API
+ * symbols and docs) sort by `frontmatter.order` (ascending; unset sorts last)
+ * then title — so an untagged kind section stays purely alphabetical,
+ * byte-identical to today, and a doc group honors its frontmatter `order`.
+ * Input-order buckets (tutorials, already ordered by their builder's tree walk)
+ * keep their emission order.
+ */
+function orderLeafEntries(entries: GroupedEntry[]): GroupedEntry[] {
+  if (entries.every((e) => e.sort === 'input')) return entries;
+  return [...entries].sort((a, b) => {
+    const ao = a.order ?? Number.POSITIVE_INFINITY;
+    const bo = b.order ?? Number.POSITIVE_INFINITY;
+    if (ao !== bo) return ao - bo;
+    return a.leaf.label.localeCompare(b.leaf.label);
+  });
+}
+
+/**
+ * Build the nested `children` tree for one top-level group from its entries.
+ * Each entry's path beyond the top segment becomes a chain of non-navigable
+ * **branch** nodes (`children`, no `slug`, label = segment); the entry's leaf
+ * sits at the end of its chain. Sibling order: by effective `order` (a leaf's
+ * own `order`, a branch's the min `order` of the pages inside it), then leaves
+ * before branches, then bucket/first-seen order — so `@category Core/Schema
+ * order=2` sorts its subgroup after `Core/Processing order=1`, and an unordered
+ * group stays byte-identical to before. Returns the top group's nodes
+ * (the array `groupNav` buckets under the bold title), each carrying
+ * `group = topLabel` so the renderer's contiguous-run grouping keeps them
+ * together. When every entry sits directly under the top group (depth 1, the
+ * common/backward-compatible case), this returns a flat list of leaves.
+ */
+function buildGroupTree(topLabel: string, entries: GroupedEntry[]): NavNode[] {
+  // A branch level: ordered child labels + their sub-entries, keyed by label.
+  interface Branch {
+    order: string[];
+    children: Map<string, GroupedEntry[]>;
+    leaves: GroupedEntry[];
+  }
+  const makeBranch = (): Branch => ({ order: [], children: new Map(), leaves: [] });
+
+  // Recursively place entries by their path segments (relative to `depth`).
+  function place(level: Branch, items: GroupedEntry[], depth: number): void {
+    for (const e of items) {
+      const segs = splitGroupPath(e.path);
+      if (depth >= segs.length) {
+        level.leaves.push(e);
+        continue;
+      }
+      const seg = segs[depth];
+      let bucket = level.children.get(seg);
+      if (!bucket) {
+        bucket = [];
+        level.children.set(seg, bucket);
+        level.order.push(seg);
+      }
+      bucket.push(e);
+    }
+  }
+
+  // A branch's effective order is the min `order` of the pages routed into it, so
+  // `order=1` on any page pulls its whole subgroup up among its siblings.
+  const minOrder = (items: GroupedEntry[]): number =>
+    items.reduce((m, e) => Math.min(m, e.order ?? Number.POSITIVE_INFINITY), Number.POSITIVE_INFINITY);
+
+  function emit(level: Branch, depth: number, group: string): NavNode[] {
+    interface Sibling {
+      node: NavNode;
+      order: number;
+      isLeaf: boolean;
+      seq: number;
+    }
+    const siblings: Sibling[] = [];
+    // Leaves at this level, pre-ordered by the bucket rule (order then label);
+    // `seq` preserves that as the tiebreak.
+    orderLeafEntries(level.leaves).forEach((e, i) => {
+      siblings.push({
+        node: { ...e.leaf, group },
+        order: e.order ?? Number.POSITIVE_INFINITY,
+        isLeaf: true,
+        seq: i,
+      });
+    });
+    // Branch nodes (deeper segments); each sorts by the min order of its pages.
+    level.order.forEach((seg, i) => {
+      const items = level.children.get(seg)!;
+      const sub = makeBranch();
+      place(sub, items, depth + 1);
+      siblings.push({
+        node: { label: seg, group, children: emit(sub, depth + 1, group) },
+        order: minOrder(items),
+        isLeaf: false,
+        seq: i,
+      });
+    });
+    // By effective order; on a tie keep leaves before branches, then the
+    // pre-computed bucket/first-seen order — so an unordered group is unchanged.
+    siblings.sort((a, b) => {
+      if (a.order !== b.order) return a.order - b.order;
+      if (a.isLeaf !== b.isLeaf) return a.isLeaf ? -1 : 1;
+      return a.seq - b.seq;
+    });
+    return siblings.map((s) => s.node);
+  }
+
+  const root = makeBranch();
+  place(root, entries, 1); // segment 0 is the top label itself
+  return emit(root, 1, topLabel);
+}
 
 /**
  * Club a section's entries into a one-level parent/child tree by the path
@@ -428,16 +632,28 @@ export function clubNavTree(nodes: readonly NavNode[]): NavNode[] {
 /**
  * Assemble the final sidebar nav from its parts, honoring `sectionOrder`.
  *
+ * Every entry carries a full `group` **path** — an `@category` tag (API pages)
+ * or `frontmatter.group` (docs/tutorials), falling back to the kind section
+ * label for untagged API symbols. The path's first segment is the top-level
+ * group (a bold, non-collapsible title); deeper `/`-segments become nested,
+ * collapsible branch nodes ({@link buildGroupTree}). So `@category Core/Parsing`
+ * nests its page under `Core` ▸ `Parsing`.
+ *
+ * Top-level groups render in the effective order: `sectionOrder` labels first,
+ * in that order (a *kind* label it omits is dropped — today's filter behavior);
+ * then category/doc groups it doesn't list, appended alphabetically (doc groups
+ * named in `docGroups` keep that explicit order). Within a deepest group, API
+ * entries sort by `frontmatter.order` then title (a kind-only section stays
+ * purely alphabetical, as before); tutorial/doc entries keep their tree order.
  * Home (if any) is always emitted first and Source Files (if any) always last;
- * neither is controlled by `sectionOrder`. The sections in between follow the
- * effective order exactly — a label not listed is omitted, so passing
- * `["Classes", "Tutorials"]` renders only those two sections. API entries are
- * sorted alphabetically within their section; tutorial entries keep their tree
- * order. Any page kind with no section mapping is collected under "Other" and
- * appended after the ordered sections (a safety net; in practice empty).
+ * neither is controlled by `sectionOrder`. Any page kind with no section mapping
+ * is collected under "Other" and appended last (a safety net; in practice empty).
  *
  * Each node's `order` mirrors its emission position (section index), so the
  * monotonic-order invariant holds; the sidebar itself renders in array order.
+ *
+ * Backward compatible: a collection with no `@category`/group and a kind-only
+ * `sectionOrder` produces byte-identical nav to the pre-nesting builder.
  */
 export function assembleNav({
   apiPages = [],
@@ -450,42 +666,72 @@ export function assembleNav({
   menu,
   clubSidebarItems = false,
 }: AssembleNavOptions): NavNode[] {
-  // Bucket every section's entries by label.
-  const bySection = new Map<string, NavNode[]>();
-  const push = (label: string, node: NavNode): void => {
-    const bucket = bySection.get(label);
-    if (bucket) bucket.push(node);
-    else bySection.set(label, [node]);
-  };
-
+  // Flatten every source into one list of grouped entries carrying their FULL
+  // group path (an `@category`/frontmatter group may be a `/`-path that nests
+  // the page). The first path segment is the top-level group (the bold title);
+  // deeper segments become nested branch nodes below.
+  const entries: GroupedEntry[] = [];
+  // Top-level groups that originate from an explicit `@category` (not a kind
+  // label), in first-seen order. Unlike kind labels — which `sectionOrder`
+  // filters — a category group not listed in `sectionOrder` is never dropped; it
+  // is appended after the listed sections (alphabetically, with doc groups). This
+  // keeps the no-category path byte-identical (this stays empty), so kind-only
+  // `sectionOrder` filtering is unchanged.
+  const categorySectionOrder: string[] = [];
   for (const p of apiPages) {
-    const label = sectionForPage(p);
-    push(label, { label: p.frontmatter.title, slug: p.slug, group: label });
+    const path = sectionForPage(p);
+    const explicit = p.frontmatter.group !== undefined;
+    if (explicit) {
+      const top = splitGroupPath(path)[0];
+      if (top && !categorySectionOrder.includes(top)) categorySectionOrder.push(top);
+    }
+    entries.push({
+      leaf: { label: p.frontmatter.title, slug: p.slug },
+      path,
+      // An explicit `frontmatter.group` (from `@category`) opts out of clubbing.
+      explicit,
+      order: p.frontmatter.order,
+      sort: 'alpha',
+    });
   }
-  for (const t of tutorials) push(TUTORIALS_SECTION, { ...t, group: TUTORIALS_SECTION });
-
-  // Doc entries section by their OWN group (fallback DOCS_SECTION). First-seen
-  // group order is captured so groups absent from `docGroups`/`sectionOrder`
-  // still render deterministically.
+  for (const t of tutorials) {
+    entries.push({ leaf: { ...t }, path: TUTORIALS_SECTION, explicit: false, sort: 'input' });
+  }
+  // Doc entries group by their OWN group path (fallback DOCS_SECTION). First-seen
+  // top-level group order is captured so groups absent from `docGroups`/
+  // `sectionOrder` still render deterministically.
   const docSectionOrder: string[] = [];
   for (const d of docs) {
-    const label = d.group ?? DOCS_SECTION;
-    if (!bySection.has(label)) docSectionOrder.push(label);
-    push(label, { ...d, group: label });
+    const path = d.group ?? DOCS_SECTION;
+    const top = splitGroupPath(path)[0] ?? DOCS_SECTION;
+    if (!docSectionOrder.includes(top)) docSectionOrder.push(top);
+    // Docs carry an explicit `frontmatter.order` (unlike tutorials, which only
+    // have the builder's tree order), so sort them by it then title — `order: 2`
+    // sits after `order: 1` regardless of the directory-walk order they arrive in.
+    entries.push({ leaf: { ...d }, path, explicit: d.group !== undefined, order: d.order, sort: 'alpha' });
   }
 
-  // API sections are alphabetized within the section; tutorials + docs keep
-  // their input order (docs are pre-ordered by the builder).
-  const orderedSet = new Set<string>([TUTORIALS_SECTION, ...docSectionOrder]);
-  for (const [label, items] of bySection) {
-    if (!orderedSet.has(label)) items.sort((a, b) => a.label.localeCompare(b.label));
+  // Bucket entries by their TOP-LEVEL group (first path segment), preserving
+  // first-seen order, then build each bucket's nested `children` tree.
+  const byTopGroup = new Map<string, GroupedEntry[]>();
+  for (const e of entries) {
+    const top = splitGroupPath(e.path)[0] ?? OTHER_SECTION;
+    const bucket = byTopGroup.get(top);
+    if (bucket) bucket.push(e);
+    else byTopGroup.set(top, [e]);
   }
 
-  // Optionally club each section's entries into prefix-grouped subtrees. Done
-  // after sorting so club order follows the section order; applies uniformly to
-  // every section (API + Tutorials), in both menu and section mode below.
-  if (clubSidebarItems) {
-    for (const [label, items] of bySection) bySection.set(label, clubNavTree(items));
+  const bySection = new Map<string, NavNode[]>();
+  for (const [top, groupEntries] of byTopGroup) {
+    let nodes = buildGroupTree(top, groupEntries);
+    // Club ONLY buckets whose entries carry no explicit category/group path
+    // (decision 6): a group built from category paths is already nested and is
+    // not additionally label-clubbed. Backward compatible — today every API
+    // bucket is kind-fallback (`explicit: false`), so clubbing still applies.
+    if (clubSidebarItems && groupEntries.every((e) => !e.explicit)) {
+      nodes = clubNavTree(nodes);
+    }
+    bySection.set(top, nodes);
   }
 
   const baseOrder =
@@ -496,14 +742,26 @@ export function assembleNav({
   // remaining groups in first-seen order. This keeps the no-docs path's order
   // byte-identical (docExtras is empty when there are no docs).
   const inBase = new Set(baseOrder);
-  const docExtras: string[] = [];
   const seenExtra = new Set<string>();
-  for (const label of [...docGroups, ...docSectionOrder]) {
+  // Doc groups named in `docGroups` keep that explicit order, appended first.
+  const docOrdered: string[] = [];
+  for (const label of docGroups) {
     if (inBase.has(label) || seenExtra.has(label)) continue;
     seenExtra.add(label);
-    docExtras.push(label);
+    docOrdered.push(label);
   }
-  const order = docExtras.length > 0 ? [...baseOrder, ...docExtras] : baseOrder;
+  // Remaining explicit top-level groups (categories + doc groups not pinned by
+  // `docGroups`) that `sectionOrder` doesn't list: appended after the listed
+  // sections, ALPHABETICALLY (decision 3 — listed-first, then unlisted sorted).
+  const alphaExtras: string[] = [];
+  for (const label of [...categorySectionOrder, ...docSectionOrder]) {
+    if (inBase.has(label) || seenExtra.has(label)) continue;
+    seenExtra.add(label);
+    alphaExtras.push(label);
+  }
+  alphaExtras.sort((a, b) => a.localeCompare(b));
+  const extras = [...docOrdered, ...alphaExtras];
+  const order = extras.length > 0 ? [...baseOrder, ...extras] : baseOrder;
   const out: NavNode[] = [];
 
   if (menu && menu.length > 0) {

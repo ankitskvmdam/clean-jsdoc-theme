@@ -28,7 +28,12 @@ export interface Frontmatter {
   description?: string;
   /** Sort order within `group`. */
   order?: number;
-  /** Sidebar group label. */
+  /**
+   * Sidebar group label. May be a `/`-path to nest the page in the sidebar
+   * (`"Core/Parsing"` → group `Core` ▸ subgroup `Parsing`); the first segment is
+   * the top-level group. Populated from an API `@category` tag or a doc/tutorial
+   * page's frontmatter group.
+   */
   group?: string;
   /** If true, omit from nav + search but still render. */
   hidden?: boolean;
