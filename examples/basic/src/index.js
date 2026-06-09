@@ -11,7 +11,7 @@ import { createUser } from './services/UserService.js';
  *
  * @example createUser({ name: "Ank" });
  *
- * {@tutorial getting-started}
+ * @tutorial getting-started
  */
 export function init() {
   console.log('App initialized');
