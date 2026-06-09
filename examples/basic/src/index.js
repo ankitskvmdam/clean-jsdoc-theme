@@ -9,10 +9,7 @@ import { createUser } from './services/UserService.js';
  * Initialize app
  * See {@link createUser}
  *
- * Example:
- * {@code
- * createUser({ name: "Ank" });
- * }
+ * @example createUser({ name: "Ank" });
  *
  * {@tutorial getting-started}
  */
