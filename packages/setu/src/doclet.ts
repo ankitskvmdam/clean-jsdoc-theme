@@ -28,12 +28,21 @@ export function filterDoclets<T extends TDoclet>(
  * All doclets whose `memberof` is `longname` — the members of a container
  * (class, interface, mixin, module, namespace, …). Kind-agnostic: callers are
  * expected to check the canonical container doclet exists first.
+ *
+ * Excludes the container's own doclet: JSDoc can emit a container whose
+ * `memberof` equals its own `longname` (an ES6 class with an explicit
+ * `@constructor`/`@class` tag is the common trigger), which would otherwise
+ * render as a duplicate member heading (the class name) under "Other". A real
+ * member's longname is always `<container><sep><name>`, never the container
+ * longname itself, so dropping `d.longname === longname` is always safe.
  */
 export function getMembersOf(
   collection: TJSDocSaltyCollection<TDoclet>,
   longname: string
 ): TDoclet[] {
-  return collection({ memberof: longname }).get();
+  return collection({ memberof: longname })
+    .get()
+    .filter((d) => d.longname !== longname);
 }
 
 /** Alias for {@link getMembersOf} retained for existing class-path callers. */
