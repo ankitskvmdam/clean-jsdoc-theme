@@ -1,0 +1,56 @@
+{
+  "name": "@clean-jsdoc-theme/typedoc",
+  "version": "5.0.0-alpha.0",
+  "description": "TypeDoc support for clean-jsdoc-theme (renders via setu → dwar)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "typedoc-plugin",
+    "typedoc-theme",
+    "clean-jsdoc-theme"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ankitskvmdam/clean-jsdoc-theme.git"
+  },
+  "author": "Ankit Kumar (hello@ankdev.me)",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run --passWithNoTests",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit",
+    "clean": "node ../../scripts/clean.mjs dist .turbo",
+    "clean-node-modules": "node ../../scripts/clean.mjs node_modules"
+  },
+  "dependencies": {
+    "@clean-jsdoc-theme/utils": "workspace:^",
+    "@clean-jsdoc-theme/setu": "workspace:^",
+    "@clean-jsdoc-theme/dwar": "workspace:^",
+    "@jsdoc/salty": "^0.2.12"
+  },
+  "peerDependencies": {
+    "typedoc": "^0.28.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typedoc": "^0.28.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
