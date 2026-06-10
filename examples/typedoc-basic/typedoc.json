@@ -7,11 +7,6 @@
   "outputs": [{ "name": "clean-jsdoc-theme", "path": "dist" }],
   "cleanJsdocTheme": {
     "siteName": "typedoc-basic",
-    "fonts": {
-      "heading": "Fraunces",
-      "body": "Spline Sans",
-      "mono": "Spline Sans Mono"
-    },
     "sectionOrder": [
       "Core",
       "Shapes",
