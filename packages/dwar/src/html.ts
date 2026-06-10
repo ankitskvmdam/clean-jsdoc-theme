@@ -34,12 +34,12 @@ export interface HtmlDocumentOptions {
   basePath?: string;
   /** Google Fonts family names to load for headings, body, and code. */
   fonts?: { heading: string; body: string; mono: string };
-  /** Href of the emitted custom-CSS asset (`_assets/custom.<buildId>.css`), linked after the theme stylesheet. */
-  customCssHref?: string;
-  /** Inline custom CSS, emitted as a `<style>` after the stylesheet/customCssHref so it can override. */
+  /** Stylesheet hrefs (content-hashed custom-CSS assets), `<link>`ed after the theme stylesheet so they can override. */
+  customCssLinks?: string[];
+  /** Inline custom CSS, emitted as a `<style>` after the stylesheet/customCssLinks so it can override. */
   customCss?: string;
-  /** Src of the emitted custom-JS asset (`_assets/custom.<buildId>.js`), referenced before `</body>`. */
-  customJsSrc?: string;
+  /** Script srcs (content-hashed custom-JS assets), referenced before `</body>`, after the theme's own scripts. */
+  customJsLinks?: string[];
   /** Inline custom JS, emitted as a classic `<script>` before `</body>`, last of all scripts. */
   customJs?: string;
 }
@@ -164,7 +164,7 @@ export function collectIslandNamesOnPage(islands: IslandRecord[]): IslandName[] 
 
 export function renderHtmlDocument(opts: HtmlDocumentOptions): string {
   const { page, bodyHtml, islands, cssHref, siteName, islandsBase, fonts } = opts;
-  const { customCssHref, customCss, customJsSrc, customJs } = opts;
+  const { customCssLinks, customCss, customJsLinks, customJs } = opts;
   const titleSuffix = siteName ? ` | ${escapeHtml(siteName)}` : '';
   const title = `${escapeHtml(page.frontmatter.title)}${titleSuffix}`;
   const description = escapeHtml(page.frontmatter.description ?? '');
@@ -185,8 +185,10 @@ export function renderHtmlDocument(opts: HtmlDocumentOptions): string {
     buildGoogleFontsLinks(fonts) +
     `<link rel="stylesheet" href="${escapeHtml(cssHref)}" />` +
     // Custom CSS comes AFTER the theme stylesheet so it can override: the file
-    // asset first, then the inline string (so inline beats the file).
-    (customCssHref ? `<link rel="stylesheet" href="${escapeHtml(customCssHref)}" />` : '') +
+    // links first (in order), then the inline string (so inline beats the files).
+    (customCssLinks ?? [])
+      .map((href) => `<link rel="stylesheet" href="${escapeHtml(href)}" />`)
+      .join('') +
     (customCss ? `<style>${escapeStyleContent(customCss)}</style>` : '') +
     `</head>` +
     `<body>` +
@@ -195,9 +197,11 @@ export function renderHtmlDocument(opts: HtmlDocumentOptions): string {
     `<script type="module">${loaderScript}</script>` +
     `<script>${getHeadingAnchorsScript()}</script>` +
     `<script>${getScrollbarScript()}</script>` +
-    // Custom JS runs last, after the theme's own scripts: the file asset first,
-    // then the inline string. Classic scripts (not modules) for v4 parity.
-    (customJsSrc ? `<script src="${escapeHtml(customJsSrc)}"></script>` : '') +
+    // Custom JS runs last, after the theme's own scripts: the file links first
+    // (in order), then the inline string. Classic scripts (not modules) for v4 parity.
+    (customJsLinks ?? [])
+      .map((src) => `<script src="${escapeHtml(src)}"></script>`)
+      .join('') +
     (customJs ? `<script>${escapeScriptContent(customJs)}</script>` : '') +
     `</body>` +
     `</html>`

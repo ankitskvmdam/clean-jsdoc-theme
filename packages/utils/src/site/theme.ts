@@ -107,18 +107,18 @@ export interface ThemeConfig {
   copyPage?: CopyPageConfig;
   /**
    * Inline custom CSS. Emitted as a `<style>` in `<head>` AFTER the theme
-   * stylesheet (and after any `customCssFile` link), so it can override theme
+   * stylesheet (and after any `customCssLinks`), so it can override theme
    * styles. Raw CSS — not escaped beyond a `</style>` break-out guard.
    */
   customCss?: string;
   /**
-   * Custom CSS sourced from file(s). The bridge (the I/O layer) reads the
-   * file(s) and passes the concatenated content here; dwar emits it as
-   * `_assets/custom.<buildId>.css` and links it after the theme stylesheet so
-   * it can override. (Kept separate from `customCss` so an inline string and a
-   * file can coexist, and so files get a cacheable shared asset.)
+   * Stylesheet hrefs to `<link>` in `<head>`, after the theme stylesheet (so
+   * they can override). For custom CSS files: the bridge copies each file to a
+   * content-hashed asset (`_assets/<name>.<hash>.css`) and passes its served
+   * href here — so `render()` stays pure (no file I/O) and an unchanged file
+   * keeps a stable, cacheable URL. Linked in array order.
    */
-  customCssFile?: string;
+  customCssLinks?: string[];
   /**
    * Inline custom JS. Emitted as a classic `<script>` just before `</body>`,
    * after the theme's own scripts. Raw JS — guarded only against a `</script>`
@@ -126,9 +126,10 @@ export interface ThemeConfig {
    */
   customJs?: string;
   /**
-   * Custom JS sourced from file(s). The bridge reads the file(s) and passes the
-   * concatenated content here; dwar emits it as `_assets/custom.<buildId>.js`
-   * and references it (classic `<script src>`) just before `</body>`.
+   * Script srcs to reference (classic `<script src>`) just before `</body>`,
+   * after the theme's own scripts. For custom JS files: the bridge copies each
+   * to a content-hashed asset (`_assets/<name>.<hash>.js`) and passes its href
+   * here. Referenced in array order.
    */
-  customJsFile?: string;
+  customJsLinks?: string[];
 }

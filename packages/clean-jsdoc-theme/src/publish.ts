@@ -5,7 +5,8 @@
 
 import { readFile, readdir } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
-import { dirname, extname, join as joinPath, resolve as resolvePath } from 'node:path';
+import { createHash } from 'node:crypto';
+import { basename, dirname, extname, join as joinPath, resolve as resolvePath } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import type {
   CopyPageAction,
@@ -252,8 +253,10 @@ interface JSDocOpts {
   customCss?: unknown;
   /**
    * Path(s) to custom CSS file(s) (`"opts": { "customCssFile": "a.css" }` or an
-   * array). Read relative to the working directory, concatenated, emitted once as
-   * `_assets/custom.<buildId>.css`, and linked after the theme stylesheet.
+   * array). Each file is copied AS-IS (its own bytes) to
+   * `_assets/<name>.<hash>.css` and linked after the theme stylesheet. The
+   * `<hash>` is a content hash (see `hashCustomAssets`), so an unchanged file
+   * keeps a stable, cacheable URL.
    */
   customCssFile?: unknown;
   /**
@@ -263,10 +266,18 @@ interface JSDocOpts {
   customJs?: unknown;
   /**
    * Path(s) to custom JS file(s) (`"opts": { "customJsFile": "a.js" }` or an
-   * array). Read relative to the working directory, concatenated, emitted once as
-   * `_assets/custom.<buildId>.js`, and referenced before `</body>`.
+   * array). Each file is copied AS-IS to `_assets/<name>.<hash>.js` and
+   * referenced before `</body>`. See `hashCustomAssets`.
    */
   customJsFile?: unknown;
+  /**
+   * Whether to append a content hash to copied `customCssFile`/`customJsFile`
+   * asset names (`_assets/<name>.<hash>.css`). Defaults to `true` — the hash is
+   * derived from the file's content (NOT random), so an unchanged file yields
+   * the same URL across builds (cache-friendly) and a changed file cache-busts.
+   * Set `false` to copy with the original `<name>.css`/`.js` (no hash).
+   */
+  hashCustomAssets?: unknown;
   /**
    * JSDoc's default-template source options, read from `conf.templates.default`
    * (or, as a fallback, nested under `opts.templates`):
@@ -359,52 +370,87 @@ function nonEmptyString(value: unknown): string | undefined {
 }
 
 /**
- * Read custom CSS/JS file(s) (a path or array of paths, relative to the working
- * directory) and concatenate their contents. A file that can't be read is
- * skipped with a warning rather than aborting the build (resilient, like
- * `prepareSiteName`). Returns `undefined` when nothing readable is supplied.
+ * Short, deterministic content hash for cache-stable custom-asset filenames.
+ * Derived from the file's bytes (NOT random), so an unchanged file produces the
+ * same name across builds (browser cache hit) and a changed file cache-busts.
  */
-async function readCustomFiles(raw: unknown, label: string): Promise<string | undefined> {
+function contentHash(bytes: Uint8Array): string {
+  return createHash('sha256').update(bytes).digest('hex').slice(0, 8);
+}
+
+/**
+ * Copy custom CSS/JS file(s) (a path or array, relative to the working dir) to
+ * served `_assets` files and return their hrefs. Each file is copied AS-IS (its
+ * own bytes — never concatenated). The asset name is `<base>.<hash>.<ext>` when
+ * `hash` is on (the hash is content-derived → stable URL for unchanged files),
+ * else the bare `<base><ext>`. A file that can't be read is skipped with a
+ * warning (resilient, like `prepareSiteName`); an identical served name is
+ * emitted once.
+ */
+async function copyCustomFiles(
+  raw: unknown,
+  ext: '.css' | '.js',
+  hash: boolean,
+  label: string,
+): Promise<{ links: string[]; files: OutputFile[] }> {
   const paths = (Array.isArray(raw) ? raw : [raw]).filter(
     (p): p is string => typeof p === 'string' && p.trim().length > 0,
   );
-  if (paths.length === 0) return undefined;
-
-  const parts: string[] = [];
+  const links: string[] = [];
+  const files: OutputFile[] = [];
+  const seen = new Set<string>();
   for (const p of paths) {
+    const trimmed = p.trim();
+    let bytes: Buffer;
     try {
-      parts.push(await readFile(resolvePath(p.trim()), 'utf8'));
+      bytes = await readFile(resolvePath(trimmed));
     } catch {
-      console.warn(`clean-jsdoc-theme: could not read ${label} ('${p}'); skipping it.`);
+      console.warn(`clean-jsdoc-theme: could not read ${label} ('${trimmed}'); skipping it.`);
+      continue;
     }
+    const base = basename(trimmed, extname(trimmed)) || 'custom';
+    const name = hash ? `${base}.${contentHash(bytes)}${ext}` : `${base}${ext}`;
+    const servedPath = `_assets/${name}`;
+    if (seen.has(servedPath)) continue;
+    seen.add(servedPath);
+    files.push({ path: servedPath, contents: bytes });
+    links.push(`/${servedPath}`);
   }
-  const joined = parts.join('\n').trim();
-  return joined.length > 0 ? joined : undefined;
+  return { links, files };
 }
 
 /**
  * Resolve the custom CSS/JS injection options into render-ready `ThemeConfig`
- * fields. Inline strings (`customCss`/`customJs`) pass through; file options
- * (`customCssFile`/`customJsFile`) are read here — the bridge is the I/O layer,
- * so dwar's `render()` stays pure and just emits/links the resulting content.
+ * fields plus the asset files to write. Inline strings (`customCss`/`customJs`)
+ * pass through; file options (`customCssFile`/`customJsFile`) are read + copied
+ * to content-hashed assets here — the bridge is the I/O layer, so dwar's
+ * `render()` stays pure and just links the resulting hrefs. `hashCustomAssets`
+ * (default `true`) toggles the content-hash suffix.
  */
 async function resolveCustomAssets(opts: JSDocOpts): Promise<{
-  customCss?: string;
-  customCssFile?: string;
-  customJs?: string;
-  customJsFile?: string;
+  theme: {
+    customCss?: string;
+    customCssLinks?: string[];
+    customJs?: string;
+    customJsLinks?: string[];
+  };
+  files: OutputFile[];
 }> {
-  const [customCssFile, customJsFile] = await Promise.all([
-    readCustomFiles(opts.customCssFile, 'customCssFile'),
-    readCustomFiles(opts.customJsFile, 'customJsFile'),
+  const hash = opts.hashCustomAssets !== false; // content-hashed by default
+  const [cssAssets, jsAssets] = await Promise.all([
+    copyCustomFiles(opts.customCssFile, '.css', hash, 'customCssFile'),
+    copyCustomFiles(opts.customJsFile, '.js', hash, 'customJsFile'),
   ]);
   const customCss = nonEmptyString(opts.customCss)?.trim();
   const customJs = nonEmptyString(opts.customJs)?.trim();
   return {
-    ...(customCss ? { customCss } : {}),
-    ...(customCssFile ? { customCssFile } : {}),
-    ...(customJs ? { customJs } : {}),
-    ...(customJsFile ? { customJsFile } : {}),
+    theme: {
+      ...(customCss ? { customCss } : {}),
+      ...(cssAssets.links.length > 0 ? { customCssLinks: cssAssets.links } : {}),
+      ...(customJs ? { customJs } : {}),
+      ...(jsAssets.links.length > 0 ? { customJsLinks: jsAssets.links } : {}),
+    },
+    files: [...cssAssets.files, ...jsAssets.files],
   };
 }
 
@@ -980,18 +1026,19 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   if (notGoogle.has('fonts.heading')) delete fonts.heading;
   if (notGoogle.has('fonts.body')) delete fonts.body;
 
-  // Custom CSS/JS (v4 parity): inline strings + file content (read here, the I/O
-  // layer). Merged onto the theme so dwar can emit/link them while render() stays
-  // pure. Empty/unset → no fields added, so behavior is unchanged when unused.
+  // Custom CSS/JS (v4 parity): inline strings pass through; custom files are
+  // copied AS-IS to content-hashed `_assets` here (the I/O layer) and merged onto
+  // the theme as hrefs, so dwar links them while render() stays pure. Empty/unset
+  // → no fields added, so behavior is unchanged when unused.
   const customAssets = await resolveCustomAssets(opts);
 
   const absoluteDestination = resolvePath(destination);
   const result = await render(manifest, {
-    theme: { ...resolveTheme(opts, siteName, fonts), ...customAssets },
+    theme: { ...resolveTheme(opts, siteName, fonts), ...customAssets.theme },
     destination: absoluteDestination,
   });
 
-  const outputFiles = [...result.files, ...logoFiles];
+  const outputFiles = [...result.files, ...logoFiles, ...customAssets.files];
   await writeOutputFiles(absoluteDestination, outputFiles);
 
   // Next.js-style build report: where the files landed, page/asset counts, and

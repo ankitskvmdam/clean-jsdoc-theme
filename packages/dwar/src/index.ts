@@ -61,7 +61,7 @@ async function renderPage(
   copyPageActions: CopyPageAction[] | undefined,
   fonts: { heading: string; body: string; mono: string },
   shiki: ShikiThemes,
-  custom: { cssHref?: string; css?: string; jsSrc?: string; js?: string },
+  custom: { cssLinks?: string[]; css?: string; jsLinks?: string[]; js?: string },
 ): Promise<{ file: OutputFile; search: SearchEntry; islands: IslandRecord[] }> {
   const islands: IslandRecord[] = [];
 
@@ -139,9 +139,9 @@ async function renderPage(
     siteName: siteNameText(siteName, manifest.pkg?.name),
     islandsBase,
     fonts,
-    customCssHref: custom.cssHref,
+    customCssLinks: custom.cssLinks,
     customCss: custom.css,
-    customJsSrc: custom.jsSrc,
+    customJsLinks: custom.jsLinks,
     customJs: custom.js,
   });
 
@@ -220,20 +220,14 @@ export async function render(
   const islandsBase = `/_islands`;
 
   // Custom CSS/JS (v4 parity). Inline strings are injected verbatim into every
-  // page's shell; file-sourced content (already read by the bridge — dwar stays
-  // pure) is emitted ONCE as a build-id-stamped asset and linked, so it caches
-  // across pages. Empty/whitespace-only values are treated as absent.
-  const customCss = theme.customCss?.trim() || undefined;
-  const customJs = theme.customJs?.trim() || undefined;
-  const customCssFile = theme.customCssFile?.trim() || undefined;
-  const customJsFile = theme.customJsFile?.trim() || undefined;
-  const customCssPath = `_assets/custom.${manifest.buildId}.css`;
-  const customJsPath = `_assets/custom.${manifest.buildId}.js`;
+  // page's shell. Custom *files* are copied to content-hashed assets by the
+  // bridge (the I/O layer) and arrive here only as hrefs to link, so render()
+  // stays pure. Empty/whitespace-only inline values are treated as absent.
   const custom = {
-    cssHref: customCssFile ? `/${customCssPath}` : undefined,
-    css: customCss,
-    jsSrc: customJsFile ? `/${customJsPath}` : undefined,
-    js: customJs,
+    cssLinks: theme.customCssLinks,
+    css: theme.customCss?.trim() || undefined,
+    jsLinks: theme.customJsLinks,
+    js: theme.customJs?.trim() || undefined,
   };
   // The fuzzy-search index the cmdk island fetches. Build-id stamped so it
   // cache-busts alongside the stylesheet/chunks.
@@ -291,11 +285,6 @@ export async function render(
 
   // CSS file.
   files.push({ path: css.path, contents: css.contents });
-
-  // Custom CSS/JS assets (file-sourced content), emitted once and linked from
-  // every page's shell. Inline strings are injected per-page in renderHtmlDocument.
-  if (customCssFile) files.push({ path: customCssPath, contents: customCssFile });
-  if (customJsFile) files.push({ path: customJsPath, contents: customJsFile });
 
   // Fuzzy-search index fetched by the cmdk island at runtime: page entries plus
   // member deep-links. (Pagefind's full-text bundle is a separate concern.)

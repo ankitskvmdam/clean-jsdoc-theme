@@ -470,13 +470,15 @@ island above the body (gated by `ThemeConfig.copyPage`, never on the source
 section). The full-text Pagefind bundle is a separate post-write step.
 
 **Custom CSS/JS.** `ThemeConfig` carries optional `customCss`/`customJs` (inline
-strings) and `customCssFile`/`customJsFile` (content the bridge already read from
-the user's file(s) — `render()` stays pure, the bridge owns the I/O). Inline
-strings are injected per-page (`<style>` / classic `<script>`); file content is
-emitted once as `_assets/custom.<buildId>.{css,js}` and linked. Custom CSS loads
-**after** the theme stylesheet (so it overrides); custom JS runs **last**, after
-the theme's own scripts. Both inline paths are guarded against `</style>` /
-`</script>` break-out.
+strings) and `customCssLinks`/`customJsLinks` (asset hrefs). Inline strings are
+injected per-page (`<style>` / classic `<script>`); the link arrays become
+`<link>` / `<script src>`. The bridge owns the file I/O: it copies each custom
+file **as-is** to a content-hashed asset (`_assets/<name>.<hash>.css`, so an
+unchanged file keeps a stable cacheable URL — `hashCustomAssets: false` skips the
+hash), writes it alongside the logos, and passes only the hrefs in — so
+`render()` stays pure. Custom CSS loads **after** the theme stylesheet (so it
+overrides); custom JS runs **last**, after the theme's own scripts. Both inline
+paths are guarded against `</style>` / `</script>` break-out.
 
 ### `clean-jsdoc-theme` — the JSDoc theme entry
 

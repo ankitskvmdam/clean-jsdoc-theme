@@ -76,10 +76,10 @@ removed | new`.
 | `codepen`                       | —                        | removed | No CodePen prefill option. v5 has sandboxed embeds via the `@iframe` tag / `iframe` prose fence instead. |
 | `static_dir`                    | —                        | removed | No theme-level static-dir copying. Use JSDoc's own static-file config. |
 | `create_style`                  | `customCss`              | renamed | Inline custom CSS string. Injected as a `<style>` after the theme stylesheet (so it overrides). |
-| `include_css`                   | `customCssFile`          | renamed | Custom CSS file(s) (path or array). Read by the bridge, emitted once as `_assets/custom.<buildId>.css`, linked after the theme stylesheet. |
+| `include_css`                   | `customCssFile`          | renamed | Custom CSS file(s) (path or array). Each copied as-is to `_assets/<name>.<hash>.css` (content hash → cacheable), linked after the theme stylesheet. |
 | `add_style_path`                | `customCssFile`          | changed | Was an external-CSS `<link>`; now the file is read and emitted as a cached asset link. Use a `customCssFile` path. |
 | `add_scripts`                   | `customJs`               | renamed | Inline custom JS string. Injected as a classic `<script>` before `</body>`, after the theme's own scripts. |
-| `include_js`                    | `customJsFile`           | renamed | Custom JS file(s) (path or array). Emitted once as `_assets/custom.<buildId>.js` and referenced before `</body>`. |
+| `include_js`                    | `customJsFile`           | renamed | Custom JS file(s) (path or array). Each copied as-is to `_assets/<name>.<hash>.js` (content hash → cacheable), referenced before `</body>`. |
 | `add_script_path`               | `customJsFile`           | changed | Was an external-JS `<script>`; now the file is read and emitted as a cached asset. Use a `customJsFile` path. |
 | `footer`                        | —                        | removed | No `footer` HTML/string option. Footer content derives from `siteName`/`pkg`. |
 | `exclude_inherited`             | —                        | removed | No exclude-inherited-symbols option. |
@@ -198,9 +198,10 @@ Each entry: **what changed → why → migration action.**
   will break — regenerate and re-link.
 - **Custom CSS/JS injection renamed (not removed).** Why: the four v4 CSS/JS
   options were consolidated into `customCss`/`customCssFile`/`customJs`/
-  `customJsFile`; the bridge reads files (so `render()` stays pure) and emits
-  them as cached `_assets/custom.<buildId>.{css,js}` assets. Custom CSS loads
-  after the theme stylesheet (overrides it); custom JS runs last. Action: rename
+  `customJsFile`; the bridge copies each file as-is to a content-hashed asset
+  (`_assets/<name>.<hash>.css`, so an unchanged file keeps a cacheable URL — set
+  `hashCustomAssets: false` to skip the hash) while `render()` stays pure. Custom
+  CSS loads after the theme stylesheet (overrides it); custom JS runs last. Action: rename
   `create_style`→`customCss`, `include_css`/`add_style_path`→`customCssFile`,
   `add_scripts`→`customJs`, `include_js`/`add_script_path`→`customJsFile`. Only
   `static_dir` has no equivalent (use JSDoc's own static-file config); deeper

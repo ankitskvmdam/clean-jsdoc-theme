@@ -33,13 +33,16 @@ describe('renderHtmlDocument — custom CSS/JS', () => {
     expect(html.indexOf('styles.b1.css')).toBeLessThan(html.indexOf('<style>'));
   });
 
-  it('links the customCss file AFTER the theme stylesheet, before the inline style', () => {
-    const html = doc({ customCssHref: '/_assets/custom.b1.css', customCss: 'a{}' });
+  it('links customCss files AFTER the theme stylesheet, before the inline style', () => {
+    const html = doc({ customCssLinks: ['/_assets/a.h1.css', '/_assets/b.h2.css'], customCss: 'a{}' });
     const main = html.indexOf('styles.b1.css');
-    const link = html.indexOf('custom.b1.css');
+    const linkA = html.indexOf('a.h1.css');
+    const linkB = html.indexOf('b.h2.css');
     const inline = html.indexOf('<style>');
-    expect(main).toBeLessThan(link);
-    expect(link).toBeLessThan(inline);
+    // theme stylesheet < first custom link < second (order preserved) < inline style.
+    expect(main).toBeLessThan(linkA);
+    expect(linkA).toBeLessThan(linkB);
+    expect(linkB).toBeLessThan(inline);
   });
 
   it('emits customJs inline as a classic <script> before </body>', () => {
@@ -48,9 +51,10 @@ describe('renderHtmlDocument — custom CSS/JS', () => {
     expect(html.indexOf('console.log(1)')).toBeLessThan(html.indexOf('</body>'));
   });
 
-  it('references the customJs file via <script src> before </body>', () => {
-    const html = doc({ customJsSrc: '/_assets/custom.b1.js' });
-    expect(html).toContain('<script src="/_assets/custom.b1.js"></script>');
+  it('references customJs files via <script src> before </body>', () => {
+    const html = doc({ customJsLinks: ['/_assets/a.h1.js'] });
+    expect(html).toContain('<script src="/_assets/a.h1.js"></script>');
+    expect(html.indexOf('a.h1.js')).toBeLessThan(html.indexOf('</body>'));
   });
 
   it('guards against </style> and </script> break-out', () => {

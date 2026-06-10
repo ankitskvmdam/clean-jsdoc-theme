@@ -25,8 +25,9 @@ v5 is a ground-up rewrite. Breaking changes, by category:
 - **Custom CSS/JS injection renamed (not removed):** the v4 CSS/JS options were
   consolidated into `customCss`/`customCssFile` and `customJs`/`customJsFile`
   (inline string + file path or array). Custom CSS loads after the theme
-  stylesheet (overrides it); custom JS runs last. Files are emitted as cached
-  `_assets/custom.<buildId>.{css,js}` assets, so `render()` stays pure. Rename
+  stylesheet (overrides it); custom JS runs last. Files are copied as-is to
+  content-hashed `_assets/<name>.<hash>.{css,js}` assets (stable URL for an
+  unchanged file; `hashCustomAssets: false` to skip), so `render()` stays pure. Rename
   `create_style`→`customCss`, `include_css`/`add_style_path`→`customCssFile`,
   `add_scripts`→`customJs`, `include_js`/`add_script_path`→`customJsFile`. Only
   `static_dir` has no equivalent (use JSDoc's own static-file config).
