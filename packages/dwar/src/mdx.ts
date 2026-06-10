@@ -104,12 +104,22 @@ function hastText(node: HastNode): string {
  * duplicate-dedup numbering (`-1`, `-2`, …) in sync, so every `#id` the TOC
  * links to resolves to a real element.
  *
- * h1 (the page title) is not in the TOC; it gets a standalone slug that does
- * NOT touch the shared registry, so the h2..h6 numbering stays identical to
- * setu's. Headings that already carry an explicit `id` are left untouched.
+ * h1 handling mirrors setu's adaptive rule (see `extractHeadings`): we first
+ * count the page's h1s. A lone h1 is the page title — kept out of the TOC, so
+ * it gets a standalone slug that does NOT touch the shared registry and the
+ * h2..h6 numbering stays identical to setu's. But two or more h1s means the
+ * author uses h1 as section structure, so they join the registry like any other
+ * heading — exactly as setu does. Headings that already carry an explicit `id`
+ * are left untouched.
  */
 function rehypeSlugHeadings() {
   return (tree: HastNode): void => {
+    let h1Count = 0;
+    for (const node of tree.children ?? []) {
+      if (node.type === 'element' && node.tagName === 'h1') h1Count++;
+    }
+    const includeH1 = h1Count >= 2;
+
     const registry = new Map<string, number>();
     for (const node of tree.children ?? []) {
       if (node.type !== 'element' || !node.tagName) continue;
@@ -120,7 +130,7 @@ function rehypeSlugHeadings() {
       const text = hastText(node).trim();
       if (!text) continue;
       const depth = Number(match[1]);
-      props.id = depth >= 2 ? slugifyHeading(text, registry) : slugifyHeading(text);
+      props.id = depth === 1 && !includeH1 ? slugifyHeading(text) : slugifyHeading(text, registry);
     }
   };
 }

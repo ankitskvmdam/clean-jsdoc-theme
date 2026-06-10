@@ -40,9 +40,14 @@ export interface Frontmatter {
   [key: string]: unknown;
 }
 
-/** A rendered heading within a page; used by the TOC island. */
+/**
+ * A rendered heading within a page; used by the TOC island. `depth` is normally
+ * h2..h6 — a page's single h1 is its title, kept out of the TOC. `depth: 1` only
+ * appears when a page has *multiple* h1s (the author is using h1 as section
+ * structure, not as a title), in which case they're surfaced like any other.
+ */
 export interface Heading {
-  depth: 2 | 3 | 4 | 5 | 6;
+  depth: 1 | 2 | 3 | 4 | 5 | 6;
   text: string;
   /** Slug computed via `slugifyHeading` so anchors match sidebar links. */
   id: string;

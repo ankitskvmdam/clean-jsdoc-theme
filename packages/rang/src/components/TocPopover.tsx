@@ -75,6 +75,10 @@ export function TocPopover({ headings }: TocPopoverProps) {
 
   const currentText = headings[currentIndex]?.text ?? 'On this page';
 
+  // Indent relative to the shallowest heading on the page (matches the rail TOC),
+  // so a multi-h1 page indents cleanly while single-title pages are unchanged.
+  const minDepth = headings.length ? Math.min(...headings.map((h) => h.depth)) : 2;
+
   // Close on outside click / Escape — only while open.
   useEffect(() => {
     if (!open) return;
@@ -156,7 +160,7 @@ export function TocPopover({ headings }: TocPopoverProps) {
                     'truncate py-1.5 transition-colors hover:text-[var(--clean-accent)]',
                     isActive ? 'text-[var(--clean-accent)]' : 'text-[var(--clean-fg-muted)]'
                   )}
-                  style={{ paddingInlineStart: `${getItemOffset(h.depth)}px` }}
+                  style={{ paddingInlineStart: `${getItemOffset(h.depth - minDepth + 2)}px` }}
                 >
                   {h.text}
                 </a>

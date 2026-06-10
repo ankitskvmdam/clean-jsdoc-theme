@@ -99,17 +99,31 @@ function jsxAttr(node: { attributes?: { name?: string; value?: unknown }[] }, na
 }
 
 /**
- * Walk an mdast tree and emit a `Heading` per h2..h6 in document order, with
- * IDs slugified through a per-page registry so duplicates dedupe consistently
- * with what the renderer will produce. h1 (page title) is skipped.
+ * Walk an mdast tree and emit a `Heading` per h{minDepth}..h6 in document order,
+ * with IDs slugified through a per-page registry so duplicates dedupe
+ * consistently with what the renderer will produce.
+ *
+ * h1 handling is adaptive: a lone h1 is the page title and is skipped
+ * (`minDepth` stays 2). But when a page has *two or more* h1s the author is
+ * using h1 as section structure rather than as a title, so they're surfaced
+ * like any other heading (`minDepth` drops to 1) and join the dedup registry.
+ * dwar's slug pass makes the exact same count-then-decide choice, so the
+ * `#id` numbering stays identical on both sides.
  *
  * `<MemberHeading>` JSX nodes (setu's signature headings) are also picked up:
  * their explicit `id`/`name`/`depth` attributes become the entry directly, and
  * they do NOT touch the dedup registry — mirroring dwar's slug pass, which skips
  * them (they carry an explicit id), so the `-1`/`-2` numbering of real markdown
- * headings stays in sync between the two.
+ * headings stays in sync between the two. Members are never h1, so this branch
+ * is unaffected by the adaptive `minDepth`.
  */
 export function extractHeadings(tree: Root): Heading[] {
+  let h1Count = 0;
+  for (const node of tree.children) {
+    if (node.type === 'heading' && node.depth === 1) h1Count++;
+  }
+  const minDepth = h1Count >= 2 ? 1 : 2;
+
   const registry = new Map<string, number>();
   const out: Heading[] = [];
   for (const node of tree.children) {
@@ -123,11 +137,11 @@ export function extractHeadings(tree: Root): Heading[] {
       continue;
     }
     if (node.type !== 'heading') continue;
-    if (node.depth < 2 || node.depth > 6) continue;
+    if (node.depth < minDepth || node.depth > 6) continue;
     const t = headingText(node).trim();
     if (!t) continue;
     out.push({
-      depth: node.depth as 2 | 3 | 4 | 5 | 6,
+      depth: node.depth as 1 | 2 | 3 | 4 | 5 | 6,
       text: t,
       id: slugifyHeading(t, registry),
     });

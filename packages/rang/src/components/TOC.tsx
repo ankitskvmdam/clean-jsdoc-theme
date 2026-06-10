@@ -24,6 +24,13 @@ export function TOC({ headings }: TOCProps) {
   const [geo, setGeo] = useState<RailGeometry | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Indent relative to the shallowest heading on the page, not absolute depth,
+  // so the gutter is consistent whether the TOC starts at h1 (a multi-h1 page)
+  // or h2 (the usual case). Mapping the shallowest depth onto the offset
+  // functions' baseline (2) keeps single-title pages byte-identical.
+  const minDepth = headings.length ? Math.min(...headings.map((h) => h.depth)) : 2;
+  const offsetDepth = (depth: number) => depth - minDepth + 2;
+
   // ── Rail geometry ───────────────────────────────────────────────────────--
   // Build the curved path from the live anchor positions (fumadocs' onPrint).
   useEffect(() => {
@@ -43,7 +50,7 @@ export function TOC({ headings }: TOCProps) {
         const el = container.querySelector<HTMLElement>(`a[href="#${head.id}"]`);
         if (!el) continue;
         const styles = getComputedStyle(el);
-        const x = getLineOffset(head.depth) + 0.5;
+        const x = getLineOffset(offsetDepth(head.depth)) + 0.5;
         const top = el.offsetTop + parseFloat(styles.paddingTop);
         const bottom = el.offsetTop + el.clientHeight - parseFloat(styles.paddingBottom);
 
@@ -131,7 +138,7 @@ export function TOC({ headings }: TOCProps) {
               class={`relative py-1.5 transition-colors hover:text-[var(--clean-accent)] ${
                 isActive ? 'text-[var(--clean-accent)]' : 'text-[var(--clean-fg-muted)]'
               }`}
-              style={{ paddingInlineStart: `${getItemOffset(h.depth)}px` }}
+              style={{ paddingInlineStart: `${getItemOffset(offsetDepth(h.depth))}px` }}
             >
               {h.text}
             </a>

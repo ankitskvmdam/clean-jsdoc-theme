@@ -163,6 +163,46 @@ describe('extractHeadings', () => {
     const headings = extractHeadings(tree);
     expect(headings.map((h) => h.id)).toEqual(['foo', 'foo-1']);
   });
+
+  it('skips a lone h1 (it is the page title)', () => {
+    const tree = {
+      type: 'root' as const,
+      children: [
+        { type: 'heading' as const, depth: 1 as const, children: [{ type: 'text' as const, value: 'Title' }] },
+        { type: 'heading' as const, depth: 2 as const, children: [{ type: 'text' as const, value: 'Section' }] },
+      ],
+    };
+    const headings = extractHeadings(tree);
+    expect(headings.map((h) => [h.depth, h.text])).toEqual([[2, 'Section']]);
+  });
+
+  it('includes h1s when a page has two or more (h1 as section structure)', () => {
+    const tree = {
+      type: 'root' as const,
+      children: [
+        { type: 'heading' as const, depth: 1 as const, children: [{ type: 'text' as const, value: 'One' }] },
+        { type: 'heading' as const, depth: 2 as const, children: [{ type: 'text' as const, value: 'Sub' }] },
+        { type: 'heading' as const, depth: 1 as const, children: [{ type: 'text' as const, value: 'Two' }] },
+      ],
+    };
+    const headings = extractHeadings(tree);
+    expect(headings.map((h) => [h.depth, h.text, h.id])).toEqual([
+      [1, 'One', 'one'],
+      [2, 'Sub', 'sub'],
+      [1, 'Two', 'two'],
+    ]);
+  });
+
+  it('runs multiple h1s through the dedup registry', () => {
+    const tree = {
+      type: 'root' as const,
+      children: [
+        { type: 'heading' as const, depth: 1 as const, children: [{ type: 'text' as const, value: 'dup' }] },
+        { type: 'heading' as const, depth: 1 as const, children: [{ type: 'text' as const, value: 'dup' }] },
+      ],
+    };
+    expect(extractHeadings(tree).map((h) => h.id)).toEqual(['dup', 'dup-1']);
+  });
 });
 
 describe('buildClassPage', () => {
