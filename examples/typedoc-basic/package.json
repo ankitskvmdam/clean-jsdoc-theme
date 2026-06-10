@@ -1,0 +1,30 @@
+{
+  "name": "example-typedoc-basic",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:theme": "pnpm exec turbo run build --filter=@clean-jsdoc-theme/typedoc",
+    "docs": "pnpm run build:theme && typedoc",
+    "dev": "pnpm run build:theme && concurrently -k -n pkgs,docs,serve \"pnpm exec turbo watch build --filter=@clean-jsdoc-theme/typedoc\" \"nodemon\" \"serve dist -l 3002\"",
+    "serve": "serve dist -l 3002",
+    "clean": "node ../../scripts/clean.mjs dist",
+    "clean-node-modules": "node ../../scripts/clean.mjs node_modules"
+  },
+  "nodemonConfig": {
+    "watch": [
+      "src",
+      "../../packages/typedoc/dist"
+    ],
+    "ext": "ts,js",
+    "exec": "typedoc"
+  },
+  "devDependencies": {
+    "@clean-jsdoc-theme/typedoc": "workspace:^",
+    "concurrently": "^9.0.0",
+    "nodemon": "^3.0.0",
+    "serve": "^14.0.0",
+    "typedoc": "^0.28.0",
+    "typescript": "^5.5.0"
+  }
+}

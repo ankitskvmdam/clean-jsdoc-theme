@@ -1,0 +1,23 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.0.0/schema.json",
+  "changelog": "@changesets/cli/changelog",
+  "commit": false,
+  "fixed": [
+    [
+      "clean-jsdoc-theme",
+      "@clean-jsdoc-theme/utils",
+      "@clean-jsdoc-theme/setu",
+      "@clean-jsdoc-theme/rang",
+      "@clean-jsdoc-theme/dwar",
+      "@clean-jsdoc-theme/aadesh",
+      "@clean-jsdoc-theme/bhasha",
+      "@clean-jsdoc-theme/typedoc"
+    ]
+  ],
+  "linked": [],
+  "access": "public",
+  "baseBranch": "master",
+  "updateInternalDependencies": "patch",
+  "ignore": [],
+  "privatePackages": { "version": false, "tag": false }
+}

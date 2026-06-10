@@ -1,0 +1,21 @@
+{
+  "getting-started": {
+    "title": "Getting Started"
+  },
+  "configuration": {
+    "title": "Configuration",
+    "children": ["advanced-usage"]
+  },
+  "advanced-usage": {
+    "title": "Advanced Usage"
+  },
+  "markdown-examples": {
+    "title": "Markdown Examples"
+  },
+  "processing-guide": {
+    "title": "Processing Guide"
+  },
+  "how-jsdoc-works": {
+    "title": "How JSDoc Works"
+  }
+}

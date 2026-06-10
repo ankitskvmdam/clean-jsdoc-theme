@@ -1,0 +1,53 @@
+{
+  "name": "@clean-jsdoc-theme/rang",
+  "version": "5.0.0-alpha.0",
+  "description": "Preact components, MDX component map, and island registry for clean-jsdoc-theme",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ankitskvmdam/clean-jsdoc-theme.git"
+  },
+  "author": "Ankit Kumar (hello@ankdev.me)",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "clean": "node ../../scripts/clean.mjs dist .turbo",
+    "clean-node-modules": "node ../../scripts/clean.mjs node_modules"
+  },
+  "devDependencies": {
+    "@testing-library/preact": "^3.2.4",
+    "@types/mdx": "^2.0.13",
+    "happy-dom": "^15.11.0",
+    "preact-render-to-string": "^6.5.13",
+    "tsup": "^8.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  },
+  "dependencies": {
+    "@clean-jsdoc-theme/utils": "workspace:^",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-preact": "^1.17.0",
+    "preact": "^10.22.0",
+    "tailwind-merge": "^3.6.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

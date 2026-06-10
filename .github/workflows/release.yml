@@ -1,0 +1,64 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*'] # any v-prefixed tag (e.g. v5.0.0, v5.0.0-beta.1) cuts a release
+
+permissions:
+  contents: write # create the GitHub release / push per-package tags
+  id-token: write # npm provenance + OIDC trusted publishing (token-less path)
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history (parity with CI; safe for changeset tooling)
+
+      - uses: pnpm/action-setup@v4 # reads packageManager (pnpm@9) from package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          registry-url: 'https://registry.npmjs.org' # sets up .npmrc auth for publish
+
+      - run: pnpm install --frozen-lockfile
+
+      # Build first: turbo wires `test`/`typecheck` to depend on `build`, so
+      # building explicitly produces the artifacts they need and warms the cache.
+      - run: pnpm build
+
+      # FULL test gate. The same suite runs in CI, but it is repeated here so a
+      # pushed tag can NEVER publish red code even if it somehow bypassed CI
+      # (e.g. a tag pushed directly without the commit going through a PR).
+      - run: pnpm test
+      - run: pnpm typecheck
+      - run: pnpm lint
+
+      # Choose the npm dist-tag from the git tag: a prerelease tag (one that
+      # contains a `-`, e.g. v5.0.0-beta.1) publishes under `next`; a plain
+      # stable tag (e.g. v5.0.0) publishes under `latest`.
+      - id: disttag
+        run: |
+          if [[ "${GITHUB_REF_NAME}" == *-* ]]; then echo "tag=next" >> "$GITHUB_OUTPUT";
+          else echo "tag=latest" >> "$GITHUB_OUTPUT"; fi
+
+      # `changeset publish` only publishes packages whose package.json version is
+      # not yet on npm, so this step is idempotent (safe to re-run) and skips
+      # `private` packages (examples/*, docs-site) automatically.
+      #
+      # OIDC upgrade path: once the npm packages are configured with a trusted
+      # publisher pointing at this repo + workflow, the `NPM_TOKEN` secret and the
+      # `NPM_TOKEN` env line below can be dropped — `id-token: write` +
+      # NPM_CONFIG_PROVENANCE handle auth and provenance token-lessly.
+      - name: Publish
+        run: pnpm changeset publish --tag ${{ steps.disttag.outputs.tag }}
+        env:
+          # setup-node's generated .npmrc authenticates via NODE_AUTH_TOKEN, so
+          # that's the variable that actually authorizes the publish. NPM_TOKEN
+          # is kept as a belt-and-suspenders alias some tooling also reads.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }} # fallback while OIDC isn't enabled
+          NPM_CONFIG_PROVENANCE: true # emit npm provenance attestations

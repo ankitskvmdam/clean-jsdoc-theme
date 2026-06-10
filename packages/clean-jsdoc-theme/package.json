@@ -1,0 +1,64 @@
+{
+  "name": "clean-jsdoc-theme",
+  "version": "5.0.0-alpha.0",
+  "description": "A modern, markdown-first JSDoc theme with i18n support",
+  "main": "./dist/publish.js",
+  "types": "./dist/publish.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/publish.js",
+      "types": "./dist/publish.d.ts",
+      "import": "./dist/publish.mjs"
+    },
+    "./publish": {
+      "require": "./dist/publish.js",
+      "types": "./dist/publish.d.ts",
+      "import": "./dist/publish.mjs"
+    }
+  },
+  "files": [
+    "publish.js",
+    "dist",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ankitskvmdam/clean-jsdoc-theme.git"
+  },
+  "author": "Ankit Kumar (hello@ankdev.me)",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "eslint src",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "clean": "node ../../scripts/clean.mjs dist .turbo",
+    "clean-node-modules": "node ../../scripts/clean.mjs node_modules"
+  },
+  "peerDependencies": {
+    "jsdoc": ">=4.x"
+  },
+  "dependencies": {
+    "@clean-jsdoc-theme/bhasha": "workspace:^",
+    "@clean-jsdoc-theme/dwar": "workspace:^",
+    "@clean-jsdoc-theme/rang": "workspace:^",
+    "@clean-jsdoc-theme/setu": "workspace:^",
+    "@clean-jsdoc-theme/utils": "workspace:^"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^4.1.4"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "jsdoc",
+    "jsdoc-template",
+    "jsdoc-theme",
+    "documentation"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "watch": [
+    "src",
+    "docs",
+    "README.md",
+    "jsdoc.json",
+    "../packages/clean-jsdoc-theme/dist",
+    "../packages/dwar/dist",
+    "../packages/rang/dist",
+    "../packages/setu/dist",
+    "../packages/utils/dist"
+  ],
+  "ext": "js,cjs,mjs,json,md,markdown,html",
+  "delay": 400,
+  "exec": "jsdoc -c jsdoc.json"
+}

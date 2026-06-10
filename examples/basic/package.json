@@ -1,0 +1,18 @@
+{
+  "name": "example-basic",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build:theme": "pnpm exec turbo run build --filter=clean-jsdoc-theme",
+    "docs": "pnpm run build:theme && jsdoc -c jsdoc.json",
+    "dev": "pnpm run build:theme && concurrently -k -n pkgs,docs,serve \"pnpm exec turbo watch build --filter=clean-jsdoc-theme\" \"nodemon\" \"serve dist\"",
+    "clean-node-modules": "node ../../scripts/clean.mjs node_modules"
+  },
+  "devDependencies": {
+    "clean-jsdoc-theme": "workspace:^",
+    "concurrently": "^9.0.0",
+    "jsdoc": "^4.0.0",
+    "nodemon": "^3.0.0",
+    "serve": "^14.0.0"
+  }
+}

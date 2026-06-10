@@ -1,2 +1,5 @@
-static/scripts/third-party
-demo
+node_modules
+dist
+.turbo
+pnpm-lock.yaml
+*.tsbuildinfo

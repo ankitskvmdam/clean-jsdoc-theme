@@ -1,0 +1,69 @@
+{
+  "tags": {
+    "allowUnknownTags": true
+  },
+  "source": {
+    "include": ["./src", "./README.md"]
+  },
+  "plugins": ["plugins/markdown"],
+  "opts": {
+    "encoding": "utf8",
+    "destination": "dist",
+    "recurse": true,
+    "template": "./node_modules/clean-jsdoc-theme/dist",
+    "readme": "./README.md",
+    "tutorials": "./tutorials",
+    "siteName": {
+      "light": "./assets/clean-jsdoc-theme.svg",
+      "dark": "./assets/clean-jsdoc-theme-white.svg",
+      "alt": "clean-jsdoc-theme"
+    },
+    "fonts": {
+      "heading": "Fraunces",
+      "body": "Spline Sans",
+      "mono": "Spline Sans Mono"
+    },
+    "sectionOrder": [
+      "Core",
+      "Services",
+      "Utilities",
+      "Classes",
+      "Modules",
+      "Externals",
+      "Events",
+      "Namespaces",
+      "Mixins",
+      "Interfaces",
+      "Typedefs",
+      "Globals",
+      "Tutorials"
+    ],
+    "clubSidebarItems": true,
+    "menu": [
+      {
+        "title": "Home",
+        "link": "/",
+        "id": "home",
+        "icon": "lucide:home"
+      },
+      {
+        "title": "Github",
+        "link": "https://github.com/ankitskvmdam/clean-jsdoc-theme",
+        "id": "github",
+        "icon": "simpleicons:github"
+      },
+      {
+        "title": "NPM",
+        "link": "https://www.npmjs.com/package/clean-jsdoc-theme",
+        "id": "npm",
+        "icon": "simpleicons:npm"
+      },
+      {
+        "title": "Source files",
+        "link": "/source",
+        "id": "source",
+        "icon": "lucide:code-xml"
+      }
+    ]
+  }
+}

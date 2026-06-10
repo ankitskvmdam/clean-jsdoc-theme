@@ -1,0 +1,14 @@
+{
+  "watch": [
+    "src",
+    "jsdoc.json",
+    "../../packages/clean-jsdoc-theme/dist",
+    "../../packages/dwar/dist",
+    "../../packages/rang/dist",
+    "../../packages/setu/dist",
+    "../../packages/utils/dist"
+  ],
+  "ext": "js,cjs,mjs,json",
+  "delay": 400,
+  "exec": "jsdoc -c jsdoc.json"
+}

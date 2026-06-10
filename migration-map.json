@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "_comment": "Machine-readable v4 -> v5 option mapping for clean-jsdoc-theme. v4 options lived under jsdoc.json `opts.theme_opts.*`; v5 options live directly under `opts.*`. Status enum: unchanged | renamed | moved | changed | removed | new. See MIGRATION.md for detail.",
+  "version": {
+    "from": "4.3.2",
+    "to": "5.0.0"
+  },
+  "v4ToV5": {
+    "default_theme": { "v5": null, "status": "removed" },
+    "base_url": { "v5": "basePath", "status": "renamed" },
+    "favicon": { "v5": null, "status": "removed" },
+    "homepageTitle": { "v5": null, "status": "removed" },
+    "title": { "v5": "siteName", "status": "changed" },
+    "includeFilesListInHomepage": { "v5": null, "status": "removed" },
+    "menu": { "v5": "menu", "status": "changed" },
+    "sections": { "v5": "sectionOrder", "status": "renamed" },
+    "meta": { "v5": null, "status": "removed" },
+    "search": { "v5": null, "status": "removed" },
+    "codepen": { "v5": null, "status": "removed" },
+    "static_dir": { "v5": null, "status": "removed" },
+    "create_style": { "v5": "customCss", "status": "renamed" },
+    "add_style_path": { "v5": "customCssFile", "status": "changed" },
+    "include_css": { "v5": "customCssFile", "status": "renamed" },
+    "add_scripts": { "v5": "customJs", "status": "renamed" },
+    "add_script_path": { "v5": "customJsFile", "status": "changed" },
+    "include_js": { "v5": "customJsFile", "status": "renamed" },
+    "footer": { "v5": null, "status": "removed" },
+    "exclude_inherited": { "v5": null, "status": "removed" },
+    "displayModuleHeader": { "v5": null, "status": "removed" },
+    "sort": { "v5": null, "status": "removed" },
+    "shouldRemoveScrollbarStyle": { "v5": null, "status": "removed" }
+  },
+  "v5New": {
+    "siteName": { "status": "new", "type": "string | { default?, dark?, light?, alt? }" },
+    "fonts": { "status": "new", "type": "{ heading?, body?, mono? }" },
+    "basePath": { "status": "new", "type": "string" },
+    "docs": { "status": "new", "type": "string (directory path)" },
+    "docGroups": { "status": "new", "type": "string[]" },
+    "defaultDocGroup": { "status": "new", "type": "string" },
+    "sectionOrder": { "status": "new", "type": "string[]" },
+    "menu": { "status": "new", "type": "Array<{ id?, title?, link?, href?, icon? }>" },
+    "clubSidebarItems": { "status": "new", "type": "boolean" },
+    "aiPrompt": { "status": "new", "type": "string" },
+    "copyPage": { "status": "new", "type": "boolean | { enabled?, actions? }" },
+    "strict": { "status": "new", "type": "boolean" },
+    "templates.default.outputSourceFiles": {
+      "status": "new",
+      "type": "boolean",
+      "_note": "JSDoc-standard option, honored by v5"
+    },
+    "templates.default.sourceLinkToComment": {
+      "status": "new",
+      "type": "boolean",
+      "_note": "JSDoc-standard option, honored by v5"
+    }
+  }
+}

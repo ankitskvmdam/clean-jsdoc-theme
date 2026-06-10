@@ -1,36 +1,65 @@
 # Contributing
 
-When contributing to this repository, please first discuss the change you wish to make via issue or
-email (hello@ankdev.me) before making a change.
+Thanks for contributing to `clean-jsdoc-theme`! This is a pnpm@9 + Turborepo
+monorepo. The default branch is **`master`**.
 
-Please note we have a code of
-conduct ([hindi](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CODE_OF_CONDUCT_HINDI.md)
-, [english](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CODE_OF_CONDUCT.md)), please follow it in all
-your interactions with the project.
+## Getting started
 
-We love your input! We want to make contributing to this project as easy and transparent as possible, whether it's:
+```sh
+pnpm install
+pnpm build        # turbo run build (build first — test/typecheck depend on artifacts)
+pnpm test         # turbo run test
+pnpm typecheck    # turbo run typecheck
+pnpm lint         # turbo run lint
+pnpm format       # prettier --write .
+```
 
-- Reporting a bug
-- Discussing the current state of the code
-- Submitting a fix
-- Proposing new features
-- Becoming a maintainer
+See `ARCHITECTURE.md` for how the packages fit together (utils → setu → rang →
+dwar, plus `clean-jsdoc-theme`, `aadesh`, `bhasha`, `typedoc`).
 
-## Any contributions you make will be under the MIT Software License
+## Pull requests
 
-In short, when you submit code changes, your submissions are understood to be under the
-same [MIT License](http://choosealicense.com/licenses/mit/) that covers the project. Feel free to contact at
-hello@ankdev.me if that's a concern.
+- Branch off `master`.
+- Keep `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm format:check` green.
+- **Add a changeset** for any change that affects a published package (see below).
 
-## Creating issues
+## Releasing
 
-Please go
-through [bug_report](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/.github/ISSUE_TEMPLATE/bug_report.md)
-and [feature_request](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/.github/ISSUE_TEMPLATE/feature_request.md)
-guide for information
+We use [Changesets](https://github.com/changesets/changesets) for versioning and
+changelogs, and a tag-based release. The full process lives in
+[`RELEASING.md`](./RELEASING.md). The essentials:
 
-## Pull Request Process
+### Add a changeset with your change
 
-1. Ensure any install or build dependencies are removed before the end of the layer when doing a
-   build.
-2. Fill the pull request template.
+Every change that affects a published package needs a changeset:
+
+```sh
+pnpm changeset
+```
+
+Pick the packages, choose a bump type (`patch` / `minor` / `major`), write a
+summary, and **commit the generated `.changeset/*.md` file** with your change.
+
+All eight publishable packages (`clean-jsdoc-theme` + the seven
+`@clean-jsdoc-theme/*` packages) are in one **`fixed`** lockstep group, so they
+always share a version and ship together; selecting any of them bumps the whole
+suite. For repo changes that don't need a published bump (docs, CI, examples),
+use `pnpm changeset add --empty`.
+
+While the suite is pre-1.0 (`5.0.0-alpha`), be explicit about bump type; the
+alpha → beta → stable progression is driven by prerelease mode
+(`changeset pre enter beta` / `pre exit`) — see `RELEASING.md`.
+
+### Maintainers: cut a release
+
+```sh
+pnpm release:check        # changeset status --verbose — eyeball pending bumps; nothing skipped?
+pnpm version-packages     # changeset version && pnpm install --lockfile-only — bump + changelog
+git commit -am "release vX.Y.Z"
+git tag vX.Y.Z
+git push origin vX.Y.Z    # pushing the v* tag triggers the release workflow
+```
+
+A tag containing `-` (e.g. `vX.Y.Z-beta.1`) publishes under npm `next`; otherwise
+`latest`. Full details, including the prerelease flow and the `fixed`-group
+rationale, are in [`RELEASING.md`](./RELEASING.md).
