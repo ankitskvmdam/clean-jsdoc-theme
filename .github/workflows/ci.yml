@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+# Cancel superseded runs for the same ref (latest push/PR update wins).
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history needed for `changeset status --since`
+
+      - uses: pnpm/action-setup@v4 # reads packageManager (pnpm@9) from package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Build first: turbo wires `test`/`typecheck` to depend on `build`, so
+      # building explicitly produces the artifacts they need and warms the
+      # turbo cache for the subsequent tasks.
+      - run: pnpm build
+      - run: pnpm test
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm format:check
+
+      # CI half of "don't skip anything": fail a PR that changes a publishable
+      # package without adding a changeset.
+      - name: Changeset coverage (PRs only)
+        if: github.event_name == 'pull_request'
+        run: pnpm changeset status --since=origin/master --verbose
