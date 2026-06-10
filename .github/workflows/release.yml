@@ -64,7 +64,15 @@ jobs:
             exit 1
           fi
           echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> .npmrc
-          pnpm changeset publish --tag ${{ steps.disttag.outputs.tag }}
+          # In changesets pre mode (.changeset/pre.json present), `changeset
+          # publish` controls the dist-tag itself (the pre tag, e.g. `alpha`) and
+          # rejects a custom --tag. Outside pre mode, pick latest/next from the
+          # git tag.
+          if [ -f .changeset/pre.json ]; then
+            pnpm changeset publish
+          else
+            pnpm changeset publish --tag ${{ steps.disttag.outputs.tag }}
+          fi
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true # emit npm provenance attestations
