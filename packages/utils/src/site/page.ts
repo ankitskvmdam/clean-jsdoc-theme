@@ -26,7 +26,11 @@ export interface Frontmatter {
   /** JSDoc longname (e.g. `module:foo~Bar#method`). */
   longname?: string;
   description?: string;
-  /** Sort order within `group`. */
+  /**
+   * Sort order within `group`. For API pages this originates from a standalone
+   * `@order N` tag or the `@category … order=` option; for docs/tutorials from
+   * frontmatter `order`. Unset sorts last (alphabetically).
+   */
   order?: number;
   /**
    * Sidebar group label. May be a `/`-path to nest the page in the sidebar

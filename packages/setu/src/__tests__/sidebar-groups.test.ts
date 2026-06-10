@@ -336,3 +336,132 @@ describe('assembleNav — backward-compat boundary (THE regression guard)', () =
     ]);
   });
 });
+
+describe('standalone @order tag → frontmatter.order', () => {
+  it('reads `@order N` onto a plain @module that carries no @category', () => {
+    const c = makeCollection([
+      {
+        kind: 'module',
+        name: 'queue',
+        longname: 'module:queue',
+        tags: [{ title: 'order', text: '1' }],
+      },
+    ]);
+    const p = buildContainerPage(c, 'module:queue', 'module')!;
+    expect(p.frontmatter.group).toBeUndefined(); // no @category → kind fallback
+    expect(p.frontmatter.order).toBe(1);
+  });
+
+  it('leaves order unset for a blank or non-numeric @order', () => {
+    const blank = makeCollection([
+      { kind: 'class', name: 'A', longname: 'A', tags: [{ title: 'order', text: '  ' }] },
+    ]);
+    expect(buildContainerPage(blank, 'A', 'class')!.frontmatter.order).toBeUndefined();
+
+    const nan = makeCollection([
+      { kind: 'class', name: 'B', longname: 'B', tags: [{ title: 'order', text: 'high' }] },
+    ]);
+    expect(buildContainerPage(nan, 'B', 'class')!.frontmatter.order).toBeUndefined();
+  });
+
+  it('lets `@category … order=` win over a standalone `@order` (more specific)', () => {
+    const c = makeCollection([
+      {
+        kind: 'class',
+        name: 'Widget',
+        longname: 'Widget',
+        tags: [
+          { title: 'category', text: 'Core order=1' },
+          { title: 'order', text: '9' },
+        ],
+      },
+    ]);
+    const p = buildContainerPage(c, 'Widget', 'class')!;
+    expect(p.frontmatter.group).toBe('Core');
+    expect(p.frontmatter.order).toBe(1);
+  });
+});
+
+describe('clubSidebarItems — order-aware clubbing', () => {
+  it('floats a clubbed parent up when any member carries @order', () => {
+    // `auth` is seen first (alphabetical), so without order it leads. `@order 1`
+    // on a `queue` member gives that parent the lower min-order → it floats up.
+    const nav = assembleNav({
+      apiPages: [
+        page('auth', 'module', 'module/auth'),
+        page('auth/Session', 'module', 'module/auth-session'),
+        page('queue', 'module', 'module/queue'),
+        page('queue/Queue', 'module', 'module/queue-queue', undefined, 1),
+        page('queue/types', 'module', 'module/queue-types'),
+      ],
+      sectionOrder: ['Modules'],
+      clubSidebarItems: true,
+    });
+    expect(groupNodes(nav, 'Modules').map((n) => n.label)).toEqual(['queue', 'auth']);
+  });
+
+  it('orders clubbed children by @order, pulling one ahead of the index child', () => {
+    const nav = assembleNav({
+      apiPages: [
+        page('queue', 'module', 'module/queue'), // bare → index child
+        page('queue/Something', 'module', 'module/queue-something', undefined, 1),
+        page('queue/Alpha', 'module', 'module/queue-alpha'),
+      ],
+      sectionOrder: ['Modules'],
+      clubSidebarItems: true,
+    });
+    const queue = groupNodes(nav, 'Modules')[0];
+    // `Something` (order 1) leads — ahead of the bare-prefix `index` child;
+    // the remaining unordered children keep index-first-then-alphabetical.
+    expect(queue.children!.map((c) => c.label)).toEqual(['Something', 'index', 'Alpha']);
+  });
+
+  it('keeps the index child first when no child carries @order', () => {
+    const nav = assembleNav({
+      apiPages: [
+        page('queue', 'module', 'module/queue'),
+        page('queue/Beta', 'module', 'module/queue-beta'),
+        page('queue/Alpha', 'module', 'module/queue-alpha'),
+      ],
+      sectionOrder: ['Modules'],
+      clubSidebarItems: true,
+    });
+    const queue = groupNodes(nav, 'Modules')[0];
+    expect(queue.children!.map((c) => c.label)).toEqual(['index', 'Alpha', 'Beta']);
+  });
+
+  it('boundary: no @order + clubSidebarItems → byte-identical clubbed nav', () => {
+    const nav = assembleNav({
+      apiPages: [
+        page('base', 'module', 'module/base'),
+        page('base/chains', 'module', 'module/base-chains'),
+        page('queue', 'module', 'module/queue'),
+        page('queue/Queue', 'module', 'module/queue-queue'),
+      ],
+      sectionOrder: ['Modules'],
+      clubSidebarItems: true,
+    });
+    // First-seen parent order (base, queue), index-first children, no `order`
+    // key leaking onto any child — exactly the pre-order-aware output.
+    expect(groupNodes(nav, 'Modules')).toEqual([
+      {
+        label: 'base',
+        group: 'Modules',
+        order: 0,
+        children: [
+          { label: 'index', slug: 'module/base', group: 'Modules' },
+          { label: 'chains', slug: 'module/base-chains', group: 'Modules' },
+        ],
+      },
+      {
+        label: 'queue',
+        group: 'Modules',
+        order: 0,
+        children: [
+          { label: 'index', slug: 'module/queue', group: 'Modules' },
+          { label: 'Queue', slug: 'module/queue-queue', group: 'Modules' },
+        ],
+      },
+    ]);
+  });
+});

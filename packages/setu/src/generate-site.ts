@@ -81,6 +81,29 @@ function parseCategory(
   return order !== undefined ? { group, order } : { group };
 }
 
+/**
+ * Read a standalone `@order N` block tag → a finite sort key, or `undefined`.
+ *
+ * Unlike the inline `@category … order=` option (which only a symbol carrying a
+ * category can use), `@order` positions ANY documented symbol — including a
+ * plain `@module`/`@class`/`@namespace` that lives in its kind section
+ * (Modules, Classes, …) rather than a `@category` group. It is an unknown tag
+ * (needs `tags.allowUnknownTags`, exactly as `@category` already relies on), so
+ * JSDoc hands us its text untouched; the built-in name-bearing tags can't carry
+ * the same `key=value` (trailing text pollutes the name or is dropped). A
+ * missing/non-numeric value is left `undefined` (the page sorts last,
+ * alphabetically), exactly as an untagged one would.
+ */
+function readOrder(
+  doclet: { tags?: { title?: string; text?: string }[] }
+): number | undefined {
+  const tag = doclet.tags?.find((t) => t.title === 'order');
+  const text = tag?.text?.trim();
+  if (!text) return undefined;
+  const num = Number(text);
+  return Number.isFinite(num) ? num : undefined;
+}
+
 /** Concatenate the text content of a heading node's inline children. */
 function headingText(node: MdastHeading): string {
   let out = '';
@@ -221,6 +244,11 @@ export function renderContainerPage(
   // back to their kind section in `sectionForPage`. The globals page's synthetic
   // doclet has no tags, so it stays ungrouped as before.
   const category = parseCategory(view.doclet);
+  // The within-group sort key. `@category … order=` wins when present (the more
+  // specific, co-located declaration); otherwise a standalone `@order N` tag
+  // applies — so a plain `@module`/`@class` with no category can still position
+  // itself in its kind section. Both feed the same `frontmatter.order`.
+  const order = category?.order ?? readOrder(view.doclet);
 
   const frontmatter: Frontmatter = {
     title,
@@ -228,7 +256,7 @@ export function renderContainerPage(
     longname: view.doclet.longname ?? longname,
     ...(description ? { description } : {}),
     ...(category ? { group: category.group } : {}),
-    ...(category?.order !== undefined ? { order: category.order } : {}),
+    ...(order !== undefined ? { order } : {}),
   };
 
   const body = toMdx(tree, { frontmatter });
@@ -587,7 +615,10 @@ function buildGroupTree(topLabel: string, entries: GroupedEntry[]): NavNode[] {
     // `seq` preserves that as the tiebreak.
     orderLeafEntries(level.leaves).forEach((e, i) => {
       siblings.push({
-        node: { ...e.leaf, group },
+        // Propagate `order` onto the emitted node so order-aware clubbing
+        // (`clubNavTree`) can read it. Conditional so the no-order path adds no
+        // `order` key — the backward-compat boundary stays byte-identical.
+        node: { ...e.leaf, group, ...(e.order !== undefined ? { order: e.order } : {}) },
         order: e.order ?? Number.POSITIVE_INFINITY,
         isLeaf: true,
         seq: i,
@@ -627,24 +658,56 @@ function buildGroupTree(topLabel: string, entries: GroupedEntry[]): NavNode[] {
  * their prefix stripped (`queue/Queue` → `Queue`); the entry that IS the bare
  * prefix (`queue`) becomes an `index` child, sorted first. A prefix with a
  * single entry is NOT clubbed — it stays flat with its original label (so a lone
- * `strings/format` is untouched). First-occurrence order of prefixes is
- * preserved, so an already-sorted (or tree-ordered) section keeps its order.
+ * `strings/format` is untouched), but its `order` still participates in the
+ * parent-level sort below.
+ *
+ * Order-aware (decisions 4/5): a clubbed parent sorts by the **min `order`** of
+ * its members (so `@order 1` on any member floats the whole parent up), and
+ * children sort by `order` then the `index`-first tiebreak then name (so
+ * `@order` can pull a sibling ahead of the bare-prefix `index` child). With no
+ * `@order`/`order=` anywhere every effective order is `+∞`, so parents fall back
+ * to first-seen order and children to `index`-first-then-alphabetical — i.e. an
+ * unordered section is byte-identical to before.
  */
 export function clubNavTree(nodes: readonly NavNode[]): NavNode[] {
   const groups = new Map<string, NavNode[]>();
+  const firstSeen = new Map<string, number>();
+  let seq = 0;
   for (const node of nodes) {
     const slash = node.label.indexOf('/');
     const prefix = slash === -1 ? node.label : node.label.slice(0, slash);
     const bucket = groups.get(prefix);
     if (bucket) bucket.push(node);
-    else groups.set(prefix, [node]);
+    else {
+      groups.set(prefix, [node]);
+      firstSeen.set(prefix, seq++);
+    }
   }
 
-  const out: NavNode[] = [];
+  // A parent's effective order is the min `order` of its members (unset → +∞),
+  // mirroring how `buildGroupTree` orders branch nodes.
+  const minOrder = (members: NavNode[]): number =>
+    members.reduce(
+      (m, n) => Math.min(m, n.order ?? Number.POSITIVE_INFINITY),
+      Number.POSITIVE_INFINITY,
+    );
+
+  interface Parent {
+    node: NavNode;
+    order: number;
+    seq: number;
+  }
+  const parents: Parent[] = [];
   for (const [prefix, members] of groups) {
+    const seqIdx = firstSeen.get(prefix)!;
     if (members.length < 2) {
-      // Single entry under this prefix → never clubbed; keep it verbatim.
-      out.push(members[0]);
+      // Single entry under this prefix → never clubbed; keep it verbatim, but
+      // let its own order place it among the section's parents.
+      parents.push({
+        node: members[0],
+        order: members[0].order ?? Number.POSITIVE_INFINITY,
+        seq: seqIdx,
+      });
       continue;
     }
     const children = members
@@ -652,16 +715,30 @@ export function clubNavTree(nodes: readonly NavNode[]): NavNode[] {
         ...m,
         label: m.label === prefix ? CLUB_ROOT_CHILD_LABEL : m.label.slice(prefix.length + 1),
       }))
-      // The bare-prefix entry (`index`) leads; the rest stay alphabetized.
+      // By `order` (unset last); on a tie the bare-prefix `index` child leads,
+      // then alphabetical — so an explicit `@order` can pull a sibling ahead of
+      // `index`, but `index` keeps its pin among otherwise-unordered children.
       .sort((a, b) => {
+        const ao = a.order ?? Number.POSITIVE_INFINITY;
+        const bo = b.order ?? Number.POSITIVE_INFINITY;
+        if (ao !== bo) return ao - bo;
         if (a.label === CLUB_ROOT_CHILD_LABEL) return -1;
         if (b.label === CLUB_ROOT_CHILD_LABEL) return 1;
         return a.label.localeCompare(b.label);
       });
     // The parent is a label-only branch (no slug → not navigable).
-    out.push({ label: prefix, group: members[0].group, children });
+    parents.push({
+      node: { label: prefix, group: members[0].group, children },
+      order: minOrder(members),
+      seq: seqIdx,
+    });
   }
-  return out;
+
+  // Parents by effective order (unset last), then first-seen order — so an
+  // unordered section keeps first-seen order (byte-identical) and `@order` on
+  // any member floats its parent up.
+  parents.sort((a, b) => (a.order !== b.order ? a.order - b.order : a.seq - b.seq));
+  return parents.map((p) => p.node);
 }
 
 /**

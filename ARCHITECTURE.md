@@ -206,7 +206,11 @@ group comes from an `@category` doclet tag (`@category Core/Parsing` → group
 the kind label (Classes / Modules / …) for untagged symbols; doc/tutorial pages
 use their frontmatter group. The tag also accepts trailing `key=value` options:
 `@category Core/Parsing order=1` sets the page's `frontmatter.order` (the path is
-the leading tokens, options follow the first `=`). The path's **first segment** is the top-level group
+the leading tokens, options follow the first `=`). A standalone **`@order N`**
+block tag (`readOrder`) sets the same `frontmatter.order` for **any** symbol —
+including a plain `@module`/`@class`/`@namespace` that has no `@category` and
+lives in its kind section; when both are present the inline `@category … order=`
+wins. The path's **first segment** is the top-level group
 (a bold, non-collapsible title via rang's `groupNav`); deeper `/`-segments become
 nested, collapsible branch nodes (`buildGroupTree`) — so the renderer's existing
 arbitrary-depth `NavEntry` recursion handles nesting with no rang change. One
@@ -223,7 +227,11 @@ first-seen order). With `clubSidebarItems` on, `clubNavTree` additionally
 collapses a section's entries into a one-level parent/child tree by the path
 segment before the first `/` (`queue`, `queue/Queue`, `queue/types` → a `queue`
 parent; the bare `queue` module becomes an `index` child); a prefix used by a
-single entry stays flat. Clubbing applies ONLY to category-less buckets (a group
+single entry stays flat. Clubbing is order-aware: a clubbed parent sorts by the
+min `order` of its members (so `@order` on any member floats the parent up) and
+children sort by `order` then the `index`-first tiebreak then name — with no
+`@order`/`order=` it falls back to first-seen parents and `index`-first children
+(byte-identical). Clubbing applies ONLY to category-less buckets (a group
 built from `@category` paths is already nested and is not additionally clubbed).
 
 ```
