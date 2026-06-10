@@ -158,7 +158,7 @@ function walkFences(parent: HasChildren): void {
 
 /** Coerce a scalar frontmatter token into a string, number, or boolean. */
 function parseScalar(raw: string): string | number | boolean {
-  let value = raw.trim();
+  const value = raw.trim();
   // Strip a single matching pair of surrounding quotes (preserve inner content).
   if (
     value.length >= 2 &&
@@ -197,7 +197,7 @@ export function parseFrontmatter(raw: string): {
   const text = typeof raw === 'string' ? raw : '';
   // Frontmatter must be the very first line: `---` (allow a leading BOM and a
   // trailing CR for CRLF files), followed by a newline.
-  const opener = /^﻿?---[ \t]*\r?\n/;
+  const opener = /^\uFEFF?---[ \t]*\r?\n/;
   const open = opener.exec(text);
   if (!open) return { data: {}, body: raw };
 

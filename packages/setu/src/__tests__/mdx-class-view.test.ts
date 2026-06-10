@@ -175,7 +175,7 @@ describe('docletBlocks (per-member composer)', () => {
     expect(callout?.attributes).toContainEqual({
       type: 'mdxJsxAttribute',
       name: 'type',
-      value: 'warning',
+      value: 'error',
     });
     // The supplied reason wins over the kind-aware default.
     const json = JSON.stringify(callout);
