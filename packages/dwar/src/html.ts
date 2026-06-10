@@ -19,6 +19,7 @@ import type { IslandRecord } from './layout';
 import { getPreHydrationThemeScript } from './theme-script';
 import { getIslandsLoaderScript } from './islands-loader';
 import { getHeadingAnchorsScript } from './heading-anchors';
+import { getScrollbarScript } from './scrollbar-script';
 
 export interface HtmlDocumentOptions {
   page: Page;
@@ -161,6 +162,7 @@ export function renderHtmlDocument(opts: HtmlDocumentOptions): string {
     `<script type="application/json" data-island-props>${propsPayload}</script>` +
     `<script type="module">${loaderScript}</script>` +
     `<script>${getHeadingAnchorsScript()}</script>` +
+    `<script>${getScrollbarScript()}</script>` +
     `</body>` +
     `</html>`
   );
