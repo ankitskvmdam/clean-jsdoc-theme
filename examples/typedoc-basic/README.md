@@ -11,6 +11,13 @@ a namespace (`Factory`) — covering every kind the plugin's adapter maps.
 
 ```sh
 pnpm run docs
+pnpm run serve   # http://localhost:3002
+```
+
+Or use the bundled dev script (typedoc + nodemon + serve, all concurrent):
+
+```sh
+pnpm run dev     # rebuilds the theme on change, re-runs typedoc, serves on :3002
 ```
 
 This builds the theme packages, then runs TypeDoc with the plugin selected via

@@ -92,18 +92,15 @@ importers:
       '@clean-jsdoc-theme/typedoc':
         specifier: workspace:^
         version: link:../../packages/typedoc
-      typedoc:
-        specifier: ^0.28.0
-        version: 0.28.19(typescript@5.9.3)
-      typescript:
-        specifier: ^5.5.0
-        version: 5.9.3
-
-  examples/typedoc-example:
-    devDependencies:
-      '@clean-jsdoc-theme/typedoc':
-        specifier: workspace:^
-        version: link:../../packages/typedoc
+      concurrently:
+        specifier: ^9.0.0
+        version: 9.2.1
+      nodemon:
+        specifier: ^3.0.0
+        version: 3.1.14
+      serve:
+        specifier: ^14.0.0
+        version: 14.2.6
       typedoc:
         specifier: ^0.28.0
         version: 0.28.19(typescript@5.9.3)
