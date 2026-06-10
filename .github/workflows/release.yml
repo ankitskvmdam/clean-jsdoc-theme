@@ -56,5 +56,9 @@ jobs:
       - name: Publish
         run: pnpm changeset publish --tag ${{ steps.disttag.outputs.tag }}
         env:
+          # setup-node's generated .npmrc authenticates via NODE_AUTH_TOKEN, so
+          # that's the variable that actually authorizes the publish. NPM_TOKEN
+          # is kept as a belt-and-suspenders alias some tooling also reads.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }} # fallback while OIDC isn't enabled
           NPM_CONFIG_PROVENANCE: true # emit npm provenance attestations
