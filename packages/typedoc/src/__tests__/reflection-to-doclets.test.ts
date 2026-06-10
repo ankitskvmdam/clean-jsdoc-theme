@@ -74,6 +74,40 @@ export function square(n: number): number {
 
 /** A top-level variable. */
 export const VERSION: string = '1.0.0';
+
+/**
+ * Direction of travel.
+ * @category Core/Things
+ */
+export enum Direction {
+  /** Going up. */
+  Up = 'up',
+  /** Going down. */
+  Down = 'down',
+}
+
+/** A coordinate pair. */
+export type Point = {
+  /** Horizontal component. */
+  x: number;
+  /** Vertical component. */
+  y: number;
+};
+
+/** A data-handling callback. */
+export type DataHandler = (chunk: string, index: number) => boolean;
+
+/** A nested namespace. */
+export namespace Shapes {
+  /** A circle living in the namespace. */
+  export class Circle {
+    /** The radius. */
+    radius: number = 0;
+  }
+
+  /** A namespaced constant. */
+  export const PI = 3.14;
+}
 `;
 
 let project: ProjectReflection;
@@ -275,6 +309,81 @@ describe('reflectionsToDoclets — meta source coords', () => {
     expect(typeof foo.meta?.lineno).toBe('number');
     expect(foo.meta?.lineno).toBeGreaterThan(0);
     expect(join(foo.meta!.path!, foo.meta!.filename!)).toContain('index.ts');
+  });
+});
+
+describe('reflectionsToDoclets — enums', () => {
+  it('maps Enum to kind:"enum" with isEnum:true', () => {
+    const dir = byLongname('Direction')!;
+    expect(dir.kind).toBe('enum');
+    expect(dir.isEnum).toBe(true);
+    expect(dir.scope).toBe('global');
+    expect(dir.memberof).toBeUndefined();
+  });
+
+  it('maps EnumMembers to static member entries under the enum', () => {
+    const up = byLongname('Direction.Up')!;
+    expect(up.kind).toBe('member');
+    expect(up.scope).toBe('static');
+    expect(up.memberof).toBe('Direction');
+    const down = byLongname('Direction.Down')!;
+    expect(down.kind).toBe('member');
+    expect(down.memberof).toBe('Direction');
+  });
+
+  it('carries the enum @category tag', () => {
+    const dir = byLongname('Direction')!;
+    expect(dir.tags?.find((t) => t.title === 'category')?.text).toBe('Core/Things');
+  });
+});
+
+describe('reflectionsToDoclets — type aliases', () => {
+  it('maps an object type alias to a typedef with properties', () => {
+    const point = byLongname('Point')!;
+    expect(point.kind).toBe('typedef');
+    expect(point.type?.names).toEqual(['Object']);
+    expect(point.properties?.map((p) => p.name)).toEqual(['x', 'y']);
+    expect(point.properties?.[0].type?.names).toEqual(['number']);
+    expect(point.properties?.[0].description).toContain('Horizontal');
+  });
+
+  it('maps a function type alias to a typedef with params/returns', () => {
+    const handler = byLongname('DataHandler')!;
+    expect(handler.kind).toBe('typedef');
+    expect(handler.type?.names).toEqual(['function']);
+    expect(handler.params?.map((p) => p.name)).toEqual(['chunk', 'index']);
+    expect(handler.params?.[0].type?.names).toEqual(['string']);
+    expect(handler.returns?.[0].type?.names).toEqual(['boolean']);
+  });
+});
+
+describe('reflectionsToDoclets — namespaces', () => {
+  it('maps a namespace to kind:"namespace" with a module: longname', () => {
+    const shapes = byLongname('module:Shapes')!;
+    expect(shapes.kind).toBe('namespace');
+    expect(shapes.scope).toBe('global');
+    expect(shapes.memberof).toBeUndefined();
+  });
+
+  it('nests a class under the namespace via module:Shapes.Circle', () => {
+    const circle = byLongname('module:Shapes.Circle')!;
+    expect(circle.kind).toBe('class');
+    expect(circle.memberof).toBe('module:Shapes');
+    expect(circle.scope).toBe('static');
+  });
+
+  it('nests an instance field under the namespaced class', () => {
+    const radius = byLongname('module:Shapes.Circle#radius')!;
+    expect(radius.kind).toBe('member');
+    expect(radius.memberof).toBe('module:Shapes.Circle');
+    expect(radius.scope).toBe('instance');
+  });
+
+  it('nests a namespaced constant as a static member', () => {
+    const pi = byLongname('module:Shapes.PI')!;
+    expect(pi.kind).toBe('member');
+    expect(pi.memberof).toBe('module:Shapes');
+    expect(pi.scope).toBe('static');
   });
 });
 

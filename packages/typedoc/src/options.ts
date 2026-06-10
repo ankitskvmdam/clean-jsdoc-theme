@@ -1,0 +1,92 @@
+/**
+ * The `cleanJsdocTheme` TypeDoc option block — declaration + typed reader.
+ *
+ * The plugin declares ONE namespaced option (`cleanJsdocTheme`, a
+ * `ParameterType.Object`) so users configure the theme from a single block in
+ * `typedoc.json`, mirroring the JSDoc bridge's flat `opts`:
+ *
+ * ```jsonc
+ * {
+ *   "plugin": ["@clean-jsdoc-theme/typedoc"],
+ *   "outputs": [{ "name": "clean-jsdoc-theme", "path": "docs" }],
+ *   "cleanJsdocTheme": {
+ *     "siteName": "My Library",
+ *     "fonts": { "heading": "Fraunces", "body": "Spline Sans" },
+ *     "sectionOrder": ["Classes", "Interfaces", "Enums", "Typedefs"],
+ *     "menu": [{ "id": "home", "title": "Home", "link": "/" }],
+ *     "clubSidebarItems": true,
+ *     "copyPage": true,
+ *     "strict": false
+ *   }
+ * }
+ * ```
+ *
+ * Because the block is a dedicated namespace (not JSDoc's shared flat `opts`),
+ * the writer validates it with `unknownKeyPolicy: 'warn-all'` — every
+ * unrecognized key is flagged (with a "did you mean" hint when close).
+ */
+import { ParameterType } from 'typedoc';
+import type { Application, DeclarationOption } from 'typedoc';
+
+/** The TypeDoc option name carrying the whole theme block. */
+export const OPTION_NAME = 'cleanJsdocTheme';
+
+/**
+ * The raw `cleanJsdocTheme` block as read from `typedoc.json`. Every field is
+ * `unknown` because TypeDoc does not type-check Object options — the writer runs
+ * it through `validateThemeOpts` + the `normalize*` helpers, exactly like the
+ * JSDoc bridge does with `env.opts`.
+ */
+export interface CleanJsdocThemeBlock {
+  /** Header/footer site identity — a string or a `{ default, dark, light, alt }` logo set. */
+  siteName?: unknown;
+  /** Font overrides `{ heading, body, mono }` (Google Fonts for heading/body). */
+  fonts?: unknown;
+  /** Ordered sidebar section labels (filters + orders the API sections). */
+  sectionOrder?: unknown;
+  /** Full sidebar menu (takes precedence over `sectionOrder`). */
+  menu?: unknown;
+  /** Club prefix-grouped sidebar entries into subtrees. */
+  clubSidebarItems?: unknown;
+  /** Copy-page button config (boolean or `{ enabled?, actions? }`). */
+  copyPage?: unknown;
+  /** Custom AI prompt for the copy-page button. */
+  aiPrompt?: unknown;
+  /** Escalate validation errors (bad font / unknown key) to a hard failure. */
+  strict?: unknown;
+  [key: string]: unknown;
+}
+
+/**
+ * Declare the `cleanJsdocTheme` option on the app. Called from `load(app)`
+ * before convert. Verified against typedoc 0.28.19:
+ * `app.options.addDeclaration(decl)` accepts a `ParameterType.Object` with a
+ * `defaultValue`; `app.options.getValue('cleanJsdocTheme')` then returns the
+ * user's merged block (or the default `{}`).
+ */
+export function declareThemeOption(app: Application): void {
+  const declaration: DeclarationOption = {
+    name: OPTION_NAME,
+    help:
+      'clean-jsdoc-theme options (siteName, fonts, sectionOrder, menu, ' +
+      'clubSidebarItems, copyPage, aiPrompt, strict).',
+    type: ParameterType.Object,
+    defaultValue: {},
+  };
+  app.options.addDeclaration(declaration);
+}
+
+/**
+ * Read the `cleanJsdocTheme` block from the app's options. Returns `{}` when the
+ * option is unset or not an object, so callers never have to null-check.
+ */
+export function readThemeOption(app: Pick<Application, 'options'>): CleanJsdocThemeBlock {
+  const raw = app.options.getValue(OPTION_NAME);
+  if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+    return raw as CleanJsdocThemeBlock;
+  }
+  return {};
+}
+
+/** Keys of the `cleanJsdocTheme` block that are NOT theme opts validated by utils. */
+export const KNOWN_NON_THEME_KEYS: ReadonlySet<string> = new Set(['strict']);

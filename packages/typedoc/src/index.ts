@@ -1,5 +1,8 @@
 import type { Application, ProjectReflection } from 'typedoc';
 import { writeSite } from './write-site';
+import { declareThemeOption } from './options';
+
+export { OPTION_NAME } from './options';
 
 /**
  * The name under which this output is registered. Users select it by listing it
@@ -28,6 +31,10 @@ export const OUTPUT_NAME = 'clean-jsdoc-theme';
  * pipeline, producing a real clean-jsdoc-theme site in `path`.
  */
 export function load(app: Application): void {
+  // Declare the `cleanJsdocTheme` option block (siteName / fonts / sectionOrder
+  // / menu / …) before convert so the writer can read it.
+  declareThemeOption(app);
+
   app.outputs.addOutput(OUTPUT_NAME, async (outDir: string, project: ProjectReflection) => {
     await writeSite(outDir, project, app);
   });

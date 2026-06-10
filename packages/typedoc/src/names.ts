@@ -32,7 +32,8 @@
  *
  * The scope separator between a member and its parent depends on the member, not
  * the parent: instance → `#`, static → `.`. Members of a module/namespace (which
- * have no instances) are treated as static (`.`), matching JSDoc.
+ * have no instances) are treated as static (`.`), matching JSDoc; enum members
+ * are likewise static (`Roles.ADMIN`).
  */
 import { ReflectionKind } from 'typedoc';
 import type { DeclarationReflection, Reflection } from 'typedoc';
@@ -85,6 +86,10 @@ function scopeOf(reflection: Reflection): TDocletScope {
 
   // Members of a module/namespace are static-scoped in JSDoc (`module:m.Foo`).
   if (isModuleLike(parent)) return 'static';
+
+  // Enum members are static-scoped in JSDoc (`Roles.ADMIN`) — they read as
+  // constants on the enum, not instance fields.
+  if (parent.kindOf(ReflectionKind.Enum)) return 'static';
 
   // Inner (locals / non-exported) symbols use `~`; TypeDoc rarely surfaces them
   // as documented children, but honor the flag if present.

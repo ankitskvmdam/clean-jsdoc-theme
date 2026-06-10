@@ -13,9 +13,14 @@
  *   Property   → `member`
  *   Variable   → `member`
  *   Accessor   → `member`    (get-signature return type → `type`)
+ *   Enum       → `enum`      (with `isEnum: true`; renders as a member section)
+ *   EnumMember → `member`    (scope `static`; an entry under its enum)
+ *   TypeAlias  → `typedef`   (type → body; function-type aliases keep params/returns)
+ *   Module     → `module`    (top-level container page)
+ *   Namespace  → `namespace` (top-level container page)
  *
- * Enums / type aliases / modules / namespaces / re-exports are DEFERRED to a
- * later phase — they are skipped cleanly here and counted in {@link AdaptResult}.
+ * `Reference`/re-exports remain DEFERRED — they are skipped cleanly here and
+ * counted in {@link AdaptResult}.
  *
  * Bitflag kinds are matched with `reflection.kindOf(...)`, never `===`.
  */
@@ -59,7 +64,12 @@ const HANDLED =
   ReflectionKind.Method |
   ReflectionKind.Property |
   ReflectionKind.Variable |
-  ReflectionKind.Accessor;
+  ReflectionKind.Accessor |
+  ReflectionKind.Enum |
+  ReflectionKind.EnumMember |
+  ReflectionKind.TypeAlias |
+  ReflectionKind.Module |
+  ReflectionKind.Namespace;
 
 /** Container kinds whose children we walk into. */
 const CONTAINER =
@@ -117,26 +127,21 @@ function walk(reflection: Reflection, result: AdaptResult, resolveLink: LinkReso
       const doclet = adaptDeclaration(declaration, resolveLink);
       if (doclet) result.doclets.push(doclet);
     } else if (!reflection.kindOf(CONTAINER)) {
-      // Not a container and not handled → a deferred leaf (enum member, type
-      // alias, reference, …). Record and skip cleanly.
+      // Not a container and not handled → a deferred symbol (a `Reference`
+      // re-export, etc.). Record and skip cleanly; nothing under it is lost
+      // because a non-container has no documented children.
       result.skipped.push({
         kind: ReflectionKind[reflection.kind] ?? String(reflection.kind),
         name: reflection.name,
         longname: safeLongname(reflection),
       });
       return;
-    } else if (!reflection.kindOf(HANDLED)) {
-      // A deferred CONTAINER (enum / module / namespace) — record it but still
-      // recurse so any handled descendants are not lost.
-      result.skipped.push({
-        kind: ReflectionKind[reflection.kind] ?? String(reflection.kind),
-        name: reflection.name,
-        longname: safeLongname(reflection),
-      });
     }
   }
 
-  // Recurse into children of any container.
+  // Recurse into children of any container (handled containers — module /
+  // namespace / enum / class / interface — emit their own doclet above AND
+  // surface their members here).
   const children = (reflection as DeclarationReflection).children;
   if (children) {
     for (const child of children) walk(child, result, resolveLink);
@@ -165,6 +170,10 @@ function adaptDeclaration(
   // Critical guard: never emit longname === memberof (the self-reference bug).
   if (memberof && memberof !== longname) doclet.memberof = memberof;
 
+  // An enum carries `isEnum` so setu buckets it as a member section (matching
+  // the JSDoc `@enum` shape), not as a standalone container page.
+  if (reflection.kindOf(ReflectionKind.Enum)) doclet.isEnum = true;
+
   // Flags (readonly / virtual / optional / access).
   Object.assign(doclet, flagFields(reflection));
 
@@ -187,6 +196,15 @@ function adaptDeclaration(
     adaptContainer(reflection, doclet, resolveLink);
   } else if (reflection.kindOf(ReflectionKind.Function | ReflectionKind.Method)) {
     adaptCallable(reflection, doclet, fields.paramDescriptions, resolveLink);
+  } else if (reflection.kindOf(ReflectionKind.TypeAlias)) {
+    adaptTypeAlias(reflection, doclet, fields.paramDescriptions, resolveLink);
+  } else if (reflection.kindOf(ReflectionKind.Enum)) {
+    // The enum's `@enum {T}` member type, when uniform — purely cosmetic; its
+    // members arrive separately via the children walk.
+    const docletType = typeToDocletType(reflection.type);
+    if (docletType) doclet.type = docletType;
+  } else if (reflection.kindOf(ReflectionKind.Module | ReflectionKind.Namespace)) {
+    // Container pages — no body of their own; members come from the walk.
   } else {
     adaptValue(reflection, doclet);
   }
@@ -198,8 +216,20 @@ function adaptDeclaration(
 function docletKind(reflection: Reflection): TDocletKind | null {
   if (reflection.kindOf(ReflectionKind.Class)) return 'class';
   if (reflection.kindOf(ReflectionKind.Interface)) return 'interface';
+  if (reflection.kindOf(ReflectionKind.Module)) return 'module';
+  if (reflection.kindOf(ReflectionKind.Namespace)) return 'namespace';
+  if (reflection.kindOf(ReflectionKind.Enum)) return 'enum';
+  if (reflection.kindOf(ReflectionKind.TypeAlias)) return 'typedef';
   if (reflection.kindOf(ReflectionKind.Function | ReflectionKind.Method)) return 'function';
-  if (reflection.kindOf(ReflectionKind.Property | ReflectionKind.Variable | ReflectionKind.Accessor))
+  // Enum members render as static member entries under the enum (`Roles.ADMIN`).
+  if (
+    reflection.kindOf(
+      ReflectionKind.Property |
+        ReflectionKind.Variable |
+        ReflectionKind.Accessor |
+        ReflectionKind.EnumMember,
+    )
+  )
     return 'member';
   return null;
 }
@@ -271,6 +301,69 @@ function adaptCallable(
     if (returnType) ret.type = returnType;
     doclet.returns = [ret, ...(doclet.returns?.slice(1) ?? [])];
   }
+}
+
+/**
+ * Type alias → `typedef`. Three shapes, matching JSDoc's `@typedef` doclets:
+ *
+ *   - A **function-type** alias (`type Fn = (x: number) => boolean`) is modelled
+ *     by TypeDoc (0.28) as a `ReflectionType` whose `declaration` carries
+ *     `signatures`. We surface `type: {names:['function']}` + the signature's
+ *     `params`/`returns` (mirrors JSDoc's `@callback`).
+ *   - An **object-literal** alias (`type Point = { x: number; y: number }`) is a
+ *     TypeAlias reflection that carries the members directly as its own
+ *     `children` (TypeDoc inlines the object literal); each becomes a
+ *     `properties[]` entry (JSDoc's `@property` list). The TypeAlias is NOT a
+ *     container, so the walk never re-emits these children as standalone doclets.
+ *   - Anything else (unions, primitives, references) keeps a single readable
+ *     `type` string via `type.toString()`.
+ */
+function adaptTypeAlias(
+  reflection: DeclarationReflection,
+  doclet: TDoclet,
+  paramDescriptions: Map<string, string>,
+  resolveLink: LinkResolver,
+): void {
+  const type = reflection.type;
+  const declaration =
+    type && type.type === 'reflection'
+      ? (type as { declaration?: DeclarationReflection }).declaration
+      : undefined;
+
+  // Function-type alias: lift the first call signature's params/returns. The
+  // signatures may live on the reflection itself or on the reflection-type's
+  // inlined declaration, depending on how TypeDoc modelled it.
+  const signature = reflection.signatures?.[0] ?? declaration?.signatures?.[0];
+  if (signature) {
+    doclet.type = { names: ['function'] };
+    const params = adaptParameters(signature, paramDescriptions, resolveLink);
+    if (params.length) doclet.params = params;
+    const returnType = typeToDocletType(signature.type);
+    if (returnType) doclet.returns = [{ type: returnType }];
+    return;
+  }
+
+  // Object-literal alias: properties live directly on the alias's `children`
+  // (TypeDoc 0.28) or on the inlined reflection-type declaration. Each → a
+  // `properties[]` entry.
+  const children = reflection.children ?? declaration?.children;
+  if (children && children.length) {
+    doclet.type = { names: ['Object'] };
+    doclet.properties = children.map((child) => {
+      const prop: TDocletParam = { name: child.name };
+      const propType = typeToDocletType(child.getSignature?.type ?? child.type);
+      if (propType) prop.type = propType;
+      if (child.flags?.isOptional) prop.optional = true;
+      const description = summaryToHtml(child.comment, resolveLink);
+      if (description) prop.description = description;
+      return prop;
+    });
+    return;
+  }
+
+  // Plain alias (union / primitive / reference): a single readable type string.
+  const docletType = typeToDocletType(type);
+  if (docletType) doclet.type = docletType;
 }
 
 /** Property / variable / accessor: value type → `type`, default → `defaultvalue`. */

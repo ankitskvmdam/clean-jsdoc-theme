@@ -59,10 +59,12 @@ clean-jsdoc-theme/
 │   ├── rang/                  # @clean-jsdoc-theme/rang   — Preact component library
 │   ├── dwar/                  # @clean-jsdoc-theme/dwar   — SiteManifest → HTML/CSS/JS
 │   ├── clean-jsdoc-theme/     # clean-jsdoc-theme         — the JSDoc theme entry (bridge)
+│   ├── typedoc/               # @clean-jsdoc-theme/typedoc — TypeDoc plugin (bridge)
 │   ├── aadesh/                # @clean-jsdoc-theme/aadesh — CLI surface (stub)
 │   └── bhasha/                # @clean-jsdoc-theme/bhasha — i18n surface (stub)
 ├── examples/
-│   └── basic/                 # working JSDoc fixture: `pnpm run docs` → dist/
+│   ├── basic/                 # working JSDoc fixture: `pnpm run docs` → dist/
+│   └── typedoc-basic/         # working TypeDoc fixture: `pnpm run docs` → dist/
 ├── docs-site/                 # dogfood docs site: prose-first `opts.docs` build
 ├── ARCHITECTURE.md            # this file
 ├── MIGRATION.md               # v4 → v5 migration guide
@@ -502,6 +504,53 @@ clean-jsdoc-theme/src/
 
 setu and dwar are ESM-only; JSDoc 4 uses `require()`, so `publish.ts` (CJS) loads
 them via dynamic `import()` of a resolved `file://` URL.
+
+### `@clean-jsdoc-theme/typedoc` — the TypeDoc plugin
+
+The TypeDoc twin of the JSDoc bridge: it feeds TypeDoc's reflection tree through
+the SAME `setu → dwar` pipeline, so a TypeDoc project gets identical output (SSR
+HTML + co-located `.md` + lazy islands + fuzzy search + optional Pagefind). A
+TypeDoc **plugin** (`load(app)`) that registers a custom **output** — selected
+via the `outputs` option, not a CSS theme extending `DefaultTheme`. ESM all the
+way, so setu/dwar/utils are imported directly (no CJS dynamic-import dance).
+
+```
+typedoc/src/
+├── index.ts                # load(app) — declares the cleanJsdocTheme option,
+│                           #   registers app.outputs.addOutput('clean-jsdoc-theme',
+│                           #   writeSite). Selected via typedoc.json `outputs`.
+├── write-site.ts           # the output writer (path, project, app): reads +
+│                           #   validates the cleanJsdocTheme block (utils
+│                           #   validateThemeOpts, unknownKeyPolicy 'warn-all' since
+│                           #   it's a dedicated namespace; bad font/typo only WARNS
+│                           #   unless `strict`), adapts reflections → TDoclet[] →
+│                           #   salty.taffy → setu generateSite → dwar render →
+│                           #   write files → Pagefind. Threads validated siteName/
+│                           #   fonts + normalized sectionOrder/menu/clubSidebarItems/
+│                           #   copyPage/aiPrompt through. Prints the utils
+│                           #   formatBuildReport (node:zlib gzip sizer — allowed here,
+│                           #   it's the bridge, not utils). Holds defaultTheme.
+├── reflection-to-doclets.ts# THE adapter: ProjectReflection → flat TDoclet[].
+│                           #   Class/Interface/Function/Method/Property/Variable/
+│                           #   Accessor/Enum(+isEnum)/EnumMember/TypeAlias(typedef)/
+│                           #   Module/Namespace. Constructor params fold into the
+│                           #   class; Reference/re-exports deferred (logged). Matches
+│                           #   kinds via reflection.kindOf (bitflags), never ===.
+├── names.ts                # synthesize longname/memberof/scope with #/./~ +
+│                           #   module: prefixes setu queries against.
+├── comment.ts              # Comment/CommentDisplayPart[] → HTML (mdast→hast→html,
+│                           #   setu's pipeline) + {@link} → JSDoc {@link}; block tags
+│                           #   → params/returns/throws/examples/deprecated/see/category.
+├── types.ts                # TypeDoc Type → { names: [type.toString()] } (v1).
+├── options.ts              # the cleanJsdocTheme ParameterType.Object declaration +
+│                           #   typed reader (siteName/fonts/sectionOrder/menu/
+│                           #   clubSidebarItems/copyPage/aiPrompt/strict).
+└── write-output-files.ts   # mkdir -p + writeFile loop (copied from the JSDoc bridge).
+```
+
+`NOTES.md` records the verified TypeDoc 0.28.x API facts the adapter relies on.
+The two bridges are independent leaf packages — pure helpers (`write-output-files`,
+`collectSourceFiles`) are copied, never cross-imported.
 
 ### Stubs
 
