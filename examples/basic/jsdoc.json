@@ -18,6 +18,11 @@
       "dark": "./assets/clean-jsdoc-theme-white.svg",
       "alt": "clean-jsdoc-theme"
     },
+    "fonts": {
+      "heading": "Fraunces",
+      "body": "Spline Sans",
+      "mono": "Spline Sans Mono"
+    },
     "sectionOrder": [
       "Core",
       "Services",

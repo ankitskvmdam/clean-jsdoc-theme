@@ -59,7 +59,7 @@ async function renderPage(
   aiPrompt: string | undefined,
   copyPageEnabled: boolean,
   copyPageActions: CopyPageAction[] | undefined,
-  fonts: { heading: string; body: string },
+  fonts: { heading: string; body: string; mono: string },
   shiki: ShikiThemes,
 ): Promise<{ file: OutputFile; search: SearchEntry; islands: IslandRecord[] }> {
   const islands: IslandRecord[] = [];

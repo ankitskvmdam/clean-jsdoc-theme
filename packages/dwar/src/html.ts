@@ -31,18 +31,57 @@ export interface HtmlDocumentOptions {
   islandsBase: string;
   /** Optional base path. */
   basePath?: string;
-  /** Google Fonts family names to load for headings + body text. */
-  fonts?: { heading: string; body: string };
+  /** Google Fonts family names to load for headings, body, and code. */
+  fonts?: { heading: string; body: string; mono: string };
+}
+
+/** CSS generic family keywords — never requested from Google Fonts. */
+const GENERIC_FAMILIES = new Set([
+  'serif',
+  'sans-serif',
+  'monospace',
+  'cursive',
+  'fantasy',
+  'system-ui',
+  'ui-serif',
+  'ui-sans-serif',
+  'ui-monospace',
+  'ui-rounded',
+  'math',
+  'emoji',
+  'fangsong',
+  'inherit',
+  'initial',
+  'revert',
+  'unset',
+]);
+
+/**
+ * The first concrete family in a CSS font stack — unquoted and trimmed. Returns
+ * '' when the stack leads with a generic keyword (e.g. the default `mono` stack
+ * `ui-monospace, …`), so a system stack never gets requested from Google Fonts.
+ */
+function primaryFamily(value: string): string {
+  const first = (value.split(',')[0] ?? '').trim().replace(/^['"]|['"]$/g, '');
+  return !first || GENERIC_FAMILIES.has(first.toLowerCase()) ? '' : first;
 }
 
 /**
- * Build the Google Fonts `<link>` block for the configured heading/body
- * families. Families are deduped (heading === body emits one) and requested
- * at the weights the theme uses (400–700). Returns '' when no fonts are set.
+ * Build the Google Fonts `<link>` block for the configured heading/body/mono
+ * families. Each family is reduced to its primary name (so a `mono` value that
+ * is a system stack contributes nothing), deduped (heading === body emits one),
+ * and requested at the weights the theme uses (400–700). Returns '' when no
+ * loadable family is set.
  */
-function buildGoogleFontsLinks(fonts?: { heading: string; body: string }): string {
+export function buildGoogleFontsLinks(fonts?: {
+  heading: string;
+  body: string;
+  mono: string;
+}): string {
   if (!fonts) return '';
-  const families = [...new Set([fonts.heading, fonts.body])].filter(Boolean);
+  const families = [
+    ...new Set([fonts.heading, fonts.body, fonts.mono].map(primaryFamily).filter(Boolean)),
+  ];
   if (families.length === 0) return '';
   const params = families
     .map(

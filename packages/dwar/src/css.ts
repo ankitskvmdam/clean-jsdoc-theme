@@ -26,6 +26,13 @@ export interface CssBuildResult {
 
 export function buildThemeVariableCss(tokens: ThemeTokens): string {
   const { colors, fonts, darkColors } = tokens;
+  // A bare `mono` family name (no comma → not already a stack) is quoted and
+  // given a monospace fallback, so a Google-loaded code font like
+  // `Spline Sans Mono` degrades to the system mono if it fails to load. A full
+  // stack (the default `ui-monospace, …`) is emitted verbatim.
+  const monoStack = fonts.mono.includes(',')
+    ? fonts.mono
+    : `'${fonts.mono}',ui-monospace,SFMono-Regular,Menlo,monospace`;
   // Emitted minified (no whitespace/comments) — the utility layer downstream is
   // already minified, so the whole stylesheet ships compact.
   const root =
@@ -42,7 +49,7 @@ export function buildThemeVariableCss(tokens: ThemeTokens): string {
     `--clean-link:oklch(0 0 0);` +
     `--clean-font-heading:'${fonts.heading}',Georgia,serif;` +
     `--clean-font-body:'${fonts.body}',system-ui,sans-serif;` +
-    `--clean-font-mono:${fonts.mono};` +
+    `--clean-font-mono:${monoStack};` +
     `}`;
 
   let dark: string;
