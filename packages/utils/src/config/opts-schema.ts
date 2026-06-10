@@ -130,6 +130,10 @@ export const THEME_OPT_KEYS = [
   'clubSidebarItems',
   'aiPrompt',
   'basePath',
+  'customCss',
+  'customCssFile',
+  'customJs',
+  'customJsFile',
 ] as const;
 
 /** Union of the recognized theme option key names. */

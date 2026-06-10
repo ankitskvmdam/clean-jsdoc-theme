@@ -246,6 +246,28 @@ interface JSDocOpts {
    */
   copyPage?: unknown;
   /**
+   * Inline custom CSS (`jsdoc.json` `"opts": { "customCss": "…" }`), injected as
+   * a `<style>` after the theme stylesheet so it can override.
+   */
+  customCss?: unknown;
+  /**
+   * Path(s) to custom CSS file(s) (`"opts": { "customCssFile": "a.css" }` or an
+   * array). Read relative to the working directory, concatenated, emitted once as
+   * `_assets/custom.<buildId>.css`, and linked after the theme stylesheet.
+   */
+  customCssFile?: unknown;
+  /**
+   * Inline custom JS (`"opts": { "customJs": "…" }`), injected as a classic
+   * `<script>` before `</body>`, after the theme's own scripts.
+   */
+  customJs?: unknown;
+  /**
+   * Path(s) to custom JS file(s) (`"opts": { "customJsFile": "a.js" }` or an
+   * array). Read relative to the working directory, concatenated, emitted once as
+   * `_assets/custom.<buildId>.js`, and referenced before `</body>`.
+   */
+  customJsFile?: unknown;
+  /**
    * JSDoc's default-template source options, read from `conf.templates.default`
    * (or, as a fallback, nested under `opts.templates`):
    *  - `outputSourceFiles` — defaults to `true`; set `false` to suppress the
@@ -328,6 +350,61 @@ function resolveTheme(
       },
       ...(siteName ? { siteName } : {}),
     },
+  };
+}
+
+/** Trim a value to a non-empty string, or `undefined`. */
+function nonEmptyString(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim().length > 0 ? value : undefined;
+}
+
+/**
+ * Read custom CSS/JS file(s) (a path or array of paths, relative to the working
+ * directory) and concatenate their contents. A file that can't be read is
+ * skipped with a warning rather than aborting the build (resilient, like
+ * `prepareSiteName`). Returns `undefined` when nothing readable is supplied.
+ */
+async function readCustomFiles(raw: unknown, label: string): Promise<string | undefined> {
+  const paths = (Array.isArray(raw) ? raw : [raw]).filter(
+    (p): p is string => typeof p === 'string' && p.trim().length > 0,
+  );
+  if (paths.length === 0) return undefined;
+
+  const parts: string[] = [];
+  for (const p of paths) {
+    try {
+      parts.push(await readFile(resolvePath(p.trim()), 'utf8'));
+    } catch {
+      console.warn(`clean-jsdoc-theme: could not read ${label} ('${p}'); skipping it.`);
+    }
+  }
+  const joined = parts.join('\n').trim();
+  return joined.length > 0 ? joined : undefined;
+}
+
+/**
+ * Resolve the custom CSS/JS injection options into render-ready `ThemeConfig`
+ * fields. Inline strings (`customCss`/`customJs`) pass through; file options
+ * (`customCssFile`/`customJsFile`) are read here — the bridge is the I/O layer,
+ * so dwar's `render()` stays pure and just emits/links the resulting content.
+ */
+async function resolveCustomAssets(opts: JSDocOpts): Promise<{
+  customCss?: string;
+  customCssFile?: string;
+  customJs?: string;
+  customJsFile?: string;
+}> {
+  const [customCssFile, customJsFile] = await Promise.all([
+    readCustomFiles(opts.customCssFile, 'customCssFile'),
+    readCustomFiles(opts.customJsFile, 'customJsFile'),
+  ]);
+  const customCss = nonEmptyString(opts.customCss)?.trim();
+  const customJs = nonEmptyString(opts.customJs)?.trim();
+  return {
+    ...(customCss ? { customCss } : {}),
+    ...(customCssFile ? { customCssFile } : {}),
+    ...(customJs ? { customJs } : {}),
+    ...(customJsFile ? { customJsFile } : {}),
   };
 }
 
@@ -903,9 +980,14 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   if (notGoogle.has('fonts.heading')) delete fonts.heading;
   if (notGoogle.has('fonts.body')) delete fonts.body;
 
+  // Custom CSS/JS (v4 parity): inline strings + file content (read here, the I/O
+  // layer). Merged onto the theme so dwar can emit/link them while render() stays
+  // pure. Empty/unset → no fields added, so behavior is unchanged when unused.
+  const customAssets = await resolveCustomAssets(opts);
+
   const absoluteDestination = resolvePath(destination);
   const result = await render(manifest, {
-    theme: resolveTheme(opts, siteName, fonts),
+    theme: { ...resolveTheme(opts, siteName, fonts), ...customAssets },
     destination: absoluteDestination,
   });
 

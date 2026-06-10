@@ -1,5 +1,68 @@
 import { describe, it, expect } from 'vitest';
-import { extractExcerpt, htmlPathFor, mdPathFor } from '../html';
+import type { Page } from '@clean-jsdoc-theme/utils';
+import { extractExcerpt, htmlPathFor, mdPathFor, renderHtmlDocument } from '../html';
+
+const basePage: Page = {
+  slug: 'x',
+  frontmatter: { title: 'X', kind: 'class' },
+  body: '',
+  headings: [],
+};
+
+function doc(extra: Record<string, unknown>): string {
+  return renderHtmlDocument({
+    page: basePage,
+    bodyHtml: '<main></main>',
+    islands: [],
+    cssHref: '/_assets/styles.b1.css',
+    islandsBase: '/_islands',
+    ...extra,
+  });
+}
+
+describe('renderHtmlDocument — custom CSS/JS', () => {
+  it('omits custom tags entirely when nothing is provided', () => {
+    const html = doc({});
+    expect(html).not.toContain('<style>');
+    expect(html).not.toContain('_assets/custom.');
+  });
+
+  it('inlines customCss as a <style> AFTER the theme stylesheet (so it overrides)', () => {
+    const html = doc({ customCss: 'body{color:red}' });
+    expect(html).toContain('<style>body{color:red}</style>');
+    expect(html.indexOf('styles.b1.css')).toBeLessThan(html.indexOf('<style>'));
+  });
+
+  it('links the customCss file AFTER the theme stylesheet, before the inline style', () => {
+    const html = doc({ customCssHref: '/_assets/custom.b1.css', customCss: 'a{}' });
+    const main = html.indexOf('styles.b1.css');
+    const link = html.indexOf('custom.b1.css');
+    const inline = html.indexOf('<style>');
+    expect(main).toBeLessThan(link);
+    expect(link).toBeLessThan(inline);
+  });
+
+  it('emits customJs inline as a classic <script> before </body>', () => {
+    const html = doc({ customJs: 'console.log(1)' });
+    expect(html).toContain('<script>console.log(1)</script>');
+    expect(html.indexOf('console.log(1)')).toBeLessThan(html.indexOf('</body>'));
+  });
+
+  it('references the customJs file via <script src> before </body>', () => {
+    const html = doc({ customJsSrc: '/_assets/custom.b1.js' });
+    expect(html).toContain('<script src="/_assets/custom.b1.js"></script>');
+  });
+
+  it('guards against </style> and </script> break-out', () => {
+    const html = doc({
+      customCss: 'a{}</style><script>evil()</script>',
+      customJs: 'x();</script><img>',
+    });
+    expect(html).not.toContain('a{}</style>');
+    expect(html).toContain('a{}<\\/style>');
+    expect(html).toContain('x();<\\/script>');
+  });
+});
 
 describe('htmlPathFor', () => {
   it('returns index.html for an empty slug', () => {

@@ -61,6 +61,7 @@ async function renderPage(
   copyPageActions: CopyPageAction[] | undefined,
   fonts: { heading: string; body: string; mono: string },
   shiki: ShikiThemes,
+  custom: { cssHref?: string; css?: string; jsSrc?: string; js?: string },
 ): Promise<{ file: OutputFile; search: SearchEntry; islands: IslandRecord[] }> {
   const islands: IslandRecord[] = [];
 
@@ -138,6 +139,10 @@ async function renderPage(
     siteName: siteNameText(siteName, manifest.pkg?.name),
     islandsBase,
     fonts,
+    customCssHref: custom.cssHref,
+    customCss: custom.css,
+    customJsSrc: custom.jsSrc,
+    customJs: custom.js,
   });
 
   const file: OutputFile = {
@@ -213,6 +218,23 @@ export async function render(
   const css = buildCss(theme.tokens, manifest.buildId);
   const cssHref = `/${css.path}`;
   const islandsBase = `/_islands`;
+
+  // Custom CSS/JS (v4 parity). Inline strings are injected verbatim into every
+  // page's shell; file-sourced content (already read by the bridge — dwar stays
+  // pure) is emitted ONCE as a build-id-stamped asset and linked, so it caches
+  // across pages. Empty/whitespace-only values are treated as absent.
+  const customCss = theme.customCss?.trim() || undefined;
+  const customJs = theme.customJs?.trim() || undefined;
+  const customCssFile = theme.customCssFile?.trim() || undefined;
+  const customJsFile = theme.customJsFile?.trim() || undefined;
+  const customCssPath = `_assets/custom.${manifest.buildId}.css`;
+  const customJsPath = `_assets/custom.${manifest.buildId}.js`;
+  const custom = {
+    cssHref: customCssFile ? `/${customCssPath}` : undefined,
+    css: customCss,
+    jsSrc: customJsFile ? `/${customJsPath}` : undefined,
+    js: customJs,
+  };
   // The fuzzy-search index the cmdk island fetches. Build-id stamped so it
   // cache-busts alongside the stylesheet/chunks.
   const searchIndexPath = `_assets/search-index.${manifest.buildId}.json`;
@@ -247,6 +269,7 @@ export async function render(
         copyPageActions,
         theme.tokens.fonts,
         theme.tokens.shiki,
+        custom,
       );
       files.push(file);
       renderedPageCount++;
@@ -268,6 +291,11 @@ export async function render(
 
   // CSS file.
   files.push({ path: css.path, contents: css.contents });
+
+  // Custom CSS/JS assets (file-sourced content), emitted once and linked from
+  // every page's shell. Inline strings are injected per-page in renderHtmlDocument.
+  if (customCssFile) files.push({ path: customCssPath, contents: customCssFile });
+  if (customJsFile) files.push({ path: customJsPath, contents: customJsFile });
 
   // Fuzzy-search index fetched by the cmdk island at runtime: page entries plus
   // member deep-links. (Pagefind's full-text bundle is a separate concern.)

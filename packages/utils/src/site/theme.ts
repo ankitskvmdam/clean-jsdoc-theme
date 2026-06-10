@@ -105,4 +105,30 @@ export interface ThemeConfig {
   aiPrompt?: string;
   /** Copy-page button config (enabled + which dropdown actions). Defaults to on, all actions. */
   copyPage?: CopyPageConfig;
+  /**
+   * Inline custom CSS. Emitted as a `<style>` in `<head>` AFTER the theme
+   * stylesheet (and after any `customCssFile` link), so it can override theme
+   * styles. Raw CSS — not escaped beyond a `</style>` break-out guard.
+   */
+  customCss?: string;
+  /**
+   * Custom CSS sourced from file(s). The bridge (the I/O layer) reads the
+   * file(s) and passes the concatenated content here; dwar emits it as
+   * `_assets/custom.<buildId>.css` and links it after the theme stylesheet so
+   * it can override. (Kept separate from `customCss` so an inline string and a
+   * file can coexist, and so files get a cacheable shared asset.)
+   */
+  customCssFile?: string;
+  /**
+   * Inline custom JS. Emitted as a classic `<script>` just before `</body>`,
+   * after the theme's own scripts. Raw JS — guarded only against a `</script>`
+   * break-out.
+   */
+  customJs?: string;
+  /**
+   * Custom JS sourced from file(s). The bridge reads the file(s) and passes the
+   * concatenated content here; dwar emits it as `_assets/custom.<buildId>.js`
+   * and references it (classic `<script src>`) just before `</body>`.
+   */
+  customJsFile?: string;
 }

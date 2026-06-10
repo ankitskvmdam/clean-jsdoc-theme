@@ -469,6 +469,15 @@ Content pages also mount the `copy-page`
 island above the body (gated by `ThemeConfig.copyPage`, never on the source
 section). The full-text Pagefind bundle is a separate post-write step.
 
+**Custom CSS/JS.** `ThemeConfig` carries optional `customCss`/`customJs` (inline
+strings) and `customCssFile`/`customJsFile` (content the bridge already read from
+the user's file(s) — `render()` stays pure, the bridge owns the I/O). Inline
+strings are injected per-page (`<style>` / classic `<script>`); file content is
+emitted once as `_assets/custom.<buildId>.{css,js}` and linked. Custom CSS loads
+**after** the theme stylesheet (so it overrides); custom JS runs **last**, after
+the theme's own scripts. Both inline paths are guarded against `</style>` /
+`</script>` break-out.
+
 ### `clean-jsdoc-theme` — the JSDoc theme entry
 
 The package JSDoc loads via `jsdoc -t clean-jsdoc-theme`. A thin orchestrator.
@@ -494,6 +503,9 @@ clean-jsdoc-theme/src/
 │                         #   Source: link lands on the declaration (default) or comment.
 │                         #   Normalizes opts.sectionOrder + opts.menu + opts.clubSidebarItems
 │                         #   → setu, and opts.aiPrompt + opts.copyPage → theme.
+│                         #   Reads opts.customCss/customJs (inline) + reads
+│                         #   opts.customCssFile/customJsFile from disk → theme
+│                         #   (dwar emits/links them; render() stays pure).
 │                         #   Walks opts.docs (collectDocs: recursive, *.md/*.markdown/
 │                         #   *.html → DocInput[] w/ POSIX rel path + raw content; the
 │                         #   only place the docs tree is read) and threads docs +

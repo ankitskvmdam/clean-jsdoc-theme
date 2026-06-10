@@ -14,10 +14,14 @@ companion (`migration-map.json` at the repo root, plus the fenced JSON block in
 - **Options moved namespaces.** v4 nested theme options under
   `opts.theme_opts.*` in `jsdoc.json`. **v5 reads them directly from `opts.*`**
   (there is no `theme_opts` block in v5).
-- **Custom CSS/JS injection is removed.** `static_dir`, `include_css`,
-  `add_style_path`, `create_style`, `add_scripts`, `add_script_path`,
-  `include_js` no longer exist — Tailwind is compiled once at the theme's own
-  build time and `render()` is pure (no consumer-side CSS/JS hooks).
+- **Custom CSS/JS injection is back, under new names.** v5 supports `customCss`
+  / `customCssFile` (inline string + file path(s)) and `customJs` /
+  `customJsFile`. Custom CSS loads after the theme stylesheet so it overrides;
+  custom JS runs last. The v4 spellings (`create_style`, `include_css`,
+  `add_style_path`, `add_scripts`, `add_script_path`, `include_js`) are gone —
+  rename to the four `custom*` options. `static_dir` has no equivalent (use
+  JSDoc's own static-file config); Tailwind is still compiled at the theme's
+  build time so `render()` stays pure.
 - **Most v4 options are gone; v5 has a new, smaller surface.** Only `base_url`
   (→ `basePath`), `sections` (→ `sectionOrder`), `title` (→ `siteName`), and
   `menu` (reshaped) carry over. Everything else was removed or replaced by new
@@ -71,12 +75,12 @@ removed | new`.
 | `search`                        | —                        | removed | Search is always on in v5 (built-in fuzzy index + optional Pagefind); there is no enable/disable opt. |
 | `codepen`                       | —                        | removed | No CodePen prefill option. v5 has sandboxed embeds via the `@iframe` tag / `iframe` prose fence instead. |
 | `static_dir`                    | —                        | removed | No theme-level static-dir copying. Use JSDoc's own static-file config. |
-| `create_style`                  | —                        | removed | No inline custom CSS. Tailwind is compiled at the theme's build time; `render()` is pure. |
-| `add_style_path`                | —                        | removed | No external-CSS `<link>` injection. |
-| `include_css`                   | —                        | removed | No custom CSS file inclusion. |
-| `add_scripts`                   | —                        | removed | No inline custom JS injection. |
-| `add_script_path`               | —                        | removed | No external-JS `<script>` injection. |
-| `include_js`                    | —                        | removed | No custom JS file inclusion (per-target included scripts gone too). |
+| `create_style`                  | `customCss`              | renamed | Inline custom CSS string. Injected as a `<style>` after the theme stylesheet (so it overrides). |
+| `include_css`                   | `customCssFile`          | renamed | Custom CSS file(s) (path or array). Read by the bridge, emitted once as `_assets/custom.<buildId>.css`, linked after the theme stylesheet. |
+| `add_style_path`                | `customCssFile`          | changed | Was an external-CSS `<link>`; now the file is read and emitted as a cached asset link. Use a `customCssFile` path. |
+| `add_scripts`                   | `customJs`               | renamed | Inline custom JS string. Injected as a classic `<script>` before `</body>`, after the theme's own scripts. |
+| `include_js`                    | `customJsFile`           | renamed | Custom JS file(s) (path or array). Emitted once as `_assets/custom.<buildId>.js` and referenced before `</body>`. |
+| `add_script_path`               | `customJsFile`           | changed | Was an external-JS `<script>`; now the file is read and emitted as a cached asset. Use a `customJsFile` path. |
 | `footer`                        | —                        | removed | No `footer` HTML/string option. Footer content derives from `siteName`/`pkg`. |
 | `exclude_inherited`             | —                        | removed | No exclude-inherited-symbols option. |
 | `displayModuleHeader`           | —                        | removed | No module-header toggle. |
@@ -163,7 +167,8 @@ These have no v4 counterpart. Sourced from the `JSDocOpts` interface in
       { "title": "GitHub", "link": "https://github.com/me/lib", "icon": "github" }
     ],
     "sectionOrder": ["Classes", "Modules", "Global"],
-    "docs": "./docs"
+    "docs": "./docs",
+    "customCssFile": "./static/custom.css"
   }
 }
 ```
@@ -175,7 +180,7 @@ Notes on the diff:
 - `menu` entries reshaped (`target`/`class` dropped, `icon` added; `id` selects
   built-ins).
 - `search: true` dropped (always on). `footer` dropped (derived). `include_css`
-  dropped (no custom CSS) — replace styling needs with theme tokens.
+  → `customCssFile` (and `create_style` → `customCss` for inline CSS).
 - `plugins: ["plugins/markdown"]` no longer required for the theme.
 
 ## 6. Behavioral / breaking changes
@@ -191,11 +196,15 @@ Each entry: **what changed → why → migration action.**
   assets live under `_assets/` (e.g. `_assets/styles.<buildId>.css`). Action:
   none required, but any v4-era hardcoded asset paths / scraping of v4 output
   will break — regenerate and re-link.
-- **Custom CSS/JS injection removed.** Why: Tailwind v4 is compiled once at the
-  theme's own build time, so `render()` is pure and consumers need no Tailwind
-  config; there are no consumer-side CSS/JS hooks. Action: remove
-  `create_style`/`include_css`/`add_style_path`/`add_scripts`/
-  `add_script_path`/`include_js`/`static_dir`; restyle via theme tokens.
+- **Custom CSS/JS injection renamed (not removed).** Why: the four v4 CSS/JS
+  options were consolidated into `customCss`/`customCssFile`/`customJs`/
+  `customJsFile`; the bridge reads files (so `render()` stays pure) and emits
+  them as cached `_assets/custom.<buildId>.{css,js}` assets. Custom CSS loads
+  after the theme stylesheet (overrides it); custom JS runs last. Action: rename
+  `create_style`→`customCss`, `include_css`/`add_style_path`→`customCssFile`,
+  `add_scripts`→`customJs`, `include_js`/`add_script_path`→`customJsFile`. Only
+  `static_dir` has no equivalent (use JSDoc's own static-file config); deeper
+  restyling is still best done via theme tokens.
 - **Theme system replaced.** Why: no `default_theme`/`fallback-*` picker; v5
   ships light + dark token palettes and a runtime toggle. Action: drop
   `default_theme`; use `fonts` (and theme tokens) for customization.
@@ -222,8 +231,8 @@ For each: the v5 replacement, or "no replacement."
 | `search` toggle                   | Always-on fuzzy search + optional Pagefind (no opt). |
 | `codepen`                         | `@iframe` block tag / `iframe` prose fence (sandboxed embeds). |
 | `static_dir`                      | JSDoc's own static-file copying. |
-| `create_style` / `include_css` / `add_style_path` | No replacement — Tailwind compiled at theme build; restyle via theme tokens. |
-| `add_scripts` / `include_js` / `add_script_path`   | No replacement (no custom JS injection). |
+| `create_style` / `include_css` / `add_style_path` | Renamed → `customCss` (inline) / `customCssFile` (file path or array). |
+| `add_scripts` / `include_js` / `add_script_path`   | Renamed → `customJs` (inline) / `customJsFile` (file path or array). |
 | `footer`                          | Footer derived from `siteName`/`pkg`. |
 | `exclude_inherited`               | No replacement opt. |
 | `displayModuleHeader`             | No replacement opt. |
@@ -299,12 +308,12 @@ canonical copy is `migration-map.json` at the repo root; it is mirrored here.
     "search": { "v5": null, "status": "removed" },
     "codepen": { "v5": null, "status": "removed" },
     "static_dir": { "v5": null, "status": "removed" },
-    "create_style": { "v5": null, "status": "removed" },
-    "add_style_path": { "v5": null, "status": "removed" },
-    "include_css": { "v5": null, "status": "removed" },
-    "add_scripts": { "v5": null, "status": "removed" },
-    "add_script_path": { "v5": null, "status": "removed" },
-    "include_js": { "v5": null, "status": "removed" },
+    "create_style": { "v5": "customCss", "status": "renamed" },
+    "add_style_path": { "v5": "customCssFile", "status": "changed" },
+    "include_css": { "v5": "customCssFile", "status": "renamed" },
+    "add_scripts": { "v5": "customJs", "status": "renamed" },
+    "add_script_path": { "v5": "customJsFile", "status": "changed" },
+    "include_js": { "v5": "customJsFile", "status": "renamed" },
     "footer": { "v5": null, "status": "removed" },
     "exclude_inherited": { "v5": null, "status": "removed" },
     "displayModuleHeader": { "v5": null, "status": "removed" },

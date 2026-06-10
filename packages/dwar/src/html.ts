@@ -34,6 +34,14 @@ export interface HtmlDocumentOptions {
   basePath?: string;
   /** Google Fonts family names to load for headings, body, and code. */
   fonts?: { heading: string; body: string; mono: string };
+  /** Href of the emitted custom-CSS asset (`_assets/custom.<buildId>.css`), linked after the theme stylesheet. */
+  customCssHref?: string;
+  /** Inline custom CSS, emitted as a `<style>` after the stylesheet/customCssHref so it can override. */
+  customCss?: string;
+  /** Src of the emitted custom-JS asset (`_assets/custom.<buildId>.js`), referenced before `</body>`. */
+  customJsSrc?: string;
+  /** Inline custom JS, emitted as a classic `<script>` before `</body>`, last of all scripts. */
+  customJs?: string;
 }
 
 /** CSS generic family keywords — never requested from Google Fonts. */
@@ -98,6 +106,25 @@ export function buildGoogleFontsLinks(fonts?: {
   );
 }
 
+/**
+ * Guard raw user CSS against breaking out of its `<style>` element. CSS has no
+ * comment/quote that can terminate the element, so the only break-out is a
+ * literal `</style` — split it so the parser never sees a closing tag. The CSS
+ * itself is otherwise emitted verbatim (it must not be HTML-escaped).
+ */
+function escapeStyleContent(css: string): string {
+  return css.replace(/<\/(style)/gi, '<\\/$1');
+}
+
+/**
+ * Guard raw user JS against breaking out of its `<script>` element: a literal
+ * `</script` in a string/regex/comment would close the block. Split it the
+ * standard way (`<\/script`) — harmless in JS source, parser-safe in HTML.
+ */
+function escapeScriptContent(js: string): string {
+  return js.replace(/<\/(script)/gi, '<\\/$1');
+}
+
 function escapeHtml(text: string): string {
   return String(text)
     .replace(/&/g, '&amp;')
@@ -137,6 +164,7 @@ export function collectIslandNamesOnPage(islands: IslandRecord[]): IslandName[] 
 
 export function renderHtmlDocument(opts: HtmlDocumentOptions): string {
   const { page, bodyHtml, islands, cssHref, siteName, islandsBase, fonts } = opts;
+  const { customCssHref, customCss, customJsSrc, customJs } = opts;
   const titleSuffix = siteName ? ` | ${escapeHtml(siteName)}` : '';
   const title = `${escapeHtml(page.frontmatter.title)}${titleSuffix}`;
   const description = escapeHtml(page.frontmatter.description ?? '');
@@ -156,6 +184,10 @@ export function renderHtmlDocument(opts: HtmlDocumentOptions): string {
     `<script>${themeScript}</script>` +
     buildGoogleFontsLinks(fonts) +
     `<link rel="stylesheet" href="${escapeHtml(cssHref)}" />` +
+    // Custom CSS comes AFTER the theme stylesheet so it can override: the file
+    // asset first, then the inline string (so inline beats the file).
+    (customCssHref ? `<link rel="stylesheet" href="${escapeHtml(customCssHref)}" />` : '') +
+    (customCss ? `<style>${escapeStyleContent(customCss)}</style>` : '') +
     `</head>` +
     `<body>` +
     bodyHtml +
@@ -163,6 +195,10 @@ export function renderHtmlDocument(opts: HtmlDocumentOptions): string {
     `<script type="module">${loaderScript}</script>` +
     `<script>${getHeadingAnchorsScript()}</script>` +
     `<script>${getScrollbarScript()}</script>` +
+    // Custom JS runs last, after the theme's own scripts: the file asset first,
+    // then the inline string. Classic scripts (not modules) for v4 parity.
+    (customJsSrc ? `<script src="${escapeHtml(customJsSrc)}"></script>` : '') +
+    (customJs ? `<script>${escapeScriptContent(customJs)}</script>` : '') +
     `</body>` +
     `</html>`
   );

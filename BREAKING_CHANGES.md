@@ -22,10 +22,15 @@ v5 is a ground-up rewrite. Breaking changes, by category:
 
 ### Removed features
 
-- **Custom CSS/JS injection removed:** `create_style`, `include_css`,
-  `add_style_path`, `add_scripts`, `add_script_path`, `include_js`, `static_dir`.
-  Tailwind is compiled at the theme's build time; `render()` is pure.
-  → [MIGRATION §7](./MIGRATION.md#7-removed-features).
+- **Custom CSS/JS injection renamed (not removed):** the v4 CSS/JS options were
+  consolidated into `customCss`/`customCssFile` and `customJs`/`customJsFile`
+  (inline string + file path or array). Custom CSS loads after the theme
+  stylesheet (overrides it); custom JS runs last. Files are emitted as cached
+  `_assets/custom.<buildId>.{css,js}` assets, so `render()` stays pure. Rename
+  `create_style`→`customCss`, `include_css`/`add_style_path`→`customCssFile`,
+  `add_scripts`→`customJs`, `include_js`/`add_script_path`→`customJsFile`. Only
+  `static_dir` has no equivalent (use JSDoc's own static-file config).
+  → [MIGRATION §4](./MIGRATION.md#4-option-mapping-table).
 - **Other removed options:** `default_theme`/`fallback-*`, `favicon`,
   `homepageTitle`, `meta`, `search` (always on now), `codepen`, `footer`,
   `exclude_inherited`, `displayModuleHeader`, `sort`, `shouldRemoveScrollbarStyle`.
