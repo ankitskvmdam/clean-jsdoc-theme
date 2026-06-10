@@ -1,6 +1,6 @@
 {
   "name": "@clean-jsdoc-theme/dwar",
-  "version": "5.0.0-alpha.0",
+  "version": "5.0.0-alpha.1",
   "description": "Astro theme integration for clean-jsdoc-theme",
   "type": "module",
   "main": "./dist/index.js",

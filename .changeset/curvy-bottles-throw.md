@@ -1,12 +1,12 @@
 ---
-'clean-jsdoc-theme': major
-'@clean-jsdoc-theme/typedoc': major
-'@clean-jsdoc-theme/aadesh': major
-'@clean-jsdoc-theme/bhasha': major
-'@clean-jsdoc-theme/utils': major
-'@clean-jsdoc-theme/dwar': major
-'@clean-jsdoc-theme/rang': major
-'@clean-jsdoc-theme/setu': major
+'clean-jsdoc-theme': patch
+'@clean-jsdoc-theme/typedoc': patch
+'@clean-jsdoc-theme/aadesh': patch
+'@clean-jsdoc-theme/bhasha': patch
+'@clean-jsdoc-theme/utils': patch
+'@clean-jsdoc-theme/dwar': patch
+'@clean-jsdoc-theme/rang': patch
+'@clean-jsdoc-theme/setu': patch
 ---
 
 v5 alpha release to test end to end pipeline

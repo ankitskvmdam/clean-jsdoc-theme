@@ -1,6 +1,6 @@
 {
   "name": "clean-jsdoc-theme",
-  "version": "5.0.0-alpha.0",
+  "version": "5.0.0-alpha.1",
   "description": "A modern, markdown-first JSDoc theme with i18n support",
   "main": "./dist/publish.js",
   "types": "./dist/publish.d.ts",
