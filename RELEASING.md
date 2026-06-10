@@ -142,3 +142,42 @@ tag — a tag containing a `-` (e.g. `v5.0.0-beta.1`, `v5.0.0-alpha.0`) publishe
 under **`next`**; any other tag (e.g. `v5.0.0`) publishes under **`latest`**.
 Commit `.changeset/pre.json` while you're in a prerelease line, and remember to
 `pre exit` before cutting the stable release.
+
+## Release prerequisites
+
+Before the first real tag push can publish, the following must be set up. These
+are one-time account/repo configuration steps, not part of any script.
+
+### npm registry access
+
+- The **`@clean-jsdoc-theme` scope/org** must exist on npm, and the publishing
+  identity (the `NPM_TOKEN` automation token's account, or the trusted-publisher
+  identity) must have publish rights to it. All seven scoped packages publish
+  under this scope.
+- The unscoped **`clean-jsdoc-theme`** package already exists on npm from v4 and
+  must be owned by — or grant publish access to — the same identity. Confirm
+  publish access to it before the first v5 tag; the unscoped entry point is the
+  riskiest package to publish for the first time.
+
+### Auth: `NPM_TOKEN` secret OR OIDC trusted publishing
+
+Either of the following authenticates the `Publish` step:
+
+- **`NPM_TOKEN` repo secret (current default).** Create an npm **automation**
+  access token with publish rights to all eight packages and add it as the
+  `NPM_TOKEN` repository secret (Settings → Secrets and variables → Actions). The
+  release workflow reads it via `env.NPM_TOKEN`.
+- **OIDC trusted publishing (token-less, preferred upgrade).** Configure each npm
+  package's **trusted publisher** to point at this repository and the `release`
+  workflow. The workflow already grants `id-token: write` and sets
+  `NPM_CONFIG_PROVENANCE: true`, so once trusted publishing is enabled the
+  `NPM_TOKEN` secret and the `env.NPM_TOKEN` line in `release.yml` can be removed.
+
+Either way, `NPM_CONFIG_PROVENANCE: true` plus `id-token: write` make npm emit
+**provenance attestations** for the published packages.
+
+### Branch protection
+
+Enable branch protection on **`master`** requiring the **CI** workflow to pass
+before merge. This keeps `master` green so that every commit reachable from a
+release tag has already passed build/test/typecheck/lint and the changeset gate.
