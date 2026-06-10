@@ -54,11 +54,17 @@ jobs:
       # `NPM_TOKEN` env line below can be dropped — `id-token: write` +
       # NPM_CONFIG_PROVENANCE handle auth and provenance token-lessly.
       - name: Publish
-        run: pnpm changeset publish --tag ${{ steps.disttag.outputs.tag }}
+        run: |
+          # Relying on setup-node's userconfig + ${NODE_AUTH_TOKEN} expansion is
+          # flaky with `pnpm changeset publish` (it produced ENEEDAUTH on every
+          # package). Write the auth line explicitly into the workspace-root
+          # .npmrc, which pnpm reads for every package it publishes.
+          if [ -z "${NPM_TOKEN}" ]; then
+            echo "::error::NPM_TOKEN secret is empty or missing. Add it under repo Settings -> Secrets and variables -> Actions (name: NPM_TOKEN)."
+            exit 1
+          fi
+          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> .npmrc
+          pnpm changeset publish --tag ${{ steps.disttag.outputs.tag }}
         env:
-          # setup-node's generated .npmrc authenticates via NODE_AUTH_TOKEN, so
-          # that's the variable that actually authorizes the publish. NPM_TOKEN
-          # is kept as a belt-and-suspenders alias some tooling also reads.
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }} # fallback while OIDC isn't enabled
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true # emit npm provenance attestations
