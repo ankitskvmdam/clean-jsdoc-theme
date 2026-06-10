@@ -1,4 +1,6 @@
-# Headers
+# Markdown Examples
+
+## Headers
 
 ```
 # h1 Heading 8-)
@@ -8,13 +10,6 @@
 ##### h5 Heading
 ###### h6 Heading
 
-Alternatively, for H1 and H2, an underline-ish style:
-
-Alt-H1
-======
-
-Alt-H2
-------
 ```	
 
 # h1 Heading 8-)
@@ -23,14 +18,6 @@ Alt-H2
 #### h4 Heading
 ##### h5 Heading
 ###### h6 Heading
-
-Alternatively, for H1 and H2, an underline-ish style:
-
-Alt-H1
-======
-
-Alt-H2
-------
 
 ------
 
@@ -607,7 +594,7 @@ Use an ```` ```iframe ```` fenced block to embed live, sandboxed content
 https://codepen.io/team/codepen/embed/PNaGbb height=400 title="Demo"
 ```
 
-## [Footnotes](https://github.com/markdown-it/markdown-it-footnote)
+# [Footnotes](https://github.com/markdown-it/markdown-it-footnote)
 
 ```
 Footnote 1 link[^first].
