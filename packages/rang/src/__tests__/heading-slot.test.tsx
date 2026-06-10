@@ -11,7 +11,7 @@ describe('MdxH1 + HeaderSlotContext', () => {
     const html = render(
       <HeaderSlotContext.Provider value={slot(<Copy />)}>
         <MdxH1 id="title">Title</MdxH1>
-      </HeaderSlotContext.Provider>,
+      </HeaderSlotContext.Provider>
     );
     expect(html).toContain('justify-between');
     expect(html).toContain('flex-wrap');
@@ -27,7 +27,7 @@ describe('MdxH1 + HeaderSlotContext', () => {
           <MdxH1>First</MdxH1>
           <MdxH1>Second</MdxH1>
         </div>
-      </HeaderSlotContext.Provider>,
+      </HeaderSlotContext.Provider>
     );
     expect((html.match(/data-slot/g) ?? []).length).toBe(1);
   });

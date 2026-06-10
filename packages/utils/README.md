@@ -26,10 +26,25 @@ The package is types-first; everything is re-exported from the barrel:
 
 ```ts
 import type {
-  SiteManifest, Page, PageKind, NavNode, SearchEntry, Frontmatter, Heading,
-  OutputFile, RenderOptions, RenderResult, RenderError,
-  ThemeConfig, ThemeTokens, ThemeColors, ComponentOverrides, SiteName,
-  IslandName, IslandPropsMap, TDoclet,
+  SiteManifest,
+  Page,
+  PageKind,
+  NavNode,
+  SearchEntry,
+  Frontmatter,
+  Heading,
+  OutputFile,
+  RenderOptions,
+  RenderResult,
+  RenderError,
+  ThemeConfig,
+  ThemeTokens,
+  ThemeColors,
+  ComponentOverrides,
+  SiteName,
+  IslandName,
+  IslandPropsMap,
+  TDoclet,
 } from '@clean-jsdoc-theme/utils';
 
 import { slugifyHeading, slugifyPath, slugifySourcePath } from '@clean-jsdoc-theme/utils';

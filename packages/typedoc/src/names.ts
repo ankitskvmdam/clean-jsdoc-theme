@@ -132,9 +132,7 @@ export function longnameOf(reflection: Reflection): string {
   // A module/namespace nested under another container keeps the `module:` shape.
   if (isModuleLike(reflection)) {
     // `module:` only appears once, at the front of the chain.
-    const base = parentLongname.startsWith('module:')
-      ? parentLongname
-      : `module:${parentLongname}`;
+    const base = parentLongname.startsWith('module:') ? parentLongname : `module:${parentLongname}`;
     return `${base}.${name}`;
   }
 

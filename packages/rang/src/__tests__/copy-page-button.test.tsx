@@ -16,7 +16,7 @@ describe('CopyPageButton', () => {
     });
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue({ ok: true, text: () => Promise.resolve(MD) }),
+      vi.fn().mockResolvedValue({ ok: true, text: () => Promise.resolve(MD) })
     );
     openSpy = vi.fn();
     vi.stubGlobal('open', openSpy);
@@ -67,7 +67,7 @@ describe('CopyPageButton', () => {
         mdUrl="/x/index.md"
         prompt="Read {mdUrl} for {siteName}"
         siteName="Acme Docs"
-      />,
+      />
     );
     fireEvent.click(getByRole('button', { name: /More copy options/ }));
     fireEvent.click(getByRole('menuitem', { name: /Open in ChatGPT/ }));
@@ -100,7 +100,7 @@ describe('CopyPageButton', () => {
 
   it('shows only the configured dropdown actions, in order', () => {
     const { getByRole, getAllByRole } = render(
-      <CopyPageButton mdUrl="/foo/index.md" actions={['copy', 'claude']} />,
+      <CopyPageButton mdUrl="/foo/index.md" actions={['copy', 'claude']} />
     );
     fireEvent.click(getByRole('button', { name: /More copy options/ }));
     const labels = getAllByRole('menuitem').map((i) => i.textContent);
@@ -110,7 +110,9 @@ describe('CopyPageButton', () => {
   });
 
   it('renders just the primary button (no dropdown) when actions is empty', () => {
-    const { getByRole, queryByRole } = render(<CopyPageButton mdUrl="/foo/index.md" actions={[]} />);
+    const { getByRole, queryByRole } = render(
+      <CopyPageButton mdUrl="/foo/index.md" actions={[]} />
+    );
     expect(getByRole('button', { name: /Copy page/ })).toBeTruthy();
     // No dropdown trigger and nothing to open.
     expect(queryByRole('button', { name: /More copy options/ })).toBeNull();

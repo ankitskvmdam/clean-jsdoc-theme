@@ -147,27 +147,33 @@ interface MemberMetaProps {
  */
 const CHIP_TINTED: Record<string, string> = {
   // behavior
-  async: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800',
+  async:
+    'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800',
   generator:
     'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950 dark:text-violet-300 dark:border-violet-800',
   // binding
-  static: 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950 dark:text-teal-300 dark:border-teal-800',
+  static:
+    'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950 dark:text-teal-300 dark:border-teal-800',
   // mutability (neutral slate ramp)
   readonly:
     'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
   // inheritance
   abstract:
     'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200 dark:bg-fuchsia-950 dark:text-fuchsia-300 dark:border-fuchsia-800',
-  override: 'bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950 dark:text-cyan-300 dark:border-cyan-800',
+  override:
+    'bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950 dark:text-cyan-300 dark:border-cyan-800',
   // access
   public:
     'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800',
   protected:
     'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800',
-  private: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800',
+  private:
+    'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800',
 };
-const CHIP_DEPRECATED = 'bg-red-600 text-white border-red-600 dark:bg-red-600 dark:text-white dark:border-red-600';
-const CHIP_KIND = 'bg-transparent text-slate-600 border-slate-300 dark:text-slate-300 dark:border-slate-600';
+const CHIP_DEPRECATED =
+  'bg-red-600 text-white border-red-600 dark:bg-red-600 dark:text-white dark:border-red-600';
+const CHIP_KIND =
+  'bg-transparent text-slate-600 border-slate-300 dark:text-slate-300 dark:border-slate-600';
 const CHIP_FALLBACK = 'border-(--clean-border) bg-(--clean-bg-muted) text-(--clean-fg-muted)';
 
 /** Kind markers — neutral outline chips; exactly one applies per symbol. */

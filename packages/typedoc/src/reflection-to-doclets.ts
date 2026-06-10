@@ -84,18 +84,12 @@ const CONTAINER =
  * Adapt a whole project. The returned doclets are flat and ready for
  * `salty.taffy(...)`.
  */
-export function reflectionsToDoclets(
-  project: ProjectReflection,
-  logger?: AdaptLogger
-): TDoclet[] {
+export function reflectionsToDoclets(project: ProjectReflection, logger?: AdaptLogger): TDoclet[] {
   return adaptProject(project, logger).doclets;
 }
 
 /** Like {@link reflectionsToDoclets} but also returns skip diagnostics. */
-export function adaptProject(
-  project: ProjectReflection,
-  logger?: AdaptLogger
-): AdaptResult {
+export function adaptProject(project: ProjectReflection, logger?: AdaptLogger): AdaptResult {
   const result: AdaptResult = { doclets: [], skipped: [] };
   const resolveLink: LinkResolver = (target) => {
     try {
@@ -227,7 +221,7 @@ function docletKind(reflection: Reflection): TDocletKind | null {
       ReflectionKind.Property |
         ReflectionKind.Variable |
         ReflectionKind.Accessor |
-        ReflectionKind.EnumMember,
+        ReflectionKind.EnumMember
     )
   )
     return 'member';
@@ -322,7 +316,7 @@ function adaptTypeAlias(
   reflection: DeclarationReflection,
   doclet: TDoclet,
   paramDescriptions: Map<string, string>,
-  resolveLink: LinkResolver,
+  resolveLink: LinkResolver
 ): void {
   const type = reflection.type;
   const declaration =

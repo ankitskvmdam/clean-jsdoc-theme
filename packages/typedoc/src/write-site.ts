@@ -87,7 +87,7 @@ const defaultTheme: ThemeConfig = {
 function resolveTheme(
   block: CleanJsdocThemeBlock,
   siteName: SiteName | undefined,
-  fonts: ValidatedFonts,
+  fonts: ValidatedFonts
 ): ThemeConfig {
   const aiPrompt =
     typeof block.aiPrompt === 'string' && block.aiPrompt.trim() ? block.aiPrompt.trim() : undefined;
@@ -201,7 +201,7 @@ function isServableUrl(value: string): boolean {
  */
 async function prepareSiteName(
   raw: SiteName | undefined,
-  logger: AdaptApp['logger'],
+  logger: AdaptApp['logger']
 ): Promise<{ siteName: SiteName | undefined; files: { path: string; contents: Buffer }[] }> {
   if (typeof raw === 'string') {
     const trimmed = raw.trim();
@@ -231,7 +231,7 @@ async function prepareSiteName(
       out[key] = `/${served}`;
     } catch {
       logger.warn(
-        `[clean-jsdoc-theme] could not read logo image for siteName.${key} ('${v}'); using it verbatim.`,
+        `[clean-jsdoc-theme] could not read logo image for siteName.${key} ('${v}'); using it verbatim.`
       );
       out[key] = v;
     }
@@ -250,10 +250,7 @@ function renderReadme(project: ProjectReflection): string | undefined {
 }
 
 /** Extensions we treat as "source" worth emitting a viewer page for. */
-const SOURCE_EXTENSIONS = new Set([
-  '.js', '.mjs', '.cjs', '.jsx',
-  '.ts', '.mts', '.cts', '.tsx',
-]);
+const SOURCE_EXTENSIONS = new Set(['.js', '.mjs', '.cjs', '.jsx', '.ts', '.mts', '.cts', '.tsx']);
 
 /**
  * Compute project-relative paths for a set of absolute source paths by stripping
@@ -282,7 +279,7 @@ function computeRelPaths(absPaths: readonly string[]): Map<string, string> {
     const rel =
       common.length > 0 && segs.length > common.length
         ? segs.slice(common.length).join('/')
-        : segs[segs.length - 1] ?? absPaths[i];
+        : (segs[segs.length - 1] ?? absPaths[i]);
     out.set(absPaths[i], rel);
   }
   return out;
@@ -298,7 +295,7 @@ function computeRelPaths(absPaths: readonly string[]): Map<string, string> {
  */
 async function collectSourceFiles(
   doclets: readonly TDoclet[],
-  logger: AdaptApp['logger'],
+  logger: AdaptApp['logger']
 ): Promise<SourceFileInput[]> {
   const absSet = new Set<string>();
   for (const d of doclets) {
@@ -320,7 +317,7 @@ async function collectSourceFiles(
       inputs.push({ absPath: abs, relPath: relPaths.get(abs) ?? abs, content });
     } catch (err) {
       logger.warn(
-        `[clean-jsdoc-theme] could not read source file '${abs}' — ${(err as Error).message}; skipping.`,
+        `[clean-jsdoc-theme] could not read source file '${abs}' — ${(err as Error).message}; skipping.`
       );
     }
   }
@@ -338,7 +335,8 @@ async function collectSourceFiles(
 async function resolvePkg(project: ProjectReflection): Promise<SiteManifest['pkg'] | undefined> {
   const pkg: NonNullable<SiteManifest['pkg']> = {};
 
-  if (typeof project.packageName === 'string' && project.packageName) pkg.name = project.packageName;
+  if (typeof project.packageName === 'string' && project.packageName)
+    pkg.name = project.packageName;
   if (typeof project.packageVersion === 'string' && project.packageVersion) {
     pkg.version = project.packageVersion;
   }
@@ -378,7 +376,7 @@ type AdaptApp = Pick<Application, 'logger' | 'options'>;
 export async function writeSite(
   outDir: string,
   project: ProjectReflection,
-  app: AdaptApp,
+  app: AdaptApp
 ): Promise<void> {
   const destination = resolvePath(outDir);
   const logger = app.logger;
@@ -406,7 +404,7 @@ export async function writeSite(
       logger.error(formatted);
       throw new Error(
         '[clean-jsdoc-theme] cleanJsdocTheme validation failed in strict mode ' +
-          '(see the diagnostics above). Fix the errors or unset `strict`.',
+          '(see the diagnostics above). Fix the errors or unset `strict`.'
       );
     }
     logger.info(formatted);
@@ -445,7 +443,7 @@ export async function writeSite(
   const notGoogle = new Set(
     diagnostics.list
       .filter((d) => d.code === 'fonts/not-google' && d.path)
-      .map((d) => d.path as string),
+      .map((d) => d.path as string)
   );
   const fonts: ValidatedFonts = { ...value.fonts };
   if (notGoogle.has('fonts.heading')) delete fonts.heading;
@@ -469,13 +467,13 @@ export async function writeSite(
       stats: result.stats,
       destination,
       gzipSizer,
-    }),
+    })
   );
 
   // Render failures are reported, never thrown — the rest of the site is intact.
   if (result.errors && result.errors.length > 0) {
     logger.warn(
-      `[clean-jsdoc-theme] ${result.errors.length} page(s) failed to render and were skipped:`,
+      `[clean-jsdoc-theme] ${result.errors.length} page(s) failed to render and were skipped:`
     );
     for (const e of result.errors) logger.warn(`  - ${e.slug}: ${e.message}`);
   }

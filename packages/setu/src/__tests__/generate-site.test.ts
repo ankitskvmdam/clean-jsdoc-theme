@@ -51,14 +51,12 @@ describe('enumerateLongnamesByKind', () => {
   it('returns documented longnames for each container kind', () => {
     const c = getJSDocTaffyData();
     expect(enumerateLongnamesByKind(c, 'module')).toEqual(
-      expect.arrayContaining(['module:CoreSchema', 'module:UserService']),
+      expect.arrayContaining(['module:CoreSchema', 'module:UserService'])
     );
     expect(enumerateLongnamesByKind(c, 'namespace')).toEqual(
-      expect.arrayContaining(['Utils', 'MathUtils']),
+      expect.arrayContaining(['Utils', 'MathUtils'])
     );
-    expect(enumerateLongnamesByKind(c, 'interface')).toContain(
-      'module:CoreSchema~ISerializable',
-    );
+    expect(enumerateLongnamesByKind(c, 'interface')).toContain('module:CoreSchema~ISerializable');
     expect(enumerateLongnamesByKind(c, 'mixin')).toContain('LoggerMixin');
   });
 
@@ -87,7 +85,7 @@ describe('buildContainerPage (non-class kinds)', () => {
     const page = buildContainerPage(
       getJSDocTaffyData(),
       'module:CoreSchema~ISerializable',
-      'interface',
+      'interface'
     )!;
     expect(page.frontmatter.kind).toBe('interface');
     expect(page.slug).toBe('module/coreschema/iserializable');
@@ -104,11 +102,7 @@ describe('buildContainerPage (non-class kinds)', () => {
   });
 
   it('builds a record typedef page rendering its type and properties', () => {
-    const page = buildContainerPage(
-      getJSDocTaffyData(),
-      'module:CoreSchema~Point',
-      'typedef',
-    )!;
+    const page = buildContainerPage(getJSDocTaffyData(), 'module:CoreSchema~Point', 'typedef')!;
     expect(page).not.toBeNull();
     expect(page.frontmatter.kind).toBe('typedef');
     expect(page.frontmatter.longname).toBe('module:CoreSchema~Point');
@@ -124,7 +118,7 @@ describe('buildContainerPage (non-class kinds)', () => {
     const page = buildContainerPage(
       getJSDocTaffyData(),
       'module:CoreSchema~DataHandler',
-      'typedef',
+      'typedef'
     )!;
     expect(page).not.toBeNull();
     expect(page.frontmatter.kind).toBe('typedef');
@@ -156,8 +150,16 @@ describe('extractHeadings', () => {
     const tree = {
       type: 'root' as const,
       children: [
-        { type: 'heading' as const, depth: 2 as const, children: [{ type: 'text' as const, value: 'foo' }] },
-        { type: 'heading' as const, depth: 3 as const, children: [{ type: 'text' as const, value: 'foo' }] },
+        {
+          type: 'heading' as const,
+          depth: 2 as const,
+          children: [{ type: 'text' as const, value: 'foo' }],
+        },
+        {
+          type: 'heading' as const,
+          depth: 3 as const,
+          children: [{ type: 'text' as const, value: 'foo' }],
+        },
       ],
     };
     const headings = extractHeadings(tree);
@@ -168,8 +170,16 @@ describe('extractHeadings', () => {
     const tree = {
       type: 'root' as const,
       children: [
-        { type: 'heading' as const, depth: 1 as const, children: [{ type: 'text' as const, value: 'Title' }] },
-        { type: 'heading' as const, depth: 2 as const, children: [{ type: 'text' as const, value: 'Section' }] },
+        {
+          type: 'heading' as const,
+          depth: 1 as const,
+          children: [{ type: 'text' as const, value: 'Title' }],
+        },
+        {
+          type: 'heading' as const,
+          depth: 2 as const,
+          children: [{ type: 'text' as const, value: 'Section' }],
+        },
       ],
     };
     const headings = extractHeadings(tree);
@@ -180,9 +190,21 @@ describe('extractHeadings', () => {
     const tree = {
       type: 'root' as const,
       children: [
-        { type: 'heading' as const, depth: 1 as const, children: [{ type: 'text' as const, value: 'One' }] },
-        { type: 'heading' as const, depth: 2 as const, children: [{ type: 'text' as const, value: 'Sub' }] },
-        { type: 'heading' as const, depth: 1 as const, children: [{ type: 'text' as const, value: 'Two' }] },
+        {
+          type: 'heading' as const,
+          depth: 1 as const,
+          children: [{ type: 'text' as const, value: 'One' }],
+        },
+        {
+          type: 'heading' as const,
+          depth: 2 as const,
+          children: [{ type: 'text' as const, value: 'Sub' }],
+        },
+        {
+          type: 'heading' as const,
+          depth: 1 as const,
+          children: [{ type: 'text' as const, value: 'Two' }],
+        },
       ],
     };
     const headings = extractHeadings(tree);
@@ -197,8 +219,16 @@ describe('extractHeadings', () => {
     const tree = {
       type: 'root' as const,
       children: [
-        { type: 'heading' as const, depth: 1 as const, children: [{ type: 'text' as const, value: 'dup' }] },
-        { type: 'heading' as const, depth: 1 as const, children: [{ type: 'text' as const, value: 'dup' }] },
+        {
+          type: 'heading' as const,
+          depth: 1 as const,
+          children: [{ type: 'text' as const, value: 'dup' }],
+        },
+        {
+          type: 'heading' as const,
+          depth: 1 as const,
+          children: [{ type: 'text' as const, value: 'dup' }],
+        },
       ],
     };
     expect(extractHeadings(tree).map((h) => h.id)).toEqual(['dup', 'dup-1']);
@@ -371,23 +401,22 @@ describe('generateSite', () => {
 
   it('emits container pages for module/namespace/interface/mixin with correct kind + slug', () => {
     const manifest = generateSite(getJSDocTaffyData());
-    const byKind = (k: string) =>
-      manifest.pages.filter((p) => p.frontmatter.kind === k);
+    const byKind = (k: string) => manifest.pages.filter((p) => p.frontmatter.kind === k);
 
     const modules = byKind('module');
     expect(modules.map((p) => p.frontmatter.longname)).toEqual(
-      expect.arrayContaining(['module:CoreSchema', 'module:UserService']),
+      expect.arrayContaining(['module:CoreSchema', 'module:UserService'])
     );
     for (const p of modules) expect(p.slug.startsWith('module/')).toBe(true);
 
     const namespaces = byKind('namespace');
     expect(namespaces.map((p) => p.frontmatter.longname)).toEqual(
-      expect.arrayContaining(['Utils', 'MathUtils']),
+      expect.arrayContaining(['Utils', 'MathUtils'])
     );
 
     const interfaces = byKind('interface');
     expect(interfaces.map((p) => p.frontmatter.longname)).toContain(
-      'module:CoreSchema~ISerializable',
+      'module:CoreSchema~ISerializable'
     );
 
     const mixins = byKind('mixin');
@@ -400,10 +429,7 @@ describe('generateSite', () => {
     // under module/.
     const typedefs = byKind('typedef');
     expect(typedefs.map((p) => p.frontmatter.longname)).toEqual(
-      expect.arrayContaining([
-        'module:CoreSchema~Point',
-        'module:CoreSchema~DataHandler',
-      ]),
+      expect.arrayContaining(['module:CoreSchema~Point', 'module:CoreSchema~DataHandler'])
     );
     const point = typedefs.find((p) => p.frontmatter.longname === 'module:CoreSchema~Point')!;
     expect(point.slug).toBe('module/coreschema/point');
@@ -450,9 +476,7 @@ describe('generateSite', () => {
     expect(widgets.length).toBe(1);
     expect(widgets[0].frontmatter.kind).toBe('namespace');
     // Merge, not skip: no "skipping duplicate page slug" warning is emitted.
-    expect(warn).not.toHaveBeenCalledWith(
-      expect.stringContaining('skipping duplicate page slug'),
-    );
+    expect(warn).not.toHaveBeenCalledWith(expect.stringContaining('skipping duplicate page slug'));
     // No duplicate slugs across the whole manifest.
     const slugs = manifest.pages.map((p) => p.slug);
     expect(new Set(slugs).size).toBe(slugs.length);

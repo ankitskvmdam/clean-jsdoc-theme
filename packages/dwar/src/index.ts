@@ -33,15 +33,19 @@ import type {
 
 import { compileMdxToComponent, type MdxComponentMap, type ShikiThemes } from './mdx';
 import { SsrLayout, renderIsland, type IslandRecord } from './layout';
-import { renderHtmlDocument, htmlPathFor, mdPathFor, extractExcerpt, extractSearchText } from './html';
+import {
+  renderHtmlDocument,
+  htmlPathFor,
+  mdPathFor,
+  extractExcerpt,
+  extractSearchText,
+} from './html';
 import { bundleIslands, ALL_ISLANDS } from './islands-bundle';
 import { buildCss } from './css';
 
 export const DWAR_PACKAGE_VERSION = '5.0.0-alpha.0';
 
-function mergeMdxComponents(
-  override?: Record<string, unknown>,
-): MdxComponentMap {
+function mergeMdxComponents(override?: Record<string, unknown>): MdxComponentMap {
   if (!override) return { ...defaultMdxComponents };
   // ComponentOverrides.mdxComponents is typed `ComponentType<any>`; the cast is safe.
   return { ...defaultMdxComponents, ...(override as MdxComponentMap) };
@@ -61,7 +65,7 @@ async function renderPage(
   copyPageActions: CopyPageAction[] | undefined,
   fonts: { heading: string; body: string; mono: string },
   shiki: ShikiThemes,
-  custom: { cssLinks?: string[]; css?: string; jsLinks?: string[]; js?: string },
+  custom: { cssLinks?: string[]; css?: string; jsLinks?: string[]; js?: string }
 ): Promise<{ file: OutputFile; search: SearchEntry; islands: IslandRecord[] }> {
   const islands: IslandRecord[] = [];
 
@@ -107,7 +111,7 @@ async function renderPage(
       mainContent = h(
         HeaderSlotContext.Provider,
         { value: { node: copyPage, placed: false } },
-        h(MdxComponent, {}),
+        h(MdxComponent, {})
       );
     } else {
       mainContent = h(MdxComponent, {});
@@ -126,7 +130,7 @@ async function renderPage(
       searchIndexUrl,
       islands,
     },
-    mainContent,
+    mainContent
   );
 
   const bodyHtml = renderToString(layoutVNode);
@@ -191,16 +195,13 @@ function memberSearchEntries(page: Page): SearchEntry[] {
  * to disk. Callers persist `result.files` themselves, then optionally call
  * `runPagefindAgainstDir` against the destination.
  */
-export async function render(
-  manifest: SiteManifest,
-  opts: RenderOptions,
-): Promise<RenderResult> {
+export async function render(manifest: SiteManifest, opts: RenderOptions): Promise<RenderResult> {
   const start = Date.now();
   const theme = opts.theme;
   const basePath = theme.basePath ?? '/';
   const siteName = theme.tokens.siteName;
   const components = mergeMdxComponents(
-    theme.components?.mdxComponents as Record<string, unknown> | undefined,
+    theme.components?.mdxComponents as Record<string, unknown> | undefined
   );
 
   // Determine islands used across the build so we only bundle what's referenced.
@@ -263,7 +264,7 @@ export async function render(
         copyPageActions,
         theme.tokens.fonts,
         theme.tokens.shiki,
-        custom,
+        custom
       );
       files.push(file);
       renderedPageCount++;

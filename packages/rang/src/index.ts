@@ -32,13 +32,7 @@ export type {
   DropdownMenuItemProps,
 } from './components/DropdownMenu';
 
-export {
-  Dialog,
-  DialogHeader,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-} from './components/Dialog';
+export { Dialog, DialogHeader, DialogTitle, DialogBody, DialogFooter } from './components/Dialog';
 export type { DialogProps } from './components/Dialog';
 
 export { cn } from './lib/cn';

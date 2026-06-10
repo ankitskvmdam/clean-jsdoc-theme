@@ -24,9 +24,12 @@ const result = await render(manifest, {
   theme: {
     tokens: {
       colors: {
-        bg: '#ffffff', bgMuted: '#f5f5f5',
-        fg: '#111111', fgMuted: '#666666',
-        accent: '#0070f3', accentFg: '#ffffff',
+        bg: '#ffffff',
+        bgMuted: '#f5f5f5',
+        fg: '#111111',
+        fgMuted: '#666666',
+        accent: '#0070f3',
+        accentFg: '#ffffff',
         border: '#e5e5e5',
       },
       fonts: { heading: 'Source Serif 4', body: 'Roboto', mono: 'ui-monospace' },

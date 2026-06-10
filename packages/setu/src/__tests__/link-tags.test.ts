@@ -81,9 +81,7 @@ describe('resolveLinkTags', () => {
   });
 
   it('resolves an external URL target with the explicit label', () => {
-    const tree = para(
-      '{@link https://en.wikipedia.org/wiki/Data_model|Data Modeling}'
-    );
+    const tree = para('{@link https://en.wikipedia.org/wiki/Data_model|Data Modeling}');
     resolveLinkTags(tree, resolve);
     const node = children(tree)[0] as Link;
     expect(node.url).toBe('https://en.wikipedia.org/wiki/Data_model');
@@ -149,9 +147,7 @@ describe('resolveLinkTags', () => {
       children: [
         {
           type: 'paragraph',
-          children: [
-            { type: 'emphasis', children: [text('{@link BaseEntity}')] },
-          ],
+          children: [{ type: 'emphasis', children: [text('{@link BaseEntity}')] }],
         },
       ],
     };

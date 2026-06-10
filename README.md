@@ -22,15 +22,15 @@ salty collection ──► setu.generateSite ──► SiteManifest ──► dw
 
 Four boundary packages, each independently testable, glued together by a thin JSDoc bridge:
 
-| Package | What it does |
-|---|---|
-| [`@clean-jsdoc-theme/utils`](./packages/utils) | Shared type contracts (`SiteManifest`, `Page`, `RenderOptions`, `IslandName`, …) and slug rules used by both setu and dwar. |
-| [`@clean-jsdoc-theme/setu`](./packages/setu) | JSDoc → `SiteManifest`. Walks the salty doclet collection into one MDX page per documented symbol (classes, interfaces, mixins, modules, namespaces, typedefs, globals) plus README/tutorials/source pages, and resolves `{@link}`/`@see` cross-references. No HTML, no JSX, no I/O. |
-| [`@clean-jsdoc-theme/rang`](./packages/rang) | Preact component library: chrome (`Layout`, `Header`, `Footer`, `Brand`), eleven hydratable islands, shadcn-style primitives (`Button`, `ButtonGroup`, `Dialog`, `DropdownMenu`), MDX element map, `ISLAND_REGISTRY`. |
-| [`@clean-jsdoc-theme/dwar`](./packages/dwar) | Pure `SiteManifest` → HTML/CSS/JS renderer. Server-renders pages, bundles each island as its own ESM chunk via esbuild, emits CSS, exposes a separate Pagefind post-write step. |
-| [`clean-jsdoc-theme`](./packages/clean-jsdoc-theme) | The JSDoc theme entry. A thin `publish.ts` bridge that wires the four packages together and is what `jsdoc -t clean-jsdoc-theme` actually invokes. |
-| [`@clean-jsdoc-theme/aadesh`](./packages/aadesh) | Reserved CLI surface — `clean-jsdoc`. Stub today; JSDoc's own `-t` is the supported entry. |
-| [`@clean-jsdoc-theme/bhasha`](./packages/bhasha) | Reserved i18n surface. Stub today; scoped to v5.1+. |
+| Package                                             | What it does                                                                                                                                                                                                                                                                         |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [`@clean-jsdoc-theme/utils`](./packages/utils)      | Shared type contracts (`SiteManifest`, `Page`, `RenderOptions`, `IslandName`, …) and slug rules used by both setu and dwar.                                                                                                                                                          |
+| [`@clean-jsdoc-theme/setu`](./packages/setu)        | JSDoc → `SiteManifest`. Walks the salty doclet collection into one MDX page per documented symbol (classes, interfaces, mixins, modules, namespaces, typedefs, globals) plus README/tutorials/source pages, and resolves `{@link}`/`@see` cross-references. No HTML, no JSX, no I/O. |
+| [`@clean-jsdoc-theme/rang`](./packages/rang)        | Preact component library: chrome (`Layout`, `Header`, `Footer`, `Brand`), eleven hydratable islands, shadcn-style primitives (`Button`, `ButtonGroup`, `Dialog`, `DropdownMenu`), MDX element map, `ISLAND_REGISTRY`.                                                                |
+| [`@clean-jsdoc-theme/dwar`](./packages/dwar)        | Pure `SiteManifest` → HTML/CSS/JS renderer. Server-renders pages, bundles each island as its own ESM chunk via esbuild, emits CSS, exposes a separate Pagefind post-write step.                                                                                                      |
+| [`clean-jsdoc-theme`](./packages/clean-jsdoc-theme) | The JSDoc theme entry. A thin `publish.ts` bridge that wires the four packages together and is what `jsdoc -t clean-jsdoc-theme` actually invokes.                                                                                                                                   |
+| [`@clean-jsdoc-theme/aadesh`](./packages/aadesh)    | Reserved CLI surface — `clean-jsdoc`. Stub today; JSDoc's own `-t` is the supported entry.                                                                                                                                                                                           |
+| [`@clean-jsdoc-theme/bhasha`](./packages/bhasha)    | Reserved i18n surface. Stub today; scoped to v5.1+.                                                                                                                                                                                                                                  |
 
 ---
 

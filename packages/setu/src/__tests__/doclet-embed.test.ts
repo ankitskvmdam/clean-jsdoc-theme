@@ -13,19 +13,23 @@ function docletWithTags(tags: TDoclet['tags']): TDoclet {
 }
 
 const isEmbed = (node: unknown): node is MdxJsxFlowElement =>
-  !!node && (node as MdxJsxFlowElement).type === 'mdxJsxFlowElement' && (node as MdxJsxFlowElement).name === 'Embed';
+  !!node &&
+  (node as MdxJsxFlowElement).type === 'mdxJsxFlowElement' &&
+  (node as MdxJsxFlowElement).name === 'Embed';
 
 const srcOf = (node: MdxJsxFlowElement): string | undefined => {
-  const attr = node.attributes.find(
-    (a) => a.type === 'mdxJsxAttribute' && a.name === 'src'
-  );
+  const attr = node.attributes.find((a) => a.type === 'mdxJsxAttribute' && a.name === 'src');
   return attr && typeof attr.value === 'string' ? attr.value : undefined;
 };
 
 describe('embedBlocks', () => {
   it('returns an Embed JSX node for a single @iframe tag', () => {
     const doclet = docletWithTags([
-      { title: 'iframe', text: 'https://codepen.io/x/embed/abc height=400', value: 'https://codepen.io/x/embed/abc height=400' },
+      {
+        title: 'iframe',
+        text: 'https://codepen.io/x/embed/abc height=400',
+        value: 'https://codepen.io/x/embed/abc height=400',
+      },
     ]);
     const blocks = embedBlocks(doclet);
     expect(blocks).toHaveLength(1);

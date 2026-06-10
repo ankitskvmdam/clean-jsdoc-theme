@@ -11,13 +11,12 @@ import type { OutputFile } from '@clean-jsdoc-theme/dwar';
  */
 export async function writeOutputFiles(
   destination: string,
-  files: readonly OutputFile[],
+  files: readonly OutputFile[]
 ): Promise<void> {
   for (const file of files) {
     const target = join(destination, file.path);
     await mkdir(dirname(target), { recursive: true });
-    const contents =
-      typeof file.contents === 'string' ? file.contents : Buffer.from(file.contents);
+    const contents = typeof file.contents === 'string' ? file.contents : Buffer.from(file.contents);
     await writeFile(target, contents);
   }
 }

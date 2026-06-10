@@ -73,7 +73,7 @@ function checkUnknownKeys(
   opts: Record<string, unknown>,
   bag: DiagnosticBag,
   policy: UnknownKeyPolicy,
-  knownNonThemeKeys: ReadonlySet<string>,
+  knownNonThemeKeys: ReadonlySet<string>
 ): void {
   if (policy === 'ignore') return;
 
@@ -109,7 +109,7 @@ function checkUnknownKeys(
  * `result.diagnostics.hasErrors()`.
  */
 export async function validateThemeOpts(
-  input: ValidateThemeOptsInput,
+  input: ValidateThemeOptsInput
 ): Promise<ValidateThemeOptsResult> {
   const { opts, fontResolver } = input;
   const policy = input.unknownKeyPolicy ?? 'suggest-typos';

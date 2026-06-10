@@ -1,17 +1,17 @@
-"use strict";
+'use strict';
 /**
  * @fileOverview The chains define the primary composition elements (functions) that determine the order of execution.
  *
  * @module base/chains
  * @requires dcl
  */
-var dcl = require( "dcl" );
+var dcl = require('dcl');
 /**
  * @classDesc Chains define the primary composition elements (functions) that determine the order of execution.
  * @exports base/chains
  * @constructor
  */
-var Chains = dcl( null, {declaredClass : "base/chains"} );
+var Chains = dcl(null, { declaredClass: 'base/chains' });
 /**
  * The `close` method asks an object to shut itself down in a way that will allow it to be reopened, unlike the
  * [end method]{@link base/chains#end} which will call the destroy method which should make the object unusable, but also
@@ -26,7 +26,7 @@ var Chains = dcl( null, {declaredClass : "base/chains"} );
  * @name close
  * @see base/chains#open
  */
-dcl.chainBefore( Chains, "close" );
+dcl.chainBefore(Chains, 'close');
 /**
  * The `end` method will call the destroy method which should make the object unusable and
  * devoid of all resources, unlike the
@@ -41,7 +41,7 @@ dcl.chainBefore( Chains, "close" );
  * foo=bar
  *
  */
-dcl.chainBefore( Chains, "end" );
+dcl.chainBefore(Chains, 'end');
 /**
  * Destroy is called by the end method and it is here that you should clean up after yourself. The difference between
  * `destroy` and [end]{@link base/chains#end} is the `end` is the verb that you raise on an object to ask it to go away
@@ -53,7 +53,7 @@ dcl.chainBefore( Chains, "end" );
  * @memberOf base/chains#
  * @name destroy
  */
-dcl.chainBefore( Chains, "destroy" );
+dcl.chainBefore(Chains, 'destroy');
 
 /**
  * If you are using the open/close paradigm for an object that can kind of go dormant on {@link base/chains#close} and can be "reopened"
@@ -65,6 +65,6 @@ dcl.chainBefore( Chains, "destroy" );
  * @name open
  * @see base/chains#close
  */
-dcl.chainAfter( Chains, "open" );
+dcl.chainAfter(Chains, 'open');
 
 module.exports = Chains;

@@ -3,7 +3,7 @@
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": ".",
-    "types": ["node", "./@types/jsdoc-salty"],
+    "types": ["node", "./@types/jsdoc-salty"]
   },
-  "include": ["src", "scripts"],
+  "include": ["src", "scripts"]
 }

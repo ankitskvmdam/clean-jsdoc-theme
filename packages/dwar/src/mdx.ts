@@ -74,9 +74,7 @@ export function escapeStrayBraces(source: string): string {
   // Single scan: a fenced code block, OR an inline code span (matched backtick
   // runs), OR a lone brace. Code matches pass through; lone braces get escaped.
   const re = /(```[\s\S]*?```|~~~[\s\S]*?~~~)|(`+)(?:[\s\S]*?)\2|([{}])/g;
-  const escaped = body.replace(re, (m, _fence, _ticks, brace) =>
-    brace ? `\\${brace}` : m,
-  );
+  const escaped = body.replace(re, (m, _fence, _ticks, brace) => (brace ? `\\${brace}` : m));
   return prefix + escaped;
 }
 
@@ -138,7 +136,7 @@ function rehypeSlugHeadings() {
 export async function compileMdxToComponent(
   source: string,
   components: MdxComponentMap,
-  shiki: ShikiThemes,
+  shiki: ShikiThemes
 ): Promise<CompiledMdx> {
   const cleaned = escapeStrayBraces(preprocessJsdocInlineTags(source));
   // The MDX `evaluate` runtime types target the React jsx-runtime signature;

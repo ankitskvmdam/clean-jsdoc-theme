@@ -15,9 +15,9 @@ import type { SiteManifest } from '@clean-jsdoc-theme/utils';
 
 const manifest: SiteManifest = generateSite(saltyCollection, {
   pkg: { name: 'my-lib', version: '1.0.0' },
-  readme: readmeHtml,      // optional: rendered to the home page
+  readme: readmeHtml, // optional: rendered to the home page
   tutorials: tutorialTree, // optional: rendered as guide pages
-  sources: sourceFiles,    // optional: rendered as source-viewer pages
+  sources: sourceFiles, // optional: rendered as source-viewer pages
 });
 ```
 

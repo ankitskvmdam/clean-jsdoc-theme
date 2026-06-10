@@ -78,7 +78,7 @@ describe('formatBuildReport sizes and totals', () => {
           jsBytes: 0,
           durationMs: 1420,
         },
-      }),
+      })
     );
     expect(out).toContain('build complete in 1.42s');
     expect(out).toContain('(97 pages, 83 assets)');
@@ -94,9 +94,7 @@ describe('formatBuildReport gzip column', () => {
   it('adds a gzip column only when a gzipSizer is given', () => {
     // Trivial fake sizer: half the raw byte length (deterministic, no real gzip).
     const gzipSizer = (b: Uint8Array | string) => Math.round(byteLength(b) / 2);
-    const out = strip(
-      formatBuildReport({ files: sampleFiles, destination: 'dist/', gzipSizer }),
-    );
+    const out = strip(formatBuildReport({ files: sampleFiles, destination: 'dist/', gzipSizer }));
     expect(out).toContain('(gzip)');
     // / route is 1200 B raw → 600 B gzip.
     expect(out).toMatch(/\/ {2,}1\.2 kB {2,}600 B/);
@@ -116,9 +114,7 @@ describe('formatBuildReport truncation', () => {
   });
 
   it('caps at maxRoutes largest and shows the dropped count', () => {
-    const out = strip(
-      formatBuildReport({ files: manyFiles, destination: 'dist/', maxRoutes: 3 }),
-    );
+    const out = strip(formatBuildReport({ files: manyFiles, destination: 'dist/', maxRoutes: 3 }));
     expect(out).toContain('+7 more pages');
     // The 3 largest are page9, page8, page7 (1000/900/800 B).
     expect(out).toContain('/page9');

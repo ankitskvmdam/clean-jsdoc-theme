@@ -29,7 +29,7 @@ function Highlighted({ text, positions }: { text: string; positions: number[] })
           </mark>
         ) : (
           <span key={i}>{seg.text}</span>
-        ),
+        )
       )}
     </>
   );
@@ -63,10 +63,10 @@ export function CmdK({ basePath: _basePath, searchIndexUrl }: CmdKProps) {
               { get: (e) => e.description, weight: 0.5 },
               { get: (e) => e.content, weight: 0.35 },
             ],
-            MAX_RESULTS,
+            MAX_RESULTS
           )
         : [],
-    [query, entries],
+    [query, entries]
   );
   const resultsRef = useRef(results);
 

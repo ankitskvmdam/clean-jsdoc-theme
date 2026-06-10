@@ -342,7 +342,7 @@ interface ValidatedFonts {
 function resolveTheme(
   opts: JSDocOpts,
   siteName: SiteName | undefined,
-  fonts: ValidatedFonts,
+  fonts: ValidatedFonts
 ): ThemeConfig {
   const aiPrompt =
     typeof opts.aiPrompt === 'string' && opts.aiPrompt.trim() ? opts.aiPrompt.trim() : undefined;
@@ -391,10 +391,10 @@ async function copyCustomFiles(
   raw: unknown,
   ext: '.css' | '.js',
   hash: boolean,
-  label: string,
+  label: string
 ): Promise<{ links: string[]; files: OutputFile[] }> {
   const paths = (Array.isArray(raw) ? raw : [raw]).filter(
-    (p): p is string => typeof p === 'string' && p.trim().length > 0,
+    (p): p is string => typeof p === 'string' && p.trim().length > 0
   );
   const links: string[] = [];
   const files: OutputFile[] = [];
@@ -468,7 +468,7 @@ function isServableUrl(value: string): boolean {
  * read is left verbatim with a warning rather than aborting the build.
  */
 async function prepareSiteName(
-  raw: string | SiteLogo | undefined,
+  raw: string | SiteLogo | undefined
 ): Promise<{ siteName: SiteName | undefined; files: OutputFile[] }> {
   if (typeof raw === 'string') {
     const trimmed = raw.trim();
@@ -498,7 +498,7 @@ async function prepareSiteName(
       out[key] = `/${served}`;
     } catch {
       console.warn(
-        `clean-jsdoc-theme: could not read logo image for siteName.${key} ('${v}'); using it verbatim.`,
+        `clean-jsdoc-theme: could not read logo image for siteName.${key} ('${v}'); using it verbatim.`
       );
       out[key] = v;
     }
@@ -667,9 +667,12 @@ export function normalizeMenu(raw: unknown): MenuItem[] | undefined {
     const item: MenuItem = {};
     if (typeof o.id === 'string' && o.id.trim()) item.id = o.id.trim();
     if (typeof o.title === 'string' && o.title.trim()) item.title = o.title.trim();
-    const link = typeof o.link === 'string' && o.link.trim() ? o.link.trim()
-      : typeof o.href === 'string' && o.href.trim() ? o.href.trim()
-      : undefined;
+    const link =
+      typeof o.link === 'string' && o.link.trim()
+        ? o.link.trim()
+        : typeof o.href === 'string' && o.href.trim()
+          ? o.href.trim()
+          : undefined;
     if (link) item.link = link;
     if (typeof o.icon === 'string' && o.icon.trim()) item.icon = o.icon.trim();
     if (item.id || item.link) out.push(item);
@@ -715,10 +718,7 @@ export function normalizeCopyPage(raw: unknown): CopyPageConfig | undefined {
 }
 
 /** Extensions we treat as "source" worth emitting a viewer page for. */
-const SOURCE_EXTENSIONS = new Set([
-  '.js', '.mjs', '.cjs', '.jsx',
-  '.ts', '.mts', '.cts', '.tsx',
-]);
+const SOURCE_EXTENSIONS = new Set(['.js', '.mjs', '.cjs', '.jsx', '.ts', '.mts', '.cts', '.tsx']);
 
 /**
  * Compute project-relative paths for a set of absolute source paths by stripping
@@ -754,7 +754,7 @@ export function computeRelPaths(absPaths: readonly string[]): Map<string, string
     const rel =
       common.length > 0 && segs.length > common.length
         ? segs.slice(common.length).join('/')
-        : segs[segs.length - 1] ?? absPaths[i];
+        : (segs[segs.length - 1] ?? absPaths[i]);
     out.set(absPaths[i], rel);
   }
   return out;
@@ -807,7 +807,7 @@ async function collectSourceFiles(data: unknown): Promise<SourceFileInput[]> {
       inputs.push({ absPath: abs, relPath: relPaths.get(abs) ?? abs, content });
     } catch (err) {
       console.warn(
-        `clean-jsdoc-theme: could not read source file '${abs}' — ${(err as Error).message}; skipping.`,
+        `clean-jsdoc-theme: could not read source file '${abs}' — ${(err as Error).message}; skipping.`
       );
     }
   }
@@ -881,7 +881,7 @@ export async function collectDocs(dir: string): Promise<DocInput[]> {
         docs.push({ path: relPath, content, type });
       } catch (err) {
         console.warn(
-          `clean-jsdoc-theme: could not read doc file '${abs}' — ${(err as Error).message}; skipping.`,
+          `clean-jsdoc-theme: could not read doc file '${abs}' — ${(err as Error).message}; skipping.`
         );
       }
     }
@@ -915,12 +915,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   const [
     { generateSite },
     { render, runPagefindAgainstDir },
-    {
-      validateThemeOpts,
-      createGoogleFontResolver,
-      formatDiagnostics,
-      formatBuildReport,
-    },
+    { validateThemeOpts, createGoogleFontResolver, formatDiagnostics, formatBuildReport },
   ] = await Promise.all([loadSetu(), loadDwar(), loadUtils()]);
 
   // Validate the theme options early (before any render work) so the developer
@@ -952,7 +947,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
       console.error(formatted);
       throw new Error(
         'clean-jsdoc-theme: opts validation failed in strict mode ' +
-          '(see the diagnostics above). Fix the errors or unset `strict`.',
+          '(see the diagnostics above). Fix the errors or unset `strict`.'
       );
     }
     console.log(formatted);
@@ -964,7 +959,8 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   // tutorials resolver tree → guide pages. Both flow through setu as ordinary
   // pages. Note: local images referenced by README/tutorial Markdown are NOT
   // copied into the output — use absolute/served URLs for those.
-  const readme = typeof opts.readme === 'string' && opts.readme.length > 0 ? opts.readme : undefined;
+  const readme =
+    typeof opts.readme === 'string' && opts.readme.length > 0 ? opts.readme : undefined;
   const tutorialTree = normalizeTutorials(tutorials);
 
   // Source viewer pages + `Source: file:line` member links. Gated behind
@@ -977,9 +973,8 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   // walking/reading (the sanctioned I/O layer); setu stays free of disk access.
   // Unset / empty dir → `[]`, so behavior is identical to today. `docGroups`
   // orders the doc-group sidebar sections; `defaultDocGroup` labels ungrouped docs.
-  const docsDir = typeof opts.docs === 'string' && opts.docs.trim().length > 0
-    ? opts.docs.trim()
-    : undefined;
+  const docsDir =
+    typeof opts.docs === 'string' && opts.docs.trim().length > 0 ? opts.docs.trim() : undefined;
   const docs = docsDir ? await collectDocs(docsDir) : [];
   const docGroups = normalizeDocGroups(opts.docGroups);
   const defaultDocGroup =
@@ -1020,7 +1015,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   const notGoogle = new Set(
     diagnostics.list
       .filter((d) => d.code === 'fonts/not-google' && d.path)
-      .map((d) => d.path as string),
+      .map((d) => d.path as string)
   );
   const fonts: ValidatedFonts = { ...value.fonts };
   if (notGoogle.has('fonts.heading')) delete fonts.heading;
@@ -1053,14 +1048,14 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
       destination,
       gzipSizer,
       color,
-    }),
+    })
   );
 
   // Skipped pages (render failures) are folded in right after the report so the
   // count is visible alongside the successful totals — never fatal.
   if (result.errors && result.errors.length > 0) {
     console.warn(
-      `clean-jsdoc-theme: ${result.errors.length} page(s) failed to render and were skipped:`,
+      `clean-jsdoc-theme: ${result.errors.length} page(s) failed to render and were skipped:`
     );
     for (const e of result.errors) {
       console.warn(`  - ${e.slug}: ${e.message}`);

@@ -145,10 +145,7 @@ export interface GenerateSiteOptions {
  * own page; the README (home page) and tutorials are rendered when supplied via
  * {@link GenerateSiteOptions}.
  */
-export function generateSite(
-  collection: unknown,
-  opts?: GenerateSiteOptions,
-): SiteManifest {
+export function generateSite(collection: unknown, opts?: GenerateSiteOptions): SiteManifest {
   validateCollectionOrThrow(collection);
 
   // Source viewer model (pages + nav + the doclet→source link resolver). Built
@@ -244,7 +241,7 @@ export function generateSite(
       sourceLink,
       resolveLink,
       resolveTutorial,
-    }),
+    })
   );
 
   const pages: Page[] = [];
@@ -264,11 +261,7 @@ export function generateSite(
   const docPages: Page[] = [];
   let docNav: NavNode[] = [];
   if (opts?.docs && opts.docs.length > 0) {
-    const built = buildDocPages(
-      opts.docs,
-      { defaultDocGroup: opts.defaultDocGroup },
-      resolveLink,
-    );
+    const built = buildDocPages(opts.docs, { defaultDocGroup: opts.defaultDocGroup }, resolveLink);
     const droppedSlugs = new Set<string>();
     for (const page of built.pages) {
       if (page.slug === '' && page.frontmatter.kind === 'index') {
@@ -281,7 +274,7 @@ export function generateSite(
         droppedSlugs.add(page.slug);
         // Non-fatal: skip deterministically and warn (the bridge surfaces logs).
         console.warn(
-          `[setu] skipping doc page: slug "${page.slug}" collides with an existing page`,
+          `[setu] skipping doc page: slug "${page.slug}" collides with an existing page`
         );
         continue;
       }

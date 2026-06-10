@@ -84,7 +84,7 @@ npmjs.com.
 
 ## Notes
 
-- **Branch:** the release workflow triggers on the *tag* regardless of branch,
+- **Branch:** the release workflow triggers on the _tag_ regardless of branch,
   so an alpha cut from `v5` works. But CI (`ci.yml`) and the changeset
   `--since=origin/master` gate key off `master` — merge `v5` → `master` before
   the stable release for a clean story.

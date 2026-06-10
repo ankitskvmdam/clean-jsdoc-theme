@@ -69,6 +69,6 @@ export function installDefaults(target) {
        * @returns {void}
        */
       onTransition(job) {},
-    },
+    }
   );
 }

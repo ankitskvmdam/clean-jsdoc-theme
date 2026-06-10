@@ -69,10 +69,7 @@ export class DiagnosticBag {
 }
 
 /** Console label + color for each level. */
-const LEVEL_META: Record<
-  DiagnosticLevel,
-  { label: string; color: keyof typeof ansi }
-> = {
+const LEVEL_META: Record<DiagnosticLevel, { label: string; color: keyof typeof ansi }> = {
   error: { label: 'error', color: 'red' },
   warning: { label: 'warning', color: 'yellow' },
   info: { label: 'info', color: 'cyan' },
@@ -87,10 +84,7 @@ const LEVEL_ORDER: readonly DiagnosticLevel[] = ['error', 'warning', 'info'];
  * ANSI escapes (default off, so the output is plain/testable); the caller
  * passes `true` only for a real TTY.
  */
-export function formatDiagnostics(
-  bag: DiagnosticBag,
-  opts?: { color?: boolean },
-): string {
+export function formatDiagnostics(bag: DiagnosticBag, opts?: { color?: boolean }): string {
   const color = opts?.color ?? false;
   const lines: string[] = [];
 

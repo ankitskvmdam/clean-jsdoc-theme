@@ -27,7 +27,15 @@ function ProgressCircle({ value }: { value: number }) {
       class="-rotate-90 shrink-0"
       aria-hidden="true"
     >
-      <circle cx="8" cy="8" r={r} fill="none" stroke="currentColor" stroke-width="2" class="opacity-25" />
+      <circle
+        cx="8"
+        cy="8"
+        r={r}
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        class="opacity-25"
+      />
       <circle
         cx="8"
         cy="8"

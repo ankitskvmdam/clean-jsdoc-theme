@@ -30,13 +30,13 @@ companion (`migration-map.json` at the repo root, plus the fenced JSON block in
 
 ## 2. Compatibility matrix
 
-| Requirement      | v4 (`4.3.2`)            | v5 (`5.0.0`)                          |
-| ---------------- | ----------------------- | ------------------------------------- |
-| JSDoc (peer dep) | `>=3.x <=4.x`           | `>=4.x`                               |
-| Node             | not pinned              | `>=20` (repo `engines.node`)          |
-| Package manager  | npm/yarn                | any (theme is published to npm)       |
-| Markdown plugin  | `plugins/markdown` recommended (`idInHeadings: true`) | not required (built-in markdown rendering) |
-| Custom CSS/JS    | supported (injection options) | not supported (see [§6](#6-removed-features)) |
+| Requirement      | v4 (`4.3.2`)                                          | v5 (`5.0.0`)                                  |
+| ---------------- | ----------------------------------------------------- | --------------------------------------------- |
+| JSDoc (peer dep) | `>=3.x <=4.x`                                         | `>=4.x`                                       |
+| Node             | not pinned                                            | `>=20` (repo `engines.node`)                  |
+| Package manager  | npm/yarn                                              | any (theme is published to npm)               |
+| Markdown plugin  | `plugins/markdown` recommended (`idInHeadings: true`) | not required (built-in markdown rendering)    |
+| Custom CSS/JS    | supported (injection options)                         | not supported (see [§6](#6-removed-features)) |
 
 Source: v4 peer dep from `git show v4.3.2:package.json`
 (`"jsdoc": ">=3.x <=4.x"`); v5 peer dep from
@@ -61,31 +61,31 @@ One row per v4 `opts.theme_opts.*` option, exhaustive against the v4.3.2 README
 cheat sheet + prose. Status enum: `unchanged | renamed | moved | changed |
 removed | new`.
 
-| v4 option (`opts.theme_opts.*`) | v5 equivalent (`opts.*`) | Status  | Notes |
-| ------------------------------- | ------------------------ | ------- | ----- |
-| `default_theme`                 | — (auto light/dark)      | removed | No theme-name picker. v5 ships light + dark token sets and a runtime toggle; no `fallback-*`/forced-default option. Customize via theme tokens, not an opt. |
-| `base_url`                      | `basePath`               | renamed | Same intent (site root prefixed onto links). v5 key is `basePath`; renderer default is `/`. |
-| `favicon`                       | —                        | removed | No `favicon` option. (Use JSDoc's own static-file copying if you need to ship one.) |
-| `homepageTitle`                 | —                        | removed | No dedicated homepage-title option; the home page derives its `<title>` from the README/`docs/index.md` + `siteName` suffix. |
-| `title`                         | `siteName`               | changed | v4 `title` set the sidebar title (HTML or string). v5 `siteName` is a string **or** a logo set `{ default, dark, light, alt }`; local image paths are copied to the output. Shown in header/footer + appended to each page `<title>`. |
-| `includeFilesListInHomepage`    | —                        | removed | No file-list-on-homepage toggle. The Source Files section (when source viewing is on) lists files instead. |
+| v4 option (`opts.theme_opts.*`) | v5 equivalent (`opts.*`) | Status  | Notes                                                                                                                                                                                                                                                                                                       |
+| ------------------------------- | ------------------------ | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `default_theme`                 | — (auto light/dark)      | removed | No theme-name picker. v5 ships light + dark token sets and a runtime toggle; no `fallback-*`/forced-default option. Customize via theme tokens, not an opt.                                                                                                                                                 |
+| `base_url`                      | `basePath`               | renamed | Same intent (site root prefixed onto links). v5 key is `basePath`; renderer default is `/`.                                                                                                                                                                                                                 |
+| `favicon`                       | —                        | removed | No `favicon` option. (Use JSDoc's own static-file copying if you need to ship one.)                                                                                                                                                                                                                         |
+| `homepageTitle`                 | —                        | removed | No dedicated homepage-title option; the home page derives its `<title>` from the README/`docs/index.md` + `siteName` suffix.                                                                                                                                                                                |
+| `title`                         | `siteName`               | changed | v4 `title` set the sidebar title (HTML or string). v5 `siteName` is a string **or** a logo set `{ default, dark, light, alt }`; local image paths are copied to the output. Shown in header/footer + appended to each page `<title>`.                                                                       |
+| `includeFilesListInHomepage`    | —                        | removed | No file-list-on-homepage toggle. The Source Files section (when source viewing is on) lists files instead.                                                                                                                                                                                                  |
 | `menu`                          | `menu`                   | changed | Still an array, but reshaped. v4 entry: `{ title, link, target, class, id }`. v5 entry: `{ id, title, link (or href), icon }` (`MenuItem`); `target`/`class` dropped, `icon` added, `id` now also selects built-in sections. v5 `menu` takes precedence over `sectionOrder` and controls the whole sidebar. |
-| `sections`                      | `sectionOrder`           | renamed | Same idea (filter + order sidebar sections). v5 key is `sectionOrder`; "Home" and "Source Files" are always shown regardless. |
-| `meta`                          | —                        | removed | No custom `<meta>` injection option. |
-| `search`                        | —                        | removed | Search is always on in v5 (built-in fuzzy index + optional Pagefind); there is no enable/disable opt. |
-| `codepen`                       | —                        | removed | No CodePen prefill option. v5 has sandboxed embeds via the `@iframe` tag / `iframe` prose fence instead. |
-| `static_dir`                    | —                        | removed | No theme-level static-dir copying. Use JSDoc's own static-file config. |
-| `create_style`                  | `customCss`              | renamed | Inline custom CSS string. Injected as a `<style>` after the theme stylesheet (so it overrides). |
-| `include_css`                   | `customCssFile`          | renamed | Custom CSS file(s) (path or array). Each copied as-is to `_assets/<name>.<hash>.css` (content hash → cacheable), linked after the theme stylesheet. |
-| `add_style_path`                | `customCssFile`          | changed | Was an external-CSS `<link>`; now the file is read and emitted as a cached asset link. Use a `customCssFile` path. |
-| `add_scripts`                   | `customJs`               | renamed | Inline custom JS string. Injected as a classic `<script>` before `</body>`, after the theme's own scripts. |
-| `include_js`                    | `customJsFile`           | renamed | Custom JS file(s) (path or array). Each copied as-is to `_assets/<name>.<hash>.js` (content hash → cacheable), referenced before `</body>`. |
-| `add_script_path`               | `customJsFile`           | changed | Was an external-JS `<script>`; now the file is read and emitted as a cached asset. Use a `customJsFile` path. |
-| `footer`                        | —                        | removed | No `footer` HTML/string option. Footer content derives from `siteName`/`pkg`. |
-| `exclude_inherited`             | —                        | removed | No exclude-inherited-symbols option. |
-| `displayModuleHeader`           | —                        | removed | No module-header toggle. |
-| `sort`                          | —                        | removed | No members/methods sort toggle. |
-| `shouldRemoveScrollbarStyle`    | —                        | removed | No scrollbar-style toggle. |
+| `sections`                      | `sectionOrder`           | renamed | Same idea (filter + order sidebar sections). v5 key is `sectionOrder`; "Home" and "Source Files" are always shown regardless.                                                                                                                                                                               |
+| `meta`                          | —                        | removed | No custom `<meta>` injection option.                                                                                                                                                                                                                                                                        |
+| `search`                        | —                        | removed | Search is always on in v5 (built-in fuzzy index + optional Pagefind); there is no enable/disable opt.                                                                                                                                                                                                       |
+| `codepen`                       | —                        | removed | No CodePen prefill option. v5 has sandboxed embeds via the `@iframe` tag / `iframe` prose fence instead.                                                                                                                                                                                                    |
+| `static_dir`                    | —                        | removed | No theme-level static-dir copying. Use JSDoc's own static-file config.                                                                                                                                                                                                                                      |
+| `create_style`                  | `customCss`              | renamed | Inline custom CSS string. Injected as a `<style>` after the theme stylesheet (so it overrides).                                                                                                                                                                                                             |
+| `include_css`                   | `customCssFile`          | renamed | Custom CSS file(s) (path or array). Each copied as-is to `_assets/<name>.<hash>.css` (content hash → cacheable), linked after the theme stylesheet.                                                                                                                                                         |
+| `add_style_path`                | `customCssFile`          | changed | Was an external-CSS `<link>`; now the file is read and emitted as a cached asset link. Use a `customCssFile` path.                                                                                                                                                                                          |
+| `add_scripts`                   | `customJs`               | renamed | Inline custom JS string. Injected as a classic `<script>` before `</body>`, after the theme's own scripts.                                                                                                                                                                                                  |
+| `include_js`                    | `customJsFile`           | renamed | Custom JS file(s) (path or array). Each copied as-is to `_assets/<name>.<hash>.js` (content hash → cacheable), referenced before `</body>`.                                                                                                                                                                 |
+| `add_script_path`               | `customJsFile`           | changed | Was an external-JS `<script>`; now the file is read and emitted as a cached asset. Use a `customJsFile` path.                                                                                                                                                                                               |
+| `footer`                        | —                        | removed | No `footer` HTML/string option. Footer content derives from `siteName`/`pkg`.                                                                                                                                                                                                                               |
+| `exclude_inherited`             | —                        | removed | No exclude-inherited-symbols option.                                                                                                                                                                                                                                                                        |
+| `displayModuleHeader`           | —                        | removed | No module-header toggle.                                                                                                                                                                                                                                                                                    |
+| `sort`                          | —                        | removed | No members/methods sort toggle.                                                                                                                                                                                                                                                                             |
+| `shouldRemoveScrollbarStyle`    | —                        | removed | No scrollbar-style toggle.                                                                                                                                                                                                                                                                                  |
 
 ### v5-only NEW options
 
@@ -93,22 +93,22 @@ These have no v4 counterpart. Sourced from the `JSDocOpts` interface in
 `packages/clean-jsdoc-theme/src/publish.ts` and cross-checked against
 `THEME_OPT_KEYS` in `packages/utils/src/config/opts-schema.ts`.
 
-| v5 option (`opts.*`)                       | Type                                              | Purpose |
-| ------------------------------------------ | ------------------------------------------------- | ------- |
-| `siteName`                                 | `string` \| `{ default?, dark?, light?, alt? }`   | Site identity (text or logo set); appended to `<title>`. |
-| `fonts`                                    | `{ heading?, body?, mono? }`                      | `heading`/`body` are Google Fonts family names; `mono` is a CSS stack. |
-| `basePath`                                 | `string`                                          | Site root path prefixed onto links (default `/`). |
-| `docs`                                     | `string` (directory path)                         | Prose-docs directory; layout drives slug + sidebar group. |
-| `docGroups`                                | `string[]`                                        | Order of doc-group sidebar sections. |
-| `defaultDocGroup`                          | `string`                                          | Group label for ungrouped docs. |
-| `sectionOrder`                             | `string[]`                                        | Filter + order API sidebar sections. |
-| `menu`                                     | `Array<{ id?, title?, link?/href?, icon? }>`      | Full sidebar control; precedes `sectionOrder`. |
-| `clubSidebarItems`                         | `boolean`                                         | Group sidebar entries into prefix subtrees. |
-| `aiPrompt`                                 | `string`                                          | Custom prompt for the copy-page "Open in ChatGPT/Claude/Perplexity" actions (`{siteName}`/`{url}`/`{mdUrl}` placeholders). |
-| `copyPage`                                 | `boolean` \| `{ enabled?, actions? }`             | Copy-page button; `actions` ⊆ `["copy","view","claude","chatgpt","perplexity"]`. |
-| `strict`                                   | `boolean`                                         | Fail the build on opts-validation errors (default: warn + continue). |
-| `templates.default.outputSourceFiles`      | `boolean` (JSDoc-standard)                        | Default `true`; `false` suppresses source-viewer pages + `Source:` links. |
-| `templates.default.sourceLinkToComment`    | `boolean` (JSDoc-standard)                        | Default `false`; `true` points `Source:` links at the doc-comment line. |
+| v5 option (`opts.*`)                    | Type                                            | Purpose                                                                                                                    |
+| --------------------------------------- | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `siteName`                              | `string` \| `{ default?, dark?, light?, alt? }` | Site identity (text or logo set); appended to `<title>`.                                                                   |
+| `fonts`                                 | `{ heading?, body?, mono? }`                    | `heading`/`body` are Google Fonts family names; `mono` is a CSS stack.                                                     |
+| `basePath`                              | `string`                                        | Site root path prefixed onto links (default `/`).                                                                          |
+| `docs`                                  | `string` (directory path)                       | Prose-docs directory; layout drives slug + sidebar group.                                                                  |
+| `docGroups`                             | `string[]`                                      | Order of doc-group sidebar sections.                                                                                       |
+| `defaultDocGroup`                       | `string`                                        | Group label for ungrouped docs.                                                                                            |
+| `sectionOrder`                          | `string[]`                                      | Filter + order API sidebar sections.                                                                                       |
+| `menu`                                  | `Array<{ id?, title?, link?/href?, icon? }>`    | Full sidebar control; precedes `sectionOrder`.                                                                             |
+| `clubSidebarItems`                      | `boolean`                                       | Group sidebar entries into prefix subtrees.                                                                                |
+| `aiPrompt`                              | `string`                                        | Custom prompt for the copy-page "Open in ChatGPT/Claude/Perplexity" actions (`{siteName}`/`{url}`/`{mdUrl}` placeholders). |
+| `copyPage`                              | `boolean` \| `{ enabled?, actions? }`           | Copy-page button; `actions` ⊆ `["copy","view","claude","chatgpt","perplexity"]`.                                           |
+| `strict`                                | `boolean`                                       | Fail the build on opts-validation errors (default: warn + continue).                                                       |
+| `templates.default.outputSourceFiles`   | `boolean` (JSDoc-standard)                      | Default `true`; `false` suppresses source-viewer pages + `Source:` links.                                                  |
+| `templates.default.sourceLinkToComment` | `boolean` (JSDoc-standard)                      | Default `false`; `true` points `Source:` links at the doc-comment line.                                                    |
 
 ## 5. Before / after `jsdoc.json`
 
@@ -132,9 +132,7 @@ These have no v4 counterpart. Sourced from the `JSDocOpts` interface in
       "default_theme": "dark",
       "base_url": "https://example.com/docs/",
       "title": "My Library",
-      "menu": [
-        { "title": "GitHub", "link": "https://github.com/me/lib", "target": "_blank" }
-      ],
+      "menu": [{ "title": "GitHub", "link": "https://github.com/me/lib", "target": "_blank" }],
       "sections": ["Classes", "Modules", "Global"],
       "search": true,
       "footer": "© My Library",
@@ -223,22 +221,22 @@ Each entry: **what changed → why → migration action.**
 
 For each: the v5 replacement, or "no replacement."
 
-| Removed v4 feature                | v5 replacement |
-| --------------------------------- | -------------- |
-| `default_theme` / `fallback-*`    | Built-in light/dark token sets + runtime toggle (no opt). |
-| `favicon`                         | No replacement opt (use JSDoc's static-file copy). |
-| `homepageTitle`                   | Home `<title>` derived from README/`docs/index.md` + `siteName`. |
-| `meta` (custom `<meta>` tags)     | No replacement. |
-| `search` toggle                   | Always-on fuzzy search + optional Pagefind (no opt). |
-| `codepen`                         | `@iframe` block tag / `iframe` prose fence (sandboxed embeds). |
-| `static_dir`                      | JSDoc's own static-file copying. |
+| Removed v4 feature                                | v5 replacement                                                         |
+| ------------------------------------------------- | ---------------------------------------------------------------------- |
+| `default_theme` / `fallback-*`                    | Built-in light/dark token sets + runtime toggle (no opt).              |
+| `favicon`                                         | No replacement opt (use JSDoc's static-file copy).                     |
+| `homepageTitle`                                   | Home `<title>` derived from README/`docs/index.md` + `siteName`.       |
+| `meta` (custom `<meta>` tags)                     | No replacement.                                                        |
+| `search` toggle                                   | Always-on fuzzy search + optional Pagefind (no opt).                   |
+| `codepen`                                         | `@iframe` block tag / `iframe` prose fence (sandboxed embeds).         |
+| `static_dir`                                      | JSDoc's own static-file copying.                                       |
 | `create_style` / `include_css` / `add_style_path` | Renamed → `customCss` (inline) / `customCssFile` (file path or array). |
-| `add_scripts` / `include_js` / `add_script_path`   | Renamed → `customJs` (inline) / `customJsFile` (file path or array). |
-| `footer`                          | Footer derived from `siteName`/`pkg`. |
-| `exclude_inherited`               | No replacement opt. |
-| `displayModuleHeader`             | No replacement opt. |
-| `sort`                            | No replacement opt. |
-| `shouldRemoveScrollbarStyle`      | No replacement opt. |
+| `add_scripts` / `include_js` / `add_script_path`  | Renamed → `customJs` (inline) / `customJsFile` (file path or array).   |
+| `footer`                                          | Footer derived from `siteName`/`pkg`.                                  |
+| `exclude_inherited`                               | No replacement opt.                                                    |
+| `displayModuleHeader`                             | No replacement opt.                                                    |
+| `sort`                                            | No replacement opt.                                                    |
+| `shouldRemoveScrollbarStyle`                      | No replacement opt.                                                    |
 
 ## 8. New in v5
 
@@ -322,9 +320,20 @@ canonical copy is `migration-map.json` at the repo root; it is mirrored here.
     "shouldRemoveScrollbarStyle": { "v5": null, "status": "removed" }
   },
   "v5New": [
-    "siteName", "fonts", "basePath", "docs", "docGroups", "defaultDocGroup",
-    "sectionOrder", "menu", "clubSidebarItems", "aiPrompt", "copyPage", "strict",
-    "templates.default.outputSourceFiles", "templates.default.sourceLinkToComment"
+    "siteName",
+    "fonts",
+    "basePath",
+    "docs",
+    "docGroups",
+    "defaultDocGroup",
+    "sectionOrder",
+    "menu",
+    "clubSidebarItems",
+    "aiPrompt",
+    "copyPage",
+    "strict",
+    "templates.default.outputSourceFiles",
+    "templates.default.sourceLinkToComment"
   ]
 }
 ```

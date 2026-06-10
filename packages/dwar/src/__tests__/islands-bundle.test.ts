@@ -46,8 +46,8 @@ describe('getIslandChunkEntrySource() — embed', () => {
   // reads back into EmbedProps and hydrates the body onto the marker itself.
   it('reads config from the marker data-* (not the props payload)', () => {
     const src = getIslandChunkEntrySource('embed');
-    expect(src).toContain("querySelectorAll('[data-island=\"embed\"]')");
-    expect(src).toContain("getAttribute");
+    expect(src).toContain('querySelectorAll(\'[data-island="embed"]\')');
+    expect(src).toContain('getAttribute');
     expect(src).toContain("'data-src'");
     expect(src).toContain('hydrate(');
     expect(src).not.toContain('data-island-props');

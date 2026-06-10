@@ -16,7 +16,7 @@ import { extractHeadings } from '../generate-site';
 describe('parseFrontmatter', () => {
   it('parses a valid block and strips it from the body', () => {
     const { data, body } = parseFrontmatter(
-      '---\ntitle: Getting Started\norder: 3\nhidden: true\n---\n# Heading\n\nBody.',
+      '---\ntitle: Getting Started\norder: 3\nhidden: true\n---\n# Heading\n\nBody.'
     );
     expect(data).toEqual({ title: 'Getting Started', order: 3, hidden: true });
     expect(body).toBe('# Heading\n\nBody.');
@@ -39,7 +39,7 @@ describe('parseFrontmatter', () => {
 
   it('parses quoted strings, numbers, and booleans', () => {
     const { data } = parseFrontmatter(
-      "---\ntitle: \"A: Title\"\nslug: 'my/slug'\norder: 2\nhidden: false\nlabel: bare\n---\nbody",
+      '---\ntitle: "A: Title"\nslug: \'my/slug\'\norder: 2\nhidden: false\nlabel: bare\n---\nbody'
     );
     expect(data).toEqual({
       title: 'A: Title',
@@ -64,9 +64,7 @@ describe('parseFrontmatter', () => {
 
 describe('buildDocPages — slug from path', () => {
   it('slugifies a flat path with no prefix', () => {
-    const docs: DocInput[] = [
-      { path: 'getting-started', content: '# Hi', type: 'markdown' },
-    ];
+    const docs: DocInput[] = [{ path: 'getting-started', content: '# Hi', type: 'markdown' }];
     const { pages } = buildDocPages(docs);
     expect(pages[0].slug).toBe('getting-started');
   });
@@ -112,9 +110,7 @@ describe('buildDocPages — group precedence', () => {
   });
 
   it('joins nested directory segments with humanized labels', () => {
-    const docs: DocInput[] = [
-      { path: 'a-b/c-d/leaf', content: '# Hi', type: 'markdown' },
-    ];
+    const docs: DocInput[] = [{ path: 'a-b/c-d/leaf', content: '# Hi', type: 'markdown' }];
     const { pages } = buildDocPages(docs);
     expect(pages[0].frontmatter.group).toBe('A B/C D');
   });
@@ -216,9 +212,10 @@ describe('buildDocPages — frontmatter gating', () => {
  * The pre-refactor `buildTutorialPages` behavior, reproduced verbatim, to assert
  * the adapter + builder remain byte-identical to it.
  */
-function legacyBuildTutorialPages(
-  tutorials: readonly TutorialInput[],
-): { pages: Page[]; nav: NavNode[] } {
+function legacyBuildTutorialPages(tutorials: readonly TutorialInput[]): {
+  pages: Page[];
+  nav: NavNode[];
+} {
   const TUTORIAL_SLUG_PREFIX = 'tutorials';
   const pages: Page[] = [];
   const nav: NavNode[] = [];
@@ -295,9 +292,7 @@ describe('tutorialsToDocInputs + buildTutorialPages — byte-identical to legacy
     const next = buildTutorialPages(TUTORIALS);
 
     expect(next.pages.map((p) => p.slug)).toEqual(legacy.pages.map((p) => p.slug));
-    expect(next.pages.map((p) => p.frontmatter)).toEqual(
-      legacy.pages.map((p) => p.frontmatter),
-    );
+    expect(next.pages.map((p) => p.frontmatter)).toEqual(legacy.pages.map((p) => p.frontmatter));
     expect(next.pages.map((p) => p.body)).toEqual(legacy.pages.map((p) => p.body));
     expect(next.pages.map((p) => p.headings)).toEqual(legacy.pages.map((p) => p.headings));
     expect(next.nav).toEqual(legacy.nav);

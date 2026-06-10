@@ -26,7 +26,7 @@ describe.skipIf(!HAS_PAGEFIND)('runPagefindAgainstDir', () => {
       await mkdir(dirname(out), { recursive: true });
       await writeFile(
         out,
-        typeof file.contents === 'string' ? file.contents : Buffer.from(file.contents),
+        typeof file.contents === 'string' ? file.contents : Buffer.from(file.contents)
       );
     }
     await runPagefindAgainstDir(dir);

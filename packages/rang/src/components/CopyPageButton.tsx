@@ -118,7 +118,11 @@ export function CopyPageButton({ mdUrl, siteName, prompt, actions }: CopyPageBut
       .replace(/\{siteName\}/g, siteName || 'this')
       .replace(/\{url\}/g, href)
       .replace(/\{mdUrl\}/g, new URL(mdUrl, href).href);
-    window.open(AI_PROVIDERS[provider] + encodeURIComponent(message), '_blank', 'noopener,noreferrer');
+    window.open(
+      AI_PROVIDERS[provider] + encodeURIComponent(message),
+      '_blank',
+      'noopener,noreferrer'
+    );
   };
 
   // One dropdown row per configured action, in the order given.

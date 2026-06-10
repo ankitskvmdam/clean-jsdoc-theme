@@ -33,7 +33,7 @@ export type SiteName = string | SiteLogo;
  */
 export function siteNameText(
   siteName: SiteName | undefined,
-  fallback?: string,
+  fallback?: string
 ): string | undefined {
   if (typeof siteName === 'string') return siteName;
   return siteName?.alt ?? fallback;
@@ -46,7 +46,7 @@ export function siteNameText(
  * rather than leaving a theme with no logo.
  */
 export function resolveSiteLogo(
-  siteName: SiteName | undefined,
+  siteName: SiteName | undefined
 ): { light: string; dark: string } | null {
   if (!siteName || typeof siteName === 'string') return null;
   const { default: def, dark, light } = siteName;

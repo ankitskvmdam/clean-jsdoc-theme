@@ -38,9 +38,11 @@ root as `Outputs`):
 
 ```ts
 class Outputs {
-  addOutput(name: string,
-            output: (path: string, project: ProjectReflection) => Promise<void>): void;
-  setDefaultOutputName(name: string): void;   // defaults to "html"
+  addOutput(
+    name: string,
+    output: (path: string, project: ProjectReflection) => Promise<void>
+  ): void;
+  setDefaultOutputName(name: string): void; // defaults to "html"
   getOutputSpecs(): OutputSpecification[];
   writeOutputs(project: ProjectReflection): Promise<void>;
 }
@@ -68,10 +70,14 @@ class Outputs {
 
   **Conclusion:** the robust, non-invasive way to select our output is the
   **`outputs` option**:
+
   ```jsonc
-  { "plugin": ["@clean-jsdoc-theme/typedoc"],
-    "outputs": [{ "name": "clean-jsdoc-theme", "path": "docs" }] }
+  {
+    "plugin": ["@clean-jsdoc-theme/typedoc"],
+    "outputs": [{ "name": "clean-jsdoc-theme", "path": "docs" }],
+  }
   ```
+
   `OutputSpecification = { name: string; path: string; options?: TypeDocOptions }`.
 
   Note: `--out` alone routes to the **default** output (`html`), NOT to us, unless
@@ -86,6 +92,7 @@ class Outputs {
 ## 3. Declaring options (for phase 4 `cleanJsdocTheme` block)
 
 `dist/lib/utils/options/options.d.ts`:
+
 - `app.options.addDeclaration(declaration: Readonly<DeclarationOption>): void`
 - `app.options.isSet(name): boolean`, `app.options.getValue(name): unknown`
 - `DeclarationOption` / `ParameterType` / `OptionDefaults` exported from root.
@@ -188,7 +195,7 @@ Plan mapping: `isStatic→scope`, `isReadonly→readonly`, `isAbstract→virtual
 
 - `Comment.summary: CommentDisplayPart[]` (the description/classdesc source).
 - `Comment.blockTags: CommentTag[]` — each `{ tag: TagString ('@param'…), name?,
-  typeAnnotation?, content: CommentDisplayPart[], skipRendering }`.
+typeAnnotation?, content: CommentDisplayPart[], skipRendering }`.
 - `Comment.modifierTags: Set<TagString>` (e.g. `@alpha`/`@beta`); `label?`.
 - Helpers: `getTag(name)`, `getTags(name)`, `hasModifier(name)`,
   `Comment.combineDisplayParts(parts)` (debug join — not for rendering).
@@ -196,20 +203,20 @@ Plan mapping: `isStatic→scope`, `isReadonly→readonly`, `isAbstract→virtual
   - `{ kind: 'text'; text: string }` (markdown),
   - `{ kind: 'code'; text: string }`,
   - `InlineTagDisplayPart { kind: 'inline-tag'; tag: TagString; text: string;
-    target?: Reflection | string | ReflectionSymbolId; tsLinkText?: string }`
+target?: Reflection | string | ReflectionSymbolId; tsLinkText?: string }`
     — this is the `{@link}` carrier; `target` resolves to a reflection (map to the
     longname the adapter assigned),
   - `RelativeLinkDisplayPart { kind: 'relative-link'; text; target?: FileId;
-    targetAnchor? }`.
+targetAnchor? }`.
 
 ## 6. Type hierarchy (`dist/lib/models/types.d.ts`)
 
 - `abstract class Type { abstract readonly type: keyof TypeKindMap;
-  toString(): string; ... }`.
+toString(): string; ... }`.
 - `SomeType = TypeKindMap[keyof TypeKindMap]`; `TypeKind = keyof TypeKindMap`.
 - `TypeKindMap` keys: `array, conditional, indexedAccess, inferred, intersection,
-  intrinsic, literal, mapped, optional, predicate, query, reference, reflection,
-  rest, templateLiteral, tuple, namedTupleMember, typeOperator, union, unknown`.
+intrinsic, literal, mapped, optional, predicate, query, reference, reflection,
+rest, templateLiteral, tuple, namedTupleMember, typeOperator, union, unknown`.
 - v1 adapter: `Type → { names: [type.toString()] }` (single readable string).
   Structured union/array/conditional rendering is deferred (use `type.visit(...)`
   with a `TypeVisitor` later if needed).

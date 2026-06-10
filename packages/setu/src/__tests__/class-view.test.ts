@@ -131,11 +131,7 @@ describe('bucketClassMembers', () => {
       { kind: 'function', scope: 'instance', name: 'b' },
       { kind: 'function', scope: 'instance', name: 'c' },
     ];
-    expect(bucketClassMembers(members).instanceMethods.map((m) => m.name)).toEqual([
-      'a',
-      'b',
-      'c',
-    ]);
+    expect(bucketClassMembers(members).instanceMethods.map((m) => m.name)).toEqual(['a', 'b', 'c']);
   });
 });
 
@@ -238,7 +234,9 @@ describe('getClassView', () => {
     const v = getClassView(getJSDocTaffyData(), 'DataProcessor')!;
     const names = (xs: ClassMember[]) => xs.map((m) => m.name);
 
-    expect(names(v.instanceMethods)).toEqual(expect.arrayContaining(['process', 'idGenerator', 'serialize']));
+    expect(names(v.instanceMethods)).toEqual(
+      expect.arrayContaining(['process', 'idGenerator', 'serialize'])
+    );
     expect(names(v.staticMethods)).toEqual(['isValidId']);
     expect(names(v.events)).toEqual(['dataProcessed']);
     expect(names(v.enums)).toEqual(['States']);
@@ -274,7 +272,7 @@ describe('getContainerView (non-class kinds)', () => {
     // The module exposes a factory function plus inner typedef/callback symbols.
     expect(names(v.instanceMethods)).toContain('createUser');
     expect(names(v.other)).toEqual(
-      expect.arrayContaining(['CreateUserPayload', 'CreateUserCallback']),
+      expect.arrayContaining(['CreateUserPayload', 'CreateUserCallback'])
     );
   });
 
@@ -290,7 +288,7 @@ describe('getContainerView (non-class kinds)', () => {
     const v = getContainerView(
       getJSDocTaffyData(),
       'module:CoreSchema~ISerializable',
-      'interface',
+      'interface'
     )!;
     expect(v.kind).toBe('interface');
     expect(v.constructorParams).toEqual([]);
@@ -330,7 +328,12 @@ describe('mergeContainerViews', () => {
     constructorParams: [],
     ...emptyBuckets(),
     instanceMethods: [
-      { kind: 'function', scope: 'instance', name: 'push', longname: 'module:queue/Queue~Queue#push' },
+      {
+        kind: 'function',
+        scope: 'instance',
+        name: 'push',
+        longname: 'module:queue/Queue~Queue#push',
+      },
     ],
   });
 
@@ -347,7 +350,12 @@ describe('mergeContainerViews', () => {
     constructorParams: [{ name: 'capacity', type: { names: ['number'] } }],
     ...emptyBuckets(),
     staticMethods: [
-      { kind: 'function', scope: 'static', name: 'from', longname: 'module:queue/Queue.Queue.from' },
+      {
+        kind: 'function',
+        scope: 'static',
+        name: 'from',
+        longname: 'module:queue/Queue.Queue.from',
+      },
     ],
   });
 

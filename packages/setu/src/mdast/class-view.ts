@@ -216,9 +216,6 @@ export function containerViewToMdast(
  * {@link containerViewToMdast} — a ClassView is a `ContainerView` with
  * `kind: 'class'`.
  */
-export function classViewToMdast(
-  view: ClassView,
-  options: ClassViewToMdastOptions = {}
-): Root {
+export function classViewToMdast(view: ClassView, options: ClassViewToMdastOptions = {}): Root {
   return containerViewToMdast(view as ContainerView, options);
 }

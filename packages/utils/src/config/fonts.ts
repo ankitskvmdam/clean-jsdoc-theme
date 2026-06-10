@@ -48,7 +48,7 @@ function suggestionHint(key: string): string {
 export async function validateFonts(
   raw: unknown,
   bag: DiagnosticBag,
-  fontResolver?: FontResolver,
+  fontResolver?: FontResolver
 ): Promise<ValidatedFonts> {
   if (raw == null) return {};
 
@@ -102,16 +102,14 @@ export async function validateFonts(
             {
               hint: 'pick a family from https://fonts.google.com.',
               path: `fonts.${key}`,
-            },
+            }
           );
         } else if (verdict === 'unknown') {
-          bag.info(
-            'fonts/unverified',
-            `couldn't verify "${family}" (offline?); using it as-is.`,
-            { path: `fonts.${key}` },
-          );
+          bag.info('fonts/unverified', `couldn't verify "${family}" (offline?); using it as-is.`, {
+            path: `fonts.${key}`,
+          });
         }
-      }),
+      })
     );
   }
 

@@ -14,9 +14,7 @@ describe('CodeViewer', () => {
   });
 
   it('renders the filename header and language hint when given', () => {
-    const html = render(
-      <CodeViewer code={code} language="javascript" filename="index.js" />,
-    );
+    const html = render(<CodeViewer code={code} language="javascript" filename="index.js" />);
     expect(html).toContain('index.js');
     expect(html).toContain('javascript');
   });

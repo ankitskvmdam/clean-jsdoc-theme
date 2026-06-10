@@ -49,7 +49,12 @@ export interface DropdownMenuProps {
   class?: string;
 }
 
-export function DropdownMenu({ open: openProp, onOpenChange, children, class: cls }: DropdownMenuProps) {
+export function DropdownMenu({
+  open: openProp,
+  onOpenChange,
+  children,
+  class: cls,
+}: DropdownMenuProps) {
   const [internal, setInternal] = useState(false);
   const open = openProp ?? internal;
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -196,7 +201,7 @@ export function DropdownMenuContent({
 
   const onKeyDown = (e: KeyboardEvent): void => {
     const items = Array.from(
-      contentRef.current?.querySelectorAll<HTMLElement>(MENU_ITEM_SELECTOR) ?? [],
+      contentRef.current?.querySelectorAll<HTMLElement>(MENU_ITEM_SELECTOR) ?? []
     );
     if (items.length === 0) return;
     const index = items.indexOf(document.activeElement as HTMLElement);
@@ -231,7 +236,7 @@ export function DropdownMenuContent({
         class={cn(
           'min-w-44 rounded-xl border border-border bg-background p-1 shadow-lg outline-none',
           'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
-          cls,
+          cls
         )}
       >
         {children}
@@ -271,12 +276,20 @@ export function DropdownMenuItem({
     'flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left text-sm text-foreground no-underline outline-none',
     'cursor-pointer hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground',
     disabled && 'pointer-events-none opacity-50',
-    cls,
+    cls
   );
   // tabIndex -1: items are reached via arrow keys (roving focus), not Tab.
   if (href && !disabled) {
     return (
-      <a role="menuitem" tabIndex={-1} href={href} target={target} rel={rel} class={shared} onClick={activate}>
+      <a
+        role="menuitem"
+        tabIndex={-1}
+        href={href}
+        target={target}
+        rel={rel}
+        class={shared}
+        onClick={activate}
+      >
         {children}
       </a>
     );
@@ -300,6 +313,14 @@ export function DropdownMenuSeparator({ class: cls }: { class?: string }) {
   return <div role="separator" class={cn('-mx-1 my-1 h-px bg-border', cls)} />;
 }
 
-export function DropdownMenuLabel({ children, class: cls }: { children?: ComponentChildren; class?: string }) {
-  return <div class={cn('px-2 py-1.5 text-xs font-semibold text-muted-foreground', cls)}>{children}</div>;
+export function DropdownMenuLabel({
+  children,
+  class: cls,
+}: {
+  children?: ComponentChildren;
+  class?: string;
+}) {
+  return (
+    <div class={cn('px-2 py-1.5 text-xs font-semibold text-muted-foreground', cls)}>{children}</div>
+  );
 }

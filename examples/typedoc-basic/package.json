@@ -12,7 +12,10 @@
     "clean-node-modules": "node ../../scripts/clean.mjs node_modules"
   },
   "nodemonConfig": {
-    "watch": ["src", "../../packages/typedoc/dist"],
+    "watch": [
+      "src",
+      "../../packages/typedoc/dist"
+    ],
     "ext": "ts,js",
     "exec": "typedoc"
   },

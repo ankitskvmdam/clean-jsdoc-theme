@@ -157,7 +157,7 @@ lists, strikethrough, footnotes) is preserved throughout.
 `<Embed>` MDX JSX node — the same round-trip as callouts — from two sources:
 the `@iframe` **block tag** on any doclet (`@iframe <url> key=value …`, parsed by
 `embedBlocks` in `mdast/doclet.ts`, rendered after `@example`) and an
-```` ```iframe ```` **prose fence** in README/tutorial/doc Markdown (lowered in
+` ```iframe ` **prose fence** in README/tutorial/doc Markdown (lowered in
 `guide-view.ts`). Both share one config grammar (`embed.ts` `parseEmbedConfig`:
 first token = URL, rest `key=value`; `https://`/protocol-relative only, else
 dropped with a warning). The `@iframe` tag requires `tags.allowUnknownTags: true`
@@ -231,7 +231,7 @@ wins. The path's **first segment** is the top-level group
 (a bold, non-collapsible title via rang's `groupNav`); deeper `/`-segments become
 nested, collapsible branch nodes (`buildGroupTree`) — so the renderer's existing
 arbitrary-depth `NavEntry` recursion handles nesting with no rang change. One
-generalized `sectionOrder` orders top-level groups: listed labels first (a *kind*
+generalized `sectionOrder` orders top-level groups: listed labels first (a _kind_
 label it omits is dropped — the legacy filter), then category/doc groups it
 doesn't list, appended alphabetically (doc groups pinned by `docGroups` keep that
 order). Within a deepest group, API and doc entries sort by `frontmatter.order`

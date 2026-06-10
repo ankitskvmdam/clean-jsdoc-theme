@@ -171,8 +171,8 @@ describe('render() — smoke', () => {
   it('emits a CSS file with theme variables on :root', async () => {
     const manifest = makeManifest();
     const result = await render(manifest, { theme: minimalTheme });
-    const css = result.files.find((f) =>
-      f.path.startsWith('_assets/styles.') && f.path.endsWith('.css'),
+    const css = result.files.find(
+      (f) => f.path.startsWith('_assets/styles.') && f.path.endsWith('.css')
     );
     expect(css).toBeDefined();
     const text = asString(css!);
@@ -268,17 +268,14 @@ describe('render() — island loader + payload', () => {
   it('emits a data-island-props JSON payload on each page', async () => {
     const result = await render(makeManifest(), { theme: minimalTheme });
     const home = asString(result.files.find((f) => f.path === 'index.html')!);
-    expect(home).toMatch(
-      /<script type="application\/json" data-island-props>\{.*\}<\/script>/u,
-    );
+    expect(home).toMatch(/<script type="application\/json" data-island-props>\{.*\}<\/script>/u);
   });
 });
 
 describe('render() — frontmatter handling', () => {
   it('strips setu-emitted YAML frontmatter from the rendered body', async () => {
     const manifest = makeManifest();
-    manifest.pages[0].body =
-      `---\ntitle: Home\nkind: class\nlongname: Home\n---\n\n# Welcome\n\nReal body content.\n`;
+    manifest.pages[0].body = `---\ntitle: Home\nkind: class\nlongname: Home\n---\n\n# Welcome\n\nReal body content.\n`;
     const result = await render(manifest, { theme: minimalTheme });
     const home = asString(result.files.find((f) => f.path === 'index.html')!);
 
@@ -310,9 +307,7 @@ describe('render() — CSS variable mapping', () => {
     };
     const result = await render(makeManifest(), { theme: customTheme });
     const css = asString(
-      result.files.find((f) =>
-        f.path.startsWith('_assets/styles.') && f.path.endsWith('.css'),
-      )!,
+      result.files.find((f) => f.path.startsWith('_assets/styles.') && f.path.endsWith('.css'))!
     );
     expect(css).toContain('--clean-bg:#ff00ff;');
     expect(css).toContain('--clean-accent:#abcdef;');

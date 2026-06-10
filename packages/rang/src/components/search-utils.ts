@@ -86,7 +86,7 @@ export function fuzzySearch<T>(
   query: string,
   items: readonly T[],
   getText: (item: T) => string,
-  limit = 25,
+  limit = 25
 ): FuzzyResult<T>[] {
   if (query.trim().length === 0) {
     return items.slice(0, limit).map((item) => ({ item, match: { score: 0, positions: [] } }));
@@ -96,7 +96,9 @@ export function fuzzySearch<T>(
     const match = fuzzyMatch(query, getText(item));
     if (match) hits.push({ item, match });
   }
-  hits.sort((a, b) => b.match.score - a.match.score || getText(a.item).length - getText(b.item).length);
+  hits.sort(
+    (a, b) => b.match.score - a.match.score || getText(a.item).length - getText(b.item).length
+  );
   return hits.slice(0, limit);
 }
 
@@ -122,7 +124,7 @@ export function fuzzySearchMulti<T>(
   query: string,
   items: readonly T[],
   fields: readonly FuzzyField<T>[],
-  limit = 25,
+  limit = 25
 ): FuzzyResult<T>[] {
   if (query.trim().length === 0) {
     return items.slice(0, limit).map((item) => ({ item, match: { score: 0, positions: [] } }));

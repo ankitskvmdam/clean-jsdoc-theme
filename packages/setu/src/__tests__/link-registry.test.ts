@@ -94,10 +94,7 @@ describe('registerContainerView', () => {
       augments: [],
       constructorParams: [],
       doclet: { longname: 'mod' },
-      other: [
-        { name: 'noLongname' },
-        { longname: 'mod.noName' },
-      ],
+      other: [{ name: 'noLongname' }, { longname: 'mod.noName' }],
     } as unknown as ContainerView;
     registerContainerView(registry, view, 'mod');
     expect(registry.has('mod.noName')).toBe(false);
@@ -237,9 +234,7 @@ describe('makeLinkResolver — unique short-name fallback', () => {
   });
 
   it('does not split on `/` (module paths stay whole)', () => {
-    const registry: LinkRegistry = new Map([
-      ['module:queue/types', { slug: 'pages/queue-types' }],
-    ]);
+    const registry: LinkRegistry = new Map([['module:queue/types', { slug: 'pages/queue-types' }]]);
     const resolve = makeLinkResolver(registry);
     // Prefix-stripped short name is `queue/types`, not `types`.
     expect(resolve('queue/types')).toEqual({

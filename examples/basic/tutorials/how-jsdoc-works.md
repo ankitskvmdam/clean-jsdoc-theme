@@ -19,11 +19,11 @@ There is **no tree**. There are no object references between doclets. Every rela
 
 `longname` is the canonical id of a doclet. It uses three sigils to encode scope:
 
-| Sigil | Meaning           | Example                              |
-| ----- | ----------------- | ------------------------------------ |
-| `#`   | instance member   | `SomeClass#someMethod`               |
-| `.`   | static member     | `SomeClass.staticHelper`             |
-| `~`   | inner / private   | `module:foo~InternalHelper`          |
+| Sigil | Meaning         | Example                     |
+| ----- | --------------- | --------------------------- |
+| `#`   | instance member | `SomeClass#someMethod`      |
+| `.`   | static member   | `SomeClass.staticHelper`    |
+| `~`   | inner / private | `module:foo~InternalHelper` |
 
 A few more conventions:
 

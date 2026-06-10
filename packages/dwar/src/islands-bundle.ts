@@ -55,7 +55,7 @@ export interface BundleIslandsOptions {
 }
 
 export async function bundleIslands(
-  opts: BundleIslandsOptions = {},
+  opts: BundleIslandsOptions = {}
 ): Promise<IslandBundleResult[]> {
   const outDir = (opts.outDir ?? '_islands').replace(/\/$/, '');
   const resolveDir = opts.resolveDir ?? DWAR_PACKAGE_DIR;
@@ -84,9 +84,7 @@ export async function bundleIslands(
     });
     const file = result.outputFiles?.[0];
     if (!file) {
-      throw new Error(
-        `esbuild produced no output for island '${name}'`,
-      );
+      throw new Error(`esbuild produced no output for island '${name}'`);
     }
     const contents = file.text;
     results.push({

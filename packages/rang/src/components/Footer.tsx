@@ -33,7 +33,12 @@ export function Footer({ pkg, siteName, year }: FooterProps) {
           <span>&copy; {y}</span>
         </div>
         {repoUrl && (
-          <a href={repoUrl} target="_blank" rel="noreferrer noopener" class="text-muted-foreground hover:text-accent">
+          <a
+            href={repoUrl}
+            target="_blank"
+            rel="noreferrer noopener"
+            class="text-muted-foreground hover:text-accent"
+          >
             Repository
           </a>
         )}

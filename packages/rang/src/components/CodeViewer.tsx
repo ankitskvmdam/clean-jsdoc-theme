@@ -21,12 +21,7 @@ interface MonacoGlobal {
     setTheme(theme: string): void;
     defineTheme(name: string, theme: MonacoThemeDef): void;
   };
-  Range: new (
-    startLine: number,
-    startCol: number,
-    endLine: number,
-    endCol: number,
-  ) => unknown;
+  Range: new (startLine: number, startCol: number, endLine: number, endCol: number) => unknown;
 }
 // AMD loader injected by loader.js. Named separately because `Window['require']`
 // may already be declared by ambient Node types, which would clash with a
@@ -37,7 +32,10 @@ type MonacoRequire = ((deps: string[], cb: (...mods: unknown[]) => void) => void
 interface MonacoWindow {
   monaco?: MonacoGlobal;
   require?: MonacoRequire;
-  MonacoEnvironment?: { getWorker?: (...args: unknown[]) => Worker; getWorkerUrl?: (...args: unknown[]) => string };
+  MonacoEnvironment?: {
+    getWorker?: (...args: unknown[]) => Worker;
+    getWorkerUrl?: (...args: unknown[]) => string;
+  };
 }
 
 // Localized cast helper: the page's untyped Monaco globals live on `window`.

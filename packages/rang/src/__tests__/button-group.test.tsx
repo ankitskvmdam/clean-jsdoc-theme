@@ -11,7 +11,7 @@ describe('ButtonGroup', () => {
       <ButtonGroup label="Page actions">
         <Button>Copy page</Button>
         <Button size="icon">▾</Button>
-      </ButtonGroup>,
+      </ButtonGroup>
     );
     const group = getByRole('group', { name: 'Page actions' });
     expect(group).toBeTruthy();
@@ -23,7 +23,7 @@ describe('ButtonGroup', () => {
       <ButtonGroup>
         <Button>A</Button>
         <Button>B</Button>
-      </ButtonGroup>,
+      </ButtonGroup>
     );
     const group = getByRole('group');
     expect(group.getAttribute('data-orientation')).toBe('horizontal');
@@ -38,7 +38,7 @@ describe('ButtonGroup', () => {
       <ButtonGroup orientation="vertical">
         <Button>A</Button>
         <Button>B</Button>
-      </ButtonGroup>,
+      </ButtonGroup>
     );
     const group = getByRole('group');
     expect(group.getAttribute('data-orientation')).toBe('vertical');

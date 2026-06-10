@@ -45,11 +45,7 @@ export function humanFileSize(bytes: number): string {
  * controls the side: `'left'` (default) right-pads, `'right'` left-pads.
  * Strings already at/over `width` are returned unchanged.
  */
-export function padColumn(
-  text: string,
-  width: number,
-  align: 'left' | 'right' = 'left',
-): string {
+export function padColumn(text: string, width: number, align: 'left' | 'right' = 'left'): string {
   const gap = width - text.length;
   if (gap <= 0) return text;
   const pad = ' '.repeat(gap);

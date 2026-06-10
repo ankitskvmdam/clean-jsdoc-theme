@@ -8,7 +8,7 @@ import { ISLAND_REGISTRY } from '../islands';
 describe('Embed (SSR markup)', () => {
   it('non-click-to-load: renders the island marker, data-* config, and a live iframe', () => {
     const html = renderToString(
-      <Embed src="https://example.com/widget" title="Live demo" height="500" />,
+      <Embed src="https://example.com/widget" title="Live demo" height="500" />
     );
     // Island marker + config channel.
     expect(html).toContain('data-island="embed"');
@@ -16,7 +16,9 @@ describe('Embed (SSR markup)', () => {
     expect(html).toContain('data-title="Live demo"');
     expect(html).toContain('data-height="500"');
     // Default sandbox is always serialized into the data channel.
-    expect(html).toContain('data-sandbox="allow-scripts allow-same-origin allow-popups allow-forms"');
+    expect(html).toContain(
+      'data-sandbox="allow-scripts allow-same-origin allow-popups allow-forms"'
+    );
     // A live iframe (no JS needed) with the security defaults.
     expect(html).toContain('<iframe');
     expect(html).toContain('src="https://example.com/widget"');
@@ -30,16 +32,14 @@ describe('Embed (SSR markup)', () => {
   });
 
   it('respects a custom sandbox override', () => {
-    const html = renderToString(
-      <Embed src="https://example.com" sandbox="allow-scripts" />,
-    );
+    const html = renderToString(<Embed src="https://example.com" sandbox="allow-scripts" />);
     expect(html).toContain('sandbox="allow-scripts"');
     expect(html).toContain('data-sandbox="allow-scripts"');
   });
 
   it('click-to-load: renders a poster button + noscript fallback, no live iframe', () => {
     const html = renderToString(
-      <Embed src="https://example.com/demo" title="Sandbox" clickToLoad="true" />,
+      <Embed src="https://example.com/demo" title="Sandbox" clickToLoad="true" />
     );
     expect(html).toContain('data-click-to-load="true"');
     // Poster button (accessible), not a live iframe up front.
@@ -54,7 +54,7 @@ describe('Embed (SSR markup)', () => {
 
   it('aspectRatio sizing wins over height and emits data-aspect', () => {
     const html = renderToString(
-      <Embed src="https://example.com" aspectRatio="16/9" height="400" />,
+      <Embed src="https://example.com" aspectRatio="16/9" height="400" />
     );
     expect(html).toContain('aspect-ratio:16/9');
     expect(html).toContain('data-aspect="16/9"');
@@ -74,9 +74,7 @@ describe('Embed (SSR markup)', () => {
   });
 
   it('themed src keeps the literal {theme} token in SSR markup (no hydration mismatch)', () => {
-    const html = renderToString(
-      <Embed src="https://example.com/{theme}" themed="true" />,
-    );
+    const html = renderToString(<Embed src="https://example.com/{theme}" themed="true" />);
     // themed defaults ON, so the on-state writes no data-themed attr.
     expect(html).not.toContain('data-themed');
     // SSR src is the literal token; the client resolves it post-hydration.
@@ -89,9 +87,7 @@ describe('Embed (SSR markup)', () => {
   });
 
   it('themed=false records the opt-out in the data channel', () => {
-    const html = renderToString(
-      <Embed src="https://example.com/widget" themed="false" />,
-    );
+    const html = renderToString(<Embed src="https://example.com/widget" themed="false" />);
     expect(html).toContain('data-themed="false"');
   });
 });
@@ -120,7 +116,7 @@ describe('EmbedBody (island hydration target)', () => {
 
   it('click-to-load body: poster click injects the live iframe in place', () => {
     const { container } = render(
-      <EmbedBody src="https://example.com/demo" title="Demo" clickToLoad="true" themed="false" />,
+      <EmbedBody src="https://example.com/demo" title="Demo" clickToLoad="true" themed="false" />
     );
     const poster = container.querySelector('button[data-embed-poster]');
     expect(poster).toBeTruthy();
@@ -137,7 +133,7 @@ describe('Embed (client hydration)', () => {
 
   it('click-to-load: clicking the poster injects the live iframe', () => {
     const { container } = render(
-      <Embed src="https://example.com/demo" title="Demo" clickToLoad="true" themed="false" />,
+      <Embed src="https://example.com/demo" title="Demo" clickToLoad="true" themed="false" />
     );
     const wrapper = container.querySelector('[data-island="embed"]')!;
     const poster = wrapper.querySelector('button[data-embed-poster]');
@@ -157,7 +153,7 @@ describe('Embed (client hydration)', () => {
     expect(iframe).toBeTruthy();
     expect(iframe!.getAttribute('src')).toBe('https://example.com/demo');
     expect(iframe!.getAttribute('sandbox')).toBe(
-      'allow-scripts allow-same-origin allow-popups allow-forms',
+      'allow-scripts allow-same-origin allow-popups allow-forms'
     );
     expect(iframe!.getAttribute('referrerpolicy')).toBe('strict-origin-when-cross-origin');
     expect(iframe!.getAttribute('loading')).toBe('lazy');
@@ -168,9 +164,7 @@ describe('Embed (client hydration)', () => {
   it('themed: resolves {theme} from <html data-theme> and re-points on theme change', async () => {
     document.documentElement.dataset.theme = 'dark';
     try {
-      const { container } = render(
-        <Embed src="https://example.com/{theme}/embed" themed="true" />,
-      );
+      const { container } = render(<Embed src="https://example.com/{theme}/embed" themed="true" />);
       const iframe = container.querySelector('iframe');
       expect(iframe).toBeTruthy();
       // The non-click effect resolves the initial {theme} token from <html>.
@@ -179,7 +173,7 @@ describe('Embed (client hydration)', () => {
       // Flipping the theme re-points the iframe via the MutationObserver.
       document.documentElement.dataset.theme = 'light';
       await vi.waitFor(() =>
-        expect(iframe!.getAttribute('src')).toBe('https://example.com/light/embed'),
+        expect(iframe!.getAttribute('src')).toBe('https://example.com/light/embed')
       );
     } finally {
       delete document.documentElement.dataset.theme;
@@ -189,9 +183,7 @@ describe('Embed (client hydration)', () => {
   it('themed: auto-appends ?theme-id=<theme> when the author declared no theme-id', async () => {
     document.documentElement.dataset.theme = 'dark';
     try {
-      const { container } = render(
-        <Embed src="https://example.com/embed" themed="true" />,
-      );
+      const { container } = render(<Embed src="https://example.com/embed" themed="true" />);
       const iframe = container.querySelector('iframe');
       expect(iframe).toBeTruthy();
       expect(iframe!.getAttribute('src')).toBe('https://example.com/embed?theme-id=dark');
@@ -199,7 +191,7 @@ describe('Embed (client hydration)', () => {
       // Re-points on theme change just like the {theme} token form.
       document.documentElement.dataset.theme = 'light';
       await vi.waitFor(() =>
-        expect(iframe!.getAttribute('src')).toBe('https://example.com/embed?theme-id=light'),
+        expect(iframe!.getAttribute('src')).toBe('https://example.com/embed?theme-id=light')
       );
     } finally {
       delete document.documentElement.dataset.theme;
@@ -210,11 +202,11 @@ describe('Embed (client hydration)', () => {
     document.documentElement.dataset.theme = 'dark';
     try {
       const { container } = render(
-        <Embed src="https://example.com/embed?foo=1#section" themed="true" />,
+        <Embed src="https://example.com/embed?foo=1#section" themed="true" />
       );
       const iframe = container.querySelector('iframe');
       expect(iframe!.getAttribute('src')).toBe(
-        'https://example.com/embed?foo=1&theme-id=dark#section',
+        'https://example.com/embed?foo=1&theme-id=dark#section'
       );
     } finally {
       delete document.documentElement.dataset.theme;
@@ -225,7 +217,7 @@ describe('Embed (client hydration)', () => {
     document.documentElement.dataset.theme = 'dark';
     try {
       const { container } = render(
-        <Embed src="https://example.com/embed?theme-id=light" themed="true" />,
+        <Embed src="https://example.com/embed?theme-id=light" themed="true" />
       );
       const iframe = container.querySelector('iframe');
       // Author pinned theme-id=light at declaration → stays light despite dark theme.
@@ -249,9 +241,7 @@ describe('Embed (client hydration)', () => {
   it('themed=false opts out: leaves src untouched (no theme-id appended)', () => {
     document.documentElement.dataset.theme = 'dark';
     try {
-      const { container } = render(
-        <Embed src="https://example.com/embed" themed="false" />,
-      );
+      const { container } = render(<Embed src="https://example.com/embed" themed="false" />);
       const iframe = container.querySelector('iframe');
       expect(iframe!.getAttribute('src')).toBe('https://example.com/embed');
     } finally {

@@ -29,7 +29,7 @@ export function levenshtein(a: string, b: string): number {
       curr[i] = Math.min(
         prev[i] + 1, // deletion
         curr[i - 1] + 1, // insertion
-        prev[i - 1] + cost, // substitution
+        prev[i - 1] + cost // substitution
       );
     }
     [prev, curr] = [curr, prev];
@@ -48,7 +48,7 @@ export function levenshtein(a: string, b: string): number {
 export function suggestKey(
   input: string,
   candidates: Iterable<string>,
-  maxDistance = 2,
+  maxDistance = 2
 ): string | undefined {
   const needle = input.toLowerCase();
   let best: string | undefined;

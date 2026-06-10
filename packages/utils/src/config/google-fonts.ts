@@ -16,7 +16,7 @@ export type FontExistence = 'exists' | 'missing' | 'unknown';
 /** Minimal slice of the `fetch` contract the resolver depends on. */
 export type FetchLike = (
   url: string,
-  init?: { signal?: AbortSignal; headers?: Record<string, string> },
+  init?: { signal?: AbortSignal; headers?: Record<string, string> }
 ) => Promise<{ status: number }>;
 
 /** Options for {@link createGoogleFontResolver}. All are injectable for tests. */
@@ -60,7 +60,7 @@ function fontUrl(family: string): string {
  * status, thrown error, abort/timeout) → `'unknown'` (**fail-open**).
  */
 export function createGoogleFontResolver(
-  options: GoogleFontResolverOptions = {},
+  options: GoogleFontResolverOptions = {}
 ): (family: string) => Promise<FontExistence> {
   const doFetch = options.fetch ?? (globalThis.fetch as unknown as FetchLike | undefined);
   const timeoutMs = options.timeoutMs ?? 3000;

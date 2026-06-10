@@ -54,7 +54,10 @@ type Tag = 'link' | 'linkcode' | 'linkplain';
  * nodes. A value with no tags returns a single-element array holding the
  * original node, so the common case allocates nothing extra.
  */
-function splitText(value: string, resolve: (target: string) => ResolvedLink | null): PhrasingContent[] {
+function splitText(
+  value: string,
+  resolve: (target: string) => ResolvedLink | null
+): PhrasingContent[] {
   TAG_RE.lastIndex = 0;
   let match = TAG_RE.exec(value);
   if (!match) return [text(value)];

@@ -122,7 +122,7 @@ export function getActiveHeadingIndex(
   tops: number[],
   scrollY: number,
   maxScroll: number,
-  offset: number,
+  offset: number
 ): number {
   const n = tops.length;
   if (n <= 1) return 0;
@@ -148,8 +148,7 @@ export function getActiveHeadingIndex(
 
   // There is a tail. Everything before it still uses the trigger line.
   const base = Math.max(firstUnreachable - 1, 0);
-  const reachScroll =
-    firstUnreachable > 0 ? Math.max(tops[firstUnreachable - 1] - offset, 0) : 0;
+  const reachScroll = firstUnreachable > 0 ? Math.max(tops[firstUnreachable - 1] - offset, 0) : 0;
 
   if (scrollY < reachScroll) {
     let active = 0;
@@ -185,7 +184,7 @@ export function getActiveHeadingIndex(
  */
 export function useTocProgress(
   headings: Heading[],
-  getOffset?: () => number,
+  getOffset?: () => number
 ): { currentIndex: number; progress: number } {
   const [state, setState] = useState({ currentIndex: 0, progress: 0 });
   const getOffsetRef = useRef(getOffset);

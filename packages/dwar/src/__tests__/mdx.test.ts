@@ -4,7 +4,7 @@ import { escapeStrayBraces, preprocessJsdocInlineTags } from '../mdx';
 describe('escapeStrayBraces', () => {
   it('escapes stray braces in prose (JSDoc namepaths / operators)', () => {
     expect(escapeStrayBraces('See {base#addOptions} for details.')).toBe(
-      'See \\{base#addOptions\\} for details.',
+      'See \\{base#addOptions\\} for details.'
     );
     expect(escapeStrayBraces('Matches {$gt: 1}.')).toBe('Matches \\{$gt: 1\\}.');
   });

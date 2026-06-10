@@ -40,12 +40,10 @@ const ALL_ISLAND_NAMES: IslandName[] = [
  */
 export function getIslandsLoaderScript(
   _islandNamesOnPage: IslandName[],
-  islandsBase: string,
+  islandsBase: string
 ): string {
   const base = islandsBase.endsWith('/') ? islandsBase : `${islandsBase}/`;
-  const importsArray = ALL_ISLAND_NAMES.map((n) =>
-    JSON.stringify(`${base}${n}.js`),
-  ).join(',');
+  const importsArray = ALL_ISLAND_NAMES.map((n) => JSON.stringify(`${base}${n}.js`)).join(',');
   return [
     `(function(){`,
     `var seen=new Set();`,

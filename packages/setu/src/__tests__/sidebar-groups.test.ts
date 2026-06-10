@@ -16,11 +16,16 @@ function page(
   kind: Page['frontmatter']['kind'],
   slug: string,
   group?: string,
-  order?: number,
+  order?: number
 ): Page {
   return {
     slug,
-    frontmatter: { title, kind, ...(group ? { group } : {}), ...(order !== undefined ? { order } : {}) },
+    frontmatter: {
+      title,
+      kind,
+      ...(group ? { group } : {}),
+      ...(order !== undefined ? { order } : {}),
+    },
     body: '',
     headings: [],
   };
@@ -51,16 +56,19 @@ describe('@category → frontmatter.group', () => {
   });
 
   it('leaves group unset (kind fallback) when untagged', () => {
-    const c = makeCollection([
-      { kind: 'class', name: 'Plain', longname: 'Plain' },
-    ]);
+    const c = makeCollection([{ kind: 'class', name: 'Plain', longname: 'Plain' }]);
     const p = buildContainerPage(c, 'Plain', 'class')!;
     expect(p.frontmatter.group).toBeUndefined();
   });
 
   it('ignores a blank @category text', () => {
     const c = makeCollection([
-      { kind: 'class', name: 'Blank', longname: 'Blank', tags: [{ title: 'category', text: '  ' }] },
+      {
+        kind: 'class',
+        name: 'Blank',
+        longname: 'Blank',
+        tags: [{ title: 'category', text: '  ' }],
+      },
     ]);
     const p = buildContainerPage(c, 'Blank', 'class')!;
     expect(p.frontmatter.group).toBeUndefined();
@@ -216,7 +224,12 @@ describe('assembleNav — within-group order by order then title', () => {
       ],
       sectionOrder: ['Core'],
     });
-    expect(groupNodes(nav, 'Core').map((n) => n.label)).toEqual(['Alpha', 'Beta', 'Delta', 'Gamma']);
+    expect(groupNodes(nav, 'Core').map((n) => n.label)).toEqual([
+      'Alpha',
+      'Beta',
+      'Delta',
+      'Gamma',
+    ]);
   });
 
   it('orders within a nested branch too', () => {

@@ -42,7 +42,7 @@ export function ButtonGroup({
         horizontal
           ? '[&>*:first-child]:rounded-l-xl [&>*:last-child]:rounded-r-xl [&>*:not(:first-child)]:-ml-px'
           : '[&>*:first-child]:rounded-t-xl [&>*:last-child]:rounded-b-xl [&>*:not(:first-child)]:-mt-px',
-        cls,
+        cls
       )}
     >
       {children}

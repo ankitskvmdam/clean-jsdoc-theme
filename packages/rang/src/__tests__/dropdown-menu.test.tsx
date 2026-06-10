@@ -68,7 +68,7 @@ describe('DropdownMenu', () => {
       <div>
         <Menu />
         <button type="button">outside</button>
-      </div>,
+      </div>
     );
     fireEvent.click(getByRole('button', { name: 'Open' }));
     expect(getByRole('menu')).toBeTruthy();

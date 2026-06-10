@@ -133,8 +133,12 @@ export interface SourceModel {
 
 /** Forward-slash join that normalizes backslashes and collapses repeats. */
 function joinPath(dir: string, file: string): string {
-  const a = String(dir ?? '').replace(/\\/g, '/').replace(/\/+$/, '');
-  const b = String(file ?? '').replace(/\\/g, '/').replace(/^\/+/, '');
+  const a = String(dir ?? '')
+    .replace(/\\/g, '/')
+    .replace(/\/+$/, '');
+  const b = String(file ?? '')
+    .replace(/\\/g, '/')
+    .replace(/^\/+/, '');
   if (!a) return b;
   if (!b) return a;
   return `${a}/${b}`;
@@ -173,9 +177,7 @@ function buildSourcePage(input: SourceFileInput): Page {
 function buildIndexPage(sources: readonly SourceFileInput[]): Page {
   const sorted = [...sources].sort((a, b) => a.relPath.localeCompare(b.relPath));
   // Each entry is a list item wrapping a paragraph with a link to the file page.
-  const listItems = sorted.map((s) =>
-    li(p(link(`/${fileSlug(s.relPath)}/`, text(s.relPath)))),
-  );
+  const listItems = sorted.map((s) => li(p(link(`/${fileSlug(s.relPath)}/`, text(s.relPath)))));
 
   const tree: Root = {
     type: 'root',
@@ -198,7 +200,7 @@ function buildIndexPage(sources: readonly SourceFileInput[]): Page {
  */
 export function buildSourceModel(
   sources: readonly SourceFileInput[],
-  options: SourceModelOptions = {},
+  options: SourceModelOptions = {}
 ): SourceModel {
   const { linkToComment = false } = options;
   const pages = sources.map(buildSourcePage);

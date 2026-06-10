@@ -6,7 +6,10 @@ import type { SiteLogo } from '../../site/site-name';
 import type { Diagnostic } from '../../config/diagnostics';
 
 /** A fake resolver that always returns the same verdict — never hits the network. */
-const resolverReturning = (verdict: FontExistence): FontResolver => async () => verdict;
+const resolverReturning =
+  (verdict: FontExistence): FontResolver =>
+  async () =>
+    verdict;
 
 /** Find a collected diagnostic by code. */
 function byCode(list: readonly Diagnostic[], code: string): Diagnostic | undefined {

@@ -52,7 +52,7 @@ describe('buildThemeVariableCss — mono', () => {
   it('quotes a bare mono family and appends a monospace fallback', () => {
     const css = buildThemeVariableCss(baseTokens);
     expect(css).toContain(
-      "--clean-font-mono:'Spline Sans Mono',ui-monospace,SFMono-Regular,Menlo,monospace;",
+      "--clean-font-mono:'Spline Sans Mono',ui-monospace,SFMono-Regular,Menlo,monospace;"
     );
   });
 

@@ -94,8 +94,7 @@ export function buildGoogleFontsLinks(fonts?: {
   if (families.length === 0) return '';
   const params = families
     .map(
-      (family) =>
-        `family=${encodeURIComponent(family).replace(/%20/g, '+')}:wght@400;500;600;700`,
+      (family) => `family=${encodeURIComponent(family).replace(/%20/g, '+')}:wght@400;500;600;700`
     )
     .join('&');
   const href = `https://fonts.googleapis.com/css2?${params}&display=swap`;
@@ -141,13 +140,7 @@ const U2029 = String.fromCharCode(0x2029);
 function escapeJsonForScript(json: string): string {
   // Defend against `</script>` injection and Unicode line separators that
   // break in JavaScript string contexts.
-  return json
-    .split('</')
-    .join('<\\/')
-    .split(U2028)
-    .join('\\u2028')
-    .split(U2029)
-    .join('\\u2029');
+  return json.split('</').join('<\\/').split(U2028).join('\\u2028').split(U2029).join('\\u2029');
 }
 
 export function buildIslandsPropsPayload(islands: IslandRecord[]): string {
@@ -199,9 +192,7 @@ export function renderHtmlDocument(opts: HtmlDocumentOptions): string {
     `<script>${getScrollbarScript()}</script>` +
     // Custom JS runs last, after the theme's own scripts: the file links first
     // (in order), then the inline string. Classic scripts (not modules) for v4 parity.
-    (customJsLinks ?? [])
-      .map((src) => `<script src="${escapeHtml(src)}"></script>`)
-      .join('') +
+    (customJsLinks ?? []).map((src) => `<script src="${escapeHtml(src)}"></script>`).join('') +
     (customJs ? `<script>${escapeScriptContent(customJs)}</script>` : '') +
     `</body>` +
     `</html>`

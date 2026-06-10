@@ -1,9 +1,4 @@
-import {
-  PageKind,
-  TDoclet,
-  TDocletParam,
-  TJSDocSaltyCollection,
-} from '@clean-jsdoc-theme/utils';
+import { PageKind, TDoclet, TDocletParam, TJSDocSaltyCollection } from '@clean-jsdoc-theme/utils';
 import {
   FilterDocletsOptions,
   filterDoclets,
@@ -196,7 +191,7 @@ export function getContainerView(
     inherited = getInheritedMembers(collection, longname, options, ownKeys);
   }
 
-  const constructorParams = kind === 'class' ? canonical.params ?? [] : [];
+  const constructorParams = kind === 'class' ? (canonical.params ?? []) : [];
 
   return {
     doclet: canonical,

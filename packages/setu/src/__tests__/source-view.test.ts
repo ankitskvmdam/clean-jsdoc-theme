@@ -11,7 +11,11 @@ import { getJSDocTaffyData } from './factory';
 
 const SAMPLE: SourceFileInput[] = [
   { absPath: '/repo/src/Foo.js', relPath: 'src/Foo.js', content: 'export const a = 1;' },
-  { absPath: '/repo/lib/util/index.ts', relPath: 'lib/util/index.ts', content: 'export type T = 1;' },
+  {
+    absPath: '/repo/lib/util/index.ts',
+    relPath: 'lib/util/index.ts',
+    content: 'export type T = 1;',
+  },
   { absPath: '/repo/styles/main.css', relPath: 'styles/main.css', content: '.a { color: red; }' },
 ];
 

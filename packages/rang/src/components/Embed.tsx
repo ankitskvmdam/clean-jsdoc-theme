@@ -112,14 +112,7 @@ function resolveSrc(src: string, themed: boolean): string {
  * the body (`EmbedBody`) keeps the marker out of the hydration root, so the
  * loader can `hydrate(h(EmbedBody, props), markerEl)` without double-wrapping.
  */
-export function EmbedBody({
-  src,
-  title,
-  allow,
-  sandbox,
-  clickToLoad,
-  themed,
-}: EmbedProps) {
+export function EmbedBody({ src, title, allow, sandbox, clickToLoad, themed }: EmbedProps) {
   const clickable = isTrue(clickToLoad);
   const isThemed = isThemedOn(themed);
   const sandboxValue = sandbox ?? DEFAULT_SANDBOX;

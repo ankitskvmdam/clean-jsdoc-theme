@@ -47,7 +47,11 @@ export function CodeTabs({ tabs }: CodeTabsProps) {
 
   return (
     <div class="my-4 rounded border border-(--clean-border)">
-      <div role="tablist" aria-label="Code variants" class="flex gap-1 border-b border-(--clean-border) bg-(--clean-bg-muted) px-2 pt-2">
+      <div
+        role="tablist"
+        aria-label="Code variants"
+        class="flex gap-1 border-b border-(--clean-border) bg-(--clean-bg-muted) px-2 pt-2"
+      >
         {tabs.map((tab, i) => {
           const id = `code-tab-${i}`;
           const panelId = `code-tab-panel-${i}`;

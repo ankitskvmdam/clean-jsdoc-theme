@@ -153,9 +153,7 @@ export class Queue {
    * @yields {JobDescriptor} The next job, highest priority first.
    */
   *peek() {
-    const ordered = [...this.#jobs.values()].sort(
-      (a, b) => b.priority - a.priority,
-    );
+    const ordered = [...this.#jobs.values()].sort((a, b) => b.priority - a.priority);
     for (const job of ordered) yield job;
   }
 

@@ -92,7 +92,10 @@ describe('Sidebar — collapsible clubs (interactive)', () => {
 
   it('restores a persisted collapsed state over the auto-open default', async () => {
     // User previously collapsed the club that holds the current page.
-    localStorage.setItem('clean-jsdoc-theme:sidebar-open', JSON.stringify({ 'Modules::queue': false }));
+    localStorage.setItem(
+      'clean-jsdoc-theme:sidebar-open',
+      JSON.stringify({ 'Modules::queue': false })
+    );
     const { queryByRole } = mount(<Sidebar nav={CLUB} currentSlug="module/queue-queue" />);
     // Despite holding the active page, the stored `false` wins → collapsed once
     // the persisted state loads on mount.
@@ -105,7 +108,13 @@ describe('Sidebar — menu region (icons + external links)', () => {
   // icons as prefixed `source:code` strings.
   const menuNav: NavNode[] = [
     { label: 'Home', slug: '', icon: 'lucide:home', menu: true },
-    { label: 'GitHub', href: 'https://github.com/x/y', external: true, icon: 'simpleicons:github', menu: true },
+    {
+      label: 'GitHub',
+      href: 'https://github.com/x/y',
+      external: true,
+      icon: 'simpleicons:github',
+      menu: true,
+    },
     { label: 'Source files', slug: 'source', icon: 'lucide:code-xml', menu: true },
     { label: 'BaseEntity', slug: 'baseentity', group: 'Classes' },
   ];
@@ -128,14 +137,22 @@ describe('Sidebar — menu region (icons + external links)', () => {
   });
 
   it('renders a bundled lucide icon for a lucide: icon, not a CDN image', () => {
-    const html = render(<Sidebar nav={[{ label: 'Home', slug: '', icon: 'lucide:home', menu: true }]} currentSlug="" />);
+    const html = render(
+      <Sidebar
+        nav={[{ label: 'Home', slug: '', icon: 'lucide:home', menu: true }]}
+        currentSlug=""
+      />
+    );
     expect(html).toContain('lucide-house'); // lucide `home` maps to the House glyph
     expect(html).not.toContain('cdn.simpleicons.org');
   });
 
   it('falls back to external-link for an unknown lucide: icon', () => {
     const html = render(
-      <Sidebar nav={[{ label: 'X', href: 'https://x.y', external: true, icon: 'lucide:nope', menu: true }]} currentSlug="" />,
+      <Sidebar
+        nav={[{ label: 'X', href: 'https://x.y', external: true, icon: 'lucide:nope', menu: true }]}
+        currentSlug=""
+      />
     );
     expect(html).toContain('lucide-external-link');
     expect(html).not.toContain('cdn.simpleicons.org');

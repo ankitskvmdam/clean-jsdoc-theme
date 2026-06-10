@@ -32,11 +32,7 @@ const LINE_SPACING_OPTIONS: ReadonlyArray<{ value: LineSpacing; label: string }>
 const FONT_SIZE_PX: Partial<Record<FontSize, string>> = { sm: '15px', lg: '18px' };
 const LINE_HEIGHT: Partial<Record<LineSpacing, string>> = { compact: '1.4', relaxed: '1.8' };
 
-function readStored<T extends string>(
-  key: string,
-  allowed: ReadonlyArray<T>,
-  fallback: T,
-): T {
+function readStored<T extends string>(key: string, allowed: ReadonlyArray<T>, fallback: T): T {
   if (typeof window === 'undefined') return fallback;
   const v = window.localStorage.getItem(key);
   return v && (allowed as ReadonlyArray<string>).includes(v) ? (v as T) : fallback;
@@ -83,7 +79,7 @@ function SegmentedControl<T extends string>({
           onClick={() => onChange(o.value)}
           class={cn(
             'rounded px-3 py-1 text-sm text-foreground transition-colors hover:bg-accent',
-            'aria-pressed:bg-primary aria-pressed:text-primary-foreground aria-pressed:hover:bg-primary',
+            'aria-pressed:bg-primary aria-pressed:text-primary-foreground aria-pressed:hover:bg-primary'
           )}
         >
           {o.label}
@@ -113,7 +109,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   useEffect(() => {
     setFontSize(readStored<FontSize>(FONT_SIZE_KEY, ['sm', 'md', 'lg'], 'md'));
     setLineSpacing(
-      readStored<LineSpacing>(LINE_SPACING_KEY, ['compact', 'default', 'relaxed'], 'default'),
+      readStored<LineSpacing>(LINE_SPACING_KEY, ['compact', 'default', 'relaxed'], 'default')
     );
   }, []);
 

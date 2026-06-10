@@ -12,10 +12,10 @@ ungrouped bucket. `order: 2` keeps it after that page.
 
 ## docs options
 
-| Option            | Meaning                                                  |
-| ----------------- | -------------------------------------------------------- |
-| `docs`            | Directory the bridge walks for Markdown/HTML content.    |
-| `docGroups`       | Explicit top-level group order in the sidebar.           |
+| Option            | Meaning                                                    |
+| ----------------- | ---------------------------------------------------------- |
+| `docs`            | Directory the bridge walks for Markdown/HTML content.      |
+| `docGroups`       | Explicit top-level group order in the sidebar.             |
 | `defaultDocGroup` | Group label for a doc with no frontmatter/directory group. |
 
 Slugs are the relative path with no prefix, so this file lives at

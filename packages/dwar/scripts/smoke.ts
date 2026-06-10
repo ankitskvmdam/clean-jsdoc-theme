@@ -61,7 +61,7 @@ async function main() {
     headings: [],
     frontmatter: { title: 'example.js', kind: 'source', hidden: true },
     source: {
-      code: "export function add(a, b) {\n  return a + b;\n}\n",
+      code: 'export function add(a, b) {\n  return a + b;\n}\n',
       language: 'javascript',
       filename: 'example.js',
     },

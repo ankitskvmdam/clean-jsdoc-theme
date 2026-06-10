@@ -28,7 +28,10 @@ const LONGNAME_SEPARATORS = /[.#~:]+/g;
  * `module` becomes a leading segment in the former.
  */
 export function splitLongnameForSlug(longname: string): string[] {
-  return longname.replace(LONGNAME_SEPARATORS, ' ').split(/\s+/).filter((p) => p.length > 0);
+  return longname
+    .replace(LONGNAME_SEPARATORS, ' ')
+    .split(/\s+/)
+    .filter((p) => p.length > 0);
 }
 
 /**
@@ -49,9 +52,9 @@ export function splitLongnameForSlug(longname: string): string[] {
  * missing/non-numeric `order` is left `undefined` (the page sorts last,
  * alphabetically, exactly as an untagged one would).
  */
-function parseCategory(
-  doclet: { tags?: { title?: string; text?: string }[] }
-): { group: string; order?: number } | undefined {
+function parseCategory(doclet: {
+  tags?: { title?: string; text?: string }[];
+}): { group: string; order?: number } | undefined {
   const tag = doclet.tags?.find((t) => t.title === 'category');
   const text = tag?.text?.trim();
   if (!text) return undefined;
@@ -94,9 +97,7 @@ function parseCategory(
  * missing/non-numeric value is left `undefined` (the page sorts last,
  * alphabetically), exactly as an untagged one would.
  */
-function readOrder(
-  doclet: { tags?: { title?: string; text?: string }[] }
-): number | undefined {
+function readOrder(doclet: { tags?: { title?: string; text?: string }[] }): number | undefined {
   const tag = doclet.tags?.find((t) => t.title === 'order');
   const text = tag?.text?.trim();
   if (!text) return undefined;
@@ -116,7 +117,10 @@ function headingText(node: MdastHeading): string {
 }
 
 /** Read a string attribute off an mdast-mdx JSX element node. */
-function jsxAttr(node: { attributes?: { name?: string; value?: unknown }[] }, name: string): string | undefined {
+function jsxAttr(
+  node: { attributes?: { name?: string; value?: unknown }[] },
+  name: string
+): string | undefined {
   const attr = node.attributes?.find((a) => a.name === name);
   return typeof attr?.value === 'string' ? attr.value : undefined;
 }
@@ -186,7 +190,7 @@ function stripHtml(html: string): string {
  */
 export function enumerateLongnamesByKind(
   collection: TJSDocSaltyCollection<TDoclet>,
-  kind: PageKind,
+  kind: PageKind
 ): string[] {
   const doclets = collection({ kind }).get();
   const seen = new Set<string>();
@@ -226,7 +230,7 @@ export function renderContainerPage(
   kind: PageKind,
   longname: string,
   slug: string,
-  { sourceLink, resolveLink, resolveTutorial }: RenderOptions = {},
+  { sourceLink, resolveLink, resolveTutorial }: RenderOptions = {}
 ): Page {
   const tree = containerViewToMdast(view, { sourceLink, resolveLink, resolveTutorial });
   if (resolveLink) resolveLinkTags(tree, resolveLink);
@@ -276,7 +280,7 @@ export function buildContainerPage(
   longname: string,
   kind: PageKind,
   sourceLink?: DocletBlocksOptions['sourceLink'],
-  resolveLink?: DocletBlocksOptions['resolveLink'],
+  resolveLink?: DocletBlocksOptions['resolveLink']
 ): Page | null {
   const view = getContainerView(collection, longname, kind);
   if (!view) return null;
@@ -291,7 +295,7 @@ export function buildContainerPage(
 export function buildClassPage(
   collection: TJSDocSaltyCollection<TDoclet>,
   longname: string,
-  sourceLink?: DocletBlocksOptions['sourceLink'],
+  sourceLink?: DocletBlocksOptions['sourceLink']
 ): Page | null {
   return buildContainerPage(collection, longname, 'class', sourceLink);
 }
@@ -316,7 +320,7 @@ const GLOBALS_SLUG = 'global';
  * page into the link registry during its dedup pass before any body is rendered.
  */
 export function buildGlobalsView(
-  collection: TJSDocSaltyCollection<TDoclet>,
+  collection: TJSDocSaltyCollection<TDoclet>
 ): { view: ContainerView; slug: string } | null {
   const globals = filterDoclets(collection({ scope: 'global' }).get());
   const remainder = globals.filter((d) => !GLOBALS_EXCLUDED_KINDS.has(d.kind ?? ''));
@@ -344,7 +348,7 @@ export function buildGlobalsView(
 export function buildGlobalsPage(
   collection: TJSDocSaltyCollection<TDoclet>,
   sourceLink?: DocletBlocksOptions['sourceLink'],
-  resolveLink?: DocletBlocksOptions['resolveLink'],
+  resolveLink?: DocletBlocksOptions['resolveLink']
 ): Page | null {
   const built = buildGlobalsView(collection);
   if (!built) return null;
@@ -535,7 +539,10 @@ interface GroupedEntry {
 
 /** Split a full `group` path into its non-empty `/`-separated segments. */
 function splitGroupPath(path: string): string[] {
-  return path.split('/').map((s) => s.trim()).filter((s) => s.length > 0);
+  return path
+    .split('/')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
 }
 
 /**
@@ -601,7 +608,10 @@ function buildGroupTree(topLabel: string, entries: GroupedEntry[]): NavNode[] {
   // A branch's effective order is the min `order` of the pages routed into it, so
   // `order=1` on any page pulls its whole subgroup up among its siblings.
   const minOrder = (items: GroupedEntry[]): number =>
-    items.reduce((m, e) => Math.min(m, e.order ?? Number.POSITIVE_INFINITY), Number.POSITIVE_INFINITY);
+    items.reduce(
+      (m, e) => Math.min(m, e.order ?? Number.POSITIVE_INFINITY),
+      Number.POSITIVE_INFINITY
+    );
 
   function emit(level: Branch, depth: number, group: string): NavNode[] {
     interface Sibling {
@@ -689,7 +699,7 @@ export function clubNavTree(nodes: readonly NavNode[]): NavNode[] {
   const minOrder = (members: NavNode[]): number =>
     members.reduce(
       (m, n) => Math.min(m, n.order ?? Number.POSITIVE_INFINITY),
-      Number.POSITIVE_INFINITY,
+      Number.POSITIVE_INFINITY
     );
 
   interface Parent {
@@ -820,7 +830,13 @@ export function assembleNav({
     // Docs carry an explicit `frontmatter.order` (unlike tutorials, which only
     // have the builder's tree order), so sort them by it then title — `order: 2`
     // sits after `order: 1` regardless of the directory-walk order they arrive in.
-    entries.push({ leaf: { ...d }, path, explicit: d.group !== undefined, order: d.order, sort: 'alpha' });
+    entries.push({
+      leaf: { ...d },
+      path,
+      explicit: d.group !== undefined,
+      order: d.order,
+      sort: 'alpha',
+    });
   }
 
   // Bucket entries by their TOP-LEVEL group (first path segment), preserving
@@ -846,8 +862,7 @@ export function assembleNav({
     bySection.set(top, nodes);
   }
 
-  const baseOrder =
-    sectionOrder && sectionOrder.length > 0 ? sectionOrder : DEFAULT_SECTION_ORDER;
+  const baseOrder = sectionOrder && sectionOrder.length > 0 ? sectionOrder : DEFAULT_SECTION_ORDER;
   // Fold doc-group section labels into the effective order, AFTER the base
   // (API) sections: `sectionOrder` stays authoritative for any label it already
   // lists; doc groups it omits are appended in `docGroups` order, then any
@@ -947,7 +962,13 @@ function resolveMenuItem(
   }
   if (id && (SOURCE_MENU_IDS as readonly string[]).includes(id)) {
     if (!source) return null;
-    return { ...source, label: title || source.label, icon: icon || SOURCE_ICON, menu: true, order };
+    return {
+      ...source,
+      label: title || source.label,
+      icon: icon || SOURCE_ICON,
+      menu: true,
+      order,
+    };
   }
 
   // External link.

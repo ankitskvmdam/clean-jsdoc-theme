@@ -125,7 +125,7 @@ function renderRow(
   size: number,
   gzip: number | undefined,
   widths: { label: number; size: number; gzip: number },
-  color: boolean,
+  color: boolean
 ): string {
   const sizeCell = padColumn(humanFileSize(size), widths.size, 'right');
   const cells = `${padColumn(label, widths.label)}  ${ansi.cyan(sizeCell, color)}`;
@@ -157,11 +157,7 @@ export function formatBuildReport(input: BuildReportInput): string {
 
   // Column widths span both the route table and the assets section so the
   // size/gzip columns line up across the whole report.
-  const labels = [
-    'Route',
-    ...shownPages.map((p) => p.route),
-    ...assets.map((a) => a.path),
-  ];
+  const labels = ['Route', ...shownPages.map((p) => p.route), ...assets.map((a) => a.path)];
   const sizeStrings = [
     ...shownPages.map((p) => humanFileSize(p.size)),
     ...assets.map((a) => humanFileSize(a.size)),
@@ -178,8 +174,7 @@ export function formatBuildReport(input: BuildReportInput): string {
     gzip: Math.max('(gzip)'.length, ...gzipStrings.map((s) => s.length), 0),
   };
 
-  const ruleWidth =
-    2 + widths.label + 2 + widths.size + (withGzip ? 2 + widths.gzip : 0);
+  const ruleWidth = 2 + widths.label + 2 + widths.size + (withGzip ? 2 + widths.gzip : 0);
   const rule = ansi.dim('─'.repeat(ruleWidth), color);
 
   const lines: string[] = [];
@@ -193,7 +188,7 @@ export function formatBuildReport(input: BuildReportInput): string {
       : '';
   lines.push(ansi.green(`clean-jsdoc-theme — build complete${duration}`, color));
   lines.push(
-    `Output: ${ansi.cyan(destination, color)}  (${pageCount} pages, ${assetCount} assets)`,
+    `Output: ${ansi.cyan(destination, color)}  (${pageCount} pages, ${assetCount} assets)`
   );
   lines.push('');
 
@@ -225,8 +220,8 @@ export function formatBuildReport(input: BuildReportInput): string {
   lines.push(rule);
   lines.push(
     `  HTML ${humanFileSize(htmlBytes)} · Markdown ${humanFileSize(
-      markdownBytes,
-    )} · Assets ${humanFileSize(assetBytes)} · Total ${humanFileSize(total)}`,
+      markdownBytes
+    )} · Assets ${humanFileSize(assetBytes)} · Total ${humanFileSize(total)}`
   );
 
   return lines.join('\n');

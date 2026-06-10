@@ -41,11 +41,7 @@ const NUMBER_KEYS = new Set<keyof EmbedSpec>(['height']);
 const BOOLEAN_KEYS = new Set<keyof EmbedSpec>(['clickToLoad', 'themed']);
 
 /** All allowlisted config keys (used to detect unknown keys for the warning). */
-const KNOWN_KEYS = new Set<string>([
-  ...STRING_KEYS,
-  ...NUMBER_KEYS,
-  ...BOOLEAN_KEYS,
-] as string[]);
+const KNOWN_KEYS = new Set<string>([...STRING_KEYS, ...NUMBER_KEYS, ...BOOLEAN_KEYS] as string[]);
 
 /**
  * Tokenize a config string into whitespace-delimited tokens, keeping spaces

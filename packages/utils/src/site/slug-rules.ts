@@ -59,7 +59,7 @@ export function slugifyPath(parts: string[]): string {
         .replace(DIACRITICS, '')
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, ''),
+        .replace(/^-+|-+$/g, '')
     )
     .filter((part) => part.length > 0)
     .join('/');
@@ -85,7 +85,7 @@ export function slugifySourcePath(relPath: string): string {
       segment
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, ''),
+        .replace(/^-+|-+$/g, '')
     )
     .filter((segment) => segment.length > 0)
     .join('/');

@@ -43,7 +43,15 @@
     "aiPrompt": { "status": "new", "type": "string" },
     "copyPage": { "status": "new", "type": "boolean | { enabled?, actions? }" },
     "strict": { "status": "new", "type": "boolean" },
-    "templates.default.outputSourceFiles": { "status": "new", "type": "boolean", "_note": "JSDoc-standard option, honored by v5" },
-    "templates.default.sourceLinkToComment": { "status": "new", "type": "boolean", "_note": "JSDoc-standard option, honored by v5" }
+    "templates.default.outputSourceFiles": {
+      "status": "new",
+      "type": "boolean",
+      "_note": "JSDoc-standard option, honored by v5"
+    },
+    "templates.default.sourceLinkToComment": {
+      "status": "new",
+      "type": "boolean",
+      "_note": "JSDoc-standard option, honored by v5"
+    }
   }
 }

@@ -22,7 +22,7 @@ function resourceLink(node: Link, _parent: Parents | undefined, state: State, in
   let subexit = state.enter('label');
   let value = tracker.move('[');
   value += tracker.move(
-    state.containerPhrasing(node, { before: value, after: '](', ...tracker.current() }),
+    state.containerPhrasing(node, { before: value, after: '](', ...tracker.current() })
   );
   value += tracker.move('](');
   subexit();
@@ -31,7 +31,9 @@ function resourceLink(node: Link, _parent: Parents | undefined, state: State, in
     // URL has whitespace/control chars → angle-bracketed destination literal.
     subexit = state.enter('destinationLiteral');
     value += tracker.move('<');
-    value += tracker.move(state.safe(node.url, { before: value, after: '>', ...tracker.current() }));
+    value += tracker.move(
+      state.safe(node.url, { before: value, after: '>', ...tracker.current() })
+    );
     value += tracker.move('>');
   } else {
     subexit = state.enter('destinationRaw');
@@ -40,7 +42,7 @@ function resourceLink(node: Link, _parent: Parents | undefined, state: State, in
         before: value,
         after: node.title ? ' ' : ')',
         ...tracker.current(),
-      }),
+      })
     );
   }
   subexit();
@@ -48,7 +50,9 @@ function resourceLink(node: Link, _parent: Parents | undefined, state: State, in
   if (node.title) {
     subexit = state.enter('titleQuote');
     value += tracker.move(' "');
-    value += tracker.move(state.safe(node.title, { before: value, after: '"', ...tracker.current() }));
+    value += tracker.move(
+      state.safe(node.title, { before: value, after: '"', ...tracker.current() })
+    );
     value += tracker.move('"');
     subexit();
   }
@@ -94,10 +98,7 @@ export function toMdx(tree: Root, options: ToMdxOptions = {}): string {
  * Markdown tutorials, where round-tripping would drop GFM tables and other
  * syntax the mdast serializer doesn't model).
  */
-export function withFrontmatter(
-  body: string,
-  frontmatter?: Record<string, unknown>,
-): string {
+export function withFrontmatter(body: string, frontmatter?: Record<string, unknown>): string {
   const fm = frontmatter ? renderFrontmatter(frontmatter) : '';
   return fm + body;
 }

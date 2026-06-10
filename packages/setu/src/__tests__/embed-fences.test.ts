@@ -14,9 +14,7 @@ const isEmbed = (node: unknown): node is MdxJsxFlowElement =>
   (node as MdxJsxFlowElement).name === 'Embed';
 
 const attrOf = (node: MdxJsxFlowElement, name: string): string | undefined => {
-  const attr = node.attributes.find(
-    (a) => a.type === 'mdxJsxAttribute' && a.name === name,
-  );
+  const attr = node.attributes.find((a) => a.type === 'mdxJsxAttribute' && a.name === name);
   return attr && typeof attr.value === 'string' ? attr.value : undefined;
 };
 
@@ -48,7 +46,7 @@ describe('resolveEmbedFences', () => {
     const tree: Root = root(
       p(text('before')),
       code('iframe', 'http://insecure.example.com'),
-      p(text('after')),
+      p(text('after'))
     );
     resolveEmbedFences(tree);
 
@@ -60,7 +58,7 @@ describe('resolveEmbedFences', () => {
 
   it('handles a multi-line fence body', () => {
     const tree: Root = root(
-      code('iframe', 'https://example.com/embed\nheight=300\ntitle="Live demo"'),
+      code('iframe', 'https://example.com/embed\nheight=300\ntitle="Live demo"')
     );
     resolveEmbedFences(tree);
 
@@ -77,7 +75,7 @@ describe('resolveEmbedFences', () => {
       h(1, text('Title')),
       code('iframe', 'https://example.com/one'),
       code('js', 'noop();'),
-      code('iframe', 'https://example.com/two'),
+      code('iframe', 'https://example.com/two')
     );
     resolveEmbedFences(tree);
 
@@ -94,7 +92,7 @@ describe('resolveEmbedFences', () => {
     const tree: Root = root(
       h(2, text('Heading')),
       p(text('Some prose.')),
-      code('ts', 'const y: number = 2;'),
+      code('ts', 'const y: number = 2;')
     );
     const before = JSON.parse(JSON.stringify(tree));
     resolveEmbedFences(tree);

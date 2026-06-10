@@ -31,7 +31,7 @@ Load the plugin and select its output in `typedoc.json`. Verified against
 {
   "entryPoints": ["src/index.ts"],
   "plugin": ["@clean-jsdoc-theme/typedoc"],
-  "outputs": [{ "name": "clean-jsdoc-theme", "path": "docs" }]
+  "outputs": [{ "name": "clean-jsdoc-theme", "path": "docs" }],
 }
 ```
 
@@ -66,8 +66,8 @@ config (the TypeDoc analog of the JSDoc theme's `opts`):
     // Custom AI prompt for the copy-page button.
     "aiPrompt": "Summarize this page.",
     // Escalate validation errors (bad font / unknown key) to a hard failure.
-    "strict": false
-  }
+    "strict": false,
+  },
 }
 ```
 

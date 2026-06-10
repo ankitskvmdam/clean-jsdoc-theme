@@ -14,10 +14,10 @@ wins over the directory default.
 
 ## Recognized keys
 
-| Key      | Effect                                                        |
-| -------- | ------------------------------------------------------------- |
-| `title`  | Page + nav label. Falls back to the humanized filename.       |
-| `group`  | Sidebar section. Falls back to the humanized directory path.  |
-| `order`  | Sort order within the group.                                  |
-| `slug`   | Override the URL (defaults to the relative path).             |
-| `hidden` | Render the page but keep it out of the sidebar.               |
+| Key      | Effect                                                       |
+| -------- | ------------------------------------------------------------ |
+| `title`  | Page + nav label. Falls back to the humanized filename.      |
+| `group`  | Sidebar section. Falls back to the humanized directory path. |
+| `order`  | Sort order within the group.                                 |
+| `slug`   | Override the URL (defaults to the relative path).            |
+| `hidden` | Render the page but keep it out of the sidebar.              |

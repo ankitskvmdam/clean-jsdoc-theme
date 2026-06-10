@@ -25,7 +25,7 @@ always share one version and ship together:
 `.changeset/config.json` declares a single **`fixed`** group containing all eight
 publishable packages. We chose `fixed` (not `linked`) deliberately:
 
-- **`fixed`** — the packages are *always* the same version and are *always*
+- **`fixed`** — the packages are _always_ the same version and are _always_
   published together, even if a given release only touched one of them. This is
   the simplest mental model for a lockstep suite and makes a single repo-level
   `vX.Y.Z` git tag meaningful: the tag describes the whole suite.
@@ -54,7 +54,7 @@ This is interactive: pick the affected packages, choose a bump type, and write a
 short summary. It writes a markdown file under `.changeset/` — **commit that file
 with your change.**
 
-Because all packages are in one `fixed` group, selecting *any* package in the
+Because all packages are in one `fixed` group, selecting _any_ package in the
 group bumps the whole group together. Pick the bump type that reflects the
 biggest change in the release.
 

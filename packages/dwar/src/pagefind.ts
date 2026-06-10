@@ -24,9 +24,7 @@ export async function runPagefindAgainstDir(destination: string): Promise<void> 
   try {
     await access(abs);
   } catch {
-    throw new Error(
-      `runPagefindAgainstDir: destination does not exist: ${abs}`,
-    );
+    throw new Error(`runPagefindAgainstDir: destination does not exist: ${abs}`);
   }
 
   let mod: PagefindModule;
@@ -38,30 +36,24 @@ export async function runPagefindAgainstDir(destination: string): Promise<void> 
   } catch (err) {
     throw new Error(
       `runPagefindAgainstDir: failed to load 'pagefind'. Install it as a dep ` +
-        `to enable search index generation. Original: ${(err as Error).message}`,
+        `to enable search index generation. Original: ${(err as Error).message}`
     );
   }
 
   const { index, errors } = await mod.createIndex();
   if (!index) {
     throw new Error(
-      `runPagefindAgainstDir: createIndex returned no index. Errors: ${(
-        errors ?? []
-      ).join(', ')}`,
+      `runPagefindAgainstDir: createIndex returned no index. Errors: ${(errors ?? []).join(', ')}`
     );
   }
 
   const addRes = await index.addDirectory({ path: abs });
   if (addRes.errors && addRes.errors.length > 0) {
-    throw new Error(
-      `runPagefindAgainstDir: addDirectory errors: ${addRes.errors.join(', ')}`,
-    );
+    throw new Error(`runPagefindAgainstDir: addDirectory errors: ${addRes.errors.join(', ')}`);
   }
 
   const writeRes = await index.writeFiles({ outputPath: resolve(abs, 'pagefind') });
   if (writeRes.errors && writeRes.errors.length > 0) {
-    throw new Error(
-      `runPagefindAgainstDir: writeFiles errors: ${writeRes.errors.join(', ')}`,
-    );
+    throw new Error(`runPagefindAgainstDir: writeFiles errors: ${writeRes.errors.join(', ')}`);
   }
 }

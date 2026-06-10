@@ -28,7 +28,7 @@ export class Circle implements Shape {
     /** The centre of the circle. */
     public readonly center: Point,
     /** The radius of the circle. */
-    public radius: number,
+    public radius: number
   ) {}
 
   /** The diameter — twice the radius. */

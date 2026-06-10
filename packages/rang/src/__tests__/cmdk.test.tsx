@@ -53,7 +53,7 @@ describe('CmdK', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     const { findByRole, findAllByRole, getByLabelText } = render(
-      <CmdK basePath="/" searchIndexUrl="/_assets/search-index.abc.json" />,
+      <CmdK basePath="/" searchIndexUrl="/_assets/search-index.abc.json" />
     );
     await flush();
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }));

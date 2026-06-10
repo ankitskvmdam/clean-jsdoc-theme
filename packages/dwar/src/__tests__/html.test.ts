@@ -34,7 +34,10 @@ describe('renderHtmlDocument — custom CSS/JS', () => {
   });
 
   it('links customCss files AFTER the theme stylesheet, before the inline style', () => {
-    const html = doc({ customCssLinks: ['/_assets/a.h1.css', '/_assets/b.h2.css'], customCss: 'a{}' });
+    const html = doc({
+      customCssLinks: ['/_assets/a.h1.css', '/_assets/b.h2.css'],
+      customCss: 'a{}',
+    });
     const main = html.indexOf('styles.b1.css');
     const linkA = html.indexOf('a.h1.css');
     const linkB = html.indexOf('b.h2.css');

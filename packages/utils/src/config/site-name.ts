@@ -76,14 +76,10 @@ export function validateSiteName(raw: unknown, bag: DiagnosticBag): SiteName | u
   const hasAlt = typeof out.alt === 'string' && out.alt.length > 0;
 
   if (!hasImage && !hasAlt) {
-    bag.warning(
-      'siteName/empty',
-      'siteName has no usable image or text; ignoring.',
-      {
-        hint: 'set at least one of `default`/`dark`/`light` (an image) or `alt` (text).',
-        path: 'siteName',
-      },
-    );
+    bag.warning('siteName/empty', 'siteName has no usable image or text; ignoring.', {
+      hint: 'set at least one of `default`/`dark`/`light` (an image) or `alt` (text).',
+      path: 'siteName',
+    });
     return undefined;
   }
 

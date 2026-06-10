@@ -200,9 +200,7 @@ describe('docletBlocks (per-member composer)', () => {
       'This type definition is deprecated and should not be used.'
     );
     // Unknown / synthetic kind degrades to a neutral noun.
-    expect(defaultDeprecationText({})).toBe(
-      'This symbol is deprecated and should not be used.'
-    );
+    expect(defaultDeprecationText({})).toBe('This symbol is deprecated and should not be used.');
   });
 
   it('renders the default sentence inside the callout for `deprecated: true`', () => {
@@ -234,7 +232,11 @@ describe('memberSignatureSuffix', () => {
   });
 
   it('returns undefined for non-functions (fields keep a bare name)', () => {
-    const m = { kind: 'member', name: 'size', type: { names: ['number'] } } as unknown as ClassMember;
+    const m = {
+      kind: 'member',
+      name: 'size',
+      type: { names: ['number'] },
+    } as unknown as ClassMember;
     expect(memberSignatureSuffix(m)).toBeUndefined();
   });
 });

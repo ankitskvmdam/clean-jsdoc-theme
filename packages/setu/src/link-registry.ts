@@ -136,9 +136,7 @@ function sameTarget(a: RegistryEntry, b: RegistryEntry): boolean {
  * targets is marked ambiguous (`null`) so the resolver refuses to guess; the
  * same target seen twice is not a conflict. Empty keys are skipped.
  */
-function buildNameIndex(
-  registry: LinkRegistry
-): Map<string, RegistryEntry | null> {
+function buildNameIndex(registry: LinkRegistry): Map<string, RegistryEntry | null> {
   const index = new Map<string, RegistryEntry | null>();
 
   const add = (key: string, entry: RegistryEntry): void => {
@@ -178,9 +176,7 @@ function buildNameIndex(
  * changes any resolution the exact/`module:` lookups already made — it only adds
  * resolutions for keys that would otherwise have been `null`.
  */
-export function makeLinkResolver(
-  registry: LinkRegistry
-): (target: string) => ResolvedLink | null {
+export function makeLinkResolver(registry: LinkRegistry): (target: string) => ResolvedLink | null {
   const nameIndex = buildNameIndex(registry);
 
   return function resolveLink(target: string): ResolvedLink | null {
@@ -188,8 +184,7 @@ export function makeLinkResolver(
     if (t === '') return null;
 
     // `@see {namepath}` — strip exactly one wrapping brace pair.
-    const key =
-      t.startsWith('{') && t.endsWith('}') ? t.slice(1, -1).trim() : t;
+    const key = t.startsWith('{') && t.endsWith('}') ? t.slice(1, -1).trim() : t;
 
     // Off-site URLs (protocol-relative, http(s), mailto) pass straight through.
     if (/^(https?:)?\/\//i.test(key) || /^mailto:/i.test(key)) {

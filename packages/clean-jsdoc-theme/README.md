@@ -63,17 +63,17 @@ When `templates.default.outputSourceFiles` is on (default), every documented sou
 
 All keys go under `opts` in `jsdoc.json` (unless noted):
 
-| Key | Type | Description |
-| --- | --- | --- |
-| `siteName` | `string` \| `{ default?, dark?, light?, alt? }` | Header/footer identity + `<title>` suffix. A string, or a per-theme logo set (local images are copied to `_assets/logo-*`). |
-| `fonts` | `{ heading?, body?, mono? }` | Google Fonts family names for `heading`/`body`; `mono` is a CSS stack. |
-| `sectionOrder` | `string[]` | Orders **and** filters the sidebar sections (e.g. `["Classes","Modules","Tutorials"]`). |
-| `menu` | `{ id?, title?, link?/href?, icon? }[]` | Full sidebar top region (built-in `home`/`source` links + external links). Takes precedence over `sectionOrder`'s built-ins. |
-| `clubSidebarItems` | `boolean` | Club related entries into collapsible `parent → children` groups by path prefix (e.g. all `queue/*` under `queue`). Off by default. |
-| `aiPrompt` | `string` | Custom prompt for the copy-page "Open in …" actions. `{siteName}`, `{url}`, `{mdUrl}` are substituted; only the prompt + links are sent (the AI fetches `{mdUrl}`). |
-| `copyPage` | `boolean` \| `{ enabled?, actions? }` | The copy-page button. `false` hides it; `actions` is an ordered subset of `["copy","view","claude","chatgpt","perplexity"]` (`[]` = primary button only). On by default. |
-| `templates.default.outputSourceFiles` | `boolean` | Emit source-viewer pages + `Source:` links. On by default. |
-| `templates.default.sourceLinkToComment` | `boolean` | Make `Source:` links land on the doc-comment line instead of the declaration. Off by default. |
+| Key                                     | Type                                            | Description                                                                                                                                                              |
+| --------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `siteName`                              | `string` \| `{ default?, dark?, light?, alt? }` | Header/footer identity + `<title>` suffix. A string, or a per-theme logo set (local images are copied to `_assets/logo-*`).                                              |
+| `fonts`                                 | `{ heading?, body?, mono? }`                    | Google Fonts family names for `heading`/`body`; `mono` is a CSS stack.                                                                                                   |
+| `sectionOrder`                          | `string[]`                                      | Orders **and** filters the sidebar sections (e.g. `["Classes","Modules","Tutorials"]`).                                                                                  |
+| `menu`                                  | `{ id?, title?, link?/href?, icon? }[]`         | Full sidebar top region (built-in `home`/`source` links + external links). Takes precedence over `sectionOrder`'s built-ins.                                             |
+| `clubSidebarItems`                      | `boolean`                                       | Club related entries into collapsible `parent → children` groups by path prefix (e.g. all `queue/*` under `queue`). Off by default.                                      |
+| `aiPrompt`                              | `string`                                        | Custom prompt for the copy-page "Open in …" actions. `{siteName}`, `{url}`, `{mdUrl}` are substituted; only the prompt + links are sent (the AI fetches `{mdUrl}`).      |
+| `copyPage`                              | `boolean` \| `{ enabled?, actions? }`           | The copy-page button. `false` hides it; `actions` is an ordered subset of `["copy","view","claude","chatgpt","perplexity"]` (`[]` = primary button only). On by default. |
+| `templates.default.outputSourceFiles`   | `boolean`                                       | Emit source-viewer pages + `Source:` links. On by default.                                                                                                               |
+| `templates.default.sourceLinkToComment` | `boolean`                                       | Make `Source:` links land on the doc-comment line instead of the declaration. Off by default.                                                                            |
 
 The default theme uses a light/dark OKLCH palette, system fonts, and the [GitHub Light](https://github.com/shikijs/textmate-grammars-themes/blob/main/packages/tm-themes/themes/github-light.json) / [GitHub Dark](https://github.com/shikijs/textmate-grammars-themes/blob/main/packages/tm-themes/themes/github-dark.json) shiki themes. Full token + component overrides land before stable.
 
@@ -102,6 +102,7 @@ JSDoc 4 invokes publish(data, opts, tutorials)
 The CJS bundle dynamic-`import()`s setu and dwar via `file://` URLs because both are ESM-only with `"type":"module"` while JSDoc 4 loads themes via `require()`. The bridge walks `node_modules` from its own location, so it works regardless of where JSDoc was invoked.
 
 See the per-package READMEs for deeper detail:
+
 - [`@clean-jsdoc-theme/utils`](../utils) — type contracts and slug rules
 - [`@clean-jsdoc-theme/setu`](../setu) — JSDoc → SiteManifest
 - [`@clean-jsdoc-theme/rang`](../rang) — Preact components + island registry

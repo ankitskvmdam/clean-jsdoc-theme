@@ -120,12 +120,7 @@ describe('getMembersOf — container self-reference', () => {
     expect(members.map((m) => m.longname)).not.toContain('User');
 
     // The real members are all still present.
-    expect(members.map((m) => m.name).sort()).toEqual([
-      'createdAt',
-      'getId',
-      'name',
-      'updateName',
-    ]);
+    expect(members.map((m) => m.name).sort()).toEqual(['createdAt', 'getId', 'name', 'updateName']);
   });
 });
 
@@ -147,14 +142,8 @@ describe('getContainerView — self-referential class', () => {
     expect(allLongnames).not.toContain('User');
 
     // Real members land in their correct buckets.
-    expect(view!.instanceMethods.map((m) => m.name).sort()).toEqual([
-      'getId',
-      'updateName',
-    ]);
-    expect(view!.instanceFields.map((m) => m.name).sort()).toEqual([
-      'createdAt',
-      'name',
-    ]);
+    expect(view!.instanceMethods.map((m) => m.name).sort()).toEqual(['getId', 'updateName']);
+    expect(view!.instanceFields.map((m) => m.name).sort()).toEqual(['createdAt', 'name']);
 
     // The Constructor section is unaffected.
     expect(view!.constructorParams.map((p) => p.name)).toEqual(['id', 'name']);

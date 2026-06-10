@@ -75,7 +75,10 @@ describe('clubNavTree', () => {
   const node = (label: string, slug: string): NavNode => ({ label, slug, group: 'Modules' });
 
   it('clubs a shared prefix into a parent branch, bare module → index child', () => {
-    const out = clubNavTree([node('base', 'module/base'), node('base/chains', 'module/base-chains')]);
+    const out = clubNavTree([
+      node('base', 'module/base'),
+      node('base/chains', 'module/base-chains'),
+    ]);
     expect(out).toHaveLength(1);
     const parent = out[0];
     expect(parent.label).toBe('base');
@@ -104,7 +107,12 @@ describe('clubNavTree', () => {
       node('strings/format', 'module/strings-format'),
     ]);
     expect(out.map((n) => n.label)).toEqual(['queue', 'strings/format']); // prefix order kept
-    expect(out[0].children!.map((c) => c.label)).toEqual(['index', 'AbstractJob', 'Queue', 'types']);
+    expect(out[0].children!.map((c) => c.label)).toEqual([
+      'index',
+      'AbstractJob',
+      'Queue',
+      'types',
+    ]);
     expect(out[1].children).toBeUndefined(); // lone strings/format stays flat
   });
 });
@@ -166,7 +174,10 @@ describe('assembleNav — menu (top region) + sections below', () => {
     expect(gh.slug).toBeUndefined();
     // Built-ins keep their internal slug (not external).
     expect(nav.find((n) => n.label === 'Start')).toMatchObject({ slug: '', menu: true });
-    expect(nav.find((n) => n.label === 'Source files')).toMatchObject({ slug: 'source', menu: true });
+    expect(nav.find((n) => n.label === 'Source files')).toMatchObject({
+      slug: 'source',
+      menu: true,
+    });
   });
 
   it('defaults icons by role (prefixed); an explicit icon wins', () => {

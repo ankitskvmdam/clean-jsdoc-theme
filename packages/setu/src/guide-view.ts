@@ -21,12 +21,7 @@
  */
 
 import type { PhrasingContent, Root, RootContent } from 'mdast';
-import {
-  slugifyPath,
-  type Frontmatter,
-  type NavNode,
-  type Page,
-} from '@clean-jsdoc-theme/utils';
+import { slugifyPath, type Frontmatter, type NavNode, type Page } from '@clean-jsdoc-theme/utils';
 import { htmlToMdastBlocks, markdownToMdastBlocks } from './mdast/from-html';
 import { resolveLinkTags } from './mdast/link-tags';
 import { embed } from './mdast/builders';
@@ -97,8 +92,7 @@ export interface BuildDocPagesOptions {
  * serializing MDX-safe output downstream. See {@link markdownToMdastBlocks}.
  */
 function contentToMdast(content: string, type: 'markdown' | 'html'): Root {
-  const children =
-    type === 'html' ? htmlToMdastBlocks(content) : markdownToMdastBlocks(content);
+  const children = type === 'html' ? htmlToMdastBlocks(content) : markdownToMdastBlocks(content);
   return { type: 'root', children };
 }
 
@@ -228,10 +222,7 @@ export function parseFrontmatter(raw: string): {
 
 /** Humanize a slug-ish token into a display label: `getting-started` → `Getting Started`. */
 function humanize(token: string): string {
-  const words = token
-    .replace(/[-_]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  const words = token.replace(/[-_]+/g, ' ').replace(/\s+/g, ' ').trim();
   if (words === '') return token;
   return words
     .split(' ')
@@ -286,7 +277,7 @@ function asBoolean(value: unknown): boolean | undefined {
 export function buildReadmePage(
   readmeHtml: string,
   pkg?: { name?: string },
-  resolveLink?: (target: string) => ResolvedLink | null,
+  resolveLink?: (target: string) => ResolvedLink | null
 ): Page | null {
   const tree: Root = { type: 'root', children: htmlToMdastBlocks(readmeHtml) };
   if (tree.children.length === 0) return null;
@@ -320,7 +311,7 @@ export interface ResolvedTutorial {
  * anchor. First registration wins on a duplicate name.
  */
 export function makeTutorialResolver(
-  tutorials: readonly TutorialInput[],
+  tutorials: readonly TutorialInput[]
 ): (name: string) => ResolvedTutorial | null {
   const byName = new Map<string, ResolvedTutorial>();
   const walk = (t: TutorialInput): void => {
@@ -358,7 +349,7 @@ export function makeTutorialResolver(
 export function buildDocPages(
   docs: readonly DocInput[],
   opts: BuildDocPagesOptions = {},
-  resolveLink?: (target: string) => ResolvedLink | null,
+  resolveLink?: (target: string) => ResolvedLink | null
 ): { pages: Page[]; nav: NavNode[] } {
   const { defaultDocGroup, parseFrontmatter: doParse = true } = opts;
   const pages: Page[] = [];
@@ -382,23 +373,16 @@ export function buildDocPages(
 
     // slug: frontmatter override, else slugify the path (no prefix).
     const slugFromData = asString(data.slug);
-    const slug = isHome
-      ? ''
-      : (slugFromData ?? slugifyPath(segments));
+    const slug = isHome ? '' : (slugFromData ?? slugifyPath(segments));
 
     // title: frontmatter → input → humanized basename.
-    const title =
-      asString(data.title) ?? (input.title?.trim() || undefined) ?? humanize(basename);
+    const title = asString(data.title) ?? (input.title?.trim() || undefined) ?? humanize(basename);
 
     // group: frontmatter → input → directory path (humanized) → default.
     const dirSegments = segments.slice(0, -1);
-    const dirGroup =
-      dirSegments.length > 0 ? dirSegments.map(humanize).join('/') : undefined;
+    const dirGroup = dirSegments.length > 0 ? dirSegments.map(humanize).join('/') : undefined;
     const group =
-      asString(data.group) ??
-      (input.group?.trim() || undefined) ??
-      dirGroup ??
-      defaultDocGroup;
+      asString(data.group) ?? (input.group?.trim() || undefined) ?? dirGroup ?? defaultDocGroup;
 
     const order = asNumber(data.order) ?? input.order;
     const hidden = asBoolean(data.hidden) ?? false;
@@ -475,11 +459,7 @@ export function tutorialsToDocInputs(tutorials: readonly TutorialInput[]): DocIn
  */
 export function buildTutorialPages(
   tutorials: readonly TutorialInput[],
-  resolveLink?: (target: string) => ResolvedLink | null,
+  resolveLink?: (target: string) => ResolvedLink | null
 ): { pages: Page[]; nav: NavNode[] } {
-  return buildDocPages(
-    tutorialsToDocInputs(tutorials),
-    { parseFrontmatter: false },
-    resolveLink,
-  );
+  return buildDocPages(tutorialsToDocInputs(tutorials), { parseFrontmatter: false }, resolveLink);
 }

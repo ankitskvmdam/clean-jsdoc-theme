@@ -68,7 +68,7 @@ describe('defaultMdxComponents', () => {
         badges: 'static,async,deprecated',
         sourceHref: '/source/x/#L1',
         sourceLabel: 'x.js:1',
-      }),
+      })
     );
     expect(html).toContain('static');
     expect(html).toContain('async');
@@ -116,7 +116,12 @@ describe('defaultMdxComponents', () => {
   it('MemberHeading renders the full signature in a single <code> with an explicit id', () => {
     const MemberHeading = defaultMdxComponents.MemberHeading;
     const html = render(
-      h(MemberHeading, { id: 'process', depth: '3', name: 'process', sig: 'process(data) -> Promise.<number>' }),
+      h(MemberHeading, {
+        id: 'process',
+        depth: '3',
+        name: 'process',
+        sig: 'process(data) -> Promise.<number>',
+      })
     );
     // h3 with the explicit (clean) id, the hover anchor, and ONE code element.
     expect(html).toContain('<h3');

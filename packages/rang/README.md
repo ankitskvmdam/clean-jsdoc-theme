@@ -20,11 +20,29 @@ the theme toggle, settings, and sidebar into a `< md` drawer.
 
 ```ts
 import {
-  Layout, Header, Footer, Brand,
-  Sidebar, MobileNav, TOC, TocPopover, CmdK, CodeTabs, CopyBtn,
-  ThemeToggle, useThemeMode, Settings, SettingsDialog, CodeViewer, CodeBlock,
-  Button, buttonVariants, Dialog, cn,
-  defaultMdxComponents, ISLAND_REGISTRY,
+  Layout,
+  Header,
+  Footer,
+  Brand,
+  Sidebar,
+  MobileNav,
+  TOC,
+  TocPopover,
+  CmdK,
+  CodeTabs,
+  CopyBtn,
+  ThemeToggle,
+  useThemeMode,
+  Settings,
+  SettingsDialog,
+  CodeViewer,
+  CodeBlock,
+  Button,
+  buttonVariants,
+  Dialog,
+  cn,
+  defaultMdxComponents,
+  ISLAND_REGISTRY,
 } from '@clean-jsdoc-theme/rang';
 ```
 
