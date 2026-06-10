@@ -26,6 +26,7 @@
     "url": "git+https://github.com/ankitskvmdam/clean-jsdoc-theme.git"
   },
   "author": "Ankit Kumar (hello@ankdev.me)",
+  "homepage": "https://ankdev.me/clean-jsdoc-theme/index.html",
   "license": "MIT",
   "scripts": {
     "build": "tsup",

@@ -17,7 +17,8 @@ import {
   CopyPageButton,
   HeaderSlotContext,
 } from '@clean-jsdoc-theme/rang';
-import { siteNameText } from '@clean-jsdoc-theme/utils';
+import { siteNameText, withBase } from '@clean-jsdoc-theme/utils';
+import { BasePathContext } from '@clean-jsdoc-theme/rang';
 import type {
   OutputFile,
   Page,
@@ -102,7 +103,7 @@ async function renderPage(
         islands,
         Component: CopyPageButton,
         props: {
-          mdUrl: `/${mdPathFor(page.slug)}`,
+          mdUrl: withBase(basePath, '/' + mdPathFor(page.slug)),
           ...(resolvedSiteName ? { siteName: resolvedSiteName } : {}),
           ...(aiPrompt ? { prompt: aiPrompt } : {}),
           ...(copyPageActions ? { actions: copyPageActions } : {}),
@@ -118,19 +119,27 @@ async function renderPage(
     }
   }
 
+  // In-content links (MdxA / SourceLink / MemberMeta) read the base-path from a
+  // Preact context. This is SSR-only — the MDX body is rendered to a string and
+  // never hydrated as a whole — so the context value is baked into the markup
+  // with no hydration concern. Islands (Step 4) rely on PROPS, not this context.
   const layoutVNode = h(
-    SsrLayout,
-    {
-      nav: manifest.nav,
-      currentSlug: page.slug,
-      headings: page.headings ?? [],
-      pkg: manifest.pkg,
-      siteName,
-      basePath,
-      searchIndexUrl,
-      islands,
-    },
-    mainContent
+    BasePathContext.Provider,
+    { value: basePath },
+    h(
+      SsrLayout,
+      {
+        nav: manifest.nav,
+        currentSlug: page.slug,
+        headings: page.headings ?? [],
+        pkg: manifest.pkg,
+        siteName,
+        basePath,
+        searchIndexUrl,
+        islands,
+      },
+      mainContent
+    )
   );
 
   const bodyHtml = renderToString(layoutVNode);
@@ -217,8 +226,8 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
   const copyPageActions = theme.copyPage?.actions;
 
   const css = buildCss(theme.tokens, manifest.buildId);
-  const cssHref = `/${css.path}`;
-  const islandsBase = `/_islands`;
+  const cssHref = withBase(basePath, '/' + css.path);
+  const islandsBase = withBase(basePath, '/_islands');
 
   // Custom CSS/JS (v4 parity). Inline strings are injected verbatim into every
   // page's shell. Custom *files* are copied to content-hashed assets by the
@@ -233,7 +242,7 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
   // The fuzzy-search index the cmdk island fetches. Build-id stamped so it
   // cache-busts alongside the stylesheet/chunks.
   const searchIndexPath = `_assets/search-index.${manifest.buildId}.json`;
-  const searchIndexUrl = `/${searchIndexPath}`;
+  const searchIndexUrl = withBase(basePath, '/' + searchIndexPath);
 
   const files: OutputFile[] = [];
   const search: SearchEntry[] = [];

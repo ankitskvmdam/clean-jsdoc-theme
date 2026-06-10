@@ -37,6 +37,20 @@ describe('Sidebar', () => {
     expect(html).toContain('href="/dataprocessor"');
   });
 
+  it('prefixes nav links with basePath when set', () => {
+    const html = render(<Sidebar nav={fixture} currentSlug="" basePath="/docs" />);
+    expect(html).toContain('href="/docs/module/coreschema"');
+    expect(html).toContain('href="/docs/baseentity"');
+    expect(html).toContain('href="/docs/dataprocessor"');
+    expect(html).not.toContain('href="/baseentity"');
+  });
+
+  it('prefixes clubbed child nav links with basePath', () => {
+    const html = render(<Sidebar nav={CLUB} currentSlug="module/queue" basePath="/docs" />);
+    expect(html).toContain('href="/docs/module/queue"');
+    expect(html).toContain('href="/docs/module/queue-queue"');
+  });
+
   it('marks the current slug with aria-current="page"', () => {
     const html = render(<Sidebar nav={fixture} currentSlug="dataprocessor" />);
     expect(html).toContain('aria-current="page"');

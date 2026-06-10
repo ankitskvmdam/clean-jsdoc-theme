@@ -8,14 +8,16 @@
   "plugins": ["plugins/markdown"],
   "opts": {
     "encoding": "utf8",
+    "basePath": "/clean-jsdoc-theme",
     "destination": "dist",
     "recurse": true,
     "template": "./node_modules/clean-jsdoc-theme/dist",
     "readme": "./README.md",
     "docs": "./docs",
-    "docGroups": ["Getting Started", "Guides", "Reference"],
+    "docGroups": ["Getting Started", "Packages"],
     "defaultDocGroup": "Docs",
-    "siteName": "clean-jsdoc-theme docs",
+    "sectionOrder": ["Getting Started", "Packages", "Modules", "Classes"],
+    "siteName": "clean-jsdoc-theme",
     "clubSidebarItems": true,
     "menu": [
       {

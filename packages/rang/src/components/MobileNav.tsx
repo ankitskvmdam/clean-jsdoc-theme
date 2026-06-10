@@ -90,7 +90,7 @@ export function MobileNav({ nav, currentSlug, siteName, basePath = '/' }: Mobile
               }}
             />
           </div>
-          <Sidebar nav={nav} currentSlug={currentSlug} />
+          <Sidebar nav={nav} currentSlug={currentSlug} basePath={basePath} />
         </div>
       </Dialog>
       {/* Sibling of the drawer so closing the drawer doesn't unmount it. */}

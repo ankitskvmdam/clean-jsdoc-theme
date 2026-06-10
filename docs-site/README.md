@@ -1,9 +1,10 @@
 # docs-site
 
-The dogfood documentation site for `clean-jsdoc-theme`. It builds a **prose-first**
-docs site from `docs/` using the theme's new docs pipeline (`opts.docs` +
-frontmatter), so the published site doubles as a real-world regression check for
-the docs-directory feature.
+The documentation site for `clean-jsdoc-theme`, built **with the theme itself**.
+Prose pages live in `docs/` (rendered via `opts.docs` + frontmatter) and the API
+reference is generated from the sample module in `src/`.
+
+> 🚧 Work in progress — an early preview while the v5 docs are rebuilt.
 
 Build it:
 
@@ -13,4 +14,5 @@ pnpm --filter @clean-jsdoc-theme/docs-site run docs
 
 This runs `build:theme` (turbo, rebuilding the upstream package graph) then
 `jsdoc -c jsdoc.json`, emitting the site to `dist/`. The root `docs/index.md`
-becomes the home page; `docs/*.md` become grouped, clean-slug pages.
+becomes the home page; the other `docs/*.md` files become grouped pages, and the
+`src/` JSDoc comments produce the API reference.
