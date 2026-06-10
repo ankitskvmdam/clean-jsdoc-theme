@@ -4,19 +4,42 @@ title: clean-jsdoc-theme
 
 # clean-jsdoc-theme
 
-Welcome to the **dogfood docs site** for `clean-jsdoc-theme` — this very page is
-authored as a Markdown file (`docs/index.md`) and rendered by the theme itself.
-Because it is the root `index.md`, the docs pipeline promotes it to the site
-**home page** (slug `''`), overriding the package README.
+A clean, responsive, and customizable documentation theme for **JSDoc** and
+**TypeDoc**. It turns your source comments into a fast static site with
+server-rendered HTML, lazy-hydrated interactive islands, a built-in fuzzy
+command palette, light/dark themes, and a co-located `.md` of every page so
+LLMs can read your docs too.
 
-## What this site exercises
+> **🚧 These docs are a work in progress.** This is an early preview while
+> we rebuild the site for v5. Some pages are missing and others will change.
+> A complete version is coming soon — thanks for your patience.
 
-- A root `index.md` that becomes the home page.
-- Root-level pages with clean, unprefixed slugs (e.g. `/getting-started`).
-- Grouped pages whose group comes from their **directory** (`guides/*`,
-  `reference/*`).
-- Frontmatter that **overrides** the directory-derived group, title, and order.
-- A **frontmatter-less** file that falls back to its folder's humanized group and
-  a humanized title.
+> **ℹ️ This very site is generated using `clean-jsdoc-theme`.** Every page you
+> are reading — including this prose and the API reference — was produced by the
+> theme itself, so it doubles as a live demo of what your own docs can look like.
 
-Head to [Getting Started](/getting-started) to see the clean slug in action.
+## Why clean-jsdoc-theme
+
+- **Looks great out of the box.** Modern, responsive layout with first-class
+  light and dark modes — no CSS required to get started.
+- **Fast, framework-free output.** A static site built on a Preact + MDX +
+  esbuild + Pagefind pipeline. No client framework to ship, no build config to
+  maintain.
+- **Interactive where it matters.** A fuzzy command palette (`⌘K`), a
+  scroll-spy table of contents, copy-to-clipboard code blocks, tabbed examples,
+  and a Monaco-powered source viewer — each loaded only on the pages that use it.
+- **Prose _and_ API in one site.** Mix hand-written Markdown guides (like this
+  page) with auto-generated API reference from your JSDoc/TypeDoc comments.
+- **LLM-friendly.** Every page ships a companion `.md` and a one-click
+  "copy page" / "open in Claude" button, so your docs are readable by humans and
+  models alike.
+- **Customizable.** Site name or logo, Google Fonts, sidebar menu, section
+  ordering, custom CSS/JS, and more — all from your `jsdoc.json`.
+
+## Where to next
+
+- **[Getting Started](/getting-started)** — install the theme and point JSDoc at
+  your project.
+- **[Packages](/packages)** — the monorepo's packages and what each one is for.
+- **API Reference** — browse a real, theme-generated API page in the sidebar
+  (see the `sample-api` module).
