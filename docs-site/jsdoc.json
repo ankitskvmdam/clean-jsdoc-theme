@@ -8,6 +8,7 @@
   "plugins": ["plugins/markdown"],
   "opts": {
     "encoding": "utf8",
+    "basePath": "/clean-jsdoc-theme",
     "destination": "dist",
     "recurse": true,
     "template": "./node_modules/clean-jsdoc-theme/dist",
