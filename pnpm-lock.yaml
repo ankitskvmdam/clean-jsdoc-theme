@@ -132,6 +132,9 @@ importers:
       '@clean-jsdoc-theme/setu':
         specifier: workspace:^
         version: link:../setu
+      '@clean-jsdoc-theme/utils':
+        specifier: workspace:^
+        version: link:../utils
       jsdoc:
         specifier: '>=4.x'
         version: 4.0.5

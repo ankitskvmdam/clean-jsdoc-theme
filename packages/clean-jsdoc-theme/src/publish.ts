@@ -129,6 +129,40 @@ const loadSetu = (): Promise<typeof import('@clean-jsdoc-theme/setu')> =>
   loadDep('@clean-jsdoc-theme/setu', ['generateSite']);
 const loadDwar = (): Promise<typeof import('@clean-jsdoc-theme/dwar')> =>
   loadDep('@clean-jsdoc-theme/dwar', ['render', 'runPagefindAgainstDir']);
+const loadUtils = (): Promise<typeof import('@clean-jsdoc-theme/utils')> =>
+  loadDep('@clean-jsdoc-theme/utils', [
+    'validateThemeOpts',
+    'createGoogleFontResolver',
+    'formatDiagnostics',
+    'formatBuildReport',
+  ]);
+
+/**
+ * JSDoc's own standard `opts` keys (`jsdoc/lib/jsdoc/opts/argparser.js` +
+ * `conf` schema). These share the flat `opts` namespace with the theme's
+ * options, so they must never be flagged as unknown theme keys — even by a
+ * near-miss typo distance. Theme keys (`docs`, `docGroups`, …) live in
+ * `THEME_OPT_KEYS`, NOT here.
+ */
+const JSDOC_OWN_OPTS: ReadonlySet<string> = new Set([
+  'destination',
+  'template',
+  'encoding',
+  'recurse',
+  'readme',
+  'package',
+  'tutorials',
+  'query',
+  'private',
+  'access',
+  'explain',
+  'debug',
+  'verbose',
+  'pedantic',
+  'match',
+  'nocolor',
+  'templates',
+]);
 
 interface JSDocOpts {
   destination?: string;
@@ -258,13 +292,25 @@ const defaultTheme: ThemeConfig = {
   basePath: '/',
 };
 
+/** A subset of `{ heading, body, mono }` — the shape validated font overrides take. */
+interface ValidatedFonts {
+  heading?: string;
+  body?: string;
+  mono?: string;
+}
+
 /**
- * Merge user overrides from `jsdoc.json` (`siteName`, `fonts`) over the
- * defaults. Only the keys the user supplies are overridden; everything else
- * keeps the default theme. `siteName` is pre-resolved by `prepareSiteName`.
+ * Merge validated user overrides from `jsdoc.json` (`siteName`, `fonts`) over
+ * the defaults. Only the keys the user supplies are overridden; everything else
+ * keeps the default theme. `siteName` is pre-resolved/validated and its local
+ * logos copied by `prepareSiteName`; `fonts` is the validated subset (any
+ * family flagged `fonts/not-google` is dropped upstream so the default applies).
  */
-function resolveTheme(opts: JSDocOpts, siteName: SiteName | undefined): ThemeConfig {
-  const f = opts.fonts;
+function resolveTheme(
+  opts: JSDocOpts,
+  siteName: SiteName | undefined,
+  fonts: ValidatedFonts,
+): ThemeConfig {
   const aiPrompt =
     typeof opts.aiPrompt === 'string' && opts.aiPrompt.trim() ? opts.aiPrompt.trim() : undefined;
   const copyPage = normalizeCopyPage(opts.copyPage);
@@ -275,13 +321,11 @@ function resolveTheme(opts: JSDocOpts, siteName: SiteName | undefined): ThemeCon
     ...(copyPage ? { copyPage } : {}),
     tokens: {
       ...defaultTheme.tokens,
-      fonts: f
-        ? {
-            heading: f.heading ?? defaultTheme.tokens.fonts.heading,
-            body: f.body ?? defaultTheme.tokens.fonts.body,
-            mono: f.mono ?? defaultTheme.tokens.fonts.mono,
-          }
-        : defaultTheme.tokens.fonts,
+      fonts: {
+        heading: fonts.heading ?? defaultTheme.tokens.fonts.heading,
+        body: fonts.body ?? defaultTheme.tokens.fonts.body,
+        mono: fonts.mono ?? defaultTheme.tokens.fonts.mono,
+      },
       ...(siteName ? { siteName } : {}),
     },
   };
@@ -745,10 +789,51 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
     );
   }
 
-  const [{ generateSite }, { render, runPagefindAgainstDir }] = await Promise.all([
-    loadSetu(),
-    loadDwar(),
-  ]);
+  const [
+    { generateSite },
+    { render, runPagefindAgainstDir },
+    {
+      validateThemeOpts,
+      createGoogleFontResolver,
+      formatDiagnostics,
+      formatBuildReport,
+    },
+  ] = await Promise.all([loadSetu(), loadDwar(), loadUtils()]);
+
+  // Validate the theme options early (before any render work) so the developer
+  // sees problems first. The Google-Font check is the one networked piece, kept
+  // behind an injectable resolver in utils; it's fail-open, so an offline build
+  // never breaks on it. Unknown keys get typo suggestions (`suggest-typos`),
+  // never blanket warnings — JSDoc's own opts share this flat namespace.
+  const fontResolver = createGoogleFontResolver();
+  const { value, diagnostics } = await validateThemeOpts({
+    opts,
+    fontResolver,
+    unknownKeyPolicy: 'suggest-typos',
+    knownNonThemeKeys: JSDOC_OWN_OPTS,
+  });
+
+  // Color only on a real TTY (and unless JSDoc's `--nocolor` is set).
+  const color = Boolean(process.stdout.isTTY) && opts.nocolor !== true;
+
+  // Strict mode: `opts.strict` (or nested `templates.default.strict`). When on
+  // AND there are errors, log + throw to fail the build. Otherwise (the
+  // resilient default) log and continue — a bad font/typo never breaks a build.
+  const strict =
+    opts.strict === true ||
+    (opts.templates as { default?: { strict?: unknown } } | undefined)?.default?.strict === true;
+
+  if (diagnostics.list.length > 0) {
+    const formatted = formatDiagnostics(diagnostics, { color });
+    if (strict && diagnostics.hasErrors()) {
+      console.error(formatted);
+      throw new Error(
+        'clean-jsdoc-theme: opts validation failed in strict mode ' +
+          '(see the diagnostics above). Fix the errors or unset `strict`.',
+      );
+    }
+    console.log(formatted);
+  }
 
   const pkg = await resolvePkg(data, opts);
 
@@ -800,15 +885,50 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   });
 
   // Resolve siteName (text or logo set) and copy any local logo images into the
-  // output before render, so the served paths are baked into the markup.
-  const { siteName, files: logoFiles } = await prepareSiteName(opts.siteName);
+  // output before render, so the served paths are baked into the markup. The
+  // shape was already validated above; `prepareSiteName` now only does the
+  // local-logo file-copy I/O on the validated value.
+  const { siteName, files: logoFiles } = await prepareSiteName(value.siteName);
+
+  // Resilient font fallback: a family flagged `fonts/not-google` is dropped so
+  // `resolveTheme` falls back to the default for that slot (the error was
+  // already reported in the diagnostics block). Verified/unverified families
+  // pass through.
+  const notGoogle = new Set(
+    diagnostics.list
+      .filter((d) => d.code === 'fonts/not-google' && d.path)
+      .map((d) => d.path as string),
+  );
+  const fonts: ValidatedFonts = { ...value.fonts };
+  if (notGoogle.has('fonts.heading')) delete fonts.heading;
+  if (notGoogle.has('fonts.body')) delete fonts.body;
 
   const absoluteDestination = resolvePath(destination);
   const result = await render(manifest, {
-    theme: resolveTheme(opts, siteName),
+    theme: resolveTheme(opts, siteName, fonts),
     destination: absoluteDestination,
   });
 
+  const outputFiles = [...result.files, ...logoFiles];
+  await writeOutputFiles(absoluteDestination, outputFiles);
+
+  // Next.js-style build report: where the files landed, page/asset counts, and
+  // per-route sizes (+ gzip). `node:zlib` is injected here as the gzip sizer so
+  // utils stays node-free. Replaces the old single `rendered N page(s)…` line.
+  const zlib = await import('node:zlib');
+  const gzipSizer = (b: Uint8Array | string): number => zlib.gzipSync(b).length;
+  console.log(
+    formatBuildReport({
+      files: outputFiles,
+      stats: result.stats,
+      destination,
+      gzipSizer,
+      color,
+    }),
+  );
+
+  // Skipped pages (render failures) are folded in right after the report so the
+  // count is visible alongside the successful totals — never fatal.
   if (result.errors && result.errors.length > 0) {
     console.warn(
       `clean-jsdoc-theme: ${result.errors.length} page(s) failed to render and were skipped:`,
@@ -817,14 +937,6 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
       console.warn(`  - ${e.slug}: ${e.message}`);
     }
   }
-  console.log(
-    `clean-jsdoc-theme: rendered ${result.stats.pageCount} page(s), ` +
-      `${result.stats.assetCount} asset(s)` +
-      (sources.length > 0 ? `, ${sources.length} source file(s)` : '') +
-      ` → ${destination}`,
-  );
-
-  await writeOutputFiles(absoluteDestination, [...result.files, ...logoFiles]);
 
   // Pagefind is optional; if the user doesn't have it installed we don't
   // want to fail the whole build. Surface the failure as a warning.

@@ -83,8 +83,12 @@ Tooling: **pnpm** workspace · **Turborepo** task orchestration · **tsup** buil
 
 ### `@clean-jsdoc-theme/utils` — shared contracts
 
-The dependency-free core every other package imports. No runtime logic beyond
-slug rules.
+The shared core every other package imports. Beyond the contracts + slug rules
+it carries one block of **pure** runtime logic: `config/` — opts validation
+(diagnostics, zod schemas, a Google-Font existence check, near-miss key
+suggestions) and the Next.js-style build report. It stays browser-safe by
+**injection**: the network (`fetch`) and `node:zlib` gzip sizer are passed in by
+the caller, never imported here, so rang can still import utils in the browser.
 
 ```
 utils/src/
@@ -99,6 +103,17 @@ utils/src/
 │   ├── islands.ts        # IslandName union + IslandPropsMap
 │   ├── slug-rules.ts     # slugifyHeading, slugifyPath, slugifySourcePath  (setu AND dwar)
 │   └── index.ts          # barrel — the setu↔dwar boundary
+├── config/               # PURE opts validation + build report (network/zlib injected)
+│   ├── diagnostics.ts    # Diagnostic model + DiagnosticBag + formatDiagnostics
+│   ├── opts-schema.ts    # zod schemas + THEME_OPT_KEYS
+│   ├── site-name.ts      # validateSiteName (shape only — no I/O)
+│   ├── fonts.ts          # validateFonts (heading/body existence-checked via resolver)
+│   ├── google-fonts.ts   # createGoogleFontResolver (injectable fetch; fail-open)
+│   ├── suggest.ts        # near-miss "did you mean X?" key suggestions
+│   ├── validate-opts.ts  # validateThemeOpts orchestrator → { value, diagnostics }
+│   ├── report.ts         # formatBuildReport (per-route sizes + optional gzip)
+│   ├── format.ts         # humanFileSize, byteLength, column padding, ANSI helper
+│   └── index.ts          # config barrel
 └── index.ts
 ```
 
@@ -463,8 +478,14 @@ clean-jsdoc-theme/src/
 │                         #   normalizes the README (→ home) + tutorial tree (→ guides)
 │                         #   into setu opts, calls setu → dwar, writes files, runs
 │                         #   Pagefind. siteName is text OR a logo set — local logo
-│                         #   images are copied to _assets/logo-*. Logs the rendered-
-│                         #   page count + any RenderResult.errors (skipped pages).
+│                         #   images are copied to _assets/logo-*. Validates opts early
+│                         #   via utils validateThemeOpts (diagnostics + live Google-Font
+│                         #   check + unknown-key "did you mean" suggestions); a bad
+│                         #   font/typo only WARNS by default (resilient — missing fonts
+│                         #   fall back to the default), unless opts.strict escalates
+│                         #   errors to a hard failure. Prints the utils formatBuildReport
+│                         #   (per-route sizes + gzip; node:zlib injected) after write,
+│                         #   plus any RenderResult.errors (skipped pages).
 │                         #   Collects source files from doclet meta (gated by
 │                         #   templates.default.outputSourceFiles, default on) → setu;
 │                         #   templates.default.sourceLinkToComment toggles whether a

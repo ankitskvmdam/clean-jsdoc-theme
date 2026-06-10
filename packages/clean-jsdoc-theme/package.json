@@ -43,7 +43,8 @@
     "@clean-jsdoc-theme/bhasha": "workspace:^",
     "@clean-jsdoc-theme/dwar": "workspace:^",
     "@clean-jsdoc-theme/rang": "workspace:^",
-    "@clean-jsdoc-theme/setu": "workspace:^"
+    "@clean-jsdoc-theme/setu": "workspace:^",
+    "@clean-jsdoc-theme/utils": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
