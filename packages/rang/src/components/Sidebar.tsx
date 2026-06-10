@@ -2,11 +2,18 @@ import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { House, CodeXml, Globe, Mail, ExternalLink, ChevronRight } from 'lucide-preact';
 import type { NavNode } from '@clean-jsdoc-theme/utils';
+import { withBase } from '@clean-jsdoc-theme/utils';
 import { cn } from '../lib/cn';
 
 export interface SidebarProps {
   nav: NavNode[];
   currentSlug: string;
+  /**
+   * Base-path prefix for internal nav links (default `'/'`). This island
+   * hydrates from JSON props, so the prefix must travel as a prop — not via a
+   * Preact context (which wouldn't survive to the client).
+   */
+  basePath?: string;
 }
 
 // Structural classes shared by every entry. Color/emphasis state is appended
@@ -120,7 +127,15 @@ export function SidebarItem({ icon, label, onClick }: SidebarItemProps) {
   );
 }
 
-function NavLink({ node, currentSlug }: { node: NavNode; currentSlug: string }) {
+function NavLink({
+  node,
+  currentSlug,
+  basePath,
+}: {
+  node: NavNode;
+  currentSlug: string;
+  basePath: string;
+}) {
   // min-w-0 lets the label shrink below its content width so break-words can act.
   const label = <span class="min-w-0 wrap-break-words">{node.label}</span>;
   const icon = <NavIcon icon={node.icon} />;
@@ -156,7 +171,7 @@ function NavLink({ node, currentSlug }: { node: NavNode; currentSlug: string }) 
   const isCurrent = node.slug === currentSlug;
   return (
     <a
-      href={`/${node.slug}`}
+      href={withBase(basePath, '/' + node.slug)}
       aria-current={isCurrent ? 'page' : undefined}
       class={cn(ITEM_BASE, align, isCurrent ? ITEM_ACTIVE : ITEM_INACTIVE)}
     >
@@ -199,6 +214,7 @@ function clubKey(node: NavNode): string {
 interface NavEntryProps {
   node: NavNode;
   currentSlug: string;
+  basePath: string;
   /** Explicit per-club open/closed choices (absent → use the default). */
   openMap: Record<string, boolean>;
   /** Persist a club's new open state. */
@@ -213,7 +229,7 @@ interface NavEntryProps {
  * current page (so you can always see where you are); an explicit user toggle
  * (persisted in `openMap`) overrides that default. Owns its own `<li>`.
  */
-function NavEntry({ node, currentSlug, openMap, onToggle }: NavEntryProps) {
+function NavEntry({ node, currentSlug, basePath, openMap, onToggle }: NavEntryProps) {
   const children = node.children;
   if (children && children.length > 0) {
     const key = clubKey(node);
@@ -242,6 +258,7 @@ function NavEntry({ node, currentSlug, openMap, onToggle }: NavEntryProps) {
                 key={child.slug ?? child.href ?? `${child.label}-${ci}`}
                 node={child}
                 currentSlug={currentSlug}
+                basePath={basePath}
                 openMap={openMap}
                 onToggle={onToggle}
               />
@@ -253,7 +270,7 @@ function NavEntry({ node, currentSlug, openMap, onToggle }: NavEntryProps) {
   }
   return (
     <li class="my-0.5">
-      <NavLink node={node} currentSlug={currentSlug} />
+      <NavLink node={node} currentSlug={currentSlug} basePath={basePath} />
     </li>
   );
 }
@@ -273,7 +290,7 @@ function scrollParent(el: HTMLElement): HTMLElement | null {
 // just above it stays visible when we scroll it toward the top.
 const ACTIVE_SCROLL_PADDING = 16;
 
-export function Sidebar({ nav, currentSlug }: SidebarProps) {
+export function Sidebar({ nav, currentSlug, basePath = '/' }: SidebarProps) {
   // Menu entries form a top region (icon links); the rest are grouped sections.
   const menuItems = nav.filter((n) => n.menu);
   const sectionNodes = nav.filter((n) => !n.menu);
@@ -317,7 +334,7 @@ export function Sidebar({ nav, currentSlug }: SidebarProps) {
         <ul class="m-0 list-none p-0">
           {menuItems.map((node, ni) => (
             <li key={node.slug ?? node.href ?? `${node.label}-${ni}`} class="my-0.5">
-              <NavLink node={node} currentSlug={currentSlug} />
+              <NavLink node={node} currentSlug={currentSlug} basePath={basePath} />
             </li>
           ))}
         </ul>
@@ -334,6 +351,7 @@ export function Sidebar({ nav, currentSlug }: SidebarProps) {
                 key={node.slug ?? node.href ?? `${node.label}-${ni}`}
                 node={node}
                 currentSlug={currentSlug}
+                basePath={basePath}
                 openMap={openMap}
                 onToggle={handleToggle}
               />

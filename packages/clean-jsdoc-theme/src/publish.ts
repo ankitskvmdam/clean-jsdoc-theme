@@ -136,6 +136,8 @@ const loadUtils = (): Promise<typeof import('@clean-jsdoc-theme/utils')> =>
     'createGoogleFontResolver',
     'formatDiagnostics',
     'formatBuildReport',
+    'normalizeBasePath',
+    'withBase',
   ]);
 
 /**
@@ -342,7 +344,8 @@ interface ValidatedFonts {
 function resolveTheme(
   opts: JSDocOpts,
   siteName: SiteName | undefined,
-  fonts: ValidatedFonts
+  fonts: ValidatedFonts,
+  basePath: string
 ): ThemeConfig {
   const aiPrompt =
     typeof opts.aiPrompt === 'string' && opts.aiPrompt.trim() ? opts.aiPrompt.trim() : undefined;
@@ -350,6 +353,7 @@ function resolveTheme(
 
   return {
     ...defaultTheme,
+    basePath,
     ...(aiPrompt ? { aiPrompt } : {}),
     ...(copyPage ? { copyPage } : {}),
     tokens: {
@@ -391,7 +395,8 @@ async function copyCustomFiles(
   raw: unknown,
   ext: '.css' | '.js',
   hash: boolean,
-  label: string
+  label: string,
+  hrefForServed: (servedPath: string) => string
 ): Promise<{ links: string[]; files: OutputFile[] }> {
   const paths = (Array.isArray(raw) ? raw : [raw]).filter(
     (p): p is string => typeof p === 'string' && p.trim().length > 0
@@ -414,7 +419,9 @@ async function copyCustomFiles(
     if (seen.has(servedPath)) continue;
     seen.add(servedPath);
     files.push({ path: servedPath, contents: bytes });
-    links.push(`/${servedPath}`);
+    // The OutputFile `path` stays relative (no leading slash); only the served
+    // href gets the base-path prefix (`/` when unset → unchanged).
+    links.push(hrefForServed(servedPath));
   }
   return { links, files };
 }
@@ -427,7 +434,10 @@ async function copyCustomFiles(
  * `render()` stays pure and just links the resulting hrefs. `hashCustomAssets`
  * (default `true`) toggles the content-hash suffix.
  */
-async function resolveCustomAssets(opts: JSDocOpts): Promise<{
+async function resolveCustomAssets(
+  opts: JSDocOpts,
+  hrefForServed: (servedPath: string) => string
+): Promise<{
   theme: {
     customCss?: string;
     customCssLinks?: string[];
@@ -438,8 +448,8 @@ async function resolveCustomAssets(opts: JSDocOpts): Promise<{
 }> {
   const hash = opts.hashCustomAssets !== false; // content-hashed by default
   const [cssAssets, jsAssets] = await Promise.all([
-    copyCustomFiles(opts.customCssFile, '.css', hash, 'customCssFile'),
-    copyCustomFiles(opts.customJsFile, '.js', hash, 'customJsFile'),
+    copyCustomFiles(opts.customCssFile, '.css', hash, 'customCssFile', hrefForServed),
+    copyCustomFiles(opts.customJsFile, '.js', hash, 'customJsFile', hrefForServed),
   ]);
   const customCss = nonEmptyString(opts.customCss)?.trim();
   const customJs = nonEmptyString(opts.customJs)?.trim();
@@ -468,7 +478,8 @@ function isServableUrl(value: string): boolean {
  * read is left verbatim with a warning rather than aborting the build.
  */
 async function prepareSiteName(
-  raw: string | SiteLogo | undefined
+  raw: string | SiteLogo | undefined,
+  hrefForServed: (servedPath: string) => string
 ): Promise<{ siteName: SiteName | undefined; files: OutputFile[] }> {
   if (typeof raw === 'string') {
     const trimmed = raw.trim();
@@ -495,7 +506,8 @@ async function prepareSiteName(
       const buf = await readFile(abs);
       const served = `_assets/logo-${key}${extname(abs)}`;
       files.push({ path: served, contents: buf });
-      out[key] = `/${served}`;
+      // OutputFile `path` stays relative; only the served href gets the prefix.
+      out[key] = hrefForServed(served);
     } catch {
       console.warn(
         `clean-jsdoc-theme: could not read logo image for siteName.${key} ('${v}'); using it verbatim.`
@@ -915,8 +927,21 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   const [
     { generateSite },
     { render, runPagefindAgainstDir },
-    { validateThemeOpts, createGoogleFontResolver, formatDiagnostics, formatBuildReport },
+    {
+      validateThemeOpts,
+      createGoogleFontResolver,
+      formatDiagnostics,
+      formatBuildReport,
+      normalizeBasePath,
+      withBase,
+    },
   ] = await Promise.all([loadSetu(), loadDwar(), loadUtils()]);
+
+  // Normalized base-path prefix (`/` when unset). Threaded into every emitted
+  // href — logos and custom assets here; dwar prefixes the rest at render time.
+  const basePath = normalizeBasePath(opts.basePath);
+  // The OutputFile `path` stays relative; only the served href gets the prefix.
+  const hrefForServed = (servedPath: string): string => withBase(basePath, '/' + servedPath);
 
   // Validate the theme options early (before any render work) so the developer
   // sees problems first. The Google-Font check is the one networked piece, kept
@@ -1006,7 +1031,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   // output before render, so the served paths are baked into the markup. The
   // shape was already validated above; `prepareSiteName` now only does the
   // local-logo file-copy I/O on the validated value.
-  const { siteName, files: logoFiles } = await prepareSiteName(value.siteName);
+  const { siteName, files: logoFiles } = await prepareSiteName(value.siteName, hrefForServed);
 
   // Resilient font fallback: a family flagged `fonts/not-google` is dropped so
   // `resolveTheme` falls back to the default for that slot (the error was
@@ -1025,11 +1050,11 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   // copied AS-IS to content-hashed `_assets` here (the I/O layer) and merged onto
   // the theme as hrefs, so dwar links them while render() stays pure. Empty/unset
   // → no fields added, so behavior is unchanged when unused.
-  const customAssets = await resolveCustomAssets(opts);
+  const customAssets = await resolveCustomAssets(opts, hrefForServed);
 
   const absoluteDestination = resolvePath(destination);
   const result = await render(manifest, {
-    theme: { ...resolveTheme(opts, siteName, fonts), ...customAssets.theme },
+    theme: { ...resolveTheme(opts, siteName, fonts, basePath), ...customAssets.theme },
     destination: absoluteDestination,
   });
 

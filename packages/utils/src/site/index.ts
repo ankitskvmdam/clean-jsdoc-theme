@@ -10,3 +10,4 @@ export * from './theme';
 export * from './site-name';
 export * from './islands';
 export * from './slug-rules';
+export * from './base-path';

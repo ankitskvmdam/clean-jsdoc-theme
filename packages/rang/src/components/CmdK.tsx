@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { Search } from 'lucide-preact';
 import type { SearchEntry } from '@clean-jsdoc-theme/utils';
+import { withBase } from '@clean-jsdoc-theme/utils';
 import { Button } from './Button';
 import { Dialog } from './Dialog';
 import { fuzzySearchMulti, highlightSegments, type FuzzyResult } from './search-utils';
@@ -35,7 +36,7 @@ function Highlighted({ text, positions }: { text: string; positions: number[] })
   );
 }
 
-export function CmdK({ basePath: _basePath, searchIndexUrl }: CmdKProps) {
+export function CmdK({ basePath, searchIndexUrl }: CmdKProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
@@ -114,13 +115,13 @@ export function CmdK({ basePath: _basePath, searchIndexUrl }: CmdKProps) {
       } else if (e.key === 'Enter') {
         const target = resultsRef.current[activeRef.current];
         if (target) {
-          window.location.href = `/${target.item.slug}`;
+          window.location.href = withBase(basePath, '/' + target.item.slug);
         }
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [basePath]);
 
   // Focus the search input once the dialog has mounted (Dialog focuses the panel
   // first; this rAF runs after, so the input ends up focused).
@@ -186,7 +187,10 @@ export function CmdK({ basePath: _basePath, searchIndexUrl }: CmdKProps) {
                 class={`rounded px-3 py-2 text-sm ${i === active ? 'bg-accent' : ''}`}
                 onMouseMove={() => setActive(i)}
               >
-                <a href={`/${r.item.slug}`} class="block text-foreground no-underline">
+                <a
+                  href={withBase(basePath, '/' + r.item.slug)}
+                  class="block text-foreground no-underline"
+                >
                   <span class="block">
                     <Highlighted text={r.item.title} positions={r.match.positions} />
                     {/* Member hits show their parent page as an inline crumb. */}

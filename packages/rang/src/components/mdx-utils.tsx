@@ -33,6 +33,15 @@ export interface HeaderSlot {
 /** Provided by dwar around the MDX render; consumed by the first heading. */
 export const HeaderSlotContext = createContext<HeaderSlot | null>(null);
 
+/**
+ * Base-path prefix for INTERNAL in-content links, provided by dwar around the
+ * SSR-only MDX render (the body is rendered to a string, never hydrated, so a
+ * context is safe — no client-side provider exists). Consumed by `MdxA`,
+ * `SourceLink`, and `MemberMeta` to prefix root-relative hrefs. Defaults to `/`
+ * (the root, identity-prefix), so unset behavior is unchanged.
+ */
+export const BasePathContext = createContext<string>('/');
+
 /** Claim the header slot for the first heading rendered; returns its node once, else null. */
 export function useHeaderSlot(): ComponentChildren | null {
   const slot = useContext(HeaderSlotContext);

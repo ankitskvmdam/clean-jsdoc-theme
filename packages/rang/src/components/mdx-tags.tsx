@@ -5,9 +5,11 @@
  * `../mdx-components`.
  */
 
+import { useContext } from 'preact/hooks';
 import { CircleAlert, Info, TriangleAlert } from 'lucide-preact';
+import { withBase } from '@clean-jsdoc-theme/utils';
 import type { BaseProps, HeadingProps } from './mdx-utils';
-import { HeadingAnchor, HeaderRow, useHeaderSlot } from './mdx-utils';
+import { HeadingAnchor, HeaderRow, useHeaderSlot, BasePathContext } from './mdx-utils';
 import { Code } from './CodeBlock';
 
 export function MdxH1({ id, children, ...rest }: HeadingProps) {
@@ -42,6 +44,7 @@ const MDX_LINK_CLASS =
   'font-bold text-(--clean-link) underline decoration-1 underline-offset-2 hover:decoration-2';
 
 export function MdxA({ href, children, ...rest }: AnchorProps) {
+  const basePath = useContext(BasePathContext);
   // Simple heuristic for external links: protocol-prefixed URLs target a new tab.
   const isExternal = !!href && /^https?:\/\//i.test(href);
   if (isExternal) {
@@ -51,8 +54,13 @@ export function MdxA({ href, children, ...rest }: AnchorProps) {
       </a>
     );
   }
+  // Root-relative internal link (`/foo`, but NOT a protocol-relative `//host`)
+  // gets the base-path prefix. Anything else (relative, `#hash`, `mailto:`,
+  // protocol-relative) passes through untouched.
+  const isInternal = !!href && href.startsWith('/') && !href.startsWith('//');
+  const resolvedHref = isInternal ? withBase(basePath, href) : href;
   return (
-    <a href={href} class={MDX_LINK_CLASS} {...rest}>
+    <a href={resolvedHref} class={MDX_LINK_CLASS} {...rest}>
       {children}
     </a>
   );
@@ -78,11 +86,12 @@ interface SourceLinkProps {
  * small 12px muted caption rather than a full-size body paragraph.
  */
 export function SourceLink({ href, label }: SourceLinkProps) {
+  const basePath = useContext(BasePathContext);
   if (!href || !label) return null;
   return (
     <p class="my-3 text-xs text-muted-foreground">
       Source:{' '}
-      <a href={href} class={MDX_LINK_CLASS}>
+      <a href={withBase(basePath, href)} class={MDX_LINK_CLASS}>
         <Code>{label}</Code>
       </a>
     </p>
@@ -210,6 +219,7 @@ function chipRank(badge: string): number {
  * nothing only when it has neither badges nor a source.
  */
 export function MemberMeta({ badges, sourceHref, sourceLabel }: MemberMetaProps) {
+  const basePath = useContext(BasePathContext);
   // `global` is never chipped (filtered out, no map entry). Stable-sort the rest
   // into category order so stacked chips read kind → access → behavior → deprecated.
   const list = (badges ? badges.split(',') : [])
@@ -234,7 +244,7 @@ export function MemberMeta({ badges, sourceHref, sourceLabel }: MemberMetaProps)
       </div>
       {sourceHref ? (
         <a
-          href={sourceHref}
+          href={withBase(basePath, sourceHref)}
           class="ml-auto font-mono text-xs text-(--clean-fg-muted) underline decoration-1 underline-offset-2 hover:text-(--clean-link)"
         >
           {sourceLabel}

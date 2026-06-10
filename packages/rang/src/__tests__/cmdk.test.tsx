@@ -69,4 +69,25 @@ describe('CmdK', () => {
     expect(options).toHaveLength(1);
     expect(options[0].querySelector('a')?.getAttribute('href')).toBe('/dataprocessor');
   });
+
+  it('prefixes result links with basePath when set', async () => {
+    const index = [{ slug: 'dataprocessor', title: 'DataProcessor', excerpt: 'Processes data.' }];
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(index),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { findByRole, findAllByRole, getByLabelText } = render(
+      <CmdK basePath="/docs" searchIndexUrl="/docs/_assets/search-index.abc.json" />
+    );
+    await flush();
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }));
+    await findByRole('dialog');
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+
+    fireEvent.input(getByLabelText('Search query'), { target: { value: 'dp' } });
+    const options = await findAllByRole('option');
+    expect(options[0].querySelector('a')?.getAttribute('href')).toBe('/docs/dataprocessor');
+  });
 });

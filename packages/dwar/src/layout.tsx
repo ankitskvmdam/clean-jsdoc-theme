@@ -162,7 +162,12 @@ export function SsrLayout({
 
   const sidebar =
     nav.length > 0 ? (
-      <Island name="sidebar" islands={islands} Component={Sidebar} props={{ nav, currentSlug }} />
+      <Island
+        name="sidebar"
+        islands={islands}
+        Component={Sidebar}
+        props={{ nav, currentSlug, basePath }}
+      />
     ) : undefined;
 
   const toc =
