@@ -1,6 +1,7 @@
 /**
  * @file The priority job queue engine.
  * @module queue/Queue
+ * @order 1
  * @requires module:queue/types
  * @requires module:queue/mixins
  */

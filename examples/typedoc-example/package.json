@@ -1,0 +1,17 @@
+{
+  "name": "example-typedoc-example",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:theme": "pnpm exec turbo run build --filter=@clean-jsdoc-theme/typedoc",
+    "docs": "pnpm run build:theme && typedoc",
+    "clean": "node ../../scripts/clean.mjs dist",
+    "clean-node-modules": "node ../../scripts/clean.mjs node_modules"
+  },
+  "devDependencies": {
+    "@clean-jsdoc-theme/typedoc": "workspace:^",
+    "typedoc": "^0.28.0",
+    "typescript": "^5.5.0"
+  }
+}

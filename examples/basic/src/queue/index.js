@@ -5,6 +5,7 @@
  *   file-overview tag family resolving to a single file description.
  *
  * @module queue
+ * @order 2
  * @summary The one-stop import for the queue library.
  * @description Pulls together the {@link Queue} engine, the {@link AbstractJob}
  *   base class and the shared {@link module:queue/types|type definitions} into a

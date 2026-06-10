@@ -2,6 +2,7 @@
  * @file A concrete job with exponential back-off — uses the synonym spellings
  *   of the common tags (`@extends`, `@emits`, `@arg`, `@prop`, …) on purpose.
  * @module queue/RetryJob
+ * @order 3
  * @requires module:queue/AbstractJob
  */
 

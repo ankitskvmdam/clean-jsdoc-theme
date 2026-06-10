@@ -394,3 +394,76 @@ describe('adaptProject — skip diagnostics', () => {
     expect(Array.isArray(result.skipped)).toBe(true);
   });
 });
+
+/**
+ * `@order` is not a TypeDoc-native tag, so it must be declared in `blockTags`
+ * for TypeDoc to keep it; the adapter then forwards it (via the unknown-tag
+ * default) as `tags:[{title:'order', text}]`, which is exactly what setu's
+ * `readOrder` reads to position the page in the sidebar. Isolated conversion so
+ * the custom `blockTags` doesn't perturb the main suite.
+ */
+describe('reflectionsToDoclets — @order block tag', () => {
+  let orderDoclets: TDoclet[];
+  let tmp2: string;
+
+  beforeAll(async () => {
+    tmp2 = await mkdtemp(join(tmpdir(), 'cjt-typedoc-order-'));
+    const entry = join(tmp2, 'index.ts');
+    await writeFile(
+      entry,
+      `
+/**
+ * An ordered class.
+ * @order 1
+ */
+export class Alpha {}
+
+/** An unordered class. */
+export class Beta {}
+`,
+      'utf8'
+    );
+    await writeFile(
+      join(tmp2, 'tsconfig.json'),
+      JSON.stringify({
+        compilerOptions: {
+          target: 'ES2020',
+          module: 'ESNext',
+          moduleResolution: 'Bundler',
+          strict: true,
+          skipLibCheck: true,
+        },
+        include: ['index.ts'],
+      }),
+      'utf8'
+    );
+    const app = await Application.bootstrap(
+      {
+        entryPoints: [posix(entry)],
+        tsconfig: posix(join(tmp2, 'tsconfig.json')),
+        skipErrorChecking: true,
+        logLevel: 'Error',
+        // Declare @order so TypeDoc keeps it (mirrors the typedoc example's config).
+        blockTags: ['@order'],
+      },
+      []
+    );
+    const converted = await app.convert();
+    if (!converted) throw new Error('typedoc convert() returned undefined');
+    orderDoclets = reflectionsToDoclets(converted);
+  }, 60_000);
+
+  afterAll(async () => {
+    if (tmp2) await rm(tmp2, { recursive: true, force: true });
+  });
+
+  it('forwards @order as tags:[{title:"order", text}] (setu reads it as the sort key)', () => {
+    const alpha = orderDoclets.find((d) => d.longname === 'Alpha');
+    expect(alpha?.tags?.find((t) => t.title === 'order')?.text).toBe('1');
+  });
+
+  it('leaves a class with no @order without an order tag', () => {
+    const beta = orderDoclets.find((d) => d.longname === 'Beta');
+    expect(beta?.tags?.find((t) => t.title === 'order')).toBeUndefined();
+  });
+});
