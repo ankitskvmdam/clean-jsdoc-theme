@@ -4,6 +4,10 @@
 >
 > To stay on v4, pin `"clean-jsdoc-theme": "^4"` in your `package.json`. Every past release is tagged, so you can check out the matching git tag to browse the v4 source.
 
+[![sponsor](https://img.shields.io/badge/sponsor-%E2%9D%A4-db61a2?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/ankitskvmdam)
+
+If clean-jsdoc-theme saves you time, please consider [sponsoring its development](https://github.com/sponsors/ankitskvmdam) — it directly funds the v5 rewrite and ongoing maintenance.
+
 A clean, responsive, and customizable theme for JSDoc. v5 emits a static site with SSR-rendered chrome, lazy-hydrated Preact islands (sidebar, TOC, fuzzy command palette, theme toggle, settings, mobile nav, copy-page button, code-block copy, tabbed code blocks, a Monaco source viewer), a co-located `.md` per page for LLMs, a built-in fuzzy search index (plus an optional Pagefind full-text index), and an Astro-free, framework-free build.
 
 ---
@@ -67,8 +71,9 @@ The working example lives in [`examples/basic/`](./examples/basic) — `pnpm ins
 - ✅ Fuzzy command-palette search over a generated index; a co-located `.md` per page + a copy-page button (copy / view / open in Claude · ChatGPT · Perplexity).
 - ✅ Configurable sidebar — `sectionOrder` / `menu`, plus opt-in clubbing into collapsible, localStorage-persisted groups.
 - ✅ Tests across utils / setu / rang / dwar / bridge. Lint and typecheck clean.
-- 🚧 Theme tokens are fixed at a sensible default; configurable token / component overrides land before stable.
-- 🚧 CLI (`@clean-jsdoc-theme/aadesh`), i18n (`@clean-jsdoc-theme/bhasha`), and the dogfood docs site (`docs-site/`) are stubbed.
+- ✅ Configurable theme tokens — `colors` / `darkColors` palette overrides (per-key merge over the OKLCH defaults) plus heading / body / mono font selection, wired through to the rendered CSS variables. Component-level overrides land before stable.
+- 🚧 Dogfood docs site (`docs-site/`) — prose-first `opts.docs` build with real content; still in progress.
+- 🚧 CLI (`@clean-jsdoc-theme/aadesh`) and i18n (`@clean-jsdoc-theme/bhasha`) are stubbed.
 
 See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the full project structure.
 
@@ -88,7 +93,7 @@ clean-jsdoc-theme/
 │   └── bhasha/                # @clean-jsdoc-theme/bhasha (stub)
 ├── examples/
 │   └── basic/                 # Working JSDoc fixture
-├── docs-site/                 # Dogfood site (stub)
+├── docs-site/                 # Dogfood site (in progress)
 ├── ARCHITECTURE.md            # Full project structure
 ├── MIGRATION.md               # v4 → v5 migration guide
 └── BREAKING_CHANGES.md
