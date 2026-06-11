@@ -1,95 +1,82 @@
-# @clean-jsdoc-theme/typedoc
+<div align="center">
 
-TypeDoc support for [`clean-jsdoc-theme`](https://github.com/ankitskvmdam/clean-jsdoc-theme).
-A TypeDoc **plugin** that renders a TypeDoc project through the exact same output
-as the JSDoc theme (SSR HTML + co-located `.md` + lazy islands + fuzzy search +
-optional Pagefind) by feeding TypeDoc's reflections into the existing
-`setu → dwar` pipeline.
+<a href="https://ankdev.me/clean-jsdoc-theme"><img src="https://raw.githubusercontent.com/ankitskvmdam/clean-jsdoc-theme/master/packages/clean-jsdoc-theme/media/clean-jsdoc-theme.svg" alt="clean-jsdoc-theme" width="340" /></a>
 
-> **Status:** alpha. v1 renders a real site end-to-end: classes, interfaces,
-> functions/methods, properties/accessors, enums (+ members), type aliases,
-> modules/namespaces, comments (summary + block tags), params/returns/throws/
-> examples/deprecated/see/category, README home, and source files + `Source:`
-> links. Deferred: rich structured TS types (beyond `toString()`), type-parameter
-> constraints, overloads (first signature used), re-exports/`Reference`
-> reflections, and cross-`extends`/`implements` inheritance.
+The **TypeDoc** plugin for `clean-jsdoc-theme` — the same fast, modern,
+LLM-friendly documentation site, generated from your TypeScript sources.
 
-## Install
+[![npm version](https://img.shields.io/npm/v/@clean-jsdoc-theme/typedoc)](https://www.npmjs.com/package/@clean-jsdoc-theme/typedoc)
+[![npm downloads](https://img.shields.io/npm/dm/@clean-jsdoc-theme/typedoc)](https://www.npmjs.com/package/@clean-jsdoc-theme/typedoc)
+[![license](https://img.shields.io/npm/l/@clean-jsdoc-theme/typedoc)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/LICENSE)
+[![docs](https://img.shields.io/badge/docs-ankdev.me-005bff)](https://ankdev.me/clean-jsdoc-theme/typedoc-getting-started)
+[![live demo](https://img.shields.io/badge/live%20demo-api--docs-7c3aed)](https://ankdev.me/clean-jsdoc-theme/api-docs)
+[![stars](https://img.shields.io/github/stars/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme)
+[![forks](https://img.shields.io/github/forks/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/fork)
+[![issues](https://img.shields.io/github/issues/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues)
+[![contributors](https://img.shields.io/github/contributors/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors)
+
+</div>
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/ankitskvmdam/clean-jsdoc-theme/master/packages/clean-jsdoc-theme/media/screenshot.png" width="49%" alt="clean-jsdoc-theme — light theme" />
+  <img src="https://raw.githubusercontent.com/ankitskvmdam/clean-jsdoc-theme/master/packages/clean-jsdoc-theme/media/screenshot-dark.png" width="49%" alt="clean-jsdoc-theme — dark theme" />
+</p>
+
+A TypeDoc plugin that feeds TypeDoc's reflections through the **same** pipeline as
+the JSDoc theme, so a TypeScript project gets identical output: server-rendered
+HTML, lazily-hydrated interactive islands, fuzzy + full-text search, light and
+dark themes, and a companion `.md` of every page for LLMs.
+
+## Highlights
+
+- **Same site as the JSDoc theme** — one rendering core, so JSDoc and TypeDoc
+  projects produce identical output.
+- **Fast & framework-free** — server-rendered pages with lazily-hydrated Preact
+  islands; each page loads only the JS it actually uses.
+- **Search built in** — a fuzzy command palette (`Ctrl K`) over titles,
+  descriptions, content, and per-member deep links, plus an optional
+  [Pagefind](https://pagefind.app/) full-text index.
+- **Guides + API in one site** — hand-written Markdown guides and the
+  auto-generated reference share one sidebar and one search.
+- **LLM-friendly** — every page ships a clean companion `.md`, plus a
+  copy-page button to hand any page to Claude / ChatGPT / Perplexity.
+- **Polished by default** — light/dark OKLCH themes, Google Fonts, shiki syntax
+  highlighting, a Monaco source viewer, and `Source: file:line` links.
+
+## Quick start
 
 ```sh
-npm install --save-dev @clean-jsdoc-theme/typedoc typedoc
+npm install --save-dev typedoc @clean-jsdoc-theme/typedoc
 ```
 
-`typedoc` is a **peer dependency** — you bring your own TypeDoc.
-
-## Usage
-
-Load the plugin and select its output in `typedoc.json`. Verified against
-**typedoc 0.28.x**, a custom output is selected via the `outputs` option:
+`typedoc` is a peer dependency — you bring your own. Load the plugin and select
+its output in `typedoc.json`; theme options live under `cleanJsdocTheme`:
 
 ```jsonc
 {
   "entryPoints": ["src/index.ts"],
   "plugin": ["@clean-jsdoc-theme/typedoc"],
-  "outputs": [{ "name": "clean-jsdoc-theme", "path": "docs" }],
+  "outputs": [{ "name": "clean-jsdoc-theme", "path": "dist" }],
+  "cleanJsdocTheme": {
+    "siteName": "My Library"
+  }
 }
 ```
 
-Then run:
+Build, then serve over HTTP (Pagefind needs HTTP to load its index):
 
 ```sh
-typedoc
+npx typedoc
+npx serve dist
 ```
 
-## Options — the `cleanJsdocTheme` block
+## Documentation
 
-The plugin declares one namespaced option, `cleanJsdocTheme`, carrying the theme
-config (the TypeDoc analog of the JSDoc theme's `opts`):
+- **Setup & full reference** — [**ankdev.me/clean-jsdoc-theme/typedoc-getting-started**](https://ankdev.me/clean-jsdoc-theme/typedoc-getting-started): installation, the `cleanJsdocTheme` options, and theming. Every theme option works the same as JSDoc's `opts`, nested under `cleanJsdocTheme`.
+- **Live demo** — [**ankdev.me/clean-jsdoc-theme/api-docs**](https://ankdev.me/clean-jsdoc-theme/api-docs): a real generated API reference, so you can see the output before installing.
 
-```jsonc
-{
-  "plugin": ["@clean-jsdoc-theme/typedoc"],
-  "outputs": [{ "name": "clean-jsdoc-theme", "path": "docs" }],
-  "cleanJsdocTheme": {
-    // Header/footer identity — a string or a logo set { default, dark, light, alt }.
-    "siteName": "My Library",
-    // Google Fonts for heading/body (existence-checked); mono is a CSS stack.
-    "fonts": { "heading": "Fraunces", "body": "Spline Sans", "mono": "Spline Sans Mono" },
-    // Ordered sidebar section labels (filters + orders the API sections).
-    "sectionOrder": ["Classes", "Interfaces", "Enums", "Typedefs", "Globals"],
-    // Full sidebar menu — takes precedence over sectionOrder.
-    "menu": [{ "id": "home", "title": "Home", "link": "/" }],
-    // Club prefix-grouped sidebar entries into subtrees.
-    "clubSidebarItems": true,
-    // Copy-page button: boolean or { enabled?, actions? }.
-    "copyPage": true,
-    // Custom AI prompt for the copy-page button.
-    "aiPrompt": "Summarize this page.",
-    // Escalate validation errors (bad font / unknown key) to a hard failure.
-    "strict": false,
-  },
-}
-```
+> **v5 is in alpha.** Verified against TypeDoc **0.28.x**.
 
-Options are validated up front (`@clean-jsdoc-theme/utils`): a live Google-Font
-existence check, unknown-key "did you mean" suggestions, and shape checks. The
-build is **resilient by default** — a bad font or a typo only **warns** (a
-missing font falls back to the default), and the build continues. Set
-`"strict": true` to turn validation errors into a hard failure. A Next.js-style
-build report (per-route sizes + gzip) prints after each build.
+## License
 
-### How output selection works (typedoc 0.28)
-
-TypeDoc's `Outputs` registry (verified in `typedoc@0.28.19`) selects which output
-writer runs, in this precedence:
-
-1. Output **shortcuts** (`--html`, `--json`) — declarations flagged with
-   `outputShortcut`. This plugin does not register one.
-2. The dedicated **`outputs`** option — an array of `{ name, path, options? }`.
-   This is the supported way to select this plugin's output (the example above).
-3. `--out <path>` writes the **default** output (`"html"` unless a plugin calls
-   `app.outputs.setDefaultOutputName(...)`).
-
-So today, list `{ "name": "clean-jsdoc-theme", "path": "docs" }` in `outputs`.
-A future version may also call `setDefaultOutputName('clean-jsdoc-theme')` so a
-plain `--out` routes here.
+[MIT](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/LICENSE) © [Ankit Kumar](https://ankdev.me)
