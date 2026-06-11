@@ -1,7 +1,8 @@
 /**
  * zod schemas for the theme option surface — the recognized `siteName`,
- * `fonts`, `menu`, `copyPage`, `sectionOrder`, `docGroups`, `defaultDocGroup`,
- * `clubSidebarItems`, `aiPrompt`, and `basePath` opts the JSDoc bridge accepts.
+ * `fonts`, `menu`, `copyPage`, `pageNav`, `sectionOrder`, `docGroups`,
+ * `defaultDocGroup`, `clubSidebarItems`, `aiPrompt`, and `basePath` opts the
+ * JSDoc bridge accepts.
  *
  * These mirror the theme-relevant subset of `clean-jsdoc-theme`'s `JSDocOpts`
  * and the lenient `normalize*` / `prepareSiteName` helpers in `publish.ts`, but
@@ -94,6 +95,19 @@ export type TCopyPageConfigOpt = z.infer<typeof CopyPageConfigSchema>;
 /** `copyPage` is a boolean shorthand OR a config object. */
 export const CopyPageSchema = z.union([z.boolean(), CopyPageConfigSchema]);
 
+// ── pageNav ──────────────────────────────────────────────────────────────────
+
+/** Prev/next pager config object — mirrors `PageNavConfig`. */
+export const PageNavConfigSchema = z
+  .object({
+    enabled: z.boolean().optional(),
+  })
+  .strip();
+export type TPageNavConfigOpt = z.infer<typeof PageNavConfigSchema>;
+
+/** `pageNav` is a boolean shorthand OR a config object. */
+export const PageNavSchema = z.union([z.boolean(), PageNavConfigSchema]);
+
 // ── simple list / scalar opts ────────────────────────────────────────────────
 
 /** `sectionOrder` / `docGroups` — an ordered list of label strings. */
@@ -124,6 +138,7 @@ export const THEME_OPT_KEYS = [
   'fonts',
   'menu',
   'copyPage',
+  'pageNav',
   'sectionOrder',
   'docGroups',
   'defaultDocGroup',

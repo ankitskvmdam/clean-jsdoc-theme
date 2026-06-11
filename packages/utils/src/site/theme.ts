@@ -70,6 +70,15 @@ export interface CopyPageConfig {
 }
 
 /**
+ * Previous/next page navigation configuration. The footer pager links each
+ * content page to its neighbors in sidebar reading order.
+ */
+export interface PageNavConfig {
+  /** Whether to render the prev/next pager at all. Defaults to `true`. */
+  enabled?: boolean;
+}
+
+/**
  * Component override: either a Preact component, or a file path (string) that
  * dwar will compile + import at render time. See Q8.
  */
@@ -105,6 +114,12 @@ export interface ThemeConfig {
   aiPrompt?: string;
   /** Copy-page button config (enabled + which dropdown actions). Defaults to on, all actions. */
   copyPage?: CopyPageConfig;
+  /**
+   * Previous/next page pager shown at the foot of each content page, linking to
+   * the adjacent pages in sidebar reading order. Defaults to on; pass
+   * `{ enabled: false }` to opt out.
+   */
+  pageNav?: PageNavConfig;
   /**
    * Inline custom CSS. Emitted as a `<style>` in `<head>` AFTER the theme
    * stylesheet (and after any `customCssLinks`), so it can override theme

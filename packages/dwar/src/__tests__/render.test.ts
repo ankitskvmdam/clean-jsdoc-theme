@@ -99,6 +99,53 @@ describe('render() — smoke', () => {
     expect(home).toContain('data-island="copy-page"');
   });
 
+  it('renders the prev/next pager linking adjacent pages in reading order', async () => {
+    const manifest = makeManifest();
+    const result = await render(manifest, { theme: minimalTheme });
+    // Reading order from the nav: '' (Home) → 'guide/intro' (Introduction).
+    const home = asString(result.files.find((f) => f.path === 'index.html')!);
+    expect(home).toContain('aria-label="Pagination"');
+    // Home is first: only a "Next" card pointing at the guide.
+    expect(home).toContain('href="/guide/intro"');
+    expect(home).toContain('Introduction');
+    expect(home).toContain('Next');
+    expect(home).not.toContain('Previous');
+
+    const guide = asString(result.files.find((f) => f.path === 'guide/intro/index.html')!);
+    expect(guide).toContain('aria-label="Pagination"');
+    // The guide is last: only a "Previous" card pointing back at Home.
+    expect(guide).toContain('href="/"');
+    expect(guide).toContain('Previous');
+    expect(guide).not.toContain('Next');
+  });
+
+  it('omits the prev/next pager when disabled in the theme', async () => {
+    const manifest = makeManifest();
+    const result = await render(manifest, {
+      theme: { ...minimalTheme, pageNav: { enabled: false } },
+    });
+    const home = asString(result.files.find((f) => f.path === 'index.html')!);
+    expect(home).not.toContain('aria-label="Pagination"');
+  });
+
+  it('omits the prev/next pager on source-viewer pages', async () => {
+    const manifest = makeManifest();
+    manifest.pages = [
+      ...manifest.pages,
+      {
+        slug: 'source/lib/queue-js',
+        frontmatter: { title: 'queue.js', kind: 'source', hidden: true },
+        body: '',
+        source: { code: 'export const x = 1;\n', language: 'js', filename: 'queue.js' },
+      },
+    ];
+    const result = await render(manifest, { theme: minimalTheme });
+    const sourcePage = asString(
+      result.files.find((f) => f.path === 'source/lib/queue-js/index.html')!
+    );
+    expect(sourcePage).not.toContain('aria-label="Pagination"');
+  });
+
   it('links the buildId-suffixed stylesheet', async () => {
     const manifest = makeManifest();
     const result = await render(manifest, { theme: minimalTheme });

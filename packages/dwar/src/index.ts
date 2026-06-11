@@ -8,15 +8,17 @@
  * files themselves and then optionally call `runPagefindAgainstDir`.
  */
 
-import { h } from 'preact';
+import { h, Fragment } from 'preact';
 import type { ComponentChildren } from 'preact';
 import { render as renderToString } from 'preact-render-to-string';
 import {
   defaultMdxComponents,
   CodeViewer,
   CopyPageButton,
+  PageNav,
   HeaderSlotContext,
 } from '@clean-jsdoc-theme/rang';
+import type { PageNavLink } from '@clean-jsdoc-theme/rang';
 import { siteNameText, withBase } from '@clean-jsdoc-theme/utils';
 import { BasePathContext } from '@clean-jsdoc-theme/rang';
 import type {
@@ -29,6 +31,7 @@ import type {
   SiteManifest,
   SiteName,
   IslandName,
+  NavNode,
   CopyPageAction,
 } from '@clean-jsdoc-theme/utils';
 
@@ -52,6 +55,72 @@ function mergeMdxComponents(override?: Record<string, unknown>): MdxComponentMap
   return { ...defaultMdxComponents, ...(override as MdxComponentMap) };
 }
 
+/** A page's adjacent pages in sidebar reading order, for the prev/next pager. */
+interface PageNeighbors {
+  prev?: PageNavLink;
+  next?: PageNavLink;
+}
+
+/** Max length of a neighbor-card description before it's truncated. */
+const PAGE_NAV_DESC_MAX = 100;
+
+/**
+ * Flatten the nav tree into the linear reading order the sidebar shows: a
+ * depth-first walk collecting every real page leaf (a node with a `slug`),
+ * skipping external links (`href`) and top-region menu entries.
+ */
+function flattenNavSlugs(nav: NavNode[]): string[] {
+  const out: string[] = [];
+  const walk = (nodes: NavNode[]): void => {
+    for (const node of nodes) {
+      if (node.slug !== undefined && !node.href && !node.menu) out.push(node.slug);
+      if (node.children) walk(node.children);
+    }
+  };
+  walk(nav);
+  return out;
+}
+
+/** Truncate a card description to {@link PAGE_NAV_DESC_MAX}, on a word boundary. */
+function truncateDesc(text: string | undefined): string | undefined {
+  if (!text) return undefined;
+  const t = text.trim();
+  if (t.length <= PAGE_NAV_DESC_MAX) return t || undefined;
+  const slice = t.slice(0, PAGE_NAV_DESC_MAX);
+  const lastSpace = slice.lastIndexOf(' ');
+  return (lastSpace > 40 ? slice.slice(0, lastSpace) : slice).trimEnd() + '…';
+}
+
+/**
+ * Map each non-hidden page to its previous/next neighbors in reading order.
+ * Returns an empty map when the pager is disabled.
+ */
+function computeNeighbors(manifest: SiteManifest, enabled: boolean): Map<string, PageNeighbors> {
+  const map = new Map<string, PageNeighbors>();
+  if (!enabled) return map;
+  const pageBySlug = new Map(manifest.pages.map((p) => [p.slug, p]));
+  const ordered = flattenNavSlugs(manifest.nav).filter((slug) => {
+    const p = pageBySlug.get(slug);
+    return !!p && !p.frontmatter.hidden;
+  });
+  const toLink = (slug: string): PageNavLink | undefined => {
+    const p = pageBySlug.get(slug);
+    if (!p) return undefined;
+    return {
+      slug,
+      title: p.frontmatter.title,
+      description: truncateDesc(p.frontmatter.description),
+    };
+  };
+  ordered.forEach((slug, i) => {
+    map.set(slug, {
+      prev: i > 0 ? toLink(ordered[i - 1]) : undefined,
+      next: i < ordered.length - 1 ? toLink(ordered[i + 1]) : undefined,
+    });
+  });
+  return map;
+}
+
 async function renderPage(
   page: Page,
   manifest: SiteManifest,
@@ -66,7 +135,8 @@ async function renderPage(
   copyPageActions: CopyPageAction[] | undefined,
   fonts: { heading: string; body: string; mono: string },
   shiki: ShikiThemes,
-  custom: { cssLinks?: string[]; css?: string; jsLinks?: string[]; js?: string }
+  custom: { cssLinks?: string[]; css?: string; jsLinks?: string[]; js?: string },
+  neighbors: PageNeighbors | undefined
 ): Promise<{ file: OutputFile; search: SearchEntry; islands: IslandRecord[] }> {
   const islands: IslandRecord[] = [];
 
@@ -119,6 +189,16 @@ async function renderPage(
     }
   }
 
+  // Prev/next pager below the body (content pages only — never the source
+  // viewer). Rendered nothing when the page has no neighbors.
+  const pager =
+    neighbors &&
+    (neighbors.prev || neighbors.next) &&
+    page.frontmatter.kind !== 'source'
+      ? h(PageNav, { prev: neighbors.prev, next: neighbors.next, basePath })
+      : null;
+  const pageBody = pager ? h(Fragment, null, mainContent, pager) : mainContent;
+
   // In-content links (MdxA / SourceLink / MemberMeta) read the base-path from a
   // Preact context. This is SSR-only — the MDX body is rendered to a string and
   // never hydrated as a whole — so the context value is baked into the markup
@@ -138,7 +218,7 @@ async function renderPage(
         searchIndexUrl,
         islands,
       },
-      mainContent
+      pageBody
     )
   );
 
@@ -225,6 +305,10 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
   const copyPageEnabled = theme.copyPage?.enabled !== false;
   const copyPageActions = theme.copyPage?.actions;
 
+  // Prev/next pager: on by default; `pageNav.enabled: false` opts out. Neighbors
+  // are computed once from the nav reading order and looked up per page.
+  const neighborsBySlug = computeNeighbors(manifest, theme.pageNav?.enabled !== false);
+
   const css = buildCss(theme.tokens, manifest.buildId);
   const cssHref = withBase(basePath, '/' + css.path);
   const islandsBase = withBase(basePath, '/_islands');
@@ -273,7 +357,8 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
         copyPageActions,
         theme.tokens.fonts,
         theme.tokens.shiki,
-        custom
+        custom,
+        neighborsBySlug.get(page.slug)
       );
       files.push(file);
       renderedPageCount++;
@@ -350,6 +435,7 @@ export type {
   ThemeTokens,
   CopyPageConfig,
   CopyPageAction,
+  PageNavConfig,
   SiteName,
   SiteLogo,
   ComponentOverrides,

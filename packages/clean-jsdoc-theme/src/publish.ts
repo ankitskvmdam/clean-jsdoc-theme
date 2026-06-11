@@ -11,6 +11,7 @@ import { pathToFileURL, fileURLToPath } from 'node:url';
 import type {
   CopyPageAction,
   CopyPageConfig,
+  PageNavConfig,
   OutputFile,
   SiteLogo,
   SiteManifest,
@@ -67,16 +68,24 @@ function resolvePackageDir(name: string): string {
 interface MinimalPkgJson {
   main?: string;
   module?: string;
-  exports?:
-    | string
-    | {
-        '.'?:
-          | string
-          | {
-              import?: string | { default?: string };
-              default?: string;
-            };
-      };
+  exports?: string | Record<string, unknown>;
+}
+
+/**
+ * Resolve an `exports` condition subtree (a string target, or a conditions
+ * object like `{ import, require, default, types }`) to an absolute path,
+ * preferring the ESM condition (`import`, then a bare `default`). Recurses for
+ * nested conditions (`import: { default: "…" }`). Returns `undefined` when no
+ * usable target is present.
+ */
+function resolveExportTarget(node: unknown, pkgRoot: string): string | undefined {
+  if (typeof node === 'string') return resolvePath(pkgRoot, node);
+  if (!node || typeof node !== 'object') return undefined;
+  const o = node as Record<string, unknown>;
+  const imp = resolveExportTarget(o.import, pkgRoot);
+  if (imp) return imp;
+  if (typeof o.default === 'string') return resolvePath(pkgRoot, o.default);
+  return undefined;
 }
 
 function resolveEsmEntry(name: string): string {
@@ -86,19 +95,13 @@ function resolveEsmEntry(name: string): string {
   ) as MinimalPkgJson;
 
   const exp = pkg.exports;
+  if (typeof exp === 'string') return resolvePath(pkgRoot, exp);
   if (exp && typeof exp === 'object') {
-    const dot = (exp as { '.'?: unknown })['.'];
-    if (typeof dot === 'string') return resolvePath(pkgRoot, dot);
-    if (dot && typeof dot === 'object') {
-      const imp = (dot as { import?: unknown }).import;
-      if (typeof imp === 'string') return resolvePath(pkgRoot, imp);
-      if (imp && typeof imp === 'object') {
-        const def = (imp as { default?: unknown }).default;
-        if (typeof def === 'string') return resolvePath(pkgRoot, def);
-      }
-      const def = (dot as { default?: unknown }).default;
-      if (typeof def === 'string') return resolvePath(pkgRoot, def);
-    }
+    // Either a `.` subpath (`{ ".": … }`) or top-level conditions with no
+    // subpaths (`{ import, default, types }`, as ora ships). Resolve whichever.
+    const dot = (exp as Record<string, unknown>)['.'];
+    const target = resolveExportTarget(dot !== undefined ? dot : exp, pkgRoot);
+    if (target) return target;
   }
   if (typeof pkg.module === 'string') return resolvePath(pkgRoot, pkg.module);
   if (typeof pkg.main === 'string') return resolvePath(pkgRoot, pkg.main);
@@ -139,6 +142,24 @@ const loadUtils = (): Promise<typeof import('@clean-jsdoc-theme/utils')> =>
     'normalizeBasePath',
     'withBase',
   ]);
+
+/** The `ora` spinner factory (its default export). */
+type OraFactory = typeof import('ora').default;
+
+/**
+ * Load `ora` (ESM-only) the same way as the other deps — via a resolved
+ * `file://` URL so the CJS bundle doesn't `require()` it. Returns `null` if
+ * `ora` can't be loaded, so progress degrades to silent rather than failing
+ * the build.
+ */
+const loadOra = async (): Promise<OraFactory | null> => {
+  try {
+    const mod = await loadDep<typeof import('ora')>('ora', ['default']);
+    return mod.default;
+  } catch {
+    return null;
+  }
+};
 
 /**
  * JSDoc's own standard `opts` keys (`jsdoc/lib/jsdoc/opts/argparser.js` +
@@ -249,6 +270,13 @@ interface JSDocOpts {
    */
   copyPage?: unknown;
   /**
+   * Previous/next page pager config (`jsdoc.json` `"opts": { "pageNav": … }`).
+   * Either a boolean (`false` hides the pager) or an object `{ enabled? }`. The
+   * pager links each content page to its neighbors in sidebar reading order.
+   * Defaults to enabled.
+   */
+  pageNav?: unknown;
+  /**
    * Inline custom CSS (`jsdoc.json` `"opts": { "customCss": "…" }`), injected as
    * a `<style>` after the theme stylesheet so it can override.
    */
@@ -358,12 +386,14 @@ function resolveTheme(
   const aiPrompt =
     typeof opts.aiPrompt === 'string' && opts.aiPrompt.trim() ? opts.aiPrompt.trim() : undefined;
   const copyPage = normalizeCopyPage(opts.copyPage);
+  const pageNav = normalizePageNav(opts.pageNav);
 
   return {
     ...defaultTheme,
     basePath,
     ...(aiPrompt ? { aiPrompt } : {}),
     ...(copyPage ? { copyPage } : {}),
+    ...(pageNav ? { pageNav } : {}),
     tokens: {
       ...defaultTheme.tokens,
       fonts: {
@@ -778,6 +808,19 @@ export function normalizeCopyPage(raw: unknown): CopyPageConfig | undefined {
   return Object.keys(config).length > 0 ? config : undefined;
 }
 
+/**
+ * Validate `opts.pageNav` into a {@link PageNavConfig}, or `undefined` to use the
+ * default (enabled). Accepts a boolean shorthand (`false` hides the pager) or an
+ * object whose `enabled` is read when boolean.
+ */
+export function normalizePageNav(raw: unknown): PageNavConfig | undefined {
+  if (raw === false) return { enabled: false };
+  if (raw === true || raw == null) return undefined;
+  if (typeof raw !== 'object') return undefined;
+  const enabled = (raw as Record<string, unknown>).enabled;
+  return typeof enabled === 'boolean' ? { enabled } : undefined;
+}
+
 /** Extensions we treat as "source" worth emitting a viewer page for. */
 const SOURCE_EXTENSIONS = new Set(['.js', '.mjs', '.cjs', '.jsx', '.ts', '.mts', '.cts', '.tsx']);
 
@@ -970,43 +1013,27 @@ function formatElapsed(ms: number): string {
 }
 
 /**
- * Minimal build-stage narrator. The setu→dwar pipeline does much more than a
- * bare jsdoc run (per-page MDX compile, per-island esbuild bundling, the
+ * Build-stage narrator backed by `ora`. The setu→dwar pipeline does much more
+ * than a bare jsdoc run (per-page MDX compile, per-island esbuild bundling, the
  * Pagefind index), so a 7–8s build can otherwise look hung. `stage(label, fn)`
- * runs `fn`, timing it, and prints `✓ <label> (<elapsed>)`; on a TTY it first
- * writes a live `<label>…` line that the result overwrites in place, so the
- * slowest stage shows what's running *while* it runs. Non-TTY (CI/piped) just
- * gets the one completed line per stage — no cursor games. `done()` prints the
- * wall-clock total. Self-contained (its own tiny ANSI), because the very first
- * stage is loading utils — so it can't borrow utils' `ansi`. Disabled when
- * `enabled` is false (`opts.progress === false`); then `stage` just runs `fn`.
+ * starts an ora spinner, runs `fn`, then resolves it to `✔ <label> (<elapsed>)`
+ * on success or `✖ <label>` on failure. ora handles the spinner animation, TTY
+ * detection (no animation when piped/CI), and the success/fail symbols.
  *
- * No grand total is printed: the per-stage lines already show each duration,
- * and the build report prints the headline render time.
+ * `ora` is `null` when progress is disabled (`opts.progress === false`) or the
+ * package couldn't be loaded — then `stage` just runs `fn` with no output.
  */
-function createBuildProgress(enabled: boolean, color: boolean) {
-  const tty = enabled && Boolean(process.stdout.isTTY);
-  const sgr = (code: number, s: string): string => (color ? `[${code}m${s}[0m` : s);
-  const dim = (s: string): string => sgr(90, s);
-  const green = (s: string): string => sgr(32, s);
-  const red = (s: string): string => sgr(31, s);
-
+function createBuildProgress(ora: OraFactory | null) {
   async function stage<T>(label: string, fn: () => T | Promise<T>): Promise<T> {
-    if (!enabled) return await fn();
+    if (!ora) return await fn();
+    const spinner = ora(label).start();
     const begin = Date.now();
-    // Live "running" line — only on a TTY, where the result can overwrite it.
-    if (tty) process.stdout.write(dim(`  ${label}…`));
-    const finish = (line: string): void => {
-      // `\r` + clear-line on a TTY rewrites the running line in place; otherwise
-      // just print the completed line on its own row.
-      process.stdout.write(tty ? `\r[2K${line}\n` : `${line}\n`);
-    };
     try {
       const result = await fn();
-      finish(`  ${green('✓')} ${label} ${dim(`(${formatElapsed(Date.now() - begin)})`)}`);
+      spinner.succeed(`${label} (${formatElapsed(Date.now() - begin)})`);
       return result;
     } catch (err) {
-      finish(`  ${red('✗')} ${label}`);
+      spinner.fail(label);
       throw err;
     }
   }
@@ -1027,11 +1054,14 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   // Markdown to HTML; bail early with an actionable message if it's missing.
   assertMarkdownPlugin();
 
-  // Color only on a real TTY (and unless JSDoc's `--nocolor` is set). Computed
-  // before the loads so the progress narrator (below) can use it from stage 1.
+  // Color only on a real TTY (and unless JSDoc's `--nocolor` is set).
   const color = Boolean(process.stdout.isTTY) && opts.nocolor !== true;
-  // Stage progress is on by default; `opts.progress: false` silences it.
-  const progress = createBuildProgress(opts.progress !== false, color);
+
+  // Stage progress (ora spinners) is on by default; `opts.progress: false`
+  // silences it. ora loads first so the narrator can wrap the renderer load
+  // (stage 1) too; a load failure degrades to silent rather than breaking.
+  const ora = opts.progress === false ? null : await loadOra();
+  const progress = createBuildProgress(ora);
 
   const [
     { generateSite },

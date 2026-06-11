@@ -50,6 +50,8 @@ export interface CleanJsdocThemeBlock {
   clubSidebarItems?: unknown;
   /** Copy-page button config (boolean or `{ enabled?, actions? }`). */
   copyPage?: unknown;
+  /** Prev/next page pager config (boolean or `{ enabled? }`). */
+  pageNav?: unknown;
   /** Custom AI prompt for the copy-page button. */
   aiPrompt?: unknown;
   /** Escalate validation errors (bad font / unknown key) to a hard failure. */
@@ -69,7 +71,7 @@ export function declareThemeOption(app: Application): void {
     name: OPTION_NAME,
     help:
       'clean-jsdoc-theme options (siteName, fonts, sectionOrder, menu, ' +
-      'clubSidebarItems, copyPage, aiPrompt, strict).',
+      'clubSidebarItems, copyPage, pageNav, aiPrompt, strict).',
     type: ParameterType.Object,
     defaultValue: {},
   };

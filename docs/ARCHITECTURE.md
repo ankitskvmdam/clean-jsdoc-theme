@@ -347,6 +347,9 @@ rang/src/
     ├── CopyPageButton.tsx # island: copy-page split button (ButtonGroup + DropdownMenu):
     │                     #   copy the page .md, view it, or open in Claude/ChatGPT/
     │                     #   Perplexity (prompt + .md link, never the page body)
+    ├── PageNav.tsx       # SSR prev/next pager: two rounded-lg bordered cards (label
+    │                     #   + page title + ≤100-char description) linking the
+    │                     #   adjacent pages in sidebar reading order (no island)
     ├── icons/            # inlined brand SVGs (ChatGptIcon ← chatgpt.svg)
     ├── CodeViewer.tsx    # island: read-only Monaco source viewer (CDN-loaded)
     ├── Embed.tsx         # island: sandboxed iframe (Embed marker + EmbedBody body);
@@ -467,7 +470,11 @@ per-page `data-island-props` JSON payload, and `RenderResult.search` (one
 `SearchEntry` per non-hidden page; the on-disk index adds the member entries).
 Content pages also mount the `copy-page`
 island above the body (gated by `ThemeConfig.copyPage`, never on the source
-section). The full-text Pagefind bundle is a separate post-write step.
+section), and a **prev/next pager** (rang's `PageNav`) below the body: dwar
+flattens `manifest.nav` into linear reading order (skipping external/menu
+entries), maps each non-hidden page to its neighbors, and renders the two cards
+(title + ≤100-char description). Gated by `ThemeConfig.pageNav` (on by default),
+never on source pages. The full-text Pagefind bundle is a separate post-write step.
 
 **Custom CSS/JS.** `ThemeConfig` carries optional `customCss`/`customJs` (inline
 strings) and `customCssLinks`/`customJsLinks` (asset hrefs). Inline strings are
@@ -504,7 +511,8 @@ clean-jsdoc-theme/src/
 │                         #   templates.default.sourceLinkToComment toggles whether a
 │                         #   Source: link lands on the declaration (default) or comment.
 │                         #   Normalizes opts.sectionOrder + opts.menu + opts.clubSidebarItems
-│                         #   → setu, and opts.aiPrompt + opts.copyPage → theme.
+│                         #   → setu, and opts.aiPrompt + opts.copyPage + opts.pageNav
+│                         #   → theme.
 │                         #   Reads opts.customCss/customJs (inline) + reads
 │                         #   opts.customCssFile/customJsFile from disk → theme
 │                         #   (dwar emits/links them; render() stays pure).
@@ -541,7 +549,7 @@ typedoc/src/
 │                           #   salty.taffy → setu generateSite → dwar render →
 │                           #   write files → Pagefind. Threads validated siteName/
 │                           #   fonts + normalized sectionOrder/menu/clubSidebarItems/
-│                           #   copyPage/aiPrompt through. Prints the utils
+│                           #   copyPage/pageNav/aiPrompt through. Prints the utils
 │                           #   formatBuildReport (node:zlib gzip sizer — allowed here,
 │                           #   it's the bridge, not utils). Holds defaultTheme.
 ├── reflection-to-doclets.ts# THE adapter: ProjectReflection → flat TDoclet[].
@@ -558,7 +566,7 @@ typedoc/src/
 ├── types.ts                # TypeDoc Type → { names: [type.toString()] } (v1).
 ├── options.ts              # the cleanJsdocTheme ParameterType.Object declaration +
 │                           #   typed reader (siteName/fonts/sectionOrder/menu/
-│                           #   clubSidebarItems/copyPage/aiPrompt/strict).
+│                           #   clubSidebarItems/copyPage/pageNav/aiPrompt/strict).
 └── write-output-files.ts   # mkdir -p + writeFile loop (copied from the JSDoc bridge).
 ```
 

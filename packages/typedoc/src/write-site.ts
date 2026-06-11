@@ -23,6 +23,7 @@ import { render, runPagefindAgainstDir } from '@clean-jsdoc-theme/dwar';
 import type {
   CopyPageAction,
   CopyPageConfig,
+  PageNavConfig,
   SiteManifest,
   SiteName,
   ThemeConfig,
@@ -92,11 +93,13 @@ function resolveTheme(
   const aiPrompt =
     typeof block.aiPrompt === 'string' && block.aiPrompt.trim() ? block.aiPrompt.trim() : undefined;
   const copyPage = normalizeCopyPage(block.copyPage);
+  const pageNav = normalizePageNav(block.pageNav);
 
   return {
     ...defaultTheme,
     ...(aiPrompt ? { aiPrompt } : {}),
     ...(copyPage ? { copyPage } : {}),
+    ...(pageNav ? { pageNav } : {}),
     tokens: {
       ...defaultTheme.tokens,
       fonts: {
@@ -184,6 +187,19 @@ function normalizeCopyPage(raw: unknown): CopyPageConfig | undefined {
     config.actions = COPY_PAGE_ACTIONS.filter((a) => seen.has(a));
   }
   return Object.keys(config).length > 0 ? config : undefined;
+}
+
+/**
+ * Validate `block.pageNav` into a {@link PageNavConfig}, or `undefined` for the
+ * default (enabled). Copied from the JSDoc bridge's `normalizePageNav`: a boolean
+ * shorthand (`false` hides the pager) or an object whose `enabled` is read.
+ */
+function normalizePageNav(raw: unknown): PageNavConfig | undefined {
+  if (raw === false) return { enabled: false };
+  if (raw === true || raw == null) return undefined;
+  if (typeof raw !== 'object') return undefined;
+  const enabled = (raw as Record<string, unknown>).enabled;
+  return typeof enabled === 'boolean' ? { enabled } : undefined;
 }
 
 /** A logo value that's already a servable URL/URI needs no copying. */
