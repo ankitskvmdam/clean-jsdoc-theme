@@ -2,7 +2,7 @@
 
 > **v5 alpha.** A ground-up rewrite of the theme on a Preact + MDX + esbuild + Pagefind pipeline. See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the full project structure.
 >
-> To stay on v4, pin `"clean-jsdoc-theme": "^4"` in your `package.json`. v4 lives on the `v4-maintenance` branch and continues to receive security patches.
+> To stay on v4, pin `"clean-jsdoc-theme": "^4"` in your `package.json`. Every past release is tagged, so you can check out the matching git tag to browse the v4 source.
 
 A clean, responsive, and customizable theme for JSDoc. v5 emits a static site with SSR-rendered chrome, lazy-hydrated Preact islands (sidebar, TOC, fuzzy command palette, theme toggle, settings, mobile nav, copy-page button, code-block copy, tabbed code blocks, a Monaco source viewer), a co-located `.md` per page for LLMs, a built-in fuzzy search index (plus an optional Pagefind full-text index), and an Astro-free, framework-free build.
 
