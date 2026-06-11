@@ -135,6 +135,7 @@ export const THEME_OPT_KEYS = [
   'customJs',
   'customJsFile',
   'hashCustomAssets',
+  'progress',
 ] as const;
 
 /** Union of the recognized theme option key names. */

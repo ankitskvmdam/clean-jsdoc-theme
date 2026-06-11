@@ -281,6 +281,14 @@ interface JSDocOpts {
    */
   hashCustomAssets?: unknown;
   /**
+   * Build-stage progress output (`jsdoc.json` `"opts": { "progress": false }`).
+   * The setu→dwar pipeline does noticeably more than a bare jsdoc run (per-page
+   * MDX compile, per-island esbuild bundling, the Pagefind index), so by default
+   * the bridge narrates each stage with its elapsed time. Set `false` to silence
+   * the stage lines (the build report still prints).
+   */
+  progress?: unknown;
+  /**
    * JSDoc's default-template source options, read from `conf.templates.default`
    * (or, as a fallback, nested under `opts.templates`):
    *  - `outputSourceFiles` — defaults to `true`; set `false` to suppress the
@@ -956,6 +964,56 @@ export function normalizeDocGroups(raw: unknown): string[] | undefined {
   return normalizeSectionOrder(raw);
 }
 
+/** Format an elapsed-ms span compactly: `840ms` under a second, else `5.2s`. */
+function formatElapsed(ms: number): string {
+  return ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(1)}s`;
+}
+
+/**
+ * Minimal build-stage narrator. The setu→dwar pipeline does much more than a
+ * bare jsdoc run (per-page MDX compile, per-island esbuild bundling, the
+ * Pagefind index), so a 7–8s build can otherwise look hung. `stage(label, fn)`
+ * runs `fn`, timing it, and prints `✓ <label> (<elapsed>)`; on a TTY it first
+ * writes a live `<label>…` line that the result overwrites in place, so the
+ * slowest stage shows what's running *while* it runs. Non-TTY (CI/piped) just
+ * gets the one completed line per stage — no cursor games. `done()` prints the
+ * wall-clock total. Self-contained (its own tiny ANSI), because the very first
+ * stage is loading utils — so it can't borrow utils' `ansi`. Disabled when
+ * `enabled` is false (`opts.progress === false`); then `stage` just runs `fn`.
+ *
+ * No grand total is printed: the per-stage lines already show each duration,
+ * and the build report prints the headline render time.
+ */
+function createBuildProgress(enabled: boolean, color: boolean) {
+  const tty = enabled && Boolean(process.stdout.isTTY);
+  const sgr = (code: number, s: string): string => (color ? `[${code}m${s}[0m` : s);
+  const dim = (s: string): string => sgr(90, s);
+  const green = (s: string): string => sgr(32, s);
+  const red = (s: string): string => sgr(31, s);
+
+  async function stage<T>(label: string, fn: () => T | Promise<T>): Promise<T> {
+    if (!enabled) return await fn();
+    const begin = Date.now();
+    // Live "running" line — only on a TTY, where the result can overwrite it.
+    if (tty) process.stdout.write(dim(`  ${label}…`));
+    const finish = (line: string): void => {
+      // `\r` + clear-line on a TTY rewrites the running line in place; otherwise
+      // just print the completed line on its own row.
+      process.stdout.write(tty ? `\r[2K${line}\n` : `${line}\n`);
+    };
+    try {
+      const result = await fn();
+      finish(`  ${green('✓')} ${label} ${dim(`(${formatElapsed(Date.now() - begin)})`)}`);
+      return result;
+    } catch (err) {
+      finish(`  ${red('✗')} ${label}`);
+      throw err;
+    }
+  }
+
+  return { stage };
+}
+
 export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknown): Promise<void> {
   const destination = opts.destination;
   if (!destination || typeof destination !== 'string') {
@@ -969,6 +1027,12 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   // Markdown to HTML; bail early with an actionable message if it's missing.
   assertMarkdownPlugin();
 
+  // Color only on a real TTY (and unless JSDoc's `--nocolor` is set). Computed
+  // before the loads so the progress narrator (below) can use it from stage 1.
+  const color = Boolean(process.stdout.isTTY) && opts.nocolor !== true;
+  // Stage progress is on by default; `opts.progress: false` silences it.
+  const progress = createBuildProgress(opts.progress !== false, color);
+
   const [
     { generateSite },
     { render, runPagefindAgainstDir },
@@ -980,7 +1044,9 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
       normalizeBasePath,
       withBase,
     },
-  ] = await Promise.all([loadSetu(), loadDwar(), loadUtils()]);
+  ] = await progress.stage('Loading renderer', () =>
+    Promise.all([loadSetu(), loadDwar(), loadUtils()])
+  );
 
   // Normalized base-path prefix (`/` when unset). Threaded into every emitted
   // href — logos and custom assets here; dwar prefixes the rest at render time.
@@ -994,15 +1060,14 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   // never breaks on it. Unknown keys get typo suggestions (`suggest-typos`),
   // never blanket warnings — JSDoc's own opts share this flat namespace.
   const fontResolver = createGoogleFontResolver();
-  const { value, diagnostics } = await validateThemeOpts({
-    opts,
-    fontResolver,
-    unknownKeyPolicy: 'suggest-typos',
-    knownNonThemeKeys: JSDOC_OWN_OPTS,
-  });
-
-  // Color only on a real TTY (and unless JSDoc's `--nocolor` is set).
-  const color = Boolean(process.stdout.isTTY) && opts.nocolor !== true;
+  const { value, diagnostics } = await progress.stage('Validating options', () =>
+    validateThemeOpts({
+      opts,
+      fontResolver,
+      unknownKeyPolicy: 'suggest-typos',
+      knownNonThemeKeys: JSDOC_OWN_OPTS,
+    })
+  );
 
   // Strict mode: `opts.strict` (or nested `templates.default.strict`). When on
   // AND there are errors, log + throw to fail the build. Otherwise (the
@@ -1036,7 +1101,6 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   // Source viewer pages + `Source: file:line` member links. Gated behind
   // JSDoc's `templates.default.outputSourceFiles` (default ON); reading files
   // is optional and self-skips on error, so this never aborts the build.
-  const sources = outputSourceFilesEnabled(opts) ? await collectSourceFiles(data) : [];
   const sourceLinkToComment = sourceLinkToCommentEnabled(opts);
 
   // Docs directory → prose pages at clean (unprefixed) slugs. The bridge does the
@@ -1045,7 +1109,14 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   // orders the doc-group sidebar sections; `defaultDocGroup` labels ungrouped docs.
   const docsDir =
     typeof opts.docs === 'string' && opts.docs.trim().length > 0 ? opts.docs.trim() : undefined;
-  const docs = docsDir ? await collectDocs(docsDir) : [];
+
+  // One stage for all the file-reading I/O — source files (for the viewer pages)
+  // and the docs tree — so the disk work is narrated as a single step.
+  const { sources, docs } = await progress.stage('Reading sources & docs', async () => ({
+    sources: outputSourceFilesEnabled(opts) ? await collectSourceFiles(data) : [],
+    docs: docsDir ? await collectDocs(docsDir) : [],
+  }));
+
   const docGroups = normalizeDocGroups(opts.docGroups);
   const defaultDocGroup =
     typeof opts.defaultDocGroup === 'string' && opts.defaultDocGroup.trim().length > 0
@@ -1058,7 +1129,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   const menu = normalizeMenu(opts.menu);
   const clubSidebarItems = opts.clubSidebarItems === true;
 
-  const manifest = generateSite(data, {
+  const manifest = await progress.stage('Generating pages', () => generateSite(data, {
     ...(pkg ? { pkg } : {}),
     ...(readme ? { readme } : {}),
     ...(tutorialTree.length > 0 ? { tutorials: tutorialTree } : {}),
@@ -1070,7 +1141,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
     ...(sectionOrder ? { sectionOrder } : {}),
     ...(menu ? { menu } : {}),
     ...(clubSidebarItems ? { clubSidebarItems } : {}),
-  });
+  }));
 
   // Resolve siteName (text or logo set) and copy any local logo images into the
   // output before render, so the served paths are baked into the markup. The
@@ -1098,13 +1169,17 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   const customAssets = await resolveCustomAssets(opts, hrefForServed);
 
   const absoluteDestination = resolvePath(destination);
-  const result = await render(manifest, {
-    theme: { ...resolveTheme(opts, siteName, fonts, basePath), ...customAssets.theme },
-    destination: absoluteDestination,
-  });
+  const result = await progress.stage('Rendering site', () =>
+    render(manifest, {
+      theme: { ...resolveTheme(opts, siteName, fonts, basePath), ...customAssets.theme },
+      destination: absoluteDestination,
+    })
+  );
 
   const outputFiles = [...result.files, ...logoFiles, ...customAssets.files];
-  await writeOutputFiles(absoluteDestination, outputFiles);
+  await progress.stage('Writing files', () =>
+    writeOutputFiles(absoluteDestination, outputFiles)
+  );
 
   // Next.js-style build report: where the files landed, page/asset counts, and
   // per-route sizes (+ gzip). `node:zlib` is injected here as the gzip sizer so
@@ -1133,10 +1208,16 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   }
 
   // Pagefind is optional; if the user doesn't have it installed we don't
-  // want to fail the whole build. Surface the failure as a warning.
+  // want to fail the whole build. Surface the failure as a warning (the stage
+  // marks ✗, then this note clarifies it's non-fatal).
   try {
-    await runPagefindAgainstDir(absoluteDestination);
+    await progress.stage('Indexing search (pagefind)', () =>
+      runPagefindAgainstDir(absoluteDestination)
+    );
   } catch (err) {
-    console.warn(`clean-jsdoc-theme: pagefind step skipped — ${(err as Error).message}`);
+    console.warn(
+      `clean-jsdoc-theme: pagefind step skipped (optional) — ${(err as Error).message}`
+    );
   }
+
 }
