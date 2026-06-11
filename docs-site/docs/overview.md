@@ -43,23 +43,12 @@ testable.
 
 See the [Packages](/packages) page for why each one exists and how they relate.
 
-## Rough architecture
+## Architecture
 
 The packages form a strict one-way pipeline — your comments flow in, a static
 site comes out:
 
-```
- JSDoc / TypeDoc          (collect your source comments)
-        │
-        ▼
- bridge  ─►  setu.generateSite()  ─►  SiteManifest   (MDX pages + nav + search)
-                                          │
-                                          ▼
-                          dwar.render()  ◄── components from rang
-                                          │
-                                          ▼
-                                    static site       (HTML + .md + islands + search)
-```
+![Build pipeline: JSDoc / TypeDoc → setu.generateSite() → SiteManifest → dwar.render() (with components from rang) → static site](/assets/build-pipeline.svg)
 
 The boundaries are deliberate and one-way: **setu never imports dwar or rang**,
 and **dwar never re-reads your doclets** — it consumes only the `SiteManifest`.

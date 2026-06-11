@@ -1,0 +1,105 @@
+<svg viewBox="0 0 1380 310" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#5a5a5a"/>
+    </marker>
+    <marker id="aro" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#dca06f"/>
+    </marker>
+    <style>
+      .box  { font-size: 14px; font-weight: 500; }
+      .mono { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; }
+      .op   { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 13px; }
+      .alab { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 12px; fill: #555555; }
+      .asub { font-size: 10px; fill: #8a8a8a; }
+      .sub  { font-size: 10.5px; }
+      @media (prefers-color-scheme: dark) {
+        /* node (start/end) boxes + their text */
+        rect[fill="#ececec"] { fill: #2a2b30; }
+        text[fill="#4a4a4a"] { fill: #d6d6da; }
+        text[fill="#777777"] { fill: #9b9ba1; }
+        /* core (green) boxes + op text */
+        rect[fill="#cbe0cc"] { fill: #243528; }
+        text[fill="#334335"] { fill: #bcd9c1; }
+        /* rang (peach) box + text */
+        rect[fill="#fbeadf"] { fill: #352a20; }
+        text[fill="#6e5747"] { fill: #e3c2a2; }
+        text[fill="#8a7565"] { fill: #c5a587; }
+        /* arrows + arrowhead marker, dashed container */
+        [stroke="#5a5a5a"] { stroke: #8c8c92; }
+        [fill="#5a5a5a"]   { fill: #8c8c92; }
+        rect[stroke="#cccccc"] { stroke: #45474c; }
+        /* faint labels: group caption, arrow labels, footnote */
+        text[fill="#9a9a9a"], text[fill="#aeaeae"] { fill: #8b8b91; }
+        text[fill="#b3b3b3"] { fill: #6e6e74; }
+        .alab { fill: #b2b2b8; }
+        .asub { fill: #8a8a90; }
+        /* the peach accent (#dca06f) reads fine on dark — left as-is */
+      }
+    </style>
+  </defs>
+
+  <!-- dashed group container (= publish.ts, the bridge) -->
+  <rect x="186" y="56" width="982" height="120" rx="12" fill="none" stroke="#cccccc" stroke-width="1.4" stroke-dasharray="5 4"/>
+  <text class="mono" x="677" y="74" text-anchor="middle" font-size="12" fill="#9a9a9a">clean-jsdoc-theme/publish.ts</text>
+  <text x="677" y="89" text-anchor="middle" font-size="11" fill="#aeaeae">the bridge — JSDoc calls it via require()</text>
+
+  <!-- main flow arrows -->
+  <g stroke="#5a5a5a" stroke-width="2.4" fill="none" marker-end="url(#ar)">
+    <line x1="136" y1="120" x2="198" y2="120"/>
+    <line x1="374" y1="120" x2="476" y2="120"/>
+    <line x1="608" y1="120" x2="710" y2="120"/>
+    <line x1="878" y1="120" x2="960" y2="120"/>
+    <line x1="1156" y1="120" x2="1232" y2="120"/>
+  </g>
+
+  <!-- arrow type labels -->
+  <text class="alab" x="167" y="110" text-anchor="middle">collection</text>
+
+  <text class="alab" x="425" y="110" text-anchor="middle">SiteManifest</text>
+  <text class="asub" x="425" y="139" text-anchor="middle">MDX · nav · buildId</text>
+
+  <text class="alab" x="659" y="110" text-anchor="middle">RenderResult</text>
+  <text class="asub" x="659" y="139" text-anchor="middle">files · search · stats</text>
+
+  <text class="alab" x="919" y="110" text-anchor="middle">destination/</text>
+  <text class="alab" x="1194" y="110" text-anchor="middle">search index</text>
+
+  <!-- peach side-input arrow: rang -> dwar.render() -->
+  <polyline points="542,206 542,150" fill="none" stroke="#dca06f" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#aro)"/>
+  <text x="552" y="180" font-size="11" fill="#8a7565">components</text>
+
+  <!-- JSDoc (start) -->
+  <rect x="22" y="94" width="110" height="52" rx="9" fill="#ececec"/>
+  <text class="box" x="77" y="116" text-anchor="middle" fill="#4a4a4a">JSDoc</text>
+  <text class="sub" x="77" y="132" text-anchor="middle" fill="#777777">doclet collection</text>
+
+  <!-- setu.generateSite() -->
+  <rect x="202" y="94" width="168" height="52" rx="9" fill="#cbe0cc"/>
+  <text class="op" x="286" y="125" text-anchor="middle" fill="#334335">setu.generateSite()</text>
+
+  <!-- dwar.render() -->
+  <rect x="480" y="94" width="124" height="52" rx="9" fill="#cbe0cc"/>
+  <text class="op" x="542" y="125" text-anchor="middle" fill="#334335">dwar.render()</text>
+
+  <!-- writeOutputFiles() -->
+  <rect x="714" y="94" width="160" height="52" rx="9" fill="#cbe0cc"/>
+  <text class="op" x="794" y="125" text-anchor="middle" fill="#334335">writeOutputFiles()</text>
+
+  <!-- runPagefindAgainstDir() -->
+  <rect x="964" y="94" width="188" height="52" rx="9" fill="#cbe0cc"/>
+  <text class="op" x="1058" y="125" text-anchor="middle" fill="#334335">runPagefindAgainstDir()</text>
+
+  <!-- static site (end) -->
+  <rect x="1236" y="94" width="120" height="52" rx="9" fill="#ececec"/>
+  <text class="box" x="1296" y="116" text-anchor="middle" fill="#4a4a4a">static site</text>
+  <text class="sub" x="1296" y="132" text-anchor="middle" fill="#777777">HTML + search</text>
+
+  <!-- rang side-input box -->
+  <rect x="442" y="206" width="200" height="46" rx="9" fill="#fbeadf" stroke="#dca06f" stroke-width="1.4" stroke-dasharray="5 4"/>
+  <text x="542" y="226" text-anchor="middle" font-size="13" font-weight="500" fill="#6e5747">rang</text>
+  <text class="mono" x="542" y="242" text-anchor="middle" font-size="10.5" fill="#8a7565">@clean-jsdoc-theme/rang</text>
+
+  <!-- footnote -->
+  <text class="mono" x="22" y="290" font-size="11" fill="#b3b3b3">type contracts for every arrow live in @clean-jsdoc-theme/utils/src/site/*</text>
+</svg>

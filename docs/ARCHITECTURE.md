@@ -10,25 +10,7 @@ Pagefind full-text index).
 
 ## The pipeline
 
-```
- JSDoc (salty doclet collection)
-        │
-        ▼
- clean-jsdoc-theme/publish.ts ── the bridge JSDoc calls via require()
-        │
-        ├─► setu.generateSite(collection)  ──►  SiteManifest
-        │                                          (pages = MDX, nav, buildId)
-        │                                              │
-        │                                              ▼
-        ├─► dwar.render(manifest, { theme })  ──►  RenderResult { files, search, stats }
-        │        ▲                                     │
-        │        │ components from rang                ▼
-        │        └─ @clean-jsdoc-theme/rang      writeOutputFiles(files → opts.destination)
-        │                                              │
-        └─► dwar.runPagefindAgainstDir(destination)  ─┘  (indexes the written HTML)
-
- type contracts for every arrow live in @clean-jsdoc-theme/utils/src/site/*
-```
+![The pipeline](./build-pipeline.svg)
 
 **Boundary guarantees**
 
