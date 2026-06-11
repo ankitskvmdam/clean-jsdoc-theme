@@ -10,7 +10,7 @@ A clean, responsive, and customizable theme for JSDoc. v5 emits a static site wi
 
 ## Architecture
 
-![The architecture](./tree/master/docs/architecture.svg)
+![clean-jsdoc-theme Architecture.](https://raw.githubusercontent.com/ankitskvmdam/clean-jsdoc-theme/refs/heads/master/docs/architecture.svg)
 
 Four boundary packages, each independently testable, glued together by a thin JSDoc bridge:
 
