@@ -3,21 +3,17 @@
     "allowUnknownTags": true
   },
   "source": {
-    "include": ["./empty.js", "./README.md"]
+    "include": ["./src", "./README.md"]
   },
   "plugins": ["plugins/markdown"],
   "opts": {
     "encoding": "utf8",
-    "basePath": "/clean-jsdoc-theme",
-    "destination": "dist/clean-jsdoc-theme",
+    "basePath": "/clean-jsdoc-theme/api-docs",
+    "destination": "dist/clean-jsdoc-theme/api-docs",
     "recurse": true,
     "template": "./node_modules/clean-jsdoc-theme/dist",
     "readme": "./README.md",
-    "docs": "./docs",
-    "docGroups": ["Getting Started", "Packages"],
-    "defaultDocGroup": "Docs",
-    "sectionOrder": ["Getting Started", "Packages", "Modules", "Classes"],
-    "siteName": "clean-jsdoc-theme",
+    "siteName": "clean-jsdoc-theme API",
     "clubSidebarItems": true,
     "menu": [
       {

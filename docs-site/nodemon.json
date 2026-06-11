@@ -4,6 +4,7 @@
     "docs",
     "README.md",
     "jsdoc.json",
+    "jsdoc.api.json",
     "../packages/clean-jsdoc-theme/dist",
     "../packages/dwar/dist",
     "../packages/rang/dist",
@@ -12,5 +13,5 @@
   ],
   "ext": "js,cjs,mjs,json,md,markdown,html",
   "delay": 400,
-  "exec": "jsdoc -c jsdoc.json"
+  "exec": "jsdoc -c jsdoc.json && jsdoc -c jsdoc.api.json"
 }
