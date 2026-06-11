@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { TextAlignStart } from 'lucide-preact';
 import type { Heading } from '@clean-jsdoc-theme/utils';
-import { getItemOffset, getLineOffset, scrollParent, useActiveHeadings } from './toc-utils';
+import { getItemOffset, getLineOffset, useActiveHeadings } from './toc-utils';
 
 export interface TOCProps {
   headings: Heading[];
@@ -78,31 +78,6 @@ export function TOC({ headings }: TOCProps) {
     ro.observe(container);
     return () => ro.disconnect();
   }, [headings]);
-
-  // Keep the active entry visible inside the rail's own scroll box. On a long
-  // page the TOC overflows and scrolls independently, so as scroll-spy moves the
-  // highlight down the list the active item can slip out of the rail's view.
-  // When the active span sits outside, nudge ONLY that container (never the
-  // window) the minimum amount to reveal it — and do nothing when it's already
-  // visible, so the rail doesn't twitch on every scroll.
-  const activeKey = activeIds.join('|');
-  useEffect(() => {
-    const list = containerRef.current;
-    if (!list) return;
-    const actives = list.querySelectorAll<HTMLElement>('[data-active="true"]');
-    if (actives.length === 0) return;
-    const container = scrollParent(actives[0]);
-    if (!container) return;
-    const cRect = container.getBoundingClientRect();
-    const pad = 24;
-    const firstTop = actives[0].getBoundingClientRect().top;
-    const lastBottom = actives[actives.length - 1].getBoundingClientRect().bottom;
-    if (firstTop < cRect.top + pad) {
-      container.scrollTop -= cRect.top + pad - firstTop;
-    } else if (lastBottom > cRect.bottom - pad) {
-      container.scrollTop += lastBottom - (cRect.bottom - pad);
-    }
-  }, [activeKey]);
 
   if (headings.length === 0) {
     return null;
