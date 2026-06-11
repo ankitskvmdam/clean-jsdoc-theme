@@ -67,8 +67,8 @@ the same reference your users do.
 
 ## Where to next
 
-- **[Getting Started](/getting-started)** — install it and point JSDoc or
-  TypeDoc at your project.
+- **Getting Started** — install it and point [JSDoc](/jsdoc-getting-started) or
+  [TypeDoc](/typedoc-getting-started) at your project.
 - **[Packages](/packages)** — the monorepo's packages and what each one is for.
 - **[API Reference](/api-docs/)** — a live example of theme-generated API
   reference, built from a small sample module.

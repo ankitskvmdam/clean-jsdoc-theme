@@ -77,4 +77,5 @@ no duplicated logic.
 - **Teams who care about AI**, who want every page to ship a clean companion
   `.md` so assistants and LLMs can read the docs as easily as people can.
 
-Ready to set it up? Head to **[Getting Started](/getting-started)**.
+Ready to set it up? Head to **[JSDoc Getting Started](/jsdoc-getting-started)**
+or **[TypeDoc Getting Started](/typedoc-getting-started)**.

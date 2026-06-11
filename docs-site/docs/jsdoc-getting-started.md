@@ -1,21 +1,19 @@
 ---
-title: Getting Started
+title: JSDoc Getting Started
 group: Getting Started
 order: 2
 ---
 
-# Getting Started
+# Getting Started with JSDoc
 
 This guide walks through adding `clean-jsdoc-theme` to a **JSDoc** project —
-installing it, pointing JSDoc at the theme, and the handful of config options
-worth knowing up front.
+installing it, pointing JSDoc at the theme, building, and viewing the output.
 
-> [!INFO]
-> **Using TypeScript?** `clean-jsdoc-theme` also ships a TypeDoc plugin
-> (`@clean-jsdoc-theme/typedoc`) that produces the same site from a TypeDoc
-> project. A dedicated TypeDoc setup guide is coming — this page covers JSDoc.
+## Getting Started
 
-## Install
+<steps>
+
+<step label="Install">
 
 Install JSDoc and the theme as dev dependencies:
 
@@ -28,7 +26,9 @@ npm install --save-dev jsdoc clean-jsdoc-theme
 pnpm add -D jsdoc clean-jsdoc-theme
 ```
 
-## Configure JSDoc
+</step>
+
+<step label="Configuration">
 
 Add a `jsdoc.json` to your project root. Here's a small but real-world example
 to start from:
@@ -56,11 +56,19 @@ to start from:
 > doc-comment Markdown already rendered to HTML — without it the build fails
 > fast, and descriptions would render as raw, unformatted text.
 
-Then build your docs:
+</step>
+
+<step label="Build">
+
+Build your docs by pointing JSDoc at the config:
 
 ```sh
 npx jsdoc -c jsdoc.json
 ```
+
+</step>
+
+<step label="Dist">
 
 The site is written to `dist/`. Open `dist/index.html` in a browser, or serve
 the folder during development:
@@ -68,6 +76,10 @@ the folder during development:
 ```sh
 npx serve dist
 ```
+
+</step>
+
+</steps>
 
 ## Interesting options
 

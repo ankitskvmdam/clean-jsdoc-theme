@@ -1,15 +1,16 @@
 ---
 title: Configuration
 group: Getting Started
-order: 3
+order: 4
 ---
 
 # Configuration
 
-Every theme option lives under `opts` in your `jsdoc.json` (or, for TypeDoc, the
-`cleanJsdocTheme` block in `typedoc.json`). The standard JSDoc options —
-`source`, `plugins`, `template`, `destination`, `recurse` — are covered in
-[Getting Started](/getting-started); this page documents the theme's own options.
+Every theme option lives under `opts` in your `jsdoc.json` (or, for TypeDoc,
+under the `cleanJsdocTheme` block in `typedoc.json` — see [JSDoc vs
+TypeDoc](#jsdoc-vs-typedoc) at the bottom). Setting up the rest of the build is
+covered in [JSDoc Getting Started](/jsdoc-getting-started) and [TypeDoc Getting
+Started](/typedoc-getting-started); this page documents the theme's own options.
 
 > [!WARNING]
 > Unknown or misspelled options only **warn** by default (with a "did you mean?"
@@ -283,3 +284,64 @@ Toggle the build's progress output (the per-stage spinners).
 ```json5
 opts: { progress: false }
 ```
+
+## JSDoc vs TypeDoc
+
+Every option on this page is the same for both tools — only **where you put it**
+differs. In JSDoc the theme options go under `opts`; in TypeDoc, under
+`cleanJsdocTheme`.
+
+<tabs>
+
+<tab label="JSDoc (jsdoc.json)">
+
+Theme options live under **`opts`**, alongside JSDoc's own options:
+
+```json5
+{
+  source: { include: ["./src", "./README.md"] },
+  plugins: ["plugins/markdown"],
+  opts: {
+    destination: "dist",
+    recurse: true,
+    template: "node_modules/clean-jsdoc-theme/dist",
+    // ↓ theme options
+    siteName: "My Library",
+    sectionOrder: ["Getting Started", "Classes", "Modules"],
+    clubSidebarItems: true,
+    copyPage: { enabled: true, actions: ["copy", "view", "claude"] },
+  },
+}
+```
+
+</tab>
+
+<tab label="TypeDoc (typedoc.json)">
+
+The theme is loaded as a plugin and selected as an output; its options live
+under **`cleanJsdocTheme`**:
+
+```json5
+{
+  entryPoints: ["src/index.ts"],
+  plugin: ["@clean-jsdoc-theme/typedoc"],
+  outputs: [{ name: "clean-jsdoc-theme", path: "dist" }],
+  // ↓ theme options
+  cleanJsdocTheme: {
+    siteName: "My Library",
+    sectionOrder: ["Getting Started", "Classes", "Modules"],
+    clubSidebarItems: true,
+    copyPage: { enabled: true, actions: ["copy", "view", "claude"] },
+  },
+}
+```
+
+</tab>
+
+</tabs>
+
+The option names and values are identical — only the namespace changes:
+**`opts`** (JSDoc) vs **`cleanJsdocTheme`** (TypeDoc). One exception: the
+[`outputSourceFiles`](#outputsourcefiles) and
+[`sourceLinkToComment`](#sourcelinktocomment) options sit under JSDoc's
+`templates.default` and are JSDoc-only.
