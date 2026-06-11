@@ -82,6 +82,11 @@ npx serve dist
 
 </steps>
 
+> [!TIP]
+> To see the complete example, visit the
+> [**typedoc-example**](https://github.com/ankitskvmdam/clean-jsdoc-theme-example/tree/master/typedoc-example)
+> repository.
+
 ## Configuring the theme
 
 Every theme option works the same as it does for JSDoc — just nested under

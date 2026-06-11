@@ -85,6 +85,11 @@ npx serve dist
 
 </steps>
 
+> [!TIP]
+> To see the complete example, visit the
+> [**jsdoc-example**](https://github.com/ankitskvmdam/clean-jsdoc-theme-example/tree/master/jsdoc-example)
+> repository.
+
 ## Interesting options
 
 A few of the options you'll reach for most — see the full
