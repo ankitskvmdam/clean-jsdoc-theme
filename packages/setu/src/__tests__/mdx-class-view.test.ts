@@ -117,6 +117,27 @@ describe('examplesBlocks', () => {
   it('returns [] when no examples', () => {
     expect(examplesBlocks({})).toEqual([]);
   });
+
+  it('unwraps an already-fenced example instead of double-fencing it', () => {
+    // TypeDoc auto-wraps @example bodies in a ```ts fence; setu must not wrap
+    // again (which would produce ````js around ```ts and leak/escape braces).
+    const doc: TDoclet = { examples: ['```ts\nconst c = new Circle({ x: 0 }, 2);\n```'] };
+    const blocks = examplesBlocks(doc, 'js');
+    expect(blocks).toHaveLength(1);
+    // The fence language wins over the default, and the body is the inner code
+    // with its braces intact (no surviving ``` fence markers).
+    expect(blocks[0]).toMatchObject({
+      type: 'code',
+      lang: 'ts',
+      value: 'const c = new Circle({ x: 0 }, 2);',
+    });
+  });
+
+  it('lets an explicit {@lang} override the unwrapped fence language', () => {
+    const doc: TDoclet = { examples: ['{@lang tsx}\n```ts\n<App />;\n```'] };
+    const blocks = examplesBlocks(doc, 'js');
+    expect(blocks[0]).toMatchObject({ type: 'code', lang: 'tsx', value: '<App />;' });
+  });
 });
 
 describe('inheritedFromParagraph', () => {

@@ -65,13 +65,24 @@ export function summaryBlocks(doclet: TDoclet): RootContent[] {
 const EXAMPLE_CAPTION_RE = /^\s*<caption>([\s\S]*?)<\/caption>\s*/i;
 /** JSDoc's `{@lang xxx}` directive that overrides an example's code language. */
 const EXAMPLE_LANG_RE = /\{@lang\s+([^}\s]+)\s*\}\s*/i;
+/**
+ * An example body that is ITSELF a single fenced code block, start to end.
+ * TypeDoc auto-wraps `@example` bodies in a ` ```ts ` fence (and a JSDoc author
+ * may fence theirs too), so we unwrap it rather than wrapping again — otherwise
+ * the body double-fences (` ````js ` around ` ```ts `), which the renderer's
+ * brace-escaping then mis-parses. Captures the fence chars (for the matching
+ * close), the info string (language), and the inner body.
+ */
+const EXAMPLE_FENCE_RE = /^(`{3,}|~{3,})([^\n]*)\n([\s\S]*?)\n?\1[ \t]*$/;
 
 /**
  * Blocks for each `@example`. JSDoc emits examples as raw strings (the markdown
  * plugin does NOT touch them), optionally prefixed with a `<caption>` label and
  * a `{@lang xxx}` directive. The caption is rendered as a paragraph (supporting
  * Markdown + inline HTML); `{@lang}` sets the fence language; the remaining body
- * is a fenced code block. Falls back to `lang` when no `{@lang}` is given.
+ * is a fenced code block. Falls back to `lang` when no `{@lang}` is given. An
+ * example whose body is already a single fenced block is unwrapped (its fence
+ * language wins unless `{@lang}` overrode it) so it isn't double-fenced.
  */
 export function examplesBlocks(doclet: TDoclet, lang: string = 'js'): RootContent[] {
   const out: RootContent[] = [];
@@ -93,6 +104,13 @@ export function examplesBlocks(doclet: TDoclet, lang: string = 'js'): RootConten
     }
 
     src = src.replace(/^\n+|\s+$/g, '');
+
+    const fence = EXAMPLE_FENCE_RE.exec(src);
+    if (fence) {
+      const fenceLang = fence[2].trim().split(/\s+/)[0];
+      if (!langMatch && fenceLang) exampleLang = fenceLang;
+      src = fence[3].replace(/\s+$/, '');
+    }
 
     if (caption) out.push(p(...markdownToMdastInline(caption)));
     if (src.length > 0) out.push(code(exampleLang, src));

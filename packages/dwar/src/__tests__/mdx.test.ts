@@ -1,5 +1,26 @@
 import { describe, it, expect } from 'vitest';
-import { escapeStrayBraces, preprocessJsdocInlineTags } from '../mdx';
+import { collectUsedLangs, escapeStrayBraces, preprocessJsdocInlineTags } from '../mdx';
+
+describe('collectUsedLangs', () => {
+  it('always includes the common documentation languages, even with no code', () => {
+    const langs = collectUsedLangs(['# Just prose, no code fences.']);
+    for (const common of ['js', 'ts', 'json', 'json5', 'html', 'css']) {
+      expect(langs, `expected ${common} in the base set`).toContain(common);
+    }
+  });
+
+  it('adds other languages a fence actually uses, deduped', () => {
+    const langs = collectUsedLangs(['```python\nx = 1\n```', '```python\ny = 2\n```']);
+    expect(langs).toContain('python');
+    expect(langs.filter((l) => l === 'python')).toHaveLength(1);
+    expect(langs).toContain('ts'); // base set still present
+  });
+
+  it('ignores unknown / non-shiki fence languages', () => {
+    const langs = collectUsedLangs(['```not-a-real-lang\nx\n```']);
+    expect(langs).not.toContain('not-a-real-lang');
+  });
+});
 
 describe('escapeStrayBraces', () => {
   it('escapes stray braces in prose (JSDoc namepaths / operators)', () => {

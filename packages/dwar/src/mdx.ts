@@ -50,25 +50,53 @@ const KNOWN_SHIKI_LANGS: Set<string> = (() => {
 })();
 
 /**
- * Scan MDX/Markdown bodies for fenced-code languages and return the unique,
- * shiki-known subset. Passing exactly the languages in use to rehype-shiki
- * makes it load only those grammars (~150ms) instead of eagerly loading all
- * 235 bundled languages (~4.3s) on the first highlight. Unknown/`text` fences
- * are dropped here and fall back to plain text at highlight time.
+ * Common documentation languages always loaded for shiki, regardless of what a
+ * given build's fence scan turns up. This guarantees the staples (JS/TS/JSX/TSX,
+ * JSON/JSON5, HTML/CSS/SCSS, shell, YAML, Markdown, diff) always highlight — a
+ * cheap baseline (~a dozen grammars) on top of which {@link collectUsedLangs}
+ * adds any other languages a site actually uses.
+ */
+const COMMON_LANGS: readonly string[] = [
+  'js',
+  'ts',
+  'jsx',
+  'tsx',
+  'json',
+  'json5',
+  'html',
+  'css',
+  'scss',
+  'bash',
+  'yaml',
+  'markdown',
+  'diff',
+];
+
+/**
+ * The shiki language set for a build: the {@link COMMON_LANGS} baseline plus any
+ * additional languages found by scanning the page bodies' fenced code blocks.
+ * This loads only this curated set (~a dozen-plus grammars) instead of eagerly
+ * loading all 235 bundled languages (~4.3s) on the first highlight, while still
+ * guaranteeing the common languages always work. Unknown/`text` fences are
+ * dropped and fall back to plain text at highlight time.
  */
 export function collectUsedLangs(bodies: readonly string[]): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
-  // Capture the first info-string token after a ``` or ~~~ fence; the rest of
-  // the info string (e.g. `title="x"` or `{1,3}`) is ignored.
+  const add = (lang: string): void => {
+    if (seen.has(lang) || !KNOWN_SHIKI_LANGS.has(lang)) return;
+    seen.add(lang);
+    out.push(lang);
+  };
+
+  // Always include the common documentation languages.
+  for (const lang of COMMON_LANGS) add(lang);
+
+  // Then any other language a fence actually uses. Capture the first info-string
+  // token after a ``` or ~~~ fence; the rest (e.g. `title="x"` or `{1,3}`) is ignored.
   const fenceRe = /^[ \t]*(?:```|~~~)([A-Za-z0-9_+#-]+)/gm;
   for (const body of bodies) {
-    for (const match of body.matchAll(fenceRe)) {
-      const lang = match[1].toLowerCase();
-      if (seen.has(lang) || !KNOWN_SHIKI_LANGS.has(lang)) continue;
-      seen.add(lang);
-      out.push(lang);
-    }
+    for (const match of body.matchAll(fenceRe)) add(match[1].toLowerCase());
   }
   return out;
 }
