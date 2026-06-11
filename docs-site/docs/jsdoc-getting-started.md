@@ -17,14 +17,19 @@ installing it, pointing JSDoc at the theme, building, and viewing the output.
 
 Install JSDoc and the theme as dev dependencies:
 
+<tabs>
+<tab label="npm">
 ```sh
 npm install --save-dev jsdoc clean-jsdoc-theme
 ```
-
+</tab>
+<tab label="pnpm">
 ```sh
 # or with pnpm
 pnpm add -D jsdoc clean-jsdoc-theme
 ```
+</tab>
+</tabs>
 
 </step>
 

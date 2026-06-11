@@ -19,14 +19,19 @@ identical site from your TypeScript sources.
 
 Install TypeDoc and the theme's TypeDoc plugin as dev dependencies:
 
+<tabs>
+<tab label="npm">
 ```sh
 npm install --save-dev typedoc @clean-jsdoc-theme/typedoc
 ```
-
+</tab>
+<tab label="pnpm">
 ```sh
 # or with pnpm
 pnpm add -D typedoc @clean-jsdoc-theme/typedoc
 ```
+</tab>
+</tabs>
 
 </step>
 
