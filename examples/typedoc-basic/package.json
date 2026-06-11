@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build:theme": "pnpm exec turbo run build --filter=@clean-jsdoc-theme/typedoc",
+    "build:docs": "typedoc",
     "docs": "pnpm run build:theme && typedoc",
     "dev": "pnpm run build:theme && concurrently -k -n pkgs,docs,serve \"pnpm exec turbo watch build --filter=@clean-jsdoc-theme/typedoc\" \"nodemon\" \"serve dist -l 3002\"",
     "serve": "serve dist -l 3002",

@@ -580,13 +580,21 @@ The two bridges are independent leaf packages — pure helpers (`write-output-fi
 ```sh
 pnpm install
 pnpm build       # tsup per package (dwar also compiles its Tailwind CSS first)
+pnpm build:docs  # generate every site (docs-site + examples) — builds the package graph first
+pnpm build:all   # everything: package builds + every site, in one dependency-aware pass
 pnpm test        # vitest across utils / setu / rang / dwar
 pnpm typecheck
 pnpm lint
 ```
 
 Turborepo (`turbo.json`) wires the task graph: `build` depends on workspace deps'
-builds; `test` / `typecheck` depend on builds so generated artifacts exist.
+builds; `test` / `typecheck` depend on builds so generated artifacts exist. The
+`build:docs` task (run by the `build:docs` script in `docs-site` and each
+`examples/*`) likewise `dependsOn: ["^build"]`, so the theme and its upstream
+packages are rebuilt before any site is generated — `pnpm build` stays scoped to
+the publishable packages (so `release` doesn't build the sites), while
+`pnpm build:docs` / `pnpm build:all` cover the sites. Each site keeps a
+self-contained `docs` script for standalone builds (see below).
 
 End-to-end check:
 
