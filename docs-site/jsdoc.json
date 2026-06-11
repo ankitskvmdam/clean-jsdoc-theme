@@ -17,7 +17,11 @@
     "docGroups": ["Getting Started", "Packages"],
     "defaultDocGroup": "Docs",
     "sectionOrder": ["Getting Started", "Packages", "Modules", "Classes"],
-    "siteName": "clean-jsdoc-theme",
+    "siteName": {
+      "light": "./assets/clean-jsdoc-theme.svg",
+      "dark": "./assets/clean-jsdoc-theme-white.svg",
+      "alt": "clean-jsdoc-theme"
+    },
     "clubSidebarItems": true,
     "menu": [
       {

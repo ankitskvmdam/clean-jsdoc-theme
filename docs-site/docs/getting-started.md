@@ -6,15 +6,18 @@ order: 2
 
 # Getting Started
 
-This guide walks through adding `clean-jsdoc-theme` to a JSDoc project and
-configuring the most useful options.
+This guide walks through adding `clean-jsdoc-theme` to a **JSDoc** project —
+installing it, pointing JSDoc at the theme, and the handful of config options
+worth knowing up front.
 
-> **🚧 Work in progress.** The full configuration reference is still being
-> written. The options below are the ones you will reach for most often.
+> [!INFO]
+> **Using TypeScript?** `clean-jsdoc-theme` also ships a TypeDoc plugin
+> (`@clean-jsdoc-theme/typedoc`) that produces the same site from a TypeDoc
+> project. A dedicated TypeDoc setup guide is coming — this page covers JSDoc.
 
 ## Install
 
-Install the theme alongside JSDoc as dev dependencies:
+Install JSDoc and the theme as dev dependencies:
 
 ```sh
 npm install --save-dev jsdoc clean-jsdoc-theme
@@ -27,24 +30,31 @@ pnpm add -D jsdoc clean-jsdoc-theme
 
 ## Configure JSDoc
 
-Point JSDoc at the theme with a `jsdoc.json` in your project root:
+Add a `jsdoc.json` to your project root. Here's a small but real-world example
+to start from:
 
-```json
+```json5
 {
-  "source": {
-    "include": ["./src", "./README.md"]
+  source: { include: ["./src", "./README.md"] },
+
+  // Required: the markdown plugin pre-renders the Markdown in your
+  // doc comments to HTML before the theme runs.
+  plugins: ["plugins/markdown"],
+
+  opts: {
+    destination: "dist",
+    recurse: true,
+    template: "node_modules/clean-jsdoc-theme/dist",
+    readme: "./README.md",
+    siteName: "My Library",
   },
-  "plugins": ["plugins/markdown"],
-  "opts": {
-    "encoding": "utf8",
-    "destination": "dist",
-    "recurse": true,
-    "template": "./node_modules/clean-jsdoc-theme",
-    "readme": "./README.md",
-    "siteName": "My Library"
-  }
 }
 ```
+
+> [!WARNING]
+> The **`plugins/markdown`** plugin is required. clean-jsdoc-theme expects your
+> doc-comment Markdown already rendered to HTML — without it the build fails
+> fast, and descriptions would render as raw, unformatted text.
 
 Then build your docs:
 
@@ -59,56 +69,17 @@ the folder during development:
 npx serve dist
 ```
 
-## Common options
+## Interesting options
 
-All theme options live under `opts` in `jsdoc.json`.
+A few of the options you'll reach for most — see the full
+[Configuration](/configuration) reference for everything.
 
-| Option                   | What it does                                                                                 |
-| ------------------------ | -------------------------------------------------------------------------------------------- |
-| `siteName`               | Site title shown in the header. Plain text, or a logo set (`{ default, dark, light, alt }`). |
-| `readme`                 | Markdown file rendered as the site **home page**.                                            |
-| `docs`                   | A directory of Markdown/HTML guides rendered as prose pages (see below).                     |
-| `docGroups`              | Order of the top-level **doc** groups in the sidebar.                                        |
-| `sectionOrder`           | Order of **all** top-level sidebar sections (doc groups and API kinds).                      |
-| `menu`                   | Extra links shown above the sidebar nav (with optional icons).                               |
-| `fonts`                  | Override `heading` / `body` (Google Fonts) and `mono` (CSS stack).                           |
-| `copyPage`               | Toggle / configure the "copy page" + open-in-LLM button.                                     |
-| `clubSidebarItems`       | Group related sidebar entries under a shared parent.                                         |
-| `customCss` / `customJs` | Inline CSS/JS injected into every page. (`customCssFile` / `customJsFile` for files.)        |
-
-### Adding prose pages
-
-Set `opts.docs` to a directory and every `*.md` / `*.html` file in it becomes a
-page. The filesystem layout drives the URL and the sidebar group:
-
-```json
-{
-  "opts": {
-    "docs": "./docs",
-    "docGroups": ["Getting Started", "Guides"],
-    "defaultDocGroup": "Docs"
-  }
-}
-```
-
-Per-file YAML frontmatter (`title`, `group`, `order`, `slug`, `hidden`) overrides
-the directory-derived defaults. A root `docs/index.md` becomes the home page.
-
-### Adding a sidebar menu
-
-```json
-{
-  "opts": {
-    "menu": [
-      { "title": "Home", "link": "/", "icon": "lucide:home" },
-      {
-        "title": "GitHub",
-        "link": "https://github.com/ankitskvmdam/clean-jsdoc-theme",
-        "icon": "simpleicons:github"
-      }
-    ]
-  }
-}
-```
-
-Icons use the `lucide:` or `simpleicons:` prefix and are loaded from a CDN.
+| Option               | What it does                                                                                          |
+| -------------------- | ----------------------------------------------------------------------------------------------------- |
+| [`siteName`](/configuration#sitename)             | Header title. Plain text, or a logo set — `light` and `dark` are the logo image URLs shown in each theme, and `alt` is the text shown if the image fails to load (and read by screen readers). |
+| [`fonts`](/configuration#fonts)                   | Override `heading` / `body` (Google Fonts, loaded for you) and `mono`.                                |
+| [`sectionOrder`](/configuration#sectionorder)     | Order the top-level sidebar sections; pair with `@category` tags to define your own groups.           |
+| [`clubSidebarItems`](/configuration#clubsidebaritems) | Collapse related entries (a module and its members) under a shared, collapsible parent.           |
+| [`menu`](/configuration#menu)                     | Custom links pinned above the sidebar nav, each with a `lucide:` / `simpleicons:` icon.               |
+| [`tutorials`](/configuration#tutorials) / [`docs`](/configuration#docs) | Render hand-written Markdown guides alongside the generated API reference.       |
+| [`copyPage`](/configuration#copypage)             | The per-page "copy page" / "open in LLM" button (on by default; configurable or opt-out).             |
