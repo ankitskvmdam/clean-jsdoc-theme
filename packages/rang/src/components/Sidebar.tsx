@@ -4,6 +4,7 @@ import { House, CodeXml, Globe, Mail, ExternalLink, ChevronRight } from 'lucide-
 import type { NavNode } from '@clean-jsdoc-theme/utils';
 import { withBase } from '@clean-jsdoc-theme/utils';
 import { cn } from '../lib/cn';
+import { scrollParent } from './toc-utils';
 
 export interface SidebarProps {
   nav: NavNode[];
@@ -273,17 +274,6 @@ function NavEntry({ node, currentSlug, basePath, openMap, onToggle }: NavEntryPr
       <NavLink node={node} currentSlug={currentSlug} basePath={basePath} />
     </li>
   );
-}
-
-/** Find the nearest ancestor that actually scrolls vertically. */
-function scrollParent(el: HTMLElement): HTMLElement | null {
-  let p = el.parentElement;
-  while (p) {
-    const oy = getComputedStyle(p).overflowY;
-    if ((oy === 'auto' || oy === 'scroll') && p.scrollHeight > p.clientHeight) return p;
-    p = p.parentElement;
-  }
-  return null;
 }
 
 // Breathing room (px) left above the active item so the section label sitting

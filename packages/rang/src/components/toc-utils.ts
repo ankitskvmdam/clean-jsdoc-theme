@@ -18,6 +18,21 @@ export function getLineOffset(depth: number): number {
   return 16 + A;
 }
 
+/**
+ * Nearest ancestor that actually scrolls vertically (its own `overflow-y` is
+ * auto/scroll and its content overflows). Used to keep the active item visible
+ * within the sidebar / TOC rail's own scroll box — never the window.
+ */
+export function scrollParent(el: HTMLElement): HTMLElement | null {
+  let p = el.parentElement;
+  while (p) {
+    const oy = getComputedStyle(p).overflowY;
+    if ((oy === 'auto' || oy === 'scroll') && p.scrollHeight > p.clientHeight) return p;
+    p = p.parentElement;
+  }
+  return null;
+}
+
 /** Per-heading intersection record (ported from fumadocs' TOC observer). */
 interface TocItemState {
   id: string;
