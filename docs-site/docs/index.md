@@ -4,19 +4,25 @@ title: clean-jsdoc-theme
 
 # clean-jsdoc-theme
 
-A clean, responsive, and customizable documentation theme for **JSDoc** and
-**TypeDoc**. It turns your source comments into a fast static site with
-server-rendered HTML, lazy-hydrated interactive islands, a built-in fuzzy
-command palette, light/dark themes, and a co-located `.md` of every page so
-LLMs can read your docs too.
+[![npm version](https://img.shields.io/npm/v/clean-jsdoc-theme.svg?logo=npm&color=005bff)](https://www.npmjs.com/package/clean-jsdoc-theme)
+[![npm downloads](https://img.shields.io/npm/dm/clean-jsdoc-theme.svg?logo=npm&color=005bff)](https://www.npmjs.com/package/clean-jsdoc-theme)
+[![GitHub stars](https://img.shields.io/github/stars/ankitskvmdam/clean-jsdoc-theme.svg?logo=github)](https://github.com/ankitskvmdam/clean-jsdoc-theme)
+[![Contributors](https://img.shields.io/github/contributors/ankitskvmdam/clean-jsdoc-theme.svg?logo=github)](https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors)
+[![License](https://img.shields.io/npm/l/clean-jsdoc-theme.svg?color=005bff)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/LICENSE)
 
-> **🚧 These docs are a work in progress.** This is an early preview while
-> we rebuild the site for v5. Some pages are missing and others will change.
-> A complete version is coming soon — thanks for your patience.
+**clean-jsdoc-theme** is a complete documentation suite for JavaScript and
+TypeScript projects — not just a coat of paint on JSDoc's output. Point it at a
+**JSDoc** _or_ **TypeDoc** project and it uses those tools under the hood only to
+collect your source comments; from there it takes over, building a structured
+model of your API and rendering a fast, modern static site — server-rendered
+HTML, lazy-hydrated interactive islands, a built-in fuzzy command palette
+(`⌘K`), full-text search, and first-class light and dark themes.
 
-> **ℹ️ This very site is generated using `clean-jsdoc-theme`.** Every page you
-> are reading — including this prose and the API reference — was produced by the
-> theme itself, so it doubles as a live demo of what your own docs can look like.
+It is also built for LLMs. Alongside every page it emits a companion `.md`,
+authored to be ideal for large language models to read and understand — so your
+API reference is as legible to an AI as it is to a human. Every API page also
+carries one-click actions to copy that Markdown or open the page straight in
+Claude, ChatGPT, or Perplexity (all opt-out if you'd rather not).
 
 ## Why clean-jsdoc-theme
 
@@ -30,16 +36,16 @@ LLMs can read your docs too.
   and a Monaco-powered source viewer — each loaded only on the pages that use it.
 - **Prose _and_ API in one site.** Mix hand-written Markdown guides (like this
   page) with auto-generated API reference from your JSDoc/TypeDoc comments.
-- **LLM-friendly.** Every page ships a companion `.md` and a one-click
-  "copy page" / "open in Claude" button, so your docs are readable by humans and
-  models alike.
+- **Built for LLMs.** Every page ships a companion `.md` written to be read by
+  machines, plus opt-out "copy page" and "open in Claude / ChatGPT / Perplexity"
+  actions on API pages — so your docs are as legible to a model as to a human.
 - **Customizable.** Site name or logo, Google Fonts, sidebar menu, section
-  ordering, custom CSS/JS, and more — all from your `jsdoc.json`.
+  ordering, custom CSS/JS, and more — all from your JSDoc or TypeDoc config.
 
 ## Where to next
 
-- **[Getting Started](/getting-started)** — install the theme and point JSDoc at
-  your project.
+- **[Getting Started](/getting-started)** — install it and point JSDoc or
+  TypeDoc at your project.
 - **[Packages](/packages)** — the monorepo's packages and what each one is for.
 - **API Reference** — browse a real, theme-generated API page in the sidebar
   (see the `sample-api` module).
