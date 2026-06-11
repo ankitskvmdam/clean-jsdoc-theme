@@ -107,6 +107,66 @@ export const callout = (
 });
 
 /**
+ * A numbered stepper — rang's `Steps` emitted as an MDX JSX element
+ * (`<Steps>` wrapping `<Step>` children). Like `callout`, the capitalized name
+ * routes it through the `components` map (rang registers `Steps` → its SSR-only
+ * stepper), and `mdxJsxToMarkdown` (wired in `mdx.ts`) serializes it so the prose
+ * authoring tags survive into the compiled MDX.
+ */
+export const steps = (children: (BlockContent | DefinitionContent)[]): MdxJsxFlowElement => ({
+  type: 'mdxJsxFlowElement',
+  name: 'Steps',
+  attributes: [],
+  children,
+});
+
+/**
+ * A single step — rang's `Step` emitted as an MDX JSX element
+ * (`<Step label="…">`). Capitalized so MDX routes it through the `components`
+ * map (rang registers `Step` as the marker `Steps` reads). The optional `label`
+ * becomes one `mdxJsxAttribute`, included only when it is a non-empty string so
+ * the renderer can omit the heading when none was authored.
+ */
+export const step = (
+  label: string | undefined,
+  children: (BlockContent | DefinitionContent)[]
+): MdxJsxFlowElement => {
+  const attributes: MdxJsxAttribute[] = [];
+  if (label) attributes.push({ type: 'mdxJsxAttribute', name: 'label', value: label });
+  return { type: 'mdxJsxFlowElement', name: 'Step', attributes, children };
+};
+
+/**
+ * A tabbed view — rang's `Tabs` emitted as an MDX JSX element (`<Tabs>` wrapping
+ * `<Tab>` children). Like `callout`, the capitalized name routes it through the
+ * `components` map (rang registers `Tabs` → its ARIA tablist), and
+ * `mdxJsxToMarkdown` (wired in `mdx.ts`) serializes it so the prose authoring
+ * tags survive into the compiled MDX.
+ */
+export const tabs = (children: (BlockContent | DefinitionContent)[]): MdxJsxFlowElement => ({
+  type: 'mdxJsxFlowElement',
+  name: 'Tabs',
+  attributes: [],
+  children,
+});
+
+/**
+ * A single tab — rang's `Tab` emitted as an MDX JSX element (`<Tab label="…">`).
+ * Capitalized so MDX routes it through the `components` map (rang registers `Tab`
+ * as the marker `Tabs` reads). The optional `label` becomes one `mdxJsxAttribute`,
+ * included only when it is a non-empty string (the renderer falls back to
+ * `Tab N` otherwise).
+ */
+export const tab = (
+  label: string | undefined,
+  children: (BlockContent | DefinitionContent)[]
+): MdxJsxFlowElement => {
+  const attributes: MdxJsxAttribute[] = [];
+  if (label) attributes.push({ type: 'mdxJsxAttribute', name: 'label', value: label });
+  return { type: 'mdxJsxFlowElement', name: 'Tab', attributes, children };
+};
+
+/**
  * An embed — rang's `Embed` island emitted as an MDX JSX element
  * (`<Embed src="…" />`). Like `callout`, the capitalized name routes it through
  * the `components` map, and `mdxJsxToMarkdown` (wired in `mdx.ts`) serializes the
