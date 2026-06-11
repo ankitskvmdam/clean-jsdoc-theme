@@ -159,6 +159,9 @@ importers:
       jsdoc:
         specifier: '>=4.x'
         version: 4.0.5
+      ora:
+        specifier: 9.3.0
+        version: 9.3.0
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
