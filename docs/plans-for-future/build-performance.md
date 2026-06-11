@@ -1,105 +1,152 @@
-# Plan: build performance
+# Plan: build performance — IMPLEMENTED (2026-06-11)
 
-The v5 pipeline is noticeably slower than a bare `jsdoc` run (~1s vs ~15–20s on
-a tiny project). The stage narrator added to `publish.ts` (`opts.progress`) makes
-the breakdown visible. On the `docs-site` fixture (8 pages, 13 islands):
+The v5 pipeline was noticeably slower than a bare `jsdoc` run (~1s vs ~15–20s on
+a tiny project). The stage narrator in `publish.ts` (`opts.progress`) makes the
+breakdown visible. **All items below are now implemented.** The result on the
+`docs-site` fixture (warm, two `jsdoc` passes per `docs` run):
 
-```
-✓ Loading renderer        4.4s
-✓ Validating options      1ms
-✓ Reading sources & docs  16ms
-✓ Generating pages        203ms
-✓ Rendering site          19.8s    ← dominant
-✓ Writing files           167ms
-✓ Indexing search         107ms
-```
+| Stage | Before | After |
+|---|---|---|
+| Loading renderer | 4.4s | ~2.1s ← now dominant |
+| Validating options | 1ms | 1ms |
+| Reading sources & docs | 16ms | ~2ms (overlaps the load) |
+| Generating pages | 203ms | ~50–100ms |
+| **Rendering site** | **19.8s** | **~0.2–0.6s** |
+| Writing files | 167ms | ~25ms |
+| Indexing search | 107ms | ~70ms |
 
-Two stages own essentially all the time: **Rendering site** and **Loading
-renderer**. Everything else is already negligible.
+`render()`'s "Rendering site" stage went from the ~19.8s bottleneck to ~0.2–0.6s.
+Total wall-clock is now dominated by the fixed ~2.1s renderer module load (see
+the open frontier at the bottom).
 
----
-
-## 1. Island bundling — the big one (`dwar/src/islands-bundle.ts`)
-
-**Root cause.** `bundleIslands` runs **one `esbuild.build()` per island in a
-sequential `for` loop** (13 islands today), and each build **inlines Preact +
-rang from scratch**. The asset report shows the cost twice over:
-
-- Every island chunk is ~**414.5 KB** — they are all carrying their own copy of
-  Preact + shared rang code. 13 × 414.5 KB ≈ **5.1 MB** of JS output, ~97 KB
-  gzip *each* on the wire.
-- 13 sequential full bundles (each re-parsing + re-minifying Preact) is the bulk
-  of the 19.8s render stage.
-
-The current inline-Preact strategy is a deliberate choice (see the file header:
-it avoids the "shipping a separate shared runtime that all chunks pin to the same
-version" coordination problem). That concern is real *across* independent builds
-— but it evaporates **within a single build**, where every chunk shares the exact
-same bundled Preact.
-
-**Proposed fix — one split build instead of 13 inline builds.** Replace the loop
-with a single `esbuild.build()` using multiple `entryPoints` (one virtual entry
-per island) + `splitting: true`, `format: 'esm'`, `outdir`. esbuild then hoists
-the common code (Preact + shared rang) into a shared chunk that each island chunk
-imports. Expected impact:
-
-- **Build time:** ~12× redundant Preact parse/minify work eliminated → the render
-  stage should drop dramatically (most of it is this loop).
-- **Output size:** ~5.1 MB → roughly (one ~shared chunk + 13 thin island chunks).
-  Big download win for end users, not just build speed.
-- The browser side already lazy-imports only the chunks present on a page
-  (`islands-loader.ts`); ESM import dedup means a shared chunk loads once and is
-  reused. The loader's per-island chunk map will need to account for the emitted
-  shared chunk (and the page must allow it to load).
-
-**Open questions / care points:**
-- esbuild's `splitting` emits hashed shared-chunk names; the loader + the
-  `_islands/<name>.js` path convention must absorb that (or pin names).
-- Keep `render()` pure — bundling stays in-memory (`write: false`,
-  `outputFiles`), as today.
-- Verify SSR markers + hydration still line up when islands share a chunk.
-
-**Fallback (lower effort, partial win).** If a single split build proves fiddly,
-at minimum `Promise.all` the 13 builds instead of `for await` to parallelize
-across esbuild's worker pool. This cuts wall-clock but does **not** fix the 5.1 MB
-duplication — #1 (splitting) is strictly better and should be preferred.
-
-## 2. Cache island bundles across builds
-
-Island source only changes when **rang/dwar** change — never per docs build. Yet
-every `jsdoc` run re-bundles all 13 from scratch. A content-hash-keyed on-disk
-cache (e.g. under `node_modules/.cache/clean-jsdoc-theme`, keyed on the rang/dwar
-versions or a hash of the island entry sources) would make warm rebuilds skip the
-island stage almost entirely.
-
-This is the **highest-leverage win for the `pnpm run dev` watch loop**, where
-`jsdoc` re-runs constantly but the islands are unchanged 99% of the time. Pairs
-well with #1 (cache the single split build's output).
-
-## 3. "Loading renderer" 4.4s — defer the heavy deps
-
-The 4.4s is the dynamic `import()` of setu/dwar/rang/utils, which transitively
-evaluates esbuild, `@mdx-js/mdx`, and shiki at module-load time. Options:
-- Warm the loads **in parallel** with `Reading sources & docs` / pkg resolution
-  (they don't depend on each other), overlapping the cost.
-- Lazy-import the heaviest leaves (esbuild, shiki) only at first use inside dwar,
-  so a build that errors early never pays for them.
-
-Smaller than #1, but it's ~20% of total wall-clock on small projects where the
-render itself is fast.
-
-## 4. Per-page MDX compile parallelism (minor)
-
-dwar compiles + runs MDX per page inside `render()`. On large projects this grows
-linearly; the pages are independent and could compile concurrently (bounded
-pool). Low priority while #1 dominates, but worth revisiting once island bundling
-is fixed and page count is the limiting factor.
+> **Note on ordering.** The investigation overturned the original priority. The
+> plan ranked the island bundle cache (#2) second *because* island bundling was
+> the 19.8s cost. Once the split build (#1) cut bundling to ~0.5s, re-measurement
+> showed the render stage was dominated by a **one-time `@shikijs/rehype` init**
+> (~4.3s) that the plan never identified — fixing that (see §0) was the real win.
+> Items are kept in their original numbering; status is marked inline.
 
 ---
 
-### Suggested order
+## 0. Shiki language set — the real render bottleneck ✅ DONE
 
-1. **#1 split build** — biggest single win for both build time *and* output size.
-2. **#2 bundle cache** — transforms the dev/watch experience.
-3. **#3 deferred deps** — trims the fixed startup cost.
-4. **#4 MDX parallelism** — only once page count is the bottleneck.
+**Not in the original plan; found by bisecting the render stage after #1 landed.**
+With the island split build done, "Rendering site" was still ~4.8s even on a
+1–2 page build — i.e. a *fixed* cost, not per-page work. Empirical bisection
+(throwaway probes, removed after measuring) pinned it precisely:
+
+- `@mdx-js/mdx` core + `remark-frontmatter` + `remark-gfm`: all <20ms.
+- `shiki`'s `getSingletonHighlighter({themes, langs:['js']})`: ~60ms.
+- **`@shikijs/rehype`, configured without an explicit `langs` option: ~4.3s cold**
+  (216ms warm). It eagerly loads shiki's **entire bundled language registry —
+  235 languages** — on the first highlight.
+- Passing an explicit `langs` array to the same plugin: **4669ms → 155ms cold.**
+
+**Fix (`dwar/src/mdx.ts` + `index.ts`).** `render()` now scans every page body
+for the code-fence languages actually used (`collectUsedLangs`), filters them to
+shiki's known ids/aliases (built once from `bundledLanguagesInfo`), and passes
+exactly that set as `rehypeShiki`'s `langs`. Only the languages in use are
+loaded; unknown / `text` fences fall back to plain text as before
+(`fallbackLanguage: 'text'`), so **no highlighting fidelity is lost** and output
+stays byte-identical for every language a page uses. Measured: **"Rendering
+site" ~4.8s → ~0.6s (~8×)**, confirmed shiki markup still present across the
+output. This is the single largest win after #1.
+
+## 1. Island bundling — one split build ✅ DONE
+
+**Root cause (verified).** `bundleIslands` ran **one `esbuild.build()` per island
+in a sequential loop** (12 islands), and each chunk imported `ISLAND_REGISTRY`
+from rang, which statically references all 12 components — so esbuild couldn't
+tree-shake, and **every chunk bundled all 12 components + Preact**. Result:
+12 × ~405 KB ≈ **4.74 MB** of JS output and ~5.9s of redundant bundle time.
+
+**Implemented.** `bundleIslands` now runs **one split build** (`splitting: true`,
+all islands as entry points via a virtual-entry esbuild plugin, `outdir` +
+`write:false`). esbuild hoists the shared runtime (Preact + the rang registry)
+into a single `chunk-<hash>.js` that each thin entry imports via relative ESM.
+Every emitted file is **content-hashed** (`[name]-[hash].js` / `chunk-[hash].js`)
+so chunks cache-bust independently; the loader (`getIslandsLoaderScript`) is
+handed the real `name → hashed-href` map instead of assuming `_islands/<name>.js`.
+
+**Measured impact:** output **4.74 MB → ~0.40 MB** (one ~404 KB shared chunk +
+12 sub-KB entry chunks), bundle time **~5.9s → ~0.5s**. The browser lazy-imports
+only the chunks for islands present on a page; the shared chunk loads once and is
+reused across islands and pages.
+
+> **Phase 1b (still open, optional).** Even split, the shared chunk holds *all 12*
+> components because each entry imports the whole `ISLAND_REGISTRY`. If each entry
+> imported only its own component (dropping the registry indirection in the chunk
+> entry), esbuild could split per-component and a page would download only the
+> components it hydrates. Splitting removed the build-time duplication and most of
+> the wire cost; 1b would trim the remaining per-page payload. Low priority — the
+> per-page payload is already small.
+
+## 2. Cache island bundles across builds ✅ DONE
+
+Island source only changes when **rang/dwar/preact** change — never per docs
+build — yet every run re-bundled from scratch. Implemented an opt-in,
+content-hash-keyed on-disk cache:
+
+- `RenderOptions.islandCacheDir?: string` (a plain dir string, so utils never
+  imports a dwar type). When set, `bundleIslands` reads/writes
+  `<cacheDir>/islands-<key>.json`. Omitted (unit tests, the dwar smoke script) →
+  `render()` stays **pure** (no disk touch), as before.
+- **Key** = sha256 over the island entry sources + the contents of rang's
+  compiled `dist/index.js` (rang ships a single bundled file, so its content
+  captures every component change) + the preact version. Keying on rang's
+  *content* (not its version) means a dev-loop edit to rang → rang rebuild → new
+  key → fresh bundle, so the cache **can't go stale**.
+- Resilient: every cache fs/crypto/resolve op is best-effort; any error falls
+  back to a fresh build and never throws out of `bundleIslands`.
+- Both bridges (`publish.ts`, `typedoc/write-site.ts`) pass
+  `<project>/node_modules/.cache/clean-jsdoc-theme`.
+
+**Measured:** warm-cache "Rendering site" ~190–240ms vs ~580ms cold (shaves the
+~0.4s esbuild bundle); output byte-identical. Biggest benefit is the
+`jsdoc --watch`/dev loop, where the bundle is unchanged 99% of the time.
+
+## 3. Overlap the renderer load with project I/O ✅ DONE (reframed)
+
+The original idea — "lazy-import the heavy leaves (esbuild, shiki)" — turned out
+to be a non-issue: measured import costs are `esbuild` ~10ms, `shiki` ~2ms,
+`@shikijs/rehype` ~92ms; only `@mdx-js/mdx` (~461ms) is notable, and deferring it
+just shifts the cost to first compile (no net win). The ~2.1s "Loading renderer"
+is broad module-graph evaluation, not one fixable leaf.
+
+**Implemented** the part that genuinely helps and scales: `publish.ts` now starts
+the project file-reading I/O (`resolvePkg`, `collectSourceFiles`, `collectDocs`)
+**concurrently with** the renderer load, awaiting it at the existing stages. The
+collectors don't need setu/dwar/utils, so on large projects (hundreds of source
+files) the reads overlap the multi-second load instead of running after it. On
+the tiny `docs-site` fixture the reads are ~2ms so the saving is negligible
+there, but it's correct and scales. (TypeDoc's bridge imports the packages
+directly — no separate load stage — so this applies to the JSDoc bridge.)
+
+## 4. Per-page MDX compile parallelism ✅ DONE (scales with page count)
+
+`render()` now compiles pages through a bounded-concurrency worker pool
+(`mapWithConcurrency`, limit `min(8, cpus-1)`) instead of a sequential loop, with
+**order-preserving assembly** so `files` / `search` / the search-index JSON stay
+byte-identical and deterministic. No shared-mutable state across page renders
+(island ids are per-call locals; `@shikijs/rehype` uses a cached singleton
+highlighter; `@mdx-js/mdx evaluate()` makes independent module instances).
+
+On small/medium fixtures this is **neutral**, because — as §0 found — the render
+stage's cost is fixed init plus ~0.07s/page incremental, not parallelizable bulk.
+The win scales with page count, so it pays off on large projects. (This matches
+the original plan's "revisit once #1 is fixed and page count is the limiting
+factor.")
+
+---
+
+## Open frontier: "Loading renderer" ~2.1s
+
+With render down to ~0.2–0.6s, total wall-clock is now dominated by the fixed
+~2.1s cost of dynamically importing setu/dwar/rang/utils and evaluating their
+module graphs (preact, `preact-render-to-string`, the unified/remark/rehype
+chain, `@mdx-js/mdx` ~461ms). This is paid fresh on every `jsdoc` process,
+including each dev-loop rerun, and can't be cached in-process. Reducing it would
+mean trimming the import graph or a persistent renderer process (e.g. a watch
+daemon that keeps the modules warm and re-renders on change) rather than
+re-spawning `jsdoc` each time. Out of scope for this round; it's the next
+bottleneck if build time is revisited.
