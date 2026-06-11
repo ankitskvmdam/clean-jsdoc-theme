@@ -92,3 +92,17 @@ npx serve dist
 Every theme option works the same as it does for JSDoc — just nested under
 `cleanJsdocTheme` instead of `opts`. See the full [Configuration](/configuration)
 reference, which shows both forms side by side.
+
+### Interesting options
+
+A few of the options you'll reach for most — set them inside `cleanJsdocTheme`.
+
+| Option               | What it does                                                                                          |
+| -------------------- | ----------------------------------------------------------------------------------------------------- |
+| [`siteName`](/configuration#sitename)             | Header title. Plain text, or a logo set — `light` / `dark` logo URLs plus `alt` fallback text.        |
+| [`fonts`](/configuration#fonts)                   | Override `heading` / `body` (Google Fonts, loaded for you) and `mono`.                                |
+| [`colors`](/configuration#colors-and-darkcolors) / [`darkColors`](/configuration#colors-and-darkcolors) | Recolor the light / dark palettes — override just `bg`, `accent`, etc., and keep the rest. |
+| [`sectionOrder`](/configuration#sectionorder)     | Order the top-level sidebar sections.                                                                 |
+| [`clubSidebarItems`](/configuration#clubsidebaritems) | Collapse related entries under a shared, collapsible parent.                                      |
+| [`menu`](/configuration#menu)                     | Custom links pinned above the sidebar nav, each with a `lucide:` / `simpleicons:` icon.               |
+| [`copyPage`](/configuration#copypage)             | The per-page "copy page" / "open in LLM" button (on by default; configurable or opt-out).             |

@@ -99,6 +99,7 @@ A few of the options you'll reach for most — see the full
 | -------------------- | ----------------------------------------------------------------------------------------------------- |
 | [`siteName`](/configuration#sitename)             | Header title. Plain text, or a logo set — `light` and `dark` are the logo image URLs shown in each theme, and `alt` is the text shown if the image fails to load (and read by screen readers). |
 | [`fonts`](/configuration#fonts)                   | Override `heading` / `body` (Google Fonts, loaded for you) and `mono`.                                |
+| [`colors`](/configuration#colors-and-darkcolors) / [`darkColors`](/configuration#colors-and-darkcolors) | Recolor the light / dark palettes — override just `bg`, `accent`, etc., and keep the rest. |
 | [`sectionOrder`](/configuration#sectionorder)     | Order the top-level sidebar sections; pair with `@category` tags to define your own groups.           |
 | [`clubSidebarItems`](/configuration#clubsidebaritems) | Collapse related entries (a module and its members) under a shared, collapsible parent.           |
 | [`menu`](/configuration#menu)                     | Custom links pinned above the sidebar nav, each with a `lucide:` / `simpleicons:` icon.               |

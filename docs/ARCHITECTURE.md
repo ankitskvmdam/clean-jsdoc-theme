@@ -494,7 +494,8 @@ clean-jsdoc-theme/src/
 │                         #   normalizes the README (→ home) + tutorial tree (→ guides)
 │                         #   into setu opts, calls setu → dwar, writes files, runs
 │                         #   Pagefind. siteName is text OR a logo set — local logo
-│                         #   images are copied to _assets/logo-*. Validates opts early
+│                         #   images are copied to content-hashed _assets/logo-<key>.<hash>.<ext>.
+│                         #   Validates opts early
 │                         #   via utils validateThemeOpts (diagnostics + live Google-Font
 │                         #   check + unknown-key "did you mean" suggestions); a bad
 │                         #   font/typo only WARNS by default (resilient — missing fonts
@@ -507,8 +508,9 @@ clean-jsdoc-theme/src/
 │                         #   templates.default.sourceLinkToComment toggles whether a
 │                         #   Source: link lands on the declaration (default) or comment.
 │                         #   Normalizes opts.sectionOrder + opts.menu + opts.clubSidebarItems
-│                         #   → setu, and opts.aiPrompt + opts.copyPage + opts.pageNav
-│                         #   → theme.
+│                         #   → setu, and opts.aiPrompt + opts.copyPage + opts.pageNav +
+│                         #   opts.colors/darkColors (per-key merge over the default
+│                         #   palettes) → theme.
 │                         #   Reads opts.customCss/customJs (inline) + reads
 │                         #   opts.customCssFile/customJsFile from disk → theme
 │                         #   (dwar emits/links them; render() stays pure).
@@ -516,6 +518,11 @@ clean-jsdoc-theme/src/
 │                         #   *.html → DocInput[] w/ POSIX rel path + raw content; the
 │                         #   only place the docs tree is read) and threads docs +
 │                         #   opts.docGroups + opts.defaultDocGroup → setu.
+│                         #   resolveDocImages then routes every local image those docs
+│                         #   reference through the content-hashed _assets/ pipeline
+│                         #   (copy + rewrite src), and additionally collects each .svg's
+│                         #   markup into render()'s inlineSvgs map so it's inlined
+│                         #   (theme-toggle-aware) rather than <img>-ed.
 │                         #   Holds defaultTheme (OKLCH palette).
 └── write-output-files.ts # mkdir -p + writeFile loop (forward-slash → OS path)
 ```
