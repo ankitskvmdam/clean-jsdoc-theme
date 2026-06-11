@@ -1,19 +1,19 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, cleanup, waitFor, fireEvent } from '@testing-library/preact';
-import { CmdK } from '../components/CmdK';
+import { CtrlK } from '../components/CtrlK';
 
 // Give Preact's microtask-scheduled effects a chance to attach window listeners
 // before we dispatch the global keydown.
 const flush = () => new Promise<void>((r) => setTimeout(r, 0));
 
-describe('CmdK', () => {
+describe('CtrlK', () => {
   afterEach(() => {
     cleanup();
     vi.restoreAllMocks();
   });
 
   it('opens on Ctrl K and closes on Escape', async () => {
-    const { queryByRole, findByRole } = render(<CmdK basePath="/" />);
+    const { queryByRole, findByRole } = render(<CtrlK basePath="/" />);
     await flush();
     expect(queryByRole('dialog')).toBeNull();
 
@@ -25,7 +25,7 @@ describe('CmdK', () => {
   });
 
   it('opens on Ctrl K', async () => {
-    const { findByRole } = render(<CmdK basePath="/" />);
+    const { findByRole } = render(<CtrlK basePath="/" />);
     await flush();
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }));
     const dialog = await findByRole('dialog');
@@ -33,7 +33,7 @@ describe('CmdK', () => {
   });
 
   it('prompts to search when no index is available', async () => {
-    const { findByText } = render(<CmdK basePath="/" />);
+    const { findByText } = render(<CtrlK basePath="/" />);
     await flush();
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }));
     const msg = await findByText(/Type to search/);
@@ -53,7 +53,7 @@ describe('CmdK', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     const { findByRole, findAllByRole, getByLabelText } = render(
-      <CmdK basePath="/" searchIndexUrl="/_assets/search-index.abc.json" />
+      <CtrlK basePath="/" searchIndexUrl="/_assets/search-index.abc.json" />
     );
     await flush();
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }));
@@ -79,7 +79,7 @@ describe('CmdK', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     const { findByRole, findAllByRole, getByLabelText } = render(
-      <CmdK basePath="/docs" searchIndexUrl="/docs/_assets/search-index.abc.json" />
+      <CtrlK basePath="/docs" searchIndexUrl="/docs/_assets/search-index.abc.json" />
     );
     await flush();
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }));

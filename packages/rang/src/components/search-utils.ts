@@ -1,5 +1,5 @@
 /**
- * Tiny dependency-free fuzzy matcher for the command palette (CmdK).
+ * Tiny dependency-free fuzzy matcher for the command palette (CtrlK).
  *
  * Matches a query as a case-insensitive subsequence of a target string and
  * scores it the way editor "fuzzy finders" do: matches at a word/camelCase

@@ -82,8 +82,8 @@ export type { PageNavProps, PageNavLink } from './components/PageNav';
 export { ThemeToggle, useThemeMode } from './components/ThemeToggle';
 export type { ThemeToggleProps } from './components/ThemeToggle';
 
-export { CmdK } from './components/CmdK';
-export type { CmdKProps } from './components/CmdK';
+export { CtrlK } from './components/CtrlK';
+export type { CtrlKProps } from './components/CtrlK';
 
 export { Settings, SettingsDialog } from './components/Settings';
 export type { SettingsProps, SettingsDialogProps } from './components/Settings';

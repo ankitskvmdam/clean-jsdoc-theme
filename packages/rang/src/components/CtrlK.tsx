@@ -6,7 +6,7 @@ import { Button } from './Button';
 import { Dialog } from './Dialog';
 import { fuzzySearchMulti, highlightSegments, type FuzzyResult } from './search-utils';
 
-export interface CmdKProps {
+export interface CtrlKProps {
   basePath: string;
   /**
    * URL of the JSON search index dwar emits (one {@link SearchEntry} per
@@ -36,7 +36,7 @@ function Highlighted({ text, positions }: { text: string; positions: number[] })
   );
 }
 
-export function CmdK({ basePath, searchIndexUrl }: CmdKProps) {
+export function CtrlK({ basePath, searchIndexUrl }: CtrlKProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);

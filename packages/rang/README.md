@@ -7,7 +7,7 @@ own ESM chunk. rang owns every byte of page-shell HTML.
 ## What's inside
 
 - **Chrome** — `Layout`, `Header`, `Footer`, `Brand`. SSR-only, no client JS of their own.
-- **Islands** — `Sidebar`, `MobileNav`, `TOC`, `TocPopover`, `CmdK`, `CodeTabs`, `CopyBtn`, `ThemeToggle`, `Settings`, `CodeViewer`. Each renders meaningful initial HTML and progressively enhances after hydration (keyboard handling, focus trap, scroll-spy, drawer state, clipboard, theme/setting persistence, a CDN-loaded Monaco source viewer).
+- **Islands** — `Sidebar`, `MobileNav`, `TOC`, `TocPopover`, `CtrlK`, `CodeTabs`, `CopyBtn`, `ThemeToggle`, `Settings`, `CodeViewer`. Each renders meaningful initial HTML and progressively enhances after hydration (keyboard handling, focus trap, scroll-spy, drawer state, clipboard, theme/setting persistence, a CDN-loaded Monaco source viewer).
 - **Primitives** — shadcn-style `Button` (`buttonVariants`), `Dialog` (+ `DialogHeader`/`DialogTitle`/`DialogBody`/`DialogFooter`), `CodeBlock`, and the `cn` class-merge helper.
 - **`defaultMdxComponents`** — element map for `@mdx-js/mdx`: headings with hover anchor links, external-link `rel`/`target` heuristics, `<CopyBtn>`-wrapped code blocks, table/list/quote primitives, and the `<Callout>` element.
 - **`ISLAND_REGISTRY`** — `Record<IslandName, ComponentType>` keyed by the `IslandName` union from `@clean-jsdoc-theme/utils`. The ten keys: `sidebar`, `mobile-nav`, `toc`, `toc-mobile`, `cmdk`, `code-tabs`, `copy-btn`, `theme-toggle`, `settings`, `code-viewer`.
@@ -28,7 +28,7 @@ import {
   MobileNav,
   TOC,
   TocPopover,
-  CmdK,
+  CtrlK,
   CodeTabs,
   CopyBtn,
   ThemeToggle,

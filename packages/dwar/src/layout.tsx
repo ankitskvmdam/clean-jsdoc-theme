@@ -22,7 +22,7 @@ import {
   MobileNav,
   TOC,
   TocPopover,
-  CmdK,
+  CtrlK,
   ThemeToggle,
   Settings,
 } from '@clean-jsdoc-theme/rang';
@@ -130,7 +130,7 @@ export function SsrLayout({
         <Island
           name="cmdk"
           islands={islands}
-          Component={CmdK}
+          Component={CtrlK}
           props={{ basePath, ...(searchIndexUrl ? { searchIndexUrl } : {}) }}
         />
         <Island

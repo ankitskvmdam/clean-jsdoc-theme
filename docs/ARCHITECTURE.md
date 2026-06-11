@@ -336,10 +336,10 @@ rang/src/
     ├── toc-utils.ts      # shared scroll-spy: useActiveHeadings (rail set),       │
     │                     #   useTocProgress / getActiveHeadingIndex (mobile),     │
     │                     #   getItemOffset / getLineOffset (depth indentation)    │
-    ├── CmdK.tsx          # island: command palette — fuzzy search │ islands
+    ├── CtrlK.tsx         # island: command palette — fuzzy search │ islands
     │                     #   over the fetched search index (search-utils) (hydrated)
     ├── search-utils.ts   # dependency-free fuzzy matcher (fuzzyMatch / fuzzySearch /
-    │                     #   highlightSegments) — fzf-style scoring for CmdK
+    │                     #   highlightSegments) — fzf-style scoring for CtrlK
     ├── Settings.tsx      # island: settings (+ SettingsDialog, controlled)
     ├── ThemeToggle.tsx   # island: light/dark (+ useThemeMode hook)
     ├── CodeTabs.tsx      # island: tabbed code

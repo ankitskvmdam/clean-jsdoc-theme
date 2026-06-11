@@ -5,7 +5,7 @@ import { Sidebar } from './components/Sidebar';
 import { MobileNav } from './components/MobileNav';
 import { TOC } from './components/TOC';
 import { TocPopover } from './components/TocPopover';
-import { CmdK } from './components/CmdK';
+import { CtrlK } from './components/CtrlK';
 import { CodeTabs } from './components/CodeTabs';
 import { CodeViewer } from './components/CodeViewer';
 import { EmbedBody } from './components/Embed';
@@ -22,7 +22,7 @@ export const ISLAND_REGISTRY: Record<IslandName, ComponentType<any>> = {
   'mobile-nav': MobileNav,
   toc: TOC,
   'toc-mobile': TocPopover,
-  cmdk: CmdK,
+  cmdk: CtrlK,
   'code-tabs': CodeTabs,
   'code-viewer': CodeViewer,
   // In-content island: the loader mounts `EmbedBody` (the marker's children)
