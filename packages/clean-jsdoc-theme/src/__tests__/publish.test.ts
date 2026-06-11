@@ -5,11 +5,41 @@ import { afterAll, beforeAll, describe, it, expect } from 'vitest';
 import {
   collectDocs,
   computeRelPaths,
+  hasMarkdownPlugin,
   normalizeDocGroups,
   normalizeMenu,
   normalizeSectionOrder,
   outputSourceFilesEnabled,
 } from '../publish';
+
+describe('hasMarkdownPlugin', () => {
+  it('returns true for the canonical "plugins/markdown" entry', () => {
+    expect(hasMarkdownPlugin(['plugins/markdown'])).toBe(true);
+    expect(hasMarkdownPlugin(['plugins/escapeHtml', 'plugins/markdown'])).toBe(true);
+  });
+
+  it('tolerates a .js suffix, backslashes, and surrounding whitespace', () => {
+    expect(hasMarkdownPlugin(['plugins/markdown.js'])).toBe(true);
+    expect(hasMarkdownPlugin(['plugins\\markdown'])).toBe(true);
+    expect(hasMarkdownPlugin([' plugins/markdown '])).toBe(true);
+  });
+
+  it('returns false when the markdown plugin is absent', () => {
+    expect(hasMarkdownPlugin(['plugins/escapeHtml'])).toBe(false);
+    expect(hasMarkdownPlugin([])).toBe(false);
+  });
+
+  it('returns false for non-arrays / undefined', () => {
+    expect(hasMarkdownPlugin(undefined)).toBe(false);
+    expect(hasMarkdownPlugin('plugins/markdown')).toBe(false);
+    expect(hasMarkdownPlugin(null)).toBe(false);
+  });
+
+  it('does not match unrelated names that merely contain "markdown"', () => {
+    expect(hasMarkdownPlugin(['plugins/markdown-extra'])).toBe(false);
+    expect(hasMarkdownPlugin(['my-markdownish'])).toBe(false);
+  });
+});
 
 describe('outputSourceFilesEnabled', () => {
   it('defaults to true when nothing disables it', () => {

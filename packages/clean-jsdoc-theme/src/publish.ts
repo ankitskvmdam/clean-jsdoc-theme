@@ -651,6 +651,47 @@ export function sourceLinkToCommentEnabled(opts: JSDocOpts): boolean {
 }
 
 /**
+ * Whether a JSDoc `conf.plugins` list enables the bundled `plugins/markdown`
+ * plugin. The theme relies on it: JSDoc runs `plugins/markdown` to convert the
+ * Markdown in doclet descriptions/tags to HTML *before* `publish` ever sees the
+ * doclets, so without it descriptions arrive as raw Markdown and render wrong.
+ * Pure + exported for testing — accepts the `plugins` array (module specifiers,
+ * e.g. `"plugins/markdown"`; tolerant of a `.js` suffix or path separators).
+ */
+export function hasMarkdownPlugin(plugins: unknown): boolean {
+  if (!Array.isArray(plugins)) return false;
+  return plugins.some(
+    (p) => typeof p === 'string' && /(^|[\\/])markdown(\.js)?$/i.test(p.trim())
+  );
+}
+
+/**
+ * Hard-require JSDoc's `plugins/markdown` plugin (see {@link hasMarkdownPlugin}).
+ * Reads the merged config from `require('jsdoc/env').conf.plugins` — the
+ * canonical location at runtime — and throws if the plugin is absent so the
+ * build stops early with an actionable message. When `jsdoc/env` can't be
+ * resolved (e.g. unit tests, or a non-JSDoc caller) the check is skipped: the
+ * plugin list is unknowable there, so it can't be enforced.
+ */
+function assertMarkdownPlugin(): void {
+  let conf: { plugins?: unknown } | undefined;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    conf = (require('jsdoc/env') as { conf?: { plugins?: unknown } }).conf;
+  } catch {
+    return; // `jsdoc/env` isn't resolvable here — can't verify, so don't enforce.
+  }
+  if (!conf) return;
+  if (!hasMarkdownPlugin(conf.plugins)) {
+    throw new Error(
+      'clean-jsdoc-theme requires JSDoc\'s "plugins/markdown" plugin, which ' +
+        'renders Markdown in doclet descriptions to HTML. Add it to your ' +
+        'jsdoc.json:\n\n  "plugins": ["plugins/markdown"]\n'
+    );
+  }
+}
+
+/**
  * Validate `opts.sectionOrder` into a clean `string[]`, or `undefined` to fall
  * back to setu's default order. Accepts only an array; trims string entries and
  * drops non-strings/empties. An array that yields no usable labels → `undefined`.
@@ -923,6 +964,10 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
         '(set "opts.destination" in your jsdoc.json).'
     );
   }
+
+  // The theme depends on JSDoc's `plugins/markdown` to pre-render doclet
+  // Markdown to HTML; bail early with an actionable message if it's missing.
+  assertMarkdownPlugin();
 
   const [
     { generateSite },
