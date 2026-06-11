@@ -88,6 +88,12 @@ export type { CtrlKProps } from './components/CtrlK';
 export { Settings, SettingsDialog } from './components/Settings';
 export type { SettingsProps, SettingsDialogProps } from './components/Settings';
 
+export { Steps, Step } from './components/Steps';
+export type { StepProps } from './components/Steps';
+
+export { Tabs, Tab } from './components/Tabs';
+export type { TabProps } from './components/Tabs';
+
 export { defaultMdxComponents } from './mdx-components';
 export { HeaderSlotContext, BasePathContext } from './components/mdx-utils';
 export type { HeaderSlot } from './components/mdx-utils';

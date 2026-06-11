@@ -46,6 +46,7 @@ const ALL_ISLANDS: IslandName[] = [
   'settings',
   'code-viewer',
   'embed',
+  'tabs',
 ];
 
 export interface IslandChunkFile {

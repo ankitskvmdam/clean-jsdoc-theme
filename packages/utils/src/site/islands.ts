@@ -23,7 +23,8 @@ export type IslandName =
   | 'theme-toggle'
   | 'settings'
   | 'code-viewer'
-  | 'embed';
+  | 'embed'
+  | 'tabs';
 
 /** Type-safe prop bag per island. Server-render and hydration share this map. */
 export interface IslandPropsMap {
@@ -48,4 +49,9 @@ export interface IslandPropsMap {
   // marker's `data-*` attributes, not the JSON props payload, so the prop bag
   // is empty here. The loader reads `data-*` back into `EmbedProps` at hydrate.
   embed: Record<string, never>;
+  // In-content island (like `embed`): the `<Tabs>`/`<Tab>` markup — the tablist
+  // buttons and panels — is fully SSR-rendered inside the marker, so there is no
+  // JSON props payload. The island enhancer reads the tabs/panels back out of
+  // the DOM and wires up click/keyboard switching.
+  tabs: Record<string, never>;
 }

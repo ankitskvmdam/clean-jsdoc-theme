@@ -154,6 +154,61 @@ if (document.readyState === 'loading') {
 `;
   }
 
+  // tabs is ENHANCED, not hydrated: the panel content is arbitrary SSR HTML
+  // (rendered MDX — paragraphs, code blocks, nested components), so re-rendering
+  // it through Preact would be wasteful and risk a mismatch. The component
+  // already SSR-rendered a fully functional ARIA tablist + panels (first tab
+  // visible, rest `hidden`); this chunk just wires up switching. It is plain DOM
+  // JS — it imports NEITHER preact NOR the rang registry, so the chunk stays
+  // tiny. For each `[data-island="tabs"]` root we scope queries to its own tabs
+  // and panels, then on click / ArrowLeft|Right / Home / End we flip
+  // `aria-selected` + `tabIndex` (roving focus) on the buttons and toggle each
+  // panel's `hidden`. The active visual is driven by the `aria-selected:`
+  // Tailwind variant, so flipping `aria-selected` is all the restyle needs.
+  if (name === 'tabs') {
+    return `function enhance(root) {
+  const tabs = Array.prototype.slice.call(root.querySelectorAll('[role="tab"]'));
+  const panels = Array.prototype.slice.call(root.querySelectorAll('[role="tabpanel"]'));
+  if (tabs.length === 0) return;
+
+  function select(idx, focus) {
+    const clamped = (idx + tabs.length) % tabs.length;
+    tabs.forEach(function (tab, i) {
+      const active = i === clamped;
+      tab.setAttribute('aria-selected', active ? 'true' : 'false');
+      tab.tabIndex = active ? 0 : -1;
+    });
+    panels.forEach(function (panel, i) {
+      panel.hidden = i !== clamped;
+    });
+    if (focus && tabs[clamped]) tabs[clamped].focus();
+  }
+
+  tabs.forEach(function (tab, i) {
+    tab.addEventListener('click', function () { select(i, false); });
+    tab.addEventListener('keydown', function (e) {
+      switch (e.key) {
+        case 'ArrowRight': e.preventDefault(); select(i + 1, true); break;
+        case 'ArrowLeft': e.preventDefault(); select(i - 1, true); break;
+        case 'Home': e.preventDefault(); select(0, true); break;
+        case 'End': e.preventDefault(); select(tabs.length - 1, true); break;
+      }
+    });
+  });
+}
+
+function enhanceAll() {
+  document.querySelectorAll('[data-island="tabs"]').forEach(enhance);
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', enhanceAll, { once: true });
+} else {
+  enhanceAll();
+}
+`;
+  }
+
   // The chunk reads the per-page props payload at runtime. Each marker carries
   // `data-island-id="iN"` — we look that key up in the JSON blob.
   return `import { hydrate, h } from 'preact';

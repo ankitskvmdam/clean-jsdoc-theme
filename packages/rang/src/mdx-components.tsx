@@ -12,6 +12,8 @@ import type { ComponentType } from 'preact';
 import { makeHeading } from './components/mdx-utils';
 import { CodeBlock as MdxPre, Code as MdxCode } from './components/CodeBlock';
 import { Embed } from './components/Embed';
+import { Steps, Step } from './components/Steps';
+import { Tabs, Tab } from './components/Tabs';
 import {
   MdxH1,
   MdxA,
@@ -69,6 +71,17 @@ export const defaultMdxComponents: Record<string, ComponentType<any>> = {
   // an h{depth} whose content is one <code> showing the full signature, with an
   // explicit id so the anchor stays clean. Capitalized so MDX routes it here.
   MemberHeading,
+  // setu emits a numbered stepper as `<Steps>` wrapping `<Step label="…">`
+  // children. Capitalized so MDX routes them here; `Steps` is SSR-only static
+  // markup (no island), and `Step` is a logical marker `Steps` reads directly.
+  Steps,
+  Step,
+  // setu emits a tabbed view as `<Tabs>` wrapping `<Tab label="…">` children.
+  // Capitalized so MDX routes them here; `Tabs` SSR-renders the full
+  // `data-island="tabs"` ARIA tablist + panels that dwar's loader ENHANCES (not
+  // hydrates — the panel content is arbitrary SSR HTML), and `Tab` is a marker.
+  Tabs,
+  Tab,
   hr: MdxHr,
   table: MdxTable,
   thead: MdxThead,

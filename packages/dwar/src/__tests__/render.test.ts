@@ -180,6 +180,7 @@ describe('render() — smoke', () => {
       'settings',
       'code-viewer',
       'embed',
+      'tabs',
     ];
     for (const name of names) {
       const re = new RegExp(`^_islands/${name}-[A-Za-z0-9]+\\.js$`);
@@ -215,6 +216,94 @@ describe('render() — smoke', () => {
     const chunk = result.files.find((f) => /^_islands\/embed-[A-Za-z0-9]+\.js$/.test(f.path));
     expect(chunk, 'missing hashed embed chunk').toBeDefined();
     expect(asString(chunk!).length).toBeGreaterThan(0);
+  });
+
+  it('renders <Steps> as a numbered stepper and <Tabs> as an enhanced tabs island', async () => {
+    const manifest = makeManifest();
+    manifest.pages = [
+      ...manifest.pages,
+      {
+        slug: 'components-page',
+        frontmatter: { title: 'Components Page', kind: 'guide' },
+        body: [
+          '# Demo',
+          '',
+          '<Steps>',
+          '<Step label="Install">',
+          'Run the installer.',
+          '</Step>',
+          '<Step label="Configure">',
+          'Edit the config.',
+          '</Step>',
+          '</Steps>',
+          '',
+          '<Tabs>',
+          '<Tab label="npm">',
+          'npm content here.',
+          '</Tab>',
+          '<Tab label="pnpm">',
+          'pnpm content here.',
+          '</Tab>',
+          '</Tabs>',
+          '',
+        ].join('\n'),
+        headings: [],
+      },
+    ];
+    const result = await render(manifest, { theme: minimalTheme });
+    const html = asString(result.files.find((f) => f.path === 'components-page/index.html')!);
+
+    // Steps: labels, the 1/2 numbers, and the body text.
+    expect(html).toContain('Install');
+    expect(html).toContain('Configure');
+    expect(html).toContain('>1<');
+    expect(html).toContain('>2<');
+    expect(html).toContain('Run the installer.');
+    expect(html).toContain('Edit the config.');
+
+    // Tabs: the island marker + ARIA roles, both labels, and content.
+    expect(html).toContain('data-island="tabs"');
+    expect(html).toContain('role="tablist"');
+    expect(html).toContain('role="tab"');
+    expect(html).toContain('role="tabpanel"');
+    expect(html).toContain('npm content here.');
+    expect(html).toContain('pnpm content here.');
+    // First panel visible, the rest hidden (exactly one `hidden` panel here).
+    expect(html).toMatch(/role="tabpanel"[^>]*\shidden/);
+
+    // Tab button ids are unique on the page (no id appears twice).
+    const tabIds = [...html.matchAll(/id="(tabs-\d+-tab-\d+)"/g)].map((m) => m[1]);
+    expect(tabIds.length).toBeGreaterThanOrEqual(2);
+    expect(new Set(tabIds).size).toBe(tabIds.length);
+
+    // The page references the (hashed) tabs chunk, and it is emitted non-empty.
+    expect(html).toMatch(/\/_islands\/tabs-[A-Za-z0-9]+\.js/);
+    const chunk = result.files.find((f) => /^_islands\/tabs-[A-Za-z0-9]+\.js$/.test(f.path));
+    expect(chunk, 'missing hashed tabs chunk').toBeDefined();
+    expect(asString(chunk!).length).toBeGreaterThan(0);
+  });
+
+  it('renders a <Callout type="tip"> as a green success callout with a lucide icon', async () => {
+    const manifest = makeManifest();
+    manifest.pages = [
+      ...manifest.pages,
+      {
+        slug: 'tip-page',
+        frontmatter: { title: 'Tip Page', kind: 'guide' },
+        body: '# Tip Page\n\n<Callout type="tip">\nPro tip here.\n</Callout>\n',
+        headings: [],
+      },
+    ];
+    const result = await render(manifest, { theme: minimalTheme });
+    const html = asString(result.files.find((f) => f.path === 'tip-page/index.html')!);
+    // Rendered as a callout (role="note") with the success-green palette …
+    expect(html).toContain('role="note"');
+    expect(html).toContain('bg-green-50');
+    expect(html).toContain('text-green-700');
+    // … the lucide lightbulb icon (its class is unique to the tip variant) …
+    expect(html).toContain('lucide-lightbulb');
+    // … and the body text intact.
+    expect(html).toContain('Pro tip here.');
   });
 
   it('emits a CSS file with theme variables on :root', async () => {
