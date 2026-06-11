@@ -465,9 +465,13 @@ export async function writeSite(
   if (notGoogle.has('fonts.heading')) delete fonts.heading;
   if (notGoogle.has('fonts.body')) delete fonts.body;
 
+  // Cache the island esbuild bundle across builds — see RenderOptions.islandCacheDir;
+  // the dev/watch loop reuses it when rang/dwar are unchanged.
+  const islandCacheDir = resolvePath(process.cwd(), 'node_modules', '.cache', 'clean-jsdoc-theme');
   const result = await render(manifest, {
     theme: resolveTheme(block, siteName, fonts),
     destination,
+    islandCacheDir,
   });
 
   const outputFiles = [...result.files, ...logoFiles];

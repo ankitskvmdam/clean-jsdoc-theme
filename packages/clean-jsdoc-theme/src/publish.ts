@@ -1057,6 +1057,22 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   // Color only on a real TTY (and unless JSDoc's `--nocolor` is set).
   const color = Boolean(process.stdout.isTTY) && opts.nocolor !== true;
 
+  // Kick off the project file-reading I/O NOW, so it runs concurrently with the
+  // renderer load below. None of it (pkg resolution, source files, the docs
+  // tree) needs setu/dwar/utils, so on large projects — where reading hundreds
+  // of source files is non-trivial — it overlaps the multi-second module
+  // evaluation instead of running serially after it. These collectors are
+  // internally resilient (unreadable files are warned + skipped, never thrown),
+  // so starting them before their await point can't surface an unhandled
+  // rejection; we await them at their narrated stages below.
+  const docsDir =
+    typeof opts.docs === 'string' && opts.docs.trim().length > 0 ? opts.docs.trim() : undefined;
+  const pkgPromise = resolvePkg(data, opts);
+  const sourcesPromise: Promise<SourceFileInput[]> = outputSourceFilesEnabled(opts)
+    ? collectSourceFiles(data)
+    : Promise.resolve([]);
+  const docsPromise: Promise<DocInput[]> = docsDir ? collectDocs(docsDir) : Promise.resolve([]);
+
   // Stage progress (ora spinners) is on by default; `opts.progress: false`
   // silences it. ora loads first so the narrator can wrap the renderer load
   // (stage 1) too; a load failure degrades to silent rather than breaking.
@@ -1118,7 +1134,8 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
     console.log(formatted);
   }
 
-  const pkg = await resolvePkg(data, opts);
+  // Resolved off the kickoff above (started concurrently with the renderer load).
+  const pkg = await pkgPromise;
 
   // README (rendered to HTML by JSDoc into `opts.readme`) → home page; the
   // tutorials resolver tree → guide pages. Both flow through setu as ordinary
@@ -1133,18 +1150,14 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   // is optional and self-skips on error, so this never aborts the build.
   const sourceLinkToComment = sourceLinkToCommentEnabled(opts);
 
-  // Docs directory → prose pages at clean (unprefixed) slugs. The bridge does the
-  // walking/reading (the sanctioned I/O layer); setu stays free of disk access.
-  // Unset / empty dir → `[]`, so behavior is identical to today. `docGroups`
-  // orders the doc-group sidebar sections; `defaultDocGroup` labels ungrouped docs.
-  const docsDir =
-    typeof opts.docs === 'string' && opts.docs.trim().length > 0 ? opts.docs.trim() : undefined;
-
-  // One stage for all the file-reading I/O — source files (for the viewer pages)
-  // and the docs tree — so the disk work is narrated as a single step.
+  // The docs tree → prose pages at clean (unprefixed) slugs; `docGroups` orders
+  // the doc-group sidebar sections, `defaultDocGroup` labels ungrouped docs. The
+  // reads were started in the kickoff above (the bridge is the sanctioned I/O
+  // layer; setu stays disk-free), so this stage just awaits the now-overlapped
+  // work — narrated as a single step.
   const { sources, docs } = await progress.stage('Reading sources & docs', async () => ({
-    sources: outputSourceFilesEnabled(opts) ? await collectSourceFiles(data) : [],
-    docs: docsDir ? await collectDocs(docsDir) : [],
+    sources: await sourcesPromise,
+    docs: await docsPromise,
   }));
 
   const docGroups = normalizeDocGroups(opts.docGroups);
@@ -1199,10 +1212,14 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   const customAssets = await resolveCustomAssets(opts, hrefForServed);
 
   const absoluteDestination = resolvePath(destination);
+  // Cache the island esbuild bundle across builds — see RenderOptions.islandCacheDir;
+  // the dev/watch loop reuses it when rang/dwar are unchanged.
+  const islandCacheDir = resolvePath(process.cwd(), 'node_modules', '.cache', 'clean-jsdoc-theme');
   const result = await progress.stage('Rendering site', () =>
     render(manifest, {
       theme: { ...resolveTheme(opts, siteName, fonts, basePath), ...customAssets.theme },
       destination: absoluteDestination,
+      islandCacheDir,
     })
   );
 
