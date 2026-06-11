@@ -10,15 +10,7 @@ A clean, responsive, and customizable theme for JSDoc. v5 emits a static site wi
 
 ## Architecture
 
-```
-salty collection ──► setu.generateSite ──► SiteManifest ──► dwar.render ──► OutputFile[]
-                          ▲                                       ▲                │
-                          │                                       │                ▼
-                    schema + slug rules                     components from    caller writes
-                @clean-jsdoc-theme/utils                @clean-jsdoc-theme/rang      │
-                                                                                     ▼
-                                                                       dwar.runPagefindAgainstDir
-```
+![The architecture](./tree/master/docs/architecture.svg)
 
 Four boundary packages, each independently testable, glued together by a thin JSDoc bridge:
 

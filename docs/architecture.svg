@@ -1,0 +1,82 @@
+<svg class="cjt-build-pipeline" viewBox="0 0 890 250" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#5a5a5a"/>
+    </marker>
+    <marker id="aro" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#dca06f"/>
+    </marker>
+    <!--
+      This SVG is INLINED into the page (so it can track the theme toggle), which
+      means its <style> applies to the whole document — every rule is therefore
+      scoped under `.cjt-build-pipeline` (the root) to avoid leaking. Dark styles
+      key off `[data-theme="dark"]` (set on <html> by the toggle), NOT
+      `prefers-color-scheme`, so they follow the in-page theme rather than the OS.
+    -->
+    <style>
+      .cjt-build-pipeline .box  { font-size: 14px; font-weight: 500; }
+      .cjt-build-pipeline .mono { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 13.5px; }
+      .cjt-build-pipeline .sub  { font-size: 10.5px; }
+      /* node (start/end) boxes + their text */
+      [data-theme="dark"] .cjt-build-pipeline rect[fill="#ececec"] { fill: #2a2b30; }
+      [data-theme="dark"] .cjt-build-pipeline text[fill="#4a4a4a"] { fill: #d6d6da; }
+      /* core (green) boxes + text */
+      [data-theme="dark"] .cjt-build-pipeline rect[fill="#cbe0cc"] { fill: #243528; }
+      [data-theme="dark"] .cjt-build-pipeline text[fill="#334335"] { fill: #bcd9c1; }
+      [data-theme="dark"] .cjt-build-pipeline text[fill="#5d6e5f"] { fill: #92b397; }
+      /* rang (peach) box + text */
+      [data-theme="dark"] .cjt-build-pipeline rect[fill="#fbeadf"] { fill: #352a20; }
+      [data-theme="dark"] .cjt-build-pipeline text[fill="#6e5747"] { fill: #e3c2a2; }
+      [data-theme="dark"] .cjt-build-pipeline text[fill="#8a7565"] { fill: #c5a587; }
+      /* arrows + arrowhead marker, dashed container, faint labels */
+      [data-theme="dark"] .cjt-build-pipeline [stroke="#5a5a5a"] { stroke: #8c8c92; }
+      [data-theme="dark"] .cjt-build-pipeline [fill="#5a5a5a"]   { fill: #8c8c92; }
+      [data-theme="dark"] .cjt-build-pipeline rect[stroke="#cccccc"] { stroke: #45474c; }
+      [data-theme="dark"] .cjt-build-pipeline text[fill="#a6a6a6"] { fill: #8b8b91; }
+      [data-theme="dark"] .cjt-build-pipeline text[fill="#6a6a6a"] { fill: #b2b2b8; }
+      /* the peach accent (#dca06f) reads fine on dark — left as-is */
+    </style>
+  </defs>
+
+  <!-- dashed group container -->
+  <rect x="190" y="44" width="540" height="104" rx="12" fill="none" stroke="#cccccc" stroke-width="1.4" stroke-dasharray="5 4"/>
+  <text x="460" y="62" text-anchor="middle" font-size="12" fill="#a6a6a6">site generation</text>
+
+  <!-- main flow arrows -->
+  <g stroke="#5a5a5a" stroke-width="2.4" fill="none" marker-end="url(#ar)">
+    <line x1="156" y1="90" x2="204" y2="90"/>
+    <line x1="366" y1="90" x2="394" y2="90"/>
+    <line x1="540" y1="90" x2="568" y2="90"/>
+    <line x1="714" y1="90" x2="766" y2="90"/>
+  </g>
+  <text x="180" y="81" text-anchor="middle" font-size="11.5" fill="#6a6a6a">bridge</text>
+
+  <!-- peach side-input arrow: rang -> dwar.render() -->
+  <polyline points="192,197 642,197 642,119" fill="none" stroke="#dca06f" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#aro)"/>
+
+  <!-- JSDoc / TypeDoc (start) -->
+  <rect x="20" y="65" width="132" height="50" rx="9" fill="#ececec"/>
+  <text class="box" x="86" y="94" text-anchor="middle" fill="#4a4a4a">JSDoc / TypeDoc</text>
+
+  <!-- setu.generateSite() -->
+  <rect x="208" y="65" width="156" height="50" rx="9" fill="#cbe0cc"/>
+  <text class="mono" x="286" y="94" text-anchor="middle" fill="#334335">setu.generateSite()</text>
+
+  <!-- SiteManifest -->
+  <rect x="398" y="65" width="140" height="50" rx="9" fill="#cbe0cc"/>
+  <text class="mono" x="468" y="86" text-anchor="middle" fill="#334335">SiteManifest</text>
+  <text class="sub" x="468" y="102" text-anchor="middle" fill="#5d6e5f">MDX · nav · search</text>
+
+  <!-- dwar.render() -->
+  <rect x="572" y="65" width="140" height="50" rx="9" fill="#cbe0cc"/>
+  <text class="mono" x="642" y="94" text-anchor="middle" fill="#334335">dwar.render()</text>
+
+  <!-- static site (end) -->
+  <rect x="770" y="65" width="104" height="50" rx="9" fill="#ececec"/>
+  <text class="box" x="822" y="94" text-anchor="middle" fill="#4a4a4a">static site</text>
+
+  <!-- rang side-input box -->
+  <rect x="20" y="174" width="172" height="46" rx="9" fill="#fbeadf" stroke="#dca06f" stroke-width="1.4" stroke-dasharray="5 4"/>
+  <text class="box" x="106" y="194" text-anchor="middle" fill="#6e5747" font-size="13">rang</text>
+  <text class="sub" x="106" y="210" text-anchor="middle" fill="#8a7565" font-size="11">component library</text>
+</svg>
