@@ -75,6 +75,8 @@ function blockquoteToCallout(node: Blockquote): RootContent {
  */
 interface ContainerItem {
   label?: string;
+  /** `<tab value="…">` sync key (see rang's `Tabs`); ignored for `<step>`. */
+  value?: string;
   raw: string;
 }
 
@@ -85,12 +87,16 @@ interface ContainerItem {
  */
 type Segment =
   | { kind: 'plain'; raw: string }
-  | { kind: 'steps' | 'tabs'; items: ContainerItem[] };
+  | { kind: 'steps' | 'tabs'; items: ContainerItem[]; group?: string };
 
 /** Matches a top-level `<steps …>` / `<tabs …>` opening tag (case-insensitive). */
 const CONTAINER_OPEN = /<(steps|tabs)(\s[^>]*)?>/i;
-/** Reads a `label="…"` / `label='…'` attribute off an item's opening tag. */
-const LABEL_ATTR = /label\s*=\s*("([^"]*)"|'([^']*)')/i;
+
+/** Read a quoted attribute (`name="…"` / `name='…'`) off an opening tag. */
+function readAttr(openTag: string, name: string): string | undefined {
+  const m = new RegExp(`${name}\\s*=\\s*("([^"]*)"|'([^']*)')`, 'i').exec(openTag);
+  return m ? (m[2] ?? m[3]) : undefined;
+}
 
 /**
  * Find the index just past the close tag matching an open tag of `name` that
@@ -134,9 +140,9 @@ function parseItems(inner: string, itemName: string): ContainerItem[] {
     if (closeIndex === -1) break; // unterminated item — stop scanning
     const close = new RegExp(`</${itemName}(\\s[^>]*)?>\\s*$`, 'i');
     const body = inner.slice(bodyStart, closeIndex).replace(close, '');
-    const labelMatch = LABEL_ATTR.exec(openTag);
-    const label = labelMatch ? (labelMatch[2] ?? labelMatch[3]) : undefined;
-    items.push({ label: label || undefined, raw: body.trim() });
+    const label = readAttr(openTag, 'label');
+    const value = readAttr(openTag, 'value');
+    items.push({ label: label || undefined, value: value || undefined, raw: body.trim() });
     cursor = closeIndex;
     open.lastIndex = closeIndex;
   }
@@ -180,7 +186,10 @@ function splitContainers(raw: string): Segment[] {
     const itemName = name === 'steps' ? 'step' : 'tab';
     const items = parseItems(inner, itemName);
     if (items.length > 0) {
-      segments.push({ kind: name, items });
+      // `group` (tabs only) opts the block into cross-block sync; read off the
+      // container's own opening tag (`open[0]`).
+      const group = name === 'tabs' ? readAttr(open[0], 'group') || undefined : undefined;
+      segments.push({ kind: name, items, group });
     } else {
       // Degenerate container (no items) — keep its source as plain text.
       segments.push({ kind: 'plain', raw: rest.slice(open.index, closeEnd) });
@@ -217,7 +226,12 @@ function expandContainers(
     } else if (seg.kind === 'steps') {
       out.push(steps(seg.items.map((it) => step(it.label, asBlocks(recurseFn(it.raw))))));
     } else {
-      out.push(tabs(seg.items.map((it) => tab(it.label, asBlocks(recurseFn(it.raw))))));
+      out.push(
+        tabs(
+          seg.items.map((it) => tab(it.label, asBlocks(recurseFn(it.raw)), it.value)),
+          seg.group
+        )
+      );
     }
   }
   return out;

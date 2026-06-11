@@ -17,10 +17,12 @@ const isTabs = isJsx('Tabs');
 const isTab = isJsx('Tab');
 const isCallout = isJsx('Callout');
 
-const labelOf = (node: MdxJsxFlowElement): string | undefined => {
-  const attr = node.attributes.find((a) => a.type === 'mdxJsxAttribute' && a.name === 'label');
+const attrOf = (node: MdxJsxFlowElement, name: string): string | undefined => {
+  const attr = node.attributes.find((a) => a.type === 'mdxJsxAttribute' && a.name === name);
   return attr && typeof attr.value === 'string' ? attr.value : undefined;
 };
+
+const labelOf = (node: MdxJsxFlowElement): string | undefined => attrOf(node, 'label');
 
 const jsxChildren = (node: MdxJsxFlowElement, name: string): MdxJsxFlowElement[] =>
   node.children.filter(isJsx(name) as (n: unknown) => n is MdxJsxFlowElement);
@@ -73,6 +75,28 @@ describe('containers — <tabs>/<tab> in prose markdown', () => {
       expect((codeNode as { lang?: string }).lang).toBe('sh');
     }
     expect(JSON.stringify(blocks)).not.toContain('<tab');
+  });
+
+  it('threads `group` onto Tabs and `value` onto each Tab for cross-block sync', () => {
+    const blocks = markdownToMdastBlocks(
+      '<tabs group="tool">\n<tab label="JSDoc" value="jsdoc">\na\n</tab>\n<tab label="TypeDoc" value="typedoc">\nb\n</tab>\n</tabs>'
+    );
+    const node = firstBlock(blocks) as MdxJsxFlowElement;
+    expect(isTabs(node)).toBe(true);
+    expect(attrOf(node, 'group')).toBe('tool');
+
+    const tabNodes = jsxChildren(node, 'Tab');
+    expect(attrOf(tabNodes[0], 'value')).toBe('jsdoc');
+    expect(attrOf(tabNodes[1], 'value')).toBe('typedoc');
+  });
+
+  it('omits `group`/`value` attributes when not authored (ungrouped blocks stay inert)', () => {
+    const blocks = markdownToMdastBlocks(
+      '<tabs>\n<tab label="npm">\na\n</tab>\n<tab label="pnpm">\nb\n</tab>\n</tabs>'
+    );
+    const node = firstBlock(blocks) as MdxJsxFlowElement;
+    expect(attrOf(node, 'group')).toBeUndefined();
+    expect(attrOf(jsxChildren(node, 'Tab')[0], 'value')).toBeUndefined();
   });
 });
 

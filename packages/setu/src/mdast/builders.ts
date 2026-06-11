@@ -143,12 +143,16 @@ export const step = (
  * `mdxJsxToMarkdown` (wired in `mdx.ts`) serializes it so the prose authoring
  * tags survive into the compiled MDX.
  */
-export const tabs = (children: (BlockContent | DefinitionContent)[]): MdxJsxFlowElement => ({
-  type: 'mdxJsxFlowElement',
-  name: 'Tabs',
-  attributes: [],
-  children,
-});
+export const tabs = (
+  children: (BlockContent | DefinitionContent)[],
+  group?: string
+): MdxJsxFlowElement => {
+  const attributes: MdxJsxAttribute[] = [];
+  // `group` opts the block into cross-block sync (see rang's `Tabs`); included
+  // only when a non-empty string was authored so ungrouped blocks stay inert.
+  if (group) attributes.push({ type: 'mdxJsxAttribute', name: 'group', value: group });
+  return { type: 'mdxJsxFlowElement', name: 'Tabs', attributes, children };
+};
 
 /**
  * A single tab — rang's `Tab` emitted as an MDX JSX element (`<Tab label="…">`).
@@ -159,10 +163,14 @@ export const tabs = (children: (BlockContent | DefinitionContent)[]): MdxJsxFlow
  */
 export const tab = (
   label: string | undefined,
-  children: (BlockContent | DefinitionContent)[]
+  children: (BlockContent | DefinitionContent)[],
+  value?: string
 ): MdxJsxFlowElement => {
   const attributes: MdxJsxAttribute[] = [];
   if (label) attributes.push({ type: 'mdxJsxAttribute', name: 'label', value: label });
+  // `value` is the cross-block sync key (see rang's `Tabs`); when omitted the
+  // renderer falls back to the normalized label, so it's emitted only when set.
+  if (value) attributes.push({ type: 'mdxJsxAttribute', name: 'value', value });
   return { type: 'mdxJsxFlowElement', name: 'Tab', attributes, children };
 };
 

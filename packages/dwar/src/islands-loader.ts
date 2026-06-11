@@ -165,11 +165,40 @@ if (document.readyState === 'loading') {
   // `aria-selected` + `tabIndex` (roving focus) on the buttons and toggle each
   // panel's `hidden`. The active visual is driven by the `aria-selected:`
   // Tailwind variant, so flipping `aria-selected` is all the restyle needs.
+  //
+  // Cross-block sync (opt-in): a block with `data-tabs-group` mirrors the user's
+  // choice — by each tab's `data-tabs-value` — onto every other block in the
+  // same group on the page, and persists it to localStorage so the next visit
+  // restores it. A block whose group lacks the chosen value is left untouched
+  // ("if that tab isn't available, do nothing"). Independent `tabs` markers can't
+  // share a Preact context (each enhances in isolation), so the group state lives
+  // in a chunk-level registry plus localStorage, kept in step via a `storage`
+  // event for cross-tab sync. Sync-driven selects never re-persist/re-broadcast,
+  // so there's no feedback loop.
   if (name === 'tabs') {
-    return `function enhance(root) {
+    return `var STORE_PREFIX = 'cjt-tab-group:';
+var groupRoots = [];
+
+function readGroup(group) {
+  try { return window.localStorage.getItem(STORE_PREFIX + group); } catch (_) { return null; }
+}
+function writeGroup(group, value) {
+  try { window.localStorage.setItem(STORE_PREFIX + group, value); } catch (_) {}
+}
+function syncGroup(group, value) {
+  groupRoots.forEach(function (r) { if (r.group === group) r.apply(value); });
+}
+function choose(group, value) {
+  if (!group || value == null) return;
+  writeGroup(group, value);
+  syncGroup(group, value);
+}
+
+function enhance(root) {
   const tabs = Array.prototype.slice.call(root.querySelectorAll('[role="tab"]'));
   const panels = Array.prototype.slice.call(root.querySelectorAll('[role="tabpanel"]'));
   if (tabs.length === 0) return;
+  const group = root.getAttribute('data-tabs-group') || null;
 
   function select(idx, focus) {
     const clamped = (idx + tabs.length) % tabs.length;
@@ -182,24 +211,55 @@ if (document.readyState === 'loading') {
       panel.hidden = i !== clamped;
     });
     if (focus && tabs[clamped]) tabs[clamped].focus();
+    return clamped;
+  }
+
+  // Switch to the tab carrying \`value\` WITHOUT persisting/broadcasting (this is
+  // what a sync calls). Returns false (a no-op) when no tab matches.
+  function apply(value) {
+    for (var i = 0; i < tabs.length; i++) {
+      if (tabs[i].getAttribute('data-tabs-value') === value) { select(i, false); return true; }
+    }
+    return false;
+  }
+
+  function pick(idx, focus) {
+    const clamped = select(idx, focus);
+    if (group) choose(group, tabs[clamped].getAttribute('data-tabs-value'));
   }
 
   tabs.forEach(function (tab, i) {
-    tab.addEventListener('click', function () { select(i, false); });
+    tab.addEventListener('click', function () { pick(i, false); });
     tab.addEventListener('keydown', function (e) {
       switch (e.key) {
-        case 'ArrowRight': e.preventDefault(); select(i + 1, true); break;
-        case 'ArrowLeft': e.preventDefault(); select(i - 1, true); break;
-        case 'Home': e.preventDefault(); select(0, true); break;
-        case 'End': e.preventDefault(); select(tabs.length - 1, true); break;
+        case 'ArrowRight': e.preventDefault(); pick(i + 1, true); break;
+        case 'ArrowLeft': e.preventDefault(); pick(i - 1, true); break;
+        case 'Home': e.preventDefault(); pick(0, true); break;
+        case 'End': e.preventDefault(); pick(tabs.length - 1, true); break;
       }
     });
   });
+
+  if (group) groupRoots.push({ group: group, apply: apply });
 }
 
 function enhanceAll() {
   document.querySelectorAll('[data-island="tabs"]').forEach(enhance);
+  // Restore each grouped block to its persisted choice (first tab stays if none).
+  const seen = {};
+  groupRoots.forEach(function (r) {
+    if (seen[r.group]) return;
+    seen[r.group] = true;
+    const stored = readGroup(r.group);
+    if (stored != null) syncGroup(r.group, stored);
+  });
 }
+
+// Cross-tab: another tab changing the choice updates this one too.
+window.addEventListener('storage', function (e) {
+  if (!e.key || e.key.indexOf(STORE_PREFIX) !== 0 || e.newValue == null) return;
+  syncGroup(e.key.slice(STORE_PREFIX.length), e.newValue);
+});
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', enhanceAll, { once: true });
