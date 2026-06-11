@@ -6,7 +6,7 @@
  */
 
 import { useContext } from 'preact/hooks';
-import { CircleAlert, Info, TriangleAlert } from 'lucide-preact';
+import { CircleAlert, Info, Lightbulb, TriangleAlert } from 'lucide-preact';
 import { withBase } from '@clean-jsdoc-theme/utils';
 import type { BaseProps, HeadingProps } from './mdx-utils';
 import { HeadingAnchor, HeaderRow, useHeaderSlot, BasePathContext } from './mdx-utils';
@@ -279,19 +279,24 @@ export function MdxLi({ children, ...rest }: BaseProps) {
 }
 
 /**
- * Callout variants. Standard info/warning/error palette built from Tailwind's
- * default colors: a `type`-less blockquote stays a plain muted quote; a typed
- * one (emitted by setu as `<blockquote type="…">`, e.g. `@deprecated`) renders
- * as a callout with a full border in the dark shade, a light tinted background,
- * matching text color, and a leading icon (lucide icons inherit `currentColor`,
- * so they pick up the same color as the text and border).
+ * Callout variants. Standard info/tip/warning/error palette built from
+ * Tailwind's default colors: a `type`-less blockquote stays a plain muted quote;
+ * a typed one (emitted by setu as `<blockquote type="…">`, e.g. `@deprecated`)
+ * renders as a callout with a full border in the dark shade, a light tinted
+ * background, matching text color, and a leading icon (lucide icons inherit
+ * `currentColor`, so they pick up the same color as the text and border). `tip`
+ * uses the conventional success green.
  */
-type CalloutType = 'info' | 'warning' | 'error';
+type CalloutType = 'info' | 'tip' | 'warning' | 'error';
 
 const CALLOUTS: Record<CalloutType, { Icon: typeof Info; cls: string }> = {
   info: {
     Icon: Info,
     cls: 'border-blue-700 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-950/40 dark:text-blue-300',
+  },
+  tip: {
+    Icon: Lightbulb,
+    cls: 'border-green-700 bg-green-50 text-green-700 dark:border-green-400 dark:bg-green-950/40 dark:text-green-300',
   },
   warning: {
     Icon: TriangleAlert,

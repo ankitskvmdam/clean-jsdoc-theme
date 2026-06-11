@@ -1,4 +1,4 @@
-import type { PhrasingContent, Root, RootContent } from 'mdast';
+import type { Blockquote, PhrasingContent, Root, RootContent } from 'mdast';
 import { fromHtml } from 'hast-util-from-html';
 import { toHtml } from 'hast-util-to-html';
 import { toMdast } from 'hast-util-to-mdast';
@@ -6,6 +6,59 @@ import { fromMarkdown } from 'mdast-util-from-markdown';
 import { gfmFromMarkdown } from 'mdast-util-gfm';
 import { toHast } from 'mdast-util-to-hast';
 import { gfm } from 'micromark-extension-gfm';
+import { callout } from './builders';
+
+/**
+ * GitHub-style alert keyword → rang callout variant. A prose blockquote whose
+ * first line is one of these markers (`> [!TIP]`, `> [!WARNING]`, …) becomes a
+ * typed callout instead of a plain quote. The keywords fold onto rang's four
+ * variants (`info` | `tip` | `warning` | `error`): `NOTE`/`IMPORTANT` read as
+ * info, `TIP`/`SUCCESS` as the green tip, and `CAUTION` as warning.
+ */
+const CALLOUT_ALERTS: Record<string, 'info' | 'tip' | 'warning' | 'error'> = {
+  info: 'info',
+  note: 'info',
+  important: 'info',
+  tip: 'tip',
+  success: 'tip',
+  warning: 'warning',
+  caution: 'warning',
+  error: 'error',
+  danger: 'error',
+};
+
+/** Leading `[!type]` marker at the start of a blockquote's first text node. */
+const ALERT_MARKER = /^\s*\[!(\w+)\]\s*/;
+
+/**
+ * Promote a blockquote that opens with a GitHub-style alert marker
+ * (`> [!INFO]`, `> [!WARNING]`, …) to a rang callout, stripping the marker from
+ * the body. An absent or unknown marker leaves the blockquote untouched (a plain
+ * quote). The callout is the same capitalized `<Callout type="…">` MDX JSX node
+ * setu emits for `@deprecated`, so it round-trips through serialization to dwar.
+ */
+function blockquoteToCallout(node: Blockquote): RootContent {
+  const para = node.children[0];
+  if (!para || para.type !== 'paragraph') return node;
+  const lead = para.children[0];
+  if (!lead || lead.type !== 'text') return node;
+  const match = ALERT_MARKER.exec(lead.value);
+  if (!match) return node;
+  const variant = CALLOUT_ALERTS[match[1].toLowerCase()];
+  if (!variant) return node;
+
+  // Strip the marker from the body. If that empties the lead text node, drop it
+  // (plus a soft break the conversion may have left right after the marker), and
+  // drop the now-empty first paragraph entirely.
+  lead.value = lead.value.slice(match[0].length);
+  if (lead.value.length === 0) {
+    para.children.shift();
+    if (para.children[0]?.type === 'break') para.children.shift();
+  }
+  if (para.children.length === 0) node.children.shift();
+
+  return callout(variant, node.children);
+}
 
 /**
  * Convert an HTML fragment (as emitted by JSDoc into `description`, `classdesc`,
@@ -28,7 +81,12 @@ export function htmlToMdastBlocks(html: string | null | undefined): RootContent[
   if (trimmed.length === 0) return [];
   const hast = fromHtml(trimmed, { fragment: true });
   const mdast = toMdast(hast) as Root;
-  return mdast.children;
+  // Promote GitHub-style alert blockquotes (`> [!INFO]`) to typed callouts.
+  // Done here, after the HTML normalization, so it applies uniformly to every
+  // prose source (README, tutorials, docs) and to JSDoc doclet descriptions.
+  return mdast.children.map((node) =>
+    node.type === 'blockquote' ? blockquoteToCallout(node) : node
+  );
 }
 
 /**

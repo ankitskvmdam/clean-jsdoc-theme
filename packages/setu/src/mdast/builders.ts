@@ -97,7 +97,7 @@ export const root = (...children: RootContent[]): Root => ({ type: 'root', child
  * the rendered element is still a `<blockquote>`.
  */
 export const callout = (
-  variant: 'info' | 'warning' | 'error',
+  variant: 'info' | 'tip' | 'warning' | 'error',
   children: (BlockContent | DefinitionContent)[]
 ): MdxJsxFlowElement => ({
   type: 'mdxJsxFlowElement',
