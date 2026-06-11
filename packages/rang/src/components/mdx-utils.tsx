@@ -42,6 +42,15 @@ export const HeaderSlotContext = createContext<HeaderSlot | null>(null);
  */
 export const BasePathContext = createContext<string>('/');
 
+/**
+ * Map from a doc image `src` to inline SVG markup. dwar fills it (per render)
+ * from the bridge's read of the referenced `.svg` doc assets; `MdxImg` inlines
+ * any `src` present here instead of `<img>`-ing it, so the SVG's
+ * `[data-theme="dark"]` styles follow the theme toggle (an `<img>`-loaded SVG
+ * only sees the OS `prefers-color-scheme`).
+ */
+export const InlineSvgContext = createContext<Record<string, string>>({});
+
 /** Claim the header slot for the first heading rendered; returns its node once, else null. */
 export function useHeaderSlot(): ComponentChildren | null {
   const slot = useContext(HeaderSlotContext);

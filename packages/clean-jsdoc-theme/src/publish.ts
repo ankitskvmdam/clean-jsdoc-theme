@@ -16,6 +16,7 @@ import type {
   SiteLogo,
   SiteManifest,
   SiteName,
+  ThemeColors,
   ThemeConfig,
 } from '@clean-jsdoc-theme/dwar';
 import type { DocInput, MenuItem, SourceFileInput, TutorialInput } from '@clean-jsdoc-theme/setu';
@@ -205,6 +206,19 @@ interface JSDocOpts {
    */
   fonts?: { heading?: string; body?: string; mono?: string };
   /**
+   * Light-mode color overrides from `jsdoc.json` (`"opts": { "colors": { ... } }`).
+   * Any subset of `bg`, `bgMuted`, `fg`, `fgMuted`, `accent`, `accentFg`, `border`;
+   * each value is any CSS color string (the theme ships oklch). Omitted keys keep
+   * the default palette.
+   */
+  colors?: unknown;
+  /**
+   * Dark-mode color overrides (`"opts": { "darkColors": { ... } }`). Same keys as
+   * {@link JSDocOpts.colors}; emitted under `[data-theme="dark"]`. Omitted keys
+   * keep the default dark palette.
+   */
+  darkColors?: unknown;
+  /**
    * Project README as HTML. JSDoc renders the Markdown README (`-R`/`opts.readme`
    * or one found in the source paths) and replaces this with the resulting HTML
    * before calling `publish`. Rendered as the site home page.
@@ -388,6 +402,12 @@ function resolveTheme(
   const copyPage = normalizeCopyPage(opts.copyPage);
   const pageNav = normalizePageNav(opts.pageNav);
 
+  // Color overrides merge per-key over the default palettes, so supplying only
+  // `colors.bg` keeps every other default color. `darkColors` layers over the
+  // default dark palette the same way.
+  const colors = normalizeColors(opts.colors);
+  const darkColors = normalizeColors(opts.darkColors);
+
   return {
     ...defaultTheme,
     basePath,
@@ -396,6 +416,8 @@ function resolveTheme(
     ...(pageNav ? { pageNav } : {}),
     tokens: {
       ...defaultTheme.tokens,
+      colors: { ...defaultTheme.tokens.colors, ...(colors ?? {}) },
+      darkColors: { ...defaultTheme.tokens.darkColors, ...(darkColors ?? {}) },
       fonts: {
         heading: fonts.heading ?? defaultTheme.tokens.fonts.heading,
         body: fonts.body ?? defaultTheme.tokens.fonts.body,
@@ -510,7 +532,8 @@ function isServableUrl(value: string): boolean {
 /**
  * Resolve `opts.siteName` into a render-ready value plus any image files to
  * write. A string passes through (trimmed). For a logo set, each local image
- * path is read and emitted as an output asset (`_assets/logo-<key><ext>`) with
+ * path is read and emitted as a content-hashed output asset
+ * (`_assets/logo-<key>.<hash><ext>`, cache-busted like the custom assets) with
  * its value rewritten to the served path; `http(s)://` / `data:` values pass
  * through untouched, and the `alt` label is preserved. A path that can't be
  * read is left verbatim with a warning rather than aborting the build.
@@ -542,7 +565,7 @@ async function prepareSiteName(
     try {
       const abs = resolvePath(v);
       const buf = await readFile(abs);
-      const served = `_assets/logo-${key}${extname(abs)}`;
+      const served = `_assets/logo-${key}.${contentHash(buf)}${extname(abs)}`;
       files.push({ path: served, contents: buf });
       // OutputFile `path` stays relative; only the served href gets the prefix.
       out[key] = hrefForServed(served);
@@ -821,6 +844,27 @@ export function normalizePageNav(raw: unknown): PageNavConfig | undefined {
   return typeof enabled === 'boolean' ? { enabled } : undefined;
 }
 
+/** The palette keys a user may override under `opts.colors` / `opts.darkColors`. */
+const COLOR_KEYS = ['bg', 'bgMuted', 'fg', 'fgMuted', 'accent', 'accentFg', 'border'] as const;
+
+/**
+ * Validate a user `colors`/`darkColors` object from `jsdoc.json` into a clean
+ * `Partial<ThemeColors>`: keeps only the known palette keys whose value is a
+ * non-empty string, dropping everything else. Returns `undefined` when the input
+ * is not an object or yields no usable keys, so callers can fall back cleanly.
+ * Values are passed through verbatim (any CSS color is valid).
+ */
+export function normalizeColors(raw: unknown): Partial<ThemeColors> | undefined {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const src = raw as Record<string, unknown>;
+  const out: Partial<ThemeColors> = {};
+  for (const key of COLOR_KEYS) {
+    const v = src[key];
+    if (typeof v === 'string' && v.trim().length > 0) out[key] = v.trim();
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
 /** Extensions we treat as "source" worth emitting a viewer page for. */
 const SOURCE_EXTENSIONS = new Set(['.js', '.mjs', '.cjs', '.jsx', '.ts', '.mts', '.cts', '.tsx']);
 
@@ -998,61 +1042,91 @@ export async function collectDocs(dir: string): Promise<DocInput[]> {
   return docs;
 }
 
+/** Markdown image: captures `![alt](`, the src, an optional `"title"`, and `)`. */
+const DOC_IMAGE_RE = /(!\[[^\]]*\]\()([^)\s]+)((?:\s+"[^"]*")?\))/g;
+
 /**
- * Recursively walk the docs directory and copy every NON-document file (images
- * and other static assets — anything that isn't a {@link DOC_EXTENSIONS} page)
- * into an {@link OutputFile} served at its path relative to `dir`. So a
- * `<docs>/assets/diagram.svg` is written to `assets/diagram.svg` in the output,
- * and a doc references it as `/assets/diagram.svg` (the renderer base-path-
- * prefixes root-relative image srcs). Mirrors {@link collectDocs}'s resilient
- * walk (dotfiles / `node_modules`-like dirs skipped, unreadable files warned +
- * skipped, missing dir → `[]`), sorted for stable output. Read as raw bytes so
- * binary assets (PNG, etc.) survive intact.
+ * Resolve the local images a doc references and route them through the same
+ * content-hashed `_assets/` pipeline the logo and custom files use. For each
+ * `![alt](src)` whose `src` points to a file on disk, the file is copied to
+ * `_assets/<base>.<hash><ext>` (cache-busted, deduped across docs) and the `src`
+ * is rewritten to the root-relative `/_assets/<base>.<hash><ext>` (rang's
+ * `MdxImg` adds the base path, like it does for links). A `src` is resolved
+ * relative to the project root when it starts with `/`, else relative to the
+ * doc's own directory; absolute (`http(s):`, `data:`), `#`-anchor, and
+ * unreadable srcs are left untouched (the last with a warning). Returns the docs
+ * with rewritten content plus the asset files to write. The bridge is the I/O
+ * layer here, so setu/dwar only ever see the final `_assets/` paths.
  */
-export async function collectDocAssets(dir: string): Promise<OutputFile[]> {
-  if (typeof dir !== 'string' || dir.trim().length === 0) return [];
-  const root = resolvePath(dir);
-  const assets: OutputFile[] = [];
+export async function resolveDocImages(
+  docs: DocInput[],
+  docsDir: string
+): Promise<{ docs: DocInput[]; files: OutputFile[]; inlineSvgs: Record<string, string> }> {
+  if (docs.length === 0) return { docs, files: [], inlineSvgs: {} };
+  const root = resolvePath(docsDir);
+  const files: OutputFile[] = [];
+  const seenServed = new Set<string>();
+  // Inline-SVG markup keyed by the rewritten src, so the renderer can inline the
+  // SVG (→ its `[data-theme]` styles follow the toggle) rather than `<img>` it.
+  const inlineSvgs: Record<string, string> = {};
+  // abs path → rewritten src (root-relative `/_assets/…`), or null if unreadable.
+  const cache = new Map<string, string | null>();
 
-  const walk = async (absDir: string, relPrefix: string): Promise<void> => {
-    let entries: import('node:fs').Dirent[];
+  const resolveOne = async (rawSrc: string, docDir: string): Promise<string | null> => {
+    const src = rawSrc.trim();
+    if (!src || isServableUrl(src) || src.startsWith('#') || src.startsWith('data:')) return null;
+    const abs = src.startsWith('/') ? resolvePath(src.slice(1)) : resolvePath(docDir, src);
+    if (cache.has(abs)) return cache.get(abs) ?? null;
+    let bytes: Buffer;
     try {
-      entries = await readdir(absDir, { withFileTypes: true });
+      bytes = await readFile(abs);
     } catch {
-      return;
+      console.warn(
+        `clean-jsdoc-theme: could not read doc image '${src}' (resolved '${abs}'); leaving it as-is.`
+      );
+      cache.set(abs, null);
+      return null;
     }
-
-    for (const entry of entries) {
-      const name = entry.name;
-      if (name.startsWith('.')) continue;
-      if (entry.isDirectory()) {
-        if (DOC_DIR_SKIP.has(name)) continue;
-        await walk(joinPath(absDir, name), relPrefix ? `${relPrefix}/${name}` : name);
-        continue;
-      }
-      if (!entry.isFile()) continue;
-
-      // Document pages (md/html) become rendered pages via collectDocs; every
-      // other file is a static asset copied verbatim alongside them.
-      const ext = extname(name).toLowerCase();
-      if (DOC_EXTENSIONS.has(ext)) continue;
-
-      const abs = joinPath(absDir, name);
-      const relPath = relPrefix ? `${relPrefix}/${name}` : name;
-      try {
-        const contents = await readFile(abs);
-        assets.push({ path: relPath, contents });
-      } catch (err) {
-        console.warn(
-          `clean-jsdoc-theme: could not read doc asset '${abs}' — ${(err as Error).message}; skipping.`
-        );
-      }
+    const ext = extname(abs);
+    const served = `_assets/${basename(abs, ext) || 'asset'}.${contentHash(bytes)}${ext}`;
+    if (!seenServed.has(served)) {
+      seenServed.add(served);
+      files.push({ path: served, contents: bytes });
     }
+    const href = '/' + served;
+    // SVGs are ALSO inlined: the renderer drops the markup into the page so its
+    // `[data-theme="dark"]` styles track the theme toggle (an `<img>`-loaded SVG
+    // only sees the OS color scheme). A responsive sizing style is injected onto
+    // the `<svg>` root; the `_assets/` copy still backs the companion `.md` link.
+    if (ext.toLowerCase() === '.svg') {
+      inlineSvgs[href] = bytes
+        .toString('utf8')
+        .replace(/<svg\b/, '<svg style="max-width:100%;height:auto;display:block"');
+    }
+    cache.set(abs, href);
+    return href;
   };
 
-  await walk(root, '');
-  assets.sort((a, b) => a.path.localeCompare(b.path));
-  return assets;
+  const out: DocInput[] = [];
+  for (const doc of docs) {
+    const docDir = dirname(resolvePath(root, doc.path));
+    const map = new Map<string, string>();
+    for (const m of doc.content.matchAll(DOC_IMAGE_RE)) {
+      const src = m[2];
+      if (map.has(src)) continue;
+      const href = await resolveOne(src, docDir);
+      if (href) map.set(src, href);
+    }
+    if (map.size === 0) {
+      out.push(doc);
+      continue;
+    }
+    const content = doc.content.replace(DOC_IMAGE_RE, (full, pre, src, post) =>
+      map.has(src) ? `${pre}${map.get(src)}${post}` : full
+    );
+    out.push({ ...doc, content });
+  }
+  return { docs: out, files, inlineSvgs };
 }
 
 /**
@@ -1129,11 +1203,6 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
     ? collectSourceFiles(data)
     : Promise.resolve([]);
   const docsPromise: Promise<DocInput[]> = docsDir ? collectDocs(docsDir) : Promise.resolve([]);
-  // Static assets co-located in the docs tree (images, etc.) copied verbatim to
-  // the output, so a guide can reference `/assets/diagram.svg` and it just works.
-  const docAssetsPromise: Promise<OutputFile[]> = docsDir
-    ? collectDocAssets(docsDir)
-    : Promise.resolve([]);
 
   // Stage progress (ora spinners) is on by default; `opts.progress: false`
   // silences it. ora loads first so the narrator can wrap the renderer load
@@ -1217,11 +1286,26 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   // reads were started in the kickoff above (the bridge is the sanctioned I/O
   // layer; setu stays disk-free), so this stage just awaits the now-overlapped
   // work — narrated as a single step.
-  const { sources, docs, docAssets } = await progress.stage('Reading sources & docs', async () => ({
-    sources: await sourcesPromise,
-    docs: await docsPromise,
-    docAssets: await docAssetsPromise,
-  }));
+  const { sources, docs, docImageFiles, inlineSvgs } = await progress.stage(
+    'Reading sources & docs',
+    async () => {
+      const [srcs, rawDocs] = await Promise.all([sourcesPromise, docsPromise]);
+      // Route the local images those docs reference through the content-hashed
+      // `_assets/` pipeline (copy + rewrite the src), so they cache-bust like the
+      // logo and custom assets. SVGs are additionally collected as inline markup
+      // so render() can drop them into the page (theme-toggle-aware) — see
+      // RenderOptions.inlineSvgs.
+      const resolved = docsDir
+        ? await resolveDocImages(rawDocs, docsDir)
+        : { docs: rawDocs, files: [], inlineSvgs: {} };
+      return {
+        sources: srcs,
+        docs: resolved.docs,
+        docImageFiles: resolved.files,
+        inlineSvgs: resolved.inlineSvgs,
+      };
+    }
+  );
 
   const docGroups = normalizeDocGroups(opts.docGroups);
   const defaultDocGroup =
@@ -1283,10 +1367,11 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
       theme: { ...resolveTheme(opts, siteName, fonts, basePath), ...customAssets.theme },
       destination: absoluteDestination,
       islandCacheDir,
+      inlineSvgs,
     })
   );
 
-  const outputFiles = [...result.files, ...logoFiles, ...customAssets.files, ...docAssets];
+  const outputFiles = [...result.files, ...logoFiles, ...customAssets.files, ...docImageFiles];
   await progress.stage('Writing files', () =>
     writeOutputFiles(absoluteDestination, outputFiles)
   );

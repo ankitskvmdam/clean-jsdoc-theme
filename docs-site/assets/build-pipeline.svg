@@ -1,4 +1,4 @@
-<svg viewBox="0 0 890 250" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+<svg class="cjt-build-pipeline" viewBox="0 0 890 250" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
   <defs>
     <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="#5a5a5a"/>
@@ -6,30 +6,35 @@
     <marker id="aro" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="#dca06f"/>
     </marker>
+    <!--
+      This SVG is INLINED into the page (so it can track the theme toggle), which
+      means its <style> applies to the whole document — every rule is therefore
+      scoped under `.cjt-build-pipeline` (the root) to avoid leaking. Dark styles
+      key off `[data-theme="dark"]` (set on <html> by the toggle), NOT
+      `prefers-color-scheme`, so they follow the in-page theme rather than the OS.
+    -->
     <style>
-      .box   { font-size: 14px; font-weight: 500; }
-      .mono  { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 13.5px; }
-      .sub   { font-size: 10.5px; }
-      @media (prefers-color-scheme: dark) {
-        /* node (start/end) boxes + their text */
-        rect[fill="#ececec"] { fill: #2a2b30; }
-        text[fill="#4a4a4a"] { fill: #d6d6da; }
-        /* core (green) boxes + text */
-        rect[fill="#cbe0cc"] { fill: #243528; }
-        text[fill="#334335"] { fill: #bcd9c1; }
-        text[fill="#5d6e5f"] { fill: #92b397; }
-        /* rang (peach) box + text */
-        rect[fill="#fbeadf"] { fill: #352a20; }
-        text[fill="#6e5747"] { fill: #e3c2a2; }
-        text[fill="#8a7565"] { fill: #c5a587; }
-        /* arrows + arrowhead marker, dashed container, faint labels */
-        [stroke="#5a5a5a"] { stroke: #8c8c92; }
-        [fill="#5a5a5a"]   { fill: #8c8c92; }
-        rect[stroke="#cccccc"] { stroke: #45474c; }
-        text[fill="#a6a6a6"] { fill: #8b8b91; }
-        text[fill="#6a6a6a"] { fill: #b2b2b8; }
-        /* the peach accent (#dca06f) reads fine on dark — left as-is */
-      }
+      .cjt-build-pipeline .box  { font-size: 14px; font-weight: 500; }
+      .cjt-build-pipeline .mono { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 13.5px; }
+      .cjt-build-pipeline .sub  { font-size: 10.5px; }
+      /* node (start/end) boxes + their text */
+      [data-theme="dark"] .cjt-build-pipeline rect[fill="#ececec"] { fill: #2a2b30; }
+      [data-theme="dark"] .cjt-build-pipeline text[fill="#4a4a4a"] { fill: #d6d6da; }
+      /* core (green) boxes + text */
+      [data-theme="dark"] .cjt-build-pipeline rect[fill="#cbe0cc"] { fill: #243528; }
+      [data-theme="dark"] .cjt-build-pipeline text[fill="#334335"] { fill: #bcd9c1; }
+      [data-theme="dark"] .cjt-build-pipeline text[fill="#5d6e5f"] { fill: #92b397; }
+      /* rang (peach) box + text */
+      [data-theme="dark"] .cjt-build-pipeline rect[fill="#fbeadf"] { fill: #352a20; }
+      [data-theme="dark"] .cjt-build-pipeline text[fill="#6e5747"] { fill: #e3c2a2; }
+      [data-theme="dark"] .cjt-build-pipeline text[fill="#8a7565"] { fill: #c5a587; }
+      /* arrows + arrowhead marker, dashed container, faint labels */
+      [data-theme="dark"] .cjt-build-pipeline [stroke="#5a5a5a"] { stroke: #8c8c92; }
+      [data-theme="dark"] .cjt-build-pipeline [fill="#5a5a5a"]   { fill: #8c8c92; }
+      [data-theme="dark"] .cjt-build-pipeline rect[stroke="#cccccc"] { stroke: #45474c; }
+      [data-theme="dark"] .cjt-build-pipeline text[fill="#a6a6a6"] { fill: #8b8b91; }
+      [data-theme="dark"] .cjt-build-pipeline text[fill="#6a6a6a"] { fill: #b2b2b8; }
+      /* the peach accent (#dca06f) reads fine on dark — left as-is */
     </style>
   </defs>
 

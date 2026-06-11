@@ -64,4 +64,13 @@ export interface RenderOptions {
    * `<project>/node_modules/.cache/clean-jsdoc-theme`.
    */
   islandCacheDir?: string;
+  /**
+   * Map from a doc image `src` (the root-relative `/_assets/<name>.<hash>.svg`
+   * the bridge rewrote it to) to that SVG's raw markup. When an `<img>`'s `src`
+   * is in this map, rang inlines the SVG into the page instead of `<img>`-ing it
+   * — so its `[data-theme="dark"]` styles follow the theme toggle (an
+   * `<img>`-loaded SVG only sees the OS `prefers-color-scheme`). The bridge reads
+   * the SVGs (the I/O layer); render() just looks them up, staying pure.
+   */
+  inlineSvgs?: Record<string, string>;
 }

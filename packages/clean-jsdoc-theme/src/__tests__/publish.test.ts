@@ -1,12 +1,13 @@
 import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterAll, beforeAll, describe, it, expect } from 'vitest';
+import { afterAll, beforeAll, describe, it, expect, vi } from 'vitest';
 import {
   collectDocs,
-  collectDocAssets,
+  resolveDocImages,
   computeRelPaths,
   hasMarkdownPlugin,
+  normalizeColors,
   normalizeDocGroups,
   normalizeMenu,
   normalizeSectionOrder,
@@ -158,6 +159,27 @@ describe('normalizeDocGroups', () => {
   });
 });
 
+describe('normalizeColors', () => {
+  it('keeps known palette keys with non-empty string values, trimming them', () => {
+    expect(normalizeColors({ bg: ' oklch(0.6 0.25 0) ', accent: '#fff' })).toEqual({
+      bg: 'oklch(0.6 0.25 0)',
+      accent: '#fff',
+    });
+  });
+
+  it('drops unknown keys and non-string / empty values', () => {
+    expect(normalizeColors({ bg: 'red', nope: 'x', fg: 42, border: '  ' })).toEqual({ bg: 'red' });
+  });
+
+  it('returns undefined for non-objects, arrays, and inputs with no usable keys', () => {
+    expect(normalizeColors(undefined)).toBeUndefined();
+    expect(normalizeColors('red')).toBeUndefined();
+    expect(normalizeColors(['red'])).toBeUndefined();
+    expect(normalizeColors({ nope: 'x' })).toBeUndefined();
+    expect(normalizeColors({})).toBeUndefined();
+  });
+});
+
 describe('collectDocs', () => {
   let dir: string;
 
@@ -213,36 +235,54 @@ describe('collectDocs', () => {
   });
 });
 
-describe('collectDocAssets', () => {
+describe('resolveDocImages', () => {
   let dir: string;
 
   beforeAll(async () => {
-    dir = await mkdtemp(join(tmpdir(), 'cjt-doc-assets-'));
-    await writeFile(join(dir, 'index.md'), '# Home\n', 'utf8'); // a page, not an asset
-    await writeFile(join(dir, 'logo.png'), 'PNGDATA', 'utf8');
+    dir = await mkdtemp(join(tmpdir(), 'cjt-doc-images-'));
     await mkdir(join(dir, 'assets'), { recursive: true });
     await writeFile(join(dir, 'assets', 'diagram.svg'), '<svg/>', 'utf8');
-    // Noise that must be skipped.
-    await writeFile(join(dir, '.hidden.svg'), 'x', 'utf8');
-    await mkdir(join(dir, 'node_modules'), { recursive: true });
-    await writeFile(join(dir, 'node_modules', 'x.svg'), 'x', 'utf8');
   });
 
   afterAll(async () => {
     await rm(dir, { recursive: true, force: true });
   });
 
-  it('copies non-doc files at their relative path, skipping pages/dotfiles/node_modules', async () => {
-    const assets = await collectDocAssets(dir);
-    // md/html pages are NOT assets (collectDocs handles those); everything else
-    // is copied, sorted by path, dotfiles + node_modules skipped.
-    expect(assets.map((a) => a.path)).toEqual(['assets/diagram.svg', 'logo.png']);
-    const svg = assets.find((a) => a.path === 'assets/diagram.svg')!;
-    expect(svg.contents.toString()).toBe('<svg/>');
+  it('copies a referenced image to a hashed _assets path and rewrites the src', async () => {
+    const docs = [
+      { path: 'overview', type: 'markdown' as const, content: '# Overview\n\n![Diagram](./assets/diagram.svg)\n' },
+    ];
+    const { docs: out, files, inlineSvgs } = await resolveDocImages(docs, dir);
+    expect(files).toHaveLength(1);
+    expect(files[0].path).toMatch(/^_assets\/diagram\.[0-9a-f]{8}\.svg$/);
+    expect(files[0].contents.toString()).toBe('<svg/>');
+    // The src is rewritten to the root-relative hashed path; the original is gone.
+    expect(out[0].content).toMatch(/!\[Diagram\]\(\/_assets\/diagram\.[0-9a-f]{8}\.svg\)/);
+    expect(out[0].content).not.toContain('./assets/diagram.svg');
+    // The SVG is also collected for inlining, keyed by its rewritten src, with a
+    // responsive sizing style injected onto the root element.
+    const served = '/' + files[0].path;
+    expect(inlineSvgs[served]).toBe('<svg style="max-width:100%;height:auto;display:block"/>');
   });
 
-  it('returns [] for a missing/empty directory (never throws)', async () => {
-    expect(await collectDocAssets(join(dir, 'does-not-exist'))).toEqual([]);
-    expect(await collectDocAssets('')).toEqual([]);
+  it('leaves external, data, and unreadable srcs untouched (no copy)', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const docs = [
+      {
+        path: 'x',
+        type: 'markdown' as const,
+        content: '![a](https://x.com/i.png)\n![b](data:image/svg+xml,abc)\n![c](./missing.png)\n',
+      },
+    ];
+    const { docs: out, files } = await resolveDocImages(docs, dir);
+    expect(files).toHaveLength(0);
+    expect(out[0].content).toContain('https://x.com/i.png');
+    expect(out[0].content).toContain('data:image/svg+xml,abc');
+    expect(out[0].content).toContain('./missing.png');
+    vi.restoreAllMocks();
+  });
+
+  it('returns docs unchanged when there are none', async () => {
+    expect(await resolveDocImages([], dir)).toEqual({ docs: [], files: [], inlineSvgs: {} });
   });
 });

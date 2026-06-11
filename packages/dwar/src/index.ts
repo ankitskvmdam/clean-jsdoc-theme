@@ -21,7 +21,7 @@ import {
 } from '@clean-jsdoc-theme/rang';
 import type { PageNavLink } from '@clean-jsdoc-theme/rang';
 import { siteNameText, withBase } from '@clean-jsdoc-theme/utils';
-import { BasePathContext } from '@clean-jsdoc-theme/rang';
+import { BasePathContext, InlineSvgContext } from '@clean-jsdoc-theme/rang';
 import type {
   OutputFile,
   Page,
@@ -164,7 +164,8 @@ async function renderPage(
   shiki: ShikiThemes,
   langs: readonly string[],
   custom: { cssLinks?: string[]; css?: string; jsLinks?: string[]; js?: string },
-  neighbors: PageNeighbors | undefined
+  neighbors: PageNeighbors | undefined,
+  inlineSvgs: Record<string, string>
 ): Promise<{ file: OutputFile; search: SearchEntry; islands: IslandRecord[] }> {
   const islands: IslandRecord[] = [];
 
@@ -235,18 +236,22 @@ async function renderPage(
     BasePathContext.Provider,
     { value: basePath },
     h(
-      SsrLayout,
-      {
-        nav: manifest.nav,
-        currentSlug: page.slug,
-        headings: page.headings ?? [],
-        pkg: manifest.pkg,
-        siteName,
-        basePath,
-        searchIndexUrl,
-        islands,
-      },
-      pageBody
+      InlineSvgContext.Provider,
+      { value: inlineSvgs },
+      h(
+        SsrLayout,
+        {
+          nav: manifest.nav,
+          currentSlug: page.slug,
+          headings: page.headings ?? [],
+          pkg: manifest.pkg,
+          siteName,
+          basePath,
+          searchIndexUrl,
+          islands,
+        },
+        pageBody
+      )
     )
   );
 
@@ -317,6 +322,9 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
   const theme = opts.theme;
   const basePath = theme.basePath ?? '/';
   const siteName = theme.tokens.siteName;
+  // Inline-SVG markup map (by doc image src), provided by the bridge; empty when
+  // unset. `MdxImg` inlines any src present here instead of `<img>`-ing it.
+  const inlineSvgs = opts.inlineSvgs ?? {};
   const components = mergeMdxComponents(
     theme.components?.mdxComponents as Record<string, unknown> | undefined
   );
@@ -427,7 +435,8 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
         theme.tokens.shiki,
         usedLangs,
         custom,
-        neighborsBySlug.get(page.slug)
+        neighborsBySlug.get(page.slug),
+        inlineSvgs
       );
       const hidden = page.frontmatter.hidden;
       return {
@@ -517,6 +526,7 @@ export type {
   SearchEntry,
   ThemeConfig,
   ThemeTokens,
+  ThemeColors,
   CopyPageConfig,
   CopyPageAction,
   PageNavConfig,

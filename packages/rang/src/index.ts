@@ -95,6 +95,6 @@ export { Tabs, Tab } from './components/Tabs';
 export type { TabProps } from './components/Tabs';
 
 export { defaultMdxComponents } from './mdx-components';
-export { HeaderSlotContext, BasePathContext } from './components/mdx-utils';
+export { HeaderSlotContext, BasePathContext, InlineSvgContext } from './components/mdx-utils';
 export type { HeaderSlot } from './components/mdx-utils';
 export { ISLAND_REGISTRY } from './islands';

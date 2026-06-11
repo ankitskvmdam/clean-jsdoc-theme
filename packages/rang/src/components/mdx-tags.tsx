@@ -9,7 +9,7 @@ import { useContext } from 'preact/hooks';
 import { CircleAlert, Info, Lightbulb, TriangleAlert } from 'lucide-preact';
 import { withBase } from '@clean-jsdoc-theme/utils';
 import type { BaseProps, HeadingProps } from './mdx-utils';
-import { HeadingAnchor, HeaderRow, useHeaderSlot, BasePathContext } from './mdx-utils';
+import { HeadingAnchor, HeaderRow, useHeaderSlot, BasePathContext, InlineSvgContext } from './mdx-utils';
 import { Code } from './CodeBlock';
 
 export function MdxH1({ id, children, ...rest }: HeadingProps) {
@@ -85,6 +85,23 @@ interface ImgProps extends BaseProps {
 // pass through. Capped to the content width so wide diagrams scale down.
 export function MdxImg({ src, alt, ...rest }: ImgProps) {
   const basePath = useContext(BasePathContext);
+  const inlineSvgs = useContext(InlineSvgContext);
+  // If the bridge marked this src as an inline SVG, render the markup directly
+  // into the page (not via <img>) so its `[data-theme="dark"]` styles follow the
+  // theme toggle. The markup is the author's own build-time doc asset, so
+  // `dangerouslySetInnerHTML` is trusted here. The bridge injects a responsive
+  // sizing style onto the <svg> root, so a plain block wrapper is enough.
+  const markup = src ? inlineSvgs[src] : undefined;
+  if (markup) {
+    return (
+      <span
+        role="img"
+        aria-label={alt ?? ''}
+        class="my-4 block"
+        dangerouslySetInnerHTML={{ __html: markup }}
+      />
+    );
+  }
   const isInternal = !!src && src.startsWith('/') && !src.startsWith('//');
   const resolvedSrc = isInternal ? withBase(basePath, src) : src;
   return <img src={resolvedSrc} alt={alt ?? ''} loading="lazy" class="my-4 h-auto max-w-full" {...rest} />;
