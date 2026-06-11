@@ -12,19 +12,19 @@ describe('CmdK', () => {
     vi.restoreAllMocks();
   });
 
-  it('opens on Cmd+K and closes on Escape', async () => {
+  it('opens on Ctrl K and closes on Escape', async () => {
     const { queryByRole, findByRole } = render(<CmdK basePath="/" />);
     await flush();
     expect(queryByRole('dialog')).toBeNull();
 
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }));
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }));
     await findByRole('dialog');
 
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     await waitFor(() => expect(queryByRole('dialog')).toBeNull());
   });
 
-  it('opens on Ctrl+K', async () => {
+  it('opens on Ctrl K', async () => {
     const { findByRole } = render(<CmdK basePath="/" />);
     await flush();
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }));
@@ -35,7 +35,7 @@ describe('CmdK', () => {
   it('prompts to search when no index is available', async () => {
     const { findByText } = render(<CmdK basePath="/" />);
     await flush();
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }));
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }));
     const msg = await findByText(/Type to search/);
     expect(msg).toBeTruthy();
   });
@@ -56,7 +56,7 @@ describe('CmdK', () => {
       <CmdK basePath="/" searchIndexUrl="/_assets/search-index.abc.json" />
     );
     await flush();
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }));
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }));
     await findByRole('dialog');
 
     // The index is fetched from the given URL on first open.
@@ -82,7 +82,7 @@ describe('CmdK', () => {
       <CmdK basePath="/docs" searchIndexUrl="/docs/_assets/search-index.abc.json" />
     );
     await flush();
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }));
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }));
     await findByRole('dialog');
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
 

@@ -51,7 +51,7 @@ The theme emits a page per documented container (class / interface / mixin / mod
 Plus, once per build:
 
 - `_assets/styles.<buildId>.css` — combined theme-variable layer + static utility CSS, content-hashed for caching.
-- `_assets/search-index.<buildId>.json` — the fuzzy search index the command palette (`Ctrl/⌘ K`) fetches on first open.
+- `_assets/search-index.<buildId>.json` — the fuzzy search index the command palette (`Ctrl K`) fetches on first open.
 - `_islands/<name>.js` — one ESM chunk per island (`sidebar`, `mobile-nav`, `toc`, `toc-mobile`, `cmdk`, `code-tabs`, `copy-btn`, `copy-page`, `theme-toggle`, `settings`, `code-viewer`). Each page loads only the chunks whose markers are present.
 - `pagefind/…` — an optional Pagefind full-text index, built against the on-disk HTML.
 

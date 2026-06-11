@@ -94,7 +94,8 @@ export function CmdK({ basePath, searchIndexUrl }: CmdKProps) {
     };
   }, [open, entries, searchIndexUrl]);
 
-  // Global shortcuts: Cmd/Ctrl+K toggles; arrows + Enter drive the result list
+  // Global shortcuts: Ctrl K toggles (metaKey also accepted so it works on
+  // macOS too); arrows + Enter drive the result list
   // while open. (Escape, focus trap, and focus restore are handled by Dialog.)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
