@@ -53,4 +53,15 @@ export interface RenderOptions {
    * entries — dwar never writes files itself.
    */
   destination?: string;
+  /**
+   * Optional directory for an on-disk cache of the bundled island chunks. When
+   * set, dwar caches the esbuild island bundle keyed on a content hash of its
+   * inputs (rang's compiled output + the island entry sources + the preact
+   * version), so a warm rebuild whose inputs are unchanged skips the ~0.4s
+   * esbuild step — the big win for the `jsdoc --watch`/dev loop. This is the
+   * one place render() touches disk and is opt-in: omit it (the default) and
+   * render() stays pure. The bridge (the I/O layer) supplies it, typically
+   * `<project>/node_modules/.cache/clean-jsdoc-theme`.
+   */
+  islandCacheDir?: string;
 }

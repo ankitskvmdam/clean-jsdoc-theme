@@ -13,43 +13,30 @@
 
 import type { IslandName } from '@clean-jsdoc-theme/utils';
 
-const ALL_ISLAND_NAMES: IslandName[] = [
-  'cmdk',
-  'code-tabs',
-  'code-viewer',
-  'copy-btn',
-  'copy-page',
-  'embed',
-  'mobile-nav',
-  'settings',
-  'sidebar',
-  'theme-toggle',
-  'toc',
-  'toc-mobile',
-];
-
 /**
- * Build the inline loader script. The script knows the path to every island
- * chunk so callers can lazily resolve any island found on the page. It only
- * imports chunks whose markers actually exist in the DOM — pages without (say)
- * `code-tabs` don't pay for that chunk.
+ * Build the inline loader script. Given a `name → chunk href` map (the
+ * content-hashed entry chunks emitted by `islands-bundle.ts`), the script
+ * collects the `data-island` names present in the DOM and `import()`s only the
+ * chunks whose markers actually exist — pages without (say) `code-tabs` don't
+ * pay for that chunk. The shared chunk loads itself: the browser fetches it
+ * automatically when an entry chunk imports it via relative ESM, so the map
+ * only needs the entry hrefs.
  *
- * The `islandNames` argument is currently unused (we always reference all
- * names so the resolver works uniformly), but is kept as a hook for future
+ * The first argument (names on the page) is unused — we embed the full map and
+ * let the DOM scan decide what to import — but is kept as a hook for future
  * per-page bundling optimizations.
  */
 export function getIslandsLoaderScript(
   _islandNamesOnPage: IslandName[],
-  islandsBase: string
+  chunkHrefByName: Record<string, string>
 ): string {
-  const base = islandsBase.endsWith('/') ? islandsBase : `${islandsBase}/`;
-  const importsArray = ALL_ISLAND_NAMES.map((n) => JSON.stringify(`${base}${n}.js`)).join(',');
+  const map = JSON.stringify(chunkHrefByName);
   return [
     `(function(){`,
+    `var map=${map};`,
     `var seen=new Set();`,
     `document.querySelectorAll('[data-island]').forEach(function(el){seen.add(el.getAttribute('data-island'));});`,
-    `var all=[${importsArray}];`,
-    `all.forEach(function(src){var name=src.split('/').pop().replace(/\\.js$/,'');if(seen.has(name)){import(src);}});`,
+    `seen.forEach(function(name){var src=map[name];if(src){import(src);}});`,
     `})();`,
   ].join('');
 }

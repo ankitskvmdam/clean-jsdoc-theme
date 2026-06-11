@@ -8,6 +8,7 @@
  * files themselves and then optionally call `runPagefindAgainstDir`.
  */
 
+import { cpus } from 'node:os';
 import { h, Fragment } from 'preact';
 import type { ComponentChildren } from 'preact';
 import { render as renderToString } from 'preact-render-to-string';
@@ -35,7 +36,7 @@ import type {
   CopyPageAction,
 } from '@clean-jsdoc-theme/utils';
 
-import { compileMdxToComponent, type MdxComponentMap, type ShikiThemes } from './mdx';
+import { collectUsedLangs, compileMdxToComponent, type MdxComponentMap, type ShikiThemes } from './mdx';
 import { SsrLayout, renderIsland, type IslandRecord } from './layout';
 import {
   renderHtmlDocument,
@@ -53,6 +54,32 @@ function mergeMdxComponents(override?: Record<string, unknown>): MdxComponentMap
   if (!override) return { ...defaultMdxComponents };
   // ComponentOverrides.mdxComponents is typed `ComponentType<any>`; the cast is safe.
   return { ...defaultMdxComponents, ...(override as MdxComponentMap) };
+}
+
+/**
+ * Bounded-concurrency `map`: runs `fn` over `items` with at most `limit` tasks
+ * in flight, and returns results in the SAME order as `items` (result[i] for
+ * items[i]) regardless of which task settles first. Dependency-free worker-pool:
+ * `limit` workers race to pull the next index off a shared cursor, so a slow
+ * page never blocks faster ones, but each result is written to its own slot.
+ */
+async function mapWithConcurrency<T, R>(
+  items: readonly T[],
+  limit: number,
+  fn: (item: T, index: number) => Promise<R>
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let cursor = 0;
+  const worker = async (): Promise<void> => {
+    // Each worker grabs the next unclaimed index until the queue is drained.
+    while (cursor < items.length) {
+      const index = cursor++;
+      results[index] = await fn(items[index], index);
+    }
+  };
+  const workerCount = Math.min(limit, items.length);
+  await Promise.all(Array.from({ length: workerCount }, () => worker()));
+  return results;
 }
 
 /** A page's adjacent pages in sidebar reading order, for the prev/next pager. */
@@ -127,7 +154,7 @@ async function renderPage(
   components: MdxComponentMap,
   basePath: string,
   cssHref: string,
-  islandsBase: string,
+  islandChunks: Record<string, string>,
   searchIndexUrl: string,
   siteName: SiteName | undefined,
   aiPrompt: string | undefined,
@@ -135,6 +162,7 @@ async function renderPage(
   copyPageActions: CopyPageAction[] | undefined,
   fonts: { heading: string; body: string; mono: string },
   shiki: ShikiThemes,
+  langs: readonly string[],
   custom: { cssLinks?: string[]; css?: string; jsLinks?: string[]; js?: string },
   neighbors: PageNeighbors | undefined
 ): Promise<{ file: OutputFile; search: SearchEntry; islands: IslandRecord[] }> {
@@ -158,7 +186,7 @@ async function renderPage(
       ssrProps: { code, language, filename, highlightLine: undefined },
     });
   } else {
-    const { Component: MdxComponent } = await compileMdxToComponent(page.body, components, shiki);
+    const { Component: MdxComponent } = await compileMdxToComponent(page.body, components, shiki, langs);
     // The copy-page button is for documentation content only — never the source
     // section (its viewer pages are `kind: 'source'` and skip this branch; the
     // "Source Files" index lives at the `source` slug and is excluded here too).
@@ -230,7 +258,7 @@ async function renderPage(
     islands,
     cssHref,
     siteName: siteNameText(siteName, manifest.pkg?.name),
-    islandsBase,
+    islandChunks,
     fonts,
     customCssLinks: custom.cssLinks,
     customCss: custom.css,
@@ -311,7 +339,23 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
 
   const css = buildCss(theme.tokens, manifest.buildId);
   const cssHref = withBase(basePath, '/' + css.path);
-  const islandsBase = withBase(basePath, '/_islands');
+
+  // Bundle islands up front: the result doesn't depend on page content (we
+  // always bundle `islandSet`), and every page's loader needs the resulting
+  // content-hashed entry hrefs. One split build hoists shared code (Preact, the
+  // rang registry) into a separate chunk the entries import via relative ESM.
+  const bundle = await bundleIslands({
+    outDir: '_islands',
+    islands: [...islandSet],
+    // Opt-in cross-build cache: only active when the bridge supplies a dir, so
+    // render() stays pure for tests/smoke. See RenderOptions.islandCacheDir.
+    cacheDir: opts.islandCacheDir,
+  });
+  // name → full href for the inline loader (base-path aware, matching cssHref).
+  const chunkHrefByName: Record<string, string> = {};
+  for (const [name, path] of Object.entries(bundle.entryPaths)) {
+    chunkHrefByName[name] = withBase(basePath, '/' + path);
+  }
 
   // Custom CSS/JS (v4 parity). Inline strings are injected verbatim into every
   // page's shell. Custom *files* are copied to content-hashed assets by the
@@ -328,6 +372,11 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
   const searchIndexPath = `_assets/search-index.${manifest.buildId}.json`;
   const searchIndexUrl = withBase(basePath, '/' + searchIndexPath);
 
+  // Curate the shiki language set from the languages pages actually use, so
+  // rehype-shiki loads only those grammars instead of all 235 bundled langs
+  // (the dominant cost of the render stage — see mdx.ts collectUsedLangs).
+  const usedLangs = collectUsedLangs(manifest.pages.map((p) => p.body ?? ''));
+
   const files: OutputFile[] = [];
   const search: SearchEntry[] = [];
   // Deep-link entries for members/fields/methods, kept separate from `search`
@@ -338,10 +387,29 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
   // must NOT inflate the page count (it's a per-page asset, not a page).
   let renderedPageCount = 0;
 
-  // Render pages. A single page that fails to compile (e.g. MDX that won't
-  // parse) must NOT abort the whole build — collect the failure and carry on so
-  // the rest of the site still renders. The caller surfaces `result.errors`.
-  for (const page of manifest.pages) {
+  // Render pages. Each page's MDX compile (`@mdx-js/mdx evaluate()` +
+  // `@shikijs/rehype`) is ~0.7s and the pages are independent, so we render them
+  // in parallel rather than one-at-a-time. `renderPage` only reads shared inputs
+  // (manifest/components/theme/neighbors) and allocates island ids in a per-call
+  // local array, so concurrent calls don't race. We cap concurrency at one less
+  // than the CPU count (max 8) to bound peak memory on large projects — each
+  // in-flight page holds a full MDX module + rendered HTML. (Reading `os.cpus`
+  // doesn't break render()'s purity contract, which is about no fs/cwd/logging.)
+  const limit = Math.max(1, Math.min(8, (cpus()?.length ?? 4) - 1));
+
+  /**
+   * Per-page render outcome. Tasks must NOT touch the shared `files`/`search`/
+   * `memberEntries`/`errors` arrays — they only return what to append. The
+   * single-threaded post-map assembly below does the appends in page order, so
+   * the output stays byte-identical and deterministic regardless of completion
+   * order. A page that fails to compile (e.g. unparseable MDX) is captured as an
+   * error and the rest of the site still renders; the caller surfaces them.
+   */
+  type PageResult =
+    | { ok: true; file: OutputFile; mdFile?: OutputFile; entry?: SearchEntry; members?: SearchEntry[] }
+    | { ok: false; error: RenderError };
+
+  const task = async (page: Page): Promise<PageResult> => {
     try {
       const { file, search: entry } = await renderPage(
         page,
@@ -349,7 +417,7 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
         components,
         basePath,
         cssHref,
-        islandsBase,
+        chunkHrefByName,
         searchIndexUrl,
         siteName,
         theme.aiPrompt,
@@ -357,24 +425,44 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
         copyPageActions,
         theme.tokens.fonts,
         theme.tokens.shiki,
+        usedLangs,
         custom,
         neighborsBySlug.get(page.slug)
       );
-      files.push(file);
-      renderedPageCount++;
-      // Companion .md alongside the .html: the page's MDX body written verbatim
-      // (no transform), so LLMs and a future "copy page" button can fetch the
-      // markdown source for the current page. Source-viewer pages have no body.
-      if (page.body) files.push({ path: mdPathFor(page.slug), contents: page.body });
-      if (!page.frontmatter.hidden) {
-        search.push(entry);
-        memberEntries.push(...memberSearchEntries(page));
-      }
+      const hidden = page.frontmatter.hidden;
+      return {
+        ok: true,
+        file,
+        // Companion .md alongside the .html: the page's MDX body written verbatim
+        // (no transform), so LLMs and the copy-page button can fetch the markdown
+        // source for the current page. Source-viewer pages have no body.
+        mdFile: page.body ? { path: mdPathFor(page.slug), contents: page.body } : undefined,
+        entry: hidden ? undefined : entry,
+        members: hidden ? undefined : memberSearchEntries(page),
+      };
     } catch (err) {
-      errors.push({
-        slug: page.slug,
-        message: err instanceof Error ? err.message : String(err),
-      });
+      return {
+        ok: false,
+        error: { slug: page.slug, message: err instanceof Error ? err.message : String(err) },
+      };
+    }
+  };
+
+  const results = await mapWithConcurrency(manifest.pages, limit, task);
+
+  // Assemble in original page order. This replicates the exact push order of the
+  // former sequential loop — html before its companion .md, page search entries
+  // before member deep-links — so `files`, `search`, and `memberEntries` (and
+  // thus the `[...search, ...memberEntries]` index JSON) are identical to before.
+  for (const result of results) {
+    if (result.ok) {
+      files.push(result.file);
+      renderedPageCount++;
+      if (result.mdFile) files.push(result.mdFile);
+      if (result.entry) search.push(result.entry);
+      if (result.members) memberEntries.push(...result.members);
+    } else {
+      errors.push(result.error);
     }
   }
 
@@ -385,13 +473,9 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
   // member deep-links. (Pagefind's full-text bundle is a separate concern.)
   files.push({ path: searchIndexPath, contents: JSON.stringify([...search, ...memberEntries]) });
 
-  // Island chunks.
-  const chunks = await bundleIslands({
-    outDir: '_islands',
-    islands: [...islandSet],
-  });
+  // Island chunks (bundled up front, before the page loop).
   let jsBytes = 0;
-  for (const chunk of chunks) {
+  for (const chunk of bundle.files) {
     files.push({ path: chunk.path, contents: chunk.contents });
     jsBytes += chunk.byteSize;
   }

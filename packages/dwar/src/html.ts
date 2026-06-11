@@ -28,8 +28,8 @@ export interface HtmlDocumentOptions {
   cssHref: string;
   /** Site name suffix appended to `<title>`. */
   siteName?: string;
-  /** Asset path prefix for island chunks. */
-  islandsBase: string;
+  /** Map from island name to its content-hashed chunk href (the loader's import map). */
+  islandChunks: Record<string, string>;
   /** Optional base path. */
   basePath?: string;
   /** Google Fonts family names to load for headings, body, and code. */
@@ -156,14 +156,14 @@ export function collectIslandNamesOnPage(islands: IslandRecord[]): IslandName[] 
 }
 
 export function renderHtmlDocument(opts: HtmlDocumentOptions): string {
-  const { page, bodyHtml, islands, cssHref, siteName, islandsBase, fonts } = opts;
+  const { page, bodyHtml, islands, cssHref, siteName, islandChunks, fonts } = opts;
   const { customCssLinks, customCss, customJsLinks, customJs } = opts;
   const titleSuffix = siteName ? ` | ${escapeHtml(siteName)}` : '';
   const title = `${escapeHtml(page.frontmatter.title)}${titleSuffix}`;
   const description = escapeHtml(page.frontmatter.description ?? '');
   const propsPayload = buildIslandsPropsPayload(islands);
   const islandNames = collectIslandNamesOnPage(islands);
-  const loaderScript = getIslandsLoaderScript(islandNames, islandsBase);
+  const loaderScript = getIslandsLoaderScript(islandNames, islandChunks);
   const themeScript = getPreHydrationThemeScript();
 
   return (

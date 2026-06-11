@@ -15,7 +15,7 @@ function doc(extra: Record<string, unknown>): string {
     bodyHtml: '<main></main>',
     islands: [],
     cssHref: '/_assets/styles.b1.css',
-    islandsBase: '/_islands',
+    islandChunks: {},
     ...extra,
   });
 }

@@ -166,23 +166,25 @@ describe('render() — smoke', () => {
   it('emits a non-empty chunk for each island', async () => {
     const manifest = makeManifest();
     const result = await render(manifest, { theme: minimalTheme });
-    const expected = [
-      '_islands/sidebar.js',
-      '_islands/mobile-nav.js',
-      '_islands/toc.js',
-      '_islands/toc-mobile.js',
-      '_islands/cmdk.js',
-      '_islands/code-tabs.js',
-      '_islands/copy-btn.js',
-      '_islands/copy-page.js',
-      '_islands/theme-toggle.js',
-      '_islands/settings.js',
-      '_islands/code-viewer.js',
-      '_islands/embed.js',
+    // Chunk filenames are now content-hashed (`<name>-<hash>.js`).
+    const names = [
+      'sidebar',
+      'mobile-nav',
+      'toc',
+      'toc-mobile',
+      'cmdk',
+      'code-tabs',
+      'copy-btn',
+      'copy-page',
+      'theme-toggle',
+      'settings',
+      'code-viewer',
+      'embed',
     ];
-    for (const path of expected) {
-      const chunk = result.files.find((f) => f.path === path);
-      expect(chunk, `missing chunk ${path}`).toBeDefined();
+    for (const name of names) {
+      const re = new RegExp(`^_islands/${name}-[A-Za-z0-9]+\\.js$`);
+      const chunk = result.files.find((f) => re.test(f.path));
+      expect(chunk, `missing chunk for ${name}`).toBeDefined();
       expect(asString(chunk!).length).toBeGreaterThan(0);
     }
   });
@@ -208,10 +210,10 @@ describe('render() — smoke', () => {
     expect(html).toContain('data-title="Live demo"');
     expect(html).toContain('<iframe');
 
-    // The page's loader references the embed chunk, and the chunk is emitted.
-    expect(html).toContain('/_islands/embed.js');
-    const chunk = result.files.find((f) => f.path === '_islands/embed.js');
-    expect(chunk, 'missing chunk _islands/embed.js').toBeDefined();
+    // The page's loader references the (hashed) embed chunk, and it is emitted.
+    expect(html).toMatch(/\/_islands\/embed-[A-Za-z0-9]+\.js/);
+    const chunk = result.files.find((f) => /^_islands\/embed-[A-Za-z0-9]+\.js$/.test(f.path));
+    expect(chunk, 'missing hashed embed chunk').toBeDefined();
     expect(asString(chunk!).length).toBeGreaterThan(0);
   });
 
@@ -308,7 +310,7 @@ describe('render() — island loader + payload', () => {
       'theme-toggle',
       'settings',
     ]) {
-      expect(home).toContain(`/_islands/${name}.js`);
+      expect(home).toMatch(new RegExp(`/_islands/${name}-[A-Za-z0-9]+\\.js`));
     }
   });
 

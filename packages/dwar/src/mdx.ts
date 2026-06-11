@@ -13,6 +13,7 @@ import { h, Fragment } from 'preact';
 import { jsx, jsxs } from 'preact/jsx-runtime';
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkGfm from 'remark-gfm';
+import { bundledLanguagesInfo } from 'shiki';
 import { slugifyHeading } from '@clean-jsdoc-theme/utils';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -30,6 +31,46 @@ export interface ShikiThemes {
 
 export interface CompiledMdx {
   Component: AnyComponent;
+}
+
+/**
+ * Every shiki-known language id + alias, lowercased. Built once from shiki's
+ * `bundledLanguagesInfo` — a small metadata array (ids/aliases/names), NOT the
+ * grammars, so reading it is cheap and does not trigger grammar loading. Used to
+ * filter the code-fence languages a site actually uses down to the set shiki can
+ * highlight (see {@link collectUsedLangs}).
+ */
+const KNOWN_SHIKI_LANGS: Set<string> = (() => {
+  const set = new Set<string>();
+  for (const entry of bundledLanguagesInfo) {
+    set.add(entry.id.toLowerCase());
+    for (const alias of entry.aliases ?? []) set.add(alias.toLowerCase());
+  }
+  return set;
+})();
+
+/**
+ * Scan MDX/Markdown bodies for fenced-code languages and return the unique,
+ * shiki-known subset. Passing exactly the languages in use to rehype-shiki
+ * makes it load only those grammars (~150ms) instead of eagerly loading all
+ * 235 bundled languages (~4.3s) on the first highlight. Unknown/`text` fences
+ * are dropped here and fall back to plain text at highlight time.
+ */
+export function collectUsedLangs(bodies: readonly string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  // Capture the first info-string token after a ``` or ~~~ fence; the rest of
+  // the info string (e.g. `title="x"` or `{1,3}`) is ignored.
+  const fenceRe = /^[ \t]*(?:```|~~~)([A-Za-z0-9_+#-]+)/gm;
+  for (const body of bodies) {
+    for (const match of body.matchAll(fenceRe)) {
+      const lang = match[1].toLowerCase();
+      if (seen.has(lang) || !KNOWN_SHIKI_LANGS.has(lang)) continue;
+      seen.add(lang);
+      out.push(lang);
+    }
+  }
+  return out;
 }
 
 /**
@@ -136,7 +177,8 @@ function rehypeSlugHeadings() {
 export async function compileMdxToComponent(
   source: string,
   components: MdxComponentMap,
-  shiki: ShikiThemes
+  shiki: ShikiThemes,
+  langs: readonly string[]
 ): Promise<CompiledMdx> {
   const cleaned = escapeStrayBraces(preprocessJsdocInlineTags(source));
   // The MDX `evaluate` runtime types target the React jsx-runtime signature;
@@ -162,6 +204,13 @@ export async function compileMdxToComponent(
     // tailwind.css base layer) swaps to the `--shiki-dark*` vars, staying in
     // sync with the theme toggle. Unknown / langless fences fall back to plain
     // text so an unrecognised `@example` language never throws mid-render.
+    //
+    // `langs` is the curated set of languages the site actually uses (see
+    // `collectUsedLangs`). Without it, rehype-shiki eagerly loads ALL 235
+    // bundled grammars on the first highlight — ~4.3s, the dominant cost of the
+    // render stage. Passing only the used languages collapses that to ~150ms
+    // with zero fidelity loss: every fence in use is still highlighted, and
+    // unknown ones fall back to plain text via `fallbackLanguage` as before.
     rehypePlugins: [
       // Heading ids first, so they're set before Shiki rewrites code subtrees
       // (headings carry no code, but order keeps the pass independent).
@@ -173,6 +222,7 @@ export async function compileMdxToComponent(
           defaultColor: 'light',
           defaultLanguage: 'text',
           fallbackLanguage: 'text',
+          langs: [...langs],
         },
       ],
     ],

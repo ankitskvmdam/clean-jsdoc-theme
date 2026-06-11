@@ -1,5 +1,7 @@
 import { tmpdir } from 'node:os';
-import { describe, it, expect } from 'vitest';
+import { mkdtemp, rm, readdir } from 'node:fs/promises';
+import { join } from 'node:path';
+import { afterEach, describe, it, expect } from 'vitest';
 import { bundleIslands } from '../islands-bundle';
 import { getIslandChunkEntrySource } from '../islands-loader';
 
@@ -11,10 +13,11 @@ describe('bundleIslands() — resolveDir default', () => {
     const prevCwd = process.cwd();
     try {
       process.chdir(tmpdir());
-      const chunks = await bundleIslands({ islands: ['sidebar'] });
-      expect(chunks).toHaveLength(1);
-      expect(chunks[0].name).toBe('sidebar');
-      expect(chunks[0].byteSize).toBeGreaterThan(0);
+      const result = await bundleIslands({ islands: ['sidebar'] });
+      expect(result.entryPaths.sidebar).toMatch(/^_islands\/sidebar-[A-Za-z0-9]+\.js$/);
+      expect(result.files.length).toBeGreaterThan(0);
+      const totalBytes = result.files.reduce((sum, f) => sum + f.byteSize, 0);
+      expect(totalBytes).toBeGreaterThan(0);
     } finally {
       process.chdir(prevCwd);
     }
@@ -54,10 +57,48 @@ describe('getIslandChunkEntrySource() — embed', () => {
   });
 
   it('bundles into a non-empty embed chunk', async () => {
-    const chunks = await bundleIslands({ islands: ['embed'] });
-    expect(chunks).toHaveLength(1);
-    expect(chunks[0].name).toBe('embed');
-    expect(chunks[0].path).toBe('_islands/embed.js');
-    expect(chunks[0].byteSize).toBeGreaterThan(0);
+    // With one island requested there may be no separate shared chunk — that's
+    // fine; just assert the (hashed) entry chunk exists and is non-empty.
+    const result = await bundleIslands({ islands: ['embed'] });
+    expect(result.entryPaths.embed).toMatch(/^_islands\/embed-[A-Za-z0-9]+\.js$/);
+    const entry = result.files.find((f) => f.path === result.entryPaths.embed);
+    expect(entry, 'missing embed entry chunk').toBeDefined();
+    expect(entry!.byteSize).toBeGreaterThan(0);
+  });
+});
+
+describe('bundleIslands() — cache', () => {
+  let cacheDir: string | undefined;
+
+  afterEach(async () => {
+    if (cacheDir) {
+      await rm(cacheDir, { recursive: true, force: true });
+      cacheDir = undefined;
+    }
+  });
+
+  it('writes a keyed cache file on first build and reuses it on the second', async () => {
+    cacheDir = await mkdtemp(join(tmpdir(), 'island-cache-'));
+
+    // Cold: builds and populates the cache.
+    const first = await bundleIslands({ islands: ['sidebar'], cacheDir });
+    const entries = await readdir(cacheDir);
+    const cacheFile = entries.find((f) => /^islands-.+\.json$/.test(f));
+    expect(cacheFile, 'expected an islands-*.json cache file').toBeDefined();
+
+    // Warm: same inputs → cache HIT, returns an equivalent result.
+    const second = await bundleIslands({ islands: ['sidebar'], cacheDir });
+    expect(second.entryPaths.sidebar).toBe(first.entryPaths.sidebar);
+    expect(second.files.map((f) => f.path).sort()).toEqual(
+      first.files.map((f) => f.path).sort()
+    );
+  });
+
+  it('writes nothing when no cacheDir is supplied (stays pure)', async () => {
+    cacheDir = await mkdtemp(join(tmpdir(), 'island-nocache-'));
+    const result = await bundleIslands({ islands: ['sidebar'] });
+    expect(result.entryPaths.sidebar).toMatch(/^_islands\/sidebar-[A-Za-z0-9]+\.js$/);
+    // The unrelated tmpdir must remain empty — no cache was requested.
+    expect(await readdir(cacheDir)).toEqual([]);
   });
 });
