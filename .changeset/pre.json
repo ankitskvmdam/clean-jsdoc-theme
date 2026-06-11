@@ -15,6 +15,7 @@
     "@clean-jsdoc-theme/utils": "5.0.0-alpha.0"
   },
   "changesets": [
+    "alpha-2-assets-colors-tabs",
     "curvy-bottles-throw"
   ]
 }
