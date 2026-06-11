@@ -999,6 +999,63 @@ export async function collectDocs(dir: string): Promise<DocInput[]> {
 }
 
 /**
+ * Recursively walk the docs directory and copy every NON-document file (images
+ * and other static assets — anything that isn't a {@link DOC_EXTENSIONS} page)
+ * into an {@link OutputFile} served at its path relative to `dir`. So a
+ * `<docs>/assets/diagram.svg` is written to `assets/diagram.svg` in the output,
+ * and a doc references it as `/assets/diagram.svg` (the renderer base-path-
+ * prefixes root-relative image srcs). Mirrors {@link collectDocs}'s resilient
+ * walk (dotfiles / `node_modules`-like dirs skipped, unreadable files warned +
+ * skipped, missing dir → `[]`), sorted for stable output. Read as raw bytes so
+ * binary assets (PNG, etc.) survive intact.
+ */
+export async function collectDocAssets(dir: string): Promise<OutputFile[]> {
+  if (typeof dir !== 'string' || dir.trim().length === 0) return [];
+  const root = resolvePath(dir);
+  const assets: OutputFile[] = [];
+
+  const walk = async (absDir: string, relPrefix: string): Promise<void> => {
+    let entries: import('node:fs').Dirent[];
+    try {
+      entries = await readdir(absDir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+
+    for (const entry of entries) {
+      const name = entry.name;
+      if (name.startsWith('.')) continue;
+      if (entry.isDirectory()) {
+        if (DOC_DIR_SKIP.has(name)) continue;
+        await walk(joinPath(absDir, name), relPrefix ? `${relPrefix}/${name}` : name);
+        continue;
+      }
+      if (!entry.isFile()) continue;
+
+      // Document pages (md/html) become rendered pages via collectDocs; every
+      // other file is a static asset copied verbatim alongside them.
+      const ext = extname(name).toLowerCase();
+      if (DOC_EXTENSIONS.has(ext)) continue;
+
+      const abs = joinPath(absDir, name);
+      const relPath = relPrefix ? `${relPrefix}/${name}` : name;
+      try {
+        const contents = await readFile(abs);
+        assets.push({ path: relPath, contents });
+      } catch (err) {
+        console.warn(
+          `clean-jsdoc-theme: could not read doc asset '${abs}' — ${(err as Error).message}; skipping.`
+        );
+      }
+    }
+  };
+
+  await walk(root, '');
+  assets.sort((a, b) => a.path.localeCompare(b.path));
+  return assets;
+}
+
+/**
  * Validate `opts.docGroups` into a clean `string[]`, or `undefined` to fall back
  * to setu's default doc-group order. Mirrors {@link normalizeSectionOrder}:
  * accepts only an array; trims string entries and drops non-strings/empties.
@@ -1072,6 +1129,11 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
     ? collectSourceFiles(data)
     : Promise.resolve([]);
   const docsPromise: Promise<DocInput[]> = docsDir ? collectDocs(docsDir) : Promise.resolve([]);
+  // Static assets co-located in the docs tree (images, etc.) copied verbatim to
+  // the output, so a guide can reference `/assets/diagram.svg` and it just works.
+  const docAssetsPromise: Promise<OutputFile[]> = docsDir
+    ? collectDocAssets(docsDir)
+    : Promise.resolve([]);
 
   // Stage progress (ora spinners) is on by default; `opts.progress: false`
   // silences it. ora loads first so the narrator can wrap the renderer load
@@ -1155,9 +1217,10 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   // reads were started in the kickoff above (the bridge is the sanctioned I/O
   // layer; setu stays disk-free), so this stage just awaits the now-overlapped
   // work — narrated as a single step.
-  const { sources, docs } = await progress.stage('Reading sources & docs', async () => ({
+  const { sources, docs, docAssets } = await progress.stage('Reading sources & docs', async () => ({
     sources: await sourcesPromise,
     docs: await docsPromise,
+    docAssets: await docAssetsPromise,
   }));
 
   const docGroups = normalizeDocGroups(opts.docGroups);
@@ -1223,7 +1286,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
     })
   );
 
-  const outputFiles = [...result.files, ...logoFiles, ...customAssets.files];
+  const outputFiles = [...result.files, ...logoFiles, ...customAssets.files, ...docAssets];
   await progress.stage('Writing files', () =>
     writeOutputFiles(absoluteDestination, outputFiles)
   );

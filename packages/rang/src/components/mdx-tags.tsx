@@ -74,6 +74,22 @@ export function MdxP({ children, ...rest }: BaseProps) {
   );
 }
 
+interface ImgProps extends BaseProps {
+  src?: string;
+  alt?: string;
+}
+
+// Images: base-path-prefix a root-relative `src` (e.g. a copied doc asset at
+// `/assets/diagram.svg`) exactly like MdxA does for links, so it resolves under
+// a sub-path deploy; absolute (`http(s):`, `data:`) and protocol-relative srcs
+// pass through. Capped to the content width so wide diagrams scale down.
+export function MdxImg({ src, alt, ...rest }: ImgProps) {
+  const basePath = useContext(BasePathContext);
+  const isInternal = !!src && src.startsWith('/') && !src.startsWith('//');
+  const resolvedSrc = isInternal ? withBase(basePath, src) : src;
+  return <img src={resolvedSrc} alt={alt ?? ''} loading="lazy" class="my-4 h-auto max-w-full" {...rest} />;
+}
+
 interface SourceLinkProps {
   href?: string;
   label?: string;

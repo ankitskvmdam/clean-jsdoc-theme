@@ -17,6 +17,7 @@ import { Tabs, Tab } from './components/Tabs';
 import {
   MdxH1,
   MdxA,
+  MdxImg,
   MdxP,
   MdxUl,
   MdxOl,
@@ -44,6 +45,9 @@ export const defaultMdxComponents: Record<string, ComponentType<any>> = {
   h5: makeHeading('h5'),
   h6: makeHeading('h6'),
   a: MdxA,
+  // Base-path-prefixes a root-relative image `src` (e.g. a copied doc asset) so
+  // it resolves under a sub-path deploy; absolute/data srcs pass through.
+  img: MdxImg,
   pre: MdxPre,
   code: MdxCode,
   p: MdxP,

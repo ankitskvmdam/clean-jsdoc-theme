@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, it, expect } from 'vitest';
 import {
   collectDocs,
+  collectDocAssets,
   computeRelPaths,
   hasMarkdownPlugin,
   normalizeDocGroups,
@@ -209,5 +210,39 @@ describe('collectDocs', () => {
   it('returns [] for a missing directory (never throws)', async () => {
     expect(await collectDocs(join(dir, 'does-not-exist'))).toEqual([]);
     expect(await collectDocs('')).toEqual([]);
+  });
+});
+
+describe('collectDocAssets', () => {
+  let dir: string;
+
+  beforeAll(async () => {
+    dir = await mkdtemp(join(tmpdir(), 'cjt-doc-assets-'));
+    await writeFile(join(dir, 'index.md'), '# Home\n', 'utf8'); // a page, not an asset
+    await writeFile(join(dir, 'logo.png'), 'PNGDATA', 'utf8');
+    await mkdir(join(dir, 'assets'), { recursive: true });
+    await writeFile(join(dir, 'assets', 'diagram.svg'), '<svg/>', 'utf8');
+    // Noise that must be skipped.
+    await writeFile(join(dir, '.hidden.svg'), 'x', 'utf8');
+    await mkdir(join(dir, 'node_modules'), { recursive: true });
+    await writeFile(join(dir, 'node_modules', 'x.svg'), 'x', 'utf8');
+  });
+
+  afterAll(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it('copies non-doc files at their relative path, skipping pages/dotfiles/node_modules', async () => {
+    const assets = await collectDocAssets(dir);
+    // md/html pages are NOT assets (collectDocs handles those); everything else
+    // is copied, sorted by path, dotfiles + node_modules skipped.
+    expect(assets.map((a) => a.path)).toEqual(['assets/diagram.svg', 'logo.png']);
+    const svg = assets.find((a) => a.path === 'assets/diagram.svg')!;
+    expect(svg.contents.toString()).toBe('<svg/>');
+  });
+
+  it('returns [] for a missing/empty directory (never throws)', async () => {
+    expect(await collectDocAssets(join(dir, 'does-not-exist'))).toEqual([]);
+    expect(await collectDocAssets('')).toEqual([]);
   });
 });
