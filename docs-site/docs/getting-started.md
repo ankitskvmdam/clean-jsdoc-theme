@@ -1,7 +1,7 @@
 ---
 title: Getting Started
 group: Getting Started
-order: 1
+order: 2
 ---
 
 # Getting Started
