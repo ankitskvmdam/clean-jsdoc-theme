@@ -16,7 +16,7 @@
     "docs": "./docs",
     "docGroups": ["Getting Started", "Packages"],
     "defaultDocGroup": "Docs",
-    "sectionOrder": ["Getting Started", "Packages", "Modules", "Classes"],
+    "sectionOrder": ["Getting Started", "Components"],
     "siteName": {
       "light": "./assets/clean-jsdoc-theme.svg",
       "dark": "./assets/clean-jsdoc-theme-white.svg",
