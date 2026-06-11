@@ -52,10 +52,15 @@ export function Tabs({ children }: { children?: ComponentChildren }) {
   const panelId = (i: number) => `tabs-${block}-panel-${i}`;
 
   return (
-    <div data-island="tabs" class="my-4 rounded border border-(--clean-border)">
+    <div data-island="tabs" class="my-6">
+      {/* Underline tab bar: a row of text tabs sharing one bottom border. The
+          active tab (driven purely by the `aria-selected:` variant the island
+          flips) takes the primary color + a `border-current` underline that sits
+          on the bar via `-mb-px`; inactive tabs are full-strength text with a
+          hover underline. */}
       <div
         role="tablist"
-        class="flex gap-1 border-b border-(--clean-border) bg-(--clean-bg-muted) px-2 pt-2"
+        class="mb-6 flex min-w-full gap-x-6 overflow-auto border-b border-(--clean-border)"
       >
         {tabs.map((tab, i) => (
           <button
@@ -66,10 +71,7 @@ export function Tabs({ children }: { children?: ComponentChildren }) {
             aria-controls={panelId(i)}
             aria-selected={i === 0}
             tabIndex={i === 0 ? 0 : -1}
-            // Active state is driven purely by the `aria-selected:` variant, so
-            // the island only has to flip `aria-selected` to restyle — no
-            // active-class juggling.
-            class="rounded-t border border-b-0 border-transparent px-3 py-1 text-sm text-(--clean-fg-muted) hover:text-(--clean-fg) aria-selected:border-(--clean-border) aria-selected:bg-(--clean-bg) aria-selected:text-(--clean-fg)"
+            class="-mb-px flex max-w-max cursor-pointer items-center gap-1.5 whitespace-nowrap border-b border-transparent pt-3 pb-2.5 text-sm leading-6 font-semibold text-(--clean-fg) hover:border-(--clean-border) aria-selected:border-current aria-selected:text-primary dark:aria-selected:text-primary-light"
           >
             {tab.props.label ?? `Tab ${i + 1}`}
           </button>
@@ -82,7 +84,7 @@ export function Tabs({ children }: { children?: ComponentChildren }) {
           role="tabpanel"
           aria-labelledby={tabId(i)}
           hidden={i !== 0}
-          class="bg-(--clean-bg) px-4 py-3 *:first:mt-0 *:last:mb-0"
+          class="*:first:mt-0 *:last:mb-0"
         >
           {tab.props.children}
         </div>

@@ -283,7 +283,7 @@ describe('render() — smoke', () => {
     expect(asString(chunk!).length).toBeGreaterThan(0);
   });
 
-  it('renders a <Callout type="tip"> as a green success callout with a lucide icon', async () => {
+  it('renders a <Callout type="tip"> in a neutral container with a green lucide icon', async () => {
     const manifest = makeManifest();
     manifest.pages = [
       ...manifest.pages,
@@ -296,12 +296,14 @@ describe('render() — smoke', () => {
     ];
     const result = await render(manifest, { theme: minimalTheme });
     const html = asString(result.files.find((f) => f.path === 'tip-page/index.html')!);
-    // Rendered as a callout (role="note") with the success-green palette …
+    // Rendered as a callout (role="note") in the neutral rounded container …
     expect(html).toContain('role="note"');
-    expect(html).toContain('bg-green-50');
-    expect(html).toContain('text-green-700');
-    // … the lucide lightbulb icon (its class is unique to the tip variant) …
+    expect(html).toContain('rounded-2xl');
+    expect(html).toContain('bg-neutral-50');
+    // … the green-tinted lucide lightbulb icon (its class is unique to the tip
+    // variant; the green is now on the icon, not the container) …
     expect(html).toContain('lucide-lightbulb');
+    expect(html).toContain('text-green-600');
     // … and the body text intact.
     expect(html).toContain('Pro tip here.');
   });

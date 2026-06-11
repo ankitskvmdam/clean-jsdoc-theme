@@ -279,33 +279,20 @@ export function MdxLi({ children, ...rest }: BaseProps) {
 }
 
 /**
- * Callout variants. Standard info/tip/warning/error palette built from
- * Tailwind's default colors: a `type`-less blockquote stays a plain muted quote;
- * a typed one (emitted by setu as `<blockquote type="…">`, e.g. `@deprecated`)
- * renders as a callout with a full border in the dark shade, a light tinted
- * background, matching text color, and a leading icon (lucide icons inherit
- * `currentColor`, so they pick up the same color as the text and border). `tip`
- * uses the conventional success green.
+ * Callout variants (info/tip/warning/error). A `type`-less blockquote stays a
+ * plain muted quote; a typed one (emitted by setu as `<blockquote type="…">`,
+ * e.g. for `@deprecated`, or from a `> [!TIP]` prose alert) renders in a neutral
+ * rounded container — the variant is conveyed by a colored leading icon (info
+ * blue, tip green, warning amber, error red). lucide icons inherit
+ * `currentColor`, so each picks up its `text-*` color below.
  */
 type CalloutType = 'info' | 'tip' | 'warning' | 'error';
 
-const CALLOUTS: Record<CalloutType, { Icon: typeof Info; cls: string }> = {
-  info: {
-    Icon: Info,
-    cls: 'border-blue-700 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-950/40 dark:text-blue-300',
-  },
-  tip: {
-    Icon: Lightbulb,
-    cls: 'border-green-700 bg-green-50 text-green-700 dark:border-green-400 dark:bg-green-950/40 dark:text-green-300',
-  },
-  warning: {
-    Icon: TriangleAlert,
-    cls: 'border-amber-700 bg-amber-50 text-amber-800 dark:border-amber-400 dark:bg-amber-950/40 dark:text-amber-300',
-  },
-  error: {
-    Icon: CircleAlert,
-    cls: 'border-red-700 bg-red-50 text-red-700 dark:border-red-400 dark:bg-red-950/40 dark:text-red-300',
-  },
+const CALLOUTS: Record<CalloutType, { Icon: typeof Info; icon: string }> = {
+  info: { Icon: Info, icon: 'text-blue-600 dark:text-blue-400' },
+  tip: { Icon: Lightbulb, icon: 'text-green-600 dark:text-green-400' },
+  warning: { Icon: TriangleAlert, icon: 'text-amber-600 dark:text-amber-400' },
+  error: { Icon: CircleAlert, icon: 'text-red-600 dark:text-red-400' },
 };
 
 interface BlockquoteProps extends BaseProps {
@@ -327,14 +314,14 @@ export function MdxBlockquote({ type, children, ...rest }: BlockquoteProps) {
     );
   }
 
-  const { Icon, cls } = callout;
+  const { Icon, icon } = callout;
   return (
     <blockquote
-      class={`my-4 mx-0 flex gap-3 rounded-md border px-4 py-3 ${cls}`}
+      class="my-4 mx-0 flex gap-3 overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-50 px-5 py-4 dark:border-neutral-700 dark:bg-white/10"
       role="note"
       {...rest}
     >
-      <Icon size={20} class="mt-0.5 shrink-0" aria-hidden="true" />
+      <Icon size={20} class={`mt-0.5 shrink-0 ${icon}`} aria-hidden="true" />
       <div class="min-w-0 *:first:mt-0 *:last:mb-0">{children}</div>
     </blockquote>
   );
