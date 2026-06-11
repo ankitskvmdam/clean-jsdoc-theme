@@ -13,7 +13,11 @@
     "recurse": true,
     "template": "./node_modules/clean-jsdoc-theme/dist",
     "readme": "./README.md",
-    "siteName": "clean-jsdoc-theme API",
+    "siteName": {
+      "light": "./assets/clean-jsdoc-theme.svg",
+      "dark": "./assets/clean-jsdoc-theme-white.svg",
+      "alt": "clean-jsdoc-theme API"
+    },
     "clubSidebarItems": true,
     "menu": [
       {
