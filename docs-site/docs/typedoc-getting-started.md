@@ -27,7 +27,6 @@ npm install --save-dev typedoc @clean-jsdoc-theme/typedoc
 </tab>
 <tab label="pnpm">
 ```sh
-# or with pnpm
 pnpm add -D typedoc @clean-jsdoc-theme/typedoc
 ```
 </tab>

@@ -25,7 +25,6 @@ npm install --save-dev jsdoc clean-jsdoc-theme
 </tab>
 <tab label="pnpm">
 ```sh
-# or with pnpm
 pnpm add -D jsdoc clean-jsdoc-theme
 ```
 </tab>
