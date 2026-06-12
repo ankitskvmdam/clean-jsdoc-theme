@@ -1143,6 +1143,12 @@ function formatElapsed(ms: number): string {
   return ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(1)}s`;
 }
 
+/** Handle a stage's `fn` can use to report sub-step progress on the spinner. */
+interface StageHandle {
+  /** Replace the live spinner label mid-stage (no-op when progress is off). */
+  setText(text: string): void;
+}
+
 /**
  * Build-stage narrator backed by `ora`. The setu→dwar pipeline does much more
  * than a bare jsdoc run (per-page MDX compile, per-island esbuild bundling, the
@@ -1151,19 +1157,50 @@ function formatElapsed(ms: number): string {
  * on success or `✖ <label>` on failure. ora handles the spinner animation, TTY
  * detection (no animation when piped/CI), and the success/fail symbols.
  *
+ * The catch: ora animates its frame on a `setInterval`, but each stage does
+ * heavy *synchronous* work (module evaluation during the dynamic `import()`,
+ * per-page MDX compile/SSR) that blocks the event loop — so the interval can't
+ * fire and the spinner freezes on one frame, looking hung. Two things keep it
+ * visibly alive: an elapsed-seconds **heartbeat** appended to the label (so it
+ * advances whenever the loop breathes — module-graph I/O gaps, esbuild/Pagefind
+ * subprocess waits), and the `setText` handle, which long stages use to report
+ * their current sub-step (e.g. the renderer load steps setu → dwar → utils).
+ *
  * `ora` is `null` when progress is disabled (`opts.progress === false`) or the
  * package couldn't be loaded — then `stage` just runs `fn` with no output.
  */
 function createBuildProgress(ora: OraFactory | null) {
-  async function stage<T>(label: string, fn: () => T | Promise<T>): Promise<T> {
-    if (!ora) return await fn();
+  async function stage<T>(
+    label: string,
+    fn: (handle: StageHandle) => T | Promise<T>
+  ): Promise<T> {
+    const noop: StageHandle = { setText: () => {} };
+    if (!ora) return await fn(noop);
     const spinner = ora(label).start();
     const begin = Date.now();
+    let current = label;
+    // Refresh the spinner text with the current sub-step + elapsed seconds. ora
+    // repaints on its own interval, so this only shows once the event loop is
+    // free, but it means a long stage advances rather than sitting on one frame.
+    const refresh = () => {
+      const secs = Math.floor((Date.now() - begin) / 1000);
+      spinner.text = secs > 0 ? `${current} (${secs}s)` : current;
+    };
+    const heartbeat = setInterval(refresh, 1000);
+    if (typeof heartbeat.unref === 'function') heartbeat.unref();
+    const handle: StageHandle = {
+      setText(text) {
+        current = text;
+        refresh();
+      },
+    };
     try {
-      const result = await fn();
+      const result = await fn(handle);
+      clearInterval(heartbeat);
       spinner.succeed(`${label} (${formatElapsed(Date.now() - begin)})`);
       return result;
     } catch (err) {
+      clearInterval(heartbeat);
       spinner.fail(label);
       throw err;
     }
@@ -1221,9 +1258,19 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
       normalizeBasePath,
       withBase,
     },
-  ] = await progress.stage('Loading renderer', () =>
-    Promise.all([loadSetu(), loadDwar(), loadUtils()])
-  );
+    // Loaded sequentially (not Promise.all) so the spinner can step its label
+    // through each module — the evaluation of these large ESM bundles is the
+    // single longest, most event-loop-blocking stage, so visibly naming the
+    // module in flight is what stops it from reading as a hang.
+  ] = await progress.stage('Loading renderer', async ({ setText }) => {
+    setText('Loading renderer (setu)');
+    const setu = await loadSetu();
+    setText('Loading renderer (dwar)');
+    const dwar = await loadDwar();
+    setText('Loading renderer (utils)');
+    const utils = await loadUtils();
+    return [setu, dwar, utils] as const;
+  });
 
   // Normalized base-path prefix (`/` when unset). Threaded into every emitted
   // href — logos and custom assets here; dwar prefixes the rest at render time.
