@@ -1,17 +1,30 @@
 ---
 title: TypeDoc Getting Started
-group: Getting Started
+group: Using the Theme
 order: 3
 ---
 
-# Getting Started with TypeDoc
+# TypeDoc Getting Started
 
-This guide walks through adding `clean-jsdoc-theme` to a **TypeDoc** project. The
-theme ships a TypeDoc plugin (`@clean-jsdoc-theme/typedoc`) that feeds TypeDoc's
-reflections through the same pipeline as the JSDoc bridge, so you get an
-identical site from your TypeScript sources.
+For TypeScript projects, the theme ships as a **TypeDoc plugin** —
+`@clean-jsdoc-theme/typedoc`. It isn't a CSS theme extending TypeDoc's default;
+it registers a custom **output** that feeds TypeDoc's reflections through the
+*same* `setu → dwar` pipeline as the JSDoc bridge. The result is an identical
+site — SSR HTML, islands, fuzzy + full-text search, companion `.md` — generated
+from your TypeScript sources.
 
-## Getting Started
+> [!NOTE]
+> **How it plugs in.** The plugin's
+> [`load(app)`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/typedoc/src/index.ts)
+> declares one option block (`cleanJsdocTheme`, see
+> [`options.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/typedoc/src/options.ts))
+> and registers an output named `clean-jsdoc-theme` via
+> `app.outputs.addOutput(...)`. The writer
+> ([`write-site.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/typedoc/src/write-site.ts))
+> adapts reflections → doclets → the shared pipeline. So you select it two ways:
+> `plugin` loads it, `outputs` turns it on.
+
+## Install and build
 
 <steps>
 
@@ -20,25 +33,32 @@ identical site from your TypeScript sources.
 Install TypeDoc and the theme's TypeDoc plugin as dev dependencies:
 
 <tabs>
+
 <tab label="npm">
+
 ```sh
 npm install --save-dev typedoc @clean-jsdoc-theme/typedoc
 ```
+
 </tab>
+
 <tab label="pnpm">
+
 ```sh
 pnpm add -D typedoc @clean-jsdoc-theme/typedoc
 ```
+
 </tab>
+
 </tabs>
 
 </step>
 
-<step label="Configuration">
+<step label="Configure">
 
-Add a `typedoc.json` to your project root. Unlike JSDoc, the theme is a TypeDoc
-**plugin** selected as an **output** — and its options live under the
-`cleanJsdocTheme` key:
+Add a `typedoc.json`. Load the plugin, select it as an **output**, and put theme
+options under the **`cleanJsdocTheme`** key (TypeDoc's counterpart to JSDoc's
+`opts`):
 
 ```json5
 {
@@ -46,11 +66,11 @@ Add a `typedoc.json` to your project root. Unlike JSDoc, the theme is a TypeDoc
   tsconfig: "tsconfig.json",
   readme: "README.md",
 
-  // Load the plugin and select it as the output to render.
+  // Load the plugin, then select its output to render.
   plugin: ["@clean-jsdoc-theme/typedoc"],
   outputs: [{ name: "clean-jsdoc-theme", path: "dist" }],
 
-  // Theme options go here (the TypeDoc counterpart of JSDoc's `opts`).
+  // Theme options live here.
   cleanJsdocTheme: {
     siteName: "My Library",
   },
@@ -61,7 +81,7 @@ Add a `typedoc.json` to your project root. Unlike JSDoc, the theme is a TypeDoc
 
 <step label="Build">
 
-Build your docs by running TypeDoc:
+Run TypeDoc — it renders the registered output to `outputs[].path`:
 
 ```sh
 npx typedoc
@@ -69,10 +89,10 @@ npx typedoc
 
 </step>
 
-<step label="Dist">
+<step label="Serve">
 
-The site is written to `dist/` (the `outputs[].path` above). Open
-`dist/index.html` in a browser, or serve the folder during development:
+Open `dist/index.html`, or serve the folder (Pagefind's full-text index needs
+HTTP to load):
 
 ```sh
 npx serve dist
@@ -83,26 +103,42 @@ npx serve dist
 </steps>
 
 > [!TIP]
-> To see the complete example, visit the
-> [**typedoc-example**](https://github.com/ankitskvmdam/clean-jsdoc-theme-example/tree/master/typedoc-example)
-> repository.
+> A complete, runnable TypeDoc setup lives in the repo at
+> [`examples/typedoc-basic`](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/examples/typedoc-basic) —
+> its [`typedoc.json`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/examples/typedoc-basic/typedoc.json)
+> is the reference for the setup above.
 
-## Configuring the theme
+## Where the options go
 
-Every theme option works the same as it does for JSDoc — just nested under
-`cleanJsdocTheme` instead of `opts`. See the full [Configuration](/configuration)
-reference, which shows both forms side by side.
+Every theme option is the same as for JSDoc — only the location differs: under
+**`cleanJsdocTheme`** instead of `opts`. The full list, with both forms side by
+side, is on the [Configuration](/configuration) page. A few to start with:
 
-### Interesting options
+| Option | What it does |
+| ------ | ------------ |
+| [`siteName`](/configuration#sitename) | Header title — plain text, or a `light`/`dark` logo set with `alt` fallback text. |
+| [`fonts`](/configuration#fonts) | Override `heading` / `body` (Google Fonts, loaded for you) and `mono`. |
+| [`colors`](/configuration#colors-and-darkcolors) / [`darkColors`](/configuration#colors-and-darkcolors) | Recolor the light / dark palettes — override just `bg`, `accent`, …, keep the rest. |
+| [`sectionOrder`](/configuration#sectionorder) | Order the top-level sidebar sections. |
+| [`clubSidebarItems`](/configuration#clubsidebaritems) | Collapse related entries under a shared, collapsible parent. |
+| [`menu`](/configuration#menu) | Custom links pinned above the sidebar, each with a `lucide:` / `simpleicons:` icon. |
+| [`copyPage`](/configuration#copypage) | The per-page "copy page" / "open in LLM" button (on by default). |
 
-A few of the options you'll reach for most — set them inside `cleanJsdocTheme`.
+> [!NOTE]
+> Because `cleanJsdocTheme` is a dedicated namespace, unknown keys inside it only
+> ever **warn** (with a "did you mean?" hint) — see
+> [`strict`](/configuration#strict) to escalate that to an error.
 
-| Option               | What it does                                                                                          |
-| -------------------- | ----------------------------------------------------------------------------------------------------- |
-| [`siteName`](/configuration#sitename)             | Header title. Plain text, or a logo set — `light` / `dark` logo URLs plus `alt` fallback text.        |
-| [`fonts`](/configuration#fonts)                   | Override `heading` / `body` (Google Fonts, loaded for you) and `mono`.                                |
-| [`colors`](/configuration#colors-and-darkcolors) / [`darkColors`](/configuration#colors-and-darkcolors) | Recolor the light / dark palettes — override just `bg`, `accent`, etc., and keep the rest. |
-| [`sectionOrder`](/configuration#sectionorder)     | Order the top-level sidebar sections.                                                                 |
-| [`clubSidebarItems`](/configuration#clubsidebaritems) | Collapse related entries under a shared, collapsible parent.                                      |
-| [`menu`](/configuration#menu)                     | Custom links pinned above the sidebar nav, each with a `lucide:` / `simpleicons:` icon.               |
-| [`copyPage`](/configuration#copypage)             | The per-page "copy page" / "open in LLM" button (on by default; configurable or opt-out).             |
+## Next steps
+
+- **[Build an API reference](/guides/build-an-api-reference)** — what becomes a
+  page and how the source-file viewer works.
+- **[Build a guides site](/guides/build-a-guides-site)** and
+  **[Combine guides + API](/guides/combine-guides-and-api)** — add hand-written
+  Markdown to the same site.
+- **[Structure your sidebar](/guides/structure-your-sidebar)** — grouping and
+  ordering levers.
+- **[Authoring](/authoring/callouts)** — callouts, steps, tabs, and embeds.
+- **[Packages](/packages)** — how the shared `setu → dwar` pipeline (and the
+  [`@clean-jsdoc-theme/typedoc`](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/packages/typedoc)
+  plugin) work under the hood.
