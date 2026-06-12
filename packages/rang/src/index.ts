@@ -98,3 +98,6 @@ export { defaultMdxComponents } from './mdx-components';
 export { HeaderSlotContext, BasePathContext, InlineSvgContext } from './components/mdx-utils';
 export type { HeaderSlot } from './components/mdx-utils';
 export { ISLAND_REGISTRY } from './islands';
+
+export { useListKeyboardNav } from './hooks/use-list-keyboard-nav';
+export type { ListKeyboardNav, UseListKeyboardNavOptions } from './hooks/use-list-keyboard-nav';
