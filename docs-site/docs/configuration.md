@@ -6,11 +6,11 @@ order: 4
 
 # Configuration
 
-Every theme option lives under `opts` in your `jsdoc.json` (or, for TypeDoc,
-under the `cleanJsdocTheme` block in `typedoc.json` — see [JSDoc vs
-TypeDoc](#jsdoc-vs-typedoc) just below). Setting up the rest of the build is
-covered in [JSDoc Getting Started](/jsdoc-getting-started) and [TypeDoc Getting
-Started](/typedoc-getting-started); this page documents the theme's own options.
+Every theme option lives under `opts` in your `jsdoc.json` (or, for TypeDoc (typedoc.json),
+under the `cleanJsdocTheme` block in `TypeDoc (typedoc.json).json` — see [JSDoc vs
+TypeDoc (typedoc.json)](#jsdoc-vs-TypeDoc (typedoc.json)) just below). Setting up the rest of the build is
+covered in [JSDoc Getting Started](/jsdoc-getting-started) and [TypeDoc (typedoc.json) Getting
+Started](/TypeDoc (typedoc.json)-getting-started); this page documents the theme's own options.
 
 Each option below shows the snippet for both tools in tabs — pick the one that
 matches your setup.
@@ -20,15 +20,15 @@ matches your setup.
 > hint) — the build continues. Set [`strict`](#strict) to turn those warnings
 > into errors.
 
-## JSDoc vs TypeDoc
+## JSDoc vs TypeDoc (typedoc.json)
 
 Every option on this page is the same for both tools — only **where you put it**
-differs. In JSDoc the theme options go under `opts`; in TypeDoc, under
+differs. In JSDoc the theme options go under `opts`; in TypeDoc (typedoc.json), under
 `cleanJsdocTheme`.
 
 <tabs group="tool">
 
-<tab label="JSDoc (jsdoc.json)" value="jsdoc">
+<tab label="JSDoc (jsdoc.json)" value="JSDoc (jsdoc.json)">
 
 Theme options live under **`opts`**, alongside JSDoc's own options:
 
@@ -51,7 +51,7 @@ Theme options live under **`opts`**, alongside JSDoc's own options:
 
 </tab>
 
-<tab label="TypeDoc (typedoc.json)" value="typedoc">
+<tab label="TypeDoc (typedoc.json) (TypeDoc (typedoc.json).json)" value="TypeDoc (typedoc.json)">
 
 The theme is loaded as a plugin and selected as an output; its options live
 under **`cleanJsdocTheme`**:
@@ -59,7 +59,7 @@ under **`cleanJsdocTheme`**:
 ```json5
 {
   entryPoints: ["src/index.ts"],
-  plugin: ["@clean-jsdoc-theme/typedoc"],
+  plugin: ["@clean-jsdoc-theme/TypeDoc (typedoc.json)"],
   outputs: [{ name: "clean-jsdoc-theme", path: "dist" }],
   // ↓ theme options
   cleanJsdocTheme: {
@@ -76,7 +76,7 @@ under **`cleanJsdocTheme`**:
 </tabs>
 
 The option names and values are identical — only the namespace changes:
-**`opts`** (JSDoc) vs **`cleanJsdocTheme`** (TypeDoc). One exception: the
+**`opts`** (JSDoc) vs **`cleanJsdocTheme`** (TypeDoc (typedoc.json)). One exception: the
 [`outputSourceFiles`](#outputsourcefiles) and
 [`sourceLinkToComment`](#sourcelinktocomment) options sit under JSDoc's
 `templates.default` and are JSDoc-only.
@@ -94,7 +94,7 @@ theme, `default` is the fallback when a theme-specific one isn't given, and
 
 <tabs group="tool">
 
-<tab label="JSDoc">
+<tab label="JSDoc (jsdoc.json)">
 
 ```json5
 opts: { siteName: "My Library" }
@@ -110,7 +110,7 @@ opts: {
 
 </tab>
 
-<tab label="TypeDoc">
+<tab label="TypeDoc (typedoc.json)">
 
 ```json5
 cleanJsdocTheme: { siteName: "My Library" }
@@ -139,7 +139,7 @@ set it when the site is served under a sub-path rather than the domain root.
 
 <tabs group="tool">
 
-<tab label="JSDoc">
+<tab label="JSDoc (jsdoc.json)">
 
 ```json5
 opts: { basePath: "/my-library" } // served at example.com/my-library/
@@ -147,7 +147,7 @@ opts: { basePath: "/my-library" } // served at example.com/my-library/
 
 </tab>
 
-<tab label="TypeDoc">
+<tab label="TypeDoc (typedoc.json)">
 
 ```json5
 cleanJsdocTheme: { basePath: "/my-library" } // served at example.com/my-library/
@@ -168,7 +168,7 @@ A Markdown file rendered as the site **home page**.
 
 <tabs group="tool">
 
-<tab label="JSDoc">
+<tab label="JSDoc (jsdoc.json)">
 
 ```json5
 opts: { readme: "./README.md" }
@@ -176,7 +176,7 @@ opts: { readme: "./README.md" }
 
 </tab>
 
-<tab label="TypeDoc">
+<tab label="TypeDoc (typedoc.json)">
 
 ```json5
 cleanJsdocTheme: { readme: "./README.md" }
@@ -197,7 +197,7 @@ defaults, and a root `index.md` becomes the home page.
 
 <tabs group="tool">
 
-<tab label="JSDoc">
+<tab label="JSDoc (jsdoc.json)">
 
 ```json5
 opts: { docs: "./docs" }
@@ -205,7 +205,7 @@ opts: { docs: "./docs" }
 
 </tab>
 
-<tab label="TypeDoc">
+<tab label="TypeDoc (typedoc.json)">
 
 ```json5
 cleanJsdocTheme: { docs: "./docs" }
@@ -223,7 +223,7 @@ The display order of the top-level **doc** groups in the sidebar.
 
 <tabs group="tool">
 
-<tab label="JSDoc">
+<tab label="JSDoc (jsdoc.json)">
 
 ```json5
 opts: { docGroups: ["Getting Started", "Guides"] }
@@ -231,7 +231,7 @@ opts: { docGroups: ["Getting Started", "Guides"] }
 
 </tab>
 
-<tab label="TypeDoc">
+<tab label="TypeDoc (typedoc.json)">
 
 ```json5
 cleanJsdocTheme: { docGroups: ["Getting Started", "Guides"] }
@@ -256,7 +256,7 @@ and no folder to humanize).
 
 <tabs group="tool">
 
-<tab label="JSDoc">
+<tab label="JSDoc (jsdoc.json)">
 
 ```json5
 opts: { defaultDocGroup: "Docs" }
@@ -264,7 +264,7 @@ opts: { defaultDocGroup: "Docs" }
 
 </tab>
 
-<tab label="TypeDoc">
+<tab label="TypeDoc (typedoc.json)">
 
 ```json5
 cleanJsdocTheme: { defaultDocGroup: "Docs" }
@@ -283,7 +283,7 @@ under "Tutorials" in the sidebar.
 
 <tabs group="tool">
 
-<tab label="JSDoc">
+<tab label="JSDoc (jsdoc.json)">
 
 ```json5
 opts: { tutorials: "./tutorials" }
@@ -291,7 +291,7 @@ opts: { tutorials: "./tutorials" }
 
 </tab>
 
-<tab label="TypeDoc">
+<tab label="TypeDoc (typedoc.json)">
 
 ```json5
 cleanJsdocTheme: { tutorials: "./tutorials" }
@@ -313,7 +313,7 @@ given order; anything you omit is appended afterward.
 
 <tabs group="tool">
 
-<tab label="JSDoc">
+<tab label="JSDoc (jsdoc.json)">
 
 ```json5
 opts: { sectionOrder: ["Getting Started", "Guides", "Classes", "Modules"] }
@@ -321,7 +321,7 @@ opts: { sectionOrder: ["Getting Started", "Guides", "Classes", "Modules"] }
 
 </tab>
 
-<tab label="TypeDoc">
+<tab label="TypeDoc (typedoc.json)">
 
 ```json5
 cleanJsdocTheme: { sectionOrder: ["Getting Started", "Guides", "Classes", "Modules"] }
@@ -340,7 +340,7 @@ collapsible parent, grouped by the path segment before the first `/`.
 
 <tabs group="tool">
 
-<tab label="JSDoc">
+<tab label="JSDoc (jsdoc.json)">
 
 ```json5
 opts: { clubSidebarItems: true }
@@ -348,7 +348,7 @@ opts: { clubSidebarItems: true }
 
 </tab>
 
-<tab label="TypeDoc">
+<tab label="TypeDoc (typedoc.json)">
 
 ```json5
 cleanJsdocTheme: { clubSidebarItems: true }
@@ -368,7 +368,7 @@ Custom links pinned above the sidebar navigation.
 
 <tabs group="tool">
 
-<tab label="JSDoc">
+<tab label="JSDoc (jsdoc.json)">
 
 ```json5
 opts: {
@@ -381,7 +381,7 @@ opts: {
 
 </tab>
 
-<tab label="TypeDoc">
+<tab label="TypeDoc (typedoc.json)">
 
 ```json5
 cleanJsdocTheme: {
@@ -408,7 +408,7 @@ time); `mono` is a CSS font stack.
 
 <tabs group="tool">
 
-<tab label="JSDoc">
+<tab label="JSDoc (jsdoc.json)">
 
 ```json5
 opts: {
@@ -418,7 +418,7 @@ opts: {
 
 </tab>
 
-<tab label="TypeDoc">
+<tab label="TypeDoc (typedoc.json)">
 
 ```json5
 cleanJsdocTheme: {
@@ -452,7 +452,7 @@ can override just `bg` and keep every other default.
 
 <tabs group="tool">
 
-<tab label="JSDoc">
+<tab label="JSDoc (jsdoc.json)">
 
 ```json5
 opts: {
@@ -463,7 +463,7 @@ opts: {
 
 </tab>
 
-<tab label="TypeDoc">
+<tab label="TypeDoc (typedoc.json)">
 
 ```json5
 cleanJsdocTheme: {
@@ -488,7 +488,7 @@ stylesheet (so it overrides); custom JS runs **last**.
 
 <tabs group="tool">
 
-<tab label="JSDoc">
+<tab label="JSDoc (jsdoc.json)">
 
 ```json5
 opts: { customCss: ".my-banner { color: rebeccapurple; }" }
@@ -496,7 +496,7 @@ opts: { customCss: ".my-banner { color: rebeccapurple; }" }
 
 </tab>
 
-<tab label="TypeDoc">
+<tab label="TypeDoc (typedoc.json)">
 
 ```json5
 cleanJsdocTheme: { customCss: ".my-banner { color: rebeccapurple; }" }
@@ -515,7 +515,7 @@ content-hashed asset and links it.
 
 <tabs group="tool">
 
-<tab label="JSDoc">
+<tab label="JSDoc (jsdoc.json)">
 
 ```json5
 opts: { customCssFile: "./extra.css", customJsFile: "./extra.js" }
@@ -523,7 +523,7 @@ opts: { customCssFile: "./extra.css", customJsFile: "./extra.js" }
 
 </tab>
 
-<tab label="TypeDoc">
+<tab label="TypeDoc (typedoc.json)">
 
 ```json5
 cleanJsdocTheme: { customCssFile: "./extra.css", customJsFile: "./extra.js" }
@@ -542,7 +542,7 @@ Whether custom-asset filenames are content-hashed (for cache-busting). Set
 
 <tabs group="tool">
 
-<tab label="JSDoc">
+<tab label="JSDoc (jsdoc.json)">
 
 ```json5
 opts: { hashCustomAssets: false }
@@ -550,7 +550,7 @@ opts: { hashCustomAssets: false }
 
 </tab>
 
-<tab label="TypeDoc">
+<tab label="TypeDoc (typedoc.json)">
 
 ```json5
 cleanJsdocTheme: { hashCustomAssets: false }
@@ -572,7 +572,7 @@ default with all actions.
 
 <tabs group="tool">
 
-<tab label="JSDoc">
+<tab label="JSDoc (jsdoc.json)">
 
 ```json5
 opts: { copyPage: { enabled: true, actions: ["copy", "view", "claude"] } }
@@ -581,7 +581,7 @@ opts: { copyPage: { enabled: true, actions: ["copy", "view", "claude"] } }
 
 </tab>
 
-<tab label="TypeDoc">
+<tab label="TypeDoc (typedoc.json)">
 
 ```json5
 cleanJsdocTheme: { copyPage: { enabled: true, actions: ["copy", "view", "claude"] } }
@@ -601,7 +601,7 @@ actions.
 
 <tabs group="tool">
 
-<tab label="JSDoc">
+<tab label="JSDoc (jsdoc.json)">
 
 ```json5
 opts: { aiPrompt: "You are helping a developer use My Library. " }
@@ -609,7 +609,7 @@ opts: { aiPrompt: "You are helping a developer use My Library. " }
 
 </tab>
 
-<tab label="TypeDoc">
+<tab label="TypeDoc (typedoc.json)">
 
 ```json5
 cleanJsdocTheme: { aiPrompt: "You are helping a developer use My Library. " }
@@ -678,7 +678,7 @@ hard build errors.
 
 <tabs group="tool">
 
-<tab label="JSDoc">
+<tab label="JSDoc (jsdoc.json)">
 
 ```json5
 opts: { strict: true }
@@ -686,7 +686,7 @@ opts: { strict: true }
 
 </tab>
 
-<tab label="TypeDoc">
+<tab label="TypeDoc (typedoc.json)">
 
 ```json5
 cleanJsdocTheme: { strict: true }
@@ -704,7 +704,7 @@ Toggle the build's progress output (the per-stage spinners).
 
 <tabs group="tool">
 
-<tab label="JSDoc">
+<tab label="JSDoc (jsdoc.json)">
 
 ```json5
 opts: { progress: false }
@@ -712,7 +712,7 @@ opts: { progress: false }
 
 </tab>
 
-<tab label="TypeDoc">
+<tab label="TypeDoc (typedoc.json)">
 
 ```json5
 cleanJsdocTheme: { progress: false }

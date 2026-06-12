@@ -1,9 +1,5 @@
 # clean-jsdoc-theme
 
-> **v5 alpha.** A ground-up rewrite of the theme on a Preact + MDX + esbuild + Pagefind pipeline. See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the full project structure.
->
-> To stay on v4, pin `"clean-jsdoc-theme": "^4"` in your `package.json`. Every past release is tagged, so you can check out the matching git tag to browse the v4 source.
-
 [![sponsor](https://img.shields.io/badge/sponsor-%E2%9D%A4-db61a2?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/ankitskvmdam)
 
 If clean-jsdoc-theme saves you time, please consider [sponsoring its development](https://github.com/sponsors/ankitskvmdam) — it directly funds the v5 rewrite and ongoing maintenance.
