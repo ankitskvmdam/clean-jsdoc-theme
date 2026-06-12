@@ -66,10 +66,64 @@ Every page emits a companion `.md` authored for machine reading, plus opt-out
 "copy page" and "open in Claude / ChatGPT / Perplexity" actions — so an AI reads
 the same reference your users do.
 
+## The packages
+
+`clean-jsdoc-theme` isn't a single template. Under the hood it's a small set of
+single-responsibility packages wired into a one-way `setu → dwar` pipeline: your
+source comments flow in one end and a fast, static, LLM-friendly site comes out
+the other. Because that core is shared, the same pieces power both the JSDoc and
+TypeDoc entry points.
+
+Most users never touch these directly — you install an [entry
+point](#entry-points), set a few [options](/configuration), and you're done. But
+every building block is **published to npm**, documented, and reusable.
+
+![Build pipeline: JSDoc / TypeDoc → setu.generateSite() → SiteManifest → dwar.render() (with components from rang) → static site](/assets/build-pipeline.svg)
+
+### Core pipeline
+
+**setu** turns your comments into a `SiteManifest`; **dwar** renders that
+manifest to HTML/CSS/JS using the Preact components from **rang**; **utils**
+holds the shared types and Zod schemas that define the boundary contract.
+
+| Package | What it does | Docs | Source |
+| --- | --- | --- | --- |
+| [`@clean-jsdoc-theme/utils`](https://www.npmjs.com/package/@clean-jsdoc-theme/utils) | Shared types, Zod schemas, and the `SiteManifest` contract every other package builds against. | [Overview](/packages/utils-overview) · [Examples](/packages/utils-examples) | [GitHub](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/packages/utils) |
+| [`@clean-jsdoc-theme/setu`](https://www.npmjs.com/package/@clean-jsdoc-theme/setu) | Processes JSDoc doclets into pages, nav, and cross-resolved links — emits the `SiteManifest`. Does no I/O. | [Overview](/packages/setu-overview) · [Examples](/packages/setu-examples) | [GitHub](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/packages/setu) |
+| [`@clean-jsdoc-theme/rang`](https://www.npmjs.com/package/@clean-jsdoc-theme/rang) | Preact component library, MDX component map, and island registry — the UI dwar bundles for SSR and hydration. | [Overview](/packages/rang-overview) · [Examples](/packages/rang-examples) | [GitHub](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/packages/rang) |
+| [`@clean-jsdoc-theme/dwar`](https://www.npmjs.com/package/@clean-jsdoc-theme/dwar) | Renders a `SiteManifest` to in-memory HTML/CSS/JS (Preact + MDX + utility CSS + esbuild islands), plus a Pagefind hook. Pure. | [Overview](/packages/dwar-overview) · [Examples](/packages/dwar-examples) | [GitHub](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/packages/dwar) |
+
+### Entry points
+
+These are what you actually install — each feeds your docs through the same
+`setu → dwar` core, JSDoc via the `publish` bridge and TypeDoc via a registered
+output.
+
+| Package | What it does | Getting started | Source |
+| --- | --- | --- | --- |
+| [`clean-jsdoc-theme`](https://www.npmjs.com/package/clean-jsdoc-theme) | The JSDoc template. JSDoc calls its `publish()` bridge, which orchestrates setu → dwar and writes the files. | [JSDoc Getting Started](/jsdoc-getting-started) | [GitHub](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/packages/clean-jsdoc-theme) |
+| [`@clean-jsdoc-theme/typedoc`](https://www.npmjs.com/package/@clean-jsdoc-theme/typedoc) | The TypeDoc plugin. Registers a `clean-jsdoc-theme` output that runs reflection → setu → dwar. | [TypeDoc Getting Started](/typedoc-getting-started) | [GitHub](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/packages/typedoc) |
+
+### Reserved
+
+Published and reserved on npm but not yet usable — stubs under active
+development. See [Reserved packages](/packages/reserved) for what each will do.
+
+| Package | Planned role |
+| --- | --- |
+| [`@clean-jsdoc-theme/aadesh`](https://www.npmjs.com/package/@clean-jsdoc-theme/aadesh) | A `clean-jsdoc` build / i18n workflow CLI. |
+| [`@clean-jsdoc-theme/bhasha`](https://www.npmjs.com/package/@clean-jsdoc-theme/bhasha) | Localization / i18n tooling (extract → translate → build). |
+
+The boundaries are deliberately one-way — **setu** never imports dwar or rang,
+**dwar** consumes only the `SiteManifest`, and `render()` is pure — which is what
+lets both entry points share one rendering core with no duplicated logic. For why
+the project is split this way, see the [Overview](/overview); to combine
+hand-written guides with your generated reference, see [Combining guides and
+API](/guides/combine-guides-and-api).
+
 ## Where to next
 
 - **Getting Started** — install it and point [JSDoc](/jsdoc-getting-started) or
   [TypeDoc](/typedoc-getting-started) at your project.
-- **[Packages](/packages)** — the monorepo's packages and what each one is for.
 - **[API Reference](/api-docs/)** — a live example of theme-generated API
   reference, built from a small sample module.
