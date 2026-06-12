@@ -92,15 +92,34 @@ interface PageNeighbors {
 const PAGE_NAV_DESC_MAX = 100;
 
 /**
- * Flatten the nav tree into the linear reading order the sidebar shows: a
- * depth-first walk collecting every real page leaf (a node with a `slug`),
- * skipping external links (`href`) and top-region menu entries.
+ * The source section: the "Source Files" index (slug `source`) and its per-file
+ * viewer pages (`source/<path>`). Documentation chrome (copy-page, the prev/next
+ * pager) excludes it. Mirrors setu's `SOURCE_SLUG_PREFIX`.
+ */
+function inSourceSection(slug: string): boolean {
+  return slug === 'source' || slug.startsWith('source/');
+}
+
+/**
+ * Flatten the nav tree into the linear reading order the prev/next pager walks: a
+ * depth-first collection of the real content pages — the Home page plus the API/
+ * docs/tutorial section entries. Excluded: external links (`href`), the Source
+ * Files section, and top-region menu entries EXCEPT Home (which is a `menu`
+ * entry in menu mode but is still the start of the reading flow).
  */
 function flattenNavSlugs(nav: NavNode[]): string[] {
   const out: string[] = [];
   const walk = (nodes: NavNode[]): void => {
     for (const node of nodes) {
-      if (node.slug !== undefined && !node.href && !node.menu) out.push(node.slug);
+      const { slug } = node;
+      if (
+        slug !== undefined &&
+        !node.href &&
+        !inSourceSection(slug) &&
+        (!node.menu || slug === '')
+      ) {
+        out.push(slug);
+      }
       if (node.children) walk(node.children);
     }
   };
@@ -191,8 +210,7 @@ async function renderPage(
     // The copy-page button is for documentation content only — never the source
     // section (its viewer pages are `kind: 'source'` and skip this branch; the
     // "Source Files" index lives at the `source` slug and is excluded here too).
-    const inSourceSection = page.slug === 'source' || page.slug.startsWith('source/');
-    if (copyPageEnabled && !inSourceSection) {
+    if (copyPageEnabled && !inSourceSection(page.slug)) {
       // Copy-page split button: copies the page's companion .md, or opens it /
       // hands it to ChatGPT/Claude/Perplexity. It's handed to the MDX render via
       // HeaderSlotContext so the first heading places it in a row beside the title.

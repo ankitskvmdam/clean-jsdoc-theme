@@ -119,6 +119,47 @@ describe('render() — smoke', () => {
     expect(guide).not.toContain('Next');
   });
 
+  it('includes Home but not the Source Files index or external links in menu-mode reading order', async () => {
+    const manifest = makeManifest();
+    // Menu mode: Home and external links are `menu` entries; add a Source Files
+    // index page + nav node. Expected reading order: '' (Home) → 'guide/intro'.
+    manifest.pages = [
+      ...manifest.pages,
+      {
+        slug: 'source',
+        frontmatter: { title: 'Source Files', kind: 'guide' },
+        body: '# Source Files\n\n- a\n- b\n',
+        headings: [],
+      },
+    ];
+    manifest.nav = [
+      { label: 'Home', slug: '', menu: true },
+      { label: 'GitHub', href: 'https://github.com/x/y', menu: true },
+      { label: 'Source Files', slug: 'source', menu: true },
+      { label: 'Guide', children: [{ label: 'Intro', slug: 'guide/intro' }] },
+    ];
+    const result = await render(manifest, { theme: minimalTheme });
+
+    // Home (a menu entry) is the start of the reading flow → only a Next card.
+    const home = asString(result.files.find((f) => f.path === 'index.html')!);
+    expect(home).toContain('aria-label="Pagination"');
+    expect(home).toContain('href="/guide/intro"');
+    expect(home).toContain('Next');
+    expect(home).not.toContain('Previous');
+
+    // The guide is the last content page (Source Files is excluded) → only a
+    // Previous card, pointing back at Home, and no Next.
+    const guide = asString(result.files.find((f) => f.path === 'guide/intro/index.html')!);
+    expect(guide).toContain('aria-label="Pagination"');
+    expect(guide).toContain('href="/"');
+    expect(guide).toContain('Previous');
+    expect(guide).not.toContain('Next');
+
+    // The Source Files index is out of the reading order → no pager at all.
+    const source = asString(result.files.find((f) => f.path === 'source/index.html')!);
+    expect(source).not.toContain('aria-label="Pagination"');
+  });
+
   it('omits the prev/next pager when disabled in the theme', async () => {
     const manifest = makeManifest();
     const result = await render(manifest, {
