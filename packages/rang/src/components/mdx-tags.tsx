@@ -9,7 +9,13 @@ import { useContext } from 'preact/hooks';
 import { CircleAlert, Info, Lightbulb, TriangleAlert } from 'lucide-preact';
 import { withBase } from '@clean-jsdoc-theme/utils';
 import type { BaseProps, HeadingProps } from './mdx-utils';
-import { HeadingAnchor, HeaderRow, useHeaderSlot, BasePathContext, InlineSvgContext } from './mdx-utils';
+import {
+  HeadingAnchor,
+  HeaderRow,
+  useHeaderSlot,
+  BasePathContext,
+  InlineSvgContext,
+} from './mdx-utils';
 import { Code } from './CodeBlock';
 
 export function MdxH1({ id, children, ...rest }: HeadingProps) {
@@ -104,7 +110,15 @@ export function MdxImg({ src, alt, ...rest }: ImgProps) {
   }
   const isInternal = !!src && src.startsWith('/') && !src.startsWith('//');
   const resolvedSrc = isInternal ? withBase(basePath, src) : src;
-  return <img src={resolvedSrc} alt={alt ?? ''} loading="lazy" class="my-4 h-auto max-w-full" {...rest} />;
+  return (
+    <img
+      src={resolvedSrc}
+      alt={alt ?? ''}
+      loading="lazy"
+      class="my-4 h-auto max-w-full"
+      {...rest}
+    />
+  );
 }
 
 interface SourceLinkProps {
@@ -312,12 +326,13 @@ export function MdxLi({ children, ...rest }: BaseProps) {
 }
 
 /**
- * Callout variants (info/tip/warning/error). A `type`-less blockquote stays a
- * plain muted quote; a typed one (emitted by setu as `<blockquote type="…">`,
- * e.g. for `@deprecated`, or from a `> [!TIP]` prose alert) renders in a neutral
- * rounded container — the variant is conveyed by a colored leading icon (info
- * blue, tip green, warning amber, error red). lucide icons inherit
- * `currentColor`, so each picks up its `text-*` color below.
+ * Callout variants (info/tip/warning/error). Every blockquote renders as a
+ * callout in a neutral rounded container — the variant is conveyed by a colored
+ * leading icon (info blue, tip green, warning amber, error red). A typed
+ * blockquote (emitted by setu as `<blockquote type="…">`, e.g. for `@deprecated`
+ * or a `> [!TIP]` prose alert) uses its variant; a blockquote with no `type` (a
+ * plain `>` quote) or an unrecognized one falls back to `info`. lucide icons
+ * inherit `currentColor`, so each picks up its `text-*` color below.
  */
 type CalloutType = 'info' | 'tip' | 'warning' | 'error';
 
@@ -329,23 +344,15 @@ const CALLOUTS: Record<CalloutType, { Icon: typeof Info; icon: string }> = {
 };
 
 interface BlockquoteProps extends BaseProps {
-  /** Callout variant. Absent → a plain muted blockquote. */
+  /** Callout variant. Absent or unrecognized → the `info` variant. */
   type?: string;
 }
 
 export function MdxBlockquote({ type, children, ...rest }: BlockquoteProps) {
-  const callout = typeof type === 'string' ? CALLOUTS[type as CalloutType] : undefined;
-
-  if (!callout) {
-    return (
-      <blockquote
-        class="mx-0 my-4 border-l-4 border-(--clean-border) bg-(--clean-bg-muted) px-4 py-2 text-muted-foreground"
-        {...rest}
-      >
-        {children}
-      </blockquote>
-    );
-  }
+  // Every blockquote is a callout; an absent or unrecognized `type` falls back
+  // to `info` (so a plain `>` quote still renders in the callout container).
+  const callout =
+    (typeof type === 'string' ? CALLOUTS[type as CalloutType] : undefined) ?? CALLOUTS.info;
 
   const { Icon, icon } = callout;
   return (

@@ -61,6 +61,49 @@ describe('defaultMdxComponents', () => {
     expect(html).toContain('<table');
   });
 
+  describe('blockquote / Callout', () => {
+    const BQ = defaultMdxComponents.blockquote;
+
+    // Each variant's leading icon color (lucide inherits currentColor).
+    const ICON_COLOR: Record<string, string> = {
+      info: 'text-blue-600',
+      tip: 'text-green-600',
+      warning: 'text-amber-600',
+      error: 'text-red-600',
+    };
+
+    it('blockquote and Callout map to the same component', () => {
+      expect(defaultMdxComponents.Callout).toBe(defaultMdxComponents.blockquote);
+    });
+
+    it('renders each typed variant in the callout container with its icon color', () => {
+      for (const [type, color] of Object.entries(ICON_COLOR)) {
+        const html = render(h(BQ, { type }, 'body text'));
+        expect(html, type).toContain('role="note"');
+        expect(html, type).toContain('rounded-2xl');
+        expect(html, type).toContain(color);
+        expect(html, type).toContain('body text');
+      }
+    });
+
+    it('a blockquote with no type falls back to the info callout (not a plain quote)', () => {
+      const html = render(h(BQ, {}, 'plain quote'));
+      // New behavior: untyped quotes render as the info callout, not the old
+      // muted `border-l-4` blockquote.
+      expect(html).toContain('role="note"');
+      expect(html).toContain('rounded-2xl');
+      expect(html).toContain(ICON_COLOR.info);
+      expect(html).not.toContain('border-l-4');
+      expect(html).toContain('plain quote');
+    });
+
+    it('an unrecognized type also falls back to the info callout', () => {
+      const html = render(h(BQ, { type: 'bogus' }, 'x'));
+      expect(html).toContain(ICON_COLOR.info);
+      expect(html).toContain('role="note"');
+    });
+  });
+
   it('MemberMeta renders chips on the left and the filename:line source on the right', () => {
     const MemberMeta = defaultMdxComponents.MemberMeta;
     const html = render(
