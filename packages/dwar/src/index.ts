@@ -48,9 +48,13 @@ import {
 import { bundleIslands, ALL_ISLANDS } from './islands-bundle';
 import { buildCss } from './css';
 
-/** Injected from package.json at build time (see tsup.config.ts `define`). */
-declare const __PKG_VERSION__: string;
-export const DWAR_PACKAGE_VERSION = __PKG_VERSION__;
+/**
+ * Injected from package.json at build time (see tsup.config.ts `define`). The
+ * `typeof` guard keeps it safe under vitest, which doesn't apply the define.
+ */
+declare const __PKG_VERSION__: string | undefined;
+export const DWAR_PACKAGE_VERSION =
+  typeof __PKG_VERSION__ === 'string' ? __PKG_VERSION__ : '0.0.0-dev';
 
 function mergeMdxComponents(override?: Record<string, unknown>): MdxComponentMap {
   if (!override) return { ...defaultMdxComponents };

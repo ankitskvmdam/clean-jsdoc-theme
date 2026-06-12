@@ -9,9 +9,13 @@
  * ThemeTokens values into those variables on `:root`.
  */
 
-/** Injected from package.json at build time (see tsup.config.ts `define`). */
-declare const __PKG_VERSION__: string;
-export const RANG_PACKAGE_VERSION = __PKG_VERSION__;
+/**
+ * Injected from package.json at build time (see tsup.config.ts `define`). The
+ * `typeof` guard keeps it safe under vitest, which doesn't apply the define.
+ */
+declare const __PKG_VERSION__: string | undefined;
+export const RANG_PACKAGE_VERSION =
+  typeof __PKG_VERSION__ === 'string' ? __PKG_VERSION__ : '0.0.0-dev';
 
 export { Button, buttonVariants } from './components/Button';
 export type { ButtonProps } from './components/Button';
