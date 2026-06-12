@@ -87,6 +87,28 @@
     line-height: var(--clean-line-height, 1.5);
   }
 
+  /*
+   * Anchor-jump offset for the sticky header. The document is the scroller, so
+   * scroll-padding-top here insets EVERY scroll-into-view entry point — heading
+   * clicks (heading-anchors.ts sets the hash), TOC `<a href="#id">` links, the
+   * browser's own hash navigation, and `scrollIntoView()` — so a targeted
+   * heading clears the sticky chrome instead of hiding behind it.
+   *
+   * Below `lg` the sticky stack is the header (h-16 = 64px) PLUS the mobile TOC
+   * bar (h-12 = 48px, `sticky top-16`, see Layout) → ~112px, so we reserve a bit
+   * more for breathing room. At `lg` the TOC bar is `lg:hidden`, leaving only the
+   * header, so the offset shrinks. Keep this breakpoint in sync with that
+   * `lg:hidden`. Per-heading `scroll-mt-20` stays as a harmless backstop.
+   */
+  html {
+    scroll-padding-top: 7.5rem;
+  }
+  @media (min-width: 64rem) {
+    html {
+      scroll-padding-top: 5rem;
+    }
+  }
+
   main h1,
   main h2,
   main h3,
