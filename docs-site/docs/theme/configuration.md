@@ -9,8 +9,8 @@ order: 4
 Every theme option lives under `opts` in your `jsdoc.json` (or, for TypeDoc,
 under the `cleanJsdocTheme` block in `typedoc.json` — see [JSDoc vs
 TypeDoc](#jsdoc-vs-typedoc) just below). Setting up the rest of the build is
-covered in [JSDoc Getting Started](/jsdoc-getting-started) and [TypeDoc Getting
-Started](/typedoc-getting-started); this page documents the theme's own options.
+covered in [JSDoc Getting Started](/theme/jsdoc-getting-started) and [TypeDoc Getting
+Started](/theme/typedoc-getting-started); this page documents the theme's own options.
 
 Each option below shows the snippet for both tools in tabs — pick the one that
 matches your setup.
