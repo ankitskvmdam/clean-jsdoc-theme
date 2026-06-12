@@ -48,7 +48,9 @@ import {
 import { bundleIslands, ALL_ISLANDS } from './islands-bundle';
 import { buildCss } from './css';
 
-export const DWAR_PACKAGE_VERSION = '5.0.0-alpha.0';
+/** Injected from package.json at build time (see tsup.config.ts `define`). */
+declare const __PKG_VERSION__: string;
+export const DWAR_PACKAGE_VERSION = __PKG_VERSION__;
 
 function mergeMdxComponents(override?: Record<string, unknown>): MdxComponentMap {
   if (!override) return { ...defaultMdxComponents };

@@ -9,7 +9,9 @@
  * ThemeTokens values into those variables on `:root`.
  */
 
-export const RANG_PACKAGE_VERSION = '5.0.0-alpha.0';
+/** Injected from package.json at build time (see tsup.config.ts `define`). */
+declare const __PKG_VERSION__: string;
+export const RANG_PACKAGE_VERSION = __PKG_VERSION__;
 
 export { Button, buttonVariants } from './components/Button';
 export type { ButtonProps } from './components/Button';
