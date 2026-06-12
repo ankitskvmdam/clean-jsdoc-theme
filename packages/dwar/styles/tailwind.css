@@ -192,3 +192,19 @@
     text-decoration: var(--shiki-dark-text-decoration) !important;
   }
 }
+
+/*
+ * Badge rows. shields.io-style badges on consecutive README/index lines render
+ * as ONE content paragraph of images — usually linked (`<a><img></a>`), some-
+ * times bare. Each <img> carries the standard `my-4` vertical margin (MdxImg),
+ * which stacks into large gaps when the row wraps onto multiple lines on small
+ * screens. Collapse it to a small margin, but ONLY for grouped images — a
+ * paragraph holding more than one image, linked (`a + a`) or bare (`img + img`).
+ * A standalone content image (a single <img> in its paragraph) is untouched and
+ * keeps its `my-4`. Unlayered on purpose: it overrides the layered Tailwind
+ * utility (`@layer utilities`) without needing `!important`.
+ */
+main p:has(a img):has(a + a) img,
+main p:has(img + img) img {
+  margin-block: 0.2rem;
+}
