@@ -22,13 +22,13 @@
     "menu": [
       {
         "title": "Home",
-        "link": "/",
+        "link": "/clean-jsdoc-theme/api-docs",
         "id": "api-docs",
         "icon": "lucide:home"
       },
       {
-        "title": "Home ",
-        "link": "https://ankdev.me/clean-jsdoc-theme",
+        "title": "clean-jsdoc-theme Guide",
+        "link": "/clean-jsdoc-theme",
         "id": "home",
         "icon": "lucide:website"
       },

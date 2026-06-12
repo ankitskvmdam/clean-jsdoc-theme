@@ -1,16 +1,16 @@
 ---
 title: Configuration
-group: Getting Started
+group: Using the Theme
 order: 4
 ---
 
 # Configuration
 
-Every theme option lives under `opts` in your `jsdoc.json` (or, for TypeDoc (typedoc.json),
-under the `cleanJsdocTheme` block in `TypeDoc (typedoc.json).json` — see [JSDoc vs
-TypeDoc (typedoc.json)](#jsdoc-vs-TypeDoc (typedoc.json)) just below). Setting up the rest of the build is
-covered in [JSDoc Getting Started](/jsdoc-getting-started) and [TypeDoc (typedoc.json) Getting
-Started](/TypeDoc (typedoc.json)-getting-started); this page documents the theme's own options.
+Every theme option lives under `opts` in your `jsdoc.json` (or, for TypeDoc,
+under the `cleanJsdocTheme` block in `typedoc.json` — see [JSDoc vs
+TypeDoc](#jsdoc-vs-typedoc) just below). Setting up the rest of the build is
+covered in [JSDoc Getting Started](/jsdoc-getting-started) and [TypeDoc Getting
+Started](/typedoc-getting-started); this page documents the theme's own options.
 
 Each option below shows the snippet for both tools in tabs — pick the one that
 matches your setup.
@@ -20,10 +20,10 @@ matches your setup.
 > hint) — the build continues. Set [`strict`](#strict) to turn those warnings
 > into errors.
 
-## JSDoc vs TypeDoc (typedoc.json)
+## JSDoc vs TypeDoc
 
 Every option on this page is the same for both tools — only **where you put it**
-differs. In JSDoc the theme options go under `opts`; in TypeDoc (typedoc.json), under
+differs. In JSDoc the theme options go under `opts`; in TypeDoc, under
 `cleanJsdocTheme`.
 
 <tabs group="tool">
@@ -51,7 +51,7 @@ Theme options live under **`opts`**, alongside JSDoc's own options:
 
 </tab>
 
-<tab label="TypeDoc (typedoc.json) (TypeDoc (typedoc.json).json)" value="TypeDoc (typedoc.json)">
+<tab label="TypeDoc (typedoc.json)" value="TypeDoc (typedoc.json)">
 
 The theme is loaded as a plugin and selected as an output; its options live
 under **`cleanJsdocTheme`**:
@@ -59,7 +59,7 @@ under **`cleanJsdocTheme`**:
 ```json5
 {
   entryPoints: ["src/index.ts"],
-  plugin: ["@clean-jsdoc-theme/TypeDoc (typedoc.json)"],
+  plugin: ["@clean-jsdoc-theme/typedoc"],
   outputs: [{ name: "clean-jsdoc-theme", path: "dist" }],
   // ↓ theme options
   cleanJsdocTheme: {
@@ -76,7 +76,7 @@ under **`cleanJsdocTheme`**:
 </tabs>
 
 The option names and values are identical — only the namespace changes:
-**`opts`** (JSDoc) vs **`cleanJsdocTheme`** (TypeDoc (typedoc.json)). One exception: the
+**`opts`** (JSDoc) vs **`cleanJsdocTheme`** (TypeDoc). One exception: the
 [`outputSourceFiles`](#outputsourcefiles) and
 [`sourceLinkToComment`](#sourcelinktocomment) options sit under JSDoc's
 `templates.default` and are JSDoc-only.

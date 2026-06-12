@@ -14,9 +14,9 @@
     "template": "./node_modules/clean-jsdoc-theme/dist",
     "readme": "./README.md",
     "docs": "./docs",
-    "docGroups": ["Getting Started", "Packages"],
+    "docGroups": ["Packages", "Using the Theme", "Guides", "Authoring"],
     "defaultDocGroup": "Docs",
-    "sectionOrder": ["Getting Started", "Components"],
+    "sectionOrder": ["Using the Theme", "Guides", "Authoring", "Packages"],
     "siteName": {
       "light": "./assets/clean-jsdoc-theme.svg",
       "dark": "./assets/clean-jsdoc-theme-white.svg",
@@ -32,7 +32,7 @@
       },
       {
         "title": "API Example Page",
-        "link": "https://ankdev.me/clean-jsdoc-theme/api-docs/",
+        "link": "./api-docs/",
         "id": "api-docs",
         "icon": "lucide:website"
       },
