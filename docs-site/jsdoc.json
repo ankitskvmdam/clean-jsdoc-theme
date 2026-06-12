@@ -31,6 +31,12 @@
         "icon": "lucide:home"
       },
       {
+        "title": "API Example Page",
+        "link": "https://ankdev.me/clean-jsdoc-theme/api-docs/",
+        "id": "api-docs",
+        "icon": "lucide:website"
+      },
+      {
         "title": "Github",
         "link": "https://github.com/ankitskvmdam/clean-jsdoc-theme",
         "id": "github",

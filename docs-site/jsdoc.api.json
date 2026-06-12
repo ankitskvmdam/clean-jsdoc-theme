@@ -23,8 +23,14 @@
       {
         "title": "Home",
         "link": "/",
-        "id": "home",
+        "id": "api-docs",
         "icon": "lucide:home"
+      },
+      {
+        "title": "Home ",
+        "link": "https://ankdev.me/clean-jsdoc-theme",
+        "id": "home",
+        "icon": "lucide:website"
       },
       {
         "title": "Github",
