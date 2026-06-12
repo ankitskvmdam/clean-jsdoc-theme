@@ -75,7 +75,7 @@ the other. Because that core is shared, the same pieces power both the JSDoc and
 TypeDoc entry points.
 
 Most users never touch these directly — you install an [entry
-point](#entry-points), set a few [options](/configuration), and you're done. But
+point](#entry-points), set a few [options](/theme/configuration), and you're done. But
 every building block is **published to npm**, documented, and reusable.
 
 ![Build pipeline: JSDoc / TypeDoc → setu.generateSite() → SiteManifest → dwar.render() (with components from rang) → static site](/assets/build-pipeline.svg)
@@ -101,8 +101,8 @@ output.
 
 | Package | What it does | Getting started | Source |
 | --- | --- | --- | --- |
-| [`clean-jsdoc-theme`](https://www.npmjs.com/package/clean-jsdoc-theme) | The JSDoc template. JSDoc calls its `publish()` bridge, which orchestrates setu → dwar and writes the files. | [JSDoc Getting Started](/jsdoc-getting-started) | [GitHub](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/packages/clean-jsdoc-theme) |
-| [`@clean-jsdoc-theme/typedoc`](https://www.npmjs.com/package/@clean-jsdoc-theme/typedoc) | The TypeDoc plugin. Registers a `clean-jsdoc-theme` output that runs reflection → setu → dwar. | [TypeDoc Getting Started](/typedoc-getting-started) | [GitHub](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/packages/typedoc) |
+| [`clean-jsdoc-theme`](https://www.npmjs.com/package/clean-jsdoc-theme) | The JSDoc template. JSDoc calls its `publish()` bridge, which orchestrates setu → dwar and writes the files. | [JSDoc Getting Started](/theme/jsdoc-getting-started) | [GitHub](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/packages/clean-jsdoc-theme) |
+| [`@clean-jsdoc-theme/typedoc`](https://www.npmjs.com/package/@clean-jsdoc-theme/typedoc) | The TypeDoc plugin. Registers a `clean-jsdoc-theme` output that runs reflection → setu → dwar. | [TypeDoc Getting Started](/theme/typedoc-getting-started) | [GitHub](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/packages/typedoc) |
 
 ### Reserved
 
@@ -117,13 +117,13 @@ development. See [Reserved packages](/packages/reserved) for what each will do.
 The boundaries are deliberately one-way — **setu** never imports dwar or rang,
 **dwar** consumes only the `SiteManifest`, and `render()` is pure — which is what
 lets both entry points share one rendering core with no duplicated logic. For why
-the project is split this way, see the [Overview](/overview); to combine
+the project is split this way, see the [Overview](/theme/overview); to combine
 hand-written guides with your generated reference, see [Combining guides and
 API](/guides/combine-guides-and-api).
 
 ## Where to next
 
-- **Getting Started** — install it and point [JSDoc](/jsdoc-getting-started) or
-  [TypeDoc](/typedoc-getting-started) at your project.
+- **Getting Started** — install it and point [JSDoc](/theme/jsdoc-getting-started) or
+  [TypeDoc](/theme/typedoc-getting-started) at your project.
 - **[API Reference](/api-docs/)** — a live example of theme-generated API
   reference, built from a small sample module.

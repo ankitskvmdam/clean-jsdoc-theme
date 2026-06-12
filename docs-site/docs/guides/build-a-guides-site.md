@@ -21,7 +21,7 @@ exactly how the site you're reading is built.
 
 ## The mental model
 
-Point [`opts.docs`](/configuration#docs) at a directory. The theme walks it
+Point [`opts.docs`](/theme/configuration#docs) at a directory. The theme walks it
 recursively, and **each `.md` / `.markdown` / `.html` file becomes one page**.
 The file's location in the folder drives two things automatically:
 
@@ -57,7 +57,7 @@ docs/
 
 <step label="Point the config at it">
 
-Add [`docs`](/configuration#docs) to your config. Tutorials and the API are
+Add [`docs`](/theme/configuration#docs) to your config. Tutorials and the API are
 optional — a docs folder alone is a complete site.
 
 <tabs group="tool">
@@ -100,8 +100,8 @@ optional — a docs folder alone is a complete site.
 
 <step label="Build">
 
-Build as usual — see [JSDoc Getting Started](/jsdoc-getting-started) or
-[TypeDoc Getting Started](/typedoc-getting-started) for the full toolchain
+Build as usual — see [JSDoc Getting Started](/theme/jsdoc-getting-started) or
+[TypeDoc Getting Started](/theme/typedoc-getting-started) for the full toolchain
 setup.
 
 ```sh
@@ -141,14 +141,14 @@ segment: `guides/advanced.md` lands in group **Guides**;
 `guides/setup/install.md` lands in the nested group **Guides/Setup** (a `/` in a
 group path nests it — see [Structure your sidebar](/guides/structure-your-sidebar)).
 A file at the docs root with no frontmatter group falls back to
-[`defaultDocGroup`](/configuration#defaultdocgroup); if that's unset too, the
+[`defaultDocGroup`](/theme/configuration#defaultdocgroup); if that's unset too, the
 page is ungrouped (it lands in the catch-all "Docs" section).
 
 ### `index.md` → home page
 
 A file whose path is exactly `index` (the docs-root `index.md`) becomes the
 home page: slug `""`, rendered at `index.html`. It **overrides** the
-[`readme`](/configuration#readme) home page when both exist.
+[`readme`](/theme/configuration#readme) home page when both exist.
 
 ## Frontmatter overrides
 
@@ -189,7 +189,7 @@ hidden: false
 
 Two levers, working at different scopes:
 
-- [`docGroups`](/configuration#docgroups) orders the **top-level group sections**
+- [`docGroups`](/theme/configuration#docgroups) orders the **top-level group sections**
   in the sidebar (e.g. `["Getting Started", "Guides"]`). Groups you don't list
   are appended after, alphabetically.
 - A page's frontmatter **`order`** positions it **within** its group.
@@ -203,7 +203,7 @@ frontmatter sequences the pages inside.
 > `docGroups` only orders **doc** groups, and it appends them **after** the API
 > kind sections. If you're mixing guides with an API reference and want full
 > control over the entire sidebar — guides interleaved with Classes, Modules,
-> etc. — reach for [`sectionOrder`](/configuration#sectionorder) instead. See
+> etc. — reach for [`sectionOrder`](/theme/configuration#sectionorder) instead. See
 > [Combine guides + API](/guides/combine-guides-and-api).
 
 ## Where to go next
@@ -211,4 +211,4 @@ frontmatter sequences the pages inside.
 - Add a generated reference: [Build an API reference](/guides/build-an-api-reference).
 - Ship both in one site: [Combine guides + API](/guides/combine-guides-and-api).
 - Master every sidebar lever: [Structure your sidebar](/guides/structure-your-sidebar).
-- Every option in detail: [Configuration](/configuration).
+- Every option in detail: [Configuration](/theme/configuration).

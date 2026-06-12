@@ -24,9 +24,9 @@ these custom tags. The component is in
 [`Tabs.tsx`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/rang/src/components/Tabs.tsx).
 
 > [!TIP]
-> Want to see tabs live? The whole [Configuration](/configuration) page is built
+> Want to see tabs live? The whole [Configuration](/theme/configuration) page is built
 > out of them — every option's snippet is a synced JSDoc/TypeDoc tab group. The
-> [JSDoc](/jsdoc-getting-started) and [TypeDoc](/typedoc-getting-started)
+> [JSDoc](/theme/jsdoc-getting-started) and [TypeDoc](/theme/typedoc-getting-started)
 > getting-started pages use them too. View any of their page sources on GitHub
 > for a real, copyable example.
 
@@ -114,7 +114,7 @@ pnpm add clean-jsdoc-theme
 
 Give another `<tabs>` block on the same page the same `group`, and the two stay
 in lockstep — pick a tab in one and every other grouped block follows. This is
-exactly the mechanism [Configuration](/configuration) uses to keep its
+exactly the mechanism [Configuration](/theme/configuration) uses to keep its
 JSDoc-vs-TypeDoc snippets in sync: every option's tabs share `group="tool"`, so
 choosing "TypeDoc" once switches the whole page.
 

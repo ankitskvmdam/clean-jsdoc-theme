@@ -115,7 +115,7 @@ the same rule a guide group uses for its frontmatter `order`.
 
 ## Lever 4 — `clubSidebarItems`
 
-[`clubSidebarItems`](/configuration#clubsidebaritems) collapses related entries
+[`clubSidebarItems`](/theme/configuration#clubsidebaritems) collapses related entries
 under a shared parent by the path segment **before the first `/` in their
 label** — e.g. `queue`, `queue/Queue`, `queue/types` club under a `queue`
 parent. A prefix shared by only one entry is left flat. Done by `clubNavTree`
@@ -135,13 +135,13 @@ members, and the bare-prefix entry (e.g. the `queue` module itself) becomes an
 
 ## Lever 5 — `sectionOrder`
 
-[`sectionOrder`](/configuration#sectionorder) orders the **top-level** groups —
+[`sectionOrder`](/theme/configuration#sectionorder) orders the **top-level** groups —
 one unified list mixing kind labels, `@category` names, and doc-group names.
 
 - Listed labels render first, in your order.
 - For **kind labels** it's a filter too: a kind label you omit is **dropped**.
 - **Category / doc groups are never dropped** by omission — they're appended
-  after the listed sections (doc groups in [`docGroups`](/configuration#docgroups)
+  after the listed sections (doc groups in [`docGroups`](/theme/configuration#docgroups)
   order, then the rest alphabetically).
 
 See [Combine guides + API](/guides/combine-guides-and-api) for how this
@@ -149,10 +149,10 @@ interleaves prose and API sections.
 
 ## Lever 6 — `docGroups` / `defaultDocGroup`
 
-- [`docGroups`](/configuration#docgroups) orders the **doc-group** sections,
+- [`docGroups`](/theme/configuration#docgroups) orders the **doc-group** sections,
   which are appended **after** the API sections (unless a doc group is also named
   in `sectionOrder`, which then takes authority for its position).
-- [`defaultDocGroup`](/configuration#defaultdocgroup) is the group a guide lands
+- [`defaultDocGroup`](/theme/configuration#defaultdocgroup) is the group a guide lands
   in when it declares none — no frontmatter `group` and no directory to derive
   one from.
 
@@ -160,7 +160,7 @@ Covered end-to-end in [Build a guides site](/guides/build-a-guides-site).
 
 ## Lever 7 — `menu`
 
-[`menu`](/configuration#menu) replaces the auto Home / Source Files links with a
+[`menu`](/theme/configuration#menu) replaces the auto Home / Source Files links with a
 **top region** above the sections, each entry with an icon
 (`lucide:<name>` or `simpleicons:<name>`). When `menu` is set it **owns** the
 home/source links — the automatic Home (first) and Source Files (last) entries
@@ -217,7 +217,7 @@ frontmatter on your guides, and you control the sidebar top to bottom.
 ## Where to go next
 
 - The `@category` / `@order` tag reference: [Custom tags](/authoring/custom-tags).
-- The full option list: [Configuration](/configuration).
+- The full option list: [Configuration](/theme/configuration).
 - The two workflows this ties together:
   [Build a guides site](/guides/build-a-guides-site) ·
   [Build an API reference](/guides/build-an-api-reference) ·

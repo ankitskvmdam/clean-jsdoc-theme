@@ -13,7 +13,7 @@ collection). So the honest examples here are the two real bridges that ship with
 the theme.
 
 If you just want to configure the theme, see
-[Configuration](/configuration) and the [guides](/guides/build-an-api-reference)
+[Configuration](/theme/configuration) and the [guides](/guides/build-an-api-reference)
 instead.
 
 ## The call shape

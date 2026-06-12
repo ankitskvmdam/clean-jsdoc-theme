@@ -26,7 +26,7 @@ on what becomes a page and how the source viewer works. Pick your tool:
 <tab label="JSDoc (jsdoc.json)" value="JSDoc (jsdoc.json)">
 
 Point `source.include` at your code. See
-[JSDoc Getting Started](/jsdoc-getting-started) for the install + build steps.
+[JSDoc Getting Started](/theme/jsdoc-getting-started) for the install + build steps.
 
 ```json5
 {
@@ -51,7 +51,7 @@ Point `source.include` at your code. See
 <tab label="TypeDoc (typedoc.json)" value="TypeDoc (typedoc.json)">
 
 Point `entryPoints` at your code and load the theme plugin. See
-[TypeDoc Getting Started](/typedoc-getting-started) for the full setup.
+[TypeDoc Getting Started](/theme/typedoc-getting-started) for the full setup.
 
 ```json5
 {
@@ -115,7 +115,7 @@ When source viewing is on, the theme renders each project source file as a
 read-only, syntax-highlighted viewer page, builds a **Source Files** index, and
 links each documented member to its declaration with a `Source: file:line` link.
 
-This is gated by JSDoc's [`outputSourceFiles`](/configuration#outputsourcefiles)
+This is gated by JSDoc's [`outputSourceFiles`](/theme/configuration#outputsourcefiles)
 (default **on**). It's a JSDoc-only option living under `templates.default`:
 
 ```json5
@@ -132,7 +132,7 @@ How the links resolve (see
 - A member's `Source:` link points at the file page anchored to a line
   (`#L<n>`). By **default** it lands on the first line of the actual
   **declaration**, skipping past the leading doc-comment block. Set
-  [`sourceLinkToComment`](/configuration#sourcelinktocomment) (`true`) to land on
+  [`sourceLinkToComment`](/theme/configuration#sourcelinktocomment) (`true`) to land on
   the comment's opening line instead (the pre-v5 behavior).
 - The "Source Files" index is always last in the sidebar. You can also surface
   it as a menu item with `{ id: "source" }` (see
@@ -147,7 +147,7 @@ How the links resolve (see
 
 By default the kind sections render in a fixed order (Classes, Modules,
 Namespaces, Mixins, Interfaces, Typedefs, Globals, …). Override it with
-[`sectionOrder`](/configuration#sectionorder), and use `@category` / `@order`
+[`sectionOrder`](/theme/configuration#sectionorder), and use `@category` / `@order`
 tags on your symbols for finer control. That's its own topic —
 [Structure your sidebar](/guides/structure-your-sidebar) covers every lever.
 
@@ -156,5 +156,5 @@ tags on your symbols for finer control. That's its own topic —
 - Add hand-written guides alongside the reference:
   [Combine guides + API](/guides/combine-guides-and-api).
 - Custom source tags (`@category`, `@order`): [Custom tags](/authoring/custom-tags).
-- Every option in detail: [Configuration](/configuration).
+- Every option in detail: [Configuration](/theme/configuration).
 - The package internals: [Packages](/#the-packages).

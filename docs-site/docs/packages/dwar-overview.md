@@ -202,4 +202,4 @@ The maintainer wants you sent to the code — start here:
   consumes comes from.
 - [rang Overview](/packages/rang-overview) — the components and islands dwar
   bundles.
-- [Configuration](/configuration) — the `theme` options that drive a render.
+- [Configuration](/theme/configuration) — the `theme` options that drive a render.

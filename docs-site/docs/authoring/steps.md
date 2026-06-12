@@ -25,8 +25,8 @@ round-trip that would otherwise strip these custom tags. The components live in
 [`Steps.tsx`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/rang/src/components/Steps.tsx).
 
 > [!TIP]
-> Want to see steps live? The [JSDoc Getting Started](/jsdoc-getting-started) and
-> [TypeDoc Getting Started](/typedoc-getting-started) pages lay out their install
+> Want to see steps live? The [JSDoc Getting Started](/theme/jsdoc-getting-started) and
+> [TypeDoc Getting Started](/theme/typedoc-getting-started) pages lay out their install
 > walkthroughs as steppers — view either page's source on GitHub for a real,
 > copyable example.
 
@@ -117,7 +117,7 @@ pnpm add -D jsdoc clean-jsdoc-theme
 </steps>
 ````
 
-This is the same pattern the [JSDoc Getting Started](/jsdoc-getting-started)
+This is the same pattern the [JSDoc Getting Started](/theme/jsdoc-getting-started)
 walkthrough uses — a `<tabs>` block nested inside a `<step>`.
 
 ## A real example, in a doc comment

@@ -12,7 +12,7 @@ order: 31
 > bundles the islands for hydration. You'd reach into rang directly only when
 > you're **contributing to the theme** or writing a **component override**. If
 > you just want docs, install an [entry point](/#the-packages) and set
-> [options](/configuration) instead.
+> [options](/theme/configuration) instead.
 
 Everything ships from the single package entry — `package.json` exposes only
 `.`, so all imports look like this:

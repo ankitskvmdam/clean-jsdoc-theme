@@ -14,7 +14,7 @@ The best starting point is the package's own runnable example: the **smoke
 script**. It exercises the whole `setu → dwar → disk` path against a fixture, and
 because it's real code that runs, it's the most honest example in this doc.
 
-If you just want to configure the theme, see [Configuration](/configuration)
+If you just want to configure the theme, see [Configuration](/theme/configuration)
 instead.
 
 ## Run the smoke script

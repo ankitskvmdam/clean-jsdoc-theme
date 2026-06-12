@@ -11,7 +11,7 @@ order: 11
 > you're writing a **custom bridge** (your own entry point that drives
 > `setu → dwar`), a **tool** that produces or inspects a `SiteManifest`, or a
 > **component override** that needs the boundary types. If you just want docs,
-> install an [entry point](/#the-packages) and set [options](/configuration) instead.
+> install an [entry point](/#the-packages) and set [options](/theme/configuration) instead.
 
 Everything is exported from the single package entry — there are no subpath
 exports (`package.json` exposes only `.`), so all imports look like this:

@@ -13,7 +13,7 @@ second site to deploy, no context-switch for your readers.
 You've seen the two halves already:
 
 - [Build a guides site](/guides/build-a-guides-site) — prose pages from a
-  [`docs`](/configuration#docs) folder.
+  [`docs`](/theme/configuration#docs) folder.
 - [Build an API reference](/guides/build-an-api-reference) — generated pages from
   your source.
 
@@ -102,14 +102,14 @@ they share a group name.
 This is the part worth getting right. The effective top-level order is built in
 [`assembleNav`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/generate-site.ts):
 
-1. **[`sectionOrder`](/configuration#sectionorder) comes first**, in the order
+1. **[`sectionOrder`](/theme/configuration#sectionorder) comes first**, in the order
    you list. It's one unified list — it can name API kind labels (`Classes`),
    `@category` group names, **and** doc-group names, interleaved however you like.
 2. For **kind labels**, `sectionOrder` is both a filter *and* an order — a kind
    label you omit is **dropped from the sidebar**.
 3. **Category and doc groups are never dropped** by omission. Any not named in
    `sectionOrder` are appended *after* the listed sections — doc groups in
-   [`docGroups`](/configuration#docgroups) order first, then the rest
+   [`docGroups`](/theme/configuration#docgroups) order first, then the rest
    alphabetically.
 4. **Home** is always first and **Source Files** always last, regardless of
    `sectionOrder`.
@@ -167,4 +167,4 @@ resolvers in
 
 - Fine-tune the merged sidebar: [Structure your sidebar](/guides/structure-your-sidebar).
 - The group/order tags on symbols: [Custom tags](/authoring/custom-tags).
-- Every option in detail: [Configuration](/configuration).
+- Every option in detail: [Configuration](/theme/configuration).

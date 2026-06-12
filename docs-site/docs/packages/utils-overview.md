@@ -16,7 +16,7 @@ a handful of small pure functions that the rest of the system is built around.
 
 > If you just want to use the theme, you never install this package. It's an
 > internal building block. See the [Packages](/#the-packages) section for the
-> pieces you actually install, and [Configuration](/configuration) for options.
+> pieces you actually install, and [Configuration](/theme/configuration) for options.
 
 ## Why it's a separate package
 

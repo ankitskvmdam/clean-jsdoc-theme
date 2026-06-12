@@ -135,6 +135,6 @@ pieces combine.
   ordering model.
 - [Embeds & live demos](/authoring/embeds) — the `@iframe` config grammar in
   full.
-- [Configuration](/configuration) — `sectionOrder`, `docGroups`, and friends.
+- [Configuration](/theme/configuration) — `sectionOrder`, `docGroups`, and friends.
 - [Build a guides site](/guides/build-a-guides-site) — guide-page frontmatter
   (`group` / `order`), the prose counterpart to these tags.
