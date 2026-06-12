@@ -67,6 +67,26 @@ function blockquoteToCallout(node: Blockquote): RootContent {
   return callout(variant, node.children);
 }
 
+/** A node that may own a `children` array we can recurse into. */
+type MaybeParent = RootContent & { children?: RootContent[] };
+
+/**
+ * Promote GitHub-style alert blockquotes (`> [!NOTE]`, …) to typed callouts at
+ * ANY depth — top level, inside list items, inside other blockquotes — mirroring
+ * GitHub, which renders alerts nested in lists. Each node is promoted first
+ * (outer blockquote → callout), then we descend into the result's children so a
+ * nested alert inside it is promoted too. A blockquote with no recognized marker
+ * is left as a blockquote but still descended into.
+ */
+function promoteCallouts(nodes: RootContent[]): RootContent[] {
+  return nodes.map((node) => {
+    const promoted = node.type === 'blockquote' ? blockquoteToCallout(node) : node;
+    const parent = promoted as MaybeParent;
+    if (Array.isArray(parent.children)) parent.children = promoteCallouts(parent.children);
+    return promoted;
+  });
+}
+
 // ── `<steps>` / `<tabs>` authoring containers ───────────────────────────────
 
 /**
@@ -259,15 +279,14 @@ function expandContainers(
 function htmlBlocksPlain(html: string): RootContent[] {
   const hast = fromHtml(html, { fragment: true });
   const mdast = toMdast(hast) as Root;
-  // Promote GitHub-style alert blockquotes (`> [!INFO]`) to typed callouts.
-  // Done here, after the HTML normalization, so it applies uniformly to every
-  // prose source (README, tutorials, docs) and to JSDoc doclet descriptions —
-  // including content nested inside steps/tabs, since the container recursion
-  // routes item content back through the public functions whose plain segments
-  // reach this transform.
-  return mdast.children.map((node) =>
-    node.type === 'blockquote' ? blockquoteToCallout(node) : node
-  );
+  // Promote GitHub-style alert blockquotes (`> [!INFO]`) to typed callouts,
+  // recursively so an alert nested in a list item is promoted too. Done here,
+  // after the HTML normalization, so it applies uniformly to every prose source
+  // (README, tutorials, docs) and to JSDoc doclet descriptions — including
+  // content nested inside steps/tabs, since the container recursion routes item
+  // content back through the public functions whose plain segments reach this
+  // transform.
+  return promoteCallouts(mdast.children);
 }
 
 /**
