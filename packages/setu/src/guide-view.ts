@@ -522,39 +522,53 @@ function deriveDocMeta(
 }
 
 /**
- * Adapt the existing tutorial tree into {@link DocInput}s for {@link buildDocPages}.
- * Depth-first (parent before its children — the order {@link buildTutorialPages}
- * uses), synthesizing per tutorial a path `tutorials/<name>` (so slugify yields
- * exactly today's `tutorials/<name>`), `group: 'Tutorials'`, the title, the
- * source type/content, and an incrementing `order` matching today's counter.
+ * Adapt the tutorial tree into {@link DocInput}s for {@link buildDocPages},
+ * depth-first (parent before its children — JSDoc's resolved order). Each
+ * tutorial gets the path `tutorials/<name>` (so slugify yields exactly today's
+ * `tutorials/<name>`), its title, source type/content, and an incrementing
+ * `order`.
+ *
+ * The sidebar **group** mirrors the tutorial hierarchy (issue #253): a tutorial
+ * that has sub-tutorials opens a nested group named after itself
+ * (`Tutorials/<title>`), with its own page as the first entry; a leaf sits
+ * directly in its parent's group. {@link buildGroupTree} turns these `/`-paths
+ * into nested, collapsible nav branches. A flat tutorial set still yields one
+ * flat "Tutorials" group, and page slugs/frontmatter/bodies are unchanged either
+ * way — only the nav grouping reflects the hierarchy.
  */
 export function tutorialsToDocInputs(tutorials: readonly TutorialInput[]): DocInput[] {
   const out: DocInput[] = [];
   let order = 0;
-  const walk = (t: TutorialInput): void => {
+  const walk = (t: TutorialInput, parentGroup: string): void => {
+    const title = t.title?.trim() || t.name;
+    const hasChildren = (t.children?.length ?? 0) > 0;
+    // A parent (has sub-tutorials) opens a collapsible group named after itself;
+    // its page + children live inside it. A leaf stays in its parent's group.
+    const group = hasChildren ? `${parentGroup}/${title}` : parentGroup;
     out.push({
       path: `${TUTORIAL_SLUG_PREFIX}/${t.name}`,
       content: typeof t.content === 'string' ? t.content : '',
       type: t.type,
-      group: TUTORIALS_GROUP,
-      title: t.title?.trim() || t.name,
+      group,
+      title,
       order: order++,
     });
-    for (const child of t.children ?? []) walk(child);
+    for (const child of t.children ?? []) walk(child, group);
   };
-  for (const t of tutorials) walk(t);
+  for (const t of tutorials) walk(t, TUTORIALS_GROUP);
   return out;
 }
 
 /**
- * Build guide pages + nav entries from the tutorial tree. The hierarchy is
- * flattened depth-first into a single "Tutorials" group, preserving the order
- * JSDoc resolved (parent before its children).
+ * Build guide pages + nav entries from the tutorial tree. The hierarchy drives
+ * the sidebar grouping (issue #253): a parent tutorial becomes a nested,
+ * collapsible group (see {@link tutorialsToDocInputs}); a flat tutorial set
+ * stays a single "Tutorials" group.
  *
- * Expressed via the shared {@link buildDocPages} builder over
- * {@link tutorialsToDocInputs}. Frontmatter parsing is disabled so a tutorial
- * whose content happens to begin with `---` keeps its exact pre-existing output
- * (the public slugs / frontmatter / body / nav are byte-identical to before).
+ * Expressed via the shared {@link buildDocPages} builder. Frontmatter parsing is
+ * disabled so a tutorial whose content begins with `---` keeps its exact output;
+ * page slugs / frontmatter / bodies are unchanged — only the nav grouping now
+ * reflects the hierarchy.
  */
 export function buildTutorialPages(
   tutorials: readonly TutorialInput[],

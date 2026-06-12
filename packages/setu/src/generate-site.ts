@@ -817,7 +817,13 @@ export function assembleNav({
     });
   }
   for (const t of tutorials) {
-    entries.push({ leaf: { ...t }, path: TUTORIALS_SECTION, explicit: false, sort: 'input' });
+    // Use the tutorial's own group, which carries the sub-tutorial hierarchy as
+    // a `Tutorials/<parent>/…` path (issue #253); buildGroupTree nests it. A
+    // declared hierarchy (group deeper than the bare section) opts out of
+    // clubbing so the nesting survives; a flat tutorial set keeps `path` ===
+    // TUTORIALS_SECTION and stays clubbable — byte-identical legacy behavior.
+    const path = t.group ?? TUTORIALS_SECTION;
+    entries.push({ leaf: { ...t }, path, explicit: path !== TUTORIALS_SECTION, sort: 'input' });
   }
   // Doc entries group by their OWN group path (fallback DOCS_SECTION). First-seen
   // top-level group order is captured so groups absent from `docGroups`/

@@ -1,8 +1,8 @@
 # Advanced Usage
 
-This page is a **child tutorial** of [Configuration](configuration) — JSDoc's
-tutorial hierarchy is declared in `tutorials.json` and preserved in the
-generated navigation.
+This page is a **child tutorial** of [Processing Guide](processing-guide) —
+JSDoc's tutorial hierarchy is declared in `tutorials.json` and preserved in the
+generated navigation as a nested, collapsible sidebar group.
 
 ## Linking between tutorials
 

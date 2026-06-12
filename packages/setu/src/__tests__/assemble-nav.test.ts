@@ -45,6 +45,57 @@ describe('assembleNav — section mode (default order)', () => {
   });
 });
 
+describe('assembleNav — nested tutorials (issue #253)', () => {
+  // A parent tutorial ("Processing Guide") whose sub-tutorials carry a nested
+  // `Tutorials/<parent>` group, exactly as tutorialsToDocInputs emits them.
+  const NESTED: NavNode[] = [
+    { label: 'Getting Started', slug: 'tutorials/getting-started', group: 'Tutorials', order: 0 },
+    {
+      label: 'Processing Guide',
+      slug: 'tutorials/processing-guide',
+      group: 'Tutorials/Processing Guide',
+      order: 1,
+    },
+    {
+      label: 'Configuration',
+      slug: 'tutorials/configuration',
+      group: 'Tutorials/Processing Guide',
+      order: 2,
+    },
+    {
+      label: 'Advanced Usage',
+      slug: 'tutorials/advanced-usage',
+      group: 'Tutorials/Processing Guide',
+      order: 3,
+    },
+  ];
+
+  it('nests sub-tutorials under a collapsible branch named after the parent', () => {
+    const nav = assembleNav({ tutorials: NESTED, sectionOrder: ['Tutorials'] });
+    const tut = nav.filter((n) => n.group === 'Tutorials');
+    // Top level: a flat "Getting Started" leaf + a "Processing Guide" branch.
+    const gs = tut.find((n) => n.label === 'Getting Started')!;
+    expect(gs.slug).toBe('tutorials/getting-started');
+    expect(gs.children).toBeUndefined();
+    const branch = tut.find((n) => n.label === 'Processing Guide')!;
+    expect(branch.slug).toBeUndefined(); // a branch, not a link
+    // The parent's own page is the first entry inside its branch, then children.
+    expect(branch.children!.map((c) => c.label)).toEqual([
+      'Processing Guide',
+      'Configuration',
+      'Advanced Usage',
+    ]);
+    expect(branch.children![0].slug).toBe('tutorials/processing-guide');
+  });
+
+  it('leaves a flat tutorial set ungrouped (no spurious nesting)', () => {
+    const nav = assembleNav({ tutorials: TUTORIAL_NAV, sectionOrder: ['Tutorials'] });
+    const tut = nav.filter((n) => n.group === 'Tutorials');
+    expect(tut.every((n) => !n.children)).toBe(true);
+    expect(tut.map((n) => n.label)).toEqual(['Getting Started', 'Advanced']);
+  });
+});
+
 describe('assembleNav — sectionOrder (filter + order)', () => {
   it('renders only the listed sections, in the listed order', () => {
     const nav = assembleNav({

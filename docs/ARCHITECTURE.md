@@ -128,8 +128,10 @@ within their parent container's page. Alongside the
 API, two free-form prose sources are also rendered as pages: the project
 **README** (`opts.readme`, which JSDoc has already rendered to HTML) becomes the
 site **home page** (slug `''` → `index.html`), and **tutorials** (the
-`--tutorials` tree) become **guide pages** under `tutorials/<name>`, grouped as
-"Tutorials" in the nav with their resolved hierarchy flattened in order. Both
+`--tutorials` tree) become **guide pages** under `tutorials/<name>`, in a
+"Tutorials" section whose **sub-tutorials nest** as collapsible groups mirroring
+JSDoc's resolved hierarchy (a parent with children opens a `Tutorials/<title>`
+group with its own page first; a flat set stays one "Tutorials" group). Both
 flow through the same MDX → dwar path as class pages. Every prose source is
 normalized to structured mdast before serialization (README + HTML tutorials via
 `htmlToMdastBlocks`; Markdown tutorials via `markdownToMdastBlocks`, which routes
@@ -169,11 +171,15 @@ root `index.md` (`path === 'index'`) becomes the **home page** (slug `''`,
 Doc-group sidebar sections render in `opts.docGroups` order, after the API
 sections. A doc whose slug would shadow the home or an already-claimed
 API/source/tutorial slug is skipped + logged (never throws), mirroring the
-synthetic-globals skip. Tutorials and docs share **one** builder: legacy
-tutorials are routed through `tutorialsToDocInputs`, a thin adapter that
-synthesizes a `DocInput` per tutorial (`tutorials/<name>`, group "Tutorials",
-incrementing order) with frontmatter parsing disabled, so today's tutorial
-output stays byte-identical while flowing through the same path.
+synthetic-globals skip. Tutorials and docs share **one** builder: tutorials are
+routed through `tutorialsToDocInputs`, a thin adapter that synthesizes a
+`DocInput` per tutorial (`tutorials/<name>`, incrementing order) with frontmatter
+parsing disabled. Its **group encodes the hierarchy** (issue #253): a tutorial
+with sub-tutorials opens a `Tutorials/<title>` group holding its own page +
+children; a leaf sits in its parent's group; a flat set is one "Tutorials" group
+(then byte-identical to before). `assembleNav` feeds these paths to
+`buildGroupTree` like any `@category` path — page slugs/bodies are unchanged,
+only the nav nests.
 
 **Link resolution.** `{@link}`/`{@linkcode}`/`{@linkplain}` inline tags and `@see`
 block tags become real anchors. setu builds a link registry (`link-registry.ts`)
@@ -256,7 +262,8 @@ setu/src/
 ├── guide-view.ts         # README → home Page; DocInput[] → guide Pages + nav
 │                         #   (buildDocPages: frontmatter/directory slugs+groups,
 │                         #   root index.md → home); tutorialsToDocInputs adapter
-│                         #   (legacy tutorials → DocInput[], byte-identical output)
+│                         #   (tutorials → DocInput[]; group encodes the hierarchy
+│                         #   as Tutorials/<parent> → nested collapsible nav, #253)
 ├── source-view.ts        # source files → hidden 'source' viewer Pages + "Source
 │                         #   Files" index + per-member meta→/source/…#L<n> resolver
 │                         #   (firstCodeLine: land on the declaration, not the comment)

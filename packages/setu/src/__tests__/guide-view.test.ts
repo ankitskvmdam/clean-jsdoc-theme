@@ -279,7 +279,7 @@ describe('tutorialsToDocInputs + buildTutorialPages — byte-identical to legacy
     },
   ];
 
-  it('the adapter assigns tutorials/<name>, Tutorials group, and incrementing order', () => {
+  it('assigns tutorials/<name> paths, incrementing order, and hierarchy-based groups', () => {
     const inputs = tutorialsToDocInputs(TUTORIALS);
     expect(inputs.map((d) => d.path)).toEqual([
       'tutorials/getting-started',
@@ -287,10 +287,16 @@ describe('tutorialsToDocInputs + buildTutorialPages — byte-identical to legacy
       'tutorials/advanced',
     ]);
     expect(inputs.map((d) => d.order)).toEqual([0, 1, 2]);
-    expect(inputs.every((d) => d.group === 'Tutorials')).toBe(true);
+    // A parent with sub-tutorials opens a nested group named after itself; its
+    // page + children sit inside it. A leaf stays in the top "Tutorials" group.
+    expect(inputs.map((d) => d.group)).toEqual([
+      'Tutorials/Getting Started',
+      'Tutorials/Getting Started',
+      'Tutorials',
+    ]);
   });
 
-  it('produces byte-identical pages + nav to the legacy builder', () => {
+  it('produces byte-identical pages to the legacy builder (slugs/frontmatter/body unchanged)', () => {
     const legacy = legacyBuildTutorialPages(TUTORIALS);
     const next = buildTutorialPages(TUTORIALS);
 
@@ -298,7 +304,23 @@ describe('tutorialsToDocInputs + buildTutorialPages — byte-identical to legacy
     expect(next.pages.map((p) => p.frontmatter)).toEqual(legacy.pages.map((p) => p.frontmatter));
     expect(next.pages.map((p) => p.body)).toEqual(legacy.pages.map((p) => p.body));
     expect(next.pages.map((p) => p.headings)).toEqual(legacy.pages.map((p) => p.headings));
-    expect(next.nav).toEqual(legacy.nav);
+  });
+
+  it('nests nav entries by the tutorial hierarchy (issue #253)', () => {
+    const { nav } = buildTutorialPages(TUTORIALS);
+    const groupOf = (label: string) => nav.find((n) => n.label === label)?.group;
+    // The parent + its child share the nested group; the leaf stays at the top.
+    expect(groupOf('Getting Started')).toBe('Tutorials/Getting Started');
+    expect(groupOf('Install')).toBe('Tutorials/Getting Started');
+    expect(groupOf('Advanced')).toBe('Tutorials');
+  });
+
+  it('keeps a flat tutorial set in a single "Tutorials" group', () => {
+    const flat: TutorialInput[] = [
+      { name: 'a', title: 'A', type: 'markdown', content: '# A' },
+      { name: 'b', title: 'B', type: 'markdown', content: '# B' },
+    ];
+    expect(tutorialsToDocInputs(flat).every((d) => d.group === 'Tutorials')).toBe(true);
   });
 
   it('keeps tutorial page frontmatter to { title, kind } only (no group/order)', () => {
