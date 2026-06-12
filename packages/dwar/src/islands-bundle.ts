@@ -107,11 +107,29 @@ function computeCacheKey(names: IslandName[]): string {
   // rang's compiled output (single bundled dist/index.js) — captures any rang
   // component change. Hash its contents, not a version, so editing rang in dev
   // (rebuild) invalidates the key even without a version bump.
+  //
+  // rang ships an ESM-only `exports` map with no `require`/bare condition, so
+  // `resolve('@clean-jsdoc-theme/rang')` throws under the CJS resolver. Resolve
+  // its package.json instead (exposed via `exports["./package.json"]`) and read
+  // the entry it points at. A bare-`rang` fallback covers a `require`-condition
+  // future; only a total failure falls back to the constant (a spurious miss
+  // just rebuilds — a stale hit, which this guards against, is the real risk).
   let rangContents = 'rang:unresolved';
   try {
-    rangContents = readFileSync(requireFromHere.resolve('@clean-jsdoc-theme/rang'), 'utf8');
+    const pkgPath = requireFromHere.resolve('@clean-jsdoc-theme/rang/package.json');
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as {
+      exports?: { '.'?: { import?: string } };
+      module?: string;
+      main?: string;
+    };
+    const entryRel = pkg.exports?.['.']?.import ?? pkg.module ?? pkg.main ?? 'dist/index.js';
+    rangContents = readFileSync(join(dirname(pkgPath), entryRel), 'utf8');
   } catch {
-    rangContents = 'rang:unresolved';
+    try {
+      rangContents = readFileSync(requireFromHere.resolve('@clean-jsdoc-theme/rang'), 'utf8');
+    } catch {
+      rangContents = 'rang:unresolved';
+    }
   }
   parts.push('rang');
   parts.push(rangContents);
