@@ -173,7 +173,7 @@ The same markup works in a JSDoc / TypeDoc **description**. Here is the
 
 > [!TIP]
 > See it rendered on the
-> **[sample-api module page](https://ankdev.me/clean-jsdoc-theme/api-docs/module/sample-api)**
+> **[sample-api module page](/api-docs/module/sample-api)**
 > in the live API demo — generated verbatim from
 > [`docs-site/src/index.js`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/docs-site/src/index.js).
 

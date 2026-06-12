@@ -153,7 +153,7 @@ live demo's module page are authored right in its `@module` comment:
 
 > [!TIP]
 > See these tabs rendered on the
-> **[sample-api module page](https://ankdev.me/clean-jsdoc-theme/api-docs/module/sample-api)**
+> **[sample-api module page](/api-docs/module/sample-api)**
 > of the live demo — source in
 > [`docs-site/src/index.js`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/docs-site/src/index.js).
 

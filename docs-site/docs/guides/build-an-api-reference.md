@@ -9,7 +9,7 @@ order: 1
 This is the **pure-API** workflow: point the tool at your source code and let it
 generate a reference site from your doc comments — one page per class, module,
 namespace, and so on, plus an optional source-file viewer. It's what the
-[API demo](https://ankdev.me/clean-jsdoc-theme/api-docs/) is built from, using
+[API demo](/api-docs/) is built from, using
 [`docs-site/jsdoc.api.json`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/docs-site/jsdoc.api.json).
 
 > [!TIP]

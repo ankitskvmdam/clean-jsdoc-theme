@@ -166,7 +166,7 @@ You can also write the **alert markers themselves** straight into a description
 
 > [!TIP]
 > See an `[!INFO]` callout authored in a real `@module` comment on the
-> **[sample-api module page](https://ankdev.me/clean-jsdoc-theme/api-docs/module/sample-api)**
+> **[sample-api module page](/api-docs/module/sample-api)**
 > of the live demo — source in
 > [`docs-site/src/index.js`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/docs-site/src/index.js).
 
