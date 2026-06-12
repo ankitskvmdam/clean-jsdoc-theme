@@ -13,12 +13,13 @@ LLM-friendly documentation site, generated from your TypeScript sources.
 [![npm version](https://img.shields.io/npm/v/@clean-jsdoc-theme/typedoc)](https://www.npmjs.com/package/@clean-jsdoc-theme/typedoc)
 [![npm downloads](https://img.shields.io/npm/dm/@clean-jsdoc-theme/typedoc)](https://www.npmjs.com/package/@clean-jsdoc-theme/typedoc)
 [![license](https://img.shields.io/npm/l/@clean-jsdoc-theme/typedoc)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/LICENSE)
-[![docs](https://img.shields.io/badge/docs-ankdev.me-005bff)](https://ankdev.me/clean-jsdoc-theme/typedoc-getting-started)
+[![docs](https://img.shields.io/badge/docs-ankdev.me-005bff)](https://ankdev.me/clean-jsdoc-theme/theme/typedoc-getting-started)
 [![live demo](https://img.shields.io/badge/live%20demo-api--docs-7c3aed)](https://ankdev.me/clean-jsdoc-theme/api-docs)
 [![stars](https://img.shields.io/github/stars/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme)
 [![forks](https://img.shields.io/github/forks/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/fork)
 [![issues](https://img.shields.io/github/issues/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues)
 [![contributors](https://img.shields.io/github/contributors/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors)
+[![sponsor](https://img.shields.io/badge/sponsor-%E2%9D%A4-db61a2?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/ankitskvmdam)
 
 </div>
 
@@ -77,7 +78,8 @@ npx serve dist
 
 ## Documentation
 
-- **Setup & full reference** — [**ankdev.me/clean-jsdoc-theme/typedoc-getting-started**](https://ankdev.me/clean-jsdoc-theme/typedoc-getting-started): installation, the `cleanJsdocTheme` options, and theming. Every theme option works the same as JSDoc's `opts`, nested under `cleanJsdocTheme`.
+- **Setup & full reference** — [**ankdev.me/clean-jsdoc-theme/theme/typedoc-getting-started**](https://ankdev.me/clean-jsdoc-theme/theme/typedoc-getting-started): installation, the `cleanJsdocTheme` options, and theming. Every theme option works the same as JSDoc's `opts`, nested under `cleanJsdocTheme`.
+- **FAQ & recipes** — [**ankdev.me/clean-jsdoc-theme/guides/faq**](https://ankdev.me/clean-jsdoc-theme/guides/faq): how to embed CodePen / YouTube / sites, write rich doc comments (callouts, steps), and common config tweaks.
 - **Live demo** — [**ankdev.me/clean-jsdoc-theme/api-docs**](https://ankdev.me/clean-jsdoc-theme/api-docs): a real generated API reference, so you can see the output before installing.
 
 > **v5 is in alpha.** Verified against TypeDoc **0.28.x**.
