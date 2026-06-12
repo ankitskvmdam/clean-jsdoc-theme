@@ -15,6 +15,8 @@ import {
   buildDocPages,
   buildReadmePage,
   buildTutorialPages,
+  composeResolvers,
+  makeDocResolver,
   makeTutorialResolver,
   type DocInput,
   type TutorialInput,
@@ -224,12 +226,16 @@ export function generateSite(collection: unknown, opts?: GenerateSiteOptions): S
   }
   const resolveLink = makeLinkResolver(registry);
 
-  // `@tutorial <name>` resolver, derived from the tutorial tree (name → guide
-  // page). Built here so it threads into every API page's render alongside
-  // `resolveLink`; the guide pages themselves are built further below.
-  const resolveTutorial = opts?.tutorials?.length
-    ? makeTutorialResolver(opts.tutorials)
-    : undefined;
+  // `@tutorial <name>` resolver. Tutorials resolve by their tutorial name; docs
+  // resolve by their slug (e.g. `@tutorial guides/advanced`). Both are derived
+  // from the raw inputs here so the resolver threads into every API page's
+  // render alongside `resolveLink`; the guide/doc pages themselves are built
+  // further below. Tutorials are tried first, so a tutorial name wins a
+  // collision with a doc slug (backward compatible).
+  const resolveTutorial = composeResolvers(
+    opts?.tutorials?.length ? makeTutorialResolver(opts.tutorials) : undefined,
+    opts?.docs?.length ? makeDocResolver(opts.docs) : undefined
+  );
 
   // --- Pass 3: render -------------------------------------------------------
   //
@@ -386,11 +392,14 @@ export {
   buildDocPages,
   buildReadmePage,
   buildTutorialPages,
+  composeResolvers,
+  makeDocResolver,
   makeTutorialResolver,
   parseFrontmatter,
   tutorialsToDocInputs,
   TUTORIALS_GROUP,
   type BuildDocPagesOptions,
+  type CrossRefResolver,
   type DocInput,
   type ResolvedTutorial,
   type TutorialInput,

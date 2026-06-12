@@ -4,6 +4,9 @@ import { slugifyPath, type NavNode, type Page } from '@clean-jsdoc-theme/utils';
 import {
   buildDocPages,
   buildTutorialPages,
+  composeResolvers,
+  makeDocResolver,
+  makeTutorialResolver,
   parseFrontmatter,
   tutorialsToDocInputs,
   type DocInput,
@@ -313,5 +316,107 @@ describe('tutorialsToDocInputs + buildTutorialPages — byte-identical to legacy
     const legacy = legacyBuildTutorialPages(tutorials);
     const next = buildTutorialPages(tutorials);
     expect(next.pages[0].body).toBe(legacy.pages[0].body);
+  });
+});
+
+describe('makeTutorialResolver', () => {
+  const TUTORIALS: TutorialInput[] = [
+    {
+      name: 'getting-started',
+      title: 'Getting Started',
+      type: 'markdown',
+      content: '# Getting Started',
+      children: [{ name: 'install', title: 'Install', type: 'markdown', content: '# Install' }],
+    },
+  ];
+
+  it('resolves a tutorial name to its guide page href + title (parent and child)', () => {
+    const resolve = makeTutorialResolver(TUTORIALS);
+    expect(resolve('getting-started')).toEqual({
+      href: '/tutorials/getting-started',
+      title: 'Getting Started',
+    });
+    expect(resolve('install')).toEqual({ href: '/tutorials/install', title: 'Install' });
+  });
+
+  it('trims the lookup key and returns null for an unknown name', () => {
+    const resolve = makeTutorialResolver(TUTORIALS);
+    expect(resolve('  install  ')).toEqual({ href: '/tutorials/install', title: 'Install' });
+    expect(resolve('nope')).toBeNull();
+  });
+
+  it('first registration wins on a duplicate name', () => {
+    const dup: TutorialInput[] = [
+      { name: 'dup', title: 'First', type: 'markdown', content: '# A' },
+      { name: 'dup', title: 'Second', type: 'markdown', content: '# B' },
+    ];
+    expect(makeTutorialResolver(dup)('dup')?.title).toBe('First');
+  });
+});
+
+describe('makeDocResolver', () => {
+  const DOCS: DocInput[] = [
+    { path: 'getting-started', type: 'markdown', content: '# Getting Started' },
+    { path: 'guides/advanced', type: 'markdown', content: '# Advanced usage' },
+    { path: 'index', type: 'markdown', content: '# Home' },
+  ];
+
+  it('resolves a doc by its slug (the path), nested paths included', () => {
+    const resolve = makeDocResolver(DOCS);
+    expect(resolve('getting-started')).toEqual({
+      href: '/getting-started',
+      title: 'Getting Started',
+    });
+    expect(resolve('guides/advanced')).toEqual({
+      href: '/guides/advanced',
+      title: 'Advanced',
+    });
+  });
+
+  it('honors a frontmatter slug/title override and matches the emitted page slug', () => {
+    const docs: DocInput[] = [
+      { path: 'guides/x', type: 'markdown', content: '---\nslug: custom\ntitle: Custom\n---\n# X' },
+    ];
+    const resolve = makeDocResolver(docs);
+    // Resolver keys on the same derived slug the page builder emits.
+    expect(buildDocPages(docs).pages[0].slug).toBe('custom');
+    expect(resolve('custom')).toEqual({ href: '/custom', title: 'Custom' });
+    expect(resolve('guides/x')).toBeNull();
+  });
+
+  it('does not make the home page (slug "") linkable, and returns null for unknown', () => {
+    const resolve = makeDocResolver(DOCS);
+    expect(resolve('')).toBeNull();
+    expect(resolve('index')).toBeNull();
+    expect(resolve('missing')).toBeNull();
+  });
+});
+
+describe('composeResolvers', () => {
+  const tutorials = makeTutorialResolver([
+    { name: 'shared', title: 'Tutorial Shared', type: 'markdown', content: '# T' },
+  ]);
+  const docs = makeDocResolver([
+    { path: 'shared', type: 'markdown', content: '# D' },
+    { path: 'guides/only-doc', type: 'markdown', content: '# Only Doc' },
+  ]);
+
+  it('returns undefined when no resolver is active', () => {
+    expect(composeResolvers(undefined, undefined)).toBeUndefined();
+  });
+
+  it('returns the single resolver unchanged when only one is active', () => {
+    expect(composeResolvers(tutorials, undefined)).toBe(tutorials);
+  });
+
+  it('tries resolvers in order — the first (tutorial) wins a name collision', () => {
+    const resolve = composeResolvers(tutorials, docs)!;
+    expect(resolve('shared')).toEqual({ href: '/tutorials/shared', title: 'Tutorial Shared' });
+  });
+
+  it('falls through to a later resolver when the earlier one misses', () => {
+    const resolve = composeResolvers(tutorials, docs)!;
+    expect(resolve('guides/only-doc')).toEqual({ href: '/guides/only-doc', title: 'Only Doc' });
+    expect(resolve('neither')).toBeNull();
   });
 });

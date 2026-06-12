@@ -295,34 +295,96 @@ export function buildReadmePage(
   return { slug: '', frontmatter, body, mdast: tree, headings };
 }
 
-/** A resolved `@tutorial` cross-reference: its guide page href + display title. */
+/** A resolved `@tutorial`/`{@link}` cross-reference: page href + display title. */
 export interface ResolvedTutorial {
   href: string;
   title: string;
 }
 
+/** A resolver: a cross-reference name → its target, or `null` when unknown. */
+export type CrossRefResolver = (name: string) => ResolvedTutorial | null;
+
+/** A keyed cross-reference target, before it's folded into a resolver map. */
+interface NamedEntry {
+  /** The identifier a `@tutorial <name>` / `{@link <name>}` references. */
+  name: string;
+  href: string;
+  title: string;
+}
+
 /**
- * Build a `resolveTutorial(name)` over the tutorial tree, so a `@tutorial <name>`
- * tag links to the guide page setu generates for it. Walks the same hierarchy
- * {@link buildTutorialPages} flattens, keying each tutorial by its `name` (the
- * identifier the tag references) to `{ href, title }`. The href and slug share
- * `slugifyPath`, so they always agree with the emitted page. Returns `null` for
- * an unknown name so the caller falls back to plain text — never a broken
- * anchor. First registration wins on a duplicate name.
+ * Fold a list of {@link NamedEntry} into a `name → { href, title }` resolver,
+ * the shared core behind {@link makeTutorialResolver} and {@link makeDocResolver}.
+ * The lookup key is trimmed; an empty name and any duplicate are dropped
+ * (**first registration wins**); an unknown name resolves to `null` so the
+ * caller falls back to plain text rather than a broken anchor.
  */
-export function makeTutorialResolver(
-  tutorials: readonly TutorialInput[]
-): (name: string) => ResolvedTutorial | null {
+function makeNamedResolver(entries: Iterable<NamedEntry>): CrossRefResolver {
   const byName = new Map<string, ResolvedTutorial>();
+  for (const { name, href, title } of entries) {
+    const key = name.trim();
+    if (key !== '' && !byName.has(key)) byName.set(key, { href, title });
+  }
+  return (name: string) => byName.get(name.trim()) ?? null;
+}
+
+/**
+ * Build a `@tutorial <name>` resolver over the tutorial tree, so a tag links to
+ * the guide page setu generates for it. Walks the same hierarchy
+ * {@link buildTutorialPages} flattens, keying each tutorial by its `name` (the
+ * identifier the tag references). The href and slug share `slugifyPath`, so they
+ * always agree with the emitted page.
+ */
+export function makeTutorialResolver(tutorials: readonly TutorialInput[]): CrossRefResolver {
+  const entries: NamedEntry[] = [];
   const walk = (t: TutorialInput): void => {
-    if (t.name && !byName.has(t.name)) {
+    if (t.name) {
       const slug = `${TUTORIAL_SLUG_PREFIX}/${slugifyPath([t.name])}`;
-      byName.set(t.name, { href: hrefFor(slug), title: t.title?.trim() || t.name });
+      entries.push({ name: t.name, href: hrefFor(slug), title: t.title?.trim() || t.name });
     }
     for (const child of t.children ?? []) walk(child);
   };
   for (const t of tutorials) walk(t);
-  return (name: string) => byName.get(name.trim()) ?? null;
+  return makeNamedResolver(entries);
+}
+
+/**
+ * Build a `@tutorial`/`{@link}` resolver over the docs directory, the docs
+ * counterpart of {@link makeTutorialResolver}. Each doc is keyed by its **slug**
+ * — its canonical address (a frontmatter `slug:` override, else the path) — so
+ * `@tutorial guides/advanced` links to that page. Derives the slug/title through
+ * the same {@link deriveDocMeta} the page builder uses, so the resolved href can
+ * never drift from the emitted page. The home page (slug `''`) is not linkable.
+ */
+export function makeDocResolver(docs: readonly DocInput[]): CrossRefResolver {
+  const entries: NamedEntry[] = [];
+  for (const input of docs) {
+    const { slug, title, isHome } = deriveDocMeta(input, { parseFrontmatter: true });
+    if (isHome) continue;
+    entries.push({ name: slug, href: hrefFor(slug), title });
+  }
+  return makeNamedResolver(entries);
+}
+
+/**
+ * Chain cross-reference resolvers, trying each in order and returning the first
+ * hit (so an earlier resolver wins a name collision). Skips absent resolvers and
+ * returns `undefined` when none are active, matching the optional `resolveTutorial`
+ * the render path threads through.
+ */
+export function composeResolvers(
+  ...resolvers: Array<CrossRefResolver | undefined>
+): CrossRefResolver | undefined {
+  const active = resolvers.filter((r): r is CrossRefResolver => typeof r === 'function');
+  if (active.length === 0) return undefined;
+  if (active.length === 1) return active[0];
+  return (name: string) => {
+    for (const resolve of active) {
+      const hit = resolve(name);
+      if (hit) return hit;
+    }
+    return null;
+  };
 }
 
 /**
@@ -356,38 +418,17 @@ export function buildDocPages(
   const nav: NavNode[] = [];
 
   for (const input of docs) {
-    const rawContent = typeof input.content === 'string' ? input.content : '';
-    const { data, body: rawBody } = doParse
-      ? parseFrontmatter(rawContent)
-      : { data: {} as Record<string, unknown>, body: rawContent };
+    const { slug, title, group, order, hidden, isHome, kind, body } = deriveDocMeta(input, {
+      defaultDocGroup,
+      parseFrontmatter: doParse,
+    });
 
-    const tree = contentToMdast(rawBody, input.type);
+    const tree = contentToMdast(body, input.type);
     if (tree.children.length === 0) continue;
     if (resolveLink) resolveLinkTags(tree, resolveLink);
     // Prose `iframe` fences → <Embed/> (after normalization, before toMdx).
     resolveEmbedFences(tree);
 
-    const segments = pathSegments(input.path);
-    const basename = segments.length > 0 ? segments[segments.length - 1] : input.path;
-    const isHome = input.path === 'index';
-
-    // slug: frontmatter override, else slugify the path (no prefix).
-    const slugFromData = asString(data.slug);
-    const slug = isHome ? '' : (slugFromData ?? slugifyPath(segments));
-
-    // title: frontmatter → input → humanized basename.
-    const title = asString(data.title) ?? (input.title?.trim() || undefined) ?? humanize(basename);
-
-    // group: frontmatter → input → directory path (humanized) → default.
-    const dirSegments = segments.slice(0, -1);
-    const dirGroup = dirSegments.length > 0 ? dirSegments.map(humanize).join('/') : undefined;
-    const group =
-      asString(data.group) ?? (input.group?.trim() || undefined) ?? dirGroup ?? defaultDocGroup;
-
-    const order = asNumber(data.order) ?? input.order;
-    const hidden = asBoolean(data.hidden) ?? false;
-
-    const kind = isHome ? 'index' : 'guide';
     const frontmatter: Frontmatter = { title, kind };
     // Tutorials carry group/order on the NAV node only (today's behavior), never
     // in page frontmatter — so the legacy tutorial output stays byte-identical.
@@ -420,6 +461,64 @@ export function buildDocPages(
   }
 
   return { pages, nav };
+}
+
+/** A {@link DocInput}'s derived page metadata — the shared truth for the page
+ * builder and the cross-reference resolver. */
+interface DocMeta {
+  slug: string;
+  title: string;
+  group: string | undefined;
+  order: number | undefined;
+  hidden: boolean;
+  isHome: boolean;
+  kind: 'index' | 'guide';
+  /** Frontmatter-stripped raw content, ready for {@link contentToMdast}. */
+  body: string;
+}
+
+/**
+ * Derive a doc page's metadata (slug, title, group, order, …) from one
+ * {@link DocInput} — the single place that resolution rule lives, so the page
+ * builder ({@link buildDocPages}) and the `@tutorial`/`{@link}` resolver
+ * ({@link makeDocResolver}) can never disagree about a page's slug.
+ *
+ * - `slug` = frontmatter `slug` ?? slugified `path` (no prefix); `index` → `''`.
+ * - `title` = frontmatter → input → humanized basename.
+ * - `group` = frontmatter → input → humanized directory path → default.
+ * - `order`/`hidden` from frontmatter (or `input.order`).
+ */
+function deriveDocMeta(
+  input: DocInput,
+  opts: { defaultDocGroup?: string; parseFrontmatter: boolean }
+): DocMeta {
+  const rawContent = typeof input.content === 'string' ? input.content : '';
+  const { data, body } = opts.parseFrontmatter
+    ? parseFrontmatter(rawContent)
+    : { data: {} as Record<string, unknown>, body: rawContent };
+
+  const segments = pathSegments(input.path);
+  const basename = segments.length > 0 ? segments[segments.length - 1] : input.path;
+  const isHome = input.path === 'index';
+
+  // slug: frontmatter override, else slugify the path (no prefix).
+  const slugFromData = asString(data.slug);
+  const slug = isHome ? '' : (slugFromData ?? slugifyPath(segments));
+
+  // title: frontmatter → input → humanized basename.
+  const title = asString(data.title) ?? (input.title?.trim() || undefined) ?? humanize(basename);
+
+  // group: frontmatter → input → directory path (humanized) → default.
+  const dirSegments = segments.slice(0, -1);
+  const dirGroup = dirSegments.length > 0 ? dirSegments.map(humanize).join('/') : undefined;
+  const group =
+    asString(data.group) ?? (input.group?.trim() || undefined) ?? dirGroup ?? opts.defaultDocGroup;
+
+  const order = asNumber(data.order) ?? input.order;
+  const hidden = asBoolean(data.hidden) ?? false;
+  const kind = isHome ? 'index' : 'guide';
+
+  return { slug, title, group, order, hidden, isHome, kind, body };
 }
 
 /**
