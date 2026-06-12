@@ -16,8 +16,9 @@
     "README.md"
   ],
   "keywords": [
-    "typedoc-plugin",
+    "typedoc",
     "typedoc-theme",
+    "typedoc-plugin",
     "clean-jsdoc-theme"
   ],
   "repository": {
@@ -25,6 +26,7 @@
     "url": "git+https://github.com/ankitskvmdam/clean-jsdoc-theme.git"
   },
   "author": "Ankit Kumar (hello@ankdev.me)",
+  "homepage": "https://ankdev.me/clean-jsdoc-theme/typedoc-getting-started",
   "license": "MIT",
   "scripts": {
     "build": "tsup",
