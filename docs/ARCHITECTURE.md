@@ -331,8 +331,10 @@ rang/src/
     ├── toc-utils.ts      # shared scroll-spy: useActiveHeadings (rail set),       │
     │                     #   useTocProgress / getActiveHeadingIndex (mobile),     │
     │                     #   getItemOffset / getLineOffset (depth indentation)    │
-    ├── CtrlK.tsx         # island: command palette — fuzzy search │ islands
-    │                     #   over the fetched search index (search-utils) (hydrated)
+    ├── CtrlK/            # island: command palette (folder) — fuzzy search │ islands
+    │                     #   (search-utils) over the fetched index + recent &
+    │                     #   favorite searches (use-saved-searches, localStorage),
+    │                     #   split into sub-components + a shared keyboard-nav hook
     ├── search-utils.ts   # dependency-free fuzzy matcher (fuzzyMatch / fuzzySearch /
     │                     #   highlightSegments) — fzf-style scoring for CtrlK
     ├── Settings.tsx      # island: settings (+ SettingsDialog, controlled)
@@ -375,7 +377,10 @@ and what's highlighted), then description and full page content — so README
 prose, member descriptions, and identifiers are all findable, not just titles.
 The index also carries a deep-link entry per member (each H3+ heading →
 `slug#anchor`), so a static field / method / property is found by name and the
-hit jumps straight to it. The `copy-page` split button
+hit jumps straight to it. With an empty query the palette shows **recent and
+favorite searches** instead — recents are tracked automatically and favorites
+are starred, both persisted to `localStorage` (`use-saved-searches`). The
+`copy-page` split button
 (content pages only, not the source section) copies the page's companion `.md`,
 opens it, or hands its raw-Markdown link to an LLM — it's configurable via
 `ThemeConfig.copyPage` (`enabled` + which `actions`). The `mobile-nav` drawer
