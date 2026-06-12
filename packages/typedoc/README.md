@@ -1,6 +1,11 @@
 <div align="center">
 
-<a href="https://ankdev.me/clean-jsdoc-theme"><img src="https://raw.githubusercontent.com/ankitskvmdam/clean-jsdoc-theme/master/packages/clean-jsdoc-theme/media/clean-jsdoc-theme.svg" alt="clean-jsdoc-theme" width="340" /></a>
+<a href="https://ankdev.me/clean-jsdoc-theme">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/ankitskvmdam/clean-jsdoc-theme/master/packages/clean-jsdoc-theme/media/clean-jsdoc-theme-dark.svg" />
+    <img src="https://raw.githubusercontent.com/ankitskvmdam/clean-jsdoc-theme/master/packages/clean-jsdoc-theme/media/clean-jsdoc-theme-light.svg" alt="clean-jsdoc-theme" width="340" />
+  </picture>
+</a>
 
 The **TypeDoc** plugin for `clean-jsdoc-theme` — the same fast, modern,
 LLM-friendly documentation site, generated from your TypeScript sources.
