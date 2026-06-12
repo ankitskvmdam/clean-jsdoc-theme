@@ -11,7 +11,7 @@ order: 31
 > don't wire it up yourself — dwar imports it, server-renders its components, and
 > bundles the islands for hydration. You'd reach into rang directly only when
 > you're **contributing to the theme** or writing a **component override**. If
-> you just want docs, install an [entry point](/packages) and set
+> you just want docs, install an [entry point](/#the-packages) and set
 > [options](/configuration) instead.
 
 Everything ships from the single package entry — `package.json` exposes only

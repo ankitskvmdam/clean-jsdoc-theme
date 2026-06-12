@@ -21,7 +21,7 @@ function render(manifest: SiteManifest, opts: RenderOptions): Promise<RenderResu
 
 > If you just want to use the theme, you never install this package directly —
 > the JSDoc and TypeDoc bridges call it for you. It's an internal building block.
-> See the [Packages](/packages) landing page for what you actually install, and
+> See the [Packages](/#the-packages) section for what you actually install, and
 > [dwar Examples](/packages/dwar-examples) for the real call shape.
 
 ## Why dwar exists

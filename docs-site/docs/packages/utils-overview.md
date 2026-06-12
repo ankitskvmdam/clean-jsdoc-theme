@@ -15,7 +15,7 @@ It contains no rendering and no I/O — just the interfaces, the Zod schemas, an
 a handful of small pure functions that the rest of the system is built around.
 
 > If you just want to use the theme, you never install this package. It's an
-> internal building block. See the [Packages](/packages) landing page for the
+> internal building block. See the [Packages](/#the-packages) section for the
 > pieces you actually install, and [Configuration](/configuration) for options.
 
 ## Why it's a separate package

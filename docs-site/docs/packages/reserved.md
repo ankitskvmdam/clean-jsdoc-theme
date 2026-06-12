@@ -47,4 +47,4 @@ Source:
 
 ---
 
-For the packages you *can* use today, see the [Packages](/packages) landing page.
+For the packages you *can* use today, see the [Packages](/#the-packages) section.

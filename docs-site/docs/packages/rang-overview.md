@@ -25,7 +25,7 @@ The package depends only on the browser-safe contract package
 
 > If you just want to use the theme, you never install this package. It's an
 > internal building block that dwar bundles for you. See the
-> [Packages](/packages) landing page for the pieces you actually install.
+> [Packages](/#the-packages) section for the pieces you actually install.
 
 ## Why it's a separate package
 

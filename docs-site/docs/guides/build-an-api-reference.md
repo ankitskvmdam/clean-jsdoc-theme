@@ -157,4 +157,4 @@ tags on your symbols for finer control. That's its own topic —
   [Combine guides + API](/guides/combine-guides-and-api).
 - Custom source tags (`@category`, `@order`): [Custom tags](/authoring/custom-tags).
 - Every option in detail: [Configuration](/configuration).
-- The package internals: [Packages](/packages).
+- The package internals: [Packages](/#the-packages).
