@@ -16,6 +16,7 @@
   },
   "changesets": [
     "alpha-2-assets-colors-tabs",
+    "alpha-3-search-callouts-tutorials",
     "curvy-bottles-throw"
   ]
 }
