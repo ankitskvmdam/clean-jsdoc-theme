@@ -32,7 +32,7 @@
       },
       {
         "title": "API Example Page",
-        "link": "./api-docs/",
+        "link": "/clean-jsdoc-theme/api-docs/",
         "id": "api-docs",
         "icon": "lucide:website"
       },
