@@ -13,6 +13,7 @@
  * exactly like opts validation.
  */
 
+import { resolve } from 'node:path';
 import { DiagnosticBag, suggestKey } from '@clean-jsdoc-theme/utils';
 import { lintSlotMarkdown, validateTokenParity } from '@clean-jsdoc-theme/bhasha';
 import { readLocaleFile } from '../artifacts';
@@ -102,7 +103,7 @@ export async function runValidate(opts: ValidateOptions): Promise<ValidateResult
     return { diagnostics, coverage: [], localized: false, ok: true };
   }
 
-  const dir = opts.dir ?? DEFAULT_ARTIFACTS_DIR;
+  const dir = resolve(cwd, opts.dir ?? DEFAULT_ARTIFACTS_DIR);
   // Absolute config path — the pipeline runs with cwd = the config's dir.
   const manifest = await extractManifest({ configPath, cwd, pipeline, runner: opts.runner });
   const template = buildTemplate(manifest.slots);

@@ -1222,7 +1222,14 @@ interface BuildSpec {
 function readBuildSpec(): BuildSpec | null {
   const path = process.env.CLEAN_JSDOC_THEME_BUILD?.trim();
   if (!path) return null;
-  const spec = JSON.parse(readFileSync(path, 'utf8')) as Partial<BuildSpec>;
+  const spec = JSON.parse(readFileSync(path, 'utf8')) as Partial<BuildSpec> & { version?: number };
+  // Must match utils' BUILD_SPEC_VERSION — guards an old theme vs new aadesh mix.
+  if (typeof spec.version === 'number' && spec.version !== 1) {
+    throw new Error(
+      `clean-jsdoc-theme: build spec version ${spec.version} unsupported ` +
+        `(expected 1) — update clean-jsdoc-theme and aadesh together.`
+    );
+  }
   if (typeof spec.destination !== 'string' || typeof spec.basePath !== 'string') {
     throw new Error(`clean-jsdoc-theme: malformed build spec at "${path}".`);
   }

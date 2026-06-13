@@ -66,7 +66,9 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     return { results: [], diagnostics, localized: true };
   }
 
-  const dir = opts.dir ?? DEFAULT_ARTIFACTS_DIR;
+  // Resolve the artifacts dir against the config's cwd (like `destination`), so
+  // `-c sub/jsdoc.json` finds the catalogs next to the config, not next to cwd.
+  const dir = resolve(cwd, opts.dir ?? DEFAULT_ARTIFACTS_DIR);
   const plan = localeBuildPlan({
     locales: locales.locales,
     defaultLocale: locales.defaultLocale,

@@ -5,6 +5,7 @@
  * prompts from its untranslated/stale entries.
  */
 
+import { resolve } from 'node:path';
 import type { DiagnosticBag } from '@clean-jsdoc-theme/utils';
 import { DEFAULT_ARTIFACTS_DIR, readLocaleFile } from '../artifacts';
 import { loadLocaleConfig, type Pipeline } from '../config';
@@ -53,7 +54,7 @@ export async function runPrompt(opts: PromptOptions): Promise<PromptResult> {
     return { prompts: [], diagnostics, localized: false };
   }
 
-  const dir = opts.dir ?? DEFAULT_ARTIFACTS_DIR;
+  const dir = resolve(cwd, opts.dir ?? DEFAULT_ARTIFACTS_DIR);
   const manifest = await extractManifest({ configPath, cwd, pipeline, runner: opts.runner });
   const template = buildTemplate(manifest.slots);
 

@@ -6,6 +6,7 @@
  * layers; the pipeline `runner` is injectable for tests.
  */
 
+import { resolve } from 'node:path';
 import type { DiagnosticBag } from '@clean-jsdoc-theme/utils';
 import { DEFAULT_ARTIFACTS_DIR, readLocaleFile, writeLocaleFile } from '../artifacts';
 import { loadLocaleConfig, type Pipeline } from '../config';
@@ -51,7 +52,7 @@ export async function runExtract(opts: ExtractOptions): Promise<ExtractResult> {
     return { reports: [], diagnostics, localized: false };
   }
 
-  const dir = opts.dir ?? DEFAULT_ARTIFACTS_DIR;
+  const dir = resolve(cwd, opts.dir ?? DEFAULT_ARTIFACTS_DIR);
   // Use the ABSOLUTE config path: the pipeline runs with cwd = the config's dir,
   // so a relative path would double-resolve.
   const manifest = await extractManifest({ configPath, cwd, pipeline, runner: opts.runner });
