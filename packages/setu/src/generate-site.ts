@@ -242,10 +242,14 @@ export function renderContainerPage(
   // The frontmatter description (page <meta> + search excerpt) is derived from
   // the same source as the body description, so it tracks the same `…#description`
   // slot — a stamped locale localizes the excerpt too, not just the visible prose.
-  // Identity by default → byte-identical (stripHtml of the unchanged source).
+  // Identity by default → byte-identical (stripHtml of the unchanged source). Key
+  // off `view.doclet.longname` (NOT the `longname` param fallback) so the
+  // frontmatter and the body's `descriptionBlocks` always resolve the SAME key —
+  // otherwise a doclet without a longname could localize the excerpt but not the
+  // body. Both short-circuit to the source when the longname is absent.
   const descriptionSource = resolveSlotText(
     slots,
-    view.doclet.longname ?? longname,
+    view.doclet.longname,
     'description',
     view.doclet.classdesc ?? view.doclet.description
   );
