@@ -20,6 +20,10 @@
  * the rang refactor (Phase 1) replaces with `t(key)` calls.
  */
 export const EN_CHROME = {
+  common: {
+    /** Dialog/drawer close button + the palette footer's Close button. */
+    close: 'Close',
+  },
   search: {
     /** CtrlK search input placeholder. */
     placeholder: 'Search docs...',
@@ -29,6 +33,8 @@ export const EN_CHROME = {
     triggerLabel: 'Search',
     /** Tooltip on the header search trigger. */
     triggerTitle: 'Search (Ctrl K)',
+    /** Accessible label for the search dialog. */
+    dialogLabel: 'Search',
     /** Accessible label for the results list. */
     resultsLabel: 'Search results',
     /** Section heading above recent searches. */
@@ -36,11 +42,23 @@ export const EN_CHROME = {
     /** Section heading above favorite searches. */
     favorite: 'Favorite',
     /** Empty-state when a query matches nothing. */
-    noResults: 'No results found',
+    noResults: 'No matching pages',
+    /** Empty-state when there's no query and no saved searches. */
+    emptyHint: 'Type to search the docs',
+    /** Connector for a result's parent context ("Title in Parent"). Carries the context. */
+    inContext: 'in {context}',
+    /** Keyboard-hint line in the palette footer. */
+    footerHint: '↑↓ to navigate · ↵ to open · esc to close',
     /** Star-button label (favorites). Carries the page title. */
     saveToFavorites: 'Save {title} to favorites',
-    /** Un-star-button label. Carries the page title. */
+    /** Un-star-button label (favorites). Carries the page title. */
     removeFromFavorites: 'Remove {title} from favorites',
+    /** Forget-button label (recents). Carries the page title. */
+    removeFromRecent: 'Remove {title} from recent searches',
+  },
+  footer: {
+    /** Repository link label. */
+    repository: 'Repository',
   },
   nav: {
     /** Accessible label for the sidebar navigation landmark. */
@@ -49,8 +67,8 @@ export const EN_CHROME = {
     open: 'Open navigation',
     /** Tooltip on the mobile-nav trigger. */
     menu: 'Menu',
-    /** Accessible label for a dialog/drawer close button. */
-    close: 'Close',
+    /** Accessible label for the mobile-nav drawer dialog. */
+    drawerLabel: 'Navigation',
   },
   toc: {
     /** Accessible label for the on-this-page table of contents. */
@@ -87,17 +105,25 @@ export const EN_CHROME = {
   code: {
     /** Accessible label for the code-variant tablist. */
     variantsLabel: 'Code variants',
-    /** Copy-to-clipboard button label (idle). */
+    /** Copy-to-clipboard button accessible label (idle). */
     copy: 'Copy to clipboard',
-    /** Copy-to-clipboard button label (after copy). */
+    /** Copy-to-clipboard button accessible label (after copy). */
     copied: 'Copied to clipboard',
+    /** Visible copy-button text (idle). */
+    copyShort: 'Copy',
+    /** Visible copy-button text (after copy). */
+    copiedShort: 'Copied!',
     /** Accessible label for the heading-anchor copy-link button. */
     copyLink: 'Copy link to this section',
   },
   copyPage: {
     /** Accessible label for the split-button's extra-options trigger. */
     moreOptions: 'More copy options',
+    /** Accessible label for the dropdown menu of copy actions. */
+    menuLabel: 'Copy page options',
     copyTitle: 'Copy page',
+    /** Primary-button text after a successful copy. */
+    copied: 'Copied',
     copyDescription: 'Copy page as Markdown for LLMs',
     viewTitle: 'View Markdown',
     viewDescription: 'View this page as plain text',
@@ -113,6 +139,14 @@ export const EN_CHROME = {
     load: 'Load embedded content',
     /** Click-to-load button label, carrying the embed title. */
     loadTitled: 'Load embedded content: {title}',
+    /** Poster heading when the embed has no title. */
+    posterTitle: 'Embedded content',
+    /** The small "Load" pill on the click-to-load poster. */
+    loadPill: 'Load',
+  },
+  language: {
+    /** Accessible label + tooltip for the language switcher. */
+    label: 'Language',
   },
 } as const;
 
