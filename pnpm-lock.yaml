@@ -307,6 +307,9 @@ importers:
 
   packages/setu:
     dependencies:
+      '@clean-jsdoc-theme/bhasha':
+        specifier: workspace:^
+        version: link:../bhasha
       '@clean-jsdoc-theme/utils':
         specifier: workspace:^
         version: link:../utils

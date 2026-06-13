@@ -22,6 +22,7 @@ import {
   type TutorialInput,
 } from './guide-view';
 import { buildSourceModel, type SourceFileInput } from './source-view';
+import { SlotCollector, makeSlotTranslator, type SlotResolver } from './slots';
 import type { NavNode, Page, PageKind, SiteManifest, TDoclet } from '@clean-jsdoc-theme/utils';
 
 /**
@@ -137,6 +138,15 @@ export interface GenerateSiteOptions {
    * tutorials included. Off by default. See {@link clubNavTree}.
    */
   clubSidebarItems?: boolean;
+  /**
+   * Translatable-prose slot resolver (localization Phase 2). When omitted, the
+   * build is byte-identical to before but still emits the slot template in
+   * `manifest.slots`. When set with a `translate`, each API description/summary/
+   * example-caption is substituted for the active locale — this is the per-locale
+   * "stamp". A `collect` hook is added internally regardless, to populate the
+   * template; a caller's own `collect` (if any) also fires. See {@link stampSite}.
+   */
+  slots?: SlotResolver;
 }
 
 /**
@@ -237,16 +247,30 @@ export function generateSite(collection: unknown, opts?: GenerateSiteOptions): S
     opts?.docs?.length ? makeDocResolver(opts.docs) : undefined
   );
 
+  // Slot template: always collect translatable API prose into `manifest.slots`,
+  // and (when the caller supplied one) substitute the active locale's text via
+  // `translate` — the per-locale stamp. The internal collector populates the
+  // template; a caller's own `collect`, if any, still fires alongside it.
+  const slotCollector = new SlotCollector();
+  const slots: SlotResolver = {
+    collect: (entry) => {
+      slotCollector.collect(entry);
+      opts?.slots?.collect?.(entry);
+    },
+    translate: opts?.slots?.translate,
+  };
+
   // --- Pass 3: render -------------------------------------------------------
   //
   // Render each surviving spec from its already-built view (views are not
-  // rebuilt), threading `sourceLink`, the registry-backed `resolveLink`, and the
-  // `@tutorial` resolver.
+  // rebuilt), threading `sourceLink`, the registry-backed `resolveLink`, the
+  // `@tutorial` resolver, and the slot resolver (collect + per-locale translate).
   const apiPages: Page[] = specs.map((s) =>
     renderContainerPage(s.view, s.kind, s.longname, s.slug, {
       sourceLink,
       resolveLink,
       resolveTutorial,
+      slots,
     })
   );
 
@@ -351,9 +375,31 @@ export function generateSite(collection: unknown, opts?: GenerateSiteOptions): S
     pages,
     nav,
     buildId: computeBuildId(pages),
+    // The locale-independent template: every translatable API slot, deduped in
+    // first-seen order. Present on every build (possibly empty); dwar ignores it.
+    slots: slotCollector.list(),
   };
   if (opts?.pkg) manifest.pkg = opts.pkg;
   return manifest;
+}
+
+/**
+ * Stamp a site for one locale: re-run {@link generateSite} with a slot resolver
+ * that substitutes the locale's translations (`messages`, keyed by `apiSlotKey`),
+ * falling back to the source text for any gap. This is the per-locale half of the
+ * two-phase build — the same doclet walk, re-serialized with translated prose.
+ * `messages` carries the `api.*` slot translations for the locale; chrome strings
+ * are handled separately by rang/bhasha at render time.
+ */
+export function stampSite(
+  collection: unknown,
+  messages: Readonly<Record<string, string>>,
+  opts?: GenerateSiteOptions
+): SiteManifest {
+  return generateSite(collection, {
+    ...opts,
+    slots: { ...opts?.slots, translate: makeSlotTranslator(messages) },
+  });
 }
 
 /**
@@ -413,3 +459,5 @@ export {
   type SourceModel,
   type SourceModelOptions,
 } from './source-view';
+
+export { SlotCollector, makeSlotTranslator, resolveSlotText, type SlotResolver } from './slots';

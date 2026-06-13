@@ -10,6 +10,7 @@ import {
   typeExpressionString,
 } from './doclet';
 import { htmlToMdastBlocks } from './from-html';
+import { resolveSlotText } from '../slots';
 
 export interface ClassViewToMdastOptions extends DocletBlocksOptions {
   /** Heading level for the class title. Default: 1. */
@@ -229,9 +230,19 @@ export function containerViewToMdast(
   // body's `classdesc ?? description` fallback — so this never duplicates.
   if (view.kind === 'class' && !view.doclet.hideconstructor) {
     const ctorParams = paramsList(view.constructorParams);
+    // The separately-documented constructor description (only when a class has
+    // BOTH a classdesc and a constructor description). Translatable like any
+    // description, keyed `…#constructor.description`.
     const ctorDescription =
       view.doclet.classdesc && view.doclet.description
-        ? htmlToMdastBlocks(view.doclet.description)
+        ? htmlToMdastBlocks(
+            resolveSlotText(
+              options.slots,
+              view.doclet.longname,
+              ['constructor', 'description'],
+              view.doclet.description
+            )
+          )
         : [];
     const ctorName = view.doclet.name ?? view.doclet.longname ?? 'constructor';
     // Documented params carry optional/rest info (`new Cache([options])`); an

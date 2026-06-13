@@ -18,6 +18,7 @@ import {
   ul,
 } from './builders';
 import { htmlToMdastBlocks, htmlToMdastInline, markdownToMdastInline } from './from-html';
+import { resolveSlotText, type SlotResolver } from '../slots';
 
 // ── Small extractors ────────────────────────────────────────────────────────
 
@@ -45,18 +46,23 @@ export function typeExpressionString(type: TDocletTypeProperty | undefined): str
 
 /**
  * Description blocks for a doclet. Prefers `classdesc` (class-level) over
- * `description` (constructor-level). Both come in as HTML from JSDoc.
+ * `description` (constructor-level). Both come in as HTML from JSDoc. The chosen
+ * source is routed through the `slots` resolver (keyed `…#description`) so it can
+ * be collected for extraction and substituted per locale before conversion;
+ * without a resolver the HTML passes through unchanged.
  */
-export function descriptionBlocks(doclet: TDoclet): RootContent[] {
-  return htmlToMdastBlocks(doclet.classdesc ?? doclet.description);
+export function descriptionBlocks(doclet: TDoclet, slots?: SlotResolver): RootContent[] {
+  const source = doclet.classdesc ?? doclet.description;
+  return htmlToMdastBlocks(resolveSlotText(slots, doclet.longname, 'description', source));
 }
 
 /**
  * `@summary` content if present, as block content. Distinct from
- * {@link descriptionBlocks} — both can coexist on a doclet.
+ * {@link descriptionBlocks} — both can coexist on a doclet. Routed through the
+ * `slots` resolver (keyed `…#summary`).
  */
-export function summaryBlocks(doclet: TDoclet): RootContent[] {
-  return htmlToMdastBlocks(doclet.summary);
+export function summaryBlocks(doclet: TDoclet, slots?: SlotResolver): RootContent[] {
+  return htmlToMdastBlocks(resolveSlotText(slots, doclet.longname, 'summary', doclet.summary));
 }
 
 // ── Examples ────────────────────────────────────────────────────────────────
@@ -84,9 +90,15 @@ const EXAMPLE_FENCE_RE = /^(`{3,}|~{3,})([^\n]*)\n([\s\S]*?)\n?\1[ \t]*$/;
  * example whose body is already a single fenced block is unwrapped (its fence
  * language wins unless `{@lang}` overrode it) so it isn't double-fenced.
  */
-export function examplesBlocks(doclet: TDoclet, lang: string = 'js'): RootContent[] {
+export function examplesBlocks(
+  doclet: TDoclet,
+  lang: string = 'js',
+  slots?: SlotResolver
+): RootContent[] {
   const out: RootContent[] = [];
+  let exampleIndex = -1;
   for (const raw of doclet.examples ?? []) {
+    exampleIndex++;
     let src = String(raw);
 
     let caption: string | null = null;
@@ -94,6 +106,17 @@ export function examplesBlocks(doclet: TDoclet, lang: string = 'js'): RootConten
     if (capMatch) {
       caption = capMatch[1].trim();
       src = src.slice(capMatch[0].length);
+    }
+    // Only the caption prose is translatable; the example CODE stays
+    // locale-invariant (a locked decision). Keyed per example by index.
+    if (caption) {
+      caption =
+        resolveSlotText(
+          slots,
+          doclet.longname,
+          ['examples', String(exampleIndex), 'caption'],
+          caption
+        ) ?? caption;
     }
 
     let exampleLang = lang;
@@ -610,6 +633,12 @@ export interface DocletBlocksOptions {
   resolveLink?: (target: string) => ResolvedLink | null;
   /** Resolves a `@tutorial` name to its guide page href + display title. */
   resolveTutorial?: (name: string) => { href: string; title: string } | null;
+  /**
+   * Translatable-prose resolver: collects each description/summary/example-
+   * caption slot and (when stamping a locale) substitutes its translation.
+   * Omitted for the byte-identical default build. See {@link SlotResolver}.
+   */
+  slots?: SlotResolver;
 }
 
 /**
@@ -641,10 +670,10 @@ export function docletBlocks(
   }
 
   if (!skip.has('summary')) {
-    blocks.push(...summaryBlocks(doclet));
+    blocks.push(...summaryBlocks(doclet, options.slots));
   }
 
-  blocks.push(...descriptionBlocks(doclet));
+  blocks.push(...descriptionBlocks(doclet, options.slots));
 
   if (!skip.has('deprecation')) {
     const dep = deprecationBlock(doclet);
@@ -704,7 +733,7 @@ export function docletBlocks(
   }
 
   if (!skip.has('examples')) {
-    const ex = examplesBlocks(doclet, options.exampleLang ?? 'js');
+    const ex = examplesBlocks(doclet, options.exampleLang ?? 'js', options.slots);
     if (ex.length > 0) {
       blocks.push(p(strong(text('Example'))));
       blocks.push(...ex);
