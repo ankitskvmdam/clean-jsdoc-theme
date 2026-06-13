@@ -126,3 +126,31 @@ export interface ExtractManifest {
 export function toExtractManifest(manifest: SiteManifest): ExtractManifest {
   return { version: EXTRACT_MANIFEST_VERSION, slots: manifest.slots ?? [] };
 }
+
+/** Current schema version of the {@link BuildSpec}. */
+export const BUILD_SPEC_VERSION = 1;
+
+/**
+ * The per-locale render instruction aadesh writes for the theme's **build mode**
+ * (the localization plan §4: "template + filled catalogs → setu stamp → dwar
+ * render → per-locale sites"). aadesh spawns the pipeline once per locale with
+ * the theme pointed at this spec; the theme stamps the API translations
+ * (`setu.stampSite`) and renders to `destination` with `basePath`. The default
+ * locale renders unprefixed (`basePath: '/'`); others under `/<locale>`.
+ */
+export interface BuildSpec {
+  /** Schema version ({@link BUILD_SPEC_VERSION}). */
+  version: number;
+  /** Locale code being rendered. */
+  locale: string;
+  /**
+   * `api.*` key → translated string, fed to `setu.stampSite`. Empty/omitted
+   * entries fall back to the source text. The default locale typically passes
+   * `{}` (identity → live source).
+   */
+  apiMessages: Record<string, string>;
+  /** Output directory for this locale's site. */
+  destination: string;
+  /** Base-path prefix for this locale's links — `/<locale>`, or `/` for the default. */
+  basePath: string;
+}

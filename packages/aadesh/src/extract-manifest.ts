@@ -21,6 +21,9 @@ import type { Pipeline } from './config';
 /** The env var the theme's extract mode reads (see the bridges). */
 export const EXTRACT_ENV_VAR = 'CLEAN_JSDOC_THEME_EXTRACT';
 
+/** The env var the theme's build mode reads (path to a per-locale build spec). */
+export const BUILD_ENV_VAR = 'CLEAN_JSDOC_THEME_BUILD';
+
 /** A spawned pipeline run. `code` is the exit code; `stderr` is captured for errors. */
 export interface RunResult {
   code: number;
@@ -76,6 +79,22 @@ const defaultRunner: PipelineRunner = ({ command, args, cwd, env }) =>
     child.on('close', (code) => resolvePromise({ code: code ?? 1, stderr }));
   });
 
+/**
+ * Run the pipeline once with extra env vars (e.g. the extract/build signal),
+ * resolving the binary and capturing the exit code. Shared by extract + build.
+ */
+export async function runPipeline(opts: {
+  pipeline: Pipeline;
+  configPath: string;
+  cwd: string;
+  env: NodeJS.ProcessEnv;
+  runner?: PipelineRunner;
+}): Promise<RunResult> {
+  const runner = opts.runner ?? defaultRunner;
+  const { command, args } = pipelineArgv(opts.pipeline, opts.configPath);
+  return runner({ command, args, cwd: opts.cwd, env: opts.env });
+}
+
 export interface ExtractManifestOptions {
   configPath: string;
   cwd: string;
@@ -91,17 +110,16 @@ export interface ExtractManifestOptions {
  * extract mode).
  */
 export async function extractManifest(opts: ExtractManifestOptions): Promise<ExtractManifest> {
-  const runner = opts.runner ?? defaultRunner;
   const dir = await mkdtemp(join(tmpdir(), 'cjt-extract-'));
   const out = join(dir, 'manifest.json');
 
   try {
-    const { command, args } = pipelineArgv(opts.pipeline, opts.configPath);
-    const result = await runner({
-      command,
-      args,
+    const result = await runPipeline({
+      pipeline: opts.pipeline,
+      configPath: opts.configPath,
       cwd: opts.cwd,
       env: { ...process.env, [EXTRACT_ENV_VAR]: out },
+      runner: opts.runner,
     });
 
     if (result.code !== 0) {

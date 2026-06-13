@@ -131,7 +131,7 @@ async function loadDep<T>(name: string, requiredExports: readonly string[]): Pro
   return mod as T;
 }
 const loadSetu = (): Promise<typeof import('@clean-jsdoc-theme/setu')> =>
-  loadDep('@clean-jsdoc-theme/setu', ['generateSite']);
+  loadDep('@clean-jsdoc-theme/setu', ['generateSite', 'stampSite']);
 const loadDwar = (): Promise<typeof import('@clean-jsdoc-theme/dwar')> =>
   loadDep('@clean-jsdoc-theme/dwar', ['render', 'runPagefindAgainstDir']);
 const loadUtils = (): Promise<typeof import('@clean-jsdoc-theme/utils')> =>
@@ -1205,8 +1205,40 @@ function createBuildProgress(ora: OraFactory | null) {
   return { stage };
 }
 
+/** A per-locale render spec (utils' `BuildSpec`) written by `aadesh build`. */
+interface BuildSpec {
+  locale: string;
+  apiMessages: Record<string, string>;
+  destination: string;
+  basePath: string;
+}
+
+/**
+ * Read the localization build spec when `CLEAN_JSDOC_THEME_BUILD` points at one
+ * (set by `aadesh build` per locale). When present, the theme stamps the API
+ * translations and renders to the spec's `destination`/`basePath` instead of the
+ * jsdoc.json values. Returns `null` for a normal (single-locale) build.
+ */
+function readBuildSpec(): BuildSpec | null {
+  const path = process.env.CLEAN_JSDOC_THEME_BUILD?.trim();
+  if (!path) return null;
+  const spec = JSON.parse(readFileSync(path, 'utf8')) as Partial<BuildSpec>;
+  if (typeof spec.destination !== 'string' || typeof spec.basePath !== 'string') {
+    throw new Error(`clean-jsdoc-theme: malformed build spec at "${path}".`);
+  }
+  return {
+    locale: typeof spec.locale === 'string' ? spec.locale : '',
+    apiMessages: spec.apiMessages ?? {},
+    destination: spec.destination,
+    basePath: spec.basePath,
+  };
+}
+
 export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknown): Promise<void> {
-  const destination = opts.destination;
+  // Localization build mode (aadesh): a per-locale spec overrides the output
+  // destination + base path and supplies the API translations to stamp in.
+  const buildSpec = readBuildSpec();
+  const destination = buildSpec?.destination ?? opts.destination;
   if (!destination || typeof destination !== 'string') {
     throw new Error(
       'clean-jsdoc-theme publish: opts.destination is required ' +
@@ -1244,7 +1276,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   const progress = createBuildProgress(ora);
 
   const [
-    { generateSite },
+    { generateSite, stampSite },
     { render, runPagefindAgainstDir },
     {
       validateThemeOpts,
@@ -1271,7 +1303,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
 
   // Normalized base-path prefix (`/` when unset). Threaded into every emitted
   // href — logos and custom assets here; dwar prefixes the rest at render time.
-  const basePath = normalizeBasePath(opts.basePath);
+  const basePath = normalizeBasePath(buildSpec?.basePath ?? opts.basePath);
   // The OutputFile `path` stays relative; only the served href gets the prefix.
   const hrefForServed = (servedPath: string): string => withBase(basePath, '/' + servedPath);
 
@@ -1363,20 +1395,24 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   const menu = normalizeMenu(opts.menu);
   const clubSidebarItems = opts.clubSidebarItems === true;
 
+  const siteOptions = {
+    ...(pkg ? { pkg } : {}),
+    ...(readme ? { readme } : {}),
+    ...(tutorialTree.length > 0 ? { tutorials: tutorialTree } : {}),
+    ...(sources.length > 0 ? { sources } : {}),
+    ...(sources.length > 0 && sourceLinkToComment ? { sourceLinkToComment } : {}),
+    ...(docs.length > 0 ? { docs } : {}),
+    ...(docGroups ? { docGroups } : {}),
+    ...(defaultDocGroup ? { defaultDocGroup } : {}),
+    ...(sectionOrder ? { sectionOrder } : {}),
+    ...(menu ? { menu } : {}),
+    ...(clubSidebarItems ? { clubSidebarItems } : {}),
+  };
+  // Build mode stamps the locale's API translations in; a normal build doesn't.
   const manifest = await progress.stage('Generating pages', () =>
-    generateSite(data, {
-      ...(pkg ? { pkg } : {}),
-      ...(readme ? { readme } : {}),
-      ...(tutorialTree.length > 0 ? { tutorials: tutorialTree } : {}),
-      ...(sources.length > 0 ? { sources } : {}),
-      ...(sources.length > 0 && sourceLinkToComment ? { sourceLinkToComment } : {}),
-      ...(docs.length > 0 ? { docs } : {}),
-      ...(docGroups ? { docGroups } : {}),
-      ...(defaultDocGroup ? { defaultDocGroup } : {}),
-      ...(sectionOrder ? { sectionOrder } : {}),
-      ...(menu ? { menu } : {}),
-      ...(clubSidebarItems ? { clubSidebarItems } : {}),
-    })
+    buildSpec
+      ? stampSite(data, buildSpec.apiMessages, siteOptions)
+      : generateSite(data, siteOptions)
   );
 
   // Localization extract mode (aadesh, Phase 3): when CLEAN_JSDOC_THEME_EXTRACT

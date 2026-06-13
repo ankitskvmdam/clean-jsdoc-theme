@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile, readFile } from 'node:fs/promises';
 import { writeFile as writeFileCb } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -7,6 +7,7 @@ import { sourceHash } from '@clean-jsdoc-theme/bhasha';
 import { runExtract } from '../commands/extract';
 import { runValidate } from '../commands/validate';
 import { runPrompt } from '../commands/prompt';
+import { runBuild } from '../commands/build';
 import { readLocaleFile, writeLocaleFile } from '../artifacts';
 import type { PipelineRunner } from '../extract-manifest';
 
@@ -189,5 +190,71 @@ describe('runPrompt', () => {
     const res = await runPrompt({ configPath, dir: localesDir, runner: fakeRunner });
     expect(res.prompts[0].count).toBe(0);
     expect(res.prompts[0].chunks).toEqual([]);
+  });
+});
+
+describe('runBuild', () => {
+  let specs: Array<{
+    locale: string;
+    apiMessages: Record<string, string>;
+    destination: string;
+    basePath: string;
+  }>;
+  // A fake build pipeline: capture the per-locale spec the theme would render.
+  const buildRunner: PipelineRunner = async ({ env }) => {
+    const path = env['CLEAN_JSDOC_THEME_BUILD'];
+    if (path) specs.push(JSON.parse(await readFile(path, 'utf8')));
+    return { code: 0, stderr: '' };
+  };
+
+  beforeEach(async () => {
+    specs = [];
+    await writeConfig({ locales: ['en', 'fr'], defaultLocale: 'en', destination: 'dist' });
+    await runExtract({ configPath, dir: localesDir, runner: fakeRunner }); // seed catalogs
+  });
+
+  it('renders default unprefixed (identity) + fr under /fr with its translations', async () => {
+    const fr = (await readLocaleFile(localesDir, 'fr'))!;
+    fr.api['X#description'] = '<p>FR</p>';
+    await writeLocaleFile(localesDir, 'fr', fr);
+
+    const res = await runBuild({ configPath, dir: localesDir, runner: buildRunner });
+    expect(res.results.map((r) => r.locale)).toEqual(['en', 'fr']);
+    expect(res.results.every((r) => r.ok)).toBe(true);
+
+    const en = specs.find((s) => s.locale === 'en')!;
+    const frSpec = specs.find((s) => s.locale === 'fr')!;
+    expect(en.basePath).toBe('/');
+    expect(en.apiMessages).toEqual({}); // default stamps nothing → live source
+    expect(frSpec.basePath).toBe('/fr');
+    expect(frSpec.destination.replace(/\\/g, '/').endsWith('/fr')).toBe(true);
+    expect(frSpec.apiMessages['api.X#description']).toBe('<p>FR</p>'); // full-key, non-empty only
+  });
+
+  it('errors (no build) when the config has no output directory', async () => {
+    await writeConfig({ locales: ['en', 'fr'], defaultLocale: 'en' }); // no destination
+    const res = await runBuild({ configPath, dir: localesDir, runner: buildRunner });
+    expect(res.diagnostics.list.some((d) => d.code === 'build/no-destination')).toBe(true);
+    expect(res.results).toHaveLength(0);
+  });
+
+  it('errors + skips a non-default locale missing its catalog', async () => {
+    await rm(join(localesDir, 'fr.json'));
+    const res = await runBuild({ configPath, dir: localesDir, runner: buildRunner });
+    expect(res.diagnostics.list.some((d) => d.code === 'locale/missing-file')).toBe(true);
+    expect(res.results.map((r) => r.locale)).toEqual(['en']); // en still built
+  });
+
+  it('records a failed pipeline (non-zero exit) as a build error', async () => {
+    const failing: PipelineRunner = async ({ env }) =>
+      env['CLEAN_JSDOC_THEME_BUILD'] ? { code: 2, stderr: 'boom' } : { code: 0, stderr: '' };
+    const res = await runBuild({ configPath, dir: localesDir, runner: failing });
+    expect(res.results.every((r) => !r.ok)).toBe(true);
+    expect(res.diagnostics.list.some((d) => d.code === 'build/pipeline-failed')).toBe(true);
+  });
+
+  it('--locale builds only that locale', async () => {
+    const res = await runBuild({ configPath, dir: localesDir, locale: 'fr', runner: buildRunner });
+    expect(res.results.map((r) => r.locale)).toEqual(['fr']);
   });
 });

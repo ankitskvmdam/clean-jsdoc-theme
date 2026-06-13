@@ -11,6 +11,7 @@ export const AADESH_PACKAGE_VERSION = '5.0.0-alpha.0';
 
 export * from './locale';
 export * from './artifacts';
+export * from './build-plan';
 export * from './config';
 export * from './extract-manifest';
 export * from './prompt';

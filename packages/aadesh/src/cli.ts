@@ -2,8 +2,9 @@
 /**
  * `clean-jsdoc` — the aadesh localization CLI. Flag-driven so it runs headless in
  * CI (the plan's "flag equivalent for every prompt"); interactive prompts are a
- * later addition layered on top. Subcommands `extract` / `validate` / `prompt`
- * orchestrate the tested pure core; the heavy `build` lands in a later chunk.
+ * later addition layered on top. Subcommands `extract` / `validate` / `prompt` /
+ * `build` orchestrate the tested pure core. `build`'s chrome locale seeding, the
+ * language switcher, hreflang, and shared-asset dedup land in follow-on chunks.
  */
 
 import { Command } from 'commander';
@@ -11,6 +12,7 @@ import { formatDiagnostics } from '@clean-jsdoc-theme/utils';
 import { runExtract } from './commands/extract';
 import { runValidate } from './commands/validate';
 import { runPrompt } from './commands/prompt';
+import { runBuild } from './commands/build';
 import { formatExtractReport } from './report';
 
 const color = (): boolean => Boolean(process.stdout.isTTY);
@@ -138,6 +140,40 @@ program
       }
     }
   );
+
+program
+  .command('build')
+  .description('Render one site per locale (default unprefixed, others under /<locale>)')
+  .option('-c, --config <path>', 'jsdoc/typedoc config file', 'jsdoc.json')
+  .option('--dir <path>', 'locale artifacts directory')
+  .option('--locale <code>', 'build a single locale (default: all configured)')
+  .option('--typedoc', 'use the TypeDoc pipeline instead of JSDoc', false)
+  .action(async (o: { config: string; dir?: string; locale?: string; typedoc: boolean }) => {
+    try {
+      const result = await runBuild({
+        configPath: o.config,
+        dir: o.dir,
+        locale: o.locale,
+        pipeline: o.typedoc ? 'typedoc' : 'jsdoc',
+      });
+      if (result.diagnostics.list.length > 0) {
+        console.log(formatDiagnostics(result.diagnostics, { color: color() }));
+      }
+      if (result.diagnostics.hasErrors()) process.exitCode = 1;
+      if (!result.localized) {
+        if (!result.diagnostics.hasErrors()) {
+          console.log('aadesh: no locales configured — set `opts.locales` in your config.');
+        }
+        return;
+      }
+      for (const r of result.results) {
+        console.log(`${r.ok ? '✓' : '✗'} ${r.locale} → ${r.destination}`);
+      }
+    } catch (err) {
+      console.error((err as Error).message);
+      process.exitCode = 1;
+    }
+  });
 
 program.parseAsync().catch((err: unknown) => {
   console.error((err as Error).message);

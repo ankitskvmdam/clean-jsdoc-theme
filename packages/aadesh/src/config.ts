@@ -23,6 +23,10 @@ export interface LoadedConfig {
   cwd: string;
   /** Validated locale config, or `undefined` when localization is off. */
   locales: ValidatedLocales | undefined;
+  /** The site output dir from the config (jsdoc `opts.destination` / typedoc `out`). */
+  destination: string | undefined;
+  /** The base-path prefix from the config (theme opts `basePath`). */
+  basePath: string | undefined;
   /** Findings from reading + validating the config. */
   diagnostics: DiagnosticBag;
 }
@@ -68,5 +72,17 @@ export async function loadLocaleConfig(
   const opts = themeOpts(config, pipeline);
   const locales = validateLocales(opts.locales, opts.defaultLocale, diagnostics);
 
-  return { configPath: abs, cwd: dirname(abs), locales, diagnostics };
+  // Output dir: jsdoc keeps it in `opts.destination`; typedoc uses a top-level
+  // `out`. base path is a theme opt either way.
+  const destination =
+    pipeline === 'typedoc'
+      ? typeof config.out === 'string'
+        ? config.out
+        : undefined
+      : typeof opts.destination === 'string'
+        ? opts.destination
+        : undefined;
+  const basePath = typeof opts.basePath === 'string' ? opts.basePath : undefined;
+
+  return { configPath: abs, cwd: dirname(abs), locales, destination, basePath, diagnostics };
 }
