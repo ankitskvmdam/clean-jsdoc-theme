@@ -1,12 +1,17 @@
 /**
  * `@clean-jsdoc-theme/aadesh` — the localization CLI + its building blocks.
  *
- * Phase 3 (in progress): the pure locale-artifact core — template building from
- * a built site's slots, locale-file (de)serialization, and the extract/merge
- * (new/stale/obsolete classification + soft-delete + prune). Disk I/O, the jsdoc
- * pipeline, and the interactive CLI build on top of this.
+ * Phase 3 (in progress): the locale-artifact core (template + extract/merge),
+ * the config reader, the disk + pipeline layers, and the `extract` / `validate`
+ * commands. The heavy per-locale `build` (stamp → render → /<locale>/ sites) and
+ * the `prompt` emitter land in later chunks.
  */
 
 export const AADESH_PACKAGE_VERSION = '5.0.0-alpha.0';
 
 export * from './locale';
+export * from './artifacts';
+export * from './config';
+export * from './extract-manifest';
+export * from './report';
+export * from './commands';
