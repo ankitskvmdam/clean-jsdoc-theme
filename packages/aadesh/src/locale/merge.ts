@@ -20,7 +20,7 @@
 
 import { flattenLocaleFile, obsoleteEntries, toLocaleFile } from './file';
 import { emptyLocaleFile } from './file';
-import type { FlatEntry, LocaleFile, Template } from './types';
+import type { FlatEntry, LocaleFile, Template, TemplateEntry } from './types';
 
 export interface MergeOptions {
   /** Locale code, for the report. */
@@ -59,6 +59,26 @@ export function coverageRatio(report: Pick<MergeReport, 'translated' | 'total'>)
 }
 
 /**
+ * Carry a non-default translation forward against the current template entry.
+ *
+ * An EMPTY (untranslated) slot tracks the current source hash — when it's later
+ * filled, it's tracking what was actually translated. A NON-EMPTY translation
+ * KEEPS the hash it was made against: if the source has since drifted, the key
+ * is reported stale AND **stays** stale on every subsequent extract (the hash is
+ * not advanced here), so `aadesh prompt`/coverage keep surfacing it until the
+ * translation is actually re-done. (The hash advances when a fresh translation is
+ * applied — a later CLI chunk — never silently at extract time.)
+ */
+function mergedEntry(prev: FlatEntry, t: TemplateEntry, stale: string[]): FlatEntry {
+  if (prev.value === '') return { value: '', hash: t.hash };
+  if (prev.hash !== t.hash) {
+    stale.push(t.key);
+    return { value: prev.value, hash: prev.hash }; // keep tracking the old source → stays stale
+  }
+  return { value: prev.value, hash: t.hash };
+}
+
+/**
  * Merge `template` into `existing` (or a fresh empty file on first run).
  */
 export function mergeLocale(
@@ -85,10 +105,7 @@ export function mergeLocale(
         // Skeleton: always mirror the current source.
         activeOut.set(t.key, { value: t.source, hash: t.hash });
       } else {
-        const value = prevActive.value;
-        // A non-empty translation whose tracked hash no longer matches is stale.
-        if (value !== '' && prevActive.hash !== t.hash) stale.push(t.key);
-        activeOut.set(t.key, { value, hash: t.hash });
+        activeOut.set(t.key, mergedEntry(prevActive, t, stale));
       }
       continue;
     }
@@ -97,9 +114,10 @@ export function mergeLocale(
     if (prevObsolete) {
       // The symbol came back: resurrect the retired translation rather than
       // re-asking for it. Counts as added (it re-enters the active set).
-      const value = isDefault ? t.source : prevObsolete.value;
-      if (!isDefault && value !== '' && prevObsolete.hash !== t.hash) stale.push(t.key);
-      activeOut.set(t.key, { value, hash: t.hash });
+      activeOut.set(
+        t.key,
+        isDefault ? { value: t.source, hash: t.hash } : mergedEntry(prevObsolete, t, stale)
+      );
       obsoleteIn.delete(t.key);
       added.push(t.key);
       continue;

@@ -94,7 +94,7 @@ describe('mergeLocale — determinism', () => {
 });
 
 describe('mergeLocale — staleness', () => {
-  it('flags a translated value whose source changed, keeps it, retracks the hash', () => {
+  it('flags a translated value whose source changed, keeps the value AND the old hash', () => {
     const v1 = template(slot('api.X#d', 'A'));
     const fr = mergeLocale(v1, null, { locale: 'fr' });
     fr.file.api['X#d'] = 'Traduit'; // translator fills it (tracking source 'A')
@@ -104,7 +104,22 @@ describe('mergeLocale — staleness', () => {
 
     expect(merged.report.stale).toContain('api.X#d');
     expect(merged.file.api['X#d']).toBe('Traduit'); // work preserved
-    expect(merged.file._hashes['api.X#d']).toBe(sourceHash('B')); // now tracks new source
+    // Hash stays at the pre-change source so the key remains flagged stale until
+    // the translation is actually re-done (not silently cleared at extract time).
+    expect(merged.file._hashes['api.X#d']).toBe(sourceHash('A'));
+  });
+
+  it('keeps reporting a stale key on repeated extracts (does not clear after one run)', () => {
+    const v1 = template(slot('api.X#d', 'A'));
+    const fr = mergeLocale(v1, null, { locale: 'fr' });
+    fr.file.api['X#d'] = 'Traduit';
+
+    const v2 = template(slot('api.X#d', 'B'));
+    const once = mergeLocale(v2, fr.file, { locale: 'fr' });
+    const twice = mergeLocale(v2, once.file, { locale: 'fr' });
+
+    expect(once.report.stale).toContain('api.X#d');
+    expect(twice.report.stale).toContain('api.X#d'); // still stale — prompt keeps surfacing it
   });
 
   it('the default locale is never stale (always re-synced to source)', () => {
