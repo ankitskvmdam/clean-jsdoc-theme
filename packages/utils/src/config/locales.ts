@@ -110,10 +110,22 @@ export function validateLocales(
   if (!defaultLocale) {
     defaultLocale = locales[0].code;
     if (defaultLocaleRaw == null) {
+      // Unset → implied default (advisory).
       bag.info('locales/default-implied', `defaultLocale defaults to "${defaultLocale}".`, {
         hint: 'set `defaultLocale` to choose the unprefixed locale explicitly.',
         path: 'defaultLocale',
       });
+    } else if (typeof defaultLocaleRaw !== 'string' || defaultLocaleRaw.trim() === '') {
+      // Set but unusable (non-string or blank) — distinct from a listed-but-unknown
+      // code, which already errored above. Warn so the silent fallback is visible.
+      bag.warning(
+        'locales/default-ignored',
+        `defaultLocale is not a usable code; using "${defaultLocale}".`,
+        {
+          hint: 'set `defaultLocale` to one of the configured locale codes.',
+          path: 'defaultLocale',
+        }
+      );
     }
   }
 

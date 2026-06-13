@@ -69,6 +69,15 @@ describe('validateLocales', () => {
     expect(value).toBeUndefined(); // nothing usable
   });
 
+  it('warns (not silently) when defaultLocale is set but unusable', () => {
+    const blank = run(['en', 'fr'], '   ');
+    expect(blank.bag.list.some((d) => d.code === 'locales/default-ignored')).toBe(true);
+    expect(blank.value!.defaultLocale).toBe('en');
+
+    const nonString = run(['en', 'fr'], 42);
+    expect(nonString.bag.list.some((d) => d.code === 'locales/default-ignored')).toBe(true);
+  });
+
   it('accepts BCP-47 region subtags like pt-BR', () => {
     const { value } = run(['pt-BR'], 'pt-BR');
     expect(value).toEqual({ locales: [{ code: 'pt-BR' }], defaultLocale: 'pt-BR' });
