@@ -73,4 +73,22 @@ export interface RenderOptions {
    * the SVGs (the I/O layer); render() just looks them up, staying pure.
    */
   inlineSvgs?: Record<string, string>;
+  /**
+   * Active-locale info for a localized build (aadesh `build`). When present, dwar
+   * renders chrome in this locale — it wraps the SSR page tree in bhasha's
+   * `LanguageProvider` and seeds each island root from the per-page payload, and
+   * sets `<html lang>`. Absent for a normal single-locale build, so that path's
+   * output stays byte-identical.
+   */
+  locale?: RenderLocale;
+}
+
+/** Active-locale chrome translations for a localized render. See {@link RenderOptions.locale}. */
+export interface RenderLocale {
+  /** Active locale code (also the `<html lang>`). */
+  code: string;
+  /** Default locale code — the fallback for any untranslated chrome key. */
+  defaultLocale: string;
+  /** Chrome translations: full `chrome.*` key → translated string (non-empty only). */
+  messages: Record<string, string>;
 }

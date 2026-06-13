@@ -143,12 +143,20 @@ export interface BuildSpec {
   version: number;
   /** Locale code being rendered. */
   locale: string;
+  /** Default locale code — the fallback for untranslated chrome/API. */
+  defaultLocale: string;
   /**
    * `api.*` key → translated string, fed to `setu.stampSite`. Empty/omitted
    * entries fall back to the source text. The default locale typically passes
    * `{}` (identity → live source).
    */
   apiMessages: Record<string, string>;
+  /**
+   * `chrome.*` key → translated UI string, fed to dwar's `RenderOptions.locale`
+   * so chrome renders in the locale (SSR + island seeding). The default locale
+   * typically passes `{}` (identity → English fallback).
+   */
+  chromeMessages: Record<string, string>;
   /** Output directory for this locale's site. */
   destination: string;
   /** Base-path prefix for this locale's links — `/<locale>`, or `/` for the default. */

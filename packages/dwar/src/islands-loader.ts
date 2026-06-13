@@ -48,6 +48,25 @@ export function getIslandsLoaderScript(
  *
  * Exported as a function so callers can inject the right import path per name.
  */
+/**
+ * JS prelude injected into each Preact-hydrated island chunk: reads the per-page
+ * `__i18n` payload and seeds the locale's `LanguageProvider` around the hydration
+ * root, so the client render matches the locale-wrapped SSR (no drift). Returns
+ * the vnode unchanged when there's no `__i18n` (a normal build), so those chunks
+ * stay behavior-identical. Requires `h`, `LanguageProvider`, `createI18n` in scope.
+ */
+const I18N_SEED = `
+function __readI18n() {
+  var el = document.querySelector('script[data-island-props]');
+  if (!el || !el.textContent) return null;
+  try {
+    var v = JSON.parse(el.textContent).__i18n;
+    return v ? createI18n({ locale: v.locale, defaultLocale: v.defaultLocale, messages: v.messages }) : null;
+  } catch (_) { return null; }
+}
+function __seed(vnode, i18n) { return i18n ? h(LanguageProvider, { value: i18n }, vnode) : vnode; }
+`;
+
 export function getIslandChunkEntrySource(name: IslandName): string {
   // copy-btn is special: it is embedded inline in MDX content (not in the
   // layout), so it carries no `data-island-id` and has no entry in the per-page
@@ -55,16 +74,17 @@ export function getIslandChunkEntrySource(name: IslandName): string {
   // in the sibling <pre>. The chunk reads it from there at hydration time.
   if (name === 'copy-btn') {
     return `import { hydrate, h } from 'preact';
-import { ISLAND_REGISTRY } from '@clean-jsdoc-theme/rang';
-
+import { ISLAND_REGISTRY, LanguageProvider, createI18n } from '@clean-jsdoc-theme/rang';
+${I18N_SEED}
 function hydrateAll() {
   const Component = ISLAND_REGISTRY['copy-btn'];
   if (!Component) return;
+  const i18n = __readI18n();
   document.querySelectorAll('[data-island="copy-btn"]').forEach((el) => {
     const wrapper = el.parentElement;
     const pre = wrapper && wrapper.querySelector('pre');
     const text = pre ? pre.textContent || '' : '';
-    hydrate(h(Component, { text }), el);
+    hydrate(__seed(h(Component, { text }), i18n), el);
   });
 }
 
@@ -85,11 +105,12 @@ if (document.readyState === 'loading') {
   // data-*, class, style) is left untouched and there is no double-wrapping.
   if (name === 'embed') {
     return `import { hydrate, h } from 'preact';
-import { ISLAND_REGISTRY } from '@clean-jsdoc-theme/rang';
-
+import { ISLAND_REGISTRY, LanguageProvider, createI18n } from '@clean-jsdoc-theme/rang';
+${I18N_SEED}
 function hydrateAll() {
   const Component = ISLAND_REGISTRY['embed'];
   if (!Component) return;
+  const i18n = __readI18n();
   document.querySelectorAll('[data-island="embed"]').forEach((el) => {
     const d = el.getAttribute.bind(el);
     const props = {};
@@ -106,7 +127,7 @@ function hydrateAll() {
     // so forward the raw value and let the component default an absent one to on.
     const themed = d('data-themed');
     if (themed != null) props.themed = themed;
-    hydrate(h(Component, props), el);
+    hydrate(__seed(h(Component, props), i18n), el);
   });
 }
 
@@ -125,8 +146,8 @@ if (document.readyState === 'loading') {
   // large) file text is never duplicated into the JSON payload.
   if (name === 'code-viewer') {
     return `import { hydrate, h } from 'preact';
-import { ISLAND_REGISTRY } from '@clean-jsdoc-theme/rang';
-
+import { ISLAND_REGISTRY, LanguageProvider, createI18n } from '@clean-jsdoc-theme/rang';
+${I18N_SEED}
 function readPayload() {
   const el = document.querySelector('script[data-island-props]');
   if (!el || !el.textContent) return {};
@@ -137,12 +158,13 @@ function hydrateAll() {
   const Component = ISLAND_REGISTRY['code-viewer'];
   if (!Component) return;
   const payload = readPayload();
+  const i18n = __readI18n();
   document.querySelectorAll('[data-island="code-viewer"]').forEach((el) => {
     const id = el.getAttribute('data-island-id');
     const props = (id && payload[id]) || {};
     const pre = el.querySelector('pre');
     const code = pre ? pre.textContent || '' : '';
-    hydrate(h(Component, { ...props, code }), el);
+    hydrate(__seed(h(Component, { ...props, code }), i18n), el);
   });
 }
 
@@ -272,8 +294,8 @@ if (document.readyState === 'loading') {
   // The chunk reads the per-page props payload at runtime. Each marker carries
   // `data-island-id="iN"` — we look that key up in the JSON blob.
   return `import { hydrate, h } from 'preact';
-import { ISLAND_REGISTRY } from '@clean-jsdoc-theme/rang';
-
+import { ISLAND_REGISTRY, LanguageProvider, createI18n } from '@clean-jsdoc-theme/rang';
+${I18N_SEED}
 const NAME = ${JSON.stringify(name)};
 
 function readPayload() {
@@ -286,10 +308,11 @@ function hydrateAll() {
   const Component = ISLAND_REGISTRY[NAME];
   if (!Component) return;
   const payload = readPayload();
+  const i18n = __readI18n();
   document.querySelectorAll('[data-island="' + NAME + '"]').forEach((el) => {
     const id = el.getAttribute('data-island-id');
     const props = (id && payload[id]) || {};
-    hydrate(h(Component, props), el);
+    hydrate(__seed(h(Component, props), i18n), el);
   });
 }
 

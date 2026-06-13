@@ -196,7 +196,9 @@ describe('runPrompt', () => {
 describe('runBuild', () => {
   let specs: Array<{
     locale: string;
+    defaultLocale: string;
     apiMessages: Record<string, string>;
+    chromeMessages: Record<string, string>;
     destination: string;
     basePath: string;
   }>;
@@ -216,6 +218,7 @@ describe('runBuild', () => {
   it('renders default unprefixed (identity) + fr under /fr with its translations', async () => {
     const fr = (await readLocaleFile(localesDir, 'fr'))!;
     fr.api['X#description'] = '<p>FR</p>';
+    fr.chrome.search = { ...(fr.chrome.search as object), placeholder: 'Rechercher…' };
     await writeLocaleFile(localesDir, 'fr', fr);
 
     const res = await runBuild({ configPath, dir: localesDir, runner: buildRunner });
@@ -224,11 +227,16 @@ describe('runBuild', () => {
 
     const en = specs.find((s) => s.locale === 'en')!;
     const frSpec = specs.find((s) => s.locale === 'fr')!;
+    // Default stamps nothing (identity → live source + English chrome via fallback).
     expect(en.basePath).toBe('/');
-    expect(en.apiMessages).toEqual({}); // default stamps nothing → live source
+    expect(en.apiMessages).toEqual({});
+    expect(en.chromeMessages).toEqual({});
+    expect(en.defaultLocale).toBe('en');
+    // Non-default carries its API + chrome translations (full keys, non-empty only).
     expect(frSpec.basePath).toBe('/fr');
     expect(frSpec.destination.replace(/\\/g, '/').endsWith('/fr')).toBe(true);
-    expect(frSpec.apiMessages['api.X#description']).toBe('<p>FR</p>'); // full-key, non-empty only
+    expect(frSpec.apiMessages['api.X#description']).toBe('<p>FR</p>');
+    expect(frSpec.chromeMessages['chrome.search.placeholder']).toBe('Rechercher…');
   });
 
   it('errors (no build) when the config has no output directory', async () => {

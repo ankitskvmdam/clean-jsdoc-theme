@@ -1208,7 +1208,9 @@ function createBuildProgress(ora: OraFactory | null) {
 /** A per-locale render spec (utils' `BuildSpec`) written by `aadesh build`. */
 interface BuildSpec {
   locale: string;
+  defaultLocale: string;
   apiMessages: Record<string, string>;
+  chromeMessages: Record<string, string>;
   destination: string;
   basePath: string;
 }
@@ -1235,7 +1237,9 @@ function readBuildSpec(): BuildSpec | null {
   }
   return {
     locale: typeof spec.locale === 'string' ? spec.locale : '',
+    defaultLocale: typeof spec.defaultLocale === 'string' ? spec.defaultLocale : 'en',
     apiMessages: spec.apiMessages ?? {},
+    chromeMessages: spec.chromeMessages ?? {},
     destination: spec.destination,
     basePath: spec.basePath,
   };
@@ -1474,6 +1478,16 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
       destination: absoluteDestination,
       islandCacheDir,
       inlineSvgs,
+      // Build mode: render chrome in the locale (SSR provider + island seeding).
+      ...(buildSpec
+        ? {
+            locale: {
+              code: buildSpec.locale,
+              defaultLocale: buildSpec.defaultLocale,
+              messages: buildSpec.chromeMessages,
+            },
+          }
+        : {}),
     })
   );
 

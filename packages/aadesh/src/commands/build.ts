@@ -80,9 +80,11 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   const results: LocaleBuildResult[] = [];
   try {
     for (const target of plan) {
-      // The default locale stamps nothing (identity → live source); a non-default
-      // locale needs its catalog file for the API translations.
+      // The default locale stamps nothing (identity → live source / English
+      // chrome via fallback); a non-default locale needs its catalog file for
+      // the API + chrome translations.
       let apiMessages: Record<string, string> = {};
+      let chromeMessages: Record<string, string> = {};
       if (!target.isDefault) {
         const file = await readLocaleFile(dir, target.code);
         if (!file) {
@@ -95,7 +97,9 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
           );
           continue;
         }
-        apiMessages = localeMessages(file).api;
+        const messages = localeMessages(file);
+        apiMessages = messages.api;
+        chromeMessages = messages.chrome;
       }
 
       const absDestination = resolve(cwd, target.destination);
@@ -105,7 +109,9 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         JSON.stringify({
           version: BUILD_SPEC_VERSION,
           locale: target.code,
+          defaultLocale: locales.defaultLocale,
           apiMessages,
+          chromeMessages,
           destination: absDestination,
           basePath: target.basePath,
         }),

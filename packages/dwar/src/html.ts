@@ -42,6 +42,14 @@ export interface HtmlDocumentOptions {
   customJsLinks?: string[];
   /** Inline custom JS, emitted as a classic `<script>` before `</body>`, last of all scripts. */
   customJs?: string;
+  /** Active locale code for `<html lang>` (defaults to `en`). */
+  lang?: string;
+  /**
+   * Active-locale chrome i18n, embedded in the per-page payload as `__i18n` so
+   * each island root can seed its own `LanguageProvider` at hydration. Omitted
+   * for a normal (non-localized) build — the payload then carries only islands.
+   */
+  i18n?: { locale: string; defaultLocale: string; messages: Record<string, string> };
 }
 
 /** CSS generic family keywords — never requested from Google Fonts. */
@@ -143,9 +151,15 @@ function escapeJsonForScript(json: string): string {
   return json.split('</').join('<\\/').split(U2028).join('\\u2028').split(U2029).join('\\u2029');
 }
 
-export function buildIslandsPropsPayload(islands: IslandRecord[]): string {
+export function buildIslandsPropsPayload(
+  islands: IslandRecord[],
+  i18n?: { locale: string; defaultLocale: string; messages: Record<string, string> }
+): string {
   const obj: Record<string, unknown> = {};
   for (const island of islands) obj[island.id] = island.props;
+  // `__i18n` is a reserved key (island ids are `i0`, `i1`, …) read by the island
+  // loader to seed each root's `LanguageProvider`. Only present in localized builds.
+  if (i18n) obj.__i18n = i18n;
   return escapeJsonForScript(JSON.stringify(obj));
 }
 
@@ -158,17 +172,18 @@ export function collectIslandNamesOnPage(islands: IslandRecord[]): IslandName[] 
 export function renderHtmlDocument(opts: HtmlDocumentOptions): string {
   const { page, bodyHtml, islands, cssHref, siteName, islandChunks, fonts } = opts;
   const { customCssLinks, customCss, customJsLinks, customJs } = opts;
+  const lang = opts.lang || 'en';
   const titleSuffix = siteName ? ` | ${escapeHtml(siteName)}` : '';
   const title = `${escapeHtml(page.frontmatter.title)}${titleSuffix}`;
   const description = escapeHtml(page.frontmatter.description ?? '');
-  const propsPayload = buildIslandsPropsPayload(islands);
+  const propsPayload = buildIslandsPropsPayload(islands, opts.i18n);
   const islandNames = collectIslandNamesOnPage(islands);
   const loaderScript = getIslandsLoaderScript(islandNames, islandChunks);
   const themeScript = getPreHydrationThemeScript();
 
   return (
     `<!doctype html>` +
-    `<html lang="en">` +
+    `<html lang="${escapeHtml(lang)}">` +
     `<head>` +
     `<meta charset="utf-8" />` +
     `<meta name="viewport" content="width=device-width, initial-scale=1" />` +
