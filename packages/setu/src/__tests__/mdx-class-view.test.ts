@@ -34,6 +34,7 @@ function makeContainerView(doclet: TDoclet, kind: ContainerView['kind'] = 'class
     kind,
     augments: doclet.augments ?? [],
     constructorParams: kind === 'class' ? (doclet.params ?? []) : [],
+    constructorParamNames: kind === 'class' ? (doclet.meta?.code?.paramnames ?? []) : [],
     instanceMethods: [],
     staticMethods: [],
     instanceFields: [],
@@ -417,6 +418,50 @@ describe('containerViewToMdast — Constructor section (signature)', () => {
     expect(json).toContain('new Widget(id, [opts])');
     // The Parameters table still renders alongside the signature.
     expect(json).toContain('Parameters');
+  });
+
+  it('renders a bare `new Base()` when the constructor has neither params nor code metadata', () => {
+    const view = makeContainerView({ kind: 'class', name: 'Base', classdesc: '<p>A base.</p>' });
+    const json = flatText(containerViewToMdast(view));
+    expect(json).toContain('Constructor');
+    expect(json).toContain('new Base()');
+  });
+
+  it('recovers undocumented constructor param names from code metadata for the signature', () => {
+    // No @param tags → constructorParams is empty, but meta.code.paramnames has
+    // the names, so the signature still shows `new Base(options)` (parity with
+    // vanilla) — without inventing a Parameters table for the undocumented args.
+    const view = makeContainerView({
+      kind: 'class',
+      name: 'Base',
+      classdesc: '<p>A base.</p>',
+      meta: { code: { paramnames: ['options'] } },
+    });
+    const json = flatText(containerViewToMdast(view));
+    expect(json).toContain('new Base(options)');
+    expect(json).not.toContain('Parameters');
+  });
+
+  it('omits the Constructor section entirely for @hideconstructor', () => {
+    const view = makeContainerView({
+      kind: 'class',
+      name: 'Hidden',
+      classdesc: '<p>No public constructor.</p>',
+      hideconstructor: true,
+      params: [{ name: 'secret', type: { names: ['string'] } }],
+    });
+    const json = flatText(containerViewToMdast(view));
+    expect(json).not.toContain('Constructor');
+    expect(json).not.toContain('new Hidden');
+  });
+
+  it('renders no Constructor section for non-class containers', () => {
+    const view = makeContainerView(
+      { kind: 'namespace', name: 'utils', description: '<p>Helpers.</p>' },
+      'namespace'
+    );
+    const json = flatText(containerViewToMdast(view));
+    expect(json).not.toContain('Constructor');
   });
 });
 

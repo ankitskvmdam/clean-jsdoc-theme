@@ -129,9 +129,12 @@ Runnable references in the repo: `examples/basic` (JSDoc), `examples/typedoc-bas
 | Each documented **source file** | A hidden Monaco-powered source viewer page + a "Source Files" index; each member gets a `Source: file:line` link (on by default). |
 
 A **class page** leads with the class description (`classdesc`), then a
-**Constructor** section: the call signature (`new ClassName(id, [opts])`), the
-separately-documented constructor description (when the class and its
-`constructor` have *separate* doc comments), and the parameter table.
+**Constructor** section (on every class unless `@hideconstructor`): the call
+signature (`new ClassName(id, [opts])` — a parameter-less class still shows
+`new ClassName()`, and an undocumented constructor recovers its param names so
+`new ClassName(options)` still appears), the separately-documented constructor
+description (when the class and its `constructor` have *separate* doc comments),
+and the parameter table.
 
 ---
 

@@ -332,6 +332,7 @@ export function buildGlobalsView(
     kind: 'global',
     augments: [],
     constructorParams: [],
+    constructorParamNames: [],
     ...buckets,
   };
   return { view, slug: GLOBALS_SLUG };

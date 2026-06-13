@@ -214,30 +214,36 @@ export function containerViewToMdast(
       : [...(options.skip ?? []), 'relations'];
   blocks.push(...docletBlocks(view.doclet, { ...options, skip }));
 
-  // Constructor: surface the class's constructor in its own section so the
-  // class-level description and the constructor signature don't run together
-  // visually. The constructor's own `description` (distinct from the class-level
+  // Constructor: every class page gets a Constructor section so the call
+  // signature (e.g. `new Widget(id, [opts])`) always shows — conveying argument
+  // order at a glance, which the vertical Parameters list doesn't, and matching
+  // the default JSDoc/TypeDoc templates. A parameter-less class still shows a
+  // bare `new ClassName()`. `@hideconstructor` opts out entirely (the author's
+  // signal that the constructor isn't part of the public API).
+  //
+  // The constructor's own `description` (distinct from the class-level
   // `classdesc` rendered in the body above) is shown here ONLY when both fields
   // are present — the two-block case where a class and its `constructor` carry
   // separate doc comments. When a class has a single comment it lives in
   // `classdesc` (already shown), and a constructor-only comment is shown via the
   // body's `classdesc ?? description` fallback — so this never duplicates.
-  if (view.kind === 'class') {
+  if (view.kind === 'class' && !view.doclet.hideconstructor) {
     const ctorParams = paramsList(view.constructorParams);
     const ctorDescription =
       view.doclet.classdesc && view.doclet.description
         ? htmlToMdastBlocks(view.doclet.description)
         : [];
-    if (ctorParams || ctorDescription.length > 0) {
-      blocks.push(hr(), h(2, text('Constructor')));
-      // Call signature (e.g. `new Widget(id, [opts])`) — conveys argument order
-      // at a glance, which the vertical Parameters list doesn't. Mirrors the
-      // per-method signatures.
-      const ctorName = view.doclet.name ?? view.doclet.longname ?? 'constructor';
-      blocks.push(p(inlineCode(constructorSignature(ctorName, view.constructorParams))));
-      blocks.push(...ctorDescription);
-      if (ctorParams) blocks.push(p(strong(text('Parameters'))), ctorParams);
-    }
+    const ctorName = view.doclet.name ?? view.doclet.longname ?? 'constructor';
+    // Documented params carry optional/rest info (`new Cache([options])`); an
+    // undocumented constructor falls back to bare names from the code metadata
+    // (`new Base(options)`). The Parameters table below stays documented-only.
+    const ctorSigParams: TDocletParam[] = view.constructorParams.length
+      ? view.constructorParams
+      : view.constructorParamNames.map((name) => ({ name }));
+    blocks.push(hr(), h(2, text('Constructor')));
+    blocks.push(p(inlineCode(constructorSignature(ctorName, ctorSigParams))));
+    blocks.push(...ctorDescription);
+    if (ctorParams) blocks.push(p(strong(text('Parameters'))), ctorParams);
   }
 
   // Members, bucketed.

@@ -121,9 +121,13 @@ JSX, inner content re-parsed recursively so nesting + callouts inside work).
 namespace — render through one kind-parametric path (`getContainerView` →
 `containerViewToMdast`): class keeps its constructor special case, and
 class/interface additionally walk the `@augments`/`@extends` inheritance chain to
-fold in inherited members. A class's **Constructor section** leads with a call
-signature (`constructorSignature` → `new ClassName(id, [opts])`: top-level param
-names, optional → `[name]`, rest → `...name`) then the **separately-documented
+fold in inherited members. **Every class page** (unless `@hideconstructor`) gets a
+**Constructor section** leading with a call signature (`constructorSignature` →
+`new ClassName(id, [opts])`: top-level param names, optional → `[name]`, rest →
+`...name`); a parameter-less class still shows a bare `new ClassName()`, and an
+*undocumented* constructor (no `@param` tags) recovers its param names from
+`meta.code.paramnames` (`constructorParamNames`, a signature-only fallback so the
+Parameters table stays documented-only). Then the **separately-documented
 constructor description** — when a class carries both a class-level doc comment
 (`classdesc`, shown in the body) and a `constructor` doc comment (`description`),
 the latter renders here, guarded so a single-comment class or a constructor-only

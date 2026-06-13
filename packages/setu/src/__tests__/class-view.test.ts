@@ -326,6 +326,7 @@ describe('mergeContainerViews', () => {
     kind: 'class',
     augments: [],
     constructorParams: [],
+    constructorParamNames: [],
     ...emptyBuckets(),
     instanceMethods: [
       {
@@ -348,6 +349,7 @@ describe('mergeContainerViews', () => {
     kind: 'class',
     augments: [],
     constructorParams: [{ name: 'capacity', type: { names: ['number'] } }],
+    constructorParamNames: [],
     ...emptyBuckets(),
     staticMethods: [
       {

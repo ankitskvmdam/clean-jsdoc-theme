@@ -48,6 +48,13 @@ export interface ContainerView extends MemberBuckets {
   augments: string[];
   /** Constructor params, surfaced for convenience. Empty for non-class kinds. */
   constructorParams: TDocletParam[];
+  /**
+   * Ordered constructor parameter names, for rendering the call signature when
+   * the constructor is undocumented (no `@param` tags, so `constructorParams` is
+   * empty). Recovered from the `meta.code.paramnames` of any doclet sharing the
+   * longname, so `new Foo(a, b)` still shows. Empty for non-class kinds.
+   */
+  constructorParamNames: string[];
 }
 
 /**
@@ -193,11 +200,29 @@ export function getContainerView(
 
   const constructorParams = kind === 'class' ? (canonical.params ?? []) : [];
 
+  // Signature fallback for an undocumented constructor (no `@param` tags, so
+  // `constructorParams` is empty): the param NAMES still live on
+  // `meta.code.paramnames`, often on a sibling doclet of the same longname (the
+  // canonical/classdesc doclet may carry none). Recover them so the call
+  // signature can show `new Foo(a, b)` rather than a bare `new Foo()`. Empty when
+  // params are documented (the table-backed `constructorParams` is used instead).
+  let constructorParamNames: string[] = [];
+  if (kind === 'class' && constructorParams.length === 0) {
+    for (const d of collection({ longname }).get()) {
+      const names = d.meta?.code?.paramnames;
+      if (names && names.length > 0) {
+        constructorParamNames = [...names];
+        break;
+      }
+    }
+  }
+
   return {
     doclet: canonical,
     kind,
     augments: canonical.augments ?? [],
     constructorParams,
+    constructorParamNames,
     ...bucketClassMembers([...own, ...inherited]),
   };
 }
@@ -302,6 +327,9 @@ export function mergeContainerViews(base: ContainerView, extra: ContainerView): 
     constructorParams: base.constructorParams.length
       ? base.constructorParams
       : extra.constructorParams,
+    constructorParamNames: base.constructorParamNames.length
+      ? base.constructorParamNames
+      : extra.constructorParamNames,
     ...mergeMemberBuckets(base, extra),
   };
 }
