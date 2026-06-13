@@ -9,6 +9,7 @@ import {
   sourceLinkBlock,
   typeExpressionString,
 } from './doclet';
+import { htmlToMdastBlocks } from './from-html';
 
 export interface ClassViewToMdastOptions extends DocletBlocksOptions {
   /** Heading level for the class title. Default: 1. */
@@ -195,12 +196,25 @@ export function containerViewToMdast(
       : [...(options.skip ?? []), 'relations'];
   blocks.push(...docletBlocks(view.doclet, { ...options, skip }));
 
-  // Constructor: if the class doclet carries params, surface them in their
-  // own section so the class description and constructor signature don't run
-  // together visually.
-  const ctorParams = paramsList(view.constructorParams);
-  if (ctorParams) {
-    blocks.push(hr(), h(2, text('Constructor')), p(strong(text('Parameters'))), ctorParams);
+  // Constructor: surface the class's constructor in its own section so the
+  // class-level description and the constructor signature don't run together
+  // visually. The constructor's own `description` (distinct from the class-level
+  // `classdesc` rendered in the body above) is shown here ONLY when both fields
+  // are present — the two-block case where a class and its `constructor` carry
+  // separate doc comments. When a class has a single comment it lives in
+  // `classdesc` (already shown), and a constructor-only comment is shown via the
+  // body's `classdesc ?? description` fallback — so this never duplicates.
+  if (view.kind === 'class') {
+    const ctorParams = paramsList(view.constructorParams);
+    const ctorDescription =
+      view.doclet.classdesc && view.doclet.description
+        ? htmlToMdastBlocks(view.doclet.description)
+        : [];
+    if (ctorParams || ctorDescription.length > 0) {
+      blocks.push(hr(), h(2, text('Constructor')));
+      blocks.push(...ctorDescription);
+      if (ctorParams) blocks.push(p(strong(text('Parameters'))), ctorParams);
+    }
   }
 
   // Members, bucketed.

@@ -15,11 +15,38 @@ import {
   typeExpressionString,
 } from '../mdast/doclet';
 import { htmlToMdastBlocks, htmlToMdastInline } from '../mdast/from-html';
-import { memberBadges, memberBlocks, memberSignatureSuffix } from '../mdast/class-view';
+import {
+  containerViewToMdast,
+  memberBadges,
+  memberBlocks,
+  memberSignatureSuffix,
+} from '../mdast/class-view';
 import { extractHeadings } from '../generate-site';
 import { root } from '../mdast/builders';
-import type { ClassMember } from '../class-view';
+import type { ClassMember, ContainerView } from '../class-view';
 import { getJSDocTaffyData } from './factory';
+
+/** Minimal ContainerView for exercising containerViewToMdast directly. */
+function makeContainerView(doclet: TDoclet, kind: ContainerView['kind'] = 'class'): ContainerView {
+  return {
+    doclet,
+    kind,
+    augments: doclet.augments ?? [],
+    constructorParams: kind === 'class' ? (doclet.params ?? []) : [],
+    instanceMethods: [],
+    staticMethods: [],
+    instanceFields: [],
+    staticFields: [],
+    enums: [],
+    events: [],
+    other: [],
+  };
+}
+
+/** Concatenated text of an mdast tree, for presence assertions. */
+function flatText(node: unknown): string {
+  return JSON.stringify(node);
+}
 
 describe('htmlToMdastBlocks', () => {
   it('returns [] for empty/null/undefined input', () => {
@@ -336,6 +363,51 @@ describe('memberBlocks', () => {
     const attrs = Object.fromEntries(meta!.attributes.map((a) => [a.name, a.value]));
     expect(attrs.badges).toBe('async');
     expect(attrs.sourceHref).toBeUndefined();
+  });
+});
+
+describe('containerViewToMdast — Constructor section (description)', () => {
+  it('renders the constructor description in the two-block case (classdesc + description)', () => {
+    // Issue 1: a class doc comment (classdesc) AND a separate constructor doc
+    // comment (description). The classdesc shows in the body; the constructor
+    // description must show in the Constructor section.
+    const view = makeContainerView({
+      kind: 'class',
+      name: 'Gadget',
+      classdesc: '<p>A gadget. (class-level comment)</p>',
+      description: '<p>Build a gadget from a spec.</p>',
+      params: [{ name: 'spec', type: { names: ['object'] }, description: '<p>The spec.</p>' }],
+    });
+    const json = flatText(containerViewToMdast(view));
+    expect(json).toContain('A gadget. (class-level comment)');
+    expect(json).toContain('Build a gadget from a spec.');
+  });
+
+  it('does not duplicate the description for a single-comment class', () => {
+    // Only a class-level comment → JSDoc puts it in classdesc, description is
+    // undefined. The Constructor section must not repeat it.
+    const view = makeContainerView({
+      kind: 'class',
+      name: 'Solo',
+      classdesc: '<p>Just one comment.</p>',
+      params: [{ name: 'id', type: { names: ['string'] } }],
+    });
+    const json = flatText(containerViewToMdast(view));
+    expect(json.split('Just one comment.').length - 1).toBe(1);
+  });
+
+  it('still shows a constructor-only comment (no classdesc) exactly once', () => {
+    // Only a constructor comment → classdesc undefined, description set. The
+    // body fallback (classdesc ?? description) shows it; the Constructor section
+    // must not add a second copy.
+    const view = makeContainerView({
+      kind: 'class',
+      name: 'CtorOnly',
+      description: '<p>Built from a constructor comment.</p>',
+      params: [{ name: 'id', type: { names: ['string'] } }],
+    });
+    const json = flatText(containerViewToMdast(view));
+    expect(json.split('Built from a constructor comment.').length - 1).toBe(1);
   });
 });
 
