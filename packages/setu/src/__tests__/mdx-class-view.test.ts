@@ -16,6 +16,7 @@ import {
 } from '../mdast/doclet';
 import { htmlToMdastBlocks, htmlToMdastInline } from '../mdast/from-html';
 import {
+  constructorSignature,
   containerViewToMdast,
   memberBadges,
   memberBlocks,
@@ -363,6 +364,59 @@ describe('memberBlocks', () => {
     const attrs = Object.fromEntries(meta!.attributes.map((a) => [a.name, a.value]));
     expect(attrs.badges).toBe('async');
     expect(attrs.sourceHref).toBeUndefined();
+  });
+});
+
+describe('constructorSignature', () => {
+  it('composes `new Name(params)` in source order, names only', () => {
+    expect(
+      constructorSignature('Widget', [
+        { name: 'id', type: { names: ['string'] } },
+        { name: 'opts', type: { names: ['object'] }, optional: true },
+      ])
+    ).toBe('new Widget(id, [opts])');
+  });
+
+  it('wraps optional params in brackets and prefixes rest params', () => {
+    expect(
+      constructorSignature('Thing', [
+        { name: 'a' },
+        { name: 'b', optional: true },
+        { name: 'rest', variable: true },
+      ])
+    ).toBe('new Thing(a, [b], ...rest)');
+  });
+
+  it('drops nested object-destructured params from the signature', () => {
+    expect(
+      constructorSignature('Box', [
+        { name: 'options', type: { names: ['object'] } },
+        { name: 'options.width', type: { names: ['number'] } },
+      ])
+    ).toBe('new Box(options)');
+  });
+
+  it('renders an empty arg list when there are no params', () => {
+    expect(constructorSignature('Empty', [])).toBe('new Empty()');
+  });
+});
+
+describe('containerViewToMdast — Constructor section (signature)', () => {
+  it('renders the `new Widget(id, [opts])` signature line near the heading', () => {
+    // Issue 2: the constructor call signature was never rendered.
+    const view = makeContainerView({
+      kind: 'class',
+      name: 'Widget',
+      classdesc: '<p>Represents a widget.</p>',
+      params: [
+        { name: 'id', type: { names: ['string'] }, description: '<p>The widget id.</p>' },
+        { name: 'opts', type: { names: ['object'] }, optional: true, description: '<p>Options.</p>' },
+      ],
+    });
+    const json = flatText(containerViewToMdast(view));
+    expect(json).toContain('new Widget(id, [opts])');
+    // The Parameters table still renders alongside the signature.
+    expect(json).toContain('Parameters');
   });
 });
 

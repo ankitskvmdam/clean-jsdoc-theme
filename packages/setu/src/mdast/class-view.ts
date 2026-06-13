@@ -1,6 +1,6 @@
 import type { Root, RootContent } from 'mdast';
 import { ClassMember, ClassView, ContainerView, MemberBuckets } from '../class-view';
-import { slugifyHeading } from '@clean-jsdoc-theme/utils';
+import { slugifyHeading, TDocletParam } from '@clean-jsdoc-theme/utils';
 import { h, hr, inlineCode, memberHeading, memberMeta, p, root, strong, text } from './builders';
 import {
   docletBlocks,
@@ -54,6 +54,24 @@ export function memberSignatureSuffix(member: ClassMember): string | undefined {
     .join(', ');
   const ret = typeExpressionString(member.returns?.[0]?.type);
   return `(${params})${ret ? ` -> ${ret}` : ''}`;
+}
+
+/**
+ * Constructor call-signature for a class, e.g. `new Widget(id, [opts])`. Top-level
+ * params only (nested `options.timeout` entries live in the Parameters table),
+ * names only — no param types — mirroring {@link memberSignatureSuffix}. Optional
+ * params are wrapped `[name]` and rest params prefixed `...name`, the look the
+ * default JSDoc template gives a constructor. `name` is the class name.
+ */
+export function constructorSignature(name: string, params: readonly TDocletParam[]): string {
+  const list = params
+    .filter((param) => param.name && !param.name.includes('.'))
+    .map((param) => {
+      const pname = param.variable ? `...${param.name}` : (param.name as string);
+      return param.optional ? `[${pname}]` : pname;
+    })
+    .join(', ');
+  return `new ${name}(${list})`;
 }
 
 /**
@@ -212,6 +230,11 @@ export function containerViewToMdast(
         : [];
     if (ctorParams || ctorDescription.length > 0) {
       blocks.push(hr(), h(2, text('Constructor')));
+      // Call signature (e.g. `new Widget(id, [opts])`) — conveys argument order
+      // at a glance, which the vertical Parameters list doesn't. Mirrors the
+      // per-method signatures.
+      const ctorName = view.doclet.name ?? view.doclet.longname ?? 'constructor';
+      blocks.push(p(inlineCode(constructorSignature(ctorName, view.constructorParams))));
       blocks.push(...ctorDescription);
       if (ctorParams) blocks.push(p(strong(text('Parameters'))), ctorParams);
     }
