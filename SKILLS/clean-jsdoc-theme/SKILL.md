@@ -11,10 +11,16 @@ description: >-
 
 # clean-jsdoc-theme — working skill
 
+<!-- skill-revision: 2026-06-13 -->
+
 This skill makes you an expert at **using and extending `clean-jsdoc-theme` v5**.
 Everything here is verified against the source. When a user is documenting a
 JS/TS project with this theme, configuring it, authoring prose, or hacking on the
 packages, follow this document over your prior assumptions about "a JSDoc theme."
+
+> **Skill revision:** `2026-06-13`. This skill is versioned with the theme — see
+> [§13 Staying current](#13-staying-current) for how (and how often) to check for
+> a newer copy and a newer theme release.
 
 > Project: <https://github.com/ankitskvmdam/clean-jsdoc-theme> ·
 > npm: `clean-jsdoc-theme` (JSDoc) and `@clean-jsdoc-theme/typedoc` (TypeDoc).
@@ -547,3 +553,83 @@ Authoring cheat sheet:
 - Embed: ` ```iframe ` fence or `@iframe <https-url> key=value`.
 - Sidebar: `@category Core/Parsing order=1`, `@order N`, frontmatter `group`/`order`.
 - Cross-link: `{@link Symbol}`, `{@linkcode Symbol}`, `@see {@link Other}`.
+
+---
+
+## 13. Staying current
+
+This skill and the theme both evolve. Keep the user current — but **do this with
+restraint**: check **at most once per session**, only when it's relevant (you're
+starting work with this skill, or the user asks about upgrading/updating), and
+**surface a result only when there's something actionable**. Never poll on every
+turn, never block the task on a check, and never nag — one short heads-up, then
+drop it unless the user engages.
+
+You do not have a background timer; "periodically" here means *opportunistically,
+once per working session*, not a loop.
+
+### Is this skill out of date?
+
+This file carries a `skill-revision: <date>` marker near the top. When relevant,
+fetch the published copy and compare its marker to this one:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/ankitskvmdam/clean-jsdoc-theme/master/SKILLS/clean-jsdoc-theme/SKILL.md | grep -m1 skill-revision
+```
+
+If the published revision is newer than the one you're running, tell the user a
+newer skill is available and **offer to update their copy** (overwrite the file
+they loaded it from — e.g. `.claude/skills/clean-jsdoc-theme/SKILL.md`). Don't
+overwrite without asking.
+
+### Is the theme out of date?
+
+When setting up or upgrading, compare the installed version against the latest
+published one and mention it if behind:
+
+```sh
+# installed (JSDoc bridge / TypeDoc plugin)
+npm ls clean-jsdoc-theme @clean-jsdoc-theme/typedoc 2>/dev/null
+# latest on npm
+npm view clean-jsdoc-theme version
+npm view @clean-jsdoc-theme/typedoc version
+```
+
+If a newer release exists, note it and the upgrade command (`npm i -D
+clean-jsdoc-theme@latest`), and point at the repo's `BREAKING_CHANGES.md` /
+`MIGRATION.md` for major bumps. Mention it once; let the user decide.
+
+---
+
+## 14. Proactively improve the docs
+
+You know features the user may not — surface them. When you're helping author or
+review docs, watch for places where a theme-specific construct would read better
+than plain Markdown, and **suggest it** (briefly, with the exact syntax from §5/§7;
+don't rewrite everything unprompted). Good prompts to act on:
+
+- **A note/warning written as plain text or bold** ("Note: …", "⚠️ be careful") →
+  offer a [callout](#callouts--github-style-alert-blockquotes)
+  (`> [!NOTE]` / `[!WARNING]` / `[!TIP]`).
+- **A numbered install/setup walkthrough** (`1.` `2.` `3.`) → offer a
+  [`<steps>`](#steps--numbered-stepper-ssr-no-js) stepper.
+- **Per-tool / per-platform variants** (npm vs pnpm, JSDoc vs TypeDoc) shown as
+  separate code blocks → offer [`<tabs>`](#tabs--tabbed-view-ssr--a-light-enhancement-island),
+  with a shared `group` to sync them across the page.
+- **A linked CodePen / StackBlitz / demo** → offer an
+  [embed](#embeds--sandboxed-iframes--live-demos) (` ```iframe ` fence or `@iframe`).
+- **A long, flat sidebar, or symbols in the wrong section** → offer
+  [`@category` / `@order`](#5-authoring-rich-content) on the source symbols and
+  `group` / `order` frontmatter on guides, plus `sectionOrder` / `clubSidebarItems`
+  to shape the top level (§7).
+- **Cross-references written as bare text or code** (mentioning another class /
+  method) → offer `{@link Symbol}` so it becomes a real, resolved anchor.
+- **A class/method whose params or returns aren't documented** → offer the
+  `@param` / `@returns` tags so the generated tables (and the constructor
+  signature) fill in.
+- **A project that cares about AI consumption** → remind them every page already
+  ships a companion `.md` and the `copyPage` actions, and that `aiPrompt` can
+  prime the open-in-LLM handoff.
+
+Lead with the highest-impact suggestion, keep it to a sentence or two, and let the
+user opt in rather than reformatting their docs wholesale.
