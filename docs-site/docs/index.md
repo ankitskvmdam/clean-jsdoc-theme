@@ -27,6 +27,13 @@ Claude, ChatGPT, or Perplexity (all opt-out if you'd rather not).
 
 ## What you get
 
+### An out-of-the-box AI skill
+
+A downloadable [**skill**](/theme/llm-skill) that turns any coding assistant into a
+`clean-jsdoc-theme` expert — point your agent at it and relax while it sets up your
+config, authors your guides, and structures your sidebar correctly the first time.
+No prompt-engineering, no guessing.
+
 ### Two kinds of search, zero setup
 
 A `Ctrl K` fuzzy command palette that ranks across titles, descriptions, and full

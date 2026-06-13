@@ -11,10 +11,17 @@ This theme is **built for LLMs** — every page ships a companion `.md` and a
 half of that story: a single, downloadable **skill file** that teaches *any*
 assistant how to **use and extend `clean-jsdoc-theme` itself**.
 
-It lives at the repo root as
-[`SKILL.md`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/SKILL.md).
+It lives in the repo's
+[`SKILLS/`](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/SKILLS)
+folder as
+[`SKILLS/clean-jsdoc-theme/SKILL.md`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/SKILLS/clean-jsdoc-theme/SKILL.md).
 Hand it to your coding assistant and it stops guessing — it configures the theme,
 authors your guides, and structures your sidebar correctly the first time.
+
+> [!NOTE]
+> `SKILLS/` is where focused skills will live as the project grows (per-package
+> skills, "build a guides site", "build an API reference", …). Today it ships the
+> umbrella `clean-jsdoc-theme` skill that covers everything below.
 
 ## What it is
 
@@ -58,14 +65,14 @@ nest a [`@category`](/authoring/custom-tags) path when only `/` does.
 
 <step label="Download it">
 
-Grab the raw file from the repository root:
+Grab the raw file from the repository:
 
 ```sh
-curl -O https://raw.githubusercontent.com/ankitskvmdam/clean-jsdoc-theme/master/SKILL.md
+curl -O https://raw.githubusercontent.com/ankitskvmdam/clean-jsdoc-theme/master/SKILLS/clean-jsdoc-theme/SKILL.md
 ```
 
 Or open
-[`SKILL.md` on GitHub](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/SKILL.md)
+[`SKILL.md` on GitHub](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/SKILLS/clean-jsdoc-theme/SKILL.md)
 and copy it.
 
 </step>
@@ -124,9 +131,13 @@ actually works.
 
 ## Keep it current
 
-`SKILL.md` is versioned alongside the code and verified against the source, so a
-fresh copy always matches the theme you're on. Re-download it after upgrading the
-theme to pick up new options and features.
+`SKILL.md` is versioned alongside the code (it carries a `skill-revision` stamp)
+and verified against the source, so a fresh copy always matches the theme you're
+on. The skill also **teaches the assistant to check for updates** — when relevant,
+and at most once per session, it compares its revision against the published copy
+and your installed theme version against npm's latest, and offers to update if
+either is behind. Re-download it after upgrading the theme to pick up new options
+and features.
 
 ## See also
 
