@@ -120,9 +120,19 @@ export function lintSlotMarkdown(
 /** True if `{`/`}` are balanced and never close before they open. Ignores `\{`/`\}`. */
 function bracesBalanced(value: string): boolean {
   let depth = 0;
+  let escaped = false;
   for (let i = 0; i < value.length; i++) {
     const ch = value[i];
-    if (value[i - 1] === '\\') continue; // escaped — not structural
+    // Track escape state by scanning, so an escaped backslash (`\\`) doesn't
+    // wrongly mark the following brace as escaped — in `\\{` the `{` is structural.
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (ch === '\\') {
+      escaped = true;
+      continue;
+    }
     if (ch === '{') depth++;
     else if (ch === '}') {
       depth--;

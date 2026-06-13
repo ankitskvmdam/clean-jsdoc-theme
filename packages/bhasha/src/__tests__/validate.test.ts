@@ -68,6 +68,13 @@ describe('lintSlotMarkdown', () => {
     const bag = lintSlotMarkdown('An escaped \\{ brace', 'api.X#d');
     expect(bag.list.some((d) => d.code === 'bhasha/unbalanced-braces')).toBe(false);
   });
+
+  it('treats a brace after an escaped backslash as structural', () => {
+    // Runtime string is `a \\{ b`: an escaped backslash then a real, unbalanced
+    // opener. The naive "prev char is \" check would wrongly skip the `{`.
+    const bag = lintSlotMarkdown('a \\\\{ b', 'api.X#d');
+    expect(bag.list.some((d) => d.code === 'bhasha/unbalanced-braces')).toBe(true);
+  });
 });
 
 describe('validateTokenParity', () => {

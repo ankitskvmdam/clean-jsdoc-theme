@@ -17,7 +17,11 @@
 /** Variables for substitution. Numbers are stringified with `String()`. */
 export type InterpolationVars = Record<string, string | number>;
 
-/** Matches a single `{identifier}` token. Recreated per use (stateful `g` flag). */
+/**
+ * Matches a single `{identifier}` token. Module-level despite the stateful `g`
+ * flag because it's only ever used with `String.replace` and `String.matchAll`,
+ * which manage `lastIndex` themselves (no dangling state across calls).
+ */
 const TOKEN = /\{([A-Za-z_][A-Za-z0-9_]*)\}/g;
 
 /**
