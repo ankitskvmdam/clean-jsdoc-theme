@@ -65,15 +65,19 @@ nest a [`@category`](/authoring/custom-tags) path when only `/` does.
 
 <step label="Download it">
 
-Grab the raw file from the repository:
+The skill is a **folder** —
+[`SKILLS/clean-jsdoc-theme/`](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/SKILLS/clean-jsdoc-theme) —
+a lean `SKILL.md` plus on-demand `reference/` files (the assistant reads only the
+slice it needs). Grab the whole folder:
 
 ```sh
-curl -O https://raw.githubusercontent.com/ankitskvmdam/clean-jsdoc-theme/master/SKILLS/clean-jsdoc-theme/SKILL.md
+npx degit ankitskvmdam/clean-jsdoc-theme/SKILLS/clean-jsdoc-theme clean-jsdoc-theme
 ```
 
-Or open
+Or just open
 [`SKILL.md` on GitHub](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/SKILLS/clean-jsdoc-theme/SKILL.md)
-and copy it.
+and copy it — the `SKILL.md` is self-sufficient for most questions and links to
+the reference files for the rest.
 
 </step>
 
@@ -85,16 +89,15 @@ Pick whichever matches your setup:
 
 <tab label="Claude Code / agents">
 
-It's a ready-to-use **skill**. Drop it into your project (or user) skills
-directory so the agent loads it on demand:
+It's a ready-to-use **skill**. Drop the folder into your project (or user) skills
+directory so the agent loads it — and its `reference/` files — on demand:
 
 ```sh
-mkdir -p .claude/skills/clean-jsdoc-theme
-mv SKILL.md .claude/skills/clean-jsdoc-theme/SKILL.md
+npx degit ankitskvmdam/clean-jsdoc-theme/SKILLS/clean-jsdoc-theme .claude/skills/clean-jsdoc-theme
 ```
 
-The `name` / `description` frontmatter is what lets the agent decide when to
-apply it.
+The `name` / `description` frontmatter is what lets the agent decide when to apply
+it; the `SKILL.md` then pulls in the matching `reference/` file per task.
 
 </tab>
 

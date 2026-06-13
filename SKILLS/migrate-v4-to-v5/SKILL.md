@@ -1,5 +1,5 @@
 ---
-name: clean-jsdoc-theme-migrate-v4-to-v5
+name: migrate-v4-to-v5
 description: >-
   Step-by-step procedure to migrate a project from clean-jsdoc-theme v4 to v5.
   Use when a user wants to upgrade, migrate, or port their JSDoc config from
