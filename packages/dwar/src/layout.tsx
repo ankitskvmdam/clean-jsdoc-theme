@@ -158,15 +158,6 @@ export function SsrLayout({
           Component={Settings}
           props={{} as Record<string, never>}
         />
-        {/* Language switcher — only in localized builds with >1 locale. */}
-        {languageSwitcher && (
-          <Island
-            name="language-switcher"
-            islands={islands}
-            Component={LanguageSwitcher}
-            props={languageSwitcher}
-          />
-        )}
       </div>
       {/* Mobile-only drawer trigger; the drawer hosts theme/settings + the page list. */}
       {nav.length > 0 && (
@@ -181,6 +172,18 @@ export function SsrLayout({
       )}
     </>
   );
+
+  // The language switcher sits beside the brand title (the Layout `headerStart`
+  // slot), visible on ALL breakpoints — so on mobile it stays in the bar rather
+  // than collapsing into the drawer. Only in a localized build with >1 locale.
+  const headerStart = languageSwitcher ? (
+    <Island
+      name="language-switcher"
+      islands={islands}
+      Component={LanguageSwitcher}
+      props={languageSwitcher}
+    />
+  ) : undefined;
 
   const sidebar =
     nav.length > 0 ? (
@@ -209,6 +212,7 @@ export function SsrLayout({
       pkg={pkg}
       basePath={basePath}
       headerControls={headerControls}
+      headerStart={headerStart}
       sidebar={sidebar}
       toc={toc}
       tocMobile={tocMobile}
