@@ -61,12 +61,13 @@ export async function runPrompt(opts: PromptOptions): Promise<PromptResult> {
     (l) => l.code !== locales.defaultLocale && (!opts.locale || l.code === opts.locale)
   );
   if (opts.locale && !targets.some((l) => l.code === opts.locale)) {
+    const isDefault = opts.locale === locales.defaultLocale;
     diagnostics.warning(
       'prompt/unknown-locale',
-      `"${opts.locale}" is not a configured non-default locale.`,
-      {
-        path: opts.locale,
-      }
+      isDefault
+        ? `"${opts.locale}" is the default locale — it's the source text, nothing to translate.`
+        : `"${opts.locale}" is not a configured locale.`,
+      { path: opts.locale }
     );
   }
 

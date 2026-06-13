@@ -165,6 +165,18 @@ describe('runPrompt', () => {
     expect(fr.chunks[0]).toContain('Translate to fr');
   });
 
+  it('warns (no crash) when --locale names the default locale', async () => {
+    const res = await runPrompt({ configPath, dir: localesDir, locale: 'en', runner: fakeRunner });
+    expect(res.prompts).toHaveLength(0);
+    expect(res.diagnostics.list.some((d) => d.code === 'prompt/unknown-locale')).toBe(true);
+  });
+
+  it('errors when a target locale has no catalog file', async () => {
+    await rm(join(localesDir, 'fr.json'));
+    const res = await runPrompt({ configPath, dir: localesDir, runner: fakeRunner });
+    expect(res.diagnostics.list.some((d) => d.code === 'locale/missing-file')).toBe(true);
+  });
+
   it('emits no chunks once a locale is fully translated', async () => {
     // Translate every entry in fr to match the template (so nothing is new/stale).
     const en = (await readLocaleFile(localesDir, 'en'))!; // skeleton = source + hashes

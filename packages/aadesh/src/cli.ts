@@ -2,8 +2,8 @@
 /**
  * `clean-jsdoc` — the aadesh localization CLI. Flag-driven so it runs headless in
  * CI (the plan's "flag equivalent for every prompt"); interactive prompts are a
- * later addition layered on top. Subcommands `extract` + `validate` orchestrate
- * the tested pure core; the heavy `build` lands in a later chunk.
+ * later addition layered on top. Subcommands `extract` / `validate` / `prompt`
+ * orchestrate the tested pure core; the heavy `build` lands in a later chunk.
  */
 
 import { Command } from 'commander';
