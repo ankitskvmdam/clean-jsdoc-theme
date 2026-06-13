@@ -59,6 +59,27 @@ export interface SearchEntry {
   context?: string;
 }
 
+/**
+ * One translatable API string in the locale-independent template setu emits.
+ *
+ * Every translatable doclet prose field (a description, a `@summary`, an
+ * `@example` caption) becomes a slot keyed by the symbol's longname + field path
+ * (bhasha's `apiSlotKey`). The slot carries the default-locale `sourceText` and a
+ * content `hash` (bhasha's `sourceHash`) so aadesh can extract a catalog skeleton
+ * and detect when a source string drifts (stale translation). Locale-invariant:
+ * the same slot key appears on every build of the same symbol+field, so a
+ * translation tracks its source across rebuilds. Names, type strings, enum
+ * values, and `@example` code are NOT slots — they stay locale-invariant.
+ */
+export interface SlotEntry {
+  /** Stable catalog key — `api.<longname>#<field>` (bhasha `apiSlotKey`). */
+  key: string;
+  /** The default-locale source string this slot renders (HTML or Markdown). */
+  sourceText: string;
+  /** Content hash of `sourceText` (bhasha `sourceHash`) for staleness detection. */
+  hash: string;
+}
+
 /** What setu hands to dwar. Self-contained: dwar should not re-read the doclet DB. */
 export interface SiteManifest {
   pages: Page[];
@@ -73,4 +94,12 @@ export interface SiteManifest {
   };
   /** Stable per-build identifier (e.g. timestamp + content hash) for cache busting. */
   buildId: string;
+  /**
+   * The translatable API slots collected during this build — the
+   * locale-independent template aadesh extracts catalogs from. setu always
+   * populates it (possibly empty); dwar ignores it. A build *stamped* for a
+   * locale carries the same slot set (keys/sources are locale-invariant); only
+   * the page bodies differ. See {@link SlotEntry}.
+   */
+  slots?: SlotEntry[];
 }
