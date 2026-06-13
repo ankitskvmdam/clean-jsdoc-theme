@@ -46,29 +46,48 @@ export function LanguageSwitcher({ locales, current }: LanguageSwitcherProps) {
   if (locales.length <= 1) return null;
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        class={cn(buttonVariants({ variant: 'ghost', size: 'icon' }))}
-        aria-label={t('chrome.language.label')}
-        title={t('chrome.language.label')}
-      >
-        <Globe size={18} aria-hidden="true" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" label={t('chrome.language.label')}>
-        {locales.map((locale) => {
-          const isCurrent = locale.code === current;
-          return (
-            // The active locale links to itself (harmless) but shows the check;
-            // the others navigate to their per-locale URL.
-            <DropdownMenuItem key={locale.code} href={locale.href}>
-              <span class="flex-1">{locale.label}</span>
-              {isCurrent ? (
-                <Check size={16} aria-hidden="true" class="text-(--clean-accent)" />
-              ) : null}
-            </DropdownMenuItem>
-          );
-        })}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          class={cn(buttonVariants({ variant: 'ghost', size: 'icon' }))}
+          aria-label={t('chrome.language.label')}
+          title={t('chrome.language.label')}
+        >
+          <Globe size={18} aria-hidden="true" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" label={t('chrome.language.label')}>
+          {locales.map((locale) => {
+            const isCurrent = locale.code === current;
+            return (
+              // The active locale links to itself (harmless) but shows the check;
+              // the others navigate to their per-locale URL.
+              <DropdownMenuItem key={locale.code} href={locale.href}>
+                <span class="flex-1">{locale.label}</span>
+                {isCurrent ? (
+                  <Check size={16} aria-hidden="true" class="text-(--clean-accent)" />
+                ) : null}
+              </DropdownMenuItem>
+            );
+          })}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {/* No-JS fallback: the dropdown content only renders after hydration, so a
+          JS-disabled visitor still gets plain links to every locale. */}
+      <noscript>
+        <nav aria-label={t('chrome.language.label')} class="flex items-center gap-2 text-sm">
+          {locales.map((locale) => (
+            <a
+              key={locale.code}
+              href={locale.href}
+              hreflang={locale.code}
+              aria-current={locale.code === current ? 'true' : undefined}
+              class="text-(--clean-fg-muted) underline hover:text-(--clean-link)"
+            >
+              {locale.code}
+            </a>
+          ))}
+        </nav>
+      </noscript>
+    </>
   );
 }

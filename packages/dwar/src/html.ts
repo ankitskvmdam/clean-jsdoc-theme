@@ -50,6 +50,26 @@ export interface HtmlDocumentOptions {
    * for a normal (non-localized) build — the payload then carries only islands.
    */
   i18n?: { locale: string; defaultLocale: string; messages: Record<string, string> };
+  /**
+   * hreflang alternates for this page (localized builds with >1 locale): one
+   * `<link rel="alternate" hreflang>` per locale (root-relative URLs, since the
+   * site domain isn't known at build time) plus an `x-default` pointing at the
+   * default locale. Omitted for a normal build.
+   */
+  hreflang?: { alternates: Array<{ code: string; href: string }>; defaultLocale: string };
+}
+
+/** Build the `<link rel="alternate" hreflang>` tags (incl. `x-default`). */
+function buildHreflangLinks(hreflang: HtmlDocumentOptions['hreflang']): string {
+  if (!hreflang || hreflang.alternates.length === 0) return '';
+  const links = hreflang.alternates.map(
+    (a) => `<link rel="alternate" hreflang="${escapeHtml(a.code)}" href="${escapeHtml(a.href)}" />`
+  );
+  const def = hreflang.alternates.find((a) => a.code === hreflang.defaultLocale);
+  if (def) {
+    links.push(`<link rel="alternate" hreflang="x-default" href="${escapeHtml(def.href)}" />`);
+  }
+  return links.join('');
 }
 
 /** CSS generic family keywords — never requested from Google Fonts. */
@@ -189,6 +209,7 @@ export function renderHtmlDocument(opts: HtmlDocumentOptions): string {
     `<meta name="viewport" content="width=device-width, initial-scale=1" />` +
     `<title>${title}</title>` +
     (description ? `<meta name="description" content="${description}" />` : '') +
+    buildHreflangLinks(opts.hreflang) +
     `<script>${themeScript}</script>` +
     buildGoogleFontsLinks(fonts) +
     `<link rel="stylesheet" href="${escapeHtml(cssHref)}" />` +

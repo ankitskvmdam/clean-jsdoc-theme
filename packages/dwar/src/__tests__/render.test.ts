@@ -520,6 +520,14 @@ describe('render() — localization (language switcher + chrome locale)', () => 
     expect(result.files.some((f) => /_islands\/language-switcher-.*\.js$/.test(f.path))).toBe(true);
   });
 
+  it('emits hreflang alternates (+ x-default → the default locale)', async () => {
+    const result = await render(makeManifest(), { theme: minimalTheme, locale: twoLocales });
+    const home = asString(result.files.find((f) => f.path === 'index.html')!);
+    expect(home).toContain('<link rel="alternate" hreflang="en" href="/"');
+    expect(home).toContain('<link rel="alternate" hreflang="fr" href="/fr"');
+    expect(home).toContain('hreflang="x-default" href="/"');
+  });
+
   it('a single locale mounts no switcher (renders nothing extra)', async () => {
     const result = await render(makeManifest(), {
       theme: minimalTheme,

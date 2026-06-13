@@ -353,6 +353,14 @@ async function renderPage(
     customJs: custom.js,
     lang: locale?.code,
     i18n: i18nPayload,
+    // hreflang reuses the switcher's per-page cross-locale URLs.
+    hreflang:
+      languageSwitcher && locale
+        ? {
+            alternates: languageSwitcher.locales.map((l) => ({ code: l.code, href: l.href })),
+            defaultLocale: locale.defaultLocale,
+          }
+        : undefined,
   });
 
   const file: OutputFile = {
