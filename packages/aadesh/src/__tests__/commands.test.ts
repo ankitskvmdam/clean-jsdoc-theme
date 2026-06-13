@@ -60,6 +60,13 @@ describe('runExtract', () => {
     expect(called).toBe(false); // never spawns the pipeline
   });
 
+  it('surfaces a malformed-locales config as an error (not a silent no-op)', async () => {
+    await writeConfig({ locales: 'en' }); // not an array → validation error
+    const res = await runExtract({ configPath, dir: localesDir, runner: fakeRunner });
+    expect(res.localized).toBe(false);
+    expect(res.diagnostics.hasErrors()).toBe(true); // the CLI exits non-zero on this
+  });
+
   it('creates a skeleton default + empty non-default on first run', async () => {
     await writeConfig({ locales: ['en', 'fr'], defaultLocale: 'en' });
     const res = await runExtract({ configPath, dir: localesDir, runner: fakeRunner });

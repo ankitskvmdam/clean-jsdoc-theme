@@ -35,12 +35,16 @@ program
       if (result.diagnostics.list.length > 0) {
         console.log(formatDiagnostics(result.diagnostics, { color: color() }));
       }
+      // A config error (e.g. malformed `locales`) fails even though it yields
+      // no locales — set the exit code BEFORE the no-locales bail.
+      if (result.diagnostics.hasErrors()) process.exitCode = 1;
       if (!result.localized) {
-        console.log('aadesh: no locales configured — set `opts.locales` in your config.');
+        if (!result.diagnostics.hasErrors()) {
+          console.log('aadesh: no locales configured — set `opts.locales` in your config.');
+        }
         return;
       }
       console.log(formatExtractReport(result.reports));
-      if (result.diagnostics.hasErrors()) process.exitCode = 1;
     } catch (err) {
       console.error((err as Error).message);
       process.exitCode = 1;
@@ -62,17 +66,19 @@ program
         strict: o.strict,
         pipeline: o.typedoc ? 'typedoc' : 'jsdoc',
       });
-      if (!result.localized) {
-        console.log('aadesh: no locales configured — nothing to validate.');
-        return;
-      }
       if (result.diagnostics.list.length > 0) {
         console.log(formatDiagnostics(result.diagnostics, { color: color() }));
       }
-      console.log(
-        result.ok ? 'Localization validation passed.' : 'Localization validation failed.'
-      );
-      if (!result.ok) process.exitCode = 1;
+      // No locales: a benign no-op UNLESS the config itself was malformed (errors).
+      if (!result.localized && !result.diagnostics.hasErrors()) {
+        console.log('aadesh: no locales configured — nothing to validate.');
+        return;
+      }
+      // `ok` already folds in errors + (under --strict) warnings; a config error
+      // with no locales isn't reflected in `ok`, so check the bag too.
+      const failed = result.diagnostics.hasErrors() || !result.ok;
+      console.log(failed ? 'Localization validation failed.' : 'Localization validation passed.');
+      if (failed) process.exitCode = 1;
     } catch (err) {
       console.error((err as Error).message);
       process.exitCode = 1;
