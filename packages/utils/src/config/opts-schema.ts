@@ -145,6 +145,8 @@ export const THEME_OPT_KEYS = [
   'clubSidebarItems',
   'aiPrompt',
   'basePath',
+  'locales',
+  'defaultLocale',
   'customCss',
   'customCssFile',
   'customJs',

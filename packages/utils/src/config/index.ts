@@ -12,6 +12,7 @@ export * from './suggest';
 export * from './format';
 export * from './site-name';
 export * from './fonts';
+export * from './locales';
 export * from './google-fonts';
 export * from './validate-opts';
 export * from './report';
