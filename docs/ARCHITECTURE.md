@@ -48,7 +48,7 @@ clean-jsdoc-theme/
 │   ├── basic/                 # working JSDoc fixture: `pnpm run docs` → dist/
 │   └── typedoc-basic/         # working TypeDoc fixture: `pnpm run docs` → dist/
 ├── docs-site/                 # dogfood docs site: prose-first `opts.docs` build
-├── SKILL.md                   # downloadable LLM agent skill — full theme reference
+├── SKILLS/                    # downloadable LLM agent skills (per-skill folder + SKILL.md)
 ├── ARCHITECTURE.md            # this file
 ├── MIGRATION.md               # v4 → v5 migration guide
 ├── BREAKING_CHANGES.md
