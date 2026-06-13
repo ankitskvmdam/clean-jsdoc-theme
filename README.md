@@ -90,6 +90,7 @@ clean-jsdoc-theme/
 ├── examples/
 │   └── basic/                 # Working JSDoc fixture
 ├── docs-site/                 # Dogfood site (in progress)
+├── SKILL.md                   # LLM agent skill — full theme reference for assistants
 ├── ARCHITECTURE.md            # Full project structure
 ├── MIGRATION.md               # v4 → v5 migration guide
 └── BREAKING_CHANGES.md
