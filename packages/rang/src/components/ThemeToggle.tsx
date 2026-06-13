@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import { Sun, Moon } from 'lucide-preact';
+import { useTranslation } from '@clean-jsdoc-theme/bhasha';
 import { Button } from './Button';
 
 type Mode = 'light' | 'dark';
@@ -57,6 +58,7 @@ export function useThemeMode() {
 }
 
 export function ThemeToggle(_props: ThemeToggleProps = {}) {
+  const { t } = useTranslation();
   const { current, next, toggle } = useThemeMode();
 
   const Icon = current === 'light' ? Sun : Moon;
@@ -67,8 +69,8 @@ export function ThemeToggle(_props: ThemeToggleProps = {}) {
       variant="ghost"
       size="icon"
       onClick={toggle}
-      aria-label={`Switch to ${next} theme`}
-      title="Toggle theme"
+      aria-label={t('chrome.theme.switchTo', { mode: next })}
+      title={t('chrome.theme.toggleTitle')}
     >
       <Icon size={18} aria-hidden="true" />
     </Button>

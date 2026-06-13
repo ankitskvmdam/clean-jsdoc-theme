@@ -1,6 +1,7 @@
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { X } from 'lucide-preact';
+import { useTranslation } from '@clean-jsdoc-theme/bhasha';
 import { Button } from './Button';
 import { cn } from '../lib/cn';
 
@@ -49,6 +50,7 @@ export function Dialog({
   class: cls,
   children,
 }: DialogProps) {
+  const { t } = useTranslation();
   const contentRef = useRef<HTMLDivElement | null>(null);
   const openerRef = useRef<HTMLElement | null>(null);
   // Presence: keep the panel mounted through the close animation. `mounted`
@@ -183,7 +185,7 @@ export function Dialog({
             <Button
               variant="ghost"
               size="icon-sm"
-              aria-label="Close"
+              aria-label={t('chrome.common.close')}
               onClick={() => onOpenChange(false)}
             >
               <X size={16} aria-hidden="true" />

@@ -1,4 +1,5 @@
 import type { VNode } from 'preact';
+import { useTranslation } from '@clean-jsdoc-theme/bhasha';
 import type { SavedSearch } from './types';
 import { SavedRow } from './SavedRow';
 
@@ -41,9 +42,12 @@ export function SavedSections({
   onRemoveRecent,
   onRemoveFavorite,
 }: SavedSectionsProps) {
+  const { t } = useTranslation();
   if (favorites.length === 0 && recents.length === 0) {
     return (
-      <li class="px-2 py-6 text-center text-sm text-muted-foreground">Type to search the docs</li>
+      <li class="px-2 py-6 text-center text-sm text-muted-foreground">
+        {t('chrome.search.emptyHint')}
+      </li>
     );
   }
 
@@ -51,7 +55,7 @@ export function SavedSections({
   let i = 0;
 
   if (favorites.length > 0) {
-    rows.push(<SectionLabel key="fav-label">Favorite</SectionLabel>);
+    rows.push(<SectionLabel key="fav-label">{t('chrome.search.favorite')}</SectionLabel>);
     for (const item of favorites) {
       const index = i++;
       rows.push(
@@ -71,7 +75,7 @@ export function SavedSections({
   }
 
   if (recents.length > 0) {
-    rows.push(<SectionLabel key="rec-label">Recent</SectionLabel>);
+    rows.push(<SectionLabel key="rec-label">{t('chrome.search.recent')}</SectionLabel>);
     for (const item of recents) {
       const index = i++;
       rows.push(

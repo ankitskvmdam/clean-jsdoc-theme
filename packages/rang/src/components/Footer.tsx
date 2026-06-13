@@ -1,3 +1,4 @@
+import { useTranslation } from '@clean-jsdoc-theme/bhasha';
 import type { SiteName } from '@clean-jsdoc-theme/utils';
 import { Brand } from './Brand';
 
@@ -23,6 +24,7 @@ function normalizeRepoUrl(repo: string): string {
 }
 
 export function Footer({ pkg, siteName, year }: FooterProps) {
+  const { t } = useTranslation();
   const y = year ?? new Date().getFullYear();
   const repoUrl = pkg?.repository ? normalizeRepoUrl(pkg.repository) : undefined;
   return (
@@ -39,7 +41,7 @@ export function Footer({ pkg, siteName, year }: FooterProps) {
             rel="noreferrer noopener"
             class="text-muted-foreground hover:text-accent"
           >
-            Repository
+            {t('chrome.footer.repository')}
           </a>
         )}
       </div>

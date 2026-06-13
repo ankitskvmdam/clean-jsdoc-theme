@@ -9,6 +9,7 @@ import type { ComponentChildren, VNode } from 'preact';
 import { createContext, isValidElement } from 'preact';
 import { useContext } from 'preact/hooks';
 import { Check, Link } from 'lucide-preact';
+import { useTranslation } from '@clean-jsdoc-theme/bhasha';
 import { Button } from './Button';
 
 export interface BaseProps {
@@ -101,13 +102,14 @@ export interface HeadingProps extends BaseProps {
  * own `group` for the opacity reveal.
  */
 export function HeadingAnchor() {
+  const { t } = useTranslation();
   return (
     <Button
       type="button"
       variant="ghost"
       size="icon-xs"
       data-heading-anchor
-      aria-label="Copy link to this section"
+      aria-label={t('chrome.code.copyLink')}
       class="group/anchor anchor absolute top-1/2 -left-7 -translate-y-1/2 text-muted-foreground opacity-0 transition group-hover:opacity-100 data-copied:opacity-100"
     >
       <Link size={16} aria-hidden="true" class="group-data-copied/anchor:hidden" />

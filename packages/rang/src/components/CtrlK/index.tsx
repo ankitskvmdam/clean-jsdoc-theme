@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
+import { useTranslation } from '@clean-jsdoc-theme/bhasha';
 import { withBase } from '@clean-jsdoc-theme/utils';
 import { useListKeyboardNav } from '../../hooks/use-list-keyboard-nav';
 import { Dialog } from '../Dialog';
@@ -20,6 +21,7 @@ export type { CtrlKProps, SavedSearch, SavedKind } from './types';
  * and the reusable list keyboard navigation (`useListKeyboardNav`).
  */
 export function CtrlK({ basePath, searchIndexUrl }: CtrlKProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -32,7 +34,9 @@ export function CtrlK({ basePath, searchIndexUrl }: CtrlKProps) {
   const hasQuery = query.trim().length > 0;
   // What arrow/Enter navigate, in render order: results while querying, else
   // favorites then recents (so the active index lines up with the rows).
-  const navItems: SavedSearch[] = hasQuery ? results.map((r) => r.item) : [...favorites, ...recents];
+  const navItems: SavedSearch[] = hasQuery
+    ? results.map((r) => r.item)
+    : [...favorites, ...recents];
 
   // Enter on the active row records it, then navigates. Rows handle their own
   // click via a real `<a href>`, so this path is keyboard selection only.
@@ -74,7 +78,13 @@ export function CtrlK({ basePath, searchIndexUrl }: CtrlKProps) {
   return (
     <>
       <SearchTrigger open={open} onOpen={() => setOpen(true)} />
-      <Dialog open={open} onOpenChange={setOpen} align="top" showClose={false} label="Search">
+      <Dialog
+        open={open}
+        onOpenChange={setOpen}
+        align="top"
+        showClose={false}
+        label={t('chrome.search.dialogLabel')}
+      >
         <SearchInput
           value={query}
           inputRef={inputRef}

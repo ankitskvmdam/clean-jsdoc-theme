@@ -1,4 +1,5 @@
 import { Search } from 'lucide-preact';
+import { useTranslation } from '@clean-jsdoc-theme/bhasha';
 import { Button } from '../Button';
 
 export interface SearchTriggerProps {
@@ -8,6 +9,7 @@ export interface SearchTriggerProps {
 
 /** The header search button that opens the palette. */
 export function SearchTrigger({ open, onOpen }: SearchTriggerProps) {
+  const { t } = useTranslation();
   return (
     <Button
       type="button"
@@ -16,8 +18,8 @@ export function SearchTrigger({ open, onOpen }: SearchTriggerProps) {
       onClick={onOpen}
       aria-haspopup="dialog"
       aria-expanded={open}
-      aria-label="Search"
-      title="Search (Ctrl K)"
+      aria-label={t('chrome.search.triggerLabel')}
+      title={t('chrome.search.triggerTitle')}
     >
       <Search size={18} aria-hidden="true" />
     </Button>

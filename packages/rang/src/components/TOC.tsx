@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { TextAlignStart } from 'lucide-preact';
+import { useTranslation } from '@clean-jsdoc-theme/bhasha';
 import type { Heading } from '@clean-jsdoc-theme/utils';
 import { getItemOffset, getLineOffset, useActiveHeadings } from './toc-utils';
 
@@ -20,6 +21,7 @@ interface RailGeometry {
 }
 
 export function TOC({ headings }: TOCProps) {
+  const { t } = useTranslation();
   const activeIds = useActiveHeadings(headings);
   const [geo, setGeo] = useState<RailGeometry | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -96,10 +98,10 @@ export function TOC({ headings }: TOCProps) {
   }
 
   return (
-    <nav aria-label="On this page" class="text-(--clean-fg)">
+    <nav aria-label={t('chrome.toc.label')} class="text-(--clean-fg)">
       <h2 class="mb-2 flex items-center gap-2 text-base font-semibold text-muted-foreground">
         <TextAlignStart size={16} aria-hidden="true" />
-        On this page
+        {t('chrome.toc.label')}
       </h2>
       <div ref={containerRef} class="relative flex flex-col text-sm">
         {geo && (

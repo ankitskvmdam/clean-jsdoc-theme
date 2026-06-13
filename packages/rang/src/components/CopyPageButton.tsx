@@ -1,6 +1,7 @@
 import type { VNode } from 'preact';
 import { useRef, useState } from 'preact/hooks';
 import { Copy, Check, ChevronDown, FileText } from 'lucide-preact';
+import { useTranslation } from '@clean-jsdoc-theme/bhasha';
 import type { CopyPageAction } from '@clean-jsdoc-theme/utils';
 import { ChatGptIcon } from './icons/ChatGptIcon';
 import { Button, buttonVariants } from './Button';
@@ -78,6 +79,7 @@ function ItemBody({ title, description }: { title: string; description: string }
 }
 
 export function CopyPageButton({ mdUrl, siteName, prompt, actions }: CopyPageButtonProps) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   // Fetch the markdown once, then reuse it for every action.
   const mdCache = useRef<string | null>(null);
@@ -132,28 +134,40 @@ export function CopyPageButton({ mdUrl, siteName, prompt, actions }: CopyPageBut
         return (
           <DropdownMenuItem key="copy" class="items-start" onSelect={copyPage}>
             <Copy size={16} class="mt-0.5 shrink-0" aria-hidden="true" />
-            <ItemBody title="Copy page" description="Copy page as Markdown for LLMs" />
+            <ItemBody
+              title={t('chrome.copyPage.copyTitle')}
+              description={t('chrome.copyPage.copyDescription')}
+            />
           </DropdownMenuItem>
         );
       case 'view':
         return (
           <DropdownMenuItem key="view" class="items-start" onSelect={viewMarkdown}>
             <FileText size={16} class="mt-0.5 shrink-0" aria-hidden="true" />
-            <ItemBody title="View Markdown" description="View this page as plain text" />
+            <ItemBody
+              title={t('chrome.copyPage.viewTitle')}
+              description={t('chrome.copyPage.viewDescription')}
+            />
           </DropdownMenuItem>
         );
       case 'claude':
         return (
           <DropdownMenuItem key="claude" class="items-start" onSelect={() => openInAi('claude')}>
             <BrandGlyph slug="claude" />
-            <ItemBody title="Open in Claude" description="Ask Claude about this page" />
+            <ItemBody
+              title={t('chrome.copyPage.claudeTitle')}
+              description={t('chrome.copyPage.claudeDescription')}
+            />
           </DropdownMenuItem>
         );
       case 'chatgpt':
         return (
           <DropdownMenuItem key="chatgpt" class="items-start" onSelect={() => openInAi('chatgpt')}>
             <ChatGptIcon size={16} class="mt-0.5 shrink-0" />
-            <ItemBody title="Open in ChatGPT" description="Ask ChatGPT about this page" />
+            <ItemBody
+              title={t('chrome.copyPage.chatgptTitle')}
+              description={t('chrome.copyPage.chatgptDescription')}
+            />
           </DropdownMenuItem>
         );
       case 'perplexity':
@@ -164,7 +178,10 @@ export function CopyPageButton({ mdUrl, siteName, prompt, actions }: CopyPageBut
             onSelect={() => openInAi('perplexity')}
           >
             <BrandGlyph slug="perplexity" />
-            <ItemBody title="Open in Perplexity" description="Ask Perplexity about this page" />
+            <ItemBody
+              title={t('chrome.copyPage.perplexityTitle')}
+              description={t('chrome.copyPage.perplexityDescription')}
+            />
           </DropdownMenuItem>
         );
     }
@@ -175,7 +192,7 @@ export function CopyPageButton({ mdUrl, siteName, prompt, actions }: CopyPageBut
   const primary = (
     <Button variant="outline" size="sm" onClick={copyPage}>
       {copied ? <Check size={16} aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}
-      {copied ? 'Copied' : 'Copy page'}
+      {copied ? t('chrome.copyPage.copied') : t('chrome.copyPage.copyTitle')}
     </Button>
   );
 
@@ -184,16 +201,16 @@ export function CopyPageButton({ mdUrl, siteName, prompt, actions }: CopyPageBut
   if (items.length === 0) return primary; // no dropdown actions → primary only
   return (
     <DropdownMenu>
-      <ButtonGroup label="Copy page">
+      <ButtonGroup label={t('chrome.copyPage.copyTitle')}>
         {primary}
         <DropdownMenuTrigger
           class={cn(buttonVariants({ variant: 'outline', size: 'icon-sm' }), 'px-1')}
-          aria-label="More copy options"
+          aria-label={t('chrome.copyPage.moreOptions')}
         >
           <ChevronDown size={16} aria-hidden="true" />
         </DropdownMenuTrigger>
       </ButtonGroup>
-      <DropdownMenuContent align="end" label="Copy page options" class="w-72">
+      <DropdownMenuContent align="end" label={t('chrome.copyPage.menuLabel')} class="w-72">
         {items.map(renderItem)}
       </DropdownMenuContent>
     </DropdownMenu>
