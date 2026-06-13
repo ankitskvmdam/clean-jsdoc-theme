@@ -1,25 +1,41 @@
-/* eslint-disable */
 /**
- * @clean-jsdoc-theme/bhasha
+ * `@clean-jsdoc-theme/bhasha` — the pure, browser-safe i18n core.
  *
- * Extract/translate/build i18n pipeline. Phase 1: type stubs.
+ * Phase 0 surface: the chrome catalog + derived key type, the `t` translator and
+ * its fallback chain, the `LanguageProvider` static carrier + `useTranslation`
+ * hook, the API-slot key scheme + source-hash, and the validation primitives.
+ *
+ * Everything here is isomorphic — zero `node:*` (rang bundles it into the
+ * browser). The disk-bound work (extract/build/translate) lives in aadesh.
  */
 
-export interface LocaleFile {
-  '@meta': {
-    version: number;
-    locale: string;
-    lastExtracted?: string;
-    fallback: string;
-  };
-  strings: Record<string, string>;
-  orphaned: Record<string, string>;
-}
+export {
+  EN_CHROME,
+  EN_CHROME_FLAT,
+  type ChromeCatalog,
+  type ChromeKey,
+  type Messages,
+} from './catalog';
 
-export function createEmptyLocale(locale: string, fallback = 'en'): LocaleFile {
-  return {
-    '@meta': { version: 1, locale, fallback },
-    strings: {},
-    orphaned: {},
-  };
-}
+export { interpolate, interpolationTokens, type InterpolationVars } from './interpolate';
+
+export {
+  createI18n,
+  DEFAULT_I18N,
+  resolve,
+  translate,
+  translateSlot,
+  type I18n,
+  type TFunc,
+} from './translate';
+
+export { LanguageProvider, useI18n, useTranslation } from './provider';
+
+export { API_NAMESPACE, apiSlotKey, isApiKey, isChromeKey, sourceHash } from './keys';
+
+export {
+  catalogCoverage,
+  lintSlotMarkdown,
+  validateCatalogShape,
+  validateTokenParity,
+} from './validate';
