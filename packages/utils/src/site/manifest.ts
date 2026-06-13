@@ -103,3 +103,26 @@ export interface SiteManifest {
    */
   slots?: SlotEntry[];
 }
+
+/** Current schema version of the {@link ExtractManifest}. */
+export const EXTRACT_MANIFEST_VERSION = 1;
+
+/**
+ * The minimal artifact the theme's localization **extract mode** writes to disk
+ * for aadesh: just the translatable API slot template (chrome strings come from
+ * bhasha's catalog, so they aren't duplicated here). aadesh spawns the jsdoc/
+ * typedoc pipeline with the theme signaled to emit this — instead of rendering —
+ * then builds the per-locale catalogs from it. Regenerate-on-build, never
+ * committed. See the localization plan, §4.
+ */
+export interface ExtractManifest {
+  /** Schema version ({@link EXTRACT_MANIFEST_VERSION}). */
+  version: number;
+  /** The translatable API slots (longname+field keyed, with source + hash). */
+  slots: SlotEntry[];
+}
+
+/** Project a built {@link SiteManifest} down to the {@link ExtractManifest} aadesh reads. */
+export function toExtractManifest(manifest: SiteManifest): ExtractManifest {
+  return { version: EXTRACT_MANIFEST_VERSION, slots: manifest.slots ?? [] };
+}

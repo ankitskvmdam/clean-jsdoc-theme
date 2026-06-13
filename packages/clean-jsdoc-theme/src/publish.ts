@@ -3,7 +3,7 @@
 // JSDoc 4 → setu → dwar bridge. `publish(taffyData, opts, tutorials)` is the
 // entry JSDoc invokes; everything below orchestrates the four phase packages.
 
-import { readFile, readdir } from 'node:fs/promises';
+import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { basename, dirname, extname, join as joinPath, resolve as resolvePath } from 'node:path';
@@ -142,6 +142,7 @@ const loadUtils = (): Promise<typeof import('@clean-jsdoc-theme/utils')> =>
     'formatBuildReport',
     'normalizeBasePath',
     'withBase',
+    'toExtractManifest',
   ]);
 
 /** The `ora` spinner factory (its default export). */
@@ -721,9 +722,7 @@ export function sourceLinkToCommentEnabled(opts: JSDocOpts): boolean {
  */
 export function hasMarkdownPlugin(plugins: unknown): boolean {
   if (!Array.isArray(plugins)) return false;
-  return plugins.some(
-    (p) => typeof p === 'string' && /(^|[\\/])markdown(\.js)?$/i.test(p.trim())
-  );
+  return plugins.some((p) => typeof p === 'string' && /(^|[\\/])markdown(\.js)?$/i.test(p.trim()));
 }
 
 /**
@@ -1170,10 +1169,7 @@ interface StageHandle {
  * package couldn't be loaded — then `stage` just runs `fn` with no output.
  */
 function createBuildProgress(ora: OraFactory | null) {
-  async function stage<T>(
-    label: string,
-    fn: (handle: StageHandle) => T | Promise<T>
-  ): Promise<T> {
+  async function stage<T>(label: string, fn: (handle: StageHandle) => T | Promise<T>): Promise<T> {
     const noop: StageHandle = { setText: () => {} };
     if (!ora) return await fn(noop);
     const spinner = ora(label).start();
@@ -1257,6 +1253,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
       formatBuildReport,
       normalizeBasePath,
       withBase,
+      toExtractManifest,
     },
     // Loaded sequentially (not Promise.all) so the spinner can step its label
     // through each module — the evaluation of these large ESM bundles is the
@@ -1366,19 +1363,38 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   const menu = normalizeMenu(opts.menu);
   const clubSidebarItems = opts.clubSidebarItems === true;
 
-  const manifest = await progress.stage('Generating pages', () => generateSite(data, {
-    ...(pkg ? { pkg } : {}),
-    ...(readme ? { readme } : {}),
-    ...(tutorialTree.length > 0 ? { tutorials: tutorialTree } : {}),
-    ...(sources.length > 0 ? { sources } : {}),
-    ...(sources.length > 0 && sourceLinkToComment ? { sourceLinkToComment } : {}),
-    ...(docs.length > 0 ? { docs } : {}),
-    ...(docGroups ? { docGroups } : {}),
-    ...(defaultDocGroup ? { defaultDocGroup } : {}),
-    ...(sectionOrder ? { sectionOrder } : {}),
-    ...(menu ? { menu } : {}),
-    ...(clubSidebarItems ? { clubSidebarItems } : {}),
-  }));
+  const manifest = await progress.stage('Generating pages', () =>
+    generateSite(data, {
+      ...(pkg ? { pkg } : {}),
+      ...(readme ? { readme } : {}),
+      ...(tutorialTree.length > 0 ? { tutorials: tutorialTree } : {}),
+      ...(sources.length > 0 ? { sources } : {}),
+      ...(sources.length > 0 && sourceLinkToComment ? { sourceLinkToComment } : {}),
+      ...(docs.length > 0 ? { docs } : {}),
+      ...(docGroups ? { docGroups } : {}),
+      ...(defaultDocGroup ? { defaultDocGroup } : {}),
+      ...(sectionOrder ? { sectionOrder } : {}),
+      ...(menu ? { menu } : {}),
+      ...(clubSidebarItems ? { clubSidebarItems } : {}),
+    })
+  );
+
+  // Localization extract mode (aadesh, Phase 3): when CLEAN_JSDOC_THEME_EXTRACT
+  // names a path, write the translatable slot template there and STOP — skipping
+  // the expensive render/island-bundle/Pagefind. aadesh spawns jsdoc with this
+  // env var set to harvest the template, then drives the per-locale builds.
+  const extractPath = process.env.CLEAN_JSDOC_THEME_EXTRACT?.trim();
+  if (extractPath) {
+    const target = resolvePath(extractPath);
+    await progress.stage('Writing extract manifest', async () => {
+      await mkdir(dirname(target), { recursive: true });
+      await writeFile(target, JSON.stringify(toExtractManifest(manifest), null, 2) + '\n', 'utf8');
+    });
+    console.log(
+      `clean-jsdoc-theme: extract mode — wrote ${manifest.slots?.length ?? 0} slot(s) to ${target}`
+    );
+    return;
+  }
 
   // Resolve siteName (text or logo set) and copy any local logo images into the
   // output before render, so the served paths are baked into the markup. The
@@ -1419,9 +1435,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   );
 
   const outputFiles = [...result.files, ...logoFiles, ...customAssets.files, ...docImageFiles];
-  await progress.stage('Writing files', () =>
-    writeOutputFiles(absoluteDestination, outputFiles)
-  );
+  await progress.stage('Writing files', () => writeOutputFiles(absoluteDestination, outputFiles));
 
   // Next.js-style build report: where the files landed, page/asset counts, and
   // per-route sizes (+ gzip). `node:zlib` is injected here as the gzip sizer so
@@ -1457,9 +1471,6 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
       runPagefindAgainstDir(absoluteDestination)
     );
   } catch (err) {
-    console.warn(
-      `clean-jsdoc-theme: pagefind step skipped (optional) — ${(err as Error).message}`
-    );
+    console.warn(`clean-jsdoc-theme: pagefind step skipped (optional) — ${(err as Error).message}`);
   }
-
 }

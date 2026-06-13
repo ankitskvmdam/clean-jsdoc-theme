@@ -14,8 +14,8 @@
  * only; we never cross-import the bridge package).
  */
 import { gzipSync } from 'node:zlib';
-import { readFile } from 'node:fs/promises';
-import { extname, resolve as resolvePath } from 'node:path';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { dirname, extname, resolve as resolvePath } from 'node:path';
 import salty from '@jsdoc/salty';
 import { generateSite } from '@clean-jsdoc-theme/setu';
 import type { MenuItem, SourceFileInput } from '@clean-jsdoc-theme/setu';
@@ -33,6 +33,7 @@ import {
   createGoogleFontResolver,
   formatBuildReport,
   formatDiagnostics,
+  toExtractManifest,
   validateThemeOpts,
 } from '@clean-jsdoc-theme/utils';
 import type { TDoclet, ValidatedFonts } from '@clean-jsdoc-theme/utils';
@@ -448,6 +449,21 @@ export async function writeSite(
     ...(menu ? { menu } : {}),
     ...(clubSidebarItems ? { clubSidebarItems } : {}),
   });
+
+  // Localization extract mode (aadesh, Phase 3): when CLEAN_JSDOC_THEME_EXTRACT
+  // names a path, write the translatable slot template there and STOP — the same
+  // contract as the JSDoc bridge, so aadesh harvests the template identically
+  // whichever pipeline produced it.
+  const extractPath = process.env.CLEAN_JSDOC_THEME_EXTRACT?.trim();
+  if (extractPath) {
+    const target = resolvePath(extractPath);
+    await mkdir(dirname(target), { recursive: true });
+    await writeFile(target, JSON.stringify(toExtractManifest(manifest), null, 2) + '\n', 'utf8');
+    logger.info(
+      `clean-jsdoc-theme: extract mode — wrote ${manifest.slots?.length ?? 0} slot(s) to ${target}`
+    );
+    return;
+  }
 
   // Resolve siteName (text or logo set) + copy any local logo images so the
   // served paths are baked into the markup. The shape was validated above.
