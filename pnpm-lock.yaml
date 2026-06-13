@@ -116,6 +116,9 @@ importers:
       '@clean-jsdoc-theme/setu':
         specifier: workspace:^
         version: link:../setu
+      '@clean-jsdoc-theme/utils':
+        specifier: workspace:^
+        version: link:../utils
       commander:
         specifier: 14.0.3
         version: 14.0.3
@@ -129,6 +132,9 @@ importers:
       typescript:
         specifier: ^5.5.0
         version: 5.9.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@22.19.17)(happy-dom@15.11.7)(lightningcss@1.32.0)
 
   packages/bhasha:
     dependencies:
