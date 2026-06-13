@@ -118,9 +118,15 @@ container tags with `<step label>`/`<tab label>` items (→ the `<Steps>`/`<Tabs
 JSX, inner content re-parsed recursively so nesting + callouts inside work).
 **API coverage.** The five container kinds — class, interface, mixin, module,
 namespace — render through one kind-parametric path (`getContainerView` →
-`containerViewToMdast`): class keeps its constructor-params special case, and
+`containerViewToMdast`): class keeps its constructor special case, and
 class/interface additionally walk the `@augments`/`@extends` inheritance chain to
-fold in inherited members. **Typedefs** get their own pages, and every
+fold in inherited members. A class's **Constructor section** leads with a call
+signature (`constructorSignature` → `new ClassName(id, [opts])`: top-level param
+names, optional → `[name]`, rest → `...name`) then the **separately-documented
+constructor description** — when a class carries both a class-level doc comment
+(`classdesc`, shown in the body) and a `constructor` doc comment (`description`),
+the latter renders here, guarded so a single-comment class or a constructor-only
+comment never duplicates — followed by the Parameters table. **Typedefs** get their own pages, and every
 **global**-scope symbol that doesn't already own a page is collected onto a single
 aggregated **"Globals"** page (each symbol a section; one nav entry). **events**,
 **enums**, and **constants** are not standalone — they render as member sections
