@@ -25,8 +25,15 @@ import {
   CtrlK,
   ThemeToggle,
   Settings,
+  LanguageSwitcher,
 } from '@clean-jsdoc-theme/rang';
-import type { Heading, IslandName, NavNode, SiteName } from '@clean-jsdoc-theme/utils';
+import type {
+  Heading,
+  IslandName,
+  IslandPropsMap,
+  NavNode,
+  SiteName,
+} from '@clean-jsdoc-theme/utils';
 
 export interface IslandRecord {
   /** `i0`, `i1`, ... — referenced by the loader's data-island-id attribute. */
@@ -52,6 +59,11 @@ export interface SsrLayoutProps {
   basePath?: string;
   /** URL of the JSON search index, handed to the cmdk island for fuzzy search. */
   searchIndexUrl?: string;
+  /**
+   * Language-switcher props (localized builds with >1 locale). When set, dwar
+   * mounts the `language-switcher` island in the desktop header controls.
+   */
+  languageSwitcher?: IslandPropsMap['language-switcher'];
   /** Mutated as islands are encountered so the caller can emit the props JSON. */
   islands: IslandRecord[];
 }
@@ -119,6 +131,7 @@ export function SsrLayout({
   siteName,
   basePath = '/',
   searchIndexUrl,
+  languageSwitcher,
   islands,
 }: SsrLayoutProps) {
   const headerControls = (
@@ -145,6 +158,15 @@ export function SsrLayout({
           Component={Settings}
           props={{} as Record<string, never>}
         />
+        {/* Language switcher — only in localized builds with >1 locale. */}
+        {languageSwitcher && (
+          <Island
+            name="language-switcher"
+            islands={islands}
+            Component={LanguageSwitcher}
+            props={languageSwitcher}
+          />
+        )}
       </div>
       {/* Mobile-only drawer trigger; the drawer hosts theme/settings + the page list. */}
       {nav.length > 0 && (

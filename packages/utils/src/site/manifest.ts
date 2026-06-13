@@ -161,4 +161,11 @@ export interface BuildSpec {
   destination: string;
   /** Base-path prefix for this locale's links — `/<locale>`, or `/` for the default. */
   basePath: string;
+  /**
+   * The UN-prefixed site base path (the default locale's base), for the language
+   * switcher's cross-locale URLs. Same across every locale in the build.
+   */
+  siteBasePath: string;
+  /** All configured locales (code + optional display name) — feeds the switcher. */
+  locales: Array<{ code: string; name?: string }>;
 }

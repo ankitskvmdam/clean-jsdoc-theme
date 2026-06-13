@@ -91,4 +91,16 @@ export interface RenderLocale {
   defaultLocale: string;
   /** Chrome translations: full `chrome.*` key → translated string (non-empty only). */
   messages: Record<string, string>;
+  /**
+   * The UN-prefixed site base path (the default locale's base), used to build the
+   * language switcher's cross-locale URLs — `<siteBasePath>/<locale>/<slug>` for a
+   * non-default locale, `<siteBasePath>/<slug>` for the default. Distinct from
+   * `theme.basePath`, which is already prefixed with the active locale.
+   */
+  siteBasePath?: string;
+  /**
+   * All configured locales (code + display label) for the switcher. When two or
+   * more are present, dwar mounts a `language-switcher` island in the header.
+   */
+  locales?: Array<{ code: string; label: string }>;
 }

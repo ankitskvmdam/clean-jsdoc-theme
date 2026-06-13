@@ -47,6 +47,9 @@ const ALL_ISLANDS: IslandName[] = [
   'code-viewer',
   'embed',
   'tabs',
+  // NB: `language-switcher` is intentionally NOT here — it's bundled only for a
+  // localized build (render() adds it when opts.locale is set), so a normal
+  // build's `_islands/` output stays byte-identical.
 ];
 
 export interface IslandChunkFile {
@@ -137,7 +140,8 @@ function computeCacheKey(names: IslandName[]): string {
   // preact version — guards against a preact bump while rang/dwar are unchanged.
   let preactVersion = 'unknown';
   try {
-    preactVersion = (requireFromHere('preact/package.json') as { version?: string }).version ?? 'unknown';
+    preactVersion =
+      (requireFromHere('preact/package.json') as { version?: string }).version ?? 'unknown';
   } catch {
     preactVersion = 'unknown';
   }
@@ -146,9 +150,7 @@ function computeCacheKey(names: IslandName[]): string {
   return createHash('sha256').update(parts.join('\x00')).digest('hex').slice(0, 16);
 }
 
-export async function bundleIslands(
-  opts: BundleIslandsOptions = {}
-): Promise<BundleIslandsResult> {
+export async function bundleIslands(opts: BundleIslandsOptions = {}): Promise<BundleIslandsResult> {
   const outDir = (opts.outDir ?? '_islands').replace(/\/$/, '');
   const resolveDir = opts.resolveDir ?? DWAR_PACKAGE_DIR;
   const names = opts.islands ?? ALL_ISLANDS;

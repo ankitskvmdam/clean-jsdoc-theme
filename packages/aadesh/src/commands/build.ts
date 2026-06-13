@@ -6,15 +6,19 @@
  * translations in and renders. The default locale renders unprefixed; others
  * under `/<locale>`.
  *
- * Scope of this chunk: API translations + per-locale output/base-path. Chrome
- * locale seeding, the language switcher, hreflang, and shared-asset dedup are
- * follow-on sub-chunks (they need dwar changes).
+ * Covers API + chrome translations, per-locale output/base-path, and the
+ * language switcher (the spec carries siteBasePath + the locale list). hreflang
+ * tags and shared-asset content-hash dedup are the remaining sub-chunks.
  */
 
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { BUILD_SPEC_VERSION, type DiagnosticBag } from '@clean-jsdoc-theme/utils';
+import {
+  BUILD_SPEC_VERSION,
+  normalizeBasePath,
+  type DiagnosticBag,
+} from '@clean-jsdoc-theme/utils';
 import { DEFAULT_ARTIFACTS_DIR, readLocaleFile } from '../artifacts';
 import { localeBuildPlan } from '../build-plan';
 import { loadLocaleConfig, type Pipeline } from '../config';
@@ -76,6 +80,8 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     basePath,
   }).filter((b) => !opts.locale || b.code === opts.locale);
 
+  // The un-prefixed site base (the default locale's base) — for switcher URLs.
+  const siteBase = normalizeBasePath(basePath);
   const specDir = await mkdtemp(join(tmpdir(), 'cjt-build-'));
   const results: LocaleBuildResult[] = [];
   try {
@@ -114,6 +120,10 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
           chromeMessages,
           destination: absDestination,
           basePath: target.basePath,
+          // The un-prefixed site base (same for all locales) + the locale list
+          // feed the language switcher's cross-locale URLs.
+          siteBasePath: siteBase,
+          locales: locales.locales,
         }),
         'utf8'
       );

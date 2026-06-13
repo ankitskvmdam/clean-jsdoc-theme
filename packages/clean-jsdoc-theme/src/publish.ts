@@ -1213,6 +1213,8 @@ interface BuildSpec {
   chromeMessages: Record<string, string>;
   destination: string;
   basePath: string;
+  siteBasePath: string;
+  locales: Array<{ code: string; name?: string }>;
 }
 
 /**
@@ -1242,6 +1244,8 @@ function readBuildSpec(): BuildSpec | null {
     chromeMessages: spec.chromeMessages ?? {},
     destination: spec.destination,
     basePath: spec.basePath,
+    siteBasePath: typeof spec.siteBasePath === 'string' ? spec.siteBasePath : '/',
+    locales: Array.isArray(spec.locales) ? spec.locales : [],
   };
 }
 
@@ -1478,13 +1482,16 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
       destination: absoluteDestination,
       islandCacheDir,
       inlineSvgs,
-      // Build mode: render chrome in the locale (SSR provider + island seeding).
+      // Build mode: render chrome in the locale (SSR provider + island seeding)
+      // and, with >1 locale, mount the language switcher.
       ...(buildSpec
         ? {
             locale: {
               code: buildSpec.locale,
               defaultLocale: buildSpec.defaultLocale,
               messages: buildSpec.chromeMessages,
+              siteBasePath: buildSpec.siteBasePath,
+              locales: buildSpec.locales.map((l) => ({ code: l.code, label: l.name ?? l.code })),
             },
           }
         : {}),

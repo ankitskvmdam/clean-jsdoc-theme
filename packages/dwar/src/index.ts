@@ -96,6 +96,17 @@ async function mapWithConcurrency<T, R>(
   return results;
 }
 
+/**
+ * Build a page's URL in a given locale for the language switcher: the default
+ * locale is unprefixed (`<siteBase>/<slug>`), others nest under `/<code>`
+ * (`<siteBase>/<code>/<slug>`). `slug` may be `''` (the home page).
+ */
+function localeHref(siteBase: string, code: string, defaultLocale: string, slug: string): string {
+  const seg = code === defaultLocale ? '' : '/' + code;
+  const path = slug ? `${seg}/${slug}` : seg || '/';
+  return withBase(siteBase, path);
+}
+
 /** A page's adjacent pages in sidebar reading order, for the prev/next pager. */
 interface PageNeighbors {
   prev?: PageNavLink;
@@ -264,6 +275,21 @@ async function renderPage(
       : null;
   const pageBody = pager ? h(Fragment, null, mainContent, pager) : mainContent;
 
+  // Language switcher (localized build with >1 locale): one link per locale to
+  // THIS page's URL in that locale. Computed per page off the un-prefixed site
+  // base so each option points at the right `/<locale>/<slug>`.
+  const languageSwitcher =
+    locale && locale.locales && locale.locales.length > 1
+      ? {
+          current: locale.code,
+          locales: locale.locales.map((l) => ({
+            code: l.code,
+            label: l.label,
+            href: localeHref(locale.siteBasePath ?? '/', l.code, locale.defaultLocale, page.slug),
+          })),
+        }
+      : undefined;
+
   // In-content links (MdxA / SourceLink / MemberMeta) read the base-path from a
   // Preact context. This is SSR-only — the MDX body is rendered to a string and
   // never hydrated as a whole — so the context value is baked into the markup
@@ -284,6 +310,7 @@ async function renderPage(
           siteName,
           basePath,
           searchIndexUrl,
+          languageSwitcher,
           islands,
         },
         pageBody
@@ -392,6 +419,11 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
   // MDX-embedded islands (`code-tabs`, `copy-btn`) are still bundled so the
   // chunks are available if/when MDX content uses them.
   const islandSet = new Set<IslandName>(ALL_ISLANDS);
+  // The language switcher is bundled ONLY for a localized build with >1 locale,
+  // so a normal build's `_islands/` output is unchanged (byte-identical).
+  if (opts.locale && (opts.locale.locales?.length ?? 0) > 1) {
+    islandSet.add('language-switcher');
+  }
 
   // Copy-page button: on by default; `enabled: false` opts out entirely.
   // `actions` (undefined → all) controls which dropdown items appear.

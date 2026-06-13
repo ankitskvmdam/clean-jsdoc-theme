@@ -13,6 +13,7 @@ import { CopyBtn } from './components/CopyBtn';
 import { CopyPageButton } from './components/CopyPageButton';
 import { ThemeToggle } from './components/ThemeToggle';
 import { Settings } from './components/Settings';
+import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { Tabs } from './components/Tabs';
 
 // Island registry is intentionally heterogeneous across IslandName keys; per-key
@@ -33,6 +34,7 @@ export const ISLAND_REGISTRY: Record<IslandName, ComponentType<any>> = {
   'copy-page': CopyPageButton,
   'theme-toggle': ThemeToggle,
   settings: Settings,
+  'language-switcher': LanguageSwitcher,
   // In-content island: the `Tabs` markup is fully SSR-rendered and only
   // DOM-enhanced on the client (the loader's `tabs` entry doesn't import the
   // registry), so this entry exists purely to satisfy `Record<IslandName, …>`.

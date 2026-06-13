@@ -22,6 +22,7 @@ export type IslandName =
   | 'copy-page'
   | 'theme-toggle'
   | 'settings'
+  | 'language-switcher'
   | 'code-viewer'
   | 'embed'
   | 'tabs';
@@ -42,6 +43,13 @@ export interface IslandPropsMap {
   'copy-page': { mdUrl: string; siteName?: string; prompt?: string; actions?: CopyPageAction[] };
   'theme-toggle': Record<string, never>;
   settings: Record<string, never>;
+  // The language switcher (localized builds only): a globe dropdown of links to
+  // the current page in each locale. `href` per option is the page's URL in that
+  // locale (default unprefixed, others under `/<locale>`), computed by dwar.
+  'language-switcher': {
+    locales: Array<{ code: string; label: string; href: string }>;
+    current: string;
+  };
   // No `code` field: the source body is read from the DOM `<pre>` at hydration
   // time rather than passed through the JSON props payload.
   'code-viewer': { language: string; filename?: string; highlightLine?: number };
