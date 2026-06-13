@@ -13,5 +13,6 @@ export * from './locale';
 export * from './artifacts';
 export * from './config';
 export * from './extract-manifest';
+export * from './prompt';
 export * from './report';
 export * from './commands';

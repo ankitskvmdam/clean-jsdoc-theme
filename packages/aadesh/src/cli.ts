@@ -10,6 +10,7 @@ import { Command } from 'commander';
 import { formatDiagnostics } from '@clean-jsdoc-theme/utils';
 import { runExtract } from './commands/extract';
 import { runValidate } from './commands/validate';
+import { runPrompt } from './commands/prompt';
 import { formatExtractReport } from './report';
 
 const color = (): boolean => Boolean(process.stdout.isTTY);
@@ -84,6 +85,59 @@ program
       process.exitCode = 1;
     }
   });
+
+program
+  .command('prompt')
+  .description('Emit an LLM translation prompt for the new + stale keys')
+  .option('-c, --config <path>', 'jsdoc/typedoc config file', 'jsdoc.json')
+  .option('--dir <path>', 'locale artifacts directory')
+  .option('--locale <code>', 'restrict to a single locale (default: all non-default)')
+  .option('--chunk-size <n>', 'entries per prompt chunk', (v) => Number.parseInt(v, 10))
+  .option('--typedoc', 'use the TypeDoc pipeline instead of JSDoc', false)
+  .action(
+    async (o: {
+      config: string;
+      dir?: string;
+      locale?: string;
+      chunkSize?: number;
+      typedoc: boolean;
+    }) => {
+      try {
+        const result = await runPrompt({
+          configPath: o.config,
+          dir: o.dir,
+          locale: o.locale,
+          chunkSize: o.chunkSize,
+          pipeline: o.typedoc ? 'typedoc' : 'jsdoc',
+        });
+        if (result.diagnostics.list.length > 0) {
+          console.log(formatDiagnostics(result.diagnostics, { color: color() }));
+        }
+        if (result.diagnostics.hasErrors()) process.exitCode = 1;
+        if (!result.localized) {
+          if (!result.diagnostics.hasErrors()) {
+            console.log('aadesh: no locales configured — set `opts.locales` in your config.');
+          }
+          return;
+        }
+        for (const { locale, count, chunks } of result.prompts) {
+          if (count === 0) {
+            console.log(`# ${locale}: fully translated — nothing to prompt.\n`);
+            continue;
+          }
+          console.log(`# ${locale}: ${count} entries to translate, ${chunks.length} chunk(s)\n`);
+          chunks.forEach((chunk, i) => {
+            if (i > 0) console.log('\n' + '─'.repeat(72) + '\n');
+            console.log(chunk);
+          });
+          console.log('');
+        }
+      } catch (err) {
+        console.error((err as Error).message);
+        process.exitCode = 1;
+      }
+    }
+  );
 
 program.parseAsync().catch((err: unknown) => {
   console.error((err as Error).message);

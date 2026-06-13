@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { sourceHash } from '@clean-jsdoc-theme/bhasha';
 import { runExtract } from '../commands/extract';
 import { runValidate } from '../commands/validate';
+import { runPrompt } from '../commands/prompt';
 import { readLocaleFile, writeLocaleFile } from '../artifacts';
 import type { PipelineRunner } from '../extract-manifest';
 
@@ -146,5 +147,35 @@ describe('runValidate', () => {
     const res = await runValidate({ configPath, dir: localesDir, runner: fakeRunner });
     expect(res.diagnostics.list.some((d) => d.code === 'locale/missing-file')).toBe(true);
     expect(res.ok).toBe(false);
+  });
+});
+
+describe('runPrompt', () => {
+  beforeEach(async () => {
+    await writeConfig({ locales: ['en', 'fr'], defaultLocale: 'en' });
+    await runExtract({ configPath, dir: localesDir, runner: fakeRunner });
+  });
+
+  it('prompts only the non-default locale, covering its untranslated entries', async () => {
+    const res = await runPrompt({ configPath, dir: localesDir, runner: fakeRunner });
+    expect(res.prompts.map((p) => p.locale)).toEqual(['fr']); // en (default) excluded
+    const fr = res.prompts[0];
+    expect(fr.count).toBeGreaterThan(0);
+    expect(fr.chunks.length).toBeGreaterThan(0);
+    expect(fr.chunks[0]).toContain('Translate to fr');
+  });
+
+  it('emits no chunks once a locale is fully translated', async () => {
+    // Translate every entry in fr to match the template (so nothing is new/stale).
+    const en = (await readLocaleFile(localesDir, 'en'))!; // skeleton = source + hashes
+    const fr = (await readLocaleFile(localesDir, 'fr'))!;
+    fr.api = { ...en.api };
+    fr.chrome = JSON.parse(JSON.stringify(en.chrome));
+    fr._hashes = { ...en._hashes };
+    await writeLocaleFile(localesDir, 'fr', fr);
+
+    const res = await runPrompt({ configPath, dir: localesDir, runner: fakeRunner });
+    expect(res.prompts[0].count).toBe(0);
+    expect(res.prompts[0].chunks).toEqual([]);
   });
 });
