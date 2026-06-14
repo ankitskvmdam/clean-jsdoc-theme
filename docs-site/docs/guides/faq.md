@@ -192,3 +192,58 @@ Configure or disable it with [`copyPage`](/theme/configuration#copypage).
 Unknown or misspelled options **warn** by default (with a "did you mean?" hint)
 and the build continues. Set [`strict`](/theme/configuration#strict) to turn
 those warnings into errors.
+
+## Localization
+
+### How do I build a localized (multi-language) site?
+
+Declare your languages in the same `opts` block and drive the build with the
+`clean-jsdoc` CLI (the `@clean-jsdoc-theme/aadesh` package):
+
+```json
+{
+  "opts": {
+    "locales": [
+      { "code": "en", "name": "English" },
+      { "code": "ja", "name": "日本語" }
+    ],
+    "defaultLocale": "en"
+  }
+}
+```
+
+```sh
+npm i -D @clean-jsdoc-theme/aadesh
+clean-jsdoc extract    # build the per-locale translation catalogs
+# …translate the JSON (or `clean-jsdoc prompt` for an LLM prompt)…
+clean-jsdoc build      # render one static site per locale
+```
+
+You get one site per language (the default at the root, others under
+`/<locale>`), a header language switcher, and `hreflang` tags. Prose is localized
+by file — a `README.<locale>.md` home page and a `docs.<locale>/` overlay — and
+fonts per locale via `"ja:heading"`-style keys. The full walkthrough is in
+[Localize your docs](/guides/localize-your-docs).
+
+## Working with LLMs
+
+### I use an LLM for development — how do I get the most out of clean-jsdoc-theme?
+
+clean-jsdoc-theme is built to be **LLM-friendly**, in two directions:
+
+- **Your generated site is readable by AI.** Every page emits a companion
+  Markdown file (`<page>/index.md`), and a per-page **copy / open-in-LLM** button
+  hands the clean `.md` straight to Claude / ChatGPT / Perplexity — so an
+  assistant reads the exact same reference your users do. Tune the handoff with
+  [`copyPage`](/theme/configuration#copypage) and
+  [`aiPrompt`](/theme/configuration#aiprompt).
+- **Setting up the theme is itself AI-assisted.** There's a downloadable
+  [**skill**](/theme/llm-skill) that turns any coding assistant into a
+  clean-jsdoc-theme expert — point your agent at it and it can write your
+  `jsdoc.json`/`typedoc.json`, author guides with callouts/steps/tabs, structure
+  the sidebar, wire up cross-links, set up localization, and debug a build, all
+  from source-verified knowledge instead of guesswork. Drop the skill folder into
+  your assistant (e.g. `.claude/skills/`) and just ask for what you want.
+
+So whether the LLM is **reading** your docs or **building** them, you don't have
+to do the translating — point it at the companion `.md` and the skill.

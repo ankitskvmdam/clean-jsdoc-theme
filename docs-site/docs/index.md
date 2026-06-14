@@ -60,6 +60,13 @@ First-class light and dark themes on an OKLCH palette — no CSS required. Bring
 your own site name or logo, Google Fonts, sidebar menu, and custom CSS/JS
 whenever you want them.
 
+### Ships in any language
+
+Built-in localization: declare your locales and the `clean-jsdoc` CLI builds one
+static site per language — translated UI, API descriptions, and prose, with a
+header language switcher, per-language fonts, and `hreflang` for SEO. See
+[Localize your docs](/guides/localize-your-docs).
+
 ### Built for LLMs
 
 Every page emits a companion `.md` authored for machine reading, plus opt-out

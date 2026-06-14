@@ -53,6 +53,9 @@ search index, and a companion `.md` for every page — ready to deploy anywhere.
   auto-generated API reference living in **one** site, one sidebar, one search.
 - **Teams who care about AI**, who want every page to ship a clean companion
   `.md` so assistants and LLMs can read the docs as easily as people can.
+- **Projects that need localization**, who want to ship their docs in multiple
+  languages — translated UI, API descriptions, and prose, one static site per
+  locale with a language switcher. See [Localize your docs](/guides/localize-your-docs).
 
 ## Find your way around
 

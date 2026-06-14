@@ -42,8 +42,13 @@ of every page for LLMs. No CSS or build config required to get started.
   [Pagefind](https://pagefind.app/) full-text index.
 - **Guides + API in one site** — hand-written Markdown guides and the
   auto-generated reference share one sidebar and one search.
+- **Localization built in** — declare your locales and the `clean-jsdoc` CLI
+  builds one static site per language (translated UI, API descriptions, and
+  prose) with a header language switcher, per-language fonts, and `hreflang`.
 - **LLM-friendly** — every page ships a clean companion `.md`, plus a
-  copy-page button to hand any page to Claude / ChatGPT / Perplexity.
+  copy-page button to hand any page to Claude / ChatGPT / Perplexity. A
+  downloadable [skill](https://ankdev.me/clean-jsdoc-theme/theme/llm-skill) turns
+  any coding assistant into a setup expert.
 - **Polished by default** — light/dark OKLCH themes, Google Fonts, shiki syntax
   highlighting, a Monaco source viewer, and `Source: file:line` links.
 
