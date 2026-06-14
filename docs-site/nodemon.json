@@ -13,5 +13,5 @@
   ],
   "ext": "js,cjs,mjs,json,md,markdown,html",
   "delay": 400,
-  "exec": "jsdoc -c jsdoc.json && jsdoc -c jsdoc.api.json"
+  "exec": "clean-jsdoc build && jsdoc -c jsdoc.api.json"
 }
