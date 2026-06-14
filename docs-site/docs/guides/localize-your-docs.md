@@ -25,6 +25,11 @@ The workflow runs through the [`clean-jsdoc`](/packages/aadesh-overview) CLI
 > Install the CLI alongside the theme:
 > `pnpm add -D clean-jsdoc-theme @clean-jsdoc-theme/aadesh`
 
+> [!INFO]
+> Localized **builds** are JSDoc-only today. The TypeDoc bridge can *extract*
+> catalogs but does not yet render the per-locale sites — full multi-language
+> output is on the JSDoc path.
+
 ## 1. Declare your locales
 
 Locales live in your existing `jsdoc.json` opts (TypeDoc: the `cleanJsdocTheme`
@@ -47,8 +52,9 @@ block) — there's no separate config file:
 ```
 
 A list of `{ code, name }` (or bare `"en"` strings) plus the default. The `name`
-is the switcher label. A single-locale (or no-`locales`) build is unaffected — it
-renders exactly as before.
+is the switcher label, and codes are BCP-47-ish (`en`, `pt-BR`). `defaultLocale`
+is optional — it defaults to the first locale in the list. A single-locale (or
+no-`locales`) build is unaffected — it renders exactly as before.
 
 ## 2. Extract the catalogs
 
@@ -81,10 +87,23 @@ Edit each locale's `<code>.json` by hand, or generate a prompt for an LLM:
 clean-jsdoc prompt
 ```
 
-`prompt` emits a ready-to-paste prompt containing only the untranslated and stale
-entries, chunked for context limits, with instructions to preserve markdown,
-`{@link}`, code fences, and `{var}` interpolation tokens. Paste the model's JSON
-back into the catalog.
+`prompt` writes a ready-to-use prompt **file** per locale under
+`clean-jsdoc-theme-artifacts/locales/prompts/` — `<code>.md` for a small catalog,
+or `<code>.part-01.md`, `<code>.part-02.md`, … chunked for context limits. Each
+file contains only the untranslated and stale entries, with instructions to
+preserve markdown, `{@link}`, code fences, and `{var}` interpolation tokens. The
+CLI prints where the files landed:
+
+```text
+ja: 60 entries → 2 prompt files:
+  clean-jsdoc-theme-artifacts/locales/prompts/ja.part-01.md
+  clean-jsdoc-theme-artifacts/locales/prompts/ja.part-02.md
+```
+
+Open each file and paste its contents into your LLM — or upload the `.md`
+directly — then copy the returned translations back into the matching `<code>.json`
+catalog. (The prompts directory is regenerated on every run and git-ignored, so
+it never clutters your commits.)
 
 You don't have to translate everything — anything left blank falls back to the
 default language, so a partially-translated site is fine (and the coverage shows
