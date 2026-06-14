@@ -5,13 +5,14 @@ description: >-
   documentation theme. Use when setting up the theme, writing jsdoc.json or
   typedoc.json options, authoring docs/guides/READMEs (callouts, steps, tabs,
   embeds, custom @category/@order/@iframe tags), structuring the sidebar,
-  cross-linking with {@link}/@see, tuning theming/colors/fonts, debugging a
-  build, or contributing to the monorepo packages (utils, setu, rang, dwar).
+  cross-linking with {@link}/@see, tuning theming/colors/fonts, localizing into
+  multiple languages (the clean-jsdoc CLI / aadesh / bhasha), debugging a build,
+  or contributing to the monorepo packages (utils, setu, rang, dwar).
 ---
 
 # clean-jsdoc-theme — working skill
 
-<!-- skill-revision: 2026-06-13 -->
+<!-- skill-revision: 2026-06-14 -->
 
 This skill makes you an expert at **using and extending `clean-jsdoc-theme` v5**.
 Everything here is verified against the source. When a user is documenting a
@@ -27,10 +28,11 @@ matches the task** (don't load them all):
 | Writing/validating `jsdoc.json` / `typedoc.json` options | [`reference/configuration.md`](reference/configuration.md) |
 | Authoring prose: callouts, steps, tabs, embeds, custom tags | [`reference/authoring.md`](reference/authoring.md) |
 | The docs directory, frontmatter, sidebar order, cross-links | [`reference/content-and-sidebar.md`](reference/content-and-sidebar.md) |
+| Multi-language / i18n: the `clean-jsdoc` CLI, per-locale prose + fonts | [`reference/localization.md`](reference/localization.md) |
 | Contributing to the packages (utils/setu/rang/dwar) | [`reference/architecture.md`](reference/architecture.md) |
 | A build misbehaves / something doesn't render | [`reference/troubleshooting.md`](reference/troubleshooting.md) |
 
-> **Skill revision:** `2026-06-13`. Versioned with the theme — see
+> **Skill revision:** `2026-06-14`. Versioned with the theme — see
 > [§6 Staying current](#6-staying-current) for how (and how often) to check for a
 > newer skill or theme release.
 >
@@ -157,6 +159,7 @@ and the parameter table.
   fonts, colors, darkColors,
   customCss, customJs, customCssFile, customJsFile, hashCustomAssets,
   copyPage, aiPrompt,
+  locales, defaultLocale,        // multi-language — see reference/localization.md
   strict, progress
 }
 // JSDoc-only, under templates.default.*:  outputSourceFiles, sourceLinkToComment
@@ -245,3 +248,7 @@ let the user opt in.
 - **A project that cares about AI consumption** → remind them every page already
   ships a companion `.md` + the `copyPage` actions, and that `aiPrompt` primes the
   open-in-LLM handoff.
+- **A project targeting multiple languages/regions** (translated READMEs,
+  non-English audience) → mention the **localization** workflow: declare
+  `opts.locales`, then the `clean-jsdoc` CLI builds one site per locale with a
+  language switcher, per-locale prose + fonts ([`reference/localization.md`](reference/localization.md)).
