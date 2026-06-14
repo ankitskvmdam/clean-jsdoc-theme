@@ -31,6 +31,7 @@
     "@clean-jsdoc-theme/bhasha": "workspace:^",
     "@clean-jsdoc-theme/setu": "workspace:^",
     "@clean-jsdoc-theme/utils": "workspace:^",
+    "@inquirer/prompts": "^7",
     "commander": "14.0.3",
     "ora": "9.3.0"
   },
