@@ -44,6 +44,12 @@
         "icon": "lucide:website"
       },
       {
+        "title": "v4 Docs",
+        "link": "/clean-jsdoc-theme/v4/",
+        "id": "v4-docs",
+        "icon": "lucide:history"
+      },
+      {
         "title": "Github",
         "link": "https://github.com/ankitskvmdam/clean-jsdoc-theme",
         "id": "github",
