@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getActiveHeadingIndex } from '../components/toc-utils';
+import { computeTocScrollTop, getActiveHeadingIndex } from '../components/toc-utils';
 
 const OFFSET = 100;
 
@@ -66,5 +66,45 @@ describe('getActiveHeadingIndex', () => {
       // The dead-zone fallback gets us to the real last heading.
       expect(getActiveHeadingIndex(tops, 1999, maxScroll, OFFSET)).toBe(4);
     });
+  });
+});
+
+describe('computeTocScrollTop', () => {
+  it('returns null when the container is not scrollable', () => {
+    expect(computeTocScrollTop(100, 0, 400, 400)).toBeNull();
+    expect(computeTocScrollTop(100, 0, 400, 300)).toBeNull();
+  });
+
+  it('returns null when the item is already in the comfortable band (30%–70%)', () => {
+    // clientHeight 400, scrollTop 0 → band is [120, 280].
+    expect(computeTocScrollTop(120, 0, 400, 2000)).toBeNull();
+    expect(computeTocScrollTop(200, 0, 400, 2000)).toBeNull();
+    expect(computeTocScrollTop(280, 0, 400, 2000)).toBeNull();
+  });
+
+  it('scrolls so an item below the band lands padding px below the top', () => {
+    // band [120, 280]; item at 1000 is below → target = 1000 - min(120, 24).
+    expect(computeTocScrollTop(1000, 0, 400, 2000)).toBe(976);
+  });
+
+  it('scrolls so an item above the band lands padding px below the top', () => {
+    // scrollTop 200 → band [320, 480]; item at 50 is above → 50 - 24.
+    expect(computeTocScrollTop(50, 200, 400, 2000)).toBe(26);
+  });
+
+  it('clamps the target to [0, maxScroll]', () => {
+    // maxScroll = 2000 - 400 = 1600. Near-bottom item over-shoots → clamp.
+    expect(computeTocScrollTop(1950, 0, 400, 2000)).toBe(1600);
+    // Above-band item near the very top under-shoots → clamp to 0.
+    expect(computeTocScrollTop(10, 500, 400, 2000)).toBe(0);
+  });
+
+  it('uses 30% of the height when it is smaller than the padding', () => {
+    // clientHeight 60 → 30% = 18 < 24, so the item lands 18px below the top.
+    expect(computeTocScrollTop(100, 0, 60, 600)).toBe(82);
+  });
+
+  it('honors a custom padding', () => {
+    expect(computeTocScrollTop(1000, 0, 400, 2000, 32)).toBe(968);
   });
 });

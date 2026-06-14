@@ -18,6 +18,59 @@ export function getLineOffset(depth: number): number {
   return 16 + A;
 }
 
+/**
+ * Small absolute inset (px) so the active item never sits flush against the top
+ * edge of the TOC viewport on very tall lists. Used as the `min(30%, padding)`
+ * landing point below.
+ */
+const COMFORTABLE_PADDING = 24;
+
+/**
+ * Decide where the TOC's scroll container should scroll so the active item
+ * stays visible — the auto-scroll Fumadocs' TOC does and our port dropped.
+ *
+ * All values are in the scroll container's content coordinate space (i.e.
+ * relative to `scrollTop = 0`). Pure so it's unit-testable without a DOM:
+ *
+ *   - Not scrollable (`scrollHeight <= clientHeight`) → `null` (do nothing).
+ *   - Item already inside the comfortable band (30%–70% of the visible height)
+ *     → `null` (do nothing).
+ *   - Otherwise → the target `scrollTop` that lands the item `min(30%, padding)`
+ *     below the top of the visible area, clamped to `[0, maxScroll]`.
+ */
+export function computeTocScrollTop(
+  itemTop: number,
+  scrollTop: number,
+  clientHeight: number,
+  scrollHeight: number,
+  padding = COMFORTABLE_PADDING
+): number | null {
+  if (scrollHeight <= clientHeight) return null; // nothing to scroll
+  const comfortableTop = scrollTop + clientHeight * 0.3;
+  const comfortableBottom = scrollTop + clientHeight * 0.7;
+  if (itemTop >= comfortableTop && itemTop <= comfortableBottom) return null;
+
+  const target = itemTop - Math.min(clientHeight * 0.3, padding);
+  const maxScroll = scrollHeight - clientHeight;
+  return Math.max(0, Math.min(target, maxScroll));
+}
+
+/**
+ * Nearest scrollable ancestor of `el` — the element whose `overflow-y` opts into
+ * scrolling (the sticky `overflow-y-auto` wrapper the Layout puts the TOC in).
+ * Whether it's *currently* overflowing is left to `computeTocScrollTop`; this
+ * just locates the container. Returns `null` if none is found.
+ */
+export function getScrollParent(el: HTMLElement | null): HTMLElement | null {
+  let node = el?.parentElement ?? null;
+  while (node) {
+    const overflowY = getComputedStyle(node).overflowY;
+    if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') return node;
+    node = node.parentElement;
+  }
+  return null;
+}
+
 /** Per-heading intersection record (ported from fumadocs' TOC observer). */
 interface TocItemState {
   id: string;
