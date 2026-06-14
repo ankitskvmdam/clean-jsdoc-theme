@@ -58,32 +58,32 @@
       "copy": "क्लिपबोर्ड पर कॉपी करें",
       "copied": "क्लिपबोर्ड पर कॉपी किया गया",
       "copyShort": "कॉपी करें",
-      "copiedShort": "",
-      "copyLink": ""
+      "copiedShort": "कॉपी हो गया!",
+      "copyLink": "इस section का link कॉपी करें"
     },
     "copyPage": {
-      "moreOptions": "",
-      "menuLabel": "",
-      "copyTitle": "",
-      "copied": "",
-      "copyDescription": "",
-      "viewTitle": "",
-      "viewDescription": "",
-      "claudeTitle": "",
-      "claudeDescription": "",
-      "chatgptTitle": "",
-      "chatgptDescription": "",
-      "perplexityTitle": "",
-      "perplexityDescription": ""
+      "moreOptions": "और copy विकल्प",
+      "menuLabel": "Page copy विकल्प",
+      "copyTitle": "Page कॉपी करें",
+      "copied": "कॉपी हो गया",
+      "copyDescription": "LLMs के लिए page को Markdown के रूप में कॉपी करें",
+      "viewTitle": "Markdown देखें",
+      "viewDescription": "इस page को plain text के रूप में देखें",
+      "claudeTitle": "Claude में खोलें",
+      "claudeDescription": "इस page के बारे में Claude से पूछें",
+      "chatgptTitle": "ChatGPT में खोलें",
+      "chatgptDescription": "इस page के बारे में ChatGPT से पूछें",
+      "perplexityTitle": "Perplexity में खोलें",
+      "perplexityDescription": "इस page के बारे में Perplexity से पूछें"
     },
     "embed": {
-      "load": "",
-      "loadTitled": "",
-      "posterTitle": "",
-      "loadPill": ""
+      "load": "Embedded सामग्री load करें",
+      "loadTitled": "Embedded सामग्री load करें: {title}",
+      "posterTitle": "Embedded सामग्री",
+      "loadPill": "Load करें"
     },
     "language": {
-      "label": ""
+      "label": "भाषा"
     }
   },
   "api": {}
