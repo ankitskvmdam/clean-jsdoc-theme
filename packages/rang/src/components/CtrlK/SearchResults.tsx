@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'preact/hooks';
+import { useTranslation } from '@clean-jsdoc-theme/bhasha';
 import type { SearchEntry } from '@clean-jsdoc-theme/utils';
 import type { FuzzyResult } from '../search-utils';
 import type { SavedSearch } from './types';
@@ -37,6 +38,7 @@ export function SearchResults({
   onRemoveRecent,
   onRemoveFavorite,
 }: SearchResultsProps) {
+  const { t } = useTranslation();
   const listRef = useRef<HTMLUListElement | null>(null);
 
   // Keep the active row scrolled into view as arrow keys move it.
@@ -49,12 +51,14 @@ export function SearchResults({
     <ul
       ref={listRef}
       role="listbox"
-      aria-label="Search results"
+      aria-label={t('chrome.search.resultsLabel')}
       class="m-0 max-h-80 list-none overflow-y-auto p-2"
     >
       {hasQuery ? (
         results.length === 0 ? (
-          <li class="px-2 py-6 text-center text-sm text-muted-foreground">No matching pages</li>
+          <li class="px-2 py-6 text-center text-sm text-muted-foreground">
+            {t('chrome.search.noResults')}
+          </li>
         ) : (
           results.map((r, i) => (
             <ResultRow

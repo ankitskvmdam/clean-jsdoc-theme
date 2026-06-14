@@ -12,7 +12,7 @@ export interface LayoutPkg {
 
 export interface LayoutProps {
   children?: ComponentChildren;
-  /** Header control slot (search, theme, settings); rendered on the header's right. */
+  /** Header control slot (search, language, theme, settings); rendered on the header's right. */
   headerControls?: ComponentChildren;
   /** Left nav slot. When omitted, the sidebar column is not rendered. */
   sidebar?: ComponentChildren;

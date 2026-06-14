@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'preact/hooks';
+import { useTranslation } from '@clean-jsdoc-theme/bhasha';
 
 /**
  * Props mirror the MDX attributes setu's `embed` builder emits — all arrive as
@@ -113,6 +114,7 @@ function resolveSrc(src: string, themed: boolean): string {
  * loader can `hydrate(h(EmbedBody, props), markerEl)` without double-wrapping.
  */
 export function EmbedBody({ src, title, allow, sandbox, clickToLoad, themed }: EmbedProps) {
+  const { t } = useTranslation();
   const clickable = isTrue(clickToLoad);
   const isThemed = isThemedOn(themed);
   const sandboxValue = sandbox ?? DEFAULT_SANDBOX;
@@ -198,12 +200,12 @@ export function EmbedBody({ src, title, allow, sandbox, clickToLoad, themed }: E
           type="button"
           ref={posterRef}
           data-embed-poster
-          aria-label={title ? `Load embedded content: ${title}` : 'Load embedded content'}
+          aria-label={title ? t('chrome.embed.loadTitled', { title }) : t('chrome.embed.load')}
           class="flex h-full w-full cursor-pointer flex-col items-center justify-center gap-2 bg-(--clean-bg-muted) p-4 text-center text-(--clean-fg) transition-colors hover:bg-(--clean-bg)"
         >
-          <span class="text-sm font-medium">{title ?? 'Embedded content'}</span>
+          <span class="text-sm font-medium">{title ?? t('chrome.embed.posterTitle')}</span>
           <span class="inline-flex items-center gap-1 rounded-full border border-(--clean-border) bg-(--clean-bg) px-3 py-1 text-xs text-(--clean-fg-muted)">
-            Load
+            {t('chrome.embed.loadPill')}
           </span>
         </button>
         {/* No-JS fallback: the live embed still renders without hydration. */}

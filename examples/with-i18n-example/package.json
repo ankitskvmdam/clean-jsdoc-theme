@@ -1,0 +1,20 @@
+{
+  "name": "example-with-i18n",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build:theme": "pnpm exec turbo run build --filter=clean-jsdoc-theme --filter=@clean-jsdoc-theme/aadesh",
+    "extract": "clean-jsdoc extract",
+    "build:docs": "clean-jsdoc build",
+    "docs": "pnpm run build:theme && clean-jsdoc build",
+    "serve": "serve dist",
+    "clean-node-modules": "node ../../scripts/clean.mjs node_modules",
+    "i18n:extract": "clean-jsdoc extract"
+  },
+  "devDependencies": {
+    "@clean-jsdoc-theme/aadesh": "workspace:^",
+    "clean-jsdoc-theme": "workspace:^",
+    "jsdoc": "^4.0.0",
+    "serve": "^14.0.0"
+  }
+}

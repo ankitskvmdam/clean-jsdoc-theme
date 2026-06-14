@@ -12,6 +12,7 @@
 import type { SiteName } from '../site/site-name';
 import { DiagnosticBag } from './diagnostics';
 import { validateFonts, type FontResolver, type ValidatedFonts } from './fonts';
+import { validateLocales, type ValidatedLocales } from './locales';
 import { THEME_OPT_KEYS } from './opts-schema';
 import { validateSiteName } from './site-name';
 import { suggestKey } from './suggest';
@@ -53,6 +54,8 @@ export interface NormalizedThemeOpts {
   siteName: SiteName | undefined;
   /** Validated font overrides — a subset of `{ heading, body, mono }`. */
   fonts: ValidatedFonts;
+  /** Validated locale config, or `undefined` when localization is off. */
+  locales: ValidatedLocales | undefined;
 }
 
 /** Result of {@link validateThemeOpts}. */
@@ -119,8 +122,9 @@ export async function validateThemeOpts(
 
   const siteName = validateSiteName(opts.siteName, diagnostics);
   const fonts = await validateFonts(opts.fonts, diagnostics, fontResolver);
+  const locales = validateLocales(opts.locales, opts.defaultLocale, diagnostics);
 
   checkUnknownKeys(opts, diagnostics, policy, knownNonThemeKeys);
 
-  return { value: { siteName, fonts }, diagnostics };
+  return { value: { siteName, fonts, locales }, diagnostics };
 }

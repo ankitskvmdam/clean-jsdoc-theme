@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import { Settings as SettingsIcon } from 'lucide-preact';
+import { useTranslation, type ChromeKey } from '@clean-jsdoc-theme/bhasha';
 import { Button } from './Button';
 import { Dialog, DialogHeader, DialogTitle, DialogBody } from './Dialog';
 import { cn } from '../lib/cn';
@@ -16,16 +17,18 @@ type LineSpacing = 'compact' | 'default' | 'relaxed';
 const FONT_SIZE_KEY = 'clean-font-size';
 const LINE_SPACING_KEY = 'clean-line-spacing';
 
-const FONT_SIZE_OPTIONS: ReadonlyArray<{ value: FontSize; label: string }> = [
-  { value: 'sm', label: 'Small' },
-  { value: 'md', label: 'Default' },
-  { value: 'lg', label: 'Large' },
+// Labels are catalog keys, resolved to strings via `t` inside the component
+// (a hook can't run at module scope). The values stay locale-invariant.
+const FONT_SIZE_OPTIONS: ReadonlyArray<{ value: FontSize; labelKey: ChromeKey }> = [
+  { value: 'sm', labelKey: 'chrome.settings.sizeSmall' },
+  { value: 'md', labelKey: 'chrome.settings.sizeDefault' },
+  { value: 'lg', labelKey: 'chrome.settings.sizeLarge' },
 ];
 
-const LINE_SPACING_OPTIONS: ReadonlyArray<{ value: LineSpacing; label: string }> = [
-  { value: 'compact', label: 'Compact' },
-  { value: 'default', label: 'Default' },
-  { value: 'relaxed', label: 'Relaxed' },
+const LINE_SPACING_OPTIONS: ReadonlyArray<{ value: LineSpacing; labelKey: ChromeKey }> = [
+  { value: 'compact', labelKey: 'chrome.settings.spacingCompact' },
+  { value: 'default', labelKey: 'chrome.settings.spacingDefault' },
+  { value: 'relaxed', labelKey: 'chrome.settings.spacingRelaxed' },
 ];
 
 // 'md' / 'default' map to "no override" so the CSS defaults apply.
@@ -101,8 +104,16 @@ export interface SettingsDialogProps {
  * drive this same dialog without duplicating the font-size / line-spacing logic.
  */
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
+  const { t } = useTranslation();
   const [fontSize, setFontSize] = useState<FontSize>('md');
   const [lineSpacing, setLineSpacing] = useState<LineSpacing>('default');
+
+  // Resolve the locale-invariant option keys to display strings.
+  const fontSizeOptions = FONT_SIZE_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) }));
+  const lineSpacingOptions = LINE_SPACING_OPTIONS.map((o) => ({
+    value: o.value,
+    label: t(o.labelKey),
+  }));
 
   // Reconcile state from storage on mount (dwar's pre-hydration script already
   // applied the visual values; this syncs the controls to match).
@@ -126,26 +137,30 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange} label="Settings">
+    <Dialog open={open} onOpenChange={onOpenChange} label={t('chrome.settings.title')}>
       <DialogHeader>
-        <DialogTitle>Settings</DialogTitle>
+        <DialogTitle>{t('chrome.settings.title')}</DialogTitle>
       </DialogHeader>
       <DialogBody>
         <div class="mb-4">
-          <div class="mb-2 text-sm font-semibold text-foreground">Font size</div>
+          <div class="mb-2 text-sm font-semibold text-foreground">
+            {t('chrome.settings.fontSize')}
+          </div>
           <SegmentedControl
-            label="Font size"
+            label={t('chrome.settings.fontSize')}
             value={fontSize}
-            options={FONT_SIZE_OPTIONS}
+            options={fontSizeOptions}
             onChange={selectFontSize}
           />
         </div>
         <div>
-          <div class="mb-2 text-sm font-semibold text-foreground">Line spacing</div>
+          <div class="mb-2 text-sm font-semibold text-foreground">
+            {t('chrome.settings.lineSpacing')}
+          </div>
           <SegmentedControl
-            label="Line spacing"
+            label={t('chrome.settings.lineSpacing')}
             value={lineSpacing}
-            options={LINE_SPACING_OPTIONS}
+            options={lineSpacingOptions}
             onChange={selectLineSpacing}
           />
         </div>
@@ -155,6 +170,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
 }
 
 export function Settings(_props: SettingsProps = {}) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
   return (
@@ -166,8 +182,8 @@ export function Settings(_props: SettingsProps = {}) {
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         aria-expanded={open}
-        aria-label="Settings"
-        title="Settings"
+        aria-label={t('chrome.settings.title')}
+        title={t('chrome.settings.title')}
       >
         <SettingsIcon size={18} aria-hidden="true" />
       </Button>

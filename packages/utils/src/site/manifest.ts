@@ -59,6 +59,27 @@ export interface SearchEntry {
   context?: string;
 }
 
+/**
+ * One translatable API string in the locale-independent template setu emits.
+ *
+ * Every translatable doclet prose field (a description, a `@summary`, an
+ * `@example` caption) becomes a slot keyed by the symbol's longname + field path
+ * (bhasha's `apiSlotKey`). The slot carries the default-locale `sourceText` and a
+ * content `hash` (bhasha's `sourceHash`) so aadesh can extract a catalog skeleton
+ * and detect when a source string drifts (stale translation). Locale-invariant:
+ * the same slot key appears on every build of the same symbol+field, so a
+ * translation tracks its source across rebuilds. Names, type strings, enum
+ * values, and `@example` code are NOT slots — they stay locale-invariant.
+ */
+export interface SlotEntry {
+  /** Stable catalog key — `api.<longname>#<field>` (bhasha `apiSlotKey`). */
+  key: string;
+  /** The default-locale source string this slot renders (HTML or Markdown). */
+  sourceText: string;
+  /** Content hash of `sourceText` (bhasha `sourceHash`) for staleness detection. */
+  hash: string;
+}
+
 /** What setu hands to dwar. Self-contained: dwar should not re-read the doclet DB. */
 export interface SiteManifest {
   pages: Page[];
@@ -73,4 +94,86 @@ export interface SiteManifest {
   };
   /** Stable per-build identifier (e.g. timestamp + content hash) for cache busting. */
   buildId: string;
+  /**
+   * The translatable API slots collected during this build — the
+   * locale-independent template aadesh extracts catalogs from. setu always
+   * populates it (possibly empty); dwar ignores it. A build *stamped* for a
+   * locale carries the same slot set (keys/sources are locale-invariant); only
+   * the page bodies differ. See {@link SlotEntry}.
+   */
+  slots?: SlotEntry[];
+}
+
+/** Current schema version of the {@link ExtractManifest}. */
+export const EXTRACT_MANIFEST_VERSION = 1;
+
+/**
+ * The minimal artifact the theme's localization **extract mode** writes to disk
+ * for aadesh: just the translatable API slot template (chrome strings come from
+ * bhasha's catalog, so they aren't duplicated here). aadesh spawns the jsdoc/
+ * typedoc pipeline with the theme signaled to emit this — instead of rendering —
+ * then builds the per-locale catalogs from it. Regenerate-on-build, never
+ * committed. See the localization plan, §4.
+ */
+export interface ExtractManifest {
+  /** Schema version ({@link EXTRACT_MANIFEST_VERSION}). */
+  version: number;
+  /** The translatable API slots (longname+field keyed, with source + hash). */
+  slots: SlotEntry[];
+}
+
+/** Project a built {@link SiteManifest} down to the {@link ExtractManifest} aadesh reads. */
+export function toExtractManifest(manifest: SiteManifest): ExtractManifest {
+  return { version: EXTRACT_MANIFEST_VERSION, slots: manifest.slots ?? [] };
+}
+
+/** Current schema version of the {@link BuildSpec}. */
+export const BUILD_SPEC_VERSION = 1;
+
+/**
+ * The per-locale render instruction aadesh writes for the theme's **build mode**
+ * (the localization plan §4: "template + filled catalogs → setu stamp → dwar
+ * render → per-locale sites"). aadesh spawns the pipeline once per locale with
+ * the theme pointed at this spec; the theme stamps the API translations
+ * (`setu.stampSite`) and renders to `destination` with `basePath`. The default
+ * locale renders unprefixed (`basePath: '/'`); others under `/<locale>`.
+ */
+export interface BuildSpec {
+  /** Schema version ({@link BUILD_SPEC_VERSION}). */
+  version: number;
+  /** Locale code being rendered. */
+  locale: string;
+  /** Default locale code — the fallback for untranslated chrome/API. */
+  defaultLocale: string;
+  /**
+   * `api.*` key → translated string, fed to `setu.stampSite`. Empty/omitted
+   * entries fall back to the source text. The default locale typically passes
+   * `{}` (identity → live source).
+   */
+  apiMessages: Record<string, string>;
+  /**
+   * `chrome.*` key → translated UI string, fed to dwar's `RenderOptions.locale`
+   * so chrome renders in the locale (SSR + island seeding). The default locale
+   * typically passes `{}` (identity → English fallback).
+   */
+  chromeMessages: Record<string, string>;
+  /** Output directory for this locale's site. */
+  destination: string;
+  /** Base-path prefix for this locale's links — `/<locale>`, or `/` for the default. */
+  basePath: string;
+  /**
+   * The UN-prefixed site base path (the default locale's base), for the language
+   * switcher's cross-locale URLs. Same across every locale in the build.
+   */
+  siteBasePath: string;
+  /** All configured locales (code + optional display name) — feeds the switcher. */
+  locales: Array<{ code: string; name?: string }>;
+  /**
+   * Absolute path of this locale's docs-overlay directory (a sibling
+   * `docs.<locale>/` of the configured `opts.docs`), when one exists. The bridge
+   * overlays its files over the default docs by path — a translated doc wins, a
+   * missing one falls back to the default. Omitted when the locale has no overlay
+   * (the default-locale + untranslated locales render the default docs).
+   */
+  docsDir?: string;
 }

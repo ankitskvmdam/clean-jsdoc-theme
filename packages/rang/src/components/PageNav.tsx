@@ -10,6 +10,7 @@
  */
 
 import { ArrowLeft, ArrowRight } from 'lucide-preact';
+import { useTranslation } from '@clean-jsdoc-theme/bhasha';
 import { withBase } from '@clean-jsdoc-theme/utils';
 
 /** One neighbor link in the pager. */
@@ -37,6 +38,7 @@ function PageNavCard({
   link: PageNavLink;
   basePath: string;
 }) {
+  const { t } = useTranslation();
   const isPrev = dir === 'prev';
   return (
     <a
@@ -47,10 +49,12 @@ function PageNavCard({
     >
       <span class="flex items-center gap-1 text-xs font-medium text-(--clean-fg-muted)">
         {isPrev ? <ArrowLeft size={14} aria-hidden="true" /> : null}
-        {isPrev ? 'Previous' : 'Next'}
+        {isPrev ? t('chrome.pager.previous') : t('chrome.pager.next')}
         {isPrev ? null : <ArrowRight size={14} aria-hidden="true" />}
       </span>
-      <span class="font-medium text-(--clean-fg) group-hover:text-(--clean-link)">{link.title}</span>
+      <span class="font-medium text-(--clean-fg) group-hover:text-(--clean-link)">
+        {link.title}
+      </span>
       {link.description ? (
         <span class="line-clamp-2 text-sm text-(--clean-fg-muted)">{link.description}</span>
       ) : null}
@@ -60,10 +64,11 @@ function PageNavCard({
 
 /** The prev/next pager. Renders nothing when the page has no neighbors. */
 export function PageNav({ prev, next, basePath = '/' }: PageNavProps) {
+  const { t } = useTranslation();
   if (!prev && !next) return null;
   return (
     <nav
-      aria-label="Pagination"
+      aria-label={t('chrome.pager.label')}
       class="mt-12 grid grid-cols-1 gap-4 border-t border-(--clean-border) pt-8 sm:grid-cols-2"
     >
       {prev ? (

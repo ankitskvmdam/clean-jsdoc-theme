@@ -12,7 +12,8 @@ published to npm and reusable. Read this when working **on** the theme rather th
 | `@clean-jsdoc-theme/dwar` | `SiteManifest` → HTML/CSS/JS. A **pure** renderer: SSR pages, esbuild island bundle, CSS, separate Pagefind step. Consumes only the manifest; never re-reads doclets. |
 | `clean-jsdoc-theme` | The JSDoc theme entry — a thin CJS bridge (`publish()`) that does the file I/O and wires setu → dwar. |
 | `@clean-jsdoc-theme/typedoc` | The TypeDoc plugin — adapts reflections → doclets → the same setu → dwar core. ESM. |
-| `aadesh` / `bhasha` | Reserved stubs (CLI / i18n), v5.1+. |
+| `@clean-jsdoc-theme/aadesh` | The `clean-jsdoc` **localization CLI** — extract → translate → validate → build one site per locale (+ an interactive menu). Disk I/O + process orchestration. |
+| `@clean-jsdoc-theme/bhasha` | The pure, browser-safe **i18n core** — UI catalog, `t` translator, `LanguageProvider`, and the API-slot key/hash scheme setu/aadesh/rang share. |
 
 Boundary guarantees (don't violate when editing): **setu never imports dwar or
 rang** (one-way), **dwar.render() is pure** (the only disk touch is Pagefind),
@@ -20,9 +21,10 @@ rang** (one-way), **dwar.render() is pure** (the only disk touch is Pagefind),
 in utils**, and **chrome markup lives once in rang** (dwar's `SsrLayout` only wraps
 islands in `data-island` markers and fills rang's `Layout` slots).
 
-The 13 islands: `sidebar`, `mobile-nav`, `toc`, `toc-mobile`, `cmdk`, `code-tabs`,
-`copy-btn`, `copy-page`, `theme-toggle`, `settings`, `code-viewer`, `embed`,
-`tabs`. Each renders meaningful SSR HTML first, then progressively enhances.
+The 14 islands: `sidebar`, `mobile-nav`, `toc`, `toc-mobile`, `cmdk`, `code-tabs`,
+`copy-btn`, `copy-page`, `theme-toggle`, `settings`, `language-switcher`,
+`code-viewer`, `embed`, `tabs`. Each renders meaningful SSR HTML first, then
+progressively enhances. (`language-switcher` mounts only in a localized build.)
 
 **Build commands:**
 

@@ -44,8 +44,14 @@ dark themes, and a companion `.md` of every page for LLMs.
   [Pagefind](https://pagefind.app/) full-text index.
 - **Guides + API in one site** — hand-written Markdown guides and the
   auto-generated reference share one sidebar and one search.
+- **Localization on the way** — the shared `clean-jsdoc` i18n tooling powers
+  multi-language sites with a language switcher and per-language fonts. The full
+  per-locale build ships for JSDoc today; TypeDoc build support is in progress
+  (string extraction already works).
 - **LLM-friendly** — every page ships a clean companion `.md`, plus a
-  copy-page button to hand any page to Claude / ChatGPT / Perplexity.
+  copy-page button to hand any page to Claude / ChatGPT / Perplexity. A
+  downloadable [skill](https://ankdev.me/clean-jsdoc-theme/theme/llm-skill) turns
+  any coding assistant into a setup expert.
 - **Polished by default** — light/dark OKLCH themes, Google Fonts, shiki syntax
   highlighting, a Monaco source viewer, and `Source: file:line` links.
 

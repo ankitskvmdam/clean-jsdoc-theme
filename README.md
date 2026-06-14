@@ -4,7 +4,7 @@
 
 If clean-jsdoc-theme saves you time, please consider [sponsoring its development](https://github.com/sponsors/ankitskvmdam) — it directly funds the v5 rewrite and ongoing maintenance.
 
-A clean, responsive, and customizable theme for JSDoc. v5 emits a static site with SSR-rendered chrome, lazy-hydrated Preact islands (sidebar, TOC, fuzzy command palette, theme toggle, settings, mobile nav, copy-page button, code-block copy, tabbed code blocks, a Monaco source viewer), a co-located `.md` per page for LLMs, a built-in fuzzy search index (plus an optional Pagefind full-text index), and an Astro-free, framework-free build.
+A clean, responsive, and customizable theme for JSDoc. v5 emits a static site with SSR-rendered chrome, lazy-hydrated Preact islands (sidebar, TOC, fuzzy command palette, theme toggle, settings, mobile nav, language switcher, copy-page button, code-block copy, tabbed code blocks, a Monaco source viewer), a co-located `.md` per page for LLMs, a built-in fuzzy search index (plus an optional Pagefind full-text index), optional multi-language (i18n) builds, and an Astro-free, framework-free build.
 
 ---
 
@@ -21,8 +21,8 @@ Four boundary packages, each independently testable, glued together by a thin JS
 | [`@clean-jsdoc-theme/rang`](./packages/rang)        | Preact component library: chrome (`Layout`, `Header`, `Footer`, `Brand`), eleven hydratable islands, shadcn-style primitives (`Button`, `ButtonGroup`, `Dialog`, `DropdownMenu`), MDX element map, `ISLAND_REGISTRY`.                                                                |
 | [`@clean-jsdoc-theme/dwar`](./packages/dwar)        | Pure `SiteManifest` → HTML/CSS/JS renderer. Server-renders pages, bundles each island as its own ESM chunk via esbuild, emits CSS, exposes a separate Pagefind post-write step.                                                                                                      |
 | [`clean-jsdoc-theme`](./packages/clean-jsdoc-theme) | The JSDoc theme entry. A thin `publish.ts` bridge that wires the four packages together and is what `jsdoc -t clean-jsdoc-theme` actually invokes.                                                                                                                                   |
-| [`@clean-jsdoc-theme/aadesh`](./packages/aadesh)    | Reserved CLI surface — `clean-jsdoc`. Stub today; JSDoc's own `-t` is the supported entry.                                                                                                                                                                                           |
-| [`@clean-jsdoc-theme/bhasha`](./packages/bhasha)    | Reserved i18n surface. Stub today; scoped to v5.1+.                                                                                                                                                                                                                                  |
+| [`@clean-jsdoc-theme/aadesh`](./packages/aadesh)    | The `clean-jsdoc` localization CLI. Extract → translate → validate → build one static site per locale (+ an interactive menu). Reads locales from your existing `jsdoc.json` opts.                                                                                                    |
+| [`@clean-jsdoc-theme/bhasha`](./packages/bhasha)    | The pure, browser-safe i18n core: the UI string catalog, the `t` translator + `LanguageProvider`, and the API-slot key/hash scheme that setu, aadesh, and rang all share.                                                                                                            |
 
 ---
 
@@ -68,10 +68,10 @@ The working example lives in [`examples/basic/`](./examples/basic) — `pnpm ins
 - ✅ Configurable sidebar — `sectionOrder` / `menu`, plus opt-in clubbing into collapsible, localStorage-persisted groups.
 - ✅ Tests across utils / setu / rang / dwar / bridge. Lint and typecheck clean.
 - ✅ Configurable theme tokens — `colors` / `darkColors` palette overrides (per-key merge over the OKLCH defaults) plus heading / body / mono font selection, wired through to the rendered CSS variables. Component-level overrides land before stable.
+- ✅ Multi-language (i18n) builds — declare `opts.locales`, then the `clean-jsdoc` CLI (`@clean-jsdoc-theme/aadesh`, on `@clean-jsdoc-theme/bhasha`) extracts/validates/builds one static site per locale: translated UI chrome + API descriptions, per-locale `README.<locale>.md` home + `docs.<locale>/` overlays, per-language fonts, and a header language switcher.
 - 🚧 Dogfood docs site (`docs-site/`) — prose-first `opts.docs` build with real content; still in progress.
-- 🚧 CLI (`@clean-jsdoc-theme/aadesh`) and i18n (`@clean-jsdoc-theme/bhasha`) are stubbed.
 
-See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the full project structure.
+See [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) for the full project structure.
 
 ---
 
@@ -85,13 +85,16 @@ clean-jsdoc-theme/
 │   ├── rang/                  # @clean-jsdoc-theme/rang
 │   ├── dwar/                  # @clean-jsdoc-theme/dwar
 │   ├── clean-jsdoc-theme/     # JSDoc theme entry (publish.ts bridge)
-│   ├── aadesh/                # @clean-jsdoc-theme/aadesh (stub)
-│   └── bhasha/                # @clean-jsdoc-theme/bhasha (stub)
+│   ├── typedoc/               # @clean-jsdoc-theme/typedoc (TypeDoc plugin)
+│   ├── aadesh/                # @clean-jsdoc-theme/aadesh (localization CLI)
+│   └── bhasha/                # @clean-jsdoc-theme/bhasha (i18n core)
 ├── examples/
-│   └── basic/                 # Working JSDoc fixture
+│   ├── basic/                 # Working JSDoc fixture
+│   ├── typedoc-basic/         # Working TypeDoc fixture
+│   └── with-i18n-example/     # 3-locale (en/ja/hi) localization fixture
 ├── docs-site/                 # Dogfood site (in progress)
 ├── SKILLS/                    # LLM agent skills — drop into an assistant for theme expertise
-├── ARCHITECTURE.md            # Full project structure
+├── docs/ARCHITECTURE.md       # Full project structure
 ├── MIGRATION.md               # v4 → v5 migration guide
 └── BREAKING_CHANGES.md
 ```

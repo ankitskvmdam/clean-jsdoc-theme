@@ -91,6 +91,9 @@ export type { ThemeToggleProps } from './components/ThemeToggle';
 export { CtrlK } from './components/CtrlK';
 export type { CtrlKProps } from './components/CtrlK';
 
+export { LanguageSwitcher } from './components/LanguageSwitcher';
+export type { LanguageSwitcherProps, LanguageOption } from './components/LanguageSwitcher';
+
 export { Settings, SettingsDialog } from './components/Settings';
 export type { SettingsProps, SettingsDialogProps } from './components/Settings';
 
@@ -99,6 +102,19 @@ export type { StepProps } from './components/Steps';
 
 export { Tabs, Tab } from './components/Tabs';
 export type { TabProps } from './components/Tabs';
+
+// Re-export the bhasha i18n seam so a consumer that mounts rang's islands
+// (dwar) can wrap each hydration root in a `LanguageProvider` and seed it from
+// the locale payload — without a separate bhasha import. The catalog, the `t`
+// translator, and the fallback chain all live in bhasha; rang just renders.
+export {
+  LanguageProvider,
+  useTranslation,
+  useI18n,
+  createI18n,
+  DEFAULT_I18N,
+} from '@clean-jsdoc-theme/bhasha';
+export type { I18n, ChromeKey, Messages, InterpolationVars } from '@clean-jsdoc-theme/bhasha';
 
 export { defaultMdxComponents } from './mdx-components';
 export { HeaderSlotContext, BasePathContext, InlineSvgContext } from './components/mdx-utils';

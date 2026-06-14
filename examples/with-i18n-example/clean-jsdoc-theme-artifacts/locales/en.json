@@ -1,0 +1,117 @@
+{
+  "_version": 1,
+  "chrome": {
+    "common": {
+      "close": "Close"
+    },
+    "search": {
+      "placeholder": "Search docs...",
+      "inputLabel": "Search query",
+      "triggerLabel": "Search",
+      "triggerTitle": "Search (Ctrl K)",
+      "dialogLabel": "Search",
+      "resultsLabel": "Search results",
+      "recent": "Recent",
+      "favorite": "Favorite",
+      "noResults": "No matching pages",
+      "emptyHint": "Type to search the docs",
+      "inContext": "in {context}",
+      "footerHint": "↑↓ to navigate · ↵ to open · esc to close",
+      "saveToFavorites": "Save {title} to favorites",
+      "removeFromFavorites": "Remove {title} from favorites",
+      "removeFromRecent": "Remove {title} from recent searches"
+    },
+    "footer": {
+      "repository": "Repository"
+    },
+    "nav": {
+      "docNavLabel": "Documentation navigation",
+      "open": "Open navigation",
+      "menu": "Menu",
+      "drawerLabel": "Navigation"
+    },
+    "toc": {
+      "label": "On this page"
+    },
+    "theme": {
+      "toggleTitle": "Toggle theme",
+      "switchTo": "Switch to {mode} theme"
+    },
+    "settings": {
+      "title": "Settings",
+      "fontSize": "Font size",
+      "lineSpacing": "Line spacing",
+      "sizeSmall": "Small",
+      "sizeDefault": "Default",
+      "sizeLarge": "Large",
+      "spacingCompact": "Compact",
+      "spacingDefault": "Default",
+      "spacingRelaxed": "Relaxed"
+    },
+    "pager": {
+      "label": "Pagination",
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "code": {
+      "variantsLabel": "Code variants",
+      "copy": "Copy to clipboard",
+      "copied": "Copied to clipboard",
+      "copyShort": "Copy",
+      "copiedShort": "Copied!",
+      "copyLink": "Copy link to this section"
+    },
+    "copyPage": {
+      "moreOptions": "More copy options",
+      "menuLabel": "Copy page options",
+      "copyTitle": "Copy page",
+      "copied": "Copied",
+      "copyDescription": "Copy page as Markdown for LLMs",
+      "viewTitle": "View Markdown",
+      "viewDescription": "View this page as plain text",
+      "claudeTitle": "Open in Claude",
+      "claudeDescription": "Ask Claude about this page",
+      "chatgptTitle": "Open in ChatGPT",
+      "chatgptDescription": "Ask ChatGPT about this page",
+      "perplexityTitle": "Open in Perplexity",
+      "perplexityDescription": "Ask Perplexity about this page"
+    },
+    "embed": {
+      "load": "Load embedded content",
+      "loadTitled": "Load embedded content: {title}",
+      "posterTitle": "Embedded content",
+      "loadPill": "Load"
+    },
+    "language": {
+      "label": "Language"
+    }
+  },
+  "api": {
+    "module:widget-kit#description": "<p>A tiny, fully-documented sample module that exists to demonstrate\n<code>clean-jsdoc-theme</code>'s <strong>multi-language</strong> documentation support.</p>\n<p>clean-jsdoc-theme renders this API reference in several languages from a\nsingle source. Class and method descriptions, parameter docs, and example\ncaptions are translated per locale, while the UI chrome — search, the\nsidebar, the table of contents, and settings — is localized too. Use the\nglobe control beside the title to switch languages; every page links to its\ncounterpart in each configured language, and anything not yet translated\ngracefully falls back to the default language.</p>",
+    "module:widget-kit#summary": "<p>A documented sample module showcasing localized API docs.</p>",
+    "module:widget-kit.Widget#constructor.description": "<p>Create a widget.</p>",
+    "module:widget-kit.Widget#constructor.params.id.description": "<p>A unique identifier for the widget.</p>",
+    "module:widget-kit.Widget#constructor.params.options.description": "<p>Optional configuration.</p>",
+    "module:widget-kit.Widget#constructor.params.options.disabled.description": "<p>Whether the widget starts disabled.</p>",
+    "module:widget-kit.Widget#constructor.params.options.label.description": "<p>Visible text for the widget.</p>",
+    "module:widget-kit.Widget#description": "<p>A reusable UI widget — the running example for this documentation site.</p>\n<p>This class shows how each documented member (the constructor, fields, and\nmethods) renders its own section, and how their prose is translated for every\nconfigured locale while the code stays the same.</p>",
+    "module:widget-kit.Widget#disabled#description": "<p>Whether the widget is currently disabled.</p>",
+    "module:widget-kit.Widget#examples.0.caption": "Create and render a widget",
+    "module:widget-kit.Widget#id#description": "<p>The widget's unique identifier.</p>",
+    "module:widget-kit.Widget#label#description": "<p>The visible label, or the id when none was given.</p>",
+    "module:widget-kit.Widget#params.id.description": "<p>A unique identifier for the widget.</p>",
+    "module:widget-kit.Widget#params.options.description": "<p>Optional configuration.</p>",
+    "module:widget-kit.Widget#params.options.disabled.description": "<p>Whether the widget starts disabled.</p>",
+    "module:widget-kit.Widget#params.options.label.description": "<p>Visible text for the widget.</p>",
+    "module:widget-kit.Widget#render#description": "<p>Render the widget to a detached DOM element.</p>",
+    "module:widget-kit.Widget#render#returns.0.description": "<p>A button element representing the widget.</p>",
+    "module:widget-kit.Widget#setDisabled#description": "<p>Enable or disable the widget.</p>",
+    "module:widget-kit.Widget#setDisabled#params.disabled.description": "<p><code>true</code> to disable, <code>false</code> to enable.</p>",
+    "module:widget-kit.Widget#setDisabled#returns.0.description": "<p>The widget instance, so calls can be chained.</p>",
+    "module:widget-kit.createWidget#description": "<p>Create a widget from a plain configuration object — a small convenience\nwrapper over the {@link Widget} constructor.</p>",
+    "module:widget-kit.createWidget#params.config.description": "<p>The widget configuration.</p>",
+    "module:widget-kit.createWidget#params.config.id.description": "<p>The widget's unique identifier.</p>",
+    "module:widget-kit.createWidget#params.config.label.description": "<p>Visible text for the widget.</p>",
+    "module:widget-kit.createWidget#returns.0.description": "<p>A new widget instance.</p>"
+  }
+}

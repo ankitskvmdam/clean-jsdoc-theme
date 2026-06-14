@@ -25,8 +25,15 @@ import {
   CtrlK,
   ThemeToggle,
   Settings,
+  LanguageSwitcher,
 } from '@clean-jsdoc-theme/rang';
-import type { Heading, IslandName, NavNode, SiteName } from '@clean-jsdoc-theme/utils';
+import type {
+  Heading,
+  IslandName,
+  IslandPropsMap,
+  NavNode,
+  SiteName,
+} from '@clean-jsdoc-theme/utils';
 
 export interface IslandRecord {
   /** `i0`, `i1`, ... — referenced by the loader's data-island-id attribute. */
@@ -52,6 +59,11 @@ export interface SsrLayoutProps {
   basePath?: string;
   /** URL of the JSON search index, handed to the cmdk island for fuzzy search. */
   searchIndexUrl?: string;
+  /**
+   * Language-switcher props (localized builds with >1 locale). When set, dwar
+   * mounts the `language-switcher` island in the desktop header controls.
+   */
+  languageSwitcher?: IslandPropsMap['language-switcher'];
   /** Mutated as islands are encountered so the caller can emit the props JSON. */
   islands: IslandRecord[];
 }
@@ -119,33 +131,71 @@ export function SsrLayout({
   siteName,
   basePath = '/',
   searchIndexUrl,
+  languageSwitcher,
   islands,
 }: SsrLayoutProps) {
+  const search = (
+    <Island
+      name="cmdk"
+      islands={islands}
+      Component={CtrlK}
+      props={{ basePath, ...(searchIndexUrl ? { searchIndexUrl } : {}) }}
+    />
+  );
+  const themeToggle = (
+    <Island
+      name="theme-toggle"
+      islands={islands}
+      Component={ThemeToggle}
+      props={{} as Record<string, never>}
+    />
+  );
+  const settings = (
+    <Island
+      name="settings"
+      islands={islands}
+      Component={Settings}
+      props={{} as Record<string, never>}
+    />
+  );
+
+  // The language switcher (localized builds with >1 locale) stays visible on ALL
+  // breakpoints. On desktop it sits between the search and theme/settings groups
+  // — i.e. right after the search icon; on mobile, where both desktop groups are
+  // hidden, only it and the nav-drawer trigger remain, so it lands immediately
+  // before the sidebar-toggle button.
+  const languageSwitcherIsland = languageSwitcher ? (
+    <Island
+      name="language-switcher"
+      islands={islands}
+      Component={LanguageSwitcher}
+      props={languageSwitcher}
+    />
+  ) : undefined;
+
   const headerControls = (
     <>
       {/* Desktop controls: search + theme + settings. On mobile these all
           collapse into the nav drawer trigger below — the mobile header keeps
-          only the panel-right button. */}
-      <div class="hidden items-center gap-1 md:flex">
-        <Island
-          name="cmdk"
-          islands={islands}
-          Component={CtrlK}
-          props={{ basePath, ...(searchIndexUrl ? { searchIndexUrl } : {}) }}
-        />
-        <Island
-          name="theme-toggle"
-          islands={islands}
-          Component={ThemeToggle}
-          props={{} as Record<string, never>}
-        />
-        <Island
-          name="settings"
-          islands={islands}
-          Component={Settings}
-          props={{} as Record<string, never>}
-        />
-      </div>
+          only the language switcher + the panel-right button. The desktop group
+          splits around the always-visible switcher so it reads search → language
+          → theme → settings. */}
+      {languageSwitcherIsland ? (
+        <>
+          <div class="hidden items-center gap-1 md:flex">{search}</div>
+          {languageSwitcherIsland}
+          <div class="hidden items-center gap-1 md:flex">
+            {themeToggle}
+            {settings}
+          </div>
+        </>
+      ) : (
+        <div class="hidden items-center gap-1 md:flex">
+          {search}
+          {themeToggle}
+          {settings}
+        </div>
+      )}
       {/* Mobile-only drawer trigger; the drawer hosts theme/settings + the page list. */}
       {nav.length > 0 && (
         <div class="md:hidden">

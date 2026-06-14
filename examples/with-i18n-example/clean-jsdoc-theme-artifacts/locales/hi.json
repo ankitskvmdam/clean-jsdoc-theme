@@ -1,0 +1,117 @@
+{
+  "_version": 1,
+  "chrome": {
+    "common": {
+      "close": ""
+    },
+    "search": {
+      "placeholder": "दस्तावेज़ खोजें...",
+      "inputLabel": "खोज क्वेरी",
+      "triggerLabel": "खोज",
+      "triggerTitle": "",
+      "dialogLabel": "",
+      "resultsLabel": "",
+      "recent": "",
+      "favorite": "",
+      "noResults": "",
+      "emptyHint": "",
+      "inContext": "",
+      "footerHint": "",
+      "saveToFavorites": "",
+      "removeFromFavorites": "",
+      "removeFromRecent": ""
+    },
+    "footer": {
+      "repository": "रिपॉज़िटरी"
+    },
+    "nav": {
+      "docNavLabel": "दस्तावेज़ नेविगेशन",
+      "open": "",
+      "menu": "",
+      "drawerLabel": ""
+    },
+    "toc": {
+      "label": "इस पृष्ठ पर"
+    },
+    "theme": {
+      "toggleTitle": "थीम बदलें",
+      "switchTo": "{mode} थीम पर जाएँ"
+    },
+    "settings": {
+      "title": "सेटिंग्स",
+      "fontSize": "फ़ॉन्ट आकार",
+      "lineSpacing": "पंक्ति अंतराल",
+      "sizeSmall": "",
+      "sizeDefault": "",
+      "sizeLarge": "",
+      "spacingCompact": "",
+      "spacingDefault": "",
+      "spacingRelaxed": ""
+    },
+    "pager": {
+      "label": "",
+      "previous": "पिछला",
+      "next": "अगला"
+    },
+    "code": {
+      "variantsLabel": "",
+      "copy": "",
+      "copied": "",
+      "copyShort": "",
+      "copiedShort": "",
+      "copyLink": ""
+    },
+    "copyPage": {
+      "moreOptions": "",
+      "menuLabel": "",
+      "copyTitle": "पृष्ठ कॉपी करें",
+      "copied": "",
+      "copyDescription": "",
+      "viewTitle": "",
+      "viewDescription": "",
+      "claudeTitle": "",
+      "claudeDescription": "",
+      "chatgptTitle": "",
+      "chatgptDescription": "",
+      "perplexityTitle": "",
+      "perplexityDescription": ""
+    },
+    "embed": {
+      "load": "",
+      "loadTitled": "",
+      "posterTitle": "",
+      "loadPill": ""
+    },
+    "language": {
+      "label": "भाषा"
+    }
+  },
+  "api": {
+    "module:widget-kit#description": "<p>एक छोटा, पूरी तरह से प्रलेखित नमूना मॉड्यूल जो clean-jsdoc-theme के बहुभाषी समर्थन को दर्शाता है।</p><p>clean-jsdoc-theme एक ही स्रोत से इस API संदर्भ को कई भाषाओं में रेंडर करता है। क्लास और मेथड के विवरण, पैरामीटर दस्तावेज़ और उदाहरण कैप्शन प्रति लोकेल अनुवादित होते हैं, जबकि UI — खोज, साइडबार, विषय-सूची और सेटिंग्स — भी स्थानीयकृत होते हैं। शीर्षक के पास ग्लोब नियंत्रण से भाषा बदलें; प्रत्येक पृष्ठ हर कॉन्फ़िगर की गई भाषा में अपने समकक्ष से जुड़ता है, और जो अभी तक अनुवादित नहीं है वह डिफ़ॉल्ट भाषा पर लौट आता है।</p>",
+    "module:widget-kit#summary": "<p>स्थानीयकृत API दस्तावेज़ दिखाने वाला एक नमूना मॉड्यूल।</p>",
+    "module:widget-kit.Widget#constructor.description": "<p>एक विजेट बनाएँ।</p>",
+    "module:widget-kit.Widget#constructor.params.id.description": "",
+    "module:widget-kit.Widget#constructor.params.options.description": "",
+    "module:widget-kit.Widget#constructor.params.options.disabled.description": "",
+    "module:widget-kit.Widget#constructor.params.options.label.description": "",
+    "module:widget-kit.Widget#description": "<p>एक पुन: प्रयोज्य UI विजेट — इस दस्तावेज़ साइट का चालू उदाहरण।</p><p>यह दर्शाता है कि प्रत्येक प्रलेखित सदस्य (कंस्ट्रक्टर, फ़ील्ड और मेथड) अपना अलग खंड कैसे रेंडर करता है, और कोड वही रहते हुए उनका विवरण हर लोकेल के लिए कैसे अनुवादित होता है।</p>",
+    "module:widget-kit.Widget#disabled#description": "<p>क्या विजेट वर्तमान में अक्षम है।</p>",
+    "module:widget-kit.Widget#examples.0.caption": "एक विजेट बनाना और रेंडर करना",
+    "module:widget-kit.Widget#id#description": "<p>विजेट का अद्वितीय पहचानकर्ता।</p>",
+    "module:widget-kit.Widget#label#description": "<p>दृश्य लेबल, या न दिए जाने पर id।</p>",
+    "module:widget-kit.Widget#params.id.description": "",
+    "module:widget-kit.Widget#params.options.description": "",
+    "module:widget-kit.Widget#params.options.disabled.description": "",
+    "module:widget-kit.Widget#params.options.label.description": "",
+    "module:widget-kit.Widget#render#description": "<p>विजेट को एक अलग DOM तत्व में रेंडर करें।</p>",
+    "module:widget-kit.Widget#render#returns.0.description": "",
+    "module:widget-kit.Widget#setDisabled#description": "<p>विजेट को सक्षम या अक्षम करें।</p>",
+    "module:widget-kit.Widget#setDisabled#params.disabled.description": "",
+    "module:widget-kit.Widget#setDisabled#returns.0.description": "",
+    "module:widget-kit.createWidget#description": "<p>एक सादे कॉन्फ़िगरेशन ऑब्जेक्ट से विजेट बनाने वाला एक छोटा सुविधाजनक फ़ंक्शन।</p>",
+    "module:widget-kit.createWidget#params.config.description": "",
+    "module:widget-kit.createWidget#params.config.id.description": "",
+    "module:widget-kit.createWidget#params.config.label.description": "",
+    "module:widget-kit.createWidget#returns.0.description": ""
+  }
+}

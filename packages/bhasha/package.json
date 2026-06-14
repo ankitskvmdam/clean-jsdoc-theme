@@ -1,7 +1,7 @@
 {
   "name": "@clean-jsdoc-theme/bhasha",
   "version": "5.0.0-alpha.3",
-  "description": "Localization tooling for clean-jsdoc-theme",
+  "description": "Pure, browser-safe i18n core for clean-jsdoc-theme (catalog, t, provider, key scheme, validation)",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -24,14 +24,22 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "lint": "eslint src",
+    "lint": "eslint src && node scripts/check-browser-safe.mjs",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "clean": "node ../../scripts/clean.mjs dist .turbo",
     "clean-node-modules": "node ../../scripts/clean.mjs node_modules"
   },
+  "dependencies": {
+    "@clean-jsdoc-theme/utils": "workspace:^",
+    "preact": "^10.22.0"
+  },
   "devDependencies": {
+    "@testing-library/preact": "^3.2.4",
+    "happy-dom": "^15.11.0",
     "tsup": "^8.0.0",
-    "typescript": "^5.5.0"
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
   },
   "publishConfig": {
     "access": "public"

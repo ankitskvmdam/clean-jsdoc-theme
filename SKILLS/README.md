@@ -13,14 +13,14 @@ into your skills directory (e.g. `.claude/skills/<name>/`).
 
 | Skill | What it does |
 | --- | --- |
-| [`clean-jsdoc-theme`](./clean-jsdoc-theme/SKILL.md) | The umbrella skill — setup (JSDoc + TypeDoc), the full config reference, authoring (callouts/steps/tabs/embeds/custom tags), the docs directory + frontmatter, the sidebar model, cross-references, source links, the LLM features, theming, the package architecture, and gotchas. |
+| [`clean-jsdoc-theme`](./clean-jsdoc-theme/SKILL.md) | The umbrella skill — setup (JSDoc + TypeDoc), the full config reference, authoring (callouts/steps/tabs/embeds/custom tags), the docs directory + frontmatter, the sidebar model, cross-references, source links, the LLM features, theming, multi-language localization (the `clean-jsdoc` CLI), the package architecture, and gotchas. |
 | [`migrate-v4-to-v5`](./migrate-v4-to-v5/SKILL.md) | A step-by-step v4 → v5 migration procedure — lift options out of `opts.theme_opts`, rename the ones that carry over, drop the removed ones, reshape the `menu`, and verify the build. Distilled from `MIGRATION.md` + `migration-map.json`. |
 
 ## Planned
 
 More focused skills are planned — e.g. building a guides-only site, building an
-API reference only, and per-package skills (`setu`, `bhasha`, …). Each will live in
-its own folder here with a `SKILL.md`.
+API reference only, and per-package deep-dives (`setu`, `dwar`, …). Each will live
+in its own folder here with a `SKILL.md`.
 
 ## Staying current
 

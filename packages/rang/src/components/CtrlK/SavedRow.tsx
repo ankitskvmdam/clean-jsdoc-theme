@@ -1,4 +1,5 @@
 import { History, Star, X } from 'lucide-preact';
+import { useTranslation } from '@clean-jsdoc-theme/bhasha';
 import { withBase } from '@clean-jsdoc-theme/utils';
 import type { SavedKind, SavedSearch } from './types';
 
@@ -31,6 +32,7 @@ export function SavedRow({
   onFavorite,
   onRemove,
 }: SavedRowProps) {
+  const { t } = useTranslation();
   return (
     <li
       role="option"
@@ -51,7 +53,9 @@ export function SavedRow({
         <span class="block truncate">
           {item.title}
           {item.context ? (
-            <span class="ml-2 text-xs text-muted-foreground">in {item.context}</span>
+            <span class="ml-2 text-xs text-muted-foreground">
+              {t('chrome.search.inContext', { context: item.context })}
+            </span>
           ) : null}
         </span>
         {!item.context && (item.excerpt || item.description) ? (
@@ -63,7 +67,7 @@ export function SavedRow({
       {kind === 'recent' ? (
         <button
           type="button"
-          aria-label={`Save ${item.title} to favorites`}
+          aria-label={t('chrome.search.saveToFavorites', { title: item.title })}
           class="grid h-7 w-7 shrink-0 place-items-center rounded text-muted-foreground hover:bg-background hover:text-amber-500"
           onClick={(e) => {
             e.preventDefault();
@@ -78,8 +82,8 @@ export function SavedRow({
         type="button"
         aria-label={
           kind === 'favorite'
-            ? `Remove ${item.title} from favorites`
-            : `Remove ${item.title} from recent searches`
+            ? t('chrome.search.removeFromFavorites', { title: item.title })
+            : t('chrome.search.removeFromRecent', { title: item.title })
         }
         class="grid h-7 w-7 shrink-0 place-items-center rounded text-muted-foreground hover:bg-background hover:text-foreground"
         onClick={(e) => {

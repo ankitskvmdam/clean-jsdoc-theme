@@ -3,7 +3,7 @@
 // JSDoc 4 → setu → dwar bridge. `publish(taffyData, opts, tutorials)` is the
 // entry JSDoc invokes; everything below orchestrates the four phase packages.
 
-import { readFile, readdir } from 'node:fs/promises';
+import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { basename, dirname, extname, join as joinPath, resolve as resolvePath } from 'node:path';
@@ -131,7 +131,7 @@ async function loadDep<T>(name: string, requiredExports: readonly string[]): Pro
   return mod as T;
 }
 const loadSetu = (): Promise<typeof import('@clean-jsdoc-theme/setu')> =>
-  loadDep('@clean-jsdoc-theme/setu', ['generateSite']);
+  loadDep('@clean-jsdoc-theme/setu', ['generateSite', 'stampSite']);
 const loadDwar = (): Promise<typeof import('@clean-jsdoc-theme/dwar')> =>
   loadDep('@clean-jsdoc-theme/dwar', ['render', 'runPagefindAgainstDir']);
 const loadUtils = (): Promise<typeof import('@clean-jsdoc-theme/utils')> =>
@@ -142,6 +142,7 @@ const loadUtils = (): Promise<typeof import('@clean-jsdoc-theme/utils')> =>
     'formatBuildReport',
     'normalizeBasePath',
     'withBase',
+    'toExtractManifest',
   ]);
 
 /** The `ora` spinner factory (its default export). */
@@ -377,11 +378,36 @@ const defaultTheme: ThemeConfig = {
   basePath: '/',
 };
 
-/** A subset of `{ heading, body, mono }` — the shape validated font overrides take. */
-interface ValidatedFonts {
+/** One font triple — any subset of `{ heading, body, mono }`. */
+interface FontSet {
   heading?: string;
   body?: string;
   mono?: string;
+}
+
+/**
+ * The shape validated font overrides take: base `{ heading, body, mono }` plus
+ * optional per-locale overrides (from `<code>:heading`-style opts). Mirrors
+ * utils' `ValidatedFonts`.
+ */
+interface ValidatedFonts extends FontSet {
+  locales?: Record<string, FontSet>;
+}
+
+/**
+ * Resolve the font triple for the active `locale`: a per-locale override wins,
+ * then the base font, then the theme default — per slot. With no locale (a
+ * normal, non-localized build) only the base + default apply, so the result is
+ * byte-identical to before per-locale fonts existed.
+ */
+function resolveFontSet(fonts: ValidatedFonts, locale: string | undefined) {
+  const base = defaultTheme.tokens.fonts;
+  const override = (locale && fonts.locales?.[locale]) || {};
+  return {
+    heading: override.heading ?? fonts.heading ?? base.heading,
+    body: override.body ?? fonts.body ?? base.body,
+    mono: override.mono ?? fonts.mono ?? base.mono,
+  };
 }
 
 /**
@@ -390,12 +416,14 @@ interface ValidatedFonts {
  * keeps the default theme. `siteName` is pre-resolved/validated and its local
  * logos copied by `prepareSiteName`; `fonts` is the validated subset (any
  * family flagged `fonts/not-google` is dropped upstream so the default applies).
+ * `locale` (set in build mode) selects per-locale font overrides.
  */
 function resolveTheme(
   opts: JSDocOpts,
   siteName: SiteName | undefined,
   fonts: ValidatedFonts,
-  basePath: string
+  basePath: string,
+  locale?: string
 ): ThemeConfig {
   const aiPrompt =
     typeof opts.aiPrompt === 'string' && opts.aiPrompt.trim() ? opts.aiPrompt.trim() : undefined;
@@ -418,11 +446,7 @@ function resolveTheme(
       ...defaultTheme.tokens,
       colors: { ...defaultTheme.tokens.colors, ...(colors ?? {}) },
       darkColors: { ...defaultTheme.tokens.darkColors, ...(darkColors ?? {}) },
-      fonts: {
-        heading: fonts.heading ?? defaultTheme.tokens.fonts.heading,
-        body: fonts.body ?? defaultTheme.tokens.fonts.body,
-        mono: fonts.mono ?? defaultTheme.tokens.fonts.mono,
-      },
+      fonts: resolveFontSet(fonts, locale),
       ...(siteName ? { siteName } : {}),
     },
   };
@@ -721,9 +745,7 @@ export function sourceLinkToCommentEnabled(opts: JSDocOpts): boolean {
  */
 export function hasMarkdownPlugin(plugins: unknown): boolean {
   if (!Array.isArray(plugins)) return false;
-  return plugins.some(
-    (p) => typeof p === 'string' && /(^|[\\/])markdown(\.js)?$/i.test(p.trim())
-  );
+  return plugins.some((p) => typeof p === 'string' && /(^|[\\/])markdown(\.js)?$/i.test(p.trim()));
 }
 
 /**
@@ -1129,6 +1151,34 @@ export async function resolveDocImages(
   return { docs: out, files, inlineSvgs };
 }
 
+/** The output of {@link resolveDocImages}: resolved docs + their image assets. */
+export interface ResolvedDocs {
+  docs: DocInput[];
+  files: OutputFile[];
+  inlineSvgs: Record<string, string>;
+}
+
+/**
+ * Overlay a locale's resolved docs over the default set (the per-locale docs
+ * track). A locale page WINS over the default page with the same `path`; a
+ * default page absent from the locale falls back (stays). Image asset files are
+ * deduped by served path (same content-hashed name → one copy), and inline SVGs
+ * merge locale-over-default. Output docs are re-sorted by `path` so the manifest
+ * stays stable regardless of merge order. Pure — the I/O already happened in the
+ * two {@link resolveDocImages} calls that produced `base`/`locale`.
+ */
+export function overlayDocs(base: ResolvedDocs, locale: ResolvedDocs): ResolvedDocs {
+  const byPath = new Map(base.docs.map((d) => [d.path, d]));
+  for (const d of locale.docs) byPath.set(d.path, d); // locale wins; default falls back
+  const filesByPath = new Map<string, OutputFile>();
+  for (const f of [...base.files, ...locale.files]) filesByPath.set(f.path, f); // dedupe
+  return {
+    docs: [...byPath.values()].sort((a, b) => a.path.localeCompare(b.path)),
+    files: [...filesByPath.values()],
+    inlineSvgs: { ...base.inlineSvgs, ...locale.inlineSvgs },
+  };
+}
+
 /**
  * Validate `opts.docGroups` into a clean `string[]`, or `undefined` to fall back
  * to setu's default doc-group order. Mirrors {@link normalizeSectionOrder}:
@@ -1170,10 +1220,7 @@ interface StageHandle {
  * package couldn't be loaded — then `stage` just runs `fn` with no output.
  */
 function createBuildProgress(ora: OraFactory | null) {
-  async function stage<T>(
-    label: string,
-    fn: (handle: StageHandle) => T | Promise<T>
-  ): Promise<T> {
+  async function stage<T>(label: string, fn: (handle: StageHandle) => T | Promise<T>): Promise<T> {
     const noop: StageHandle = { setText: () => {} };
     if (!ora) return await fn(noop);
     const spinner = ora(label).start();
@@ -1209,8 +1256,58 @@ function createBuildProgress(ora: OraFactory | null) {
   return { stage };
 }
 
+/** A per-locale render spec (utils' `BuildSpec`) written by `aadesh build`. */
+interface BuildSpec {
+  locale: string;
+  defaultLocale: string;
+  apiMessages: Record<string, string>;
+  chromeMessages: Record<string, string>;
+  destination: string;
+  basePath: string;
+  siteBasePath: string;
+  locales: Array<{ code: string; name?: string }>;
+  /** Absolute path of this locale's docs-overlay dir (`docs.<locale>/`), if any. */
+  docsDir?: string;
+}
+
+/**
+ * Read the localization build spec when `CLEAN_JSDOC_THEME_BUILD` points at one
+ * (set by `aadesh build` per locale). When present, the theme stamps the API
+ * translations and renders to the spec's `destination`/`basePath` instead of the
+ * jsdoc.json values. Returns `null` for a normal (single-locale) build.
+ */
+function readBuildSpec(): BuildSpec | null {
+  const path = process.env.CLEAN_JSDOC_THEME_BUILD?.trim();
+  if (!path) return null;
+  const spec = JSON.parse(readFileSync(path, 'utf8')) as Partial<BuildSpec> & { version?: number };
+  // Must match utils' BUILD_SPEC_VERSION — guards an old theme vs new aadesh mix.
+  if (typeof spec.version === 'number' && spec.version !== 1) {
+    throw new Error(
+      `clean-jsdoc-theme: build spec version ${spec.version} unsupported ` +
+        `(expected 1) — update clean-jsdoc-theme and aadesh together.`
+    );
+  }
+  if (typeof spec.destination !== 'string' || typeof spec.basePath !== 'string') {
+    throw new Error(`clean-jsdoc-theme: malformed build spec at "${path}".`);
+  }
+  return {
+    locale: typeof spec.locale === 'string' ? spec.locale : '',
+    defaultLocale: typeof spec.defaultLocale === 'string' ? spec.defaultLocale : 'en',
+    apiMessages: spec.apiMessages ?? {},
+    chromeMessages: spec.chromeMessages ?? {},
+    destination: spec.destination,
+    basePath: spec.basePath,
+    siteBasePath: typeof spec.siteBasePath === 'string' ? spec.siteBasePath : '/',
+    locales: Array.isArray(spec.locales) ? spec.locales : [],
+    ...(typeof spec.docsDir === 'string' && spec.docsDir ? { docsDir: spec.docsDir } : {}),
+  };
+}
+
 export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknown): Promise<void> {
-  const destination = opts.destination;
+  // Localization build mode (aadesh): a per-locale spec overrides the output
+  // destination + base path and supplies the API translations to stamp in.
+  const buildSpec = readBuildSpec();
+  const destination = buildSpec?.destination ?? opts.destination;
   if (!destination || typeof destination !== 'string') {
     throw new Error(
       'clean-jsdoc-theme publish: opts.destination is required ' +
@@ -1248,7 +1345,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   const progress = createBuildProgress(ora);
 
   const [
-    { generateSite },
+    { generateSite, stampSite },
     { render, runPagefindAgainstDir },
     {
       validateThemeOpts,
@@ -1257,6 +1354,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
       formatBuildReport,
       normalizeBasePath,
       withBase,
+      toExtractManifest,
     },
     // Loaded sequentially (not Promise.all) so the spinner can step its label
     // through each module — the evaluation of these large ESM bundles is the
@@ -1274,7 +1372,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
 
   // Normalized base-path prefix (`/` when unset). Threaded into every emitted
   // href — logos and custom assets here; dwar prefixes the rest at render time.
-  const basePath = normalizeBasePath(opts.basePath);
+  const basePath = normalizeBasePath(buildSpec?.basePath ?? opts.basePath);
   // The OutputFile `path` stays relative; only the served href gets the prefix.
   const hrefForServed = (servedPath: string): string => withBase(basePath, '/' + servedPath);
 
@@ -1342,14 +1440,30 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
       // logo and custom assets. SVGs are additionally collected as inline markup
       // so render() can drop them into the page (theme-toggle-aware) — see
       // RenderOptions.inlineSvgs.
-      const resolved = docsDir
+      const base = docsDir
         ? await resolveDocImages(rawDocs, docsDir)
-        : { docs: rawDocs, files: [], inlineSvgs: {} };
+        : { docs: rawDocs, files: [] as OutputFile[], inlineSvgs: {} as Record<string, string> };
+
+      // Per-locale docs overlay (build mode): a locale's `docs.<locale>/` files
+      // win over the default docs by path; default-only docs fall back, so a
+      // partially-translated docs tree still renders the untranslated pages.
+      // Each set's images resolve against its OWN root, then merge.
+      if (!buildSpec?.docsDir) {
+        return {
+          sources: srcs,
+          docs: base.docs,
+          docImageFiles: base.files,
+          inlineSvgs: base.inlineSvgs,
+        };
+      }
+      const localeRaw = await collectDocs(buildSpec.docsDir);
+      const locale = await resolveDocImages(localeRaw, buildSpec.docsDir);
+      const merged = overlayDocs(base, locale);
       return {
         sources: srcs,
-        docs: resolved.docs,
-        docImageFiles: resolved.files,
-        inlineSvgs: resolved.inlineSvgs,
+        docs: merged.docs,
+        docImageFiles: merged.files,
+        inlineSvgs: merged.inlineSvgs,
       };
     }
   );
@@ -1366,7 +1480,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   const menu = normalizeMenu(opts.menu);
   const clubSidebarItems = opts.clubSidebarItems === true;
 
-  const manifest = await progress.stage('Generating pages', () => generateSite(data, {
+  const siteOptions = {
     ...(pkg ? { pkg } : {}),
     ...(readme ? { readme } : {}),
     ...(tutorialTree.length > 0 ? { tutorials: tutorialTree } : {}),
@@ -1378,7 +1492,30 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
     ...(sectionOrder ? { sectionOrder } : {}),
     ...(menu ? { menu } : {}),
     ...(clubSidebarItems ? { clubSidebarItems } : {}),
-  }));
+  };
+  // Build mode stamps the locale's API translations in; a normal build doesn't.
+  const manifest = await progress.stage('Generating pages', () =>
+    buildSpec
+      ? stampSite(data, buildSpec.apiMessages, siteOptions)
+      : generateSite(data, siteOptions)
+  );
+
+  // Localization extract mode (aadesh, Phase 3): when CLEAN_JSDOC_THEME_EXTRACT
+  // names a path, write the translatable slot template there and STOP — skipping
+  // the expensive render/island-bundle/Pagefind. aadesh spawns jsdoc with this
+  // env var set to harvest the template, then drives the per-locale builds.
+  const extractPath = process.env.CLEAN_JSDOC_THEME_EXTRACT?.trim();
+  if (extractPath) {
+    const target = resolvePath(extractPath);
+    await progress.stage('Writing extract manifest', async () => {
+      await mkdir(dirname(target), { recursive: true });
+      await writeFile(target, JSON.stringify(toExtractManifest(manifest), null, 2) + '\n', 'utf8');
+    });
+    console.log(
+      `clean-jsdoc-theme: extract mode — wrote ${manifest.slots?.length ?? 0} slot(s) to ${target}`
+    );
+    return;
+  }
 
   // Resolve siteName (text or logo set) and copy any local logo images into the
   // output before render, so the served paths are baked into the markup. The
@@ -1398,6 +1535,18 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   const fonts: ValidatedFonts = { ...value.fonts };
   if (notGoogle.has('fonts.heading')) delete fonts.heading;
   if (notGoogle.has('fonts.body')) delete fonts.body;
+  // Same resilient drop for per-locale fonts (`fonts.ja:heading`), so a bad
+  // locale font falls back to the base/default rather than breaking the build.
+  if (fonts.locales) {
+    const cleaned: Record<string, FontSet> = {};
+    for (const [loc, set] of Object.entries(fonts.locales)) {
+      const s: FontSet = { ...set };
+      if (notGoogle.has(`fonts.${loc}:heading`)) delete s.heading;
+      if (notGoogle.has(`fonts.${loc}:body`)) delete s.body;
+      cleaned[loc] = s;
+    }
+    fonts.locales = cleaned;
+  }
 
   // Custom CSS/JS (v4 parity): inline strings pass through; custom files are
   // copied AS-IS to content-hashed `_assets` here (the I/O layer) and merged onto
@@ -1411,17 +1560,31 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   const islandCacheDir = resolvePath(process.cwd(), 'node_modules', '.cache', 'clean-jsdoc-theme');
   const result = await progress.stage('Rendering site', () =>
     render(manifest, {
-      theme: { ...resolveTheme(opts, siteName, fonts, basePath), ...customAssets.theme },
+      theme: {
+        ...resolveTheme(opts, siteName, fonts, basePath, buildSpec?.locale),
+        ...customAssets.theme,
+      },
       destination: absoluteDestination,
       islandCacheDir,
       inlineSvgs,
+      // Build mode: render chrome in the locale (SSR provider + island seeding)
+      // and, with >1 locale, mount the language switcher.
+      ...(buildSpec
+        ? {
+            locale: {
+              code: buildSpec.locale,
+              defaultLocale: buildSpec.defaultLocale,
+              messages: buildSpec.chromeMessages,
+              siteBasePath: buildSpec.siteBasePath,
+              locales: buildSpec.locales.map((l) => ({ code: l.code, label: l.name ?? l.code })),
+            },
+          }
+        : {}),
     })
   );
 
   const outputFiles = [...result.files, ...logoFiles, ...customAssets.files, ...docImageFiles];
-  await progress.stage('Writing files', () =>
-    writeOutputFiles(absoluteDestination, outputFiles)
-  );
+  await progress.stage('Writing files', () => writeOutputFiles(absoluteDestination, outputFiles));
 
   // Next.js-style build report: where the files landed, page/asset counts, and
   // per-route sizes (+ gzip). `node:zlib` is injected here as the gzip sizer so
@@ -1457,9 +1620,6 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
       runPagefindAgainstDir(absoluteDestination)
     );
   } catch (err) {
-    console.warn(
-      `clean-jsdoc-theme: pagefind step skipped (optional) — ${(err as Error).message}`
-    );
+    console.warn(`clean-jsdoc-theme: pagefind step skipped (optional) — ${(err as Error).message}`);
   }
-
 }

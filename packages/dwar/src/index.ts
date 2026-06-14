@@ -10,7 +10,7 @@
 
 import { cpus } from 'node:os';
 import { h, Fragment } from 'preact';
-import type { ComponentChildren } from 'preact';
+import type { ComponentChildren, VNode } from 'preact';
 import { render as renderToString } from 'preact-render-to-string';
 import {
   defaultMdxComponents,
@@ -18,6 +18,8 @@ import {
   CopyPageButton,
   PageNav,
   HeaderSlotContext,
+  LanguageProvider,
+  createI18n,
 } from '@clean-jsdoc-theme/rang';
 import type { PageNavLink } from '@clean-jsdoc-theme/rang';
 import { siteNameText, withBase } from '@clean-jsdoc-theme/utils';
@@ -26,6 +28,7 @@ import type {
   OutputFile,
   Page,
   RenderError,
+  RenderLocale,
   RenderOptions,
   RenderResult,
   SearchEntry,
@@ -36,7 +39,12 @@ import type {
   CopyPageAction,
 } from '@clean-jsdoc-theme/utils';
 
-import { collectUsedLangs, compileMdxToComponent, type MdxComponentMap, type ShikiThemes } from './mdx';
+import {
+  collectUsedLangs,
+  compileMdxToComponent,
+  type MdxComponentMap,
+  type ShikiThemes,
+} from './mdx';
 import { SsrLayout, renderIsland, type IslandRecord } from './layout';
 import {
   renderHtmlDocument,
@@ -86,6 +94,17 @@ async function mapWithConcurrency<T, R>(
   const workerCount = Math.min(limit, items.length);
   await Promise.all(Array.from({ length: workerCount }, () => worker()));
   return results;
+}
+
+/**
+ * Build a page's URL in a given locale for the language switcher: the default
+ * locale is unprefixed (`<siteBase>/<slug>`), others nest under `/<code>`
+ * (`<siteBase>/<code>/<slug>`). `slug` may be `''` (the home page).
+ */
+function localeHref(siteBase: string, code: string, defaultLocale: string, slug: string): string {
+  const seg = code === defaultLocale ? '' : '/' + code;
+  const path = slug ? `${seg}/${slug}` : seg || '/';
+  return withBase(siteBase, path);
 }
 
 /** A page's adjacent pages in sidebar reading order, for the prev/next pager. */
@@ -190,7 +209,8 @@ async function renderPage(
   langs: readonly string[],
   custom: { cssLinks?: string[]; css?: string; jsLinks?: string[]; js?: string },
   neighbors: PageNeighbors | undefined,
-  inlineSvgs: Record<string, string>
+  inlineSvgs: Record<string, string>,
+  locale: RenderLocale | undefined
 ): Promise<{ file: OutputFile; search: SearchEntry; islands: IslandRecord[] }> {
   const islands: IslandRecord[] = [];
 
@@ -212,7 +232,12 @@ async function renderPage(
       ssrProps: { code, language, filename, highlightLine: undefined },
     });
   } else {
-    const { Component: MdxComponent } = await compileMdxToComponent(page.body, components, shiki, langs);
+    const { Component: MdxComponent } = await compileMdxToComponent(
+      page.body,
+      components,
+      shiki,
+      langs
+    );
     // The copy-page button is for documentation content only — never the source
     // section (its viewer pages are `kind: 'source'` and skip this branch; the
     // "Source Files" index lives at the `source` slug and is excluded here too).
@@ -245,12 +270,25 @@ async function renderPage(
   // Prev/next pager below the body (content pages only — never the source
   // viewer). Rendered nothing when the page has no neighbors.
   const pager =
-    neighbors &&
-    (neighbors.prev || neighbors.next) &&
-    page.frontmatter.kind !== 'source'
+    neighbors && (neighbors.prev || neighbors.next) && page.frontmatter.kind !== 'source'
       ? h(PageNav, { prev: neighbors.prev, next: neighbors.next, basePath })
       : null;
   const pageBody = pager ? h(Fragment, null, mainContent, pager) : mainContent;
+
+  // Language switcher (localized build with >1 locale): one link per locale to
+  // THIS page's URL in that locale. Computed per page off the un-prefixed site
+  // base so each option points at the right `/<locale>/<slug>`.
+  const languageSwitcher =
+    locale && locale.locales && locale.locales.length > 1
+      ? {
+          current: locale.code,
+          locales: locale.locales.map((l) => ({
+            code: l.code,
+            label: l.label,
+            href: localeHref(locale.siteBasePath ?? '/', l.code, locale.defaultLocale, page.slug),
+          })),
+        }
+      : undefined;
 
   // In-content links (MdxA / SourceLink / MemberMeta) read the base-path from a
   // Preact context. This is SSR-only — the MDX body is rendered to a string and
@@ -272,6 +310,7 @@ async function renderPage(
           siteName,
           basePath,
           searchIndexUrl,
+          languageSwitcher,
           islands,
         },
         pageBody
@@ -279,7 +318,26 @@ async function renderPage(
     )
   );
 
-  const bodyHtml = renderToString(layoutVNode);
+  // Localized build: wrap the whole SSR tree in the locale's `LanguageProvider`
+  // so every rang chrome component + island SSR markup renders in the locale.
+  // Each island re-hydrates as its own root, seeded from the same `__i18n` in the
+  // payload (below), so the client render matches — no hydration drift. Absent
+  // for a normal build → no wrap, byte-identical.
+  const i18nPayload = locale
+    ? { locale: locale.code, defaultLocale: locale.defaultLocale, messages: locale.messages }
+    : undefined;
+  const renderTree = locale
+    ? h(LanguageProvider, {
+        value: createI18n({
+          locale: locale.code,
+          defaultLocale: locale.defaultLocale,
+          messages: locale.messages,
+        }),
+        children: layoutVNode,
+      })
+    : layoutVNode;
+
+  const bodyHtml = renderToString(renderTree as VNode);
 
   const html = renderHtmlDocument({
     page,
@@ -293,6 +351,16 @@ async function renderPage(
     customCss: custom.css,
     customJsLinks: custom.jsLinks,
     customJs: custom.js,
+    lang: locale?.code,
+    i18n: i18nPayload,
+    // hreflang reuses the switcher's per-page cross-locale URLs.
+    hreflang:
+      languageSwitcher && locale
+        ? {
+            alternates: languageSwitcher.locales.map((l) => ({ code: l.code, href: l.href })),
+            defaultLocale: locale.defaultLocale,
+          }
+        : undefined,
   });
 
   const file: OutputFile = {
@@ -359,6 +427,11 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
   // MDX-embedded islands (`code-tabs`, `copy-btn`) are still bundled so the
   // chunks are available if/when MDX content uses them.
   const islandSet = new Set<IslandName>(ALL_ISLANDS);
+  // The language switcher is bundled ONLY for a localized build with >1 locale,
+  // so a normal build's `_islands/` output is unchanged (byte-identical).
+  if (opts.locale && (opts.locale.locales?.length ?? 0) > 1) {
+    islandSet.add('language-switcher');
+  }
 
   // Copy-page button: on by default; `enabled: false` opts out entirely.
   // `actions` (undefined → all) controls which dropdown items appear.
@@ -438,7 +511,13 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
    * error and the rest of the site still renders; the caller surfaces them.
    */
   type PageResult =
-    | { ok: true; file: OutputFile; mdFile?: OutputFile; entry?: SearchEntry; members?: SearchEntry[] }
+    | {
+        ok: true;
+        file: OutputFile;
+        mdFile?: OutputFile;
+        entry?: SearchEntry;
+        members?: SearchEntry[];
+      }
     | { ok: false; error: RenderError };
 
   const task = async (page: Page): Promise<PageResult> => {
@@ -460,7 +539,8 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
         usedLangs,
         custom,
         neighborsBySlug.get(page.slug),
-        inlineSvgs
+        inlineSvgs,
+        opts.locale
       );
       const hidden = page.frontmatter.hidden;
       return {

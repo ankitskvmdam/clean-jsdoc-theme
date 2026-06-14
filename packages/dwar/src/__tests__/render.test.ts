@@ -494,3 +494,55 @@ describe('render() — CSS variable mapping', () => {
     expect(css).toContain('--clean-accent:#abcdef;');
   });
 });
+
+describe('render() — localization (language switcher + chrome locale)', () => {
+  const twoLocales = {
+    code: 'fr',
+    defaultLocale: 'en',
+    messages: {},
+    siteBasePath: '/',
+    locales: [
+      { code: 'en', label: 'English' },
+      { code: 'fr', label: 'Français' },
+    ],
+  };
+
+  it('localized build: <html lang>, __i18n payload, and a language-switcher island', async () => {
+    const result = await render(makeManifest(), { theme: minimalTheme, locale: twoLocales });
+    const home = asString(result.files.find((f) => f.path === 'index.html')!);
+    expect(home).toContain('<html lang="fr">');
+    expect(home).toContain('__i18n');
+    expect(home).toContain('data-island="language-switcher"');
+    // The switcher offers the OTHER locale (en) linking to the default home '/'.
+    expect(home).toContain('"current":"fr"');
+    expect(home).toContain('"code":"en"');
+    // The switcher chunk is bundled only for the localized build.
+    expect(result.files.some((f) => /_islands\/language-switcher-.*\.js$/.test(f.path))).toBe(true);
+  });
+
+  it('emits hreflang alternates (+ x-default → the default locale)', async () => {
+    const result = await render(makeManifest(), { theme: minimalTheme, locale: twoLocales });
+    const home = asString(result.files.find((f) => f.path === 'index.html')!);
+    expect(home).toContain('<link rel="alternate" hreflang="en" href="/"');
+    expect(home).toContain('<link rel="alternate" hreflang="fr" href="/fr"');
+    expect(home).toContain('hreflang="x-default" href="/"');
+  });
+
+  it('a single locale mounts no switcher (renders nothing extra)', async () => {
+    const result = await render(makeManifest(), {
+      theme: minimalTheme,
+      locale: { ...twoLocales, locales: [{ code: 'fr', label: 'Français' }] },
+    });
+    const home = asString(result.files.find((f) => f.path === 'index.html')!);
+    expect(home).not.toContain('data-island="language-switcher"');
+    expect(result.files.some((f) => /language-switcher/.test(f.path))).toBe(false);
+  });
+
+  it('no locale → byte-identical chrome path (lang=en, no __i18n, no switcher)', async () => {
+    const result = await render(makeManifest(), { theme: minimalTheme });
+    const home = asString(result.files.find((f) => f.path === 'index.html')!);
+    expect(home).toContain('<html lang="en">');
+    expect(home).not.toContain('__i18n');
+    expect(home).not.toContain('language-switcher');
+  });
+});

@@ -1,0 +1,117 @@
+{
+  "_version": 1,
+  "chrome": {
+    "common": {
+      "close": ""
+    },
+    "search": {
+      "placeholder": "ドキュメントを検索...",
+      "inputLabel": "検索クエリ",
+      "triggerLabel": "検索",
+      "triggerTitle": "",
+      "dialogLabel": "",
+      "resultsLabel": "",
+      "recent": "",
+      "favorite": "",
+      "noResults": "",
+      "emptyHint": "",
+      "inContext": "",
+      "footerHint": "",
+      "saveToFavorites": "",
+      "removeFromFavorites": "",
+      "removeFromRecent": ""
+    },
+    "footer": {
+      "repository": "リポジトリ"
+    },
+    "nav": {
+      "docNavLabel": "ドキュメントナビゲーション",
+      "open": "",
+      "menu": "",
+      "drawerLabel": ""
+    },
+    "toc": {
+      "label": "このページの内容"
+    },
+    "theme": {
+      "toggleTitle": "テーマを切り替え",
+      "switchTo": "{mode}テーマに切り替え"
+    },
+    "settings": {
+      "title": "設定",
+      "fontSize": "文字サイズ",
+      "lineSpacing": "行間",
+      "sizeSmall": "",
+      "sizeDefault": "",
+      "sizeLarge": "",
+      "spacingCompact": "",
+      "spacingDefault": "",
+      "spacingRelaxed": ""
+    },
+    "pager": {
+      "label": "",
+      "previous": "前へ",
+      "next": "次へ"
+    },
+    "code": {
+      "variantsLabel": "",
+      "copy": "",
+      "copied": "",
+      "copyShort": "",
+      "copiedShort": "",
+      "copyLink": ""
+    },
+    "copyPage": {
+      "moreOptions": "",
+      "menuLabel": "",
+      "copyTitle": "ページをコピー",
+      "copied": "",
+      "copyDescription": "",
+      "viewTitle": "",
+      "viewDescription": "",
+      "claudeTitle": "",
+      "claudeDescription": "",
+      "chatgptTitle": "",
+      "chatgptDescription": "",
+      "perplexityTitle": "",
+      "perplexityDescription": ""
+    },
+    "embed": {
+      "load": "",
+      "loadTitled": "",
+      "posterTitle": "",
+      "loadPill": ""
+    },
+    "language": {
+      "label": "言語"
+    }
+  },
+  "api": {
+    "module:widget-kit#description": "<p>ローカライズ対応を示すための、小さく完全にドキュメント化されたサンプルモジュールです。</p><p>clean-jsdoc-theme は単一のソースからこの API リファレンスを複数の言語でレンダリングします。クラスやメソッドの説明、パラメータのドキュメント、例のキャプションはロケールごとに翻訳され、検索・サイドバー・目次・設定などの UI も同様にローカライズされます。タイトル横の地球儀から言語を切り替えてください。各ページは設定された各言語の対応ページにリンクし、未翻訳の項目は既定の言語にフォールバックします。</p>",
+    "module:widget-kit#summary": "<p>ローカライズされた API ドキュメントを紹介するサンプルモジュール。</p>",
+    "module:widget-kit.Widget#constructor.description": "<p>ウィジェットを作成します。</p>",
+    "module:widget-kit.Widget#constructor.params.id.description": "",
+    "module:widget-kit.Widget#constructor.params.options.description": "",
+    "module:widget-kit.Widget#constructor.params.options.disabled.description": "",
+    "module:widget-kit.Widget#constructor.params.options.label.description": "",
+    "module:widget-kit.Widget#description": "<p>再利用可能な UI ウィジェット — このドキュメントサイトの実行例です。</p><p>各メンバー（コンストラクタ、フィールド、メソッド）が独自のセクションとしてレンダリングされ、コードはそのままに説明文だけが各ロケール向けに翻訳される様子を示します。</p>",
+    "module:widget-kit.Widget#disabled#description": "<p>ウィジェットが現在無効かどうか。</p>",
+    "module:widget-kit.Widget#examples.0.caption": "ウィジェットの作成とレンダリング",
+    "module:widget-kit.Widget#id#description": "<p>ウィジェットの一意の識別子。</p>",
+    "module:widget-kit.Widget#label#description": "<p>表示ラベル。指定がない場合は id。</p>",
+    "module:widget-kit.Widget#params.id.description": "",
+    "module:widget-kit.Widget#params.options.description": "",
+    "module:widget-kit.Widget#params.options.disabled.description": "",
+    "module:widget-kit.Widget#params.options.label.description": "",
+    "module:widget-kit.Widget#render#description": "<p>ウィジェットを切り離された DOM 要素にレンダリングします。</p>",
+    "module:widget-kit.Widget#render#returns.0.description": "",
+    "module:widget-kit.Widget#setDisabled#description": "<p>ウィジェットを有効または無効にします。</p>",
+    "module:widget-kit.Widget#setDisabled#params.disabled.description": "",
+    "module:widget-kit.Widget#setDisabled#returns.0.description": "",
+    "module:widget-kit.createWidget#description": "<p>プレーンな設定オブジェクトからウィジェットを作成する小さな便利関数です。</p>",
+    "module:widget-kit.createWidget#params.config.description": "",
+    "module:widget-kit.createWidget#params.config.id.description": "",
+    "module:widget-kit.createWidget#params.config.label.description": "",
+    "module:widget-kit.createWidget#returns.0.description": ""
+  }
+}

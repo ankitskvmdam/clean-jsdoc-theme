@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { ChevronDown } from 'lucide-preact';
+import { useTranslation } from '@clean-jsdoc-theme/bhasha';
 import type { Heading } from '@clean-jsdoc-theme/utils';
 import { cn } from '../lib/cn';
 import { getItemOffset, useTocProgress } from './toc-utils';
@@ -72,6 +73,7 @@ function ProgressCircle({ value }: { value: number }) {
  * hydration root rather than sharing tracking state across two roots.
  */
 export function TocPopover({ headings }: TocPopoverProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const barRef = useRef<HTMLButtonElement>(null);
@@ -81,7 +83,7 @@ export function TocPopover({ headings }: TocPopoverProps) {
     barRef.current ? barRef.current.getBoundingClientRect().bottom : 112
   );
 
-  const currentText = headings[currentIndex]?.text ?? 'On this page';
+  const currentText = headings[currentIndex]?.text ?? t('chrome.toc.label');
 
   // Indent relative to the shallowest heading on the page (matches the rail TOC),
   // so a multi-h1 page indents cleanly while single-title pages are unchanged.
@@ -113,7 +115,7 @@ export function TocPopover({ headings }: TocPopoverProps) {
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        aria-label="On this page"
+        aria-label={t('chrome.toc.label')}
         class="flex h-12 w-full items-center gap-2.5 px-4 text-sm text-muted-foreground md:px-6"
       >
         <ProgressCircle value={progress} />
@@ -126,7 +128,7 @@ export function TocPopover({ headings }: TocPopoverProps) {
               open ? 'opacity-100' : 'pointer-events-none -translate-y-1 opacity-0'
             )}
           >
-            On this page
+            {t('chrome.toc.label')}
           </span>
           <span
             class={cn(
@@ -152,7 +154,7 @@ export function TocPopover({ headings }: TocPopoverProps) {
       >
         <div class="min-h-0 overflow-hidden">
           <nav
-            aria-label="On this page"
+            aria-label={t('chrome.toc.label')}
             class="flex max-h-[50vh] flex-col overflow-y-auto px-4 pb-4 text-sm md:px-6"
           >
             {headings.map((h, i) => {

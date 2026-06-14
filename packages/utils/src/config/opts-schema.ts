@@ -41,9 +41,12 @@ export type TSiteNameOpt = z.infer<typeof SiteNameSchema>;
 // ── fonts ────────────────────────────────────────────────────────────────────
 
 /**
- * Font overrides — only `heading`/`body`/`mono` are recognized. `heading` and
- * `body` are Google Fonts family names (existence-checked later); `mono` is a
- * CSS stack. Extras are stripped; the explicit policy flags them.
+ * Font overrides — `heading`/`body`/`mono`, each optionally prefixed with a
+ * locale code (`ja:heading`) to override that locale only. `heading`/`body` are
+ * Google Fonts family names (existence-checked later); `mono` is a CSS stack.
+ * The `catchall` admits the `<locale>:slot` keys; `validateFonts` does the real
+ * shape/slot validation (this schema is declarative — the runtime path uses it
+ * for documentation/typing, not parsing).
  */
 export const FontsSchema = z
   .object({
@@ -51,7 +54,7 @@ export const FontsSchema = z
     body: z.string().optional(),
     mono: z.string().optional(),
   })
-  .strip();
+  .catchall(z.string());
 export type TFontsOpt = z.infer<typeof FontsSchema>;
 
 /** Recognized `fonts` sub-keys, for typo suggestions. */
@@ -145,6 +148,8 @@ export const THEME_OPT_KEYS = [
   'clubSidebarItems',
   'aiPrompt',
   'basePath',
+  'locales',
+  'defaultLocale',
   'customCss',
   'customCssFile',
   'customJs',

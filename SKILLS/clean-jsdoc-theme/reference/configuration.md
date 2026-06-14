@@ -43,12 +43,27 @@ See [content-and-sidebar.md](content-and-sidebar.md) for the full ordering model
 
 | Option | Type | Notes |
 | --- | --- | --- |
-| `fonts` | `{ heading?, body?, mono? }` | `heading`/`body` are Google Font family names (loaded for you, existence-checked at build); `mono` is a CSS font stack. |
+| `fonts` | `{ heading?, body?, mono? }` | `heading`/`body` are Google Font family names (loaded for you, existence-checked at build); `mono` is a CSS font stack. A key may be prefixed with a locale (`"ja:heading"`, `"hi:body"`) to override that font for one locale only — see [Localization](#localization). |
 | `colors` | color map | Light-mode palette; merges **per key** over the built-in palette. Keys: `bg`, `bgMuted`, `fg`, `fgMuted`, `accent`, `accentFg`, `border`. Any valid CSS color (ships OKLCH). |
 | `darkColors` | color map | Same keys, emitted under `[data-theme="dark"]`. Omit it and dark mode falls back to a sensible bg/fg swap. |
 | `customCss` / `customJs` | string | Inline CSS/JS injected on every page. CSS loads **after** the theme stylesheet (overrides win); JS runs **last**. |
 | `customCssFile` / `customJsFile` | path | Same, read from disk; copied to content-hashed `_assets/`. |
 | `hashCustomAssets` | boolean | Content-hash custom-asset filenames for cache-busting. Default `true`. |
+
+## Localization
+
+Opt into multi-language builds. These two opts live in the **same** `opts` /
+`cleanJsdocTheme` block; the rest of the i18n workflow runs through the
+`clean-jsdoc` CLI (see [localization.md](localization.md)).
+
+| Option | Type | Notes |
+| --- | --- | --- |
+| `locales` | `(string \| { code, name? })[]` | The languages to build. `code` is the URL/path segment; `name` is the switcher label. Omit (or one entry) → a normal single-language build. |
+| `defaultLocale` | string | Which `locales` code renders **unprefixed** (at the root); the others render under `/<code>`. Must be one of `locales`. |
+
+With `locales` set, the [`clean-jsdoc`](localization.md) CLI builds one site per
+locale. Per-locale **fonts** use the `fonts` map with a `"<code>:slot"` key;
+per-locale **prose** uses sibling files (`README.<code>.md`, `docs.<code>/`).
 
 ## LLM & copy-page
 

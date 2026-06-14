@@ -29,11 +29,14 @@ describe('getIslandChunkEntrySource() — copy-btn', () => {
   // its chunk must derive the text to copy from the sibling <pre> in the DOM.
   // (Regression: the button used to render but never hydrate, so clicks did
   // nothing.)
-  it('derives the text from the sibling <pre>, not the props payload', () => {
+  it('derives the text from the sibling <pre>, not a per-island payload entry', () => {
     const src = getIslandChunkEntrySource('copy-btn');
     expect(src).toContain("querySelector('pre')");
     expect(src).toContain('hydrate(');
-    expect(src).not.toContain('data-island-props');
+    // No per-island props lookup (copy-btn has no data-island-id entry); it may
+    // still read the payload for the shared `__i18n` locale seed.
+    expect(src).not.toContain('data-island-id');
+    expect(src).toContain('__i18n');
   });
 
   it('layout islands still read from the props payload', () => {
@@ -47,13 +50,16 @@ describe('getIslandChunkEntrySource() — embed', () => {
   // embed is an in-content island like copy-btn: no data-island-id / payload
   // entry. Its config lives in the marker's data-* attributes, which the chunk
   // reads back into EmbedProps and hydrates the body onto the marker itself.
-  it('reads config from the marker data-* (not the props payload)', () => {
+  it('reads config from the marker data-* (not a per-island payload entry)', () => {
     const src = getIslandChunkEntrySource('embed');
     expect(src).toContain('querySelectorAll(\'[data-island="embed"]\')');
     expect(src).toContain('getAttribute');
     expect(src).toContain("'data-src'");
     expect(src).toContain('hydrate(');
-    expect(src).not.toContain('data-island-props');
+    // Config comes from data-* (no per-island payload lookup); the payload is
+    // only consulted for the shared `__i18n` locale seed.
+    expect(src).not.toContain('data-island-id');
+    expect(src).toContain('__i18n');
   });
 
   it('bundles into a non-empty embed chunk', async () => {
@@ -89,9 +95,7 @@ describe('bundleIslands() — cache', () => {
     // Warm: same inputs → cache HIT, returns an equivalent result.
     const second = await bundleIslands({ islands: ['sidebar'], cacheDir });
     expect(second.entryPaths.sidebar).toBe(first.entryPaths.sidebar);
-    expect(second.files.map((f) => f.path).sort()).toEqual(
-      first.files.map((f) => f.path).sort()
-    );
+    expect(second.files.map((f) => f.path).sort()).toEqual(first.files.map((f) => f.path).sort());
   });
 
   it('writes nothing when no cacheDir is supplied (stays pure)', async () => {

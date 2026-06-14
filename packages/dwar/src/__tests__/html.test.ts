@@ -128,3 +128,26 @@ Body paragraph here with **bold** and \`code\`.
     expect(out).not.toContain('example.com');
   });
 });
+
+describe('renderHtmlDocument — locale (i18n)', () => {
+  it('defaults to <html lang="en"> with no __i18n payload (byte-identical path)', () => {
+    const html = doc({});
+    expect(html).toContain('<html lang="en">');
+    expect(html).not.toContain('__i18n');
+  });
+
+  it('sets <html lang> + embeds the __i18n chrome payload when localized', () => {
+    const html = doc({
+      lang: 'fr',
+      i18n: {
+        locale: 'fr',
+        defaultLocale: 'en',
+        messages: { 'chrome.search.placeholder': 'Rechercher…' },
+      },
+    });
+    expect(html).toContain('<html lang="fr">');
+    expect(html).toContain('__i18n');
+    expect(html).toContain('Rechercher');
+    expect(html).toContain('"locale":"fr"');
+  });
+});

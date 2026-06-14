@@ -42,11 +42,12 @@ clean-jsdoc-theme/
 │   ├── dwar/                  # @clean-jsdoc-theme/dwar   — SiteManifest → HTML/CSS/JS
 │   ├── clean-jsdoc-theme/     # clean-jsdoc-theme         — the JSDoc theme entry (bridge)
 │   ├── typedoc/               # @clean-jsdoc-theme/typedoc — TypeDoc plugin (bridge)
-│   ├── aadesh/                # @clean-jsdoc-theme/aadesh — CLI surface (stub)
-│   └── bhasha/                # @clean-jsdoc-theme/bhasha — i18n surface (stub)
+│   ├── aadesh/                # @clean-jsdoc-theme/aadesh — localization CLI (clean-jsdoc)
+│   └── bhasha/                # @clean-jsdoc-theme/bhasha — pure i18n core
 ├── examples/
 │   ├── basic/                 # working JSDoc fixture: `pnpm run docs` → dist/
-│   └── typedoc-basic/         # working TypeDoc fixture: `pnpm run docs` → dist/
+│   ├── typedoc-basic/         # working TypeDoc fixture: `pnpm run docs` → dist/
+│   └── with-i18n-example/     # 3-locale (en/ja/hi) localization fixture
 ├── docs-site/                 # dogfood docs site: prose-first `opts.docs` build
 ├── SKILLS/                    # downloadable LLM agent skills (per-skill folder + SKILL.md)
 ├── ARCHITECTURE.md            # this file
@@ -350,6 +351,10 @@ rang/src/
     │                     #   highlightSegments) — fzf-style scoring for CtrlK
     ├── Settings.tsx      # island: settings (+ SettingsDialog, controlled)
     ├── ThemeToggle.tsx   # island: light/dark (+ useThemeMode hook)
+    ├── LanguageSwitcher.tsx # island: locale dropdown (lucide Languages icon) —
+    │                     #   navigation to the same page in each locale; renders
+    │                     #   nothing for a single locale. Localized builds only
+    │                     #   (after search on desktop, before the nav trigger on mobile)
     ├── CodeTabs.tsx      # island: tabbed code
     ├── CopyBtn.tsx       # island: clipboard (code blocks)
     ├── CopyPageButton.tsx # island: copy-page split button (ButtonGroup + DropdownMenu):
@@ -378,9 +383,9 @@ rang/src/
                           #   `Code` (MDX `code`); also serves CodeTabs + standalone
 ```
 
-**Islands** (`IslandName`, 13): `sidebar`, `mobile-nav`, `toc`, `toc-mobile`,
+**Islands** (`IslandName`, 14): `sidebar`, `mobile-nav`, `toc`, `toc-mobile`,
 `cmdk`, `code-tabs`, `copy-btn`, `copy-page`, `theme-toggle`, `settings`,
-`code-viewer`, `embed`, `tabs`.
+`language-switcher`, `code-viewer`, `embed`, `tabs`.
 Each renders meaningful SSR HTML, then progressively enhances after hydration.
 The `cmdk` palette lazily fetches the search index on first open and ranks hits
 with a fuzzy matcher (`search-utils`) across weighted fields — title (highest,
@@ -600,12 +605,71 @@ typedoc/src/
 The two bridges are independent leaf packages — pure helpers (`write-output-files`,
 `collectSourceFiles`) are copied, never cross-imported.
 
-### Stubs
+### `@clean-jsdoc-theme/bhasha` — the pure i18n core
 
-- **`@clean-jsdoc-theme/aadesh`** — reserved CLI (`clean-jsdoc build`). Stub today;
-  JSDoc's own `-t` flag is the supported entry.
-- **`@clean-jsdoc-theme/bhasha`** — reserved i18n surface. Only `createEmptyLocale`
-  today; scoped to v5.1+.
+The isomorphic (zero `node:*`) half of localization, imported by rang into the
+browser. Holds the canonical English UI catalog (`EN_CHROME` + the derived
+`ChromeKey`), the `t(key, vars?)` translator with its fallback chain (active →
+default → key/source) + named `{var}` interpolation, the `LanguageProvider`
+static carrier + `useTranslation` hook (scopes a catalog per render on the server,
+seeds each island root in the browser — no setter, no reactivity), the API-slot
+key scheme (`apiSlotKey(longname, field)`) + `sourceHash` (FNV-1a), and the
+validation primitives aadesh's `validate` uses. setu and aadesh import its key/hash
+helpers so they agree on slot identity + staleness.
+
+### `@clean-jsdoc-theme/aadesh` — the localization CLI
+
+The disk-bound, process-orchestrating half. The published binary is `clean-jsdoc`;
+its four subcommands (`extract` / `prompt` / `validate` / `build`, plus an
+interactive menu when run with no args) drive the i18n workflow. It reads locale
+config from the **same `jsdoc.json` opts** (`opts.locales` + `opts.defaultLocale`),
+spawns the real pipeline in *extract mode* to harvest translatable strings, and
+once per locale in *build mode* to stamp translations back in.
+
+```
+aadesh/src/
+├── cli.ts               # commander front-end; no subcommand → the interactive menu
+├── runners.ts           # exec* per command — the shared run+print+exit path
+├── interactive/         # @inquirer/prompts welcome screen + command picker
+│   ├── registry.ts      #   pure command metadata + toArgv/toCommandString
+│   └── package-json.ts  #   save the equivalent command as an npm script
+├── commands/            # extract / prompt / validate / build
+├── locale/              # PURE catalog core: template, merge, file model
+├── artifacts.ts         # disk layer: <code>.json (editable) + <code>.meta.json (auto)
+├── extract-manifest.ts  # spawn the pipeline (extract mode); runPipeline(extraArgs)
+└── build-plan.ts        # per-locale dest/basePath plan (default unprefixed, /<locale>)
+```
+
+---
+
+## Localization (i18n)
+
+Locale is a **build dimension, not a runtime toggle**: each language renders to its
+own static output (default unprefixed, others under `/<locale>`), and the language
+switcher is navigation between those sites. Three content tracks, one rule each:
+
+- **Chrome (UI)** — a key→string catalog (bhasha `EN_CHROME`); rang calls
+  `t(key)`. Missing → default catalog.
+- **API descriptions** — setu emits translatable **slots** (`apiSlotKey`) for every
+  description / `@summary` / example caption / **parameter & return description**;
+  `stampSite(collection, messages)` re-renders with a locale's translations.
+  Missing → source text. Names, type strings, enum values, and `@example` code stay
+  locale-invariant.
+- **Prose (files)** — the home page via a sibling `README.<locale>.md` (aadesh
+  passes `--readme`), and `opts.docs` via a sibling `docs.<locale>/` overlay (passed
+  in the build spec; the bridge overlays per file). Missing file → default.
+
+**The flow** (`aadesh`): declare `opts.locales` → `extract` (build the template from
+`EN_CHROME` + `manifest.slots`, merge into committable `clean-jsdoc-theme-artifacts/
+locales/<code>.json` + auto-managed `<code>.meta.json`) → translate (or `prompt`
+for an LLM) → `validate` → `build` (per locale: a `BuildSpec` carries the chrome +
+API translations + dest/basePath + the docs overlay; the theme's build mode stamps
++ seeds the chrome locale + mounts the switcher + emits `hreflang`). **Per-locale
+fonts**: `opts.fonts` accepts `<locale>:heading`-style keys (resolved override →
+base → default per slot). The no-locale build path stays byte-identical.
+
+The TypeDoc bridge supports *extract* but not yet the localized *build* path
+(JSDoc-only today). Runnable reference: `examples/with-i18n-example`.
 
 ---
 

@@ -1,4 +1,5 @@
 import { useRef, useState } from 'preact/hooks';
+import { useTranslation } from '@clean-jsdoc-theme/bhasha';
 import { CodeBlock } from './CodeBlock';
 
 export interface CodeTab {
@@ -12,6 +13,7 @@ export interface CodeTabsProps {
 }
 
 export function CodeTabs({ tabs }: CodeTabsProps) {
+  const { t } = useTranslation();
   const [active, setActive] = useState(0);
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
@@ -49,7 +51,7 @@ export function CodeTabs({ tabs }: CodeTabsProps) {
     <div class="my-4 rounded border border-(--clean-border)">
       <div
         role="tablist"
-        aria-label="Code variants"
+        aria-label={t('chrome.code.variantsLabel')}
         class="flex gap-1 border-b border-(--clean-border) bg-(--clean-bg-muted) px-2 pt-2"
       >
         {tabs.map((tab, i) => {

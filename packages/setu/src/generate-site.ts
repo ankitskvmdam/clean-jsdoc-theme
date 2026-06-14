@@ -15,6 +15,7 @@ import { filterDoclets } from './doclet';
 import { containerViewToMdast } from './mdast/class-view';
 import type { DocletBlocksOptions } from './mdast/doclet';
 import { resolveLinkTags } from './mdast/link-tags';
+import { resolveSlotText } from './slots';
 import { toMdx } from './mdx';
 
 /** JSDoc separator characters that delimit name parts in a longname. */
@@ -214,6 +215,8 @@ interface RenderOptions {
   sourceLink?: DocletBlocksOptions['sourceLink'];
   resolveLink?: DocletBlocksOptions['resolveLink'];
   resolveTutorial?: DocletBlocksOptions['resolveTutorial'];
+  /** Translatable-prose slot resolver (collect + per-locale translate). */
+  slots?: DocletBlocksOptions['slots'];
 }
 
 /**
@@ -230,17 +233,27 @@ export function renderContainerPage(
   kind: PageKind,
   longname: string,
   slug: string,
-  { sourceLink, resolveLink, resolveTutorial }: RenderOptions = {}
+  { sourceLink, resolveLink, resolveTutorial, slots }: RenderOptions = {}
 ): Page {
-  const tree = containerViewToMdast(view, { sourceLink, resolveLink, resolveTutorial });
+  const tree = containerViewToMdast(view, { sourceLink, resolveLink, resolveTutorial, slots });
   if (resolveLink) resolveLinkTags(tree, resolveLink);
 
   const title = view.doclet.name ?? view.doclet.longname ?? longname;
-  const description = view.doclet.classdesc
-    ? stripHtml(view.doclet.classdesc)
-    : view.doclet.description
-      ? stripHtml(view.doclet.description)
-      : undefined;
+  // The frontmatter description (page <meta> + search excerpt) is derived from
+  // the same source as the body description, so it tracks the same `…#description`
+  // slot — a stamped locale localizes the excerpt too, not just the visible prose.
+  // Identity by default → byte-identical (stripHtml of the unchanged source). Key
+  // off `view.doclet.longname` (NOT the `longname` param fallback) so the
+  // frontmatter and the body's `descriptionBlocks` always resolve the SAME key —
+  // otherwise a doclet without a longname could localize the excerpt but not the
+  // body. Both short-circuit to the source when the longname is absent.
+  const descriptionSource = resolveSlotText(
+    slots,
+    view.doclet.longname,
+    'description',
+    view.doclet.classdesc ?? view.doclet.description
+  );
+  const description = descriptionSource ? stripHtml(descriptionSource) : undefined;
 
   // `@category` (if any) becomes the sidebar group — possibly a `/`-path that
   // nests the page (`Core/Parsing` → Core ▸ Parsing) — and its `order=` option

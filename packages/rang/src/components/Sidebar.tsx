@@ -1,6 +1,7 @@
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { House, CodeXml, Globe, Mail, ExternalLink, ChevronRight } from 'lucide-preact';
+import { useTranslation } from '@clean-jsdoc-theme/bhasha';
 import type { NavNode } from '@clean-jsdoc-theme/utils';
 import { withBase } from '@clean-jsdoc-theme/utils';
 import { cn } from '../lib/cn';
@@ -291,6 +292,7 @@ function scrollParent(el: HTMLElement): HTMLElement | null {
 const ACTIVE_SCROLL_PADDING = 16;
 
 export function Sidebar({ nav, currentSlug, basePath = '/' }: SidebarProps) {
+  const { t } = useTranslation();
   // Menu entries form a top region (icon links); the rest are grouped sections.
   const menuItems = nav.filter((n) => n.menu);
   const sectionNodes = nav.filter((n) => !n.menu);
@@ -329,7 +331,7 @@ export function Sidebar({ nav, currentSlug, basePath = '/' }: SidebarProps) {
   };
 
   return (
-    <nav ref={navRef} aria-label="Documentation navigation" class="text-(--clean-fg)">
+    <nav ref={navRef} aria-label={t('chrome.nav.docNavLabel')} class="text-(--clean-fg)">
       {menuItems.length > 0 && (
         <ul class="m-0 list-none p-0">
           {menuItems.map((node, ni) => (
