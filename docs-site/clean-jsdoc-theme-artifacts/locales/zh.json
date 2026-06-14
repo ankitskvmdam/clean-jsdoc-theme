@@ -1,0 +1,90 @@
+{
+  "_version": 1,
+  "chrome": {
+    "common": {
+      "close": "关闭"
+    },
+    "search": {
+      "placeholder": "搜索文档...",
+      "inputLabel": "搜索查询",
+      "triggerLabel": "搜索",
+      "triggerTitle": "搜索 (Ctrl K)",
+      "dialogLabel": "搜索",
+      "resultsLabel": "搜索结果",
+      "recent": "最近",
+      "favorite": "收藏",
+      "noResults": "没有匹配的页面",
+      "emptyHint": "输入以搜索文档",
+      "inContext": "位于 {context}",
+      "footerHint": "↑↓ 导航 · ↵ 打开 · esc 关闭",
+      "saveToFavorites": "将 {title} 加入收藏",
+      "removeFromFavorites": "将 {title} 从收藏中移除",
+      "removeFromRecent": "将 {title} 从最近搜索中移除"
+    },
+    "footer": {
+      "repository": "代码仓库"
+    },
+    "nav": {
+      "docNavLabel": "文档导航",
+      "open": "打开导航",
+      "menu": "菜单",
+      "drawerLabel": "导航"
+    },
+    "toc": {
+      "label": "本页内容"
+    },
+    "theme": {
+      "toggleTitle": "切换主题",
+      "switchTo": "切换到{mode}主题"
+    },
+    "settings": {
+      "title": "设置",
+      "fontSize": "字体大小",
+      "lineSpacing": "行间距",
+      "sizeSmall": "小",
+      "sizeDefault": "默认",
+      "sizeLarge": "大",
+      "spacingCompact": "紧凑",
+      "spacingDefault": "默认",
+      "spacingRelaxed": "宽松"
+    },
+    "pager": {
+      "label": "分页",
+      "previous": "上一页",
+      "next": "下一页"
+    },
+    "code": {
+      "variantsLabel": "代码变体",
+      "copy": "复制到剪贴板",
+      "copied": "已复制到剪贴板",
+      "copyShort": "复制",
+      "copiedShort": "已复制！",
+      "copyLink": "复制此部分的链接"
+    },
+    "copyPage": {
+      "moreOptions": "更多复制选项",
+      "menuLabel": "页面复制选项",
+      "copyTitle": "复制页面",
+      "copied": "已复制",
+      "copyDescription": "将页面复制为 Markdown 以供 LLM 使用",
+      "viewTitle": "查看 Markdown",
+      "viewDescription": "以纯文本查看此页面",
+      "claudeTitle": "在 Claude 中打开",
+      "claudeDescription": "向 Claude 询问此页面",
+      "chatgptTitle": "在 ChatGPT 中打开",
+      "chatgptDescription": "向 ChatGPT 询问此页面",
+      "perplexityTitle": "在 Perplexity 中打开",
+      "perplexityDescription": "向 Perplexity 询问此页面"
+    },
+    "embed": {
+      "load": "加载嵌入内容",
+      "loadTitled": "加载嵌入内容：{title}",
+      "posterTitle": "嵌入内容",
+      "loadPill": "加载"
+    },
+    "language": {
+      "label": "语言"
+    }
+  },
+  "api": {}
+}

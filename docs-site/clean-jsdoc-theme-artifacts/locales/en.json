@@ -1,0 +1,90 @@
+{
+  "_version": 1,
+  "chrome": {
+    "common": {
+      "close": "Close"
+    },
+    "search": {
+      "placeholder": "Search docs...",
+      "inputLabel": "Search query",
+      "triggerLabel": "Search",
+      "triggerTitle": "Search (Ctrl K)",
+      "dialogLabel": "Search",
+      "resultsLabel": "Search results",
+      "recent": "Recent",
+      "favorite": "Favorite",
+      "noResults": "No matching pages",
+      "emptyHint": "Type to search the docs",
+      "inContext": "in {context}",
+      "footerHint": "↑↓ to navigate · ↵ to open · esc to close",
+      "saveToFavorites": "Save {title} to favorites",
+      "removeFromFavorites": "Remove {title} from favorites",
+      "removeFromRecent": "Remove {title} from recent searches"
+    },
+    "footer": {
+      "repository": "Repository"
+    },
+    "nav": {
+      "docNavLabel": "Documentation navigation",
+      "open": "Open navigation",
+      "menu": "Menu",
+      "drawerLabel": "Navigation"
+    },
+    "toc": {
+      "label": "On this page"
+    },
+    "theme": {
+      "toggleTitle": "Toggle theme",
+      "switchTo": "Switch to {mode} theme"
+    },
+    "settings": {
+      "title": "Settings",
+      "fontSize": "Font size",
+      "lineSpacing": "Line spacing",
+      "sizeSmall": "Small",
+      "sizeDefault": "Default",
+      "sizeLarge": "Large",
+      "spacingCompact": "Compact",
+      "spacingDefault": "Default",
+      "spacingRelaxed": "Relaxed"
+    },
+    "pager": {
+      "label": "Pagination",
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "code": {
+      "variantsLabel": "Code variants",
+      "copy": "Copy to clipboard",
+      "copied": "Copied to clipboard",
+      "copyShort": "Copy",
+      "copiedShort": "Copied!",
+      "copyLink": "Copy link to this section"
+    },
+    "copyPage": {
+      "moreOptions": "More copy options",
+      "menuLabel": "Copy page options",
+      "copyTitle": "Copy page",
+      "copied": "Copied",
+      "copyDescription": "Copy page as Markdown for LLMs",
+      "viewTitle": "View Markdown",
+      "viewDescription": "View this page as plain text",
+      "claudeTitle": "Open in Claude",
+      "claudeDescription": "Ask Claude about this page",
+      "chatgptTitle": "Open in ChatGPT",
+      "chatgptDescription": "Ask ChatGPT about this page",
+      "perplexityTitle": "Open in Perplexity",
+      "perplexityDescription": "Ask Perplexity about this page"
+    },
+    "embed": {
+      "load": "Load embedded content",
+      "loadTitled": "Load embedded content: {title}",
+      "posterTitle": "Embedded content",
+      "loadPill": "Load"
+    },
+    "language": {
+      "label": "Language"
+    }
+  },
+  "api": {}
+}

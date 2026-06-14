@@ -53,6 +53,9 @@ importers:
 
   docs-site:
     devDependencies:
+      '@clean-jsdoc-theme/aadesh':
+        specifier: workspace:^
+        version: link:../packages/aadesh
       clean-jsdoc-theme:
         specifier: workspace:^
         version: link:../packages/clean-jsdoc-theme

@@ -2,7 +2,13 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { TextAlignStart } from 'lucide-preact';
 import { useTranslation } from '@clean-jsdoc-theme/bhasha';
 import type { Heading } from '@clean-jsdoc-theme/utils';
-import { getItemOffset, getLineOffset, useActiveHeadings } from './toc-utils';
+import {
+  computeTocScrollTop,
+  getItemOffset,
+  getLineOffset,
+  getScrollParent,
+  useActiveHeadings,
+} from './toc-utils';
 
 export interface TOCProps {
   headings: Heading[];
@@ -25,6 +31,9 @@ export function TOC({ headings }: TOCProps) {
   const activeIds = useActiveHeadings(headings);
   const [geo, setGeo] = useState<RailGeometry | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  // First alignment (mount / deep-linked `#anchor`) jumps instantly; later
+  // active-item changes animate. Flipped on the first evaluation below.
+  const didInitialAlign = useRef(false);
 
   // Indent relative to the shallowest heading on the page, not absolute depth,
   // so the gutter is consistent whether the TOC starts at h1 (a multi-h1 page)
@@ -80,6 +89,45 @@ export function TOC({ headings }: TOCProps) {
     ro.observe(container);
     return () => ro.disconnect();
   }, [headings]);
+
+  // ── Keep the active item visible ────────────────────────────────────────--
+  // Fumadocs' TOC scrolls its own container so the active item tracks the page;
+  // that effect was dropped in the port (issue: active item scrolls out of view
+  // on long TOCs). Re-add it: on each active-item change, scroll the nearest
+  // scrollable ancestor so the first active item lands in the comfortable band.
+  useEffect(() => {
+    const list = containerRef.current;
+    if (!list || activeIds.length === 0) return;
+    const scroller = getScrollParent(list);
+    if (!scroller) return;
+
+    // First active heading in document order (the top of the highlighted span).
+    const firstId = headings.find((h) => activeIds.includes(h.id))?.id;
+    if (!firstId) return;
+    const el = list.querySelector<HTMLElement>(`a[href="#${firstId}"]`);
+    if (!el) return;
+
+    // Item top in the scroller's content coordinates (robust to the heading/nav
+    // sitting between the list and the scroll container).
+    const itemTop = el.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop;
+
+    const target = computeTocScrollTop(
+      itemTop,
+      scroller.scrollTop,
+      scroller.clientHeight,
+      scroller.scrollHeight
+    );
+
+    const isInitial = !didInitialAlign.current;
+    didInitialAlign.current = true;
+    if (target === null) return;
+
+    const prefersReduced =
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const behavior: ScrollBehavior = isInitial || prefersReduced ? 'instant' : 'smooth';
+    scroller.scrollTo({ top: target, behavior });
+  }, [activeIds, headings]);
 
   if (headings.length === 0) {
     return null;

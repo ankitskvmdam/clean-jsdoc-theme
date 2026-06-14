@@ -32,6 +32,20 @@ describe('slugifyHeading', () => {
     expect(slugifyHeading('naïve approach')).toBe('naive-approach');
   });
 
+  it('keeps non-Latin scripts (Unicode-aware), not just ASCII', () => {
+    // Regression: an ASCII-only class dropped every non-Latin letter, leaving
+    // empty or Latin-only slugs. Devanagari vowel signs (matras) must survive —
+    // 'पैकेज' must not degrade to 'पकज'.
+    expect(slugifyHeading('पैकेज')).toBe('पैकेज');
+    expect(slugifyHeading('आपको क्या मिलता है')).toBe('आपको-क्या-मिलता-है');
+    expect(slugifyHeading('प्रोज़ और API एक ही साइट में')).toBe(
+      'प्रोज़-और-api-एक-ही-साइट-में'
+    );
+    expect(slugifyHeading('パッケージ')).toBe('パッケージ');
+    // Mixed scripts + punctuation still drops the punctuation only.
+    expect(slugifyHeading('変更点 (changelog)')).toBe('変更点-changelog');
+  });
+
   it('dedupes via the registry when supplied', () => {
     const reg = new Map<string, number>();
     expect(slugifyHeading('Hello', reg)).toBe('hello');
@@ -73,5 +87,10 @@ describe('slugifyPath', () => {
 
   it('strips diacritics in path parts', () => {
     expect(slugifyPath(['Café', 'Naïve'])).toBe('cafe/naive');
+  });
+
+  it('keeps non-Latin path parts (Unicode-aware)', () => {
+    expect(slugifyPath(['पैकेज', 'API!'])).toBe('पैकेज/api');
+    expect(slugifyPath(['パッケージ'])).toBe('パッケージ');
   });
 });

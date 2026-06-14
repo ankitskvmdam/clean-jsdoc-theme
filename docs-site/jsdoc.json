@@ -17,6 +17,13 @@
     "docGroups": ["Packages", "Using the Theme", "Guides", "Authoring"],
     "defaultDocGroup": "Docs",
     "sectionOrder": ["Using the Theme", "Guides", "Authoring", "Packages"],
+    "locales": [
+      { "code": "en", "name": "English" },
+      { "code": "hi", "name": "हिन्दी" },
+      { "code": "ja", "name": "日本語" },
+      { "code": "zh", "name": "中文" }
+    ],
+    "defaultLocale": "en",
     "siteName": {
       "light": "./assets/clean-jsdoc-theme.svg",
       "dark": "./assets/clean-jsdoc-theme-white.svg",
