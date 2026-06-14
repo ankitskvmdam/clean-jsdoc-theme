@@ -6,10 +6,16 @@ import {
   coverageRatio,
   localeMessages,
   mergeLocale,
-  parseLocaleFile,
-  serializeLocaleFile,
+  parseLocaleFiles,
+  serializeLocaleContent,
+  serializeLocaleMeta,
   type Template,
+  type LocaleFile,
 } from '../locale';
+
+/** Combined serialization (content + meta) — for byte-identity/round-trip asserts. */
+const serializeBoth = (file: LocaleFile): string =>
+  serializeLocaleContent(file) + serializeLocaleMeta(file);
 
 const slot = (key: string, sourceText: string): SlotEntry => ({
   key,
@@ -40,12 +46,28 @@ describe('buildTemplate', () => {
 });
 
 describe('locale file round-trip + messages', () => {
-  it('serializes deterministically and parses back', () => {
+  it('serializes deterministically (content + meta) and parses both back', () => {
     const t = template(slot('api.X#d', 'A'));
     const { file } = mergeLocale(t, null, { locale: 'en', isDefault: true });
-    const json = serializeLocaleFile(file);
-    expect(json.endsWith('\n')).toBe(true);
-    expect(serializeLocaleFile(parseLocaleFile(json))).toBe(json);
+    const content = serializeLocaleContent(file);
+    const meta = serializeLocaleMeta(file);
+    expect(content.endsWith('\n')).toBe(true);
+    expect(meta.endsWith('\n')).toBe(true);
+    // The editable file carries no machine bookkeeping; hashes live in the meta.
+    expect(content).not.toContain('_hashes');
+    expect(meta).toContain('_hashes');
+    const round = parseLocaleFiles(content, meta);
+    expect(serializeLocaleContent(round)).toBe(content);
+    expect(serializeLocaleMeta(round)).toBe(meta);
+  });
+
+  it('parses with a missing meta sidecar → empty hashes/obsolete (self-heals)', () => {
+    const t = template(slot('api.X#d', 'A'));
+    const { file } = mergeLocale(t, null, { locale: 'en', isDefault: true });
+    const round = parseLocaleFiles(serializeLocaleContent(file), null);
+    expect(round.api['X#d']).toBe('A');
+    expect(round._hashes).toEqual({});
+    expect(round._obsolete).toEqual({});
   });
 
   it('localeMessages splits non-empty translations into full chrome.* / api.* keys', () => {
@@ -86,7 +108,7 @@ describe('mergeLocale — determinism', () => {
     const t = template(slot('api.X#d', 'A'), slot('api.Y#d', 'B'));
     const first = mergeLocale(t, null, { locale: 'fr' });
     const second = mergeLocale(t, first.file, { locale: 'fr' });
-    expect(serializeLocaleFile(second.file)).toBe(serializeLocaleFile(first.file));
+    expect(serializeBoth(second.file)).toBe(serializeBoth(first.file));
     expect(second.report.added).toHaveLength(0);
     expect(second.report.stale).toHaveLength(0);
     expect(second.report.obsolete).toHaveLength(0);

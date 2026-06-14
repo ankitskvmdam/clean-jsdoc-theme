@@ -8,7 +8,12 @@ import { runExtract } from '../commands/extract';
 import { runValidate } from '../commands/validate';
 import { runPrompt } from '../commands/prompt';
 import { runBuild } from '../commands/build';
-import { readLocaleFile, writeLocaleFile } from '../artifacts';
+import {
+  localeFilePath,
+  localeMetaFilePath,
+  readLocaleFile,
+  writeLocaleFile,
+} from '../artifacts';
 import type { PipelineRunner } from '../extract-manifest';
 
 const SLOTS = [
@@ -79,6 +84,14 @@ describe('runExtract', () => {
     const en = (await readLocaleFile(localesDir, 'en'))!;
     expect(en.api['X#description']).toBe('<p>Hi {count}.</p>'); // skeleton = source
     expect(en.chrome.search).toMatchObject({ recent: 'Recent' }); // chrome from EN_CHROME
+
+    // On disk it's two files: the editable content (no machine bookkeeping) and
+    // the auto-managed meta sidecar that carries the hashes.
+    const enContent = await readFile(localeFilePath(localesDir, 'en'), 'utf8');
+    const enMeta = await readFile(localeMetaFilePath(localesDir, 'en'), 'utf8');
+    expect(enContent).not.toContain('_hashes');
+    expect(enContent).toContain('"api"');
+    expect(enMeta).toContain('_hashes');
 
     const fr = (await readLocaleFile(localesDir, 'fr'))!;
     expect(fr.api['X#description']).toBe(''); // untranslated

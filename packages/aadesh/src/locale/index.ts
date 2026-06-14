@@ -22,8 +22,9 @@ export {
   flattenLocaleFile,
   localeMessages,
   obsoleteEntries,
-  parseLocaleFile,
-  serializeLocaleFile,
+  parseLocaleFiles,
+  serializeLocaleContent,
+  serializeLocaleMeta,
   toLocaleFile,
 } from './file';
 

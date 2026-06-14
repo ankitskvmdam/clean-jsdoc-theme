@@ -145,19 +145,43 @@ export function localeMessages(file: LocaleFile): {
   return { chrome, api };
 }
 
-/** Serialize a locale file to deterministic, diff-friendly JSON (2-space, trailing newline). */
-export function serializeLocaleFile(file: LocaleFile): string {
-  return JSON.stringify(file, null, 2) + '\n';
+/**
+ * Serialize the **editable** half of a locale file — `_version` + the human
+ * `chrome`/`api` translations — to deterministic, diff-friendly JSON (2-space,
+ * trailing newline). The auto-managed `_hashes`/`_obsolete` live in a sibling
+ * meta file (see {@link serializeLocaleMeta}), so this is all the translator
+ * ever edits.
+ */
+export function serializeLocaleContent(file: LocaleFile): string {
+  const content = { _version: file._version, chrome: file.chrome, api: file.api };
+  return JSON.stringify(content, null, 2) + '\n';
 }
 
-/** Parse a locale file's JSON, tolerating missing optional blocks. */
-export function parseLocaleFile(json: string): LocaleFile {
-  const raw = JSON.parse(json) as Partial<LocaleFile>;
+/**
+ * Serialize the **auto-managed** half — `_hashes` (staleness) + `_obsolete`
+ * (soft-deleted entries). This is processing metadata the user never edits; it's
+ * written to `<code>.meta.json` beside the editable `<code>.json`.
+ */
+export function serializeLocaleMeta(file: LocaleFile): string {
+  const meta = { _version: file._version, _hashes: file._hashes, _obsolete: file._obsolete };
+  return JSON.stringify(meta, null, 2) + '\n';
+}
+
+/**
+ * Recombine the editable content JSON with its (optional) sibling meta JSON into
+ * one in-memory {@link LocaleFile}. A missing/absent meta file (first extract, or
+ * a hand-deleted cache) parses to empty `_hashes`/`_obsolete` — the merge treats
+ * those as "needs a hash", so it self-heals on the next extract. Tolerant of
+ * missing blocks throughout.
+ */
+export function parseLocaleFiles(contentJson: string, metaJson: string | null): LocaleFile {
+  const content = JSON.parse(contentJson) as Partial<LocaleFile>;
+  const meta = (metaJson ? JSON.parse(metaJson) : {}) as Partial<LocaleFile>;
   return {
-    _version: typeof raw._version === 'number' ? raw._version : LOCALE_FILE_VERSION,
-    chrome: raw.chrome ?? {},
-    api: raw.api ?? {},
-    _hashes: raw._hashes ?? {},
-    _obsolete: raw._obsolete ?? {},
+    _version: typeof content._version === 'number' ? content._version : LOCALE_FILE_VERSION,
+    chrome: content.chrome ?? {},
+    api: content.api ?? {},
+    _hashes: meta._hashes ?? {},
+    _obsolete: meta._obsolete ?? {},
   };
 }

@@ -3,12 +3,13 @@
  * on. See `packages/aadesh-bhasha-plan.md` §5 (artifact layout) and §4 (the
  * extract→translate→build flow).
  *
- * A locale file is human-edited JSON: clean translated strings under nested
- * `chrome.*` and a flat `api` map, plus three underscore-prefixed metadata
- * blocks — `_version` (schema migrations), `_hashes` (the source-hash each
- * translation was made against, for staleness), and `_obsolete` (soft-deleted
- * entries kept until `--prune`). The default-locale file is the *skeleton*: its
- * values ARE the source text.
+ * On disk a locale is split across two files: the human-edited `<code>.json`
+ * holds `_version` + clean translated strings (nested `chrome.*`, flat `api`),
+ * while the auto-managed `<code>.meta.json` holds the processing-only blocks —
+ * `_hashes` (the source-hash each translation was made against, for staleness)
+ * and `_obsolete` (soft-deleted entries kept until `--prune`). In memory the two
+ * are recombined into this one {@link LocaleFile}. The default-locale file is the
+ * *skeleton*: its values ARE the source text.
  */
 
 /** Current locale-file schema version. Bump + migrate when the shape changes. */
@@ -28,10 +29,11 @@ export interface ObsoleteEntry {
 }
 
 /**
- * The on-disk locale artifact (`clean-jsdoc-theme-artifacts/locales/<locale>.json`).
- * `chrome` is nested for readability; `api` is a flat map keyed by the slot key
- * **without** the `api.` namespace prefix (it's already under `api`). `_hashes`
- * and `_obsolete` are keyed by the FULL flat key (`chrome.*` / `api.*`).
+ * The in-memory locale artifact (persisted split across `<locale>.json` +
+ * `<locale>.meta.json`). `chrome` is nested for readability; `api` is a flat map
+ * keyed by the slot key **without** the `api.` namespace prefix (it's already
+ * under `api`). `_hashes` and `_obsolete` (the meta sidecar) are keyed by the
+ * FULL flat key (`chrome.*` / `api.*`).
  */
 export interface LocaleFile {
   _version: number;
