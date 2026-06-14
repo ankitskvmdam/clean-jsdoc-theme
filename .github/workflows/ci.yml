@@ -15,8 +15,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # full history needed for `changeset status --since`
 
       - uses: pnpm/action-setup@v4 # reads packageManager (pnpm@9) from package.json
 
@@ -39,8 +37,6 @@ jobs:
       # - run: pnpm lint
       # - run: pnpm format:check
 
-      # CI half of "don't skip anything": fail a PR that changes a publishable
-      # package without adding a changeset.
-      - name: Changeset coverage (PRs only)
-        if: github.event_name == 'pull_request'
-        run: pnpm changeset status --since=origin/master --verbose
+      # NOTE: no per-PR changeset gate. Changesets are added when preparing a
+      # release (the tag-triggered Release workflow publishes by package.json
+      # version), not on every PR.
