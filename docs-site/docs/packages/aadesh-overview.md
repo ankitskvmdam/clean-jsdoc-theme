@@ -12,6 +12,10 @@ does the disk-bound, process-orchestrating half of i18n — the work that
 can't: spawning your JSDoc/TypeDoc pipeline, reading and writing the committable
 locale catalogs, and rendering one static site per locale.
 
+> [!NOTE]
+> **Why the name?** *aadesh* (आदेश) is Sanskrit/Hindi for **command / instruction**
+> — fitting for the project's command-line interface.
+
 The published binary is **`clean-jsdoc`**. Most projects use it through four
 subcommands (and an interactive menu when you run it with no arguments):
 
@@ -46,9 +50,12 @@ translations back in.
   are a merge: new keys are added, source changes mark a key *stale*, and removed
   keys are soft-deleted (kept until `--prune`) so a rename never drops a
   translator's work. A no-change run is a zero git diff.
-- **`prompt`** — emits a ready-to-paste LLM translation prompt for the new and
-  stale keys only, chunked for context limits, with the exact return-JSON shape and
-  instructions to preserve markdown / `{@link}` / code fences / `{var}` tokens.
+- **`prompt`** — writes a ready-to-use LLM translation prompt **file** per locale
+  (under `clean-jsdoc-theme-artifacts/locales/prompts/`, chunked for context limits)
+  covering the new and stale keys only, with the exact return-JSON shape and
+  instructions to preserve markdown / `{@link}` / code fences / `{var}` tokens. You
+  paste each file into an LLM (or upload the `.md`); the directory is git-ignored
+  and regenerated each run.
 - **`validate`** — preflights the catalogs: a coverage gap warns ("using the
   default"), a malformation (broken markdown-in-slot, a dropped `{var}` token,
   unknown keys) errors. Resilient by default; `--strict` escalates warnings to
@@ -58,7 +65,8 @@ translations back in.
   `hreflang` alternates.
 
 Every prompt has a flag equivalent (`--config`, `--dir`, `--prune`, `--strict`,
-`--locale`, `--typedoc`), so the CLI runs headless in CI and never blocks.
+`--locale`, `--chunk-size`, `--typedoc`), so the CLI runs headless in CI and never
+blocks.
 
 ## The artifacts
 

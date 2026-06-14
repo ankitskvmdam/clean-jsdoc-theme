@@ -132,6 +132,28 @@ shown side by side, is on the [Configuration](/theme/configuration) page.
 > and sit under `templates.default`, not `opts` (the theme reads them from
 > `jsdoc/env`). They're flagged on the Configuration page.
 
+## Multiple languages
+
+The theme can render your docs in **several languages** — one static site per
+locale (the default at the root, others under `/<locale>`), with a header
+language switcher. You declare the locales in `opts.locales`, then drive the
+translation + per-locale builds with the `clean-jsdoc` CLI:
+
+```json5
+opts: {
+  locales: [
+    { code: "en", name: "English" },
+    { code: "ja", name: "日本語" },
+  ],
+  defaultLocale: "en",
+}
+```
+
+A build with no `locales` is unaffected. See
+**[Localize your docs](/guides/localize-your-docs)** for the full workflow
+(`extract` → translate → `build`), and the
+[`locales` / `defaultLocale`](/theme/configuration#localization) reference.
+
 ## Next steps
 
 - **[Build an API reference](/guides/build-an-api-reference)** — what becomes a
@@ -143,5 +165,7 @@ shown side by side, is on the [Configuration](/theme/configuration) page.
   `@order`, and the sidebar options.
 - **[Authoring](/authoring/callouts)** — callouts, steps, tabs, and embeds you
   can use in comments and prose.
+- **[Localize your docs](/guides/localize-your-docs)** — ship the site in
+  multiple languages.
 - Prefer TypeScript? See **[TypeDoc Getting Started](/theme/typedoc-getting-started)** —
   same output, different toolchain.

@@ -9,6 +9,7 @@
  * printed, and reflected in the exit code.
  */
 
+import { relative } from 'node:path';
 import { formatDiagnostics } from '@clean-jsdoc-theme/utils';
 import { runExtract } from './commands/extract';
 import { runValidate } from './commands/validate';
@@ -119,17 +120,24 @@ export async function execPrompt(o: PromptOpts): Promise<void> {
       if (!result.diagnostics.hasErrors()) noLocalesNotice('set `opts.locales` in your config.');
       return;
     }
-    for (const { locale, count, chunks } of result.prompts) {
+    const rel = (p: string): string => relative(process.cwd(), p) || p;
+    let wrote = false;
+    for (const { locale, count, files } of result.prompts) {
       if (count === 0) {
-        console.log(`# ${locale}: fully translated — nothing to prompt.\n`);
+        console.log(`${locale}: fully translated — nothing to prompt.`);
         continue;
       }
-      console.log(`# ${locale}: ${count} entries to translate, ${chunks.length} chunk(s)\n`);
-      chunks.forEach((chunk, i) => {
-        if (i > 0) console.log('\n' + '─'.repeat(72) + '\n');
-        console.log(chunk);
-      });
+      wrote = true;
+      const noun = files.length === 1 ? 'file' : 'files';
+      console.log(`${locale}: ${count} ${count === 1 ? 'entry' : 'entries'} → ${files.length} prompt ${noun}:`);
+      for (const f of files) console.log(`  ${rel(f)}`);
+    }
+    if (wrote) {
       console.log('');
+      console.log('Open each file and paste its contents into your LLM — or upload the .md directly.');
+      console.log(
+        'Then copy the returned translations into the matching <code>.json catalog and run `clean-jsdoc validate`.'
+      );
     }
   } catch (err) {
     console.error((err as Error).message);

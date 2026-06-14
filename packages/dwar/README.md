@@ -1,9 +1,9 @@
 # @clean-jsdoc-theme/dwar
 
 Pure SiteManifest → HTML/CSS/JS renderer. Compiles MDX through Preact components
-from `@clean-jsdoc-theme/rang`, server-renders each page, bundles each island as
-its own ESM chunk via esbuild, emits CSS, and provides a separate post-write
-Pagefind step.
+from `@clean-jsdoc-theme/rang`, server-renders each page, bundles the islands in
+one split esbuild build (a shared chunk + a content-hashed entry chunk per
+island), emits CSS, and provides a separate post-write Pagefind step.
 
 ## Public API
 
@@ -56,9 +56,16 @@ await runPagefindAgainstDir(outDir);
 - `<slug>/index.md` per content page — the page's MDX body verbatim, co-located with the HTML (for LLMs + the copy-page button). Source-viewer pages emit none.
 - `_assets/styles.${buildId}.css` — the per-theme `:root` / `[data-theme="dark"]` token block plus the prebuilt static utility layer.
 - `_assets/search-index.${buildId}.json` — the fuzzy search index the `cmdk` island fetches.
-- `_islands/<name>.js` per `IslandName` — esbuild-bundled ESM chunks (Preact inlined per chunk).
+- `_islands/<name>.js` per `IslandName` — content-hashed entry chunks from one split esbuild build, sharing a common Preact + rang chunk.
 - Per-page `<script data-island-props>{ "i0": …, "i1": …, … }</script>` carrying serialized island props.
+- A **copy-page** island above the body and a **prev/next pager** (`PageNav`) below it on content pages — each gated by `ThemeConfig` (`copyPage` / `pageNav`), never on source pages.
 - `RenderResult.search` — one `SearchEntry` per non-hidden page, ready for downstream indexing.
+
+For a **localized** build (`RenderOptions.locale`), the SSR tree is wrapped in a
+bhasha `LanguageProvider`, an `__i18n` payload seeds every island root (no
+hydration drift), `<html lang>` and `hreflang` alternates are set, and the
+language switcher is mounted. A build with no `locale` is byte-identical to
+before.
 
 `kind: 'source'` pages skip MDX entirely: the raw source stays in the SSR `<pre>`
 (off the JSON payload) and the `code-viewer` island lazy-loads Monaco from a CDN
@@ -72,7 +79,7 @@ SiteManifest ──► dwar.render ──► OutputFile[] ──► caller write
                      ├── MDX via @mdx-js/mdx + rang.defaultMdxComponents
                      ├── SSR via preact-render-to-string + rang.Layout
                      ├── Island markers wrapping rang.ISLAND_REGISTRY entries
-                     ├── Islands bundled via esbuild (one ESM chunk per island)
+                     ├── Islands bundled via esbuild (shared chunk + per-island entry)
                      └── CSS: per-theme token block + prebuilt utility layer
 ```
 

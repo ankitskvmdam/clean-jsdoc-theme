@@ -1,7 +1,7 @@
 {
   "name": "@clean-jsdoc-theme/dwar",
   "version": "5.0.0-alpha.3",
-  "description": "Astro theme integration for clean-jsdoc-theme",
+  "description": "Pure SiteManifest → HTML/CSS/JS renderer for clean-jsdoc-theme",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

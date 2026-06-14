@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdir, mkdtemp, rm, writeFile, readFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, rm, writeFile, readFile } from 'node:fs/promises';
 import { writeFile as writeFileCb } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -177,6 +177,60 @@ describe('runPrompt', () => {
     expect(fr.count).toBeGreaterThan(0);
     expect(fr.chunks.length).toBeGreaterThan(0);
     expect(fr.chunks[0]).toContain('Translate to fr');
+  });
+
+  it('writes the prompt chunks as Markdown files under <dir>/prompts/', async () => {
+    const res = await runPrompt({ configPath, dir: localesDir, runner: fakeRunner });
+    const fr = res.prompts[0];
+    // One file per chunk, all under the reported prompts directory, content matches.
+    expect(fr.files.length).toBe(fr.chunks.length);
+    expect(res.promptsDir).toBe(join(localesDir, 'prompts'));
+    for (let i = 0; i < fr.files.length; i++) {
+      expect(fr.files[i].startsWith(res.promptsDir!)).toBe(true);
+      const onDisk = await readFile(fr.files[i], 'utf8');
+      expect(onDisk).toContain('Translate to fr');
+    }
+    // A single chunk → `<code>.md`; many → `<code>.part-NN.md`.
+    const expected =
+      fr.chunks.length === 1
+        ? [join(res.promptsDir!, 'fr.md')]
+        : fr.chunks.map((_, i) =>
+            join(res.promptsDir!, `fr.part-${String(i + 1).padStart(2, '0')}.md`)
+          );
+    expect(fr.files).toEqual(expected);
+  });
+
+  it('removes stale prompt parts when a re-run produces fewer chunks', async () => {
+    // First run with a tiny chunk size → many part files.
+    const many = await runPrompt({ configPath, dir: localesDir, chunkSize: 1, runner: fakeRunner });
+    expect(many.prompts[0].files.length).toBeGreaterThan(1);
+    // Translate everything except one entry, then re-run → a single `fr.md`.
+    const en = (await readLocaleFile(localesDir, 'en'))!;
+    const fr = (await readLocaleFile(localesDir, 'fr'))!;
+    fr.api = { ...en.api };
+    fr.chrome = JSON.parse(JSON.stringify(en.chrome));
+    fr._hashes = { ...en._hashes };
+    fr.api['X#description'] = ''; // leave exactly one entry to translate
+    delete fr._hashes['api.X#description'];
+    await writeLocaleFile(localesDir, 'fr', fr);
+
+    const few = await runPrompt({ configPath, dir: localesDir, runner: fakeRunner });
+    expect(few.prompts[0].files).toEqual([join(few.promptsDir!, 'fr.md')]);
+    // The old `.part-NN.md` files are gone (the `.gitignore` keeper aside).
+    const left = (await readdir(few.promptsDir!)).filter((n) => n !== '.gitignore');
+    expect(left).toEqual(['fr.md']);
+  });
+
+  it('writes no files once a locale is fully translated', async () => {
+    const en = (await readLocaleFile(localesDir, 'en'))!;
+    const fr = (await readLocaleFile(localesDir, 'fr'))!;
+    fr.api = { ...en.api };
+    fr.chrome = JSON.parse(JSON.stringify(en.chrome));
+    fr._hashes = { ...en._hashes };
+    await writeLocaleFile(localesDir, 'fr', fr);
+
+    const res = await runPrompt({ configPath, dir: localesDir, runner: fakeRunner });
+    expect(res.prompts[0].files).toEqual([]);
   });
 
   it('warns (no crash) when --locale names the default locale', async () => {

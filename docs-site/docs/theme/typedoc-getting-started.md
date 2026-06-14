@@ -129,6 +129,18 @@ side, is on the [Configuration](/theme/configuration) page. A few to start with:
 > ever **warn** (with a "did you mean?" hint) — see
 > [`strict`](/theme/configuration#strict) to escalate that to an error.
 
+## Multiple languages
+
+The localization workflow declares its locales in the same `cleanJsdocTheme`
+block (`locales` + `defaultLocale`) and runs through the `clean-jsdoc` CLI — see
+**[Localize your docs](/guides/localize-your-docs)** and the
+[`locales` / `defaultLocale`](/theme/configuration#localization) reference.
+
+> [!INFO]
+> Today the TypeDoc bridge can **extract** translation catalogs but does not yet
+> render the per-locale sites — localized *builds* are JSDoc-only for now. A
+> single-language TypeDoc site is fully supported.
+
 ## Next steps
 
 - **[Build an API reference](/guides/build-an-api-reference)** — what becomes a
@@ -139,6 +151,8 @@ side, is on the [Configuration](/theme/configuration) page. A few to start with:
 - **[Structure your sidebar](/guides/structure-your-sidebar)** — grouping and
   ordering levers.
 - **[Authoring](/authoring/callouts)** — callouts, steps, tabs, and embeds.
+- **[Localize your docs](/guides/localize-your-docs)** — the multi-language
+  workflow (extract works on TypeDoc; localized builds are JSDoc-only today).
 - **[Packages](/#the-packages)** — how the shared `setu → dwar` pipeline (and the
   [`@clean-jsdoc-theme/typedoc`](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/packages/typedoc)
   plugin) work under the hood.

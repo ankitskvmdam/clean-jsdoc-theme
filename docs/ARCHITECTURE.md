@@ -93,7 +93,8 @@ utils/src/
 │   ├── diagnostics.ts    # Diagnostic model + DiagnosticBag + formatDiagnostics
 │   ├── opts-schema.ts    # zod schemas + THEME_OPT_KEYS
 │   ├── site-name.ts      # validateSiteName (shape only — no I/O)
-│   ├── fonts.ts          # validateFonts (heading/body existence-checked via resolver)
+│   ├── locales.ts        # validateLocales (opts.locales/defaultLocale → ValidatedLocales; i18n off → undefined)
+│   ├── fonts.ts          # validateFonts (heading/body existence-checked via resolver; per-locale keys)
 │   ├── google-fonts.ts   # createGoogleFontResolver (injectable fetch; fail-open)
 │   ├── suggest.ts        # near-miss "did you mean X?" key suggestions
 │   ├── validate-opts.ts  # validateThemeOpts orchestrator → { value, diagnostics }
@@ -286,6 +287,10 @@ setu/src/
 ├── name-registry.ts      # longname → slug/path resolution
 ├── link-registry.ts      # longname → {slug,#anchor} registry + makeLinkResolver
 │                         #   ({@link}/@see → href; unique short-name fallback)
+├── embed.ts              # parseEmbedConfig — shared @iframe / ```iframe config
+│                         #   grammar (URL + key=value; https/protocol-relative only)
+├── slots.ts              # i18n: SlotResolver + SlotCollector (collect translatable
+│                         #   SlotEntry[]) + makeSlotTranslator (per-locale stamp)
 ├── helper.ts
 ├── mdx.ts                # mdast → MDX string (resource-form links only, so no
 │                         #   `<url>` autolink reaches dwar's MDX compile)

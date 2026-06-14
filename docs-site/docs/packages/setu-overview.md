@@ -12,6 +12,11 @@ a nav tree, and the link resolution that ties them together. It is the
 build-side counterpart to [dwar](/packages/dwar-overview), which renders the
 manifest into HTML.
 
+> [!NOTE]
+> **Why the name?** *setu* (सेतु) is Sanskrit for **bridge** — fitting, since this
+> package bridges your raw doclets to the structured `SiteManifest` the renderer
+> consumes.
+
 The single entry point is
 [`generateSite(collection, opts)`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/index.ts):
 
