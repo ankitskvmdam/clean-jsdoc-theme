@@ -134,31 +134,68 @@ export function SsrLayout({
   languageSwitcher,
   islands,
 }: SsrLayoutProps) {
+  const search = (
+    <Island
+      name="cmdk"
+      islands={islands}
+      Component={CtrlK}
+      props={{ basePath, ...(searchIndexUrl ? { searchIndexUrl } : {}) }}
+    />
+  );
+  const themeToggle = (
+    <Island
+      name="theme-toggle"
+      islands={islands}
+      Component={ThemeToggle}
+      props={{} as Record<string, never>}
+    />
+  );
+  const settings = (
+    <Island
+      name="settings"
+      islands={islands}
+      Component={Settings}
+      props={{} as Record<string, never>}
+    />
+  );
+
+  // The language switcher (localized builds with >1 locale) stays visible on ALL
+  // breakpoints. On desktop it sits between the search and theme/settings groups
+  // — i.e. right after the search icon; on mobile, where both desktop groups are
+  // hidden, only it and the nav-drawer trigger remain, so it lands immediately
+  // before the sidebar-toggle button.
+  const languageSwitcherIsland = languageSwitcher ? (
+    <Island
+      name="language-switcher"
+      islands={islands}
+      Component={LanguageSwitcher}
+      props={languageSwitcher}
+    />
+  ) : undefined;
+
   const headerControls = (
     <>
       {/* Desktop controls: search + theme + settings. On mobile these all
           collapse into the nav drawer trigger below — the mobile header keeps
-          only the panel-right button. */}
-      <div class="hidden items-center gap-1 md:flex">
-        <Island
-          name="cmdk"
-          islands={islands}
-          Component={CtrlK}
-          props={{ basePath, ...(searchIndexUrl ? { searchIndexUrl } : {}) }}
-        />
-        <Island
-          name="theme-toggle"
-          islands={islands}
-          Component={ThemeToggle}
-          props={{} as Record<string, never>}
-        />
-        <Island
-          name="settings"
-          islands={islands}
-          Component={Settings}
-          props={{} as Record<string, never>}
-        />
-      </div>
+          only the language switcher + the panel-right button. The desktop group
+          splits around the always-visible switcher so it reads search → language
+          → theme → settings. */}
+      {languageSwitcherIsland ? (
+        <>
+          <div class="hidden items-center gap-1 md:flex">{search}</div>
+          {languageSwitcherIsland}
+          <div class="hidden items-center gap-1 md:flex">
+            {themeToggle}
+            {settings}
+          </div>
+        </>
+      ) : (
+        <div class="hidden items-center gap-1 md:flex">
+          {search}
+          {themeToggle}
+          {settings}
+        </div>
+      )}
       {/* Mobile-only drawer trigger; the drawer hosts theme/settings + the page list. */}
       {nav.length > 0 && (
         <div class="md:hidden">
@@ -172,18 +209,6 @@ export function SsrLayout({
       )}
     </>
   );
-
-  // The language switcher sits beside the brand title (the Layout `headerStart`
-  // slot), visible on ALL breakpoints — so on mobile it stays in the bar rather
-  // than collapsing into the drawer. Only in a localized build with >1 locale.
-  const headerStart = languageSwitcher ? (
-    <Island
-      name="language-switcher"
-      islands={islands}
-      Component={LanguageSwitcher}
-      props={languageSwitcher}
-    />
-  ) : undefined;
 
   const sidebar =
     nav.length > 0 ? (
@@ -212,7 +237,6 @@ export function SsrLayout({
       pkg={pkg}
       basePath={basePath}
       headerControls={headerControls}
-      headerStart={headerStart}
       sidebar={sidebar}
       toc={toc}
       tocMobile={tocMobile}

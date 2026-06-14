@@ -12,14 +12,8 @@ export interface LayoutPkg {
 
 export interface LayoutProps {
   children?: ComponentChildren;
-  /** Header control slot (search, theme, settings); rendered on the header's right. */
+  /** Header control slot (search, language, theme, settings); rendered on the header's right. */
   headerControls?: ComponentChildren;
-  /**
-   * Header slot rendered right after the brand, visible on ALL breakpoints (the
-   * language switcher lives here so it stays in the bar on mobile rather than
-   * collapsing into the drawer).
-   */
-  headerStart?: ComponentChildren;
   /** Left nav slot. When omitted, the sidebar column is not rendered. */
   sidebar?: ComponentChildren;
   /** Right table-of-contents slot. When omitted, the toc column is not rendered. */
@@ -45,7 +39,6 @@ export interface LayoutProps {
 export function Layout({
   children,
   headerControls,
-  headerStart,
   sidebar,
   toc,
   tocMobile,
@@ -55,7 +48,7 @@ export function Layout({
 }: LayoutProps) {
   return (
     <div class="flex min-h-screen flex-col bg-background text-(--clean-fg)">
-      <Header siteName={siteName} pkg={pkg} basePath={basePath} start={headerStart}>
+      <Header siteName={siteName} pkg={pkg} basePath={basePath}>
         {headerControls}
       </Header>
       {/* Mobile TOC bar: sticky just under the header (h-16 → top-16), below the

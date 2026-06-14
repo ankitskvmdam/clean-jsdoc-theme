@@ -14,16 +14,9 @@ export interface HeaderProps {
   pkg?: HeaderPkg;
   basePath?: string;
   children?: ComponentChildren;
-  /**
-   * Content rendered immediately after the brand, on ALL breakpoints (e.g. the
-   * language switcher) — distinct from `children` (the right-aligned controls
-   * that collapse into the mobile drawer). `shrink-0` so it never squeezes; the
-   * brand title truncates instead when space is tight.
-   */
-  start?: ComponentChildren;
 }
 
-export function Header({ siteName, pkg, basePath = '/', children, start }: HeaderProps) {
+export function Header({ siteName, pkg, basePath = '/', children }: HeaderProps) {
   return (
     <header class="sticky top-0 z-30 border-b border-(--clean-border) bg-background">
       <div class="mx-auto flex h-16 w-full min-w-0 max-w-screen-2xl items-center gap-4 px-4">
@@ -42,7 +35,6 @@ export function Header({ siteName, pkg, basePath = '/', children, start }: Heade
             containerClass="flex items-center rounded-lg p-1.5"
           />
         </a>
-        {start && <div class="flex shrink-0 items-center">{start}</div>}
         {pkg?.version && (
           <span class="shrink-0 rounded bg-(--clean-bg-muted) px-2 py-0.5 text-xs text-muted-foreground">
             v{pkg.version}

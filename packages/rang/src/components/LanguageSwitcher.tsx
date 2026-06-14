@@ -1,4 +1,4 @@
-import { Check, Globe } from 'lucide-preact';
+import { Check, Languages } from 'lucide-preact';
 import { useTranslation } from '@clean-jsdoc-theme/bhasha';
 import { buttonVariants } from './Button';
 import {
@@ -32,9 +32,10 @@ export interface LanguageSwitcherProps {
 }
 
 /**
- * The language switcher: a globe-triggered dropdown of links to the current
- * page in each available locale. It sits in the header controls beside
- * `ThemeToggle` and inside the mobile-nav drawer. Because locale is a build
+ * The language switcher: a dropdown of links to the current page in each
+ * available locale, triggered by the lucide `Languages` icon. On desktop it
+ * sits in the header controls just after the search button; on mobile it stays
+ * in the bar, immediately before the nav-drawer (sidebar) trigger. Because locale is a build
  * dimension (each locale is a separate static site), this is a *navigation*
  * control — every option is an `<a href>`, never a live DOM swap.
  *
@@ -53,7 +54,7 @@ export function LanguageSwitcher({ locales, current }: LanguageSwitcherProps) {
           aria-label={t('chrome.language.label')}
           title={t('chrome.language.label')}
         >
-          <Globe size={18} aria-hidden="true" />
+          <Languages size={18} aria-hidden="true" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" label={t('chrome.language.label')}>
           {locales.map((locale) => {
