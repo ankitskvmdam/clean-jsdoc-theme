@@ -111,15 +111,17 @@ output.
 | [`clean-jsdoc-theme`](https://www.npmjs.com/package/clean-jsdoc-theme) | The JSDoc template. JSDoc calls its `publish()` bridge, which orchestrates setu → dwar and writes the files. | [JSDoc Getting Started](/theme/jsdoc-getting-started) | [GitHub](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/packages/clean-jsdoc-theme) |
 | [`@clean-jsdoc-theme/typedoc`](https://www.npmjs.com/package/@clean-jsdoc-theme/typedoc) | The TypeDoc plugin. Registers a `clean-jsdoc-theme` output that runs reflection → setu → dwar. | [TypeDoc Getting Started](/theme/typedoc-getting-started) | [GitHub](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/packages/typedoc) |
 
-### Reserved
+### Localization
 
-Published and reserved on npm but not yet usable — stubs under active
-development. See [Reserved packages](/packages/reserved) for what each will do.
+Ship your docs in multiple languages. **aadesh** is the `clean-jsdoc` CLI that
+drives the extract → translate → build workflow; **bhasha** is the pure,
+browser-safe i18n core (catalog, translator, key scheme) the build and the UI
+share. Start with [Localize your docs](/guides/localize-your-docs).
 
-| Package | Planned role |
-| --- | --- |
-| [`@clean-jsdoc-theme/aadesh`](https://www.npmjs.com/package/@clean-jsdoc-theme/aadesh) | A `clean-jsdoc` build / i18n workflow CLI. |
-| [`@clean-jsdoc-theme/bhasha`](https://www.npmjs.com/package/@clean-jsdoc-theme/bhasha) | Localization / i18n tooling (extract → translate → build). |
+| Package | What it does | Docs | Source |
+| --- | --- | --- | --- |
+| [`@clean-jsdoc-theme/aadesh`](https://www.npmjs.com/package/@clean-jsdoc-theme/aadesh) | The `clean-jsdoc` localization CLI — extract, translate-prompt, validate, and build one site per locale. | [Overview](/packages/aadesh-overview) | [GitHub](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/packages/aadesh) |
+| [`@clean-jsdoc-theme/bhasha`](https://www.npmjs.com/package/@clean-jsdoc-theme/bhasha) | The isomorphic i18n core: chrome catalog, `t` translator, `LanguageProvider`, and the API key/hash scheme. | [Overview](/packages/bhasha-overview) | [GitHub](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/packages/bhasha) |
 
 The boundaries are deliberately one-way — **setu** never imports dwar or rang,
 **dwar** consumes only the `SiteManifest`, and `render()` is pure — which is what
