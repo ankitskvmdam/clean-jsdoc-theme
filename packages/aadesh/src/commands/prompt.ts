@@ -7,7 +7,12 @@
 
 import { resolve } from 'node:path';
 import type { DiagnosticBag } from '@clean-jsdoc-theme/utils';
-import { DEFAULT_ARTIFACTS_DIR, readLocaleFile } from '../artifacts';
+import {
+  DEFAULT_ARTIFACTS_DIR,
+  promptsDirPath,
+  readLocaleFile,
+  writePromptFiles,
+} from '../artifacts';
 import { loadLocaleConfig, type Pipeline } from '../config';
 import { extractManifest, type PipelineRunner } from '../extract-manifest';
 import { buildTemplate } from '../locale';
@@ -31,17 +36,23 @@ export interface LocalePrompts {
   count: number;
   /** Self-contained prompt chunks (empty when the locale is fully translated). */
   chunks: string[];
+  /** Absolute paths of the Markdown prompt files written for this locale, in order. */
+  files: string[];
 }
 
 export interface PromptResult {
   prompts: LocalePrompts[];
+  /** Directory the prompt files were written under (the CLI points the user here). */
+  promptsDir?: string;
   diagnostics: DiagnosticBag;
   localized: boolean;
 }
 
 /**
- * Build the translation prompts. Returns per-locale chunks; the CLI prints them.
- * Throws only on hard setup errors (unreadable config, failed pipeline).
+ * Build the translation prompts and write each chunk to a Markdown file under
+ * `<dir>/prompts/` so the user can copy/paste or upload it straight to an LLM.
+ * Returns the per-locale chunks + written file paths; the CLI points the user at
+ * them. Throws only on hard setup errors (unreadable config, failed pipeline).
  */
 export async function runPrompt(opts: PromptOptions): Promise<PromptResult> {
   const pipeline = opts.pipeline ?? 'jsdoc';
@@ -86,12 +97,10 @@ export async function runPrompt(opts: PromptOptions): Promise<PromptResult> {
       continue;
     }
     const items = collectTranslatable(template, file);
-    prompts.push({
-      locale: code,
-      count: items.length,
-      chunks: buildPrompts({ locale: code, name, items, chunkSize: opts.chunkSize }),
-    });
+    const chunks = buildPrompts({ locale: code, name, items, chunkSize: opts.chunkSize });
+    const files = chunks.length > 0 ? await writePromptFiles(dir, code, chunks) : [];
+    prompts.push({ locale: code, count: items.length, chunks, files });
   }
 
-  return { prompts, diagnostics, localized: true };
+  return { prompts, promptsDir: promptsDirPath(dir), diagnostics, localized: true };
 }

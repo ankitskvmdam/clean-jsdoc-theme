@@ -99,7 +99,7 @@ export const COMMANDS: readonly InteractiveCommand[] = [
   {
     id: 'prompt',
     title: 'prompt',
-    description: 'Emit an LLM translation prompt for the untranslated + stale keys.',
+    description: 'Write an LLM translation prompt file per locale for the untranslated + stale keys.',
     options: [
       config,
       dir,
