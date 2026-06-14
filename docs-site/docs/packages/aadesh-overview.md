@@ -12,6 +12,13 @@ does the disk-bound, process-orchestrating half of i18n — the work that
 can't: spawning your JSDoc/TypeDoc pipeline, reading and writing the committable
 locale catalogs, and rendering one static site per locale.
 
+> [!NOTE]
+> **Why the name?** *aadesh* (आदेश) is Sanskrit/Hindi for **command / instruction**
+> — fitting for the project's command-line interface. It belongs to a family of
+> Sanskrit/Hindi-named internals: [setu](/packages/setu-overview) (bridge),
+> [rang](/packages/rang-overview) (color), [dwar](/packages/dwar-overview) (gateway),
+> and *aadesh* (command).
+
 The published binary is **`clean-jsdoc`**. Most projects use it through four
 subcommands (and an interactive menu when you run it with no arguments):
 

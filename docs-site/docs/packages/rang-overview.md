@@ -15,6 +15,14 @@ the hydratable **islands** that add progressive enhancement, the MDX element →
 component map, and the shadcn-style primitives styled with Tailwind utilities
 that reference CSS variables.
 
+> [!NOTE]
+> **Why the name?** *rang* (रंग) is Hindi/Sanskrit for **color** — apt for the
+> package that owns the theme's entire visual surface: layout, components, and
+> styling. It belongs to a family of Sanskrit/Hindi-named internals:
+> [setu](/packages/setu-overview) (bridge), *rang* (color),
+> [dwar](/packages/dwar-overview) (gateway), and
+> [aadesh](/packages/aadesh-overview) (command).
+
 The package depends only on the browser-safe contract package
 ([`@clean-jsdoc-theme/utils`](/packages/utils-overview)) plus
 [`preact`](https://preactjs.com/), [`class-variance-authority`](https://cva.style/),
