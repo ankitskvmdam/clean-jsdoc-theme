@@ -9,11 +9,20 @@
  * Covers API + chrome translations, per-locale output/base-path, and the
  * language switcher (the spec carries siteBasePath + the locale list). hreflang
  * tags and shared-asset content-hash dedup are the remaining sub-chunks.
+ *
+ * **Prose track (home page).** `opts.readme` reaches the bridge already rendered
+ * to HTML, so the theme can't swap it per locale — the file must be chosen before
+ * the pipeline runs. So for each locale we look for a sibling `README.<locale>.md`
+ * next to the configured README and, when present, pass `--readme <that>` to the
+ * spawned pipeline (jsdoc `-R/--readme` / typedoc `--readme` — a CLI flag wins
+ * over the config). Missing variant → the configured README (the default-locale
+ * home). Whole-file translation; no bridge change needed.
  */
 
+import { existsSync } from 'node:fs';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { basename, dirname, extname, join, resolve } from 'node:path';
 import {
   BUILD_SPEC_VERSION,
   normalizeBasePath,
@@ -24,6 +33,16 @@ import { localeBuildPlan } from '../build-plan';
 import { loadLocaleConfig, type Pipeline } from '../config';
 import { BUILD_ENV_VAR, runPipeline, type PipelineRunner } from '../extract-manifest';
 import { localeMessages } from '../locale';
+
+/**
+ * The per-locale README variant path: insert `.<locale>` before the extension
+ * (`docs/README.md` + `ja` → `docs/README.ja.md`). `readmeAbs` is the resolved
+ * configured README; the variant sits in the same directory.
+ */
+function localeReadmePath(readmeAbs: string, locale: string): string {
+  const ext = extname(readmeAbs);
+  return join(dirname(readmeAbs), `${basename(readmeAbs, ext)}.${locale}${ext}`);
+}
 
 export interface BuildOptions {
   configPath: string;
@@ -55,10 +74,8 @@ export interface BuildResult {
  */
 export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   const pipeline = opts.pipeline ?? 'jsdoc';
-  const { configPath, cwd, locales, destination, basePath, diagnostics } = await loadLocaleConfig(
-    opts.configPath,
-    pipeline
-  );
+  const { configPath, cwd, locales, destination, basePath, readme, diagnostics } =
+    await loadLocaleConfig(opts.configPath, pipeline);
 
   if (!locales) {
     return { results: [], diagnostics, localized: false };
@@ -128,11 +145,21 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         'utf8'
       );
 
+      // Prose track: localize the home page by overriding the README when a
+      // `README.<locale>.md` sits next to the configured one. Missing → the
+      // configured README (English home) renders for this locale.
+      let extraArgs: string[] | undefined;
+      if (readme) {
+        const variant = localeReadmePath(resolve(cwd, readme), target.code);
+        if (existsSync(variant)) extraArgs = ['--readme', variant];
+      }
+
       const run = await runPipeline({
         pipeline,
         configPath,
         cwd,
         env: { ...process.env, [BUILD_ENV_VAR]: specPath },
+        extraArgs,
         runner: opts.runner,
       });
       const ok = run.code === 0;

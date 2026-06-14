@@ -215,15 +215,22 @@ describe('runBuild', () => {
     destination: string;
     basePath: string;
   }>;
-  // A fake build pipeline: capture the per-locale spec the theme would render.
-  const buildRunner: PipelineRunner = async ({ env }) => {
+  // Captured spawn argv per locale (the spec carries the locale code).
+  let runs: Array<{ locale: string; args: string[] }>;
+  // A fake build pipeline: capture the per-locale spec the theme would render + its argv.
+  const buildRunner: PipelineRunner = async ({ args, env }) => {
     const path = env['CLEAN_JSDOC_THEME_BUILD'];
-    if (path) specs.push(JSON.parse(await readFile(path, 'utf8')));
+    if (path) {
+      const spec = JSON.parse(await readFile(path, 'utf8'));
+      specs.push(spec);
+      runs.push({ locale: spec.locale, args });
+    }
     return { code: 0, stderr: '' };
   };
 
   beforeEach(async () => {
     specs = [];
+    runs = [];
     await writeConfig({ locales: ['en', 'fr'], defaultLocale: 'en', destination: 'dist' });
     await runExtract({ configPath, dir: localesDir, runner: fakeRunner }); // seed catalogs
   });
@@ -250,6 +257,30 @@ describe('runBuild', () => {
     expect(frSpec.destination.replace(/\\/g, '/').endsWith('/fr')).toBe(true);
     expect(frSpec.apiMessages['api.X#description']).toBe('<p>FR</p>');
     expect(frSpec.chromeMessages['chrome.search.placeholder']).toBe('Rechercher…');
+  });
+
+  it('passes --readme <variant> only for a locale that has a README.<locale>.md', async () => {
+    await writeConfig({
+      locales: ['en', 'fr'],
+      defaultLocale: 'en',
+      destination: 'dist',
+      readme: 'README.md',
+    });
+    await writeFile(join(root, 'README.md'), '# Home', 'utf8');
+    await writeFile(join(root, 'README.fr.md'), '# Accueil', 'utf8'); // fr variant only
+
+    const res = await runBuild({ configPath, dir: localesDir, runner: buildRunner });
+    expect(res.results.every((r) => r.ok)).toBe(true);
+
+    const enArgs = runs.find((r) => r.locale === 'en')!.args;
+    const frArgs = runs.find((r) => r.locale === 'fr')!.args;
+
+    // en has no README.en.md → no override (the configured README is the English home).
+    expect(enArgs).not.toContain('--readme');
+    // fr has a variant → `--readme <abs path to README.fr.md>`.
+    const i = frArgs.indexOf('--readme');
+    expect(i).toBeGreaterThanOrEqual(0);
+    expect(frArgs[i + 1].replace(/\\/g, '/').endsWith('/README.fr.md')).toBe(true);
   });
 
   it('errors (no build) when the config has no output directory', async () => {

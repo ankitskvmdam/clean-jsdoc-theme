@@ -88,11 +88,23 @@ export async function runPipeline(opts: {
   configPath: string;
   cwd: string;
   env: NodeJS.ProcessEnv;
+  /**
+   * Extra CLI flags appended after the pipeline args (e.g. `--readme <path>` to
+   * override the home-page source per locale). jsdoc/typedoc both let a CLI flag
+   * win over the config value, so this is how a localized build swaps in a
+   * `README.<locale>.md`.
+   */
+  extraArgs?: string[];
   runner?: PipelineRunner;
 }): Promise<RunResult> {
   const runner = opts.runner ?? defaultRunner;
   const { command, args } = pipelineArgv(opts.pipeline, opts.configPath);
-  return runner({ command, args, cwd: opts.cwd, env: opts.env });
+  return runner({
+    command,
+    args: [...args, ...(opts.extraArgs ?? [])],
+    cwd: opts.cwd,
+    env: opts.env,
+  });
 }
 
 export interface ExtractManifestOptions {

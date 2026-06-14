@@ -27,6 +27,11 @@ export interface LoadedConfig {
   destination: string | undefined;
   /** The base-path prefix from the config (theme opts `basePath`). */
   basePath: string | undefined;
+  /**
+   * The README path from the config (jsdoc `opts.readme` / typedoc `readme`),
+   * relative to the config dir. Used to find per-locale variants for the home page.
+   */
+  readme: string | undefined;
   /** Findings from reading + validating the config. */
   diagnostics: DiagnosticBag;
 }
@@ -83,6 +88,17 @@ export async function loadLocaleConfig(
         ? opts.destination
         : undefined;
   const basePath = typeof opts.basePath === 'string' ? opts.basePath : undefined;
+  // README path: jsdoc keeps it in `opts.readme`; typedoc uses a top-level `readme`.
+  const readmeRaw = pipeline === 'typedoc' ? config.readme : opts.readme;
+  const readme = typeof readmeRaw === 'string' && readmeRaw.length > 0 ? readmeRaw : undefined;
 
-  return { configPath: abs, cwd: dirname(abs), locales, destination, basePath, diagnostics };
+  return {
+    configPath: abs,
+    cwd: dirname(abs),
+    locales,
+    destination,
+    basePath,
+    readme,
+    diagnostics,
+  };
 }
