@@ -1,0 +1,90 @@
+{
+  "_version": 1,
+  "chrome": {
+    "common": {
+      "close": "बंद करें"
+    },
+    "search": {
+      "placeholder": "दस्तावेज़ खोजें...",
+      "inputLabel": "खोज क्वेरी",
+      "triggerLabel": "खोजें",
+      "triggerTitle": "खोजें (Ctrl K)",
+      "dialogLabel": "खोजें",
+      "resultsLabel": "खोज परिणाम",
+      "recent": "हाल के",
+      "favorite": "पसंदीदा",
+      "noResults": "कोई मेल खाता पृष्ठ नहीं",
+      "emptyHint": "दस्तावेज़ खोजने के लिए टाइप करें",
+      "inContext": "{context} में",
+      "footerHint": "नेविगेट करने के लिए ↑↓ · खोलने के लिए ↵ · बंद करने के लिए esc",
+      "saveToFavorites": "{title} को पसंदीदा में सहेजें",
+      "removeFromFavorites": "{title} को पसंदीदा से हटाएं",
+      "removeFromRecent": "{title} को हाल की खोजों से हटाएं"
+    },
+    "footer": {
+      "repository": "रिपॉज़िटरी"
+    },
+    "nav": {
+      "docNavLabel": "दस्तावेज़ नेविगेशन",
+      "open": "नेविगेशन खोलें",
+      "menu": "मेन्यू",
+      "drawerLabel": "नेविगेशन"
+    },
+    "toc": {
+      "label": "इस पृष्ठ पर"
+    },
+    "theme": {
+      "toggleTitle": "थीम बदलें",
+      "switchTo": "{mode} थीम पर स्विच करें"
+    },
+    "settings": {
+      "title": "सेटिंग्स",
+      "fontSize": "फ़ॉन्ट आकार",
+      "lineSpacing": "पंक्ति अंतराल",
+      "sizeSmall": "छोटा",
+      "sizeDefault": "डिफ़ॉल्ट",
+      "sizeLarge": "बड़ा",
+      "spacingCompact": "संक्षिप्त",
+      "spacingDefault": "डिफ़ॉल्ट",
+      "spacingRelaxed": "विस्तृत"
+    },
+    "pager": {
+      "label": "पृष्ठ क्रमांकन",
+      "previous": "पिछला",
+      "next": "अगला"
+    },
+    "code": {
+      "variantsLabel": "कोड वेरिएंट",
+      "copy": "क्लिपबोर्ड पर कॉपी करें",
+      "copied": "क्लिपबोर्ड पर कॉपी किया गया",
+      "copyShort": "कॉपी करें",
+      "copiedShort": "",
+      "copyLink": ""
+    },
+    "copyPage": {
+      "moreOptions": "",
+      "menuLabel": "",
+      "copyTitle": "",
+      "copied": "",
+      "copyDescription": "",
+      "viewTitle": "",
+      "viewDescription": "",
+      "claudeTitle": "",
+      "claudeDescription": "",
+      "chatgptTitle": "",
+      "chatgptDescription": "",
+      "perplexityTitle": "",
+      "perplexityDescription": ""
+    },
+    "embed": {
+      "load": "",
+      "loadTitled": "",
+      "posterTitle": "",
+      "loadPill": ""
+    },
+    "language": {
+      "label": ""
+    }
+  },
+  "api": {}
+}

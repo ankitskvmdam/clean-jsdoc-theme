@@ -1,0 +1,90 @@
+{
+  "_version": 1,
+  "chrome": {
+    "common": {
+      "close": "閉じる"
+    },
+    "search": {
+      "placeholder": "ドキュメントを検索...",
+      "inputLabel": "検索クエリ",
+      "triggerLabel": "検索",
+      "triggerTitle": "検索 (Ctrl K)",
+      "dialogLabel": "検索",
+      "resultsLabel": "検索結果",
+      "recent": "最近",
+      "favorite": "お気に入り",
+      "noResults": "一致するページがありません",
+      "emptyHint": "入力してドキュメントを検索",
+      "inContext": "{context} 内",
+      "footerHint": "↑↓ で移動 · ↵ で開く · esc で閉じる",
+      "saveToFavorites": "{title} をお気に入りに保存",
+      "removeFromFavorites": "{title} をお気に入りから削除",
+      "removeFromRecent": "{title} を最近の検索から削除"
+    },
+    "footer": {
+      "repository": "リポジトリ"
+    },
+    "nav": {
+      "docNavLabel": "ドキュメントナビゲーション",
+      "open": "ナビゲーションを開く",
+      "menu": "メニュー",
+      "drawerLabel": "ナビゲーション"
+    },
+    "toc": {
+      "label": "このページの内容"
+    },
+    "theme": {
+      "toggleTitle": "テーマを切り替え",
+      "switchTo": "{mode} テーマに切り替え"
+    },
+    "settings": {
+      "title": "設定",
+      "fontSize": "フォントサイズ",
+      "lineSpacing": "行間",
+      "sizeSmall": "小",
+      "sizeDefault": "標準",
+      "sizeLarge": "大",
+      "spacingCompact": "狭い",
+      "spacingDefault": "標準",
+      "spacingRelaxed": "広い"
+    },
+    "pager": {
+      "label": "ページ送り",
+      "previous": "前へ",
+      "next": "次へ"
+    },
+    "code": {
+      "variantsLabel": "コードバリアント",
+      "copy": "クリップボードにコピー",
+      "copied": "クリップボードにコピーしました",
+      "copyShort": "コピー",
+      "copiedShort": "",
+      "copyLink": ""
+    },
+    "copyPage": {
+      "moreOptions": "",
+      "menuLabel": "",
+      "copyTitle": "",
+      "copied": "",
+      "copyDescription": "",
+      "viewTitle": "",
+      "viewDescription": "",
+      "claudeTitle": "",
+      "claudeDescription": "",
+      "chatgptTitle": "",
+      "chatgptDescription": "",
+      "perplexityTitle": "",
+      "perplexityDescription": ""
+    },
+    "embed": {
+      "load": "",
+      "loadTitled": "",
+      "posterTitle": "",
+      "loadPill": ""
+    },
+    "language": {
+      "label": ""
+    }
+  },
+  "api": {}
+}
