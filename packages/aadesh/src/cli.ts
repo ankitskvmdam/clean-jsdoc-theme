@@ -62,7 +62,7 @@ program
   .action((o: { config: string; dir?: string; locale?: string; typedoc: boolean }) => execBuild(o));
 
 // No subcommand → the interactive menu (the welcome screen + command picker).
-// Any args (a subcommand, `--help`, `--version`) flow through commander as usual.
+// Any args (a subcommand or `--help`) flow through commander as usual.
 if (process.argv.slice(2).length === 0) {
   runInteractive().catch((err: unknown) => {
     console.error((err as Error).message);
