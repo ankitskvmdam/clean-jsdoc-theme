@@ -1238,6 +1238,8 @@ interface BuildSpec {
   basePath: string;
   siteBasePath: string;
   locales: Array<{ code: string; name?: string }>;
+  /** Absolute path of this locale's docs-overlay dir (`docs.<locale>/`), if any. */
+  docsDir?: string;
 }
 
 /**
@@ -1269,6 +1271,7 @@ function readBuildSpec(): BuildSpec | null {
     basePath: spec.basePath,
     siteBasePath: typeof spec.siteBasePath === 'string' ? spec.siteBasePath : '/',
     locales: Array.isArray(spec.locales) ? spec.locales : [],
+    ...(typeof spec.docsDir === 'string' && spec.docsDir ? { docsDir: spec.docsDir } : {}),
   };
 }
 
@@ -1409,14 +1412,33 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
       // logo and custom assets. SVGs are additionally collected as inline markup
       // so render() can drop them into the page (theme-toggle-aware) — see
       // RenderOptions.inlineSvgs.
-      const resolved = docsDir
+      const base = docsDir
         ? await resolveDocImages(rawDocs, docsDir)
-        : { docs: rawDocs, files: [], inlineSvgs: {} };
+        : { docs: rawDocs, files: [] as OutputFile[], inlineSvgs: {} as Record<string, string> };
+
+      // Per-locale docs overlay (build mode): a locale's `docs.<locale>/` files
+      // win over the default docs by path; default-only docs fall back, so a
+      // partially-translated docs tree still renders the untranslated pages.
+      // Each set's images resolve against its OWN root, then merge.
+      if (!buildSpec?.docsDir) {
+        return {
+          sources: srcs,
+          docs: base.docs,
+          docImageFiles: base.files,
+          inlineSvgs: base.inlineSvgs,
+        };
+      }
+      const localeRaw = await collectDocs(buildSpec.docsDir);
+      const locale = await resolveDocImages(localeRaw, buildSpec.docsDir);
+      const byPath = new Map(base.docs.map((d) => [d.path, d]));
+      for (const d of locale.docs) byPath.set(d.path, d); // locale wins
+      const filesByPath = new Map<string, OutputFile>();
+      for (const f of [...base.files, ...locale.files]) filesByPath.set(f.path, f); // dedupe
       return {
         sources: srcs,
-        docs: resolved.docs,
-        docImageFiles: resolved.files,
-        inlineSvgs: resolved.inlineSvgs,
+        docs: [...byPath.values()].sort((a, b) => a.path.localeCompare(b.path)),
+        docImageFiles: [...filesByPath.values()],
+        inlineSvgs: { ...base.inlineSvgs, ...locale.inlineSvgs },
       };
     }
   );

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdtemp, rm, writeFile, readFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile, readFile } from 'node:fs/promises';
 import { writeFile as writeFileCb } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -214,6 +214,7 @@ describe('runBuild', () => {
     chromeMessages: Record<string, string>;
     destination: string;
     basePath: string;
+    docsDir?: string;
   }>;
   // Captured spawn argv per locale (the spec carries the locale code).
   let runs: Array<{ locale: string; args: string[] }>;
@@ -299,6 +300,24 @@ describe('runBuild', () => {
     const note = res.diagnostics.list.find((d) => d.code === 'home/readme-fallback');
     expect(note?.level).toBe('info');
     expect(note?.path).toBe('fr');
+  });
+
+  it('passes docsDir only for a non-default locale that has a docs.<locale>/ overlay', async () => {
+    await writeConfig({
+      locales: ['en', 'fr'],
+      defaultLocale: 'en',
+      destination: 'dist',
+      docs: 'docs',
+    });
+    await mkdir(join(root, 'docs.fr'), { recursive: true }); // fr overlay only
+
+    const res = await runBuild({ configPath, dir: localesDir, runner: buildRunner });
+    expect(res.results.every((r) => r.ok)).toBe(true);
+
+    const en = specs.find((s) => s.locale === 'en')!;
+    const fr = specs.find((s) => s.locale === 'fr')!;
+    expect(en.docsDir).toBeUndefined(); // default locale never overlays
+    expect(fr.docsDir?.replace(/\\/g, '/').endsWith('/docs.fr')).toBe(true);
   });
 
   it('errors (no build) when the config has no output directory', async () => {

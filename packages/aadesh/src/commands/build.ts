@@ -17,6 +17,13 @@
  * spawned pipeline (jsdoc `-R/--readme` / typedoc `--readme` — a CLI flag wins
  * over the config). Missing variant → the configured README (the default-locale
  * home). Whole-file translation; no bridge change needed.
+ *
+ * **Prose track (multi-page docs).** Unlike the README, `opts.docs` is a directory
+ * the bridge reads itself, so it's overridden through the build spec rather than a
+ * CLI flag: a non-default locale with a sibling `docs.<locale>/` directory has its
+ * absolute path passed as `BuildSpec.docsDir`, and the bridge overlays those files
+ * over the default docs by path (a translated page wins; an untranslated one falls
+ * back to the default). Partial translation is fine.
  */
 
 import { existsSync } from 'node:fs';
@@ -42,6 +49,16 @@ import { localeMessages } from '../locale';
 function localeReadmePath(readmeAbs: string, locale: string): string {
   const ext = extname(readmeAbs);
   return join(dirname(readmeAbs), `${basename(readmeAbs, ext)}.${locale}${ext}`);
+}
+
+/**
+ * The per-locale docs-overlay directory: a sibling of the configured docs dir
+ * with `.<locale>` appended (`docs` + `ja` → `docs.ja`). The bridge overlays its
+ * files over the default docs by path, so a locale only needs to translate the
+ * pages it has — the rest fall back to the default docs.
+ */
+function localeDocsPath(docsAbs: string, locale: string): string {
+  return `${docsAbs}.${locale}`;
 }
 
 export interface BuildOptions {
@@ -74,7 +91,7 @@ export interface BuildResult {
  */
 export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   const pipeline = opts.pipeline ?? 'jsdoc';
-  const { configPath, cwd, locales, destination, basePath, readme, diagnostics } =
+  const { configPath, cwd, locales, destination, basePath, readme, docs, diagnostics } =
     await loadLocaleConfig(opts.configPath, pipeline);
 
   if (!locales) {
@@ -125,6 +142,16 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         chromeMessages = messages.chrome;
       }
 
+      // Prose track (multi-page docs): a non-default locale with a sibling
+      // `docs.<locale>/` overlay dir has its docs translated per-file; the bridge
+      // overlays them over the default docs. Default locale + no-overlay locales
+      // render the default docs.
+      let docsDir: string | undefined;
+      if (docs && !target.isDefault) {
+        const overlay = localeDocsPath(resolve(cwd, docs), target.code);
+        if (existsSync(overlay)) docsDir = overlay;
+      }
+
       const absDestination = resolve(cwd, target.destination);
       const specPath = join(specDir, `${target.code}.json`);
       await writeFile(
@@ -141,6 +168,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
           // feed the language switcher's cross-locale URLs.
           siteBasePath: siteBase,
           locales: locales.locales,
+          ...(docsDir ? { docsDir } : {}),
         }),
         'utf8'
       );

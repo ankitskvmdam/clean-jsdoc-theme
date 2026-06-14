@@ -32,6 +32,11 @@ export interface LoadedConfig {
    * relative to the config dir. Used to find per-locale variants for the home page.
    */
   readme: string | undefined;
+  /**
+   * The docs directory from the config (theme opt `docs`), relative to the config
+   * dir. Used to find a per-locale `docs.<locale>/` overlay directory.
+   */
+  docs: string | undefined;
   /** Findings from reading + validating the config. */
   diagnostics: DiagnosticBag;
 }
@@ -91,6 +96,9 @@ export async function loadLocaleConfig(
   // README path: jsdoc keeps it in `opts.readme`; typedoc uses a top-level `readme`.
   const readmeRaw = pipeline === 'typedoc' ? config.readme : opts.readme;
   const readme = typeof readmeRaw === 'string' && readmeRaw.length > 0 ? readmeRaw : undefined;
+  // The docs directory is a theme opt either way (jsdoc `opts.docs` / typedoc
+  // `cleanJsdocTheme.docs`), already pulled into `opts` by `themeOpts`.
+  const docs = typeof opts.docs === 'string' && opts.docs.length > 0 ? opts.docs : undefined;
 
   return {
     configPath: abs,
@@ -99,6 +107,7 @@ export async function loadLocaleConfig(
     destination,
     basePath,
     readme,
+    docs,
     diagnostics,
   };
 }

@@ -168,4 +168,12 @@ export interface BuildSpec {
   siteBasePath: string;
   /** All configured locales (code + optional display name) — feeds the switcher. */
   locales: Array<{ code: string; name?: string }>;
+  /**
+   * Absolute path of this locale's docs-overlay directory (a sibling
+   * `docs.<locale>/` of the configured `opts.docs`), when one exists. The bridge
+   * overlays its files over the default docs by path — a translated doc wins, a
+   * missing one falls back to the default. Omitted when the locale has no overlay
+   * (the default-locale + untranslated locales render the default docs).
+   */
+  docsDir?: string;
 }
