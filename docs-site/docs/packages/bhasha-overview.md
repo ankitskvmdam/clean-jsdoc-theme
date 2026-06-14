@@ -13,6 +13,11 @@ language-neutral primitives that both the build and the **browser** rely on — 
 UI string catalog, the translator, the provider that scopes a locale per render,
 and the key scheme that gives every translatable string a stable identity.
 
+> [!NOTE]
+> **Why the name?** *bhasha* (भाषा) is Sanskrit/Hindi for **language** — fitting
+> for the package that holds the localization core: catalogs, the translator, and
+> the per-locale provider.
+
 > bhasha is imported by [rang](/packages/rang-overview), which bundles into the
 > browser, so it ships **zero `node:*`** — it's fully isomorphic. The disk-bound
 > half (extract / build / translate) lives in [aadesh](/packages/aadesh-overview).
