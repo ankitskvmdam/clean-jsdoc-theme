@@ -4,8 +4,8 @@ JSDoc → SiteManifest. Validates a salty doclet collection, walks the
 documentable kinds, and emits the structured `SiteManifest` that dwar consumes.
 Zero rendering knowledge — no HTML, no JSX, no file I/O.
 
-For the full module map, layering rules, and extension guide, see
-[`docs/architecture.md`](./docs/architecture.md).
+For the full module map, layering rules, and the wider pipeline, see the
+repo's [`docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md).
 
 ## Public API
 
@@ -65,6 +65,14 @@ params special case; class/interface walk the inheritance chain). On top of that
 - **events / enums / constants** render as member sections within their parent page.
 - The project **README** becomes the home page; **tutorials** become guide pages;
   documented **source files** become read-only viewer pages.
+- A **docs directory** (`opts.docs`) of Markdown/HTML — the filesystem layout (plus
+  optional YAML frontmatter) drives the slug and sidebar group.
+- **Callouts, steps, tabs, and embeds** lower to capitalized MDX JSX nodes
+  (`<Callout>` / `<Steps>` / `<Tabs>` / `<Embed>`) that round-trip to rang
+  components; `@iframe` tags and ` ```iframe ` fences share one config grammar.
+- **i18n slots** — every translatable string (descriptions, summaries, example
+  captions, param/return descriptions) is emitted as a `SlotEntry` for aadesh to
+  translate, and `stampSite` re-renders a locale with its translations.
 
 ### Link resolution
 

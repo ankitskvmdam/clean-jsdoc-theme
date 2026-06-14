@@ -1,28 +1,109 @@
 # @clean-jsdoc-theme/aadesh
 
-> **Stub — reserved for a future v5.x.** Not a usable CLI yet.
+The **localization CLI** for clean-jsdoc-theme. aadesh does the disk-bound,
+process-orchestrating half of i18n — the work the pure, browser-safe core
+[`@clean-jsdoc-theme/bhasha`](../bhasha) deliberately can't: spawning your
+JSDoc/TypeDoc pipeline, reading and writing the committable locale catalogs, and
+rendering one static site per locale.
 
-The reserved command-line surface for clean-jsdoc-theme — the eventual home of a
-`clean-jsdoc` binary for workflows that live outside `jsdoc -c` (scaffolding,
-config validation, and driving the i18n cycle in
-[`@clean-jsdoc-theme/bhasha`](../bhasha)).
+The published binary is **`clean-jsdoc`**.
 
-The supported way to build docs today is JSDoc's own template flag:
+> You only need aadesh to ship **multiple languages**. A single-language site is
+> built directly by JSDoc (`jsdoc -t clean-jsdoc-theme`) or the TypeDoc plugin —
+> no CLI required.
+
+## Install
 
 ```sh
-jsdoc -t clean-jsdoc-theme -c jsdoc.json
+pnpm add -D clean-jsdoc-theme @clean-jsdoc-theme/aadesh
 ```
 
-## Current contents
+## The workflow
 
-```ts
-import { AADESH_PACKAGE_VERSION } from '@clean-jsdoc-theme/aadesh';
+Locale is a **build dimension**, not a runtime toggle: each language renders to
+its own static output (the default locale unprefixed, the others under
+`/<locale>`), and the language switcher is navigation between them. aadesh reads
+its locale config from the **same `jsdoc.json` opts** you already use
+(`opts.locales` + `opts.defaultLocale`) — there's no separate config file.
+
+```sh
+clean-jsdoc extract    # sync the per-locale catalogs from your docs
+clean-jsdoc prompt     # (optional) write LLM translation prompt files
+clean-jsdoc validate   # preflight the catalogs
+clean-jsdoc build      # render one site per locale
 ```
 
-`src/cli.ts` is a placeholder entry that prints a stub banner. When the CLI
-lands it will be a thin wrapper over the boundary packages — it won't
-re-implement generation or rendering, so programmatic users can keep importing
-[`setu`](../setu) / [`dwar`](../dwar) directly.
+Run `clean-jsdoc` with **no subcommand** for a guided interactive menu (a welcome
+banner, a command picker, option prompts with defaults, and an offer to save the
+equivalent command to your `package.json` scripts).
+
+### The commands
+
+- **`extract`** — runs the pipeline in *extract mode*, collects every translatable
+  string (UI chrome + API descriptions/summaries/example captions + parameter and
+  return descriptions), and syncs them into one committable JSON per locale.
+  Re-runs **merge**: new keys are added, source changes mark a key *stale*, and
+  removed keys are soft-deleted (kept until `--prune`). A no-change run is a zero
+  git diff.
+- **`prompt`** — writes a ready-to-use LLM translation prompt **file** per locale
+  under `clean-jsdoc-theme-artifacts/locales/prompts/` (`<code>.md`, or
+  `<code>.part-01.md`, … chunked for context limits) covering only the new and
+  stale keys, with the exact return-JSON shape and instructions to preserve
+  markdown / `{@link}` / code fences / `{var}` tokens. Paste each file into an LLM
+  or upload the `.md` directly. The directory is git-ignored and regenerated each
+  run.
+- **`validate`** — preflights the catalogs: a coverage gap warns, a malformation
+  (broken markdown-in-slot, a dropped `{var}` token, unknown keys) errors.
+  Resilient by default; `--strict` escalates warnings to failures for CI.
+- **`build`** — template + filled catalogs → setu stamp → dwar render → one site
+  per locale. Owns the cross-locale index that feeds the language switcher and the
+  `hreflang` alternates.
+
+Every prompt has a flag equivalent (`--config`, `--dir`, `--prune`, `--strict`,
+`--locale`, `--chunk-size`, `--typedoc`), so the CLI runs headless in CI.
+
+## The artifacts
+
+Catalogs live under `clean-jsdoc-theme-artifacts/locales/`, **committed** to your
+repo and edited by hand (or by your translation workflow). Each locale is two
+files:
+
+```
+clean-jsdoc-theme-artifacts/locales/
+  en.json        # editable: _version + chrome / api translations
+  en.meta.json   # auto-managed: source hashes + soft-deleted keys (don't touch)
+  ja.json
+  ja.meta.json
+```
+
+The editable file holds only what a translator changes; the staleness hashes and
+soft-deletes live in the sibling `.meta.json` so machine bookkeeping never
+clutters the file you review.
+
+## Prose localization
+
+Beyond the keyed catalogs, free-form prose is localized by **file**, no extraction
+needed:
+
+- **Home page** — a sibling `README.<locale>.md` next to your configured README is
+  rendered as that locale's home (falling back to the default README when absent).
+- **Docs** — a sibling `docs.<locale>/` directory overlays your `opts.docs` per
+  file: a translated page wins, a missing one falls back to the default doc.
+
+## Today's limits
+
+The TypeDoc bridge supports **extract** but not yet the localized **build** path —
+per-locale rendering is JSDoc-only for now. Tutorials prose and shared-asset
+content-hash dedup across locales are tracked follow-ups.
+
+## Documentation
+
+- **Walkthrough** — [Localize your docs](https://ankdev.me/clean-jsdoc-theme/guides/localize-your-docs)
+- **CLI in depth** — [aadesh overview](https://ankdev.me/clean-jsdoc-theme/packages/aadesh-overview)
+- **i18n core** — [`@clean-jsdoc-theme/bhasha`](../bhasha)
+
+A runnable three-locale (en / ja / hi) reference lives at
+[`examples/with-i18n-example`](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/examples/with-i18n-example).
 
 ## License
 

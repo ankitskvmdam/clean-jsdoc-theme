@@ -1,14 +1,15 @@
 # @clean-jsdoc-theme/bhasha
 
-> **Phase 0 — i18n core.** The pure, browser-safe runtime for localization. The
-> disk-bound extract/translate/build pipeline lives in `@clean-jsdoc-theme/aadesh`.
+> The pure, browser-safe i18n runtime. The disk-bound extract/translate/build
+> pipeline lives in [`@clean-jsdoc-theme/aadesh`](../aadesh).
 
 The internationalization core for clean-jsdoc-theme. bhasha is **isomorphic** —
 zero `node:*` — because rang bundles it into the browser. It holds the
 translatable chrome catalog, the `t` translator and its fallback chain, the
 `LanguageProvider` static carrier, the API-slot key scheme, and the validation
-primitives. (See `packages/aadesh-bhasha-plan.md` for the full localization
-design.)
+primitives. setu and aadesh import its key/hash helpers so they agree on slot
+identity + staleness. The full localization walkthrough is in
+[Localize your docs](https://ankdev.me/clean-jsdoc-theme/guides/localize-your-docs).
 
 ## What's here
 
