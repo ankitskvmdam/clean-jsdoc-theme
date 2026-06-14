@@ -146,12 +146,22 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       );
 
       // Prose track: localize the home page by overriding the README when a
-      // `README.<locale>.md` sits next to the configured one. Missing → the
-      // configured README (English home) renders for this locale.
+      // `README.<locale>.md` sits next to the configured one. The DEFAULT locale
+      // always uses the configured README (the canonical source home), so it's
+      // never overridden. A non-default locale with no variant falls back to that
+      // source home — reported (info) so the gap is visible, not silent.
       let extraArgs: string[] | undefined;
-      if (readme) {
+      if (readme && !target.isDefault) {
         const variant = localeReadmePath(resolve(cwd, readme), target.code);
-        if (existsSync(variant)) extraArgs = ['--readme', variant];
+        if (existsSync(variant)) {
+          extraArgs = ['--readme', variant];
+        } else {
+          diagnostics.info(
+            'home/readme-fallback',
+            `${target.code}: no README.${target.code}.md — the home page uses the default README.`,
+            { path: target.code }
+          );
+        }
       }
 
       const run = await runPipeline({

@@ -259,7 +259,7 @@ describe('runBuild', () => {
     expect(frSpec.chromeMessages['chrome.search.placeholder']).toBe('Rechercher…');
   });
 
-  it('passes --readme <variant> only for a locale that has a README.<locale>.md', async () => {
+  it('passes --readme <variant> for a non-default locale, never for the default', async () => {
     await writeConfig({
       locales: ['en', 'fr'],
       defaultLocale: 'en',
@@ -267,7 +267,8 @@ describe('runBuild', () => {
       readme: 'README.md',
     });
     await writeFile(join(root, 'README.md'), '# Home', 'utf8');
-    await writeFile(join(root, 'README.fr.md'), '# Accueil', 'utf8'); // fr variant only
+    await writeFile(join(root, 'README.en.md'), '# Default home', 'utf8'); // present but ignored
+    await writeFile(join(root, 'README.fr.md'), '# Accueil', 'utf8');
 
     const res = await runBuild({ configPath, dir: localesDir, runner: buildRunner });
     expect(res.results.every((r) => r.ok)).toBe(true);
@@ -275,12 +276,29 @@ describe('runBuild', () => {
     const enArgs = runs.find((r) => r.locale === 'en')!.args;
     const frArgs = runs.find((r) => r.locale === 'fr')!.args;
 
-    // en has no README.en.md → no override (the configured README is the English home).
+    // The default locale always uses the configured README — a README.en.md is
+    // NOT honored (the canonical source home stays config-driven).
     expect(enArgs).not.toContain('--readme');
     // fr has a variant → `--readme <abs path to README.fr.md>`.
     const i = frArgs.indexOf('--readme');
     expect(i).toBeGreaterThanOrEqual(0);
     expect(frArgs[i + 1].replace(/\\/g, '/').endsWith('/README.fr.md')).toBe(true);
+  });
+
+  it('reports a fallback (info) + passes no --readme when a non-default locale lacks a variant', async () => {
+    await writeConfig({
+      locales: ['en', 'fr'],
+      defaultLocale: 'en',
+      destination: 'dist',
+      readme: 'README.md',
+    });
+    await writeFile(join(root, 'README.md'), '# Home', 'utf8'); // no README.fr.md
+
+    const res = await runBuild({ configPath, dir: localesDir, runner: buildRunner });
+    expect(runs.find((r) => r.locale === 'fr')!.args).not.toContain('--readme');
+    const note = res.diagnostics.list.find((d) => d.code === 'home/readme-fallback');
+    expect(note?.level).toBe('info');
+    expect(note?.path).toBe('fr');
   });
 
   it('errors (no build) when the config has no output directory', async () => {
