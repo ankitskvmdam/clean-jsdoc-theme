@@ -145,11 +145,22 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       // Prose track (multi-page docs): a non-default locale with a sibling
       // `docs.<locale>/` overlay dir has its docs translated per-file; the bridge
       // overlays them over the default docs. Default locale + no-overlay locales
-      // render the default docs.
+      // render the default docs. (Per-file fallback inside an overlay — a locale
+      // dir missing one page — is silent: the bridge stays pure/log-free and
+      // aadesh can't see the dir's contents from here; only a wholly-absent
+      // overlay is reported below.)
       let docsDir: string | undefined;
       if (docs && !target.isDefault) {
         const overlay = localeDocsPath(resolve(cwd, docs), target.code);
-        if (existsSync(overlay)) docsDir = overlay;
+        if (existsSync(overlay)) {
+          docsDir = overlay;
+        } else {
+          diagnostics.info(
+            'docs/overlay-fallback',
+            `${target.code}: no docs.${target.code}/ — the docs render in the default language.`,
+            { path: target.code }
+          );
+        }
       }
 
       const absDestination = resolve(cwd, target.destination);

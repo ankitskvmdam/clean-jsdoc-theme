@@ -1151,6 +1151,34 @@ export async function resolveDocImages(
   return { docs: out, files, inlineSvgs };
 }
 
+/** The output of {@link resolveDocImages}: resolved docs + their image assets. */
+export interface ResolvedDocs {
+  docs: DocInput[];
+  files: OutputFile[];
+  inlineSvgs: Record<string, string>;
+}
+
+/**
+ * Overlay a locale's resolved docs over the default set (the per-locale docs
+ * track). A locale page WINS over the default page with the same `path`; a
+ * default page absent from the locale falls back (stays). Image asset files are
+ * deduped by served path (same content-hashed name → one copy), and inline SVGs
+ * merge locale-over-default. Output docs are re-sorted by `path` so the manifest
+ * stays stable regardless of merge order. Pure — the I/O already happened in the
+ * two {@link resolveDocImages} calls that produced `base`/`locale`.
+ */
+export function overlayDocs(base: ResolvedDocs, locale: ResolvedDocs): ResolvedDocs {
+  const byPath = new Map(base.docs.map((d) => [d.path, d]));
+  for (const d of locale.docs) byPath.set(d.path, d); // locale wins; default falls back
+  const filesByPath = new Map<string, OutputFile>();
+  for (const f of [...base.files, ...locale.files]) filesByPath.set(f.path, f); // dedupe
+  return {
+    docs: [...byPath.values()].sort((a, b) => a.path.localeCompare(b.path)),
+    files: [...filesByPath.values()],
+    inlineSvgs: { ...base.inlineSvgs, ...locale.inlineSvgs },
+  };
+}
+
 /**
  * Validate `opts.docGroups` into a clean `string[]`, or `undefined` to fall back
  * to setu's default doc-group order. Mirrors {@link normalizeSectionOrder}:
@@ -1430,15 +1458,12 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
       }
       const localeRaw = await collectDocs(buildSpec.docsDir);
       const locale = await resolveDocImages(localeRaw, buildSpec.docsDir);
-      const byPath = new Map(base.docs.map((d) => [d.path, d]));
-      for (const d of locale.docs) byPath.set(d.path, d); // locale wins
-      const filesByPath = new Map<string, OutputFile>();
-      for (const f of [...base.files, ...locale.files]) filesByPath.set(f.path, f); // dedupe
+      const merged = overlayDocs(base, locale);
       return {
         sources: srcs,
-        docs: [...byPath.values()].sort((a, b) => a.path.localeCompare(b.path)),
-        docImageFiles: [...filesByPath.values()],
-        inlineSvgs: { ...base.inlineSvgs, ...locale.inlineSvgs },
+        docs: merged.docs,
+        docImageFiles: merged.files,
+        inlineSvgs: merged.inlineSvgs,
       };
     }
   );

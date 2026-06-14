@@ -309,7 +309,8 @@ describe('runBuild', () => {
       destination: 'dist',
       docs: 'docs',
     });
-    await mkdir(join(root, 'docs.fr'), { recursive: true }); // fr overlay only
+    await mkdir(join(root, 'docs.fr'), { recursive: true });
+    await writeFile(join(root, 'docs.fr', 'getting-started.md'), '# Démarrage'); // a real overlay
 
     const res = await runBuild({ configPath, dir: localesDir, runner: buildRunner });
     expect(res.results.every((r) => r.ok)).toBe(true);
@@ -318,6 +319,21 @@ describe('runBuild', () => {
     const fr = specs.find((s) => s.locale === 'fr')!;
     expect(en.docsDir).toBeUndefined(); // default locale never overlays
     expect(fr.docsDir?.replace(/\\/g, '/').endsWith('/docs.fr')).toBe(true);
+  });
+
+  it('reports a docs fallback (info) when a non-default locale has no overlay dir', async () => {
+    await writeConfig({
+      locales: ['en', 'fr'],
+      defaultLocale: 'en',
+      destination: 'dist',
+      docs: 'docs',
+    }); // no docs.fr/
+
+    const res = await runBuild({ configPath, dir: localesDir, runner: buildRunner });
+    expect(specs.find((s) => s.locale === 'fr')!.docsDir).toBeUndefined();
+    const note = res.diagnostics.list.find((d) => d.code === 'docs/overlay-fallback');
+    expect(note?.level).toBe('info');
+    expect(note?.path).toBe('fr');
   });
 
   it('errors (no build) when the config has no output directory', async () => {

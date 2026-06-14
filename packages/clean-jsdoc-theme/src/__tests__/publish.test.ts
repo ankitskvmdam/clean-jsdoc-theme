@@ -5,6 +5,7 @@ import { afterAll, beforeAll, describe, it, expect, vi } from 'vitest';
 import {
   collectDocs,
   resolveDocImages,
+  overlayDocs,
   computeRelPaths,
   hasMarkdownPlugin,
   normalizeColors,
@@ -13,6 +14,36 @@ import {
   normalizeSectionOrder,
   outputSourceFilesEnabled,
 } from '../publish';
+
+describe('overlayDocs (per-locale docs overlay)', () => {
+  const doc = (path: string, content: string) => ({ path, content, type: 'markdown' as const });
+  const file = (p: string, c: string) => ({ path: p, contents: c });
+
+  it('locale page wins, default-only page falls back, output sorted by path', () => {
+    const base = {
+      docs: [doc('getting-started', '# GS en'), doc('configuration', '# Config en')],
+      files: [],
+      inlineSvgs: {},
+    };
+    const locale = { docs: [doc('getting-started', '# GS ja')], files: [], inlineSvgs: {} };
+    const merged = overlayDocs(base, locale);
+    expect(merged.docs.map((d) => d.path)).toEqual(['configuration', 'getting-started']); // sorted
+    expect(merged.docs.find((d) => d.path === 'getting-started')!.content).toBe('# GS ja'); // locale wins
+    expect(merged.docs.find((d) => d.path === 'configuration')!.content).toBe('# Config en'); // fallback
+  });
+
+  it('dedupes identical image assets by served path; keeps distinct ones', () => {
+    const base = { docs: [], files: [file('_assets/a.111.png', 'X')], inlineSvgs: { '/a': '<svg/>' } };
+    const locale = {
+      docs: [],
+      files: [file('_assets/a.111.png', 'X'), file('_assets/b.222.png', 'Y')],
+      inlineSvgs: { '/b': '<svg/>' },
+    };
+    const merged = overlayDocs(base, locale);
+    expect(merged.files.map((f) => f.path).sort()).toEqual(['_assets/a.111.png', '_assets/b.222.png']);
+    expect(merged.inlineSvgs).toEqual({ '/a': '<svg/>', '/b': '<svg/>' });
+  });
+});
 
 describe('hasMarkdownPlugin', () => {
   it('returns true for the canonical "plugins/markdown" entry', () => {
