@@ -69,7 +69,6 @@ The working example lives in [`examples/basic/`](./examples/basic) — `pnpm ins
 - ✅ Tests across utils / setu / rang / dwar / bridge. Lint and typecheck clean.
 - ✅ Configurable theme tokens — `colors` / `darkColors` palette overrides (per-key merge over the OKLCH defaults) plus heading / body / mono font selection, wired through to the rendered CSS variables. Component-level overrides land before stable.
 - ✅ Multi-language (i18n) builds — declare `opts.locales`, then the `clean-jsdoc` CLI (`@clean-jsdoc-theme/aadesh`, on `@clean-jsdoc-theme/bhasha`) extracts/validates/builds one static site per locale: translated UI chrome + API descriptions, per-locale `README.<locale>.md` home + `docs.<locale>/` overlays, per-language fonts, and a header language switcher.
-- 🚧 Dogfood docs site (`docs-site/`) — prose-first `opts.docs` build with real content; still in progress.
 
 See [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) for the full project structure.
 
@@ -92,7 +91,7 @@ clean-jsdoc-theme/
 │   ├── basic/                 # Working JSDoc fixture
 │   ├── typedoc-basic/         # Working TypeDoc fixture
 │   └── with-i18n-example/     # 3-locale (en/ja/hi) localization fixture
-├── docs-site/                 # Dogfood site (in progress)
+├── docs-site/                 # Dogfood site (the published docs)
 ├── SKILLS/                    # LLM agent skills — drop into an assistant for theme expertise
 ├── docs/ARCHITECTURE.md       # Full project structure
 ├── MIGRATION.md               # v4 → v5 migration guide
