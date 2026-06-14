@@ -8,7 +8,8 @@
     "build:docs": "clean-jsdoc build",
     "docs": "pnpm run build:theme && clean-jsdoc build",
     "serve": "serve dist",
-    "clean-node-modules": "node ../../scripts/clean.mjs node_modules"
+    "clean-node-modules": "node ../../scripts/clean.mjs node_modules",
+    "i18n:extract": "clean-jsdoc extract"
   },
   "devDependencies": {
     "@clean-jsdoc-theme/aadesh": "workspace:^",
