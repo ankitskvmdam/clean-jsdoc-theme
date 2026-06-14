@@ -58,32 +58,32 @@
       "copy": "クリップボードにコピー",
       "copied": "クリップボードにコピーしました",
       "copyShort": "コピー",
-      "copiedShort": "",
-      "copyLink": ""
+      "copiedShort": "コピーしました！",
+      "copyLink": "このセクションへのリンクをコピー"
     },
     "copyPage": {
-      "moreOptions": "",
-      "menuLabel": "",
-      "copyTitle": "",
-      "copied": "",
-      "copyDescription": "",
-      "viewTitle": "",
-      "viewDescription": "",
-      "claudeTitle": "",
-      "claudeDescription": "",
-      "chatgptTitle": "",
-      "chatgptDescription": "",
-      "perplexityTitle": "",
-      "perplexityDescription": ""
+      "moreOptions": "その他のコピーオプション",
+      "menuLabel": "ページコピーのオプション",
+      "copyTitle": "ページをコピー",
+      "copied": "コピーしました",
+      "copyDescription": "LLM 向けにページを Markdown としてコピー",
+      "viewTitle": "Markdown を表示",
+      "viewDescription": "このページをプレーンテキストで表示",
+      "claudeTitle": "Claude で開く",
+      "claudeDescription": "このページについて Claude に質問",
+      "chatgptTitle": "ChatGPT で開く",
+      "chatgptDescription": "このページについて ChatGPT に質問",
+      "perplexityTitle": "Perplexity で開く",
+      "perplexityDescription": "このページについて Perplexity に質問"
     },
     "embed": {
-      "load": "",
-      "loadTitled": "",
-      "posterTitle": "",
-      "loadPill": ""
+      "load": "埋め込みコンテンツを読み込む",
+      "loadTitled": "埋め込みコンテンツを読み込む: {title}",
+      "posterTitle": "埋め込みコンテンツ",
+      "loadPill": "読み込む"
     },
     "language": {
-      "label": ""
+      "label": "言語"
     }
   },
   "api": {}
