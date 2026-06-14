@@ -164,6 +164,14 @@ describe('validateThemeOpts — per-locale fonts', () => {
     expect(warn?.hint).toContain('heading');
   });
 
+  it('treats a leading-colon key (empty locale) as an unknown slot, not a locale', async () => {
+    const { value, diagnostics } = await validateThemeOpts({
+      opts: { fonts: { ':heading': 'Roboto' } },
+    });
+    expect(value.fonts.locales).toBeUndefined(); // not grouped under a "" locale
+    expect(byCode(diagnostics.list, 'fonts/unknown-key')?.path).toBe('fonts.:heading');
+  });
+
   it('never existence-checks a per-locale mono', async () => {
     const { diagnostics } = await validateThemeOpts({
       opts: { fonts: { 'ja:mono': 'Menlo' } },
