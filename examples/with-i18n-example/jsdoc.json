@@ -13,6 +13,14 @@
     "template": "./node_modules/clean-jsdoc-theme/dist",
     "readme": "./README.md",
     "siteName": "Widget Kit",
+    "fonts": {
+      "heading": "Source Serif 4",
+      "body": "Roboto",
+      "ja:heading": "Noto Sans JP",
+      "ja:body": "Noto Sans JP",
+      "hi:heading": "Noto Sans Devanagari",
+      "hi:body": "Noto Sans Devanagari"
+    },
     "locales": [
       { "code": "en", "name": "English" },
       { "code": "ja", "name": "日本語" },
