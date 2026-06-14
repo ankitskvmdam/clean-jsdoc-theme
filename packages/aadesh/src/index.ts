@@ -1,13 +1,16 @@
 /**
- * `@clean-jsdoc-theme/aadesh` — the localization CLI + its building blocks.
- *
- * Phase 3 (in progress): the locale-artifact core (template + extract/merge),
- * the config reader, the disk + pipeline layers, and the `extract` / `validate` /
- * `prompt` commands. The heavy per-locale `build` (stamp → render → /<locale>/
- * sites + cross-locale index) lands in a later chunk.
+ * `@clean-jsdoc-theme/aadesh` — the localization CLI + its building blocks: the
+ * locale-artifact core (template + extract/merge), the config reader, the disk +
+ * pipeline layers, and the `extract` / `prompt` / `validate` / `build` commands.
  */
 
-export const AADESH_PACKAGE_VERSION = '5.0.0-alpha.0';
+/**
+ * Injected from package.json at build time (see tsup.config.ts `define`). The
+ * `typeof` guard keeps it safe under vitest, which doesn't apply the define.
+ */
+declare const __PKG_VERSION__: string | undefined;
+export const AADESH_PACKAGE_VERSION =
+  typeof __PKG_VERSION__ === 'string' ? __PKG_VERSION__ : '0.0.0-dev';
 
 export * from './locale';
 export * from './artifacts';
