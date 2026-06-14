@@ -14,10 +14,7 @@ and returns all of that as in-memory files. It is the render-side counterpart to
 
 > [!NOTE]
 > **Why the name?** *dwar* (द्वार) is Sanskrit/Hindi for **door / gateway** — the
-> gateway the `SiteManifest` passes through to become the finished HTML site. It
-> belongs to a family of Sanskrit/Hindi-named internals:
-> [setu](/packages/setu-overview) (bridge), [rang](/packages/rang-overview) (color),
-> *dwar* (gateway), and [aadesh](/packages/aadesh-overview) (command).
+> gateway the `SiteManifest` passes through to become the finished HTML site.
 
 The single entry point is
 [`render(manifest, opts)`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/src/index.ts):

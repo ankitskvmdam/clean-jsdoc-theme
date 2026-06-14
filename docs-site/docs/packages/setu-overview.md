@@ -15,10 +15,7 @@ manifest into HTML.
 > [!NOTE]
 > **Why the name?** *setu* (सेतु) is Sanskrit for **bridge** — fitting, since this
 > package bridges your raw doclets to the structured `SiteManifest` the renderer
-> consumes. It belongs to a family of Sanskrit/Hindi-named internals:
-> *setu* (bridge), [rang](/packages/rang-overview) (color),
-> [dwar](/packages/dwar-overview) (gateway), and
-> [aadesh](/packages/aadesh-overview) (command).
+> consumes.
 
 The single entry point is
 [`generateSite(collection, opts)`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/index.ts):

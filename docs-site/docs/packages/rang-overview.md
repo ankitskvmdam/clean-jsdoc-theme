@@ -18,10 +18,7 @@ that reference CSS variables.
 > [!NOTE]
 > **Why the name?** *rang* (रंग) is Hindi/Sanskrit for **color** — apt for the
 > package that owns the theme's entire visual surface: layout, components, and
-> styling. It belongs to a family of Sanskrit/Hindi-named internals:
-> [setu](/packages/setu-overview) (bridge), *rang* (color),
-> [dwar](/packages/dwar-overview) (gateway), and
-> [aadesh](/packages/aadesh-overview) (command).
+> styling.
 
 The package depends only on the browser-safe contract package
 ([`@clean-jsdoc-theme/utils`](/packages/utils-overview)) plus
