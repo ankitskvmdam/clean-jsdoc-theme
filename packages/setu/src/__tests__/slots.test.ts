@@ -21,6 +21,8 @@ const DOCLETS = [
     memberof: 'Widget',
     scope: 'instance',
     description: '<p>Runs the widget.</p>',
+    params: [{ name: 'times', type: { names: ['number'] }, description: '<p>How many times.</p>' }],
+    returns: [{ type: { names: ['boolean'] }, description: '<p>Whether it ran.</p>' }],
     examples: ['<caption>Basic use</caption>\nwidget.run();'],
     meta: { filename: 'widget.js', lineno: 5, path: '/src', code: {} },
   },
@@ -33,6 +35,8 @@ function collection(): unknown {
 const CLASS_DESC = apiSlotKey('Widget', 'description');
 const RUN_DESC = apiSlotKey('Widget#run', 'description');
 const RUN_CAPTION = apiSlotKey('Widget#run', ['examples', '0', 'caption']);
+const RUN_PARAM_DESC = apiSlotKey('Widget#run', ['params', 'times', 'description']);
+const RUN_RETURN_DESC = apiSlotKey('Widget#run', ['returns', '0', 'description']);
 
 describe('slot template (generateSite)', () => {
   it('collects a slot per translatable prose field, keyed + hashed', () => {
@@ -48,9 +52,19 @@ describe('slot template (generateSite)', () => {
     expect(byKey.get(RUN_CAPTION)!.sourceText).toBe('Basic use');
   });
 
-  it('does NOT slot the example code (locale-invariant)', () => {
+  it('slots a parameter description (keyed by param name) and a return description (by index)', () => {
+    const { slots = [] } = generateSite(collection());
+    const byKey = new Map(slots.map((s) => [s.key, s]));
+
+    expect(byKey.get(RUN_PARAM_DESC)?.sourceText).toBe('<p>How many times.</p>');
+    expect(byKey.get(RUN_RETURN_DESC)?.sourceText).toBe('<p>Whether it ran.</p>');
+  });
+
+  it('does NOT slot the example code, param NAME, or type string (locale-invariant)', () => {
     const { slots = [] } = generateSite(collection());
     expect(slots.some((s) => s.sourceText.includes('widget.run();'))).toBe(false);
+    // The param name + type are identifiers, never their own slots.
+    expect(slots.some((s) => s.sourceText === 'times' || s.sourceText === 'number')).toBe(false);
   });
 });
 
@@ -89,5 +103,20 @@ describe('stampSite (per-locale)', () => {
 
     expect(body).toContain('Un widget.'); // translated
     expect(body).toContain('Runs the widget.'); // untranslated → source
+  });
+
+  it('substitutes translated param + return descriptions (names/types stay invariant)', () => {
+    const manifest = stampSite(collection(), {
+      [RUN_PARAM_DESC]: '<p>Combien de fois.</p>',
+      [RUN_RETURN_DESC]: '<p>Si elle a tourné.</p>',
+    });
+    const body = manifest.pages.find((p) => p.slug === 'widget')!.body;
+
+    expect(body).toContain('Combien de fois.');
+    expect(body).toContain('Si elle a tourné.');
+    expect(body).not.toContain('How many times.');
+    // The param name + type render unchanged alongside the translated prose.
+    expect(body).toContain('times');
+    expect(body).toContain('number');
   });
 });

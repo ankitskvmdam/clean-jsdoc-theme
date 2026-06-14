@@ -229,7 +229,14 @@ export function containerViewToMdast(
   // `classdesc` (already shown), and a constructor-only comment is shown via the
   // body's `classdesc ?? description` fallback — so this never duplicates.
   if (view.kind === 'class' && !view.doclet.hideconstructor) {
-    const ctorParams = paramsList(view.constructorParams);
+    // Constructor params belong to the class symbol; key them under
+    // `constructor.params.*` so their descriptions translate distinctly from any
+    // member-level params on the same longname.
+    const ctorParams = paramsList(
+      view.constructorParams,
+      { slots: options.slots, longname: view.doclet.longname },
+      'constructor.params'
+    );
     // The separately-documented constructor description (only when a class has
     // BOTH a classdesc and a constructor description). Translatable like any
     // description, keyed `…#constructor.description`.

@@ -313,54 +313,116 @@ export function relationsBlocks(doclet: TDoclet): RootContent[] {
 // ── Params (incl. nested object-destructured params) ────────────────────────
 
 /**
+ * The owning symbol + slot resolver needed to translate a param/return/throws
+ * **description**. Only the prose is a slot — names, type strings, optional/rest
+ * markers, and default values stay locale-invariant. Omitted (or with no
+ * resolver) → descriptions render from source, byte-identical to before.
+ */
+export interface ParamSlotCtx {
+  slots?: SlotResolver;
+  longname?: string;
+}
+
+/**
+ * Resolve one param/return description to its render string: collect it for the
+ * extractable template and (when stamping) substitute the locale's translation.
+ * Keyed `<fieldPrefix>.<discriminator>.description` under the owning longname,
+ * so a parameter is `params.timeout.description` and a return is
+ * `returns.0.description`.
+ */
+function descriptionInline(
+  description: string | null | undefined,
+  ctx: ParamSlotCtx | undefined,
+  fieldPrefix: string,
+  discriminator: string
+) {
+  const source =
+    resolveSlotText(
+      ctx?.slots,
+      ctx?.longname,
+      [fieldPrefix, discriminator, 'description'],
+      description
+    ) ?? description;
+  return htmlToMdastInline(source);
+}
+
+/**
  * `params` array rendered as a nested list. Object-destructured params (e.g.
  * `name: "options.timeout"`) are nested under their parent.
  *
  * Each item: `` `name` `` (`type`, optional, default: `value`) — description.
+ * Descriptions are translatable slots (keyed by `fieldPrefix` + param name)
+ * when a {@link ParamSlotCtx} with a resolver is supplied.
  */
-export function paramsList(params: readonly TDocletParam[] | undefined): List | null {
+export function paramsList(
+  params: readonly TDocletParam[] | undefined,
+  ctx?: ParamSlotCtx,
+  fieldPrefix = 'params'
+): List | null {
   if (!params || params.length === 0) return null;
-  return ul(nestParamItems(params));
+  return ul(nestParamItems(params, ctx, fieldPrefix));
 }
 
 /**
  * `@property` list. Same nested shape as {@link paramsList} — object-property
  * entries (`options.timeout`) nest under their parent. `properties` carries the
  * param-compatible fields (name/type/optional/defaultvalue/description), so it
- * reuses the same item builder.
+ * reuses the same item builder (slots keyed under `properties.*`).
  */
-export function propertiesList(properties: readonly TDocletParam[] | undefined): List | null {
-  return paramsList(properties);
+export function propertiesList(
+  properties: readonly TDocletParam[] | undefined,
+  ctx?: ParamSlotCtx
+): List | null {
+  return paramsList(properties, ctx, 'properties');
 }
 
 /**
  * Same shape as {@link paramsList} but for `@returns`. The `name` field is
- * usually absent — just type + description.
+ * usually absent — just type + description (a translatable slot keyed by index).
  */
-export function returnsList(returns: readonly TDocletParam[] | undefined): List | null {
-  return labeledTypedList(returns);
+export function returnsList(
+  returns: readonly TDocletParam[] | undefined,
+  ctx?: ParamSlotCtx
+): List | null {
+  return labeledTypedList(returns, ctx, 'returns');
 }
 
 /** Same as {@link returnsList} for `@yields`. */
-export function yieldsList(yields: readonly TDocletParam[] | undefined): List | null {
-  return labeledTypedList(yields);
+export function yieldsList(
+  yields: readonly TDocletParam[] | undefined,
+  ctx?: ParamSlotCtx
+): List | null {
+  return labeledTypedList(yields, ctx, 'yields');
 }
 
 /** Same as {@link returnsList} for `@throws` / `exceptions`. */
-export function throwsList(exceptions: readonly TDocletParam[] | undefined): List | null {
-  return labeledTypedList(exceptions);
+export function throwsList(
+  exceptions: readonly TDocletParam[] | undefined,
+  ctx?: ParamSlotCtx
+): List | null {
+  return labeledTypedList(exceptions, ctx, 'throws');
 }
 
-function labeledTypedList(items: readonly TDocletParam[] | undefined): List | null {
+function labeledTypedList(
+  items: readonly TDocletParam[] | undefined,
+  ctx: ParamSlotCtx | undefined,
+  fieldPrefix: string
+): List | null {
   if (!items || items.length === 0) return null;
-  return ul(items.map((it) => li(p(...typedDescriptionInline(it)))));
+  return ul(items.map((it, i) => li(p(...typedDescriptionInline(it, ctx, fieldPrefix, i)))));
 }
 
-function typedDescriptionInline(item: TDocletParam) {
+function typedDescriptionInline(
+  item: TDocletParam,
+  ctx: ParamSlotCtx | undefined,
+  fieldPrefix: string,
+  index: number
+) {
   const out = [];
   const t = typeExpressionString(item.type);
   if (t) out.push(inlineCode(t));
-  const desc = htmlToMdastInline(item.description);
+  // No name on a return/throws entry → key by position.
+  const desc = descriptionInline(item.description, ctx, fieldPrefix, String(index));
   if (desc.length > 0) {
     if (out.length > 0) out.push(text(' — '));
     out.push(...desc);
@@ -368,14 +430,18 @@ function typedDescriptionInline(item: TDocletParam) {
   return out;
 }
 
-function nestParamItems(params: readonly TDocletParam[]): ListItem[] {
+function nestParamItems(
+  params: readonly TDocletParam[],
+  ctx: ParamSlotCtx | undefined,
+  fieldPrefix: string
+): ListItem[] {
   // Group nested `options.timeout` under `options`. JSDoc lists them flat but
   // in declaration order; we walk and build a name → ListItem map.
   const items: ListItem[] = [];
   const byName = new Map<string, ListItem>();
 
   for (const param of params) {
-    const item = paramListItem(param);
+    const item = paramListItem(param, ctx, fieldPrefix);
     const name = param.name ?? '';
     byName.set(name, item);
 
@@ -399,7 +465,11 @@ function nestParamItems(params: readonly TDocletParam[]): ListItem[] {
   return items;
 }
 
-function paramListItem(param: TDocletParam): ListItem {
+function paramListItem(
+  param: TDocletParam,
+  ctx: ParamSlotCtx | undefined,
+  fieldPrefix: string
+): ListItem {
   const line: Paragraph['children'] = [];
 
   if (param.name) line.push(inlineCode(param.name));
@@ -415,7 +485,9 @@ function paramListItem(param: TDocletParam): ListItem {
     line.push(text(`(${flags.join(', ')})`));
   }
 
-  const desc = htmlToMdastInline(param.description);
+  // The param NAME is the slot discriminator (stable across reorders, unlike an
+  // index); nested `options.timeout` keeps its dotted name.
+  const desc = descriptionInline(param.description, ctx, fieldPrefix, param.name ?? '');
   if (desc.length > 0) {
     if (line.length > 0) line.push(text(' — '));
     line.push(...desc);
@@ -688,28 +760,31 @@ export function docletBlocks(
     blocks.push(p(strong(text('Alias:')), text(' '), inlineCode(doclet.alias)));
   }
 
+  // Owning symbol + resolver for the translatable param/return descriptions.
+  const slotCtx: ParamSlotCtx = { slots: options.slots, longname: doclet.longname };
+
   if (!skip.has('params')) {
-    const list = paramsList(doclet.params);
+    const list = paramsList(doclet.params, slotCtx);
     if (list) blocks.push(p(strong(text('Parameters'))), list);
   }
 
   if (!skip.has('properties')) {
-    const list = propertiesList(doclet.properties as readonly TDocletParam[] | undefined);
+    const list = propertiesList(doclet.properties as readonly TDocletParam[] | undefined, slotCtx);
     if (list) blocks.push(p(strong(text('Properties'))), list);
   }
 
   if (!skip.has('returns')) {
-    const list = returnsList(doclet.returns);
+    const list = returnsList(doclet.returns, slotCtx);
     if (list) blocks.push(p(strong(text('Returns'))), list);
   }
 
   if (!skip.has('yields')) {
-    const list = yieldsList(doclet.yields);
+    const list = yieldsList(doclet.yields, slotCtx);
     if (list) blocks.push(p(strong(text('Yields'))), list);
   }
 
   if (!skip.has('throws')) {
-    const list = throwsList(doclet.exceptions);
+    const list = throwsList(doclet.exceptions, slotCtx);
     if (list) blocks.push(p(strong(text('Throws'))), list);
   }
 
