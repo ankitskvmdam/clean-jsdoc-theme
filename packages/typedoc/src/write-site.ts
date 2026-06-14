@@ -36,7 +36,7 @@ import {
   toExtractManifest,
   validateThemeOpts,
 } from '@clean-jsdoc-theme/utils';
-import type { TDoclet, ValidatedFonts } from '@clean-jsdoc-theme/utils';
+import type { FontSet, TDoclet, ValidatedFonts } from '@clean-jsdoc-theme/utils';
 import { reflectionsToDoclets } from './reflection-to-doclets';
 import { markdownToHtml, partsToMarkdown } from './comment';
 import { writeOutputFiles } from './write-output-files';
@@ -86,10 +86,27 @@ const defaultTheme: ThemeConfig = {
  * `aiPrompt`/`copyPage` come straight off the block. Mirrors the JSDoc bridge's
  * `resolveTheme`.
  */
+/**
+ * Resolve the font triple for the active `locale`: a per-locale override wins,
+ * then the base font, then the theme default — per slot. With no locale (the
+ * current TypeDoc path, which has no localized-build mode yet) only the base +
+ * default apply. Mirrors the JSDoc bridge's `resolveFontSet`.
+ */
+function resolveFontSet(fonts: ValidatedFonts, locale: string | undefined) {
+  const base = defaultTheme.tokens.fonts;
+  const override = (locale && fonts.locales?.[locale]) || {};
+  return {
+    heading: override.heading ?? fonts.heading ?? base.heading,
+    body: override.body ?? fonts.body ?? base.body,
+    mono: override.mono ?? fonts.mono ?? base.mono,
+  };
+}
+
 function resolveTheme(
   block: CleanJsdocThemeBlock,
   siteName: SiteName | undefined,
-  fonts: ValidatedFonts
+  fonts: ValidatedFonts,
+  locale?: string
 ): ThemeConfig {
   const aiPrompt =
     typeof block.aiPrompt === 'string' && block.aiPrompt.trim() ? block.aiPrompt.trim() : undefined;
@@ -103,11 +120,7 @@ function resolveTheme(
     ...(pageNav ? { pageNav } : {}),
     tokens: {
       ...defaultTheme.tokens,
-      fonts: {
-        heading: fonts.heading ?? defaultTheme.tokens.fonts.heading,
-        body: fonts.body ?? defaultTheme.tokens.fonts.body,
-        mono: fonts.mono ?? defaultTheme.tokens.fonts.mono,
-      },
+      fonts: resolveFontSet(fonts, locale),
       ...(siteName ? { siteName } : {}),
     },
   };
@@ -480,6 +493,17 @@ export async function writeSite(
   const fonts: ValidatedFonts = { ...value.fonts };
   if (notGoogle.has('fonts.heading')) delete fonts.heading;
   if (notGoogle.has('fonts.body')) delete fonts.body;
+  // Same resilient drop for per-locale fonts (`fonts.ja:heading`).
+  if (fonts.locales) {
+    const cleaned: Record<string, FontSet> = {};
+    for (const [loc, set] of Object.entries(fonts.locales)) {
+      const s: FontSet = { ...set };
+      if (notGoogle.has(`fonts.${loc}:heading`)) delete s.heading;
+      if (notGoogle.has(`fonts.${loc}:body`)) delete s.body;
+      cleaned[loc] = s;
+    }
+    fonts.locales = cleaned;
+  }
 
   // Cache the island esbuild bundle across builds — see RenderOptions.islandCacheDir;
   // the dev/watch loop reuses it when rang/dwar are unchanged.

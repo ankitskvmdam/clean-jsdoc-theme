@@ -120,6 +120,60 @@ describe('validateThemeOpts — fonts', () => {
   });
 });
 
+describe('validateThemeOpts — per-locale fonts', () => {
+  it('groups `<locale>:slot` keys under `locales`, keeping the base separate', async () => {
+    const { value, diagnostics } = await validateThemeOpts({
+      opts: {
+        fonts: {
+          heading: 'Roboto',
+          body: 'Inter',
+          'ja:heading': 'Noto Sans JP',
+          'hi:body': 'Noto Sans Devanagari',
+        },
+      },
+      fontResolver: resolverReturning('exists'),
+    });
+    expect(value.fonts).toEqual({
+      heading: 'Roboto',
+      body: 'Inter',
+      locales: {
+        ja: { heading: 'Noto Sans JP' },
+        hi: { body: 'Noto Sans Devanagari' },
+      },
+    });
+    expect(diagnostics.hasErrors()).toBe(false);
+  });
+
+  it('existence-checks a per-locale heading and reports it against its key path', async () => {
+    const { diagnostics } = await validateThemeOpts({
+      opts: { fonts: { 'ja:heading': 'NotARealFont' } },
+      fontResolver: resolverReturning('missing'),
+    });
+    const err = byCode(diagnostics.list, 'fonts/not-google');
+    expect(err?.level).toBe('error');
+    expect(err?.path).toBe('fonts.ja:heading');
+  });
+
+  it('warns on an unknown slot after a locale prefix, suggesting a real slot', async () => {
+    const { diagnostics } = await validateThemeOpts({
+      opts: { fonts: { 'ja:heding': 'Noto Sans JP' } },
+    });
+    const warn = byCode(diagnostics.list, 'fonts/unknown-key');
+    expect(warn?.level).toBe('warning');
+    expect(warn?.path).toBe('fonts.ja:heding');
+    expect(warn?.hint).toContain('heading');
+  });
+
+  it('never existence-checks a per-locale mono', async () => {
+    const { diagnostics } = await validateThemeOpts({
+      opts: { fonts: { 'ja:mono': 'Menlo' } },
+      fontResolver: resolverReturning('missing'),
+    });
+    expect(byCode(diagnostics.list, 'fonts/not-google')).toBeUndefined();
+    expect(diagnostics.hasErrors()).toBe(false);
+  });
+});
+
 describe('validateThemeOpts — unknown-key policy', () => {
   it('suggest-typos flags a near-miss of a known key', async () => {
     const { diagnostics } = await validateThemeOpts({ opts: { siteNme: 'X' } });
