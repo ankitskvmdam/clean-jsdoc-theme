@@ -31,6 +31,10 @@ jobs:
       - run: pnpm build
       - run: pnpm test
       - run: pnpm typecheck
+      # Doc-consistency guard: package coverage, repository-layout paths, and
+      # island docs must match the code (scripts/check-docs.mjs). Pure Node, no
+      # build needed — but it's cheap, so it rides the already-installed job.
+      - run: pnpm check:docs
       # TODO: re-enable the style gates once docs-site formatting/lint is sorted.
       # Temporarily disabled — `format:check` was failing on un-formatted
       # docs-site files; deferred rather than blocking the release PR.
@@ -40,3 +44,21 @@ jobs:
       # NOTE: no per-PR changeset gate. Changesets are added when preparing a
       # release (the tag-triggered Release workflow publishes by package.json
       # version), not on every PR.
+
+  # Markdown link check (READMEs + the top-level guides). `--offline` only
+  # verifies relative/local paths exist — external URLs are skipped, so the job
+  # never flakes on network or rate limits. Scoped to the hand-maintained docs
+  # whose links are real file paths (docs-site prose uses site routes like
+  # `/theme/configuration`, which aren't files, so it's deliberately excluded).
+  docs-links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Markdown links
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: >-
+            --offline --no-progress
+            ./README.md ./MIGRATION.md ./docs/ARCHITECTURE.md
+            ./packages/*/README.md ./examples/*/README*.md
+          fail: true

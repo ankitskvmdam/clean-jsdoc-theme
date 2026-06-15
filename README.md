@@ -112,6 +112,7 @@ pnpm build         # build all packages
 pnpm test          # vitest across every package
 pnpm typecheck
 pnpm lint
+pnpm check:docs    # doc-consistency guard (package table, repo layout, island docs)
 ```
 
 To iterate on the example end-to-end:

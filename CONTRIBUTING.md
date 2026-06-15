@@ -11,6 +11,7 @@ pnpm build        # turbo run build (build first — test/typecheck depend on ar
 pnpm test         # turbo run test
 pnpm typecheck    # turbo run typecheck
 pnpm lint         # turbo run lint
+pnpm check:docs   # doc-consistency guard (package table, repo layout, island docs)
 pnpm format       # prettier --write .
 ```
 
@@ -20,7 +21,7 @@ dwar, plus `clean-jsdoc-theme`, `aadesh`, `bhasha`, `typedoc`).
 ## Pull requests
 
 - Branch off `master`.
-- Keep `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm format:check` green.
+- Keep `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm check:docs`, and `pnpm format:check` green.
 - **Add a changeset** for any change that affects a published package (see below).
 
 ## Releasing

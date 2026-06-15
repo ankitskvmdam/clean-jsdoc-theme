@@ -23,6 +23,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "turbo run typecheck",
+    "check:docs": "node scripts/check-docs.mjs",
     "clean": "pnpm -r --parallel run clean && node scripts/clean.mjs node_modules",
     "clean-node-modules": "pnpm -r --parallel run clean-node-modules && node scripts/clean.mjs node_modules",
     "changeset": "changeset",
