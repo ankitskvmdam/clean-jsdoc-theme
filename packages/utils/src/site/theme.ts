@@ -52,6 +52,14 @@ export interface ThemeTokens {
 }
 
 /**
+ * A single custom `<meta>` tag, expressed as its attribute map — each key/value
+ * pair becomes one HTML attribute (`{ name, content }`, `{ property, content }`,
+ * `{ "http-equiv", content }`, `{ charset }`, …). Emitted into `<head>` on every
+ * page (see `ThemeConfig.meta`).
+ */
+export type MetaTag = Record<string, string>;
+
+/**
  * One selectable action in the copy-page button's dropdown, in render order:
  * `copy` (copy markdown), `view` (open the .md), and the "Open in …" links.
  */
@@ -130,6 +138,16 @@ export interface ThemeConfig {
    * the default footer.
    */
   footer?: string;
+  /**
+   * Site-wide custom `<meta>` tags, emitted into every page's `<head>`. Each
+   * entry is an attribute map (`{ name, content }`, `{ property, content }`,
+   * etc.). dwar emits its own defaults (charset, viewport, the auto
+   * description) first, then these — de-duping by identifying attribute
+   * (`name` / `property` / `http-equiv` / `charset`) so an author tag replaces
+   * the theme's competing default rather than duplicating it. Values are
+   * escaped; invalid attribute names are dropped. Site-wide (no per-page meta).
+   */
+  meta?: MetaTag[];
   /**
    * Inline custom CSS. Emitted as a `<style>` in `<head>` AFTER the theme
    * stylesheet (and after any `customCssLinks`), so it can override theme

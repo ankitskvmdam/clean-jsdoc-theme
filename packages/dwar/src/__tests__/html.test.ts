@@ -71,6 +71,66 @@ describe('renderHtmlDocument — custom CSS/JS', () => {
   });
 });
 
+describe('renderHtmlDocument — custom <meta> tags', () => {
+  it('emits author meta tags in <head> with escaped values', () => {
+    const html = doc({
+      meta: [
+        { name: 'keywords', content: 'jsdoc, typescript' },
+        { property: 'og:title', content: 'Fast & "typed" <docs>' },
+      ],
+    });
+    expect(html).toContain('<meta name="keywords" content="jsdoc, typescript" />');
+    expect(html).toContain(
+      '<meta property="og:title" content="Fast &amp; &quot;typed&quot; &lt;docs&gt;" />'
+    );
+    // meta lives in <head>.
+    expect(html.indexOf('og:title')).toBeLessThan(html.indexOf('</head>'));
+  });
+
+  it('neutralises a value that tries to break out of the tag', () => {
+    const html = doc({ meta: [{ name: 'x', content: '"><script>alert(1)</script>' }] });
+    expect(html).not.toContain('"><script>alert(1)');
+    expect(html).toContain('content="&quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;"');
+  });
+
+  it('drops attributes whose names are not simple HTML attribute names', () => {
+    const html = doc({ meta: [{ name: 'ok', 'x" onmouseover="alert(1)': 'y' }] });
+    expect(html).toContain('<meta name="ok" />');
+    expect(html).not.toContain('onmouseover');
+  });
+
+  it('lets an author description replace the theme default (exactly one)', () => {
+    const page: Page = {
+      slug: 'x',
+      frontmatter: { title: 'X', kind: 'class', description: 'Auto excerpt' },
+      body: '',
+      headings: [],
+    };
+    const html = doc({ page, meta: [{ name: 'description', content: 'Hand-written' }] });
+    expect(html).toContain('<meta name="description" content="Hand-written" />');
+    expect(html).not.toContain('Auto excerpt');
+    expect(html.match(/name="description"/g)).toHaveLength(1);
+  });
+
+  it('lets an author charset/viewport replace the theme defaults (no duplicate)', () => {
+    const html = doc({
+      meta: [
+        { charset: 'utf-8' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1, maximum-scale=5' },
+      ],
+    });
+    expect(html.match(/charset=/g)).toHaveLength(1);
+    expect(html.match(/name="viewport"/g)).toHaveLength(1);
+    expect(html).toContain('maximum-scale=5');
+  });
+
+  it('emits the theme charset/viewport unchanged when no meta is given', () => {
+    const html = doc({});
+    expect(html).toContain('<meta charset="utf-8" />');
+    expect(html).toContain('<meta name="viewport" content="width=device-width, initial-scale=1" />');
+  });
+});
+
 describe('htmlPathFor', () => {
   it('returns index.html for an empty slug', () => {
     expect(htmlPathFor('')).toBe('index.html');

@@ -65,6 +65,11 @@
         "icon": "lucide:code-xml"
       }
     ],
-    "footer": "<div class=\"site-footer\">© 2026 clean-jsdoc-theme — built with care. <a href=\"https://github.com/ankitskvmdam/clean-jsdoc-theme\">GitHub</a></div>"
+    "footer": "<div class=\"site-footer\">© 2026 clean-jsdoc-theme — built with care. <a href=\"https://github.com/ankitskvmdam/clean-jsdoc-theme\">GitHub</a></div>",
+    "meta": [
+      { "name": "description", "content": "A clean, customizable JSDoc theme" },
+      { "name": "keywords", "content": "jsdoc, documentation, theme" },
+      { "property": "og:title", "content": "clean-jsdoc-theme" }
+    ]
   }
 }

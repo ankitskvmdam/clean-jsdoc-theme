@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { FooterSchema, THEME_OPT_KEYS } from '../../config/opts-schema';
+import { FooterSchema, MetaSchema, THEME_OPT_KEYS } from '../../config/opts-schema';
 import { validateThemeOpts } from '../../config/validate-opts';
 
 describe('FooterSchema', () => {
@@ -27,6 +27,25 @@ describe('FooterSchema', () => {
   });
 });
 
+describe('MetaSchema', () => {
+  it('accepts an array of string→string attribute maps', () => {
+    const parsed = MetaSchema.parse([
+      { name: 'description', content: 'Fast docs' },
+      { property: 'og:title', content: 'My Library' },
+    ]);
+    expect(parsed).toHaveLength(2);
+    expect(parsed[0]).toEqual({ name: 'description', content: 'Fast docs' });
+  });
+
+  it('rejects a non-array', () => {
+    expect(() => MetaSchema.parse({ name: 'description' })).toThrow();
+  });
+
+  it('rejects an entry with a non-string value', () => {
+    expect(() => MetaSchema.parse([{ name: 'x', content: 1 }])).toThrow();
+  });
+});
+
 describe('footer in the theme-option surface', () => {
   it('is a recognized key, so the unknown-key suggester never flags it', async () => {
     const { diagnostics } = await validateThemeOpts({
@@ -38,5 +57,14 @@ describe('footer in the theme-option surface', () => {
 
   it('is listed in THEME_OPT_KEYS', () => {
     expect(THEME_OPT_KEYS).toContain('footer');
+  });
+
+  it('recognizes `meta` too (no unknown-key warning)', async () => {
+    const { diagnostics } = await validateThemeOpts({
+      opts: { meta: [{ name: 'description', content: 'x' }] },
+      unknownKeyPolicy: 'warn-all',
+    });
+    expect(diagnostics.list.find((d) => d.code === 'opts/unknown-key')).toBeUndefined();
+    expect(THEME_OPT_KEYS).toContain('meta');
   });
 });

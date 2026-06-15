@@ -14,7 +14,7 @@
  * script and a tiny inline loader that lazy-imports island chunks.
  */
 
-import type { Page, IslandName } from '@clean-jsdoc-theme/utils';
+import type { Page, IslandName, MetaTag } from '@clean-jsdoc-theme/utils';
 import type { IslandRecord } from './layout';
 import { getPreHydrationThemeScript } from './theme-script';
 import { getIslandsLoaderScript } from './islands-loader';
@@ -42,6 +42,13 @@ export interface HtmlDocumentOptions {
   customJsLinks?: string[];
   /** Inline custom JS, emitted as a classic `<script>` before `</body>`, last of all scripts. */
   customJs?: string;
+  /**
+   * Site-wide custom `<meta>` tags (`ThemeConfig.meta`). Emitted into `<head>`
+   * after the theme's own defaults, which are skipped where an author entry
+   * shares the same identifying attribute (de-dupe). Values are escaped and
+   * invalid attribute names dropped.
+   */
+  meta?: MetaTag[];
   /** Active locale code for `<html lang>` (defaults to `en`). */
   lang?: string;
   /**
@@ -70,6 +77,40 @@ function buildHreflangLinks(hreflang: HtmlDocumentOptions['hreflang']): string {
     links.push(`<link rel="alternate" hreflang="x-default" href="${escapeHtml(def.href)}" />`);
   }
   return links.join('');
+}
+
+/** HTML attribute name shape — a crafted key can't inject extra attributes. */
+const META_ATTR_NAME_RE = /^[A-Za-z][A-Za-z0-9-]*$/;
+
+/**
+ * The de-dupe identity of a `<meta>` tag: the value of its first identifying
+ * attribute (`charset`, then `name` / `property` / `http-equiv`), or `undefined`
+ * when it has none. `charset` collapses to the bare key (there's only one
+ * charset); the others key off `attr=value` (case-insensitive). An author tag
+ * sharing an identity with a theme default makes the theme skip its own.
+ */
+function metaIdentity(tag: MetaTag): string | undefined {
+  const charset = tag.charset;
+  if (typeof charset === 'string' && charset.trim()) return 'charset';
+  for (const attr of ['name', 'property', 'http-equiv'] as const) {
+    const v = tag[attr];
+    if (typeof v === 'string' && v.trim()) return `${attr}=${v.trim().toLowerCase()}`;
+  }
+  return undefined;
+}
+
+/**
+ * Render one author `<meta>` tag from its attribute map. Attribute names that
+ * aren't simple HTML names are dropped (so a crafted key can't inject markup),
+ * and every value is HTML-escaped. Returns '' when nothing valid remains.
+ */
+function renderMetaTag(tag: MetaTag): string {
+  const attrs: string[] = [];
+  for (const [k, v] of Object.entries(tag)) {
+    if (!META_ATTR_NAME_RE.test(k) || typeof v !== 'string') continue;
+    attrs.push(`${k}="${escapeHtml(v)}"`);
+  }
+  return attrs.length > 0 ? `<meta ${attrs.join(' ')} />` : '';
 }
 
 /** CSS generic family keywords — never requested from Google Fonts. */
@@ -201,14 +242,28 @@ export function renderHtmlDocument(opts: HtmlDocumentOptions): string {
   const loaderScript = getIslandsLoaderScript(islandNames, islandChunks);
   const themeScript = getPreHydrationThemeScript();
 
+  // Author <meta> tags (site-wide). Theme defaults are emitted first, then these
+  // — but a theme default is skipped when an author entry shares its identifying
+  // attribute (so `name: "description"` replaces the auto description, etc.).
+  const authorMeta = opts.meta ?? [];
+  const authorIdentities = new Set(
+    authorMeta.map(metaIdentity).filter((id): id is string => Boolean(id))
+  );
+  const authorMetaHtml = authorMeta.map(renderMetaTag).join('');
+
   return (
     `<!doctype html>` +
     `<html lang="${escapeHtml(lang)}">` +
     `<head>` +
-    `<meta charset="utf-8" />` +
-    `<meta name="viewport" content="width=device-width, initial-scale=1" />` +
+    (authorIdentities.has('charset') ? '' : `<meta charset="utf-8" />`) +
+    (authorIdentities.has('name=viewport')
+      ? ''
+      : `<meta name="viewport" content="width=device-width, initial-scale=1" />`) +
     `<title>${title}</title>` +
-    (description ? `<meta name="description" content="${description}" />` : '') +
+    (description && !authorIdentities.has('name=description')
+      ? `<meta name="description" content="${description}" />`
+      : '') +
+    authorMetaHtml +
     buildHreflangLinks(opts.hreflang) +
     `<script>${themeScript}</script>` +
     buildGoogleFontsLinks(fonts) +

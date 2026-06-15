@@ -49,6 +49,7 @@ See [content-and-sidebar.md](content-and-sidebar.md) for the full ordering model
 | `customCss` / `customJs` | string | Inline CSS/JS injected on every page. CSS loads **after** the theme stylesheet (overrides win); JS runs **last**. |
 | `customCssFile` / `customJsFile` | path | Same, read from disk; copied to content-hashed `_assets/`. |
 | `footer` | string \| `{ file }` | Custom footer HTML, rendered in place of the default footer on every page. Inline string or `{ file: "./footer.html" }` (read at build time). Trusted, author-controlled HTML; style it with `customCss`/`customCssFile`. |
+| `meta` | `Array<{ [attr]: value }>` | Site-wide custom `<meta>` tags. Each object's key/value pairs become one `<meta>` (`{ name, content }`, `{ property, content }`, …). Theme defaults (charset/viewport/auto description) emit first; an author entry sharing a `name`/`property`/`http-equiv`/`charset` replaces the default (no dupes). Values escaped; invalid attr names dropped. |
 | `hashCustomAssets` | boolean | Content-hash custom-asset filenames for cache-busting. Default `true`. |
 
 ## Localization

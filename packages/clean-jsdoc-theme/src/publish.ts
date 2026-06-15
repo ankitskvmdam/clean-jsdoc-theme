@@ -12,6 +12,7 @@ import type {
   CopyPageAction,
   CopyPageConfig,
   PageNavConfig,
+  MetaTag,
   OutputFile,
   SiteLogo,
   SiteManifest,
@@ -300,6 +301,14 @@ interface JSDocOpts {
    */
   footer?: unknown;
   /**
+   * Site-wide custom `<meta>` tags (`jsdoc.json` `"opts": { "meta": [...] }`). An
+   * array of attribute maps — each object's key/value pairs become one `<meta>`
+   * tag in `<head>` (`{ name, content }`, `{ property, content }`, …). dwar
+   * escapes values, drops invalid attribute names, and de-dupes against its own
+   * head defaults (an author `name: "description"` replaces the auto one).
+   */
+  meta?: unknown;
+  /**
    * Inline custom CSS (`jsdoc.json` `"opts": { "customCss": "…" }`), injected as
    * a `<style>` after the theme stylesheet so it can override.
    */
@@ -583,6 +592,44 @@ export async function resolveFooter(raw: unknown): Promise<string | undefined> {
     }
   }
   return undefined;
+}
+
+/** Attributes that identify a `<meta>` tag (so an entry must carry at least one). */
+const META_IDENTITY_ATTRS = ['name', 'property', 'http-equiv', 'charset', 'itemprop'] as const;
+
+/**
+ * Validate `opts.meta` into a clean `MetaTag[]` (attribute maps), or `undefined`
+ * when there's nothing usable. Accepts only an array of objects; within each,
+ * keeps string→string pairs (trimming the value, coercing finite numbers to
+ * strings for convenience) and drops the rest. An entry with no recognized
+ * identifying attribute (`name`/`property`/`http-equiv`/`charset`/`itemprop`) is
+ * dropped with a warning — dwar does the final escaping + key validation.
+ */
+export function normalizeMeta(raw: unknown): MetaTag[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const out: MetaTag[] = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
+    const o = entry as Record<string, unknown>;
+    const tag: MetaTag = {};
+    for (const [k, v] of Object.entries(o)) {
+      if (typeof v === 'string') {
+        const t = v.trim();
+        if (t.length > 0) tag[k] = t;
+      } else if (typeof v === 'number' && Number.isFinite(v)) {
+        tag[k] = String(v);
+      }
+    }
+    const hasIdentity = META_IDENTITY_ATTRS.some((a) => typeof tag[a] === 'string');
+    if (!hasIdentity || Object.keys(tag).length === 0) {
+      console.warn(
+        `clean-jsdoc-theme: skipping a meta entry with no usable name/property/http-equiv/charset attribute (${JSON.stringify(entry)}).`
+      );
+      continue;
+    }
+    out.push(tag);
+  }
+  return out.length > 0 ? out : undefined;
 }
 
 /** A logo value that's already a servable URL/URI needs no copying. */
@@ -1594,6 +1641,9 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   // is read here (the I/O layer) → a resolved string on the theme, so render()
   // stays pure. Unset/empty → default footer.
   const footer = await resolveFooter(opts.footer);
+  // Site-wide custom <meta> tags. Validated/normalized here (junk dropped +
+  // warned); dwar does the escaping + de-dupe against its head defaults.
+  const meta = normalizeMeta(opts.meta);
 
   const absoluteDestination = resolvePath(destination);
   // Cache the island esbuild bundle across builds — see RenderOptions.islandCacheDir;
@@ -1605,6 +1655,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
         ...resolveTheme(opts, siteName, fonts, basePath, buildSpec?.locale),
         ...customAssets.theme,
         ...(footer ? { footer } : {}),
+        ...(meta ? { meta } : {}),
       },
       destination: absoluteDestination,
       islandCacheDir,

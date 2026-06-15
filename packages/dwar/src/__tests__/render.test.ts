@@ -96,6 +96,24 @@ describe('render() — smoke', () => {
     }
   });
 
+  it('emits custom theme.meta tags into every page head (render stays in-memory)', async () => {
+    const manifest = makeManifest();
+    const result = await render(manifest, {
+      theme: {
+        ...minimalTheme,
+        meta: [
+          { name: 'keywords', content: 'a, b' },
+          { property: 'og:image', content: 'https://example.com/c.png' },
+        ],
+      },
+    });
+    for (const path of ['index.html', 'guide/intro/index.html']) {
+      const html = asString(result.files.find((f) => f.path === path)!);
+      expect(html).toContain('<meta name="keywords" content="a, b" />');
+      expect(html).toContain('<meta property="og:image" content="https://example.com/c.png" />');
+    }
+  });
+
   it('omits the copy-page button when disabled in the theme', async () => {
     const manifest = makeManifest();
     const result = await render(manifest, {

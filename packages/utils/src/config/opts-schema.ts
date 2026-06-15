@@ -130,6 +130,18 @@ export type TFooterFileOpt = z.infer<typeof FooterFileSchema>;
 export const FooterSchema = z.union([z.string(), FooterFileSchema]);
 export type TFooterOpt = z.infer<typeof FooterSchema>;
 
+// ── meta ─────────────────────────────────────────────────────────────────────
+
+/**
+ * `meta` is an array of attribute maps — each object's key/value pairs become
+ * the attributes of one `<meta>` tag (`{ name, content }`, `{ property, content }`,
+ * `{ "http-equiv", content }`, `{ charset }`, …). Maximally flexible (v4 parity);
+ * dwar escapes the values, validates attribute names, and de-dupes against its
+ * own head defaults.
+ */
+export const MetaSchema = z.array(z.record(z.string(), z.string()));
+export type TMetaOpt = z.infer<typeof MetaSchema>;
+
 // ── simple list / scalar opts ────────────────────────────────────────────────
 
 /** `sectionOrder` / `docGroups` — an ordered list of label strings. */
@@ -168,6 +180,7 @@ export const THEME_OPT_KEYS = [
   'aiPrompt',
   'basePath',
   'footer',
+  'meta',
   'locales',
   'defaultLocale',
   'customCss',

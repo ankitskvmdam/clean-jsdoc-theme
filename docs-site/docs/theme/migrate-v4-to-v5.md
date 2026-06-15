@@ -105,7 +105,7 @@ errors while you migrate, then relax it.
 | `favicon` | — | removed | Use JSDoc's own static-file copying. |
 | `homepageTitle` | — | removed | Home `<title>` derives from README / `docs/index.md` + `siteName`. |
 | `includeFilesListInHomepage` | — | removed | The Source Files section lists files. |
-| `meta` | — | removed | No custom `<meta>` injection. |
+| `meta` | `meta` | changed | Supported again — an array of attribute maps → `<meta>` tags in `<head>`. See [`meta`](/theme/configuration#meta). |
 | `search` | — | removed | Always-on fuzzy search + optional Pagefind. |
 | `codepen` | — | removed | Use [`@iframe`](/authoring/embeds) embeds. |
 | `static_dir` | — | removed | Use JSDoc's own static-file config. |

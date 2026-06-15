@@ -98,11 +98,11 @@ over `sectionOrder`** and owns the whole top region of the sidebar.
 
 Delete options with no v5 equivalent and tell the user what replaced them
 ([§3](#3-removed-features)): `default_theme`, `favicon`, `homepageTitle`,
-`includeFilesListInHomepage`, `meta`, `search`, `codepen`, `static_dir`,
+`includeFilesListInHomepage`, `search`, `codepen`, `static_dir`,
 `exclude_inherited`, `displayModuleHeader`, `sort`, `shouldRemoveScrollbarStyle`.
-(`footer` is **not** removed in v5 — map it, see [§2](#2-option-mapping).)
-Most are now automatic (search is always on; light/dark is a runtime toggle) or
-moved to JSDoc's own config (`static_dir`, `favicon`).
+(`footer` and `meta` are **not** removed in v5 — map them, see
+[§2](#2-option-mapping).) Most are now automatic (search is always on; light/dark
+is a runtime toggle) or moved to JSDoc's own config (`static_dir`, `favicon`).
 
 </step>
 
@@ -132,7 +132,7 @@ the source viewer (`templates.default.outputSourceFiles`).
 | `includeFilesListInHomepage` | — | removed | The Source Files section lists files instead. |
 | `menu` | `menu` | changed | Reshaped (see step 4); `target`/`class` dropped, `icon` added. |
 | `sections` | `sectionOrder` | renamed | Filter + order sidebar sections. |
-| `meta` | — | removed | No custom `<meta>` injection. |
+| `meta` | `meta` | changed | Supported again — array of attribute maps → `<meta>` tags in `<head>` (same shape as v4). |
 | `search` | — | removed | Always-on fuzzy search + optional Pagefind. |
 | `codepen` | — | removed | Use `@iframe` tag / ` ```iframe ` fence (sandboxed embeds). |
 | `static_dir` | — | removed | Use JSDoc's own static-file config. |
@@ -158,7 +158,7 @@ A machine-readable version of this exact map (for codemods) lives at
 - `search` toggle → always on (fuzzy + optional Pagefind).
 - `codepen` → `@iframe` block tag / ` ```iframe ` prose fence.
 - `static_dir` / `favicon` → JSDoc's own static-file copying.
-- `meta`, `homepageTitle`, `includeFilesListInHomepage`, `exclude_inherited`,
+- `homepageTitle`, `includeFilesListInHomepage`, `exclude_inherited`,
   `displayModuleHeader`, `sort`, `shouldRemoveScrollbarStyle` → no replacement opt.
 
 ## 4. Before / after `jsdoc.json`

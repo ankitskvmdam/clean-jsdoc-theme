@@ -37,6 +37,7 @@ import type {
   IslandName,
   NavNode,
   CopyPageAction,
+  MetaTag,
 } from '@clean-jsdoc-theme/utils';
 
 import {
@@ -208,7 +209,13 @@ async function renderPage(
   fonts: { heading: string; body: string; mono: string },
   shiki: ShikiThemes,
   langs: readonly string[],
-  custom: { cssLinks?: string[]; css?: string; jsLinks?: string[]; js?: string },
+  custom: {
+    cssLinks?: string[];
+    css?: string;
+    jsLinks?: string[];
+    js?: string;
+    meta?: MetaTag[];
+  },
   neighbors: PageNeighbors | undefined,
   inlineSvgs: Record<string, string>,
   locale: RenderLocale | undefined
@@ -353,6 +360,7 @@ async function renderPage(
     customCss: custom.css,
     customJsLinks: custom.jsLinks,
     customJs: custom.js,
+    meta: custom.meta,
     lang: locale?.code,
     i18n: i18nPayload,
     // hreflang reuses the switcher's per-page cross-locale URLs.
@@ -473,6 +481,7 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
     css: theme.customCss?.trim() || undefined,
     jsLinks: theme.customJsLinks,
     js: theme.customJs?.trim() || undefined,
+    meta: theme.meta,
   };
   // The fuzzy-search index the cmdk island fetches. Build-id stamped so it
   // cache-busts alongside the stylesheet/chunks.
@@ -637,6 +646,7 @@ export type {
   CopyPageConfig,
   CopyPageAction,
   PageNavConfig,
+  MetaTag,
   SiteName,
   SiteLogo,
   ComponentOverrides,

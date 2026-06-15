@@ -24,6 +24,7 @@ import type {
   CopyPageAction,
   CopyPageConfig,
   PageNavConfig,
+  MetaTag,
   SiteManifest,
   SiteName,
   ThemeConfig,
@@ -245,6 +246,42 @@ async function resolveFooter(
     }
   }
   return undefined;
+}
+
+/** Attributes that identify a `<meta>` tag (so an entry must carry at least one). */
+const META_IDENTITY_ATTRS = ['name', 'property', 'http-equiv', 'charset', 'itemprop'] as const;
+
+/**
+ * Validate `block.meta` into a clean `MetaTag[]`, or `undefined` when there's
+ * nothing usable. Mirrors the JSDoc bridge's `normalizeMeta`: keeps string→string
+ * pairs (trimmed; finite numbers coerced), drops an entry with no identifying
+ * attribute (warned). dwar does the final escaping + key validation.
+ */
+function normalizeMeta(raw: unknown, logger: AdaptApp['logger']): MetaTag[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const out: MetaTag[] = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
+    const o = entry as Record<string, unknown>;
+    const tag: MetaTag = {};
+    for (const [k, v] of Object.entries(o)) {
+      if (typeof v === 'string') {
+        const t = v.trim();
+        if (t.length > 0) tag[k] = t;
+      } else if (typeof v === 'number' && Number.isFinite(v)) {
+        tag[k] = String(v);
+      }
+    }
+    const hasIdentity = META_IDENTITY_ATTRS.some((a) => typeof tag[a] === 'string');
+    if (!hasIdentity || Object.keys(tag).length === 0) {
+      logger.warn(
+        `[clean-jsdoc-theme] skipping a meta entry with no usable name/property/http-equiv/charset attribute (${JSON.stringify(entry)}).`
+      );
+      continue;
+    }
+    out.push(tag);
+  }
+  return out.length > 0 ? out : undefined;
 }
 
 /** A logo value that's already a servable URL/URI needs no copying. */
@@ -542,8 +579,13 @@ export async function writeSite(
   // Custom footer (v4 parity): inline HTML or `{ file }` read here → resolved
   // string on the theme, so render() stays pure. Unset/empty → default footer.
   const footer = await resolveFooter(block.footer, logger);
+  const meta = normalizeMeta(block.meta, logger);
   const result = await render(manifest, {
-    theme: { ...resolveTheme(block, siteName, fonts), ...(footer ? { footer } : {}) },
+    theme: {
+      ...resolveTheme(block, siteName, fonts),
+      ...(footer ? { footer } : {}),
+      ...(meta ? { meta } : {}),
+    },
     destination,
     islandCacheDir,
   });

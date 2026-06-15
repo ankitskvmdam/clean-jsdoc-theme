@@ -452,6 +452,8 @@ dwar/src/
 │                         #   Pre-pass: {@link} → code spans + escapeStrayBraces (literal
 │                         #   {…} in JSDoc prose escaped so MDX won't read it as JS)
 ├── html.ts               # HTML document skeleton, slug→path, excerpt, payload escaping
+│                         #   + author <meta> tags (ThemeConfig.meta: defaults first,
+│                         #   de-dupe by identifying attr, escaped, invalid keys dropped)
 ├── css.ts                # buildThemeVariableCss (:root + [data-theme=dark] tokens)
 │                         #   + the prebuilt UTILITY_CSS  →  one stylesheet
 ├── generated/
@@ -525,6 +527,17 @@ from disk and threads only the final string in, so the setu→dwar boundary stay
 plain `string` and `render()` stays pure. dwar's `SsrLayout` just passes it into
 rang's `Layout` footer slot — it adds no chrome.
 
+**Custom meta.** `ThemeConfig.meta` is an array of attribute maps that dwar's
+`html.ts` emits as `<meta>` tags in `<head>`. The theme's own defaults
+(charset, viewport, the auto `description`) emit **first**, then the author
+entries — but a default is **skipped** when an author entry shares its
+identifying attribute (`name` / `property` / `http-equiv` / `charset`), so an
+author `description` replaces the auto one rather than duplicating it. Values are
+HTML-escaped and attribute names validated (a crafted key is dropped), so it's
+pure inline data — `render()` does **no** I/O for it (no file form, unlike the
+footer). The bridge only normalises/validates the array (dropping junk entries
+with a warning).
+
 ### `clean-jsdoc-theme` — the JSDoc theme entry
 
 The package JSDoc loads via `jsdoc -t clean-jsdoc-theme`. A thin orchestrator.
@@ -558,6 +571,8 @@ clean-jsdoc-theme/src/
 │                         #   (dwar emits/links them; render() stays pure).
 │                         #   resolveFooter: opts.footer (string | { file }) →
 │                         #   ThemeConfig.footer string ({ file } read here).
+│                         #   normalizeMeta: opts.meta (attribute maps) →
+│                         #   ThemeConfig.meta (junk dropped+warned; dwar escapes).
 │                         #   Walks opts.docs (collectDocs: recursive, *.md/*.markdown/
 │                         #   *.html → DocInput[] w/ POSIX rel path + raw content; the
 │                         #   only place the docs tree is read) and threads docs +

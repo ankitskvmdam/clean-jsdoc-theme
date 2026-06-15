@@ -220,6 +220,43 @@ opts: { footer: { file: "./footer.html" }, customCssFile: "./footer.css" }
 Need behaviour (e.g. a dynamic year)? Add `customJs` / `customJsFile` — it runs
 last, after the theme's own scripts. Most footers don't need it.
 
+### How do I add custom meta tags (SEO, Open Graph, Twitter cards)?
+
+Set [`meta`](/theme/configuration#meta) to an array of attribute objects. Each
+object becomes one `<meta>` tag in every page's `<head>` — the keys are the
+attributes:
+
+```json5
+opts: {
+  meta: [
+    { name: "description", content: "Fast, typed docs for My Library" },
+    { name: "keywords", content: "jsdoc, typescript, documentation" },
+    { name: "theme-color", content: "#0b0b0b" }
+  ]
+}
+```
+
+**Open Graph and Twitter cards** work the same way — they're just `<meta>` tags:
+
+```json5
+opts: {
+  meta: [
+    { property: "og:title", content: "My Library" },
+    { property: "og:image", content: "https://example.com/social-card.png" },
+    { name: "twitter:card", content: "summary_large_image" }
+  ]
+}
+```
+
+A few things worth knowing:
+
+- **`charset` and `viewport` are already emitted** — you don't need to add them.
+- **Your tag wins over the theme's default.** A `{ name: "description", … }`
+  replaces the auto description; you won't get two.
+- **These are site-wide** — the same tags render on every page (per-page social
+  cards aren't supported yet).
+- Values are escaped automatically, so quotes and angle brackets are safe.
+
 ### How do I turn off the "copy page" / "open in LLM" button?
 
 Configure or disable it with [`copyPage`](/theme/configuration#copypage).

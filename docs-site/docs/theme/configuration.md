@@ -625,6 +625,52 @@ cleanJsdocTheme: { footer: { file: "./footer.html" } }
 
 </tabs>
 
+### `meta`
+
+Site-wide custom `<meta>` tags. Pass an array of attribute objects — each
+object's key/value pairs become the attributes of one `<meta>` tag in `<head>`
+(`name`/`content`, `property`/`content`, `http-equiv`, `charset`, …). The theme
+emits `charset`/`viewport`/an auto `description` itself and **de-dupes**: an
+author entry sharing an identifying attribute (`name` / `property` /
+`http-equiv` / `charset`) replaces the theme's default rather than duplicating
+it (so your `description` wins). Values are escaped automatically; invalid
+attribute names are dropped. These are **site-wide** (no per-page meta yet).
+
+**Expected:** an array of `{ [attr]: value }` objects.
+
+<tabs group="tool">
+
+<tab label="JSDoc (jsdoc.json)">
+
+```json5
+opts: {
+  meta: [
+    { name: "description", content: "Fast, typed docs for My Library" },
+    { name: "keywords", content: "jsdoc, typescript, docs" },
+    { property: "og:title", content: "My Library" },
+    { property: "og:image", content: "https://example.com/card.png" },
+    { name: "theme-color", content: "#0b0b0b" }
+  ]
+}
+```
+
+</tab>
+
+<tab label="TypeDoc (typedoc.json)">
+
+```json5
+cleanJsdocTheme: {
+  meta: [
+    { name: "description", content: "Fast, typed docs for My Library" },
+    { property: "og:title", content: "My Library" }
+  ]
+}
+```
+
+</tab>
+
+</tabs>
+
 ## LLM & copy page
 
 ### `copyPage`

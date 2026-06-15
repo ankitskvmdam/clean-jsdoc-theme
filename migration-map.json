@@ -14,7 +14,7 @@
     "includeFilesListInHomepage": { "v5": null, "status": "removed" },
     "menu": { "v5": "menu", "status": "changed" },
     "sections": { "v5": "sectionOrder", "status": "renamed" },
-    "meta": { "v5": null, "status": "removed" },
+    "meta": { "v5": "meta", "status": "changed", "_note": "Supported again: an array of attribute maps → <meta> tags in <head> (same shape as v4)." },
     "search": { "v5": null, "status": "removed" },
     "codepen": { "v5": null, "status": "removed" },
     "static_dir": { "v5": null, "status": "removed" },

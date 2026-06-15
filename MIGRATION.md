@@ -71,7 +71,7 @@ removed | new`.
 | `includeFilesListInHomepage`    | —                        | removed | No file-list-on-homepage toggle. The Source Files section (when source viewing is on) lists files instead.                                                                                                                                                                                                  |
 | `menu`                          | `menu`                   | changed | Still an array, but reshaped. v4 entry: `{ title, link, target, class, id }`. v5 entry: `{ id, title, link (or href), icon }` (`MenuItem`); `target`/`class` dropped, `icon` added, `id` now also selects built-in sections. v5 `menu` takes precedence over `sectionOrder` and controls the whole sidebar. |
 | `sections`                      | `sectionOrder`           | renamed | Same idea (filter + order sidebar sections). v5 key is `sectionOrder`; "Home" and "Source Files" are always shown regardless.                                                                                                                                                                               |
-| `meta`                          | —                        | removed | No custom `<meta>` injection option.                                                                                                                                                                                                                                                                        |
+| `meta`                          | `meta`                   | changed | Supported again. Same shape as v4 — an array of attribute maps (`{ name, content }`, `{ property, content }`, …), each rendered as a `<meta>` tag in `<head>`. dwar escapes the values and de-dupes against its own defaults (an author `description` replaces the auto one).                                |
 | `search`                        | —                        | removed | Search is always on in v5 (built-in fuzzy index + optional Pagefind); there is no enable/disable opt.                                                                                                                                                                                                       |
 | `codepen`                       | —                        | removed | No CodePen prefill option. v5 has sandboxed embeds via the `@iframe` tag / `iframe` prose fence instead.                                                                                                                                                                                                    |
 | `static_dir`                    | —                        | removed | No theme-level static-dir copying. Use JSDoc's own static-file config.                                                                                                                                                                                                                                      |
@@ -228,7 +228,6 @@ For each: the v5 replacement, or "no replacement."
 | `default_theme` / `fallback-*`                    | Built-in light/dark token sets + runtime toggle (no opt).              |
 | `favicon`                                         | No replacement opt (use JSDoc's static-file copy).                     |
 | `homepageTitle`                                   | Home `<title>` derived from README/`docs/index.md` + `siteName`.       |
-| `meta` (custom `<meta>` tags)                     | No replacement.                                                        |
 | `search` toggle                                   | Always-on fuzzy search + optional Pagefind (no opt).                   |
 | `codepen`                                         | `@iframe` block tag / `iframe` prose fence (sandboxed embeds).         |
 | `static_dir`                                      | JSDoc's own static-file copying.                                       |
@@ -304,7 +303,7 @@ canonical copy is `migration-map.json` at the repo root; it is mirrored here.
     "includeFilesListInHomepage": { "v5": null, "status": "removed" },
     "menu": { "v5": "menu", "status": "changed" },
     "sections": { "v5": "sectionOrder", "status": "renamed" },
-    "meta": { "v5": null, "status": "removed" },
+    "meta": { "v5": "meta", "status": "changed" },
     "search": { "v5": null, "status": "removed" },
     "codepen": { "v5": null, "status": "removed" },
     "static_dir": { "v5": null, "status": "removed" },

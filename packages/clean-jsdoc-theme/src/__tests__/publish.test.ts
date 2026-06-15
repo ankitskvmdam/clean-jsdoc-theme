@@ -11,6 +11,7 @@ import {
   normalizeColors,
   normalizeDocGroups,
   normalizeMenu,
+  normalizeMeta,
   normalizeSectionOrder,
   outputSourceFilesEnabled,
   resolveFooter,
@@ -75,6 +76,44 @@ describe('resolveFooter', () => {
     } finally {
       warn.mockRestore();
     }
+  });
+});
+
+describe('normalizeMeta', () => {
+  it('keeps string→string attribute maps, trimming values', () => {
+    expect(
+      normalizeMeta([
+        { name: 'description', content: '  Fast docs  ' },
+        { property: 'og:title', content: 'My Library' },
+      ])
+    ).toEqual([
+      { name: 'description', content: 'Fast docs' },
+      { property: 'og:title', content: 'My Library' },
+    ]);
+  });
+
+  it('coerces finite numbers to strings and drops blank/non-finite values', () => {
+    expect(normalizeMeta([{ name: 'rating', content: 5, bad: '   ' }])).toEqual([
+      { name: 'rating', content: '5' },
+    ]);
+  });
+
+  it('drops (and warns on) an entry with no identifying attribute', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      expect(normalizeMeta([{ content: 'orphan' }, { name: 'ok', content: 'y' }])).toEqual([
+        { name: 'ok', content: 'y' },
+      ]);
+      expect(warn).toHaveBeenCalledTimes(1);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it('returns undefined for a non-array or an all-empty result', () => {
+    expect(normalizeMeta(undefined)).toBeUndefined();
+    expect(normalizeMeta('nope')).toBeUndefined();
+    expect(normalizeMeta([])).toBeUndefined();
   });
 });
 
