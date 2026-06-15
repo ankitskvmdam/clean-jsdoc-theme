@@ -7,9 +7,9 @@
     "extract": "clean-jsdoc i18n extract",
     "build:docs": "clean-jsdoc build && jsdoc -c jsdoc.api.json",
     "docs": "pnpm run build:theme && clean-jsdoc build && jsdoc -c jsdoc.api.json",
-    "dev": "pnpm run build:theme && concurrently -k -n pkgs,docs,serve \"pnpm exec turbo watch build --filter=clean-jsdoc-theme\" \"nodemon\" \"serve -l 3001 dist\"",
+    "serve": "serve dist -l 3001 -c ../serve.json",
+    "dev": "pnpm run build:theme && concurrently -k -n pkgs,docs,serve \"pnpm exec turbo watch build --filter=clean-jsdoc-theme\" \"nodemon\" \"serve dist -l 3001 -c ../serve.json\"",
     "clean-node-modules": "node ../scripts/clean.mjs node_modules",
-    "clean-jsdoc": "clean-jsdoc-theme",
     "i18n:prompt": "clean-jsdoc i18n prompt"
   },
   "devDependencies": {
