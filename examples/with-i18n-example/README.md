@@ -33,7 +33,7 @@ clean-jsdoc build          # stamp + render one site per locale
 
 > Note on prose localization:
 >
-> - **Home** — `aadesh build` picks up a sibling `README.<locale>.md` (here
+> - **Home** — `clean-jsdoc build` picks up a sibling `README.<locale>.md` (here
 >   `README.ja.md` / `README.hi.md`) and renders it as that locale's home,
 >   falling back to this `README.md` when a variant is missing.
 > - **Docs** — each locale gets a sibling `docs.<locale>/` overlay; a translated

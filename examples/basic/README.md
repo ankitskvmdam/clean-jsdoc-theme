@@ -1,10 +1,10 @@
 # examples/basic
 
-End-to-end fixture for `clean-jsdoc-theme` v5. 28 JSDoc-annotated source files in
-[`src/`](./src) — exercising modules, namespaces, classes, interfaces, mixins,
-typedefs, constants/enums, and globals, plus tutorials and a README — and a
-minimal [`jsdoc.json`](./jsdoc.json) that points `opts.template` at the workspace
-`clean-jsdoc-theme` package.
+End-to-end fixture for `clean-jsdoc-theme` v5. A [`src/`](./src) of
+JSDoc-annotated source files — exercising modules, namespaces, classes,
+interfaces, mixins, typedefs, constants/enums, and globals, plus tutorials and a
+README — and a minimal [`jsdoc.json`](./jsdoc.json) that points `opts.template`
+at the workspace `clean-jsdoc-theme` package.
 
 This is also the integration test for the publish bridge in
 `packages/clean-jsdoc-theme/src/publish.ts`. If something regresses across setu,
@@ -18,8 +18,8 @@ pnpm run docs
 ```
 
 That runs `build:theme` (turbo rebuilds the upstream packages) then
-`jsdoc -c jsdoc.json`, logging something like `rendered 95 page(s), 11 asset(s),
-28 source file(s) → dist`:
+`jsdoc -c jsdoc.json`, printing a per-route build report (page/asset counts +
+sizes, with gzip) and writing `dist/`:
 
 ```
 dist/
@@ -53,7 +53,7 @@ pnpm run dev
 
 ## What the example is exercising
 
-- **Real JSDoc input** — a taffy collection produced by `jsdoc` against 28 files, not a hand-rolled fixture.
+- **Real JSDoc input** — a taffy collection produced by `jsdoc` against the `src/` files, not a hand-rolled fixture.
 - **All documentable kinds** — container kinds, typedefs, and an aggregated globals page, with events/enums/constants rendered as member sections.
 - **Slug separation + dedup** — `BaseEntity` lives under `module/coreschema/…` (its longname embeds the module); the module-exports-a-class overlaps (`Queue`, `RetryJob`) collapse to a single page via setu's slug-dedup guard (logged as a skip).
 - **Link resolution** — `{@link}` / `@see` cross-references (e.g. `@see base/chains#open`) become real anchors to the target page + member hash; external URLs open in a new tab.
