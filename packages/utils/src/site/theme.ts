@@ -121,6 +121,16 @@ export interface ThemeConfig {
    */
   pageNav?: PageNavConfig;
   /**
+   * Author-supplied footer HTML, rendered into rang's footer slot in place of
+   * the default `Footer` on every page. This is the **resolved** value: the
+   * opts layer accepts `string | { file }`, but the bridge reads the file form
+   * from disk and threads only the final string here, so `render()` stays pure.
+   * Trusted, author-controlled HTML (rendered verbatim, like v4's
+   * `theme_opts.footer`); style it via `customCss`/`customCssLinks`. Omit for
+   * the default footer.
+   */
+  footer?: string;
+  /**
    * Inline custom CSS. Emitted as a `<style>` in `<head>` AFTER the theme
    * stylesheet (and after any `customCssLinks`), so it can override theme
    * styles. Raw CSS — not escaped beyond a `</style>` break-out guard.

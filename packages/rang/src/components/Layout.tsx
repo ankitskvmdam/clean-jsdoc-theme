@@ -26,6 +26,11 @@ export interface LayoutProps {
   pkg?: LayoutPkg;
   siteName?: SiteName;
   basePath?: string;
+  /**
+   * Author-supplied footer HTML (`opts.footer`). When set, the default `Footer`
+   * is replaced by this markup; omit for the default footer.
+   */
+  footer?: string;
 }
 
 /**
@@ -45,6 +50,7 @@ export function Layout({
   pkg,
   siteName,
   basePath = '/',
+  footer,
 }: LayoutProps) {
   return (
     <div class="flex min-h-screen flex-col bg-background text-(--clean-fg)">
@@ -82,7 +88,7 @@ export function Layout({
           </aside>
         )}
       </div>
-      <Footer pkg={pkg} siteName={siteName} />
+      <Footer pkg={pkg} siteName={siteName} custom={footer} />
     </div>
   );
 }

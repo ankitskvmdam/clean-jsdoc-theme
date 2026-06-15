@@ -590,6 +590,41 @@ cleanJsdocTheme: { hashCustomAssets: false }
 
 </tabs>
 
+### `footer`
+
+A custom site footer, rendered in place of the default footer on every page.
+Either an inline HTML string or `{ file: "./footer.html" }` — the bridge reads
+the file at build time, so `render()` stays pure. It's trusted, author-controlled
+HTML (rendered verbatim, like v4's `footer`); style it with
+[`customCss` / `customCssFile`](#customcss-and-customjs), which load **after** the
+theme stylesheet so your selectors win.
+
+**Expected:** a string, or `{ file }`.
+
+<tabs group="tool">
+
+<tab label="JSDoc (jsdoc.json)">
+
+```json5
+opts: { footer: "<div class='site-footer'>© 2026 My Library</div>" }
+// or, for anything longer than a line:
+opts: { footer: { file: "./footer.html" } }
+```
+
+</tab>
+
+<tab label="TypeDoc (typedoc.json)">
+
+```json5
+cleanJsdocTheme: { footer: "<div class='site-footer'>© 2026 My Library</div>" }
+// or:
+cleanJsdocTheme: { footer: { file: "./footer.html" } }
+```
+
+</tab>
+
+</tabs>
+
 ## LLM & copy page
 
 ### `copyPage`

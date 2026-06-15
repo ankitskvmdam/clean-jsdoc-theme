@@ -81,7 +81,7 @@ removed | new`.
 | `add_scripts`                   | `customJs`               | renamed | Inline custom JS string. Injected as a classic `<script>` before `</body>`, after the theme's own scripts.                                                                                                                                                                                                  |
 | `include_js`                    | `customJsFile`           | renamed | Custom JS file(s) (path or array). Each copied as-is to `_assets/<name>.<hash>.js` (content hash → cacheable), referenced before `</body>`.                                                                                                                                                                 |
 | `add_script_path`               | `customJsFile`           | changed | Was an external-JS `<script>`; now the file is read and emitted as a cached asset. Use a `customJsFile` path.                                                                                                                                                                                               |
-| `footer`                        | —                        | removed | No `footer` HTML/string option. Footer content derives from `siteName`/`pkg`.                                                                                                                                                                                                                               |
+| `footer`                        | `footer`                 | changed | Supported again. v4 took an HTML/string footer; v5 `footer` accepts an inline HTML string **or** `{ file: "./footer.html" }` (read at build time). Rendered in place of the default footer; style it with `customCss`/`customCssFile`.                                                                       |
 | `exclude_inherited`             | —                        | removed | No exclude-inherited-symbols option.                                                                                                                                                                                                                                                                        |
 | `displayModuleHeader`           | —                        | removed | No module-header toggle.                                                                                                                                                                                                                                                                                    |
 | `sort`                          | —                        | removed | No members/methods sort toggle.                                                                                                                                                                                                                                                                             |
@@ -166,6 +166,7 @@ These have no v4 counterpart. Sourced from the `JSDocOpts` interface in
     ],
     "sectionOrder": ["Classes", "Modules", "Global"],
     "docs": "./docs",
+    "footer": "© My Library",
     "customCssFile": "./static/custom.css"
   }
 }
@@ -177,7 +178,8 @@ Notes on the diff:
 - `base_url` → `basePath`, `title` → `siteName`, `sections` → `sectionOrder`.
 - `menu` entries reshaped (`target`/`class` dropped, `icon` added; `id` selects
   built-ins).
-- `search: true` dropped (always on). `footer` dropped (derived). `include_css`
+- `search: true` dropped (always on). `footer` is supported again — an inline
+  HTML string or `{ file }` (here it stays the same string). `include_css`
   → `customCssFile` (and `create_style` → `customCss` for inline CSS).
 - `plugins: ["plugins/markdown"]` no longer required for the theme.
 
@@ -232,7 +234,6 @@ For each: the v5 replacement, or "no replacement."
 | `static_dir`                                      | JSDoc's own static-file copying.                                       |
 | `create_style` / `include_css` / `add_style_path` | Renamed → `customCss` (inline) / `customCssFile` (file path or array). |
 | `add_scripts` / `include_js` / `add_script_path`  | Renamed → `customJs` (inline) / `customJsFile` (file path or array).   |
-| `footer`                                          | Footer derived from `siteName`/`pkg`.                                  |
 | `exclude_inherited`                               | No replacement opt.                                                    |
 | `displayModuleHeader`                             | No replacement opt.                                                    |
 | `sort`                                            | No replacement opt.                                                    |
@@ -313,7 +314,7 @@ canonical copy is `migration-map.json` at the repo root; it is mirrored here.
     "add_scripts": { "v5": "customJs", "status": "renamed" },
     "add_script_path": { "v5": "customJsFile", "status": "changed" },
     "include_js": { "v5": "customJsFile", "status": "renamed" },
-    "footer": { "v5": null, "status": "removed" },
+    "footer": { "v5": "footer", "status": "changed" },
     "exclude_inherited": { "v5": null, "status": "removed" },
     "displayModuleHeader": { "v5": null, "status": "removed" },
     "sort": { "v5": null, "status": "removed" },

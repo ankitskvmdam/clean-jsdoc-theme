@@ -109,7 +109,7 @@ errors while you migrate, then relax it.
 | `search` | — | removed | Always-on fuzzy search + optional Pagefind. |
 | `codepen` | — | removed | Use [`@iframe`](/authoring/embeds) embeds. |
 | `static_dir` | — | removed | Use JSDoc's own static-file config. |
-| `footer` | — | removed | Derived from `siteName` / `pkg`. |
+| `footer` | `footer` | changed | Supported again — an inline HTML string or `{ file: "./footer.html" }`. Style it with `customCss` / `customCssFile`. See [`footer`](/theme/configuration#footer). |
 | `exclude_inherited`, `displayModuleHeader`, `sort`, `shouldRemoveScrollbarStyle` | — | removed | No equivalent. |
 
 > [!NOTE]
@@ -160,8 +160,9 @@ errors while you migrate, then relax it.
       { title: "GitHub", link: "https://github.com/me/lib", icon: "simpleicons:github" },
     ],
     sectionOrder: ["Classes", "Modules", "Global"],
+    footer: "© My Library",
     customCssFile: "./static/custom.css",
-    // dropped: default_theme (auto), search (always on), footer (derived)
+    // dropped: default_theme (auto), search (always on)
     docs: "./docs", // optional v5 upside
   },
 }

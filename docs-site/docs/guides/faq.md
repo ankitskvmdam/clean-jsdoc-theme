@@ -183,6 +183,43 @@ Point `opts.docs` at a folder of Markdown. See [Build a guides
 site](/guides/build-a-guides-site) and [Combine guides +
 API](/guides/combine-guides-and-api).
 
+### How do I add a custom footer?
+
+Set [`footer`](/theme/configuration#footer) to a string of HTML — it renders at
+the bottom of every page, in place of the default footer:
+
+```json5
+opts: {
+  template: "./node_modules/clean-jsdoc-theme",
+  footer: "<div class='site-footer'>© 2026 My Library — built with care</div>"
+}
+```
+
+For anything longer than a line, hand it a file instead — it's read at build
+time and keeps your config tidy:
+
+```json5
+opts: { footer: { file: "./footer.html" } }
+```
+
+**Style it with your own CSS.** The footer carries whatever classes you put in
+your markup; style them with [`customCss` /
+`customCssFile`](/theme/configuration#customcss-and-customjs), which the theme
+loads _after_ its own stylesheet, so your rules win without `!important`:
+
+```json5
+opts: { footer: { file: "./footer.html" }, customCssFile: "./footer.css" }
+```
+
+```css
+/* footer.css */
+.site-footer { padding: 2rem 0; text-align: center; color: var(--clean-text-muted); }
+.site-footer a { color: var(--clean-primary); }
+```
+
+Need behaviour (e.g. a dynamic year)? Add `customJs` / `customJsFile` — it runs
+last, after the theme's own scripts. Most footers don't need it.
+
 ### How do I turn off the "copy page" / "open in LLM" button?
 
 Configure or disable it with [`copyPage`](/theme/configuration#copypage).

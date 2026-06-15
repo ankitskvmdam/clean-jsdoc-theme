@@ -57,6 +57,8 @@ export interface SsrLayoutProps {
   };
   siteName?: SiteName;
   basePath?: string;
+  /** Author-supplied footer HTML (`ThemeConfig.footer`), passed into rang's footer slot. */
+  footer?: string;
   /** URL of the JSON search index, handed to the cmdk island for fuzzy search. */
   searchIndexUrl?: string;
   /**
@@ -130,6 +132,7 @@ export function SsrLayout({
   pkg,
   siteName,
   basePath = '/',
+  footer,
   searchIndexUrl,
   languageSwitcher,
   islands,
@@ -236,6 +239,7 @@ export function SsrLayout({
       siteName={siteName}
       pkg={pkg}
       basePath={basePath}
+      footer={footer}
       headerControls={headerControls}
       sidebar={sidebar}
       toc={toc}

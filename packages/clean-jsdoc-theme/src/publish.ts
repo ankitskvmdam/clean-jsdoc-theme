@@ -292,6 +292,14 @@ interface JSDocOpts {
    */
   pageNav?: unknown;
   /**
+   * Custom site footer (`jsdoc.json` `"opts": { "footer": … }`). Either an
+   * inline HTML string (v4 parity) or `{ "file": "./footer.html" }` (read from
+   * disk by the bridge). Rendered into rang's footer slot in place of the
+   * default footer on every page; style it with `customCss`/`customCssFile`.
+   * Omit for the default footer.
+   */
+  footer?: unknown;
+  /**
    * Inline custom CSS (`jsdoc.json` `"opts": { "customCss": "…" }`), injected as
    * a `<style>` after the theme stylesheet so it can override.
    */
@@ -546,6 +554,35 @@ async function resolveCustomAssets(
     },
     files: [...cssAssets.files, ...jsAssets.files],
   };
+}
+
+/**
+ * Resolve `opts.footer` (inline HTML `string` | `{ file }`) into the single
+ * `ThemeConfig.footer` string. The `{ file }` form is read from disk HERE — the
+ * bridge is the I/O layer, so dwar's `render()` only ever sees the resolved
+ * string. A missing/unreadable file is warned about and dropped (resilient,
+ * like the logo/custom-asset paths), and an empty value yields `undefined` so
+ * the default footer renders. Exported for testing.
+ */
+export async function resolveFooter(raw: unknown): Promise<string | undefined> {
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  }
+  if (raw && typeof raw === 'object' && typeof (raw as { file?: unknown }).file === 'string') {
+    const file = (raw as { file: string }).file.trim();
+    if (!file) return undefined;
+    try {
+      const html = await readFile(resolvePath(file), 'utf8');
+      return html.trim().length > 0 ? html : undefined;
+    } catch {
+      console.warn(
+        `clean-jsdoc-theme: could not read footer file ('${file}'); omitting the custom footer.`
+      );
+      return undefined;
+    }
+  }
+  return undefined;
 }
 
 /** A logo value that's already a servable URL/URI needs no copying. */
@@ -1553,6 +1590,10 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   // the theme as hrefs, so dwar links them while render() stays pure. Empty/unset
   // → no fields added, so behavior is unchanged when unused.
   const customAssets = await resolveCustomAssets(opts, hrefForServed);
+  // Custom footer (v4 parity): inline HTML passes through; the `{ file }` form
+  // is read here (the I/O layer) → a resolved string on the theme, so render()
+  // stays pure. Unset/empty → default footer.
+  const footer = await resolveFooter(opts.footer);
 
   const absoluteDestination = resolvePath(destination);
   // Cache the island esbuild bundle across builds — see RenderOptions.islandCacheDir;
@@ -1563,6 +1604,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
       theme: {
         ...resolveTheme(opts, siteName, fonts, basePath, buildSpec?.locale),
         ...customAssets.theme,
+        ...(footer ? { footer } : {}),
       },
       destination: absoluteDestination,
       islandCacheDir,

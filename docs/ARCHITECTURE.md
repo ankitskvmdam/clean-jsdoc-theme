@@ -335,7 +335,8 @@ rang/src/
     │                     #   roving arrow-key focus)
     ├── Layout.tsx        # slot page shell (SSR; toc rail only when toc slot set)┐
     ├── Header.tsx        # site header (SSR)            │ chrome
-    ├── Footer.tsx        # site footer (SSR)            ┘
+    ├── Footer.tsx        # site footer (SSR; renders `ThemeConfig.footer` author
+    │                     #   HTML verbatim when set, else the default footer)  ┘
     ├── Sidebar.tsx       # island: menu region (icon links: lucide/┐ (+ SidebarItem
     │                     #   simpleicons CDN) + divider + grouped nav │  action row);
     │                     #   clubbed parents are collapsible (chevron, localStorage-
@@ -516,6 +517,14 @@ hash), writes it alongside the logos, and passes only the hrefs in — so
 overrides); custom JS runs **last**, after the theme's own scripts. Both inline
 paths are guarded against `</style>` / `</script>` break-out.
 
+**Custom footer.** `ThemeConfig.footer` is a resolved HTML **string** that rang's
+footer slot renders verbatim in place of the default `Footer` (trusted,
+author-controlled — v4 parity; style it via the custom-CSS keys). The opts layer
+accepts a `string | { file }` union, but the **bridge** reads the `{ file }` form
+from disk and threads only the final string in, so the setu→dwar boundary stays a
+plain `string` and `render()` stays pure. dwar's `SsrLayout` just passes it into
+rang's `Layout` footer slot — it adds no chrome.
+
 ### `clean-jsdoc-theme` — the JSDoc theme entry
 
 The package JSDoc loads via `jsdoc -t clean-jsdoc-theme`. A thin orchestrator.
@@ -547,6 +556,8 @@ clean-jsdoc-theme/src/
 │                         #   Reads opts.customCss/customJs (inline) + reads
 │                         #   opts.customCssFile/customJsFile from disk → theme
 │                         #   (dwar emits/links them; render() stays pure).
+│                         #   resolveFooter: opts.footer (string | { file }) →
+│                         #   ThemeConfig.footer string ({ file } read here).
 │                         #   Walks opts.docs (collectDocs: recursive, *.md/*.markdown/
 │                         #   *.html → DocInput[] w/ POSIX rel path + raw content; the
 │                         #   only place the docs tree is read) and threads docs +

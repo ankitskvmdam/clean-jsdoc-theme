@@ -13,6 +13,12 @@ export interface FooterProps {
   /** Site name or logo; takes precedence over `pkg.name` (mirrors the header). */
   siteName?: SiteName;
   year?: number;
+  /**
+   * Author-supplied footer HTML (`opts.footer`, resolved to a string by the
+   * bridge). When set, it replaces the default footer markup entirely — rendered
+   * verbatim inside the `<footer>` element. Style it via `customCss`.
+   */
+  custom?: string;
 }
 
 function normalizeRepoUrl(repo: string): string {
@@ -23,8 +29,13 @@ function normalizeRepoUrl(repo: string): string {
     .replace(/^git@github\.com:/, 'https://github.com/');
 }
 
-export function Footer({ pkg, siteName, year }: FooterProps) {
+export function Footer({ pkg, siteName, year, custom }: FooterProps) {
   const { t } = useTranslation();
+  // Custom footer (opts.footer): trusted author HTML, rendered verbatim in place
+  // of the default chrome — same trust level as v4's `theme_opts.footer`.
+  if (custom) {
+    return <footer dangerouslySetInnerHTML={{ __html: custom }} />;
+  }
   const y = year ?? new Date().getFullYear();
   const repoUrl = pkg?.repository ? normalizeRepoUrl(pkg.repository) : undefined;
   return (

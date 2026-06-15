@@ -13,6 +13,7 @@ import {
   normalizeMenu,
   normalizeSectionOrder,
   outputSourceFilesEnabled,
+  resolveFooter,
 } from '../publish';
 
 describe('overlayDocs (per-locale docs overlay)', () => {
@@ -42,6 +43,38 @@ describe('overlayDocs (per-locale docs overlay)', () => {
     const merged = overlayDocs(base, locale);
     expect(merged.files.map((f) => f.path).sort()).toEqual(['_assets/a.111.png', '_assets/b.222.png']);
     expect(merged.inlineSvgs).toEqual({ '/a': '<svg/>', '/b': '<svg/>' });
+  });
+});
+
+describe('resolveFooter', () => {
+  it('passes an inline HTML string through, trimmed', async () => {
+    expect(await resolveFooter('  <footer>hi</footer>  ')).toBe('<footer>hi</footer>');
+  });
+
+  it('returns undefined for an empty/whitespace string (→ default footer)', async () => {
+    expect(await resolveFooter('   ')).toBeUndefined();
+    expect(await resolveFooter(undefined)).toBeUndefined();
+  });
+
+  it('reads the `{ file }` form from disk and returns its contents', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'cjt-footer-'));
+    try {
+      const fp = join(dir, 'footer.html');
+      await writeFile(fp, '<div class="ft">© 2026</div>\n', 'utf8');
+      expect(await resolveFooter({ file: fp })).toBe('<div class="ft">© 2026</div>\n');
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('warns and returns undefined when the `{ file }` is unreadable', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      expect(await resolveFooter({ file: '/no/such/footer.html' })).toBeUndefined();
+      expect(warn).toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
   });
 });
 

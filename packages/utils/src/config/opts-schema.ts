@@ -111,6 +111,25 @@ export type TPageNavConfigOpt = z.infer<typeof PageNavConfigSchema>;
 /** `pageNav` is a boolean shorthand OR a config object. */
 export const PageNavSchema = z.union([z.boolean(), PageNavConfigSchema]);
 
+// ── footer ───────────────────────────────────────────────────────────────────
+
+/**
+ * Footer file form — `{ file: "./footer.html" }`. Modeled as its own object so
+ * a later reusable-partial shape (`{ file, css, js }`) is a non-breaking
+ * extension; only `file` is recognized today (extras stripped).
+ */
+export const FooterFileSchema = z.object({ file: z.string() }).strip();
+export type TFooterFileOpt = z.infer<typeof FooterFileSchema>;
+
+/**
+ * `footer` is a discriminated union: an inline HTML string (the common case,
+ * v4 parity) OR a `{ file }` object the bridge reads from disk. The boundary
+ * (`ThemeConfig.footer`) is always the resolved string — the union lives only
+ * at the opts/bridge layer.
+ */
+export const FooterSchema = z.union([z.string(), FooterFileSchema]);
+export type TFooterOpt = z.infer<typeof FooterSchema>;
+
 // ── simple list / scalar opts ────────────────────────────────────────────────
 
 /** `sectionOrder` / `docGroups` — an ordered list of label strings. */
@@ -148,6 +167,7 @@ export const THEME_OPT_KEYS = [
   'clubSidebarItems',
   'aiPrompt',
   'basePath',
+  'footer',
   'locales',
   'defaultLocale',
   'customCss',

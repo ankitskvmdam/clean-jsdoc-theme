@@ -24,7 +24,7 @@
     "add_scripts": { "v5": "customJs", "status": "renamed" },
     "add_script_path": { "v5": "customJsFile", "status": "changed" },
     "include_js": { "v5": "customJsFile", "status": "renamed" },
-    "footer": { "v5": null, "status": "removed" },
+    "footer": { "v5": "footer", "status": "changed", "_note": "Supported again: an inline HTML string (v4 parity) or { file: \"./footer.html\" }." },
     "exclude_inherited": { "v5": null, "status": "removed" },
     "displayModuleHeader": { "v5": null, "status": "removed" },
     "sort": { "v5": null, "status": "removed" },

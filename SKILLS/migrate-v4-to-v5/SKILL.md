@@ -98,8 +98,9 @@ over `sectionOrder`** and owns the whole top region of the sidebar.
 
 Delete options with no v5 equivalent and tell the user what replaced them
 ([§3](#3-removed-features)): `default_theme`, `favicon`, `homepageTitle`,
-`includeFilesListInHomepage`, `meta`, `search`, `codepen`, `static_dir`, `footer`,
+`includeFilesListInHomepage`, `meta`, `search`, `codepen`, `static_dir`,
 `exclude_inherited`, `displayModuleHeader`, `sort`, `shouldRemoveScrollbarStyle`.
+(`footer` is **not** removed in v5 — map it, see [§2](#2-option-mapping).)
 Most are now automatic (search is always on; light/dark is a runtime toggle) or
 moved to JSDoc's own config (`static_dir`, `favicon`).
 
@@ -141,7 +142,7 @@ the source viewer (`templates.default.outputSourceFiles`).
 | `add_scripts` | `customJs` | renamed | Inline JS, runs last (before `</body>`). |
 | `include_js` | `customJsFile` | renamed | JS file(s); copied to a content-hashed `_assets/` reference. |
 | `add_script_path` | `customJsFile` | changed | Was an external `<script>`; now read + emitted as a cached asset. |
-| `footer` | — | removed | Footer derives from `siteName`/`pkg`. |
+| `footer` | `footer` | changed | Supported again — inline HTML string or `{ file: "./footer.html" }`; style via `customCss`/`customCssFile`. |
 | `exclude_inherited` | — | removed | No equivalent. |
 | `displayModuleHeader` | — | removed | No equivalent. |
 | `sort` | — | removed | No equivalent. |
@@ -157,7 +158,6 @@ A machine-readable version of this exact map (for codemods) lives at
 - `search` toggle → always on (fuzzy + optional Pagefind).
 - `codepen` → `@iframe` block tag / ` ```iframe ` prose fence.
 - `static_dir` / `favicon` → JSDoc's own static-file copying.
-- `footer` → derived from `siteName` / `pkg`.
 - `meta`, `homepageTitle`, `includeFilesListInHomepage`, `exclude_inherited`,
   `displayModuleHeader`, `sort`, `shouldRemoveScrollbarStyle` → no replacement opt.
 
@@ -207,7 +207,8 @@ A machine-readable version of this exact map (for codemods) lives at
       { title: "GitHub", link: "https://github.com/me/lib", icon: "simpleicons:github" },
     ],
     sectionOrder: ["Classes", "Modules", "Global"],
-    // dropped: default_theme (auto), search (always on), footer (derived)
+    footer: "© My Library",
+    // dropped: default_theme (auto), search (always on)
     customCssFile: "./static/custom.css",
     // optional v5 upside:
     docs: "./docs",
@@ -216,8 +217,8 @@ A machine-readable version of this exact map (for codemods) lives at
 ```
 
 Diff highlights: the `theme_opts` block is gone; `base_url`→`basePath`,
-`title`→`siteName`, `sections`→`sectionOrder`; `menu` reshaped; `search`/`footer`
-dropped; `include_css`→`customCssFile`.
+`title`→`siteName`, `sections`→`sectionOrder`; `menu` reshaped; `search`
+dropped; `footer` stays (now also accepts `{ file }`); `include_css`→`customCssFile`.
 
 ## 5. Build & verify
 

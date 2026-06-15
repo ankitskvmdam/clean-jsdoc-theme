@@ -71,6 +71,31 @@ describe('render() — smoke', () => {
     expect(guide).toContain('guide/intro/index.md');
   });
 
+  // The default Footer's footer-specific class signature (the pager reuses
+  // `border-t border-(--clean-border)`, so we key off the footer-only classes).
+  const DEFAULT_FOOTER_SIG = 'py-6 text-sm text-muted-foreground';
+
+  it('renders the default footer when no theme.footer is set', async () => {
+    const manifest = makeManifest();
+    const result = await render(manifest, { theme: minimalTheme });
+    const home = asString(result.files.find((f) => f.path === 'index.html')!);
+    expect(home).toContain(DEFAULT_FOOTER_SIG);
+  });
+
+  it('renders the custom footer in place of the default when theme.footer is set', async () => {
+    const manifest = makeManifest();
+    const result = await render(manifest, {
+      theme: { ...minimalTheme, footer: '<div class="my-footer">Custom Footer XYZ</div>' },
+    });
+    for (const path of ['index.html', 'guide/intro/index.html']) {
+      const html = asString(result.files.find((f) => f.path === path)!);
+      // Author markup is present verbatim on every page...
+      expect(html).toContain('<div class="my-footer">Custom Footer XYZ</div>');
+      // ...and the default footer chrome is gone.
+      expect(html).not.toContain(DEFAULT_FOOTER_SIG);
+    }
+  });
+
   it('omits the copy-page button when disabled in the theme', async () => {
     const manifest = makeManifest();
     const result = await render(manifest, {

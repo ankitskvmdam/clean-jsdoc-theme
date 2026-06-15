@@ -216,6 +216,37 @@ function normalizePageNav(raw: unknown): PageNavConfig | undefined {
   return typeof enabled === 'boolean' ? { enabled } : undefined;
 }
 
+/**
+ * Resolve the `footer` block option (inline HTML `string` | `{ file }`) into the
+ * single `ThemeConfig.footer` string. The `{ file }` form is read from disk here
+ * (the bridge is the I/O layer, so dwar's `render()` stays pure). A
+ * missing/unreadable file is warned about and dropped; an empty value → the
+ * default footer. Mirrors the JSDoc bridge's `resolveFooter`.
+ */
+async function resolveFooter(
+  raw: unknown,
+  logger: AdaptApp['logger']
+): Promise<string | undefined> {
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  }
+  if (raw && typeof raw === 'object' && typeof (raw as { file?: unknown }).file === 'string') {
+    const file = (raw as { file: string }).file.trim();
+    if (!file) return undefined;
+    try {
+      const html = await readFile(resolvePath(file), 'utf8');
+      return html.trim().length > 0 ? html : undefined;
+    } catch {
+      logger.warn(
+        `[clean-jsdoc-theme] could not read footer file ('${file}'); omitting the custom footer.`
+      );
+      return undefined;
+    }
+  }
+  return undefined;
+}
+
 /** A logo value that's already a servable URL/URI needs no copying. */
 function isServableUrl(value: string): boolean {
   return /^(https?:)?\/\//i.test(value) || /^data:/i.test(value);
@@ -508,8 +539,11 @@ export async function writeSite(
   // Cache the island esbuild bundle across builds — see RenderOptions.islandCacheDir;
   // the dev/watch loop reuses it when rang/dwar are unchanged.
   const islandCacheDir = resolvePath(process.cwd(), 'node_modules', '.cache', 'clean-jsdoc-theme');
+  // Custom footer (v4 parity): inline HTML or `{ file }` read here → resolved
+  // string on the theme, so render() stays pure. Unset/empty → default footer.
+  const footer = await resolveFooter(block.footer, logger);
   const result = await render(manifest, {
-    theme: resolveTheme(block, siteName, fonts),
+    theme: { ...resolveTheme(block, siteName, fonts), ...(footer ? { footer } : {}) },
     destination,
     islandCacheDir,
   });

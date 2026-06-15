@@ -48,6 +48,7 @@ See [content-and-sidebar.md](content-and-sidebar.md) for the full ordering model
 | `darkColors` | color map | Same keys, emitted under `[data-theme="dark"]`. Omit it and dark mode falls back to a sensible bg/fg swap. |
 | `customCss` / `customJs` | string | Inline CSS/JS injected on every page. CSS loads **after** the theme stylesheet (overrides win); JS runs **last**. |
 | `customCssFile` / `customJsFile` | path | Same, read from disk; copied to content-hashed `_assets/`. |
+| `footer` | string \| `{ file }` | Custom footer HTML, rendered in place of the default footer on every page. Inline string or `{ file: "./footer.html" }` (read at build time). Trusted, author-controlled HTML; style it with `customCss`/`customCssFile`. |
 | `hashCustomAssets` | boolean | Content-hash custom-asset filenames for cache-busting. Default `true`. |
 
 ## Localization
