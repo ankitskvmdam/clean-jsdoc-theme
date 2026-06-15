@@ -78,7 +78,11 @@ export function Layout({
       >
         {sidebar && (
           <aside class="hidden md:block">
-            <div class="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto">{sidebar}</div>
+            {/* `scrollbar-gutter: stable` + a small right padding keep the scrollbar
+                track clear of the nav labels (it used to overlap the text). */}
+            <div class="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto [scrollbar-gutter:stable] pr-2">
+              {sidebar}
+            </div>
           </aside>
         )}
         <main class="min-w-0 px-4 md:px-8 lg:px-12">{children}</main>

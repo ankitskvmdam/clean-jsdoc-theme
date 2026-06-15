@@ -54,6 +54,12 @@
         "link": "https://github.com/ankitskvmdam/clean-jsdoc-theme",
         "id": "github",
         "icon": "simpleicons:github"
+      },
+      {
+        "title": "npm",
+        "link": "https://www.npmjs.com/package/clean-jsdoc-theme",
+        "id": "npm",
+        "icon": "simpleicons:npm"
       }
     ]
   }

@@ -1,5 +1,6 @@
 # clean-jsdoc-theme
 
+[![npm](https://img.shields.io/npm/v/clean-jsdoc-theme?logo=npm)](https://www.npmjs.com/package/clean-jsdoc-theme)
 [![sponsor](https://img.shields.io/badge/sponsor-%E2%9D%A4-db61a2?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/ankitskvmdam)
 
 If clean-jsdoc-theme saves you time, please consider [sponsoring its development](https://github.com/sponsors/ankitskvmdam) — it directly funds the v5 rewrite and ongoing maintenance.
@@ -21,7 +22,7 @@ Four boundary packages, each independently testable, glued together by a thin JS
 | [`@clean-jsdoc-theme/rang`](./packages/rang)        | Preact component library: chrome (`Layout`, `Header`, `Footer`, `Brand`), eleven hydratable islands, shadcn-style primitives (`Button`, `ButtonGroup`, `Dialog`, `DropdownMenu`), MDX element map, `ISLAND_REGISTRY`.                                                                |
 | [`@clean-jsdoc-theme/dwar`](./packages/dwar)        | Pure `SiteManifest` → HTML/CSS/JS renderer. Server-renders pages, bundles each island as its own ESM chunk via esbuild, emits CSS, exposes a separate Pagefind post-write step.                                                                                                      |
 | [`clean-jsdoc-theme`](./packages/clean-jsdoc-theme) | The JSDoc theme entry. A thin `publish.ts` bridge that wires the four packages together and is what `jsdoc -t clean-jsdoc-theme` actually invokes.                                                                                                                                   |
-| [`@clean-jsdoc-theme/aadesh`](./packages/aadesh)    | The `clean-jsdoc` localization CLI. Extract → translate → validate → build one static site per locale (+ an interactive menu). Reads locales from your existing `jsdoc.json` opts.                                                                                                    |
+| [`@clean-jsdoc-theme/aadesh`](./packages/aadesh)    | The `clean-jsdoc` CLI for the theme. Localization authoring lives under the `i18n` group (`clean-jsdoc i18n extract`/`prompt`/`validate`); `build` is top-level (one static site per locale). Reads locales from your existing `jsdoc.json` opts; the top-level namespace is reserved for future groups. |
 | [`@clean-jsdoc-theme/bhasha`](./packages/bhasha)    | The pure, browser-safe i18n core: the UI string catalog, the `t` translator + `LanguageProvider`, and the API-slot key/hash scheme that setu, aadesh, and rang all share.                                                                                                            |
 
 ---
@@ -119,6 +120,12 @@ cd examples/basic
 pnpm run docs      # build:theme (turbo) → jsdoc -c jsdoc.json → dist/
 pnpm dlx serve dist
 ```
+
+---
+
+## History
+
+clean-jsdoc-theme has been in active development since its [first commit](https://github.com/ankitskvmdam/clean-jsdoc-theme/commit/cd1e612e3897d17ee0c500353b079d087310c1e0) on 10 November 2019.
 
 ---
 

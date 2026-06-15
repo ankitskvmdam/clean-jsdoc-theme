@@ -16,11 +16,28 @@ export interface SavedSearches {
 }
 
 /**
+ * The active locale code from `<html lang>` (dwar sets it per built site). Used
+ * to scope saved-search keys per locale, since every locale shares one origin's
+ * localStorage but its saved slugs/titles only resolve against that locale's
+ * search index (issue: switching language wiped/overwrote the lists).
+ */
+function currentLocale(): string {
+  if (typeof document === 'undefined') return 'en';
+  return document.documentElement.lang || 'en';
+}
+
+/** Suffix a base storage key with the active locale (`…:recent-searches:ja`). */
+function scopedKey(base: string): string {
+  return `${base}:${currentLocale()}`;
+}
+
+/**
  * Recent + favorite searches, persisted to localStorage (issue #137). Hydrated
  * on mount (client only, so SSR stays pure) and pruned against the search index
  * once it loads, so a saved link can't point at a page that no longer exists.
  * Writes are synchronous and ref-backed, so a list change lands before any
- * navigation that follows a selection.
+ * navigation that follows a selection. The storage keys are **scoped per locale**
+ * so each language keeps its own independent lists that survive a switch.
  */
 export function useSavedSearches(entries: SearchEntry[] | null): SavedSearches {
   const [recents, setRecents] = useState<SavedSearch[]>([]);
@@ -29,21 +46,25 @@ export function useSavedSearches(entries: SearchEntry[] | null): SavedSearches {
   const favoritesRef = useRef(favorites);
   recentsRef.current = recents;
   favoritesRef.current = favorites;
+  // Locale-scoped keys, resolved once on the client (the ref initializer runs at
+  // the hydration render, where `document.documentElement.lang` is available).
+  const recentKey = useRef(scopedKey(RECENT_KEY)).current;
+  const favoriteKey = useRef(scopedKey(FAVORITE_KEY)).current;
 
   // Hydrate from localStorage on mount.
   useEffect(() => {
-    setRecents(loadSaved(RECENT_KEY, MAX_RECENT));
-    setFavorites(loadSaved(FAVORITE_KEY, MAX_FAVORITES));
-  }, []);
+    setRecents(loadSaved(recentKey, MAX_RECENT));
+    setFavorites(loadSaved(favoriteKey, MAX_FAVORITES));
+  }, [recentKey, favoriteKey]);
 
   const persistRecents = (next: SavedSearch[]) => {
     recentsRef.current = next;
-    saveSaved(RECENT_KEY, next);
+    saveSaved(recentKey, next);
     setRecents(next);
   };
   const persistFavorites = (next: SavedSearch[]) => {
     favoritesRef.current = next;
-    saveSaved(FAVORITE_KEY, next);
+    saveSaved(favoriteKey, next);
     setFavorites(next);
   };
 

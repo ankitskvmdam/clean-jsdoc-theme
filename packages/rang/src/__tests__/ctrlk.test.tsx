@@ -6,14 +6,17 @@ import { CtrlK } from '../components/CtrlK';
 // before we dispatch the global keydown.
 const flush = () => new Promise<void>((r) => setTimeout(r, 0));
 
-const RECENT_KEY = 'clean-jsdoc-theme:recent-searches';
-const FAVORITE_KEY = 'clean-jsdoc-theme:favorite-searches';
+// Saved-search keys are scoped per locale (from <html lang>); jsdom's default
+// lang is '' → the hook falls back to 'en', so these are the en-scoped keys.
+const RECENT_KEY = 'clean-jsdoc-theme:recent-searches:en';
+const FAVORITE_KEY = 'clean-jsdoc-theme:favorite-searches:en';
 
 describe('CtrlK', () => {
   afterEach(() => {
     cleanup();
     vi.restoreAllMocks();
     localStorage.clear();
+    document.documentElement.removeAttribute('lang');
   });
 
   it('opens on Ctrl K and closes on Escape', async () => {
@@ -123,6 +126,32 @@ describe('CtrlK', () => {
       const link = (await findByText('DataProcessor')).closest('a');
       expect(link?.getAttribute('href')).toBe('/dataprocessor');
       expect(queryByText(/Type to search/)).toBeNull();
+    });
+
+    it('scopes the saved list per locale (a `ja` build keeps its own list)', async () => {
+      // An `en` list pre-exists; rendering under `lang="ja"` must not see or
+      // overwrite it — the `ja` save lands under the ja-scoped key.
+      localStorage.setItem(RECENT_KEY, JSON.stringify([{ slug: 'queue', title: 'Queue' }]));
+      document.documentElement.lang = 'ja';
+      stubIndex();
+      const { findByRole, findAllByRole, getByLabelText } = render(
+        <CtrlK basePath="/" searchIndexUrl="/_assets/search-index.abc.json" />
+      );
+      await flush();
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }));
+      await findByRole('dialog');
+
+      fireEvent.input(getByLabelText('Search query'), { target: { value: 'dp' } });
+      const options = await findAllByRole('option');
+      fireEvent.click(options[0].querySelector('a')!);
+
+      // The ja list got the new entry; the en list is untouched.
+      const ja = JSON.parse(
+        localStorage.getItem('clean-jsdoc-theme:recent-searches:ja') || '[]'
+      );
+      expect(ja.map((r: { slug: string }) => r.slug)).toEqual(['dataprocessor']);
+      const en = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
+      expect(en.map((r: { slug: string }) => r.slug)).toEqual(['queue']);
     });
 
     it('records a selected result into localStorage', async () => {
