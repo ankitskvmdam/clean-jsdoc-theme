@@ -60,7 +60,7 @@ single-locale な（または `locales` のない）build は影響を受けま�
 ## 2. catalog を extract する
 
 ```sh
-clean-jsdoc extract
+clean-jsdoc i18n extract
 ```
 
 これはあなたの pipeline を走らせ、翻訳可能なすべての string（chrome + API）を集め、
@@ -85,7 +85,7 @@ docs が変わるたびに `extract` を再実行します — これは **merge
 各 locale の `<code>.json` を手で edit するか、LLM 用に prompt を生成します:
 
 ```sh
-clean-jsdoc prompt
+clean-jsdoc i18n prompt
 ```
 
 `prompt` は locale ごとに、すぐ使える prompt **file** を
@@ -112,8 +112,8 @@ ja: 60 entries → 2 prompt files:
 ## 4. Validate する（任意）
 
 ```sh
-clean-jsdoc validate          # warns on gaps, errors on malformations
-clean-jsdoc validate --strict # gaps become failures too (for CI)
+clean-jsdoc i18n validate          # warns on gaps, errors on malformations
+clean-jsdoc i18n validate --strict # gaps become failures too (for CI)
 ```
 
 ## 5. Build する

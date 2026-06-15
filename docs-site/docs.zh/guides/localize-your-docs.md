@@ -48,7 +48,7 @@ Locale 位于你现有的 `jsdoc.json` opts 中（TypeDoc：即 `cleanJsdocTheme
 ## 2. 提取 catalog
 
 ```sh
-clean-jsdoc extract
+clean-jsdoc i18n extract
 ```
 
 它会运行你的管线，收集每一条可翻译的字符串（chrome + API），并在 `clean-jsdoc-theme-artifacts/locales/` 之下为每个 locale 写出一份可提交的 catalog：
@@ -69,7 +69,7 @@ clean-jsdoc-theme-artifacts/locales/
 逐一手动编辑每个 locale 的 `<code>.json`，或为 LLM 生成一份提示：
 
 ```sh
-clean-jsdoc prompt
+clean-jsdoc i18n prompt
 ```
 
 `prompt` 会在 `clean-jsdoc-theme-artifacts/locales/prompts/` 之下为每个 locale 写出一份开箱即用的提示**文件**——对于较小的 catalog 是 `<code>.md`，或为应对上下文限制而分块的 `<code>.part-01.md`、`<code>.part-02.md`、……。每个文件仅包含未翻译和陈旧的条目，并附有保留 markdown、`{@link}`、code fences 以及 `{var}` 插值 token 的说明。CLI 会打印文件落在何处：
@@ -87,8 +87,8 @@ ja: 60 entries → 2 prompt files:
 ## 4. 校验（可选）
 
 ```sh
-clean-jsdoc validate          # warns on gaps, errors on malformations
-clean-jsdoc validate --strict # gaps become failures too (for CI)
+clean-jsdoc i18n validate          # warns on gaps, errors on malformations
+clean-jsdoc i18n validate --strict # gaps become failures too (for CI)
 ```
 
 ## 5. 构建

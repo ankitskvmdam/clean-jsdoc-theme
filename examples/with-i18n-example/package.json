@@ -4,12 +4,12 @@
   "private": true,
   "scripts": {
     "build:theme": "pnpm exec turbo run build --filter=clean-jsdoc-theme --filter=@clean-jsdoc-theme/aadesh",
-    "extract": "clean-jsdoc extract",
+    "extract": "clean-jsdoc i18n extract",
     "build:docs": "clean-jsdoc build",
     "docs": "pnpm run build:theme && clean-jsdoc build",
     "serve": "serve dist",
     "clean-node-modules": "node ../../scripts/clean.mjs node_modules",
-    "i18n:extract": "clean-jsdoc extract"
+    "i18n:extract": "clean-jsdoc i18n extract"
   },
   "devDependencies": {
     "@clean-jsdoc-theme/aadesh": "workspace:^",

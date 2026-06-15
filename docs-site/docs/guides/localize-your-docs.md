@@ -22,8 +22,12 @@ The workflow runs through the [`clean-jsdoc`](/packages/aadesh-overview) CLI
 ([**bhasha**](/packages/bhasha-overview)).
 
 > [!NOTE]
-> Install the CLI alongside the theme:
+> **Prerequisites:** JSDoc ≥ 4 (or TypeDoc, for extract) and Node ≥ 20. Install
+> the CLI alongside the theme:
 > `pnpm add -D clean-jsdoc-theme @clean-jsdoc-theme/aadesh`
+
+The localization commands live under the `clean-jsdoc i18n` group; `build` stays
+top-level (it renders your site with or without locales).
 
 > [!INFO]
 > Localized **builds** are JSDoc-only today. The TypeDoc bridge can *extract*
@@ -59,7 +63,7 @@ no-`locales`) build is unaffected — it renders exactly as before.
 ## 2. Extract the catalogs
 
 ```sh
-clean-jsdoc extract
+clean-jsdoc i18n extract
 ```
 
 This runs your pipeline, collects every translatable string (chrome + API), and
@@ -75,7 +79,7 @@ clean-jsdoc-theme-artifacts/locales/
   ...
 ```
 
-Re-run `extract` any time your docs change — it **merges**: new keys are added,
+Re-run `i18n extract` any time your docs change — it **merges**: new keys are added,
 changed source marks a key stale, removed keys are soft-deleted (kept until
 `--prune`). A no-change run produces a zero git diff.
 
@@ -84,10 +88,10 @@ changed source marks a key stale, removed keys are soft-deleted (kept until
 Edit each locale's `<code>.json` by hand, or generate a prompt for an LLM:
 
 ```sh
-clean-jsdoc prompt
+clean-jsdoc i18n prompt
 ```
 
-`prompt` writes a ready-to-use prompt **file** per locale under
+`i18n prompt` writes a ready-to-use prompt **file** per locale under
 `clean-jsdoc-theme-artifacts/locales/prompts/` — `<code>.md` for a small catalog,
 or `<code>.part-01.md`, `<code>.part-02.md`, … chunked for context limits. Each
 file contains only the untranslated and stale entries, with instructions to
@@ -112,8 +116,8 @@ up in the report).
 ## 4. Validate (optional)
 
 ```sh
-clean-jsdoc validate          # warns on gaps, errors on malformations
-clean-jsdoc validate --strict # gaps become failures too (for CI)
+clean-jsdoc i18n validate          # warns on gaps, errors on malformations
+clean-jsdoc i18n validate --strict # gaps become failures too (for CI)
 ```
 
 ## 5. Build
@@ -125,6 +129,19 @@ clean-jsdoc build
 One site per locale: the default locale at `destination`, each other locale under
 `destination/<locale>`. The language switcher and `hreflang` alternates are wired
 automatically from the set of locales each page actually exists in.
+
+## 6. Preview & deploy
+
+Serve the output over **HTTP** (not `file://`) — the full-text Pagefind index is
+fetched at runtime and needs a real server:
+
+```sh
+pnpm dlx serve dist
+```
+
+Deploy the whole `dist/` directory to any static host. The default locale sits at
+the root and each other locale under its `/<locale>/` prefix, so the switcher and
+`hreflang` links resolve the same way in production as they do locally.
 
 ## Localizing prose
 
@@ -182,8 +199,10 @@ Prefer a guided run? Invoke the CLI with no arguments:
 clean-jsdoc
 ```
 
-It opens a welcome banner and a command picker that prompts for each command's
-options and offers to save the equivalent command to your `package.json` scripts.
+It opens a welcome banner and a command picker — the `i18n` group (drilling into
+extract / prompt / validate) and `build` — that prompts for each command's
+options and offers to save the equivalent (namespaced) command to your
+`package.json` scripts.
 
 ## A complete example
 

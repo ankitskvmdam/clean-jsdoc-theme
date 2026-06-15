@@ -6,8 +6,8 @@ order: 20
 
 # `@clean-jsdoc-theme/aadesh`
 
-`@clean-jsdoc-theme/aadesh` is the **localization CLI** for clean-jsdoc-theme. It
-does the disk-bound, process-orchestrating half of i18n — the work that
+`@clean-jsdoc-theme/aadesh` is the **CLI for clean-jsdoc-theme** — localization is
+its first area. It does the disk-bound, process-orchestrating work that
 [bhasha](/packages/bhasha-overview) (the pure, browser-safe core) deliberately
 can't: spawning your JSDoc/TypeDoc pipeline, reading and writing the committable
 locale catalogs, and rendering one static site per locale.
@@ -16,14 +16,17 @@ locale catalogs, and rendering one static site per locale.
 > **Why the name?** *aadesh* (आदेश) is Sanskrit/Hindi for **command / instruction**
 > — fitting for the project's command-line interface.
 
-The published binary is **`clean-jsdoc`**. Most projects use it through four
-subcommands (and an interactive menu when you run it with no arguments):
+The published binary is **`clean-jsdoc`**. The localization authoring verbs live
+under an **`i18n`** group; **`build`** stays top-level because it renders your
+site whether or not you use multiple locales (i18n is just _one_ area of the CLI,
+and the top-level namespace is reserved for future groups). Run with no arguments
+for an interactive menu.
 
 ```sh
-clean-jsdoc extract    # sync the per-locale catalogs from your docs
-clean-jsdoc prompt     # (optional) emit an LLM translation prompt
-clean-jsdoc validate   # preflight the catalogs
-clean-jsdoc build      # render one site per locale
+clean-jsdoc i18n extract    # sync the per-locale catalogs from your docs
+clean-jsdoc i18n prompt     # (optional) emit an LLM translation prompt
+clean-jsdoc i18n validate   # preflight the catalogs
+clean-jsdoc build           # render one site per locale
 ```
 
 > If you just want to ship a single-language site you never need aadesh — the

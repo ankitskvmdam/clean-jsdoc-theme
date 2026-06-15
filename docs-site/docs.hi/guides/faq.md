@@ -216,8 +216,8 @@ you mean?" संकेत के साथ) और build जारी रहत
 
 ```sh
 npm i -D @clean-jsdoc-theme/aadesh
-clean-jsdoc extract    # build the per-locale translation catalogs
-# …translate the JSON (or `clean-jsdoc prompt` for an LLM prompt)…
+clean-jsdoc i18n extract    # build the per-locale translation catalogs
+# …translate the JSON (or `clean-jsdoc i18n prompt` for an LLM prompt)…
 clean-jsdoc build      # render one static site per locale
 ```
 

@@ -21,7 +21,7 @@ pnpm add -D clean-jsdoc-theme @clean-jsdoc-theme/aadesh
 `jsdoc.json` に `opts.locales` と `opts.defaultLocale` を追加し、ビルドを実行します。
 
 ```sh
-clean-jsdoc extract   # カタログを同期
+clean-jsdoc i18n extract   # カタログを同期
 clean-jsdoc build     # ロケールごとにサイトをレンダリング
 ```
 

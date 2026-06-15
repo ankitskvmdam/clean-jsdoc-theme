@@ -59,7 +59,7 @@ build अप्रभावित रहता है — यह ठीक प�
 ## 2. catalogs को extract करें
 
 ```sh
-clean-jsdoc extract
+clean-jsdoc i18n extract
 ```
 
 यह आपकी pipeline चलाता है, हर translatable string (chrome + API) इकट्ठा करता है,
@@ -86,7 +86,7 @@ git diff उत्पन्न करता है।
 generate करें:
 
 ```sh
-clean-jsdoc prompt
+clean-jsdoc i18n prompt
 ```
 
 `prompt` प्रति locale एक तैयार-उपयोग prompt **file**
@@ -114,8 +114,8 @@ fallback करता है, इसलिए एक आंशिक रूप �
 ## 4. Validate करें (वैकल्पिक)
 
 ```sh
-clean-jsdoc validate          # warns on gaps, errors on malformations
-clean-jsdoc validate --strict # gaps become failures too (for CI)
+clean-jsdoc i18n validate          # warns on gaps, errors on malformations
+clean-jsdoc i18n validate --strict # gaps become failures too (for CI)
 ```
 
 ## 5. Build करें

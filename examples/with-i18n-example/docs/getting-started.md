@@ -22,8 +22,8 @@ Add `opts.locales` and `opts.defaultLocale` to your `jsdoc.json`, then run the
 build:
 
 ```sh
-clean-jsdoc extract   # sync the catalogs
-clean-jsdoc build     # render one site per locale
+clean-jsdoc i18n extract   # sync the catalogs
+clean-jsdoc build          # render one site per locale
 ```
 
 The default locale renders at the root; every other locale under `/<locale>`.

@@ -40,14 +40,16 @@ A single-locale (or no-`locales`) build is unaffected — byte-identical to befo
 
 ## 2. The CLI workflow
 
-The binary is `clean-jsdoc`. Every prompt has a flag, so it runs in CI; run it
-with **no arguments** for an interactive menu.
+The binary is `clean-jsdoc`. The localization authoring verbs live under the
+`i18n` group; `build` is top-level (it renders the site with or without locales).
+Every prompt has a flag, so it runs in CI; run it with **no arguments** for an
+interactive menu.
 
 ```sh
-clean-jsdoc extract    # build/refresh the per-locale catalogs (merges on re-run)
-clean-jsdoc prompt     # (optional) emit an LLM translation prompt for new/stale keys
-clean-jsdoc validate   # preflight — gaps warn, malformations error (--strict to fail on gaps)
-clean-jsdoc build      # render one static site per locale
+clean-jsdoc i18n extract    # build/refresh the per-locale catalogs (merges on re-run)
+clean-jsdoc i18n prompt     # (optional) emit an LLM translation prompt for new/stale keys
+clean-jsdoc i18n validate   # preflight — gaps warn, malformations error (--strict to fail on gaps)
+clean-jsdoc build           # render one static site per locale
 ```
 
 `extract` writes committable catalogs under `clean-jsdoc-theme-artifacts/locales/`:

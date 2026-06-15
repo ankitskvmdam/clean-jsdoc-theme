@@ -251,9 +251,9 @@ Declare your languages in the same `opts` block and drive the build with the
 
 ```sh
 npm i -D @clean-jsdoc-theme/aadesh
-clean-jsdoc extract    # build the per-locale translation catalogs
-# …translate the JSON (or `clean-jsdoc prompt` for an LLM prompt)…
-clean-jsdoc build      # render one static site per locale
+clean-jsdoc i18n extract    # build the per-locale translation catalogs
+# …translate the JSON (or `clean-jsdoc i18n prompt` for an LLM prompt)…
+clean-jsdoc build           # render one static site per locale
 ```
 
 You get one site per language (the default at the root, others under
@@ -261,6 +261,23 @@ You get one site per language (the default at the root, others under
 by file — a `README.<locale>.md` home page and a `docs.<locale>/` overlay — and
 fonts per locale via `"ja:heading"`-style keys. The full walkthrough is in
 [Localize your docs](/guides/localize-your-docs).
+
+### I used to run `clean-jsdoc extract` — where did it go?
+
+The localization commands now live under an `i18n` group, so the CLI has room to
+grow beyond localization. Update your commands (and any `package.json` scripts):
+
+| Old | New |
+| --- | --- |
+| `clean-jsdoc extract` | `clean-jsdoc i18n extract` |
+| `clean-jsdoc prompt` | `clean-jsdoc i18n prompt` |
+| `clean-jsdoc validate` | `clean-jsdoc i18n validate` |
+| `clean-jsdoc build` | `clean-jsdoc build` (unchanged) |
+
+`build` stays top-level because it renders your site whether or not you use
+multiple locales — the per-locale fan-out is just what `build` does when
+`opts.locales` is set. All flags are unchanged. Run `clean-jsdoc` with no
+arguments for the interactive menu, which now groups the i18n steps together.
 
 ## Working with LLMs
 

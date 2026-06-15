@@ -22,9 +22,9 @@ subcommands を通じてこれを使います（引数なしで実行すると i
 表示されます）:
 
 ```sh
-clean-jsdoc extract    # sync the per-locale catalogs from your docs
-clean-jsdoc prompt     # (optional) emit an LLM translation prompt
-clean-jsdoc validate   # preflight the catalogs
+clean-jsdoc i18n extract    # sync the per-locale catalogs from your docs
+clean-jsdoc i18n prompt     # (optional) emit an LLM translation prompt
+clean-jsdoc i18n validate   # preflight the catalogs
 clean-jsdoc build      # render one site per locale
 ```
 

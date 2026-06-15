@@ -1,10 +1,13 @@
 #!/usr/bin/env node
 /**
- * `clean-jsdoc` — the aadesh localization CLI. Two front-ends over ONE execution
+ * `clean-jsdoc` — the clean-jsdoc-theme CLI. Two front-ends over ONE execution
  * core (`runners.ts`):
  *
- *  - **Flag-driven** subcommands (`extract`/`validate`/`prompt`/`build`) — run
- *    headless in CI (the plan's "flag equivalent for every prompt").
+ *  - **Flag-driven** subcommands — run headless in CI (the plan's "flag
+ *    equivalent for every prompt"). The localization authoring verbs live under
+ *    an `i18n` group (`clean-jsdoc i18n extract|prompt|validate`); `build` is a
+ *    top-level command (it renders the site with or without locales). The
+ *    top-level namespace is reserved for future command groups.
  *  - **Interactive** menu — when invoked with NO subcommand (`clean-jsdoc`), a
  *    welcome screen + a looped command picker that asks each command's options,
  *    runs it, and offers to save the equivalent command to package.json.
@@ -15,9 +18,17 @@ import { execExtract, execValidate, execPrompt, execBuild } from './runners';
 import { runInteractive } from './interactive';
 
 const program = new Command();
-program.name('clean-jsdoc').description('clean-jsdoc-theme localization CLI');
+program.name('clean-jsdoc').description('clean-jsdoc-theme CLI');
 
-program
+// Localization authoring lives under `i18n` so the top-level namespace stays
+// free for future command groups. `clean-jsdoc i18n` with no subcommand prints
+// the group help rather than erroring.
+const i18n = program
+  .command('i18n')
+  .description('Localization workflow: extract, prompt, and validate catalogs')
+  .action(() => i18n.help());
+
+i18n
   .command('extract')
   .description('Run the pipeline in extract mode and sync the locale catalogs')
   .option('-c, --config <path>', 'jsdoc/typedoc config file', 'jsdoc.json')
@@ -28,7 +39,7 @@ program
     execExtract(o)
   );
 
-program
+i18n
   .command('validate')
   .description('Preflight the committed locale catalogs')
   .option('-c, --config <path>', 'jsdoc/typedoc config file', 'jsdoc.json')
@@ -39,7 +50,7 @@ program
     execValidate(o)
   );
 
-program
+i18n
   .command('prompt')
   .description('Emit an LLM translation prompt for the new + stale keys')
   .option('-c, --config <path>', 'jsdoc/typedoc config file', 'jsdoc.json')

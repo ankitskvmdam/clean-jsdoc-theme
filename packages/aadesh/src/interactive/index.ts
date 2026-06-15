@@ -132,17 +132,46 @@ export async function runInteractive(): Promise<void> {
   printWelcome();
   try {
     for (;;) {
-      const id = await select({
+      // Top-level menu: the `i18n` group + the ungrouped top-level commands
+      // (`build`). Mirrors the CLI structure (`clean-jsdoc i18n …` vs `build`).
+      const top = await select({
         message: 'What would you like to do?',
         choices: [
-          ...COMMANDS.map((c) => ({ name: c.title, value: c.id, description: c.description })),
+          {
+            name: 'i18n',
+            value: 'i18n',
+            description: 'Localization authoring: extract, prompt, validate.',
+          },
+          ...COMMANDS.filter((c) => !c.group).map((c) => ({
+            name: c.title,
+            value: c.id,
+            description: c.description,
+          })),
           { name: 'Exit', value: 'exit', description: 'Leave the interactive CLI.' },
         ],
       });
-      if (id === 'exit') return;
+      if (top === 'exit') return;
 
-      const command = COMMANDS.find((c) => c.id === id);
-      if (!command) return;
+      let command: InteractiveCommand | undefined;
+      if (top === 'i18n') {
+        // Drill into the i18n group; `Back` returns to the top-level menu.
+        const sub = await select({
+          message: 'i18n — which step?',
+          choices: [
+            ...COMMANDS.filter((c) => c.group === 'i18n').map((c) => ({
+              name: c.title,
+              value: c.id,
+              description: c.description,
+            })),
+            { name: 'Back', value: 'back', description: 'Return to the main menu.' },
+          ],
+        });
+        if (sub === 'back') continue;
+        command = COMMANDS.find((c) => c.id === sub);
+      } else {
+        command = COMMANDS.find((c) => c.id === top);
+      }
+      if (!command) continue;
 
       const answers = await promptOptions(command);
       const argv = toArgv(command, answers);

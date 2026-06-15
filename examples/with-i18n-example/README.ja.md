@@ -24,10 +24,10 @@ pnpm --filter example-with-i18n run serve  # serve ./dist
 ## ローカライズのワークフロー
 
 ```sh
-clean-jsdoc extract   # API + chrome キーに対してロケール別カタログを同期
-clean-jsdoc prompt    # （任意）未翻訳キー用の LLM プロンプトを出力
-clean-jsdoc validate  # カタログを事前チェック
-clean-jsdoc build     # スタンプしてロケールごとにサイトをレンダリング
+clean-jsdoc i18n extract   # API + chrome キーに対してロケール別カタログを同期
+clean-jsdoc i18n prompt    # （任意）未翻訳キー用の LLM プロンプトを出力
+clean-jsdoc i18n validate  # カタログを事前チェック
+clean-jsdoc build          # スタンプしてロケールごとにサイトをレンダリング
 ```
 
 > 注: ホームページはローカライズされています。`aadesh build` は隣接する

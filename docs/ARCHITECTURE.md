@@ -42,7 +42,7 @@ clean-jsdoc-theme/
 │   ├── dwar/                  # @clean-jsdoc-theme/dwar   — SiteManifest → HTML/CSS/JS
 │   ├── clean-jsdoc-theme/     # clean-jsdoc-theme         — the JSDoc theme entry (bridge)
 │   ├── typedoc/               # @clean-jsdoc-theme/typedoc — TypeDoc plugin (bridge)
-│   ├── aadesh/                # @clean-jsdoc-theme/aadesh — localization CLI (clean-jsdoc)
+│   ├── aadesh/                # @clean-jsdoc-theme/aadesh — theme CLI (clean-jsdoc; i18n group + build)
 │   └── bhasha/                # @clean-jsdoc-theme/bhasha — pure i18n core
 ├── examples/
 │   ├── basic/                 # working JSDoc fixture: `pnpm run docs` → dist/
@@ -633,23 +633,27 @@ key scheme (`apiSlotKey(longname, field)`) + `sourceHash` (FNV-1a), and the
 validation primitives aadesh's `validate` uses. setu and aadesh import its key/hash
 helpers so they agree on slot identity + staleness.
 
-### `@clean-jsdoc-theme/aadesh` — the localization CLI
+### `@clean-jsdoc-theme/aadesh` — the theme CLI
 
-The disk-bound, process-orchestrating half. The published binary is `clean-jsdoc`;
-its four subcommands (`extract` / `prompt` / `validate` / `build`, plus an
-interactive menu when run with no args) drive the i18n workflow. It reads locale
+The disk-bound, process-orchestrating half. The published binary is `clean-jsdoc`,
+the CLI for the whole theme — i18n is its first area. The localization authoring
+verbs live under an **`i18n` group** (`clean-jsdoc i18n extract` / `i18n prompt` /
+`i18n validate`); **`build` stays top-level** because it renders the site with or
+without locales (the per-locale fan-out is just its behaviour when `opts.locales`
+is set). The top-level namespace is reserved for future command groups. Run with
+no args for an interactive menu (the `i18n` group + `build`). It reads locale
 config from the **same `jsdoc.json` opts** (`opts.locales` + `opts.defaultLocale`),
 spawns the real pipeline in *extract mode* to harvest translatable strings, and
 once per locale in *build mode* to stamp translations back in.
 
 ```
 aadesh/src/
-├── cli.ts               # commander front-end; no subcommand → the interactive menu
+├── cli.ts               # commander front-end (i18n group + top-level build); no subcommand → interactive menu
 ├── runners.ts           # exec* per command — the shared run+print+exit path
 ├── interactive/         # @inquirer/prompts welcome screen + command picker
 │   ├── registry.ts      #   pure command metadata + toArgv/toCommandString
 │   └── package-json.ts  #   save the equivalent command as an npm script
-├── commands/            # extract / prompt / validate / build
+├── commands/            # extract / prompt / validate (i18n group) + build (top-level)
 ├── locale/              # PURE catalog core: template, merge, file model
 ├── artifacts.ts         # disk layer: <code>.json (editable) + <code>.meta.json (auto)
 ├── extract-manifest.ts  # spawn the pipeline (extract mode); runPipeline(extraArgs)

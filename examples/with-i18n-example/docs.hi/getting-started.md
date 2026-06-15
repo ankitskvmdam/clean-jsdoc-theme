@@ -21,7 +21,7 @@ pnpm add -D clean-jsdoc-theme @clean-jsdoc-theme/aadesh
 अपनी `jsdoc.json` में `opts.locales` और `opts.defaultLocale` जोड़ें, फिर बिल्ड चलाएँ:
 
 ```sh
-clean-jsdoc extract   # कैटलॉग सिंक करें
+clean-jsdoc i18n extract   # कैटलॉग सिंक करें
 clean-jsdoc build     # प्रति लोकेल एक साइट रेंडर करें
 ```
 

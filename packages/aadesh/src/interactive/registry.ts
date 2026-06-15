@@ -45,6 +45,12 @@ export type OptionSpec = TextOption | ConfirmOption | NumberOption;
 
 export interface InteractiveCommand {
   id: 'extract' | 'validate' | 'prompt' | 'build';
+  /**
+   * Parent command group, if any. The localization authoring verbs live under
+   * `i18n` (`clean-jsdoc i18n extract`); `build` is a top-level command with no
+   * group. Drives both the nested interactive menu and the saved-command argv.
+   */
+  group?: 'i18n';
   /** Menu label. */
   title: string;
   /** One-line description shown for the focused menu item. */
@@ -81,6 +87,7 @@ const typedoc: ConfirmOption = {
 export const COMMANDS: readonly InteractiveCommand[] = [
   {
     id: 'extract',
+    group: 'i18n',
     title: 'extract',
     description: 'Run the pipeline and sync the per-locale catalogs (new/stale/obsolete keys).',
     options: [
@@ -98,6 +105,7 @@ export const COMMANDS: readonly InteractiveCommand[] = [
   },
   {
     id: 'prompt',
+    group: 'i18n',
     title: 'prompt',
     description: 'Write an LLM translation prompt file per locale for the untranslated + stale keys.',
     options: [
@@ -120,6 +128,7 @@ export const COMMANDS: readonly InteractiveCommand[] = [
   },
   {
     id: 'validate',
+    group: 'i18n',
     title: 'validate',
     description: 'Preflight the committed catalogs (gaps warn, malformations error).',
     options: [
@@ -167,12 +176,13 @@ function cleanText(value: OptionAnswer): string | undefined {
 
 /**
  * Reconstruct the CLI argv for a command from collected answers — the array a
- * user could pass to `clean-jsdoc`. Defaults and blanks are omitted so the saved
+ * user could pass to `clean-jsdoc`. The command's `group` (e.g. `i18n`) leads,
+ * then its id, then the options. Defaults and blanks are omitted so the saved
  * command stays minimal: a text option equal to its default (or blank) is
  * dropped, a confirm is emitted only when true, a number only when provided.
  */
 export function toArgv(command: InteractiveCommand, answers: Record<string, OptionAnswer>): string[] {
-  const argv: string[] = [command.id];
+  const argv: string[] = command.group ? [command.group, command.id] : [command.id];
   for (const opt of command.options) {
     const value = answers[opt.name];
     if (opt.kind === 'confirm') {
@@ -192,7 +202,7 @@ function quote(part: string): string {
   return /\s/.test(part) ? `"${part}"` : part;
 }
 
-/** The full saved command string, e.g. `clean-jsdoc extract --prune`. */
+/** The full saved command string, e.g. `clean-jsdoc i18n extract --prune`. */
 export function toCommandString(argv: readonly string[]): string {
   return ['clean-jsdoc', ...argv].map(quote).join(' ');
 }

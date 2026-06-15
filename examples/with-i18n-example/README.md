@@ -25,10 +25,10 @@ The default locale renders at the root (`/`); the others under `/ja` and `/hi`.
 ## The localization workflow
 
 ```sh
-clean-jsdoc extract   # sync the per-locale catalogs against the API + chrome keys
-clean-jsdoc prompt    # (optional) emit an LLM prompt for the untranslated keys
-clean-jsdoc validate  # preflight the catalogs
-clean-jsdoc build     # stamp + render one site per locale
+clean-jsdoc i18n extract   # sync the per-locale catalogs against the API + chrome keys
+clean-jsdoc i18n prompt    # (optional) emit an LLM prompt for the untranslated keys
+clean-jsdoc i18n validate  # preflight the catalogs
+clean-jsdoc build          # stamp + render one site per locale
 ```
 
 > Note on prose localization:

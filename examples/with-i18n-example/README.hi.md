@@ -24,10 +24,10 @@ pnpm --filter example-with-i18n run serve  # serve ./dist
 ## स्थानीयकरण की कार्यप्रणाली
 
 ```sh
-clean-jsdoc extract   # API + chrome कुंजियों के विरुद्ध प्रति-लोकेल कैटलॉग सिंक करें
-clean-jsdoc prompt    # (वैकल्पिक) अनट्रांसलेटेड कुंजियों के लिए LLM प्रॉम्प्ट दें
-clean-jsdoc validate  # कैटलॉग की प्रीफ़्लाइट जाँच करें
-clean-jsdoc build     # स्टैम्प करें + प्रति लोकेल एक साइट रेंडर करें
+clean-jsdoc i18n extract   # API + chrome कुंजियों के विरुद्ध प्रति-लोकेल कैटलॉग सिंक करें
+clean-jsdoc i18n prompt    # (वैकल्पिक) अनट्रांसलेटेड कुंजियों के लिए LLM प्रॉम्प्ट दें
+clean-jsdoc i18n validate  # कैटलॉग की प्रीफ़्लाइट जाँच करें
+clean-jsdoc build          # स्टैम्प करें + प्रति लोकेल एक साइट रेंडर करें
 ```
 
 > नोट: होम पेज स्थानीयकृत है — `aadesh build` साथ रखी गई

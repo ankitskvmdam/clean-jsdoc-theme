@@ -10,28 +10,35 @@ describe('interactive registry — toArgv', () => {
   const prompt = findCommand('prompt')!;
   const build = findCommand('build')!;
 
-  it('omits defaults + falsy flags → bare command', () => {
+  it('omits defaults + falsy flags → bare command, under the i18n group', () => {
     // config left at its default, every confirm false, optionals blank.
     expect(toArgv(extract, { config: 'jsdoc.json', dir: undefined, prune: false, typedoc: false }))
-      .toEqual(['extract']);
+      .toEqual(['i18n', 'extract']);
   });
 
   it('emits a non-default config (short flag), true confirms, and a dir', () => {
     expect(
       toArgv(extract, { config: 'sub/jsdoc.json', dir: 'locales', prune: true, typedoc: true })
-    ).toEqual(['extract', '-c', 'sub/jsdoc.json', '--dir', 'locales', '--prune', '--typedoc']);
+    ).toEqual(['i18n', 'extract', '-c', 'sub/jsdoc.json', '--dir', 'locales', '--prune', '--typedoc']);
   });
 
-  it('emits a number option only when provided', () => {
+  it('emits a number option only when provided (under the i18n group)', () => {
     expect(toArgv(prompt, { config: 'jsdoc.json', locale: 'fr', chunkSize: 40, typedoc: false }))
-      .toEqual(['prompt', '--locale', 'fr', '--chunk-size', '40']);
-    expect(toArgv(prompt, { config: 'jsdoc.json', chunkSize: undefined })).toEqual(['prompt']);
+      .toEqual(['i18n', 'prompt', '--locale', 'fr', '--chunk-size', '40']);
+    expect(toArgv(prompt, { config: 'jsdoc.json', chunkSize: undefined })).toEqual(['i18n', 'prompt']);
   });
 
-  it('treats a blank/whitespace text answer as omitted', () => {
+  it('keeps build top-level (no i18n group prefix)', () => {
     expect(toArgv(build, { config: '   ', dir: '', locale: '  ', typedoc: false })).toEqual([
       'build',
     ]);
+  });
+
+  it('groups the authoring verbs under i18n but not build', () => {
+    expect(extract.group).toBe('i18n');
+    expect(prompt.group).toBe('i18n');
+    expect(findCommand('validate')!.group).toBe('i18n');
+    expect(build.group).toBeUndefined();
   });
 
   it('build is the last command and frames itself as the recurring step', () => {
@@ -42,9 +49,18 @@ describe('interactive registry — toArgv', () => {
 
 describe('interactive registry — toCommandString', () => {
   it('prefixes clean-jsdoc and quotes parts with whitespace', () => {
-    expect(toCommandString(['extract', '--prune'])).toBe('clean-jsdoc extract --prune');
+    expect(toCommandString(['i18n', 'extract', '--prune'])).toBe(
+      'clean-jsdoc i18n extract --prune'
+    );
     expect(toCommandString(['build', '-c', 'my docs/jsdoc.json'])).toBe(
       'clean-jsdoc build -c "my docs/jsdoc.json"'
+    );
+  });
+
+  it('saves the namespaced i18n form end-to-end (toArgv → toCommandString)', () => {
+    const extract = findCommand('extract')!;
+    expect(toCommandString(toArgv(extract, { config: 'jsdoc.json', prune: true }))).toBe(
+      'clean-jsdoc i18n extract --prune'
     );
   });
 });
@@ -69,9 +85,9 @@ describe('interactive package.json — addScript / hasScript', () => {
   });
 
   it('creates the scripts block when absent', () => {
-    const res = addScript(JSON.stringify({ name: 'demo' }) + '', 'i18n:extract', 'clean-jsdoc extract');
+    const res = addScript(JSON.stringify({ name: 'demo' }) + '', 'i18n:extract', 'clean-jsdoc i18n extract');
     expect(res.status).toBe('added');
-    expect(JSON.parse(res.json).scripts).toEqual({ 'i18n:extract': 'clean-jsdoc extract' });
+    expect(JSON.parse(res.json).scripts).toEqual({ 'i18n:extract': 'clean-jsdoc i18n extract' });
   });
 
   it('never overwrites an existing key (status exists, text unchanged)', () => {

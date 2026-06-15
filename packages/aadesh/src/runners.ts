@@ -136,7 +136,7 @@ export async function execPrompt(o: PromptOpts): Promise<void> {
       console.log('');
       console.log('Open each file and paste its contents into your LLM — or upload the .md directly.');
       console.log(
-        'Then copy the returned translations into the matching <code>.json catalog and run `clean-jsdoc validate`.'
+        'Then copy the returned translations into the matching <code>.json catalog and run `clean-jsdoc i18n validate`.'
       );
     }
   } catch (err) {
