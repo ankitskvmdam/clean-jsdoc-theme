@@ -1,6 +1,6 @@
 {
   "name": "@clean-jsdoc-theme/dwar",
-  "version": "5.0.0-alpha.4",
+  "version": "5.0.0",
   "description": "Pure SiteManifest → HTML/CSS/JS renderer for clean-jsdoc-theme",
   "type": "module",
   "main": "./dist/index.js",
