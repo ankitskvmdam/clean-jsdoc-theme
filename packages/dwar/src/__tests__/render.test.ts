@@ -589,3 +589,55 @@ describe('render() — localization (language switcher + chrome locale)', () => 
     expect(home).not.toContain('language-switcher');
   });
 });
+
+describe('render() — header controls visibility (mobile + desktop)', () => {
+  const twoLocales = {
+    code: 'fr',
+    defaultLocale: 'en',
+    messages: {},
+    siteBasePath: '/',
+    locales: [
+      { code: 'en', label: 'English' },
+      { code: 'fr', label: 'Français' },
+    ],
+  };
+
+  /**
+   * The class string of the `<div>` that directly wraps a given island marker,
+   * or `null` when the marker is emitted with no wrapping div. The desktop-only
+   * controls live behind a `hidden … md:flex` wrapper; the always-visible ones
+   * do not.
+   */
+  function wrapperClassFor(html: string, island: string): string | null {
+    const m = html.match(new RegExp(`<div class="([^"]*)">\\s*<div data-island="${island}"`, 'u'));
+    return m ? m[1] : null;
+  }
+
+  it('keeps the search (cmdk) trigger visible on all breakpoints, not desktop-only', async () => {
+    const result = await render(makeManifest(), { theme: minimalTheme });
+    const home = asString(result.files.find((f) => f.path === 'index.html')!);
+
+    const searchWrapper = wrapperClassFor(home, 'cmdk');
+    expect(searchWrapper).not.toBeNull();
+    // Visible at every breakpoint: a plain flex container, never gated by `hidden`.
+    expect(searchWrapper).toContain('flex');
+    expect(searchWrapper).not.toContain('hidden');
+    expect(searchWrapper).not.toContain('md:flex');
+
+    // Regression guard: theme + settings stay desktop-only (they live in the
+    // mobile nav drawer), so the search fix didn't accidentally expose them.
+    expect(wrapperClassFor(home, 'theme-toggle')).toBe('hidden items-center gap-1 md:flex');
+  });
+
+  it('keeps the language switcher visible on all breakpoints, not desktop-only', async () => {
+    const result = await render(makeManifest(), { theme: minimalTheme, locale: twoLocales });
+    const home = asString(result.files.find((f) => f.path === 'index.html')!);
+
+    expect(home).toContain('data-island="language-switcher"');
+    // The switcher is emitted with no wrapping div, so it is never gated by a
+    // `hidden`/`md:flex` desktop-only wrapper.
+    expect(wrapperClassFor(home, 'language-switcher')).toBeNull();
+    // And search remains visible alongside it on every breakpoint.
+    expect(wrapperClassFor(home, 'cmdk')).not.toContain('hidden');
+  });
+});

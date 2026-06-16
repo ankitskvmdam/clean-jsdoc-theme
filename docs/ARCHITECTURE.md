@@ -407,7 +407,8 @@ are starred, both persisted to `localStorage` (`use-saved-searches`). The
 opens it, or hands its raw-Markdown link to an LLM — it's configurable via
 `ThemeConfig.copyPage` (`enabled` + which `actions`). The `mobile-nav` drawer
 composes the others (theme toggle, settings, sidebar) rather than duplicating
-them; it shows below `md`, where the header keeps only its trigger and the
+them; it shows below `md`, where the header keeps the search trigger, the
+language switcher (localized builds), and the nav-drawer trigger, and the
 sidebar column is hidden. `toc` (the curved right rail) and `toc-mobile` (the
 `< lg` progress-bar popover, `TocPopover`) are two presentations of the same
 headings — both hydrate but only one is visible per breakpoint; they share their
@@ -449,9 +450,11 @@ dwar/src/
 │                         #   island directly (code stays in the SSR <pre>, off the payload)
 ├── layout.tsx            # SsrLayout — island-seam adapter: wraps islands in
 │                         #   data-island markers, then composes rang's Layout
-│                         #   via its slots (emits no chrome of its own). Header
-│                         #   controls are desktop-only (search/theme/settings);
-│                         #   mobile-nav is the only < md control. Exposes
+│                         #   via its slots (emits no chrome of its own). Search
+│                         #   + the language switcher stay visible on all
+│                         #   breakpoints; theme/settings are desktop-only (they
+│                         #   live in the mobile nav drawer), so < md the header
+│                         #   keeps search + switcher + the mobile-nav trigger. Exposes
 │                         #   renderIsland() (id alloc + marker), reused for source pages
 ├── mdx.ts                # @mdx-js/mdx compile + run (Preact runtime, frontmatter,
 │                         #   remark-gfm for tables/strikethrough/task-lists,

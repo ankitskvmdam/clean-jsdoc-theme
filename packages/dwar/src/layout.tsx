@@ -163,10 +163,8 @@ export function SsrLayout({
   );
 
   // The language switcher (localized builds with >1 locale) stays visible on ALL
-  // breakpoints. On desktop it sits between the search and theme/settings groups
-  // — i.e. right after the search icon; on mobile, where both desktop groups are
-  // hidden, only it and the nav-drawer trigger remain, so it lands immediately
-  // before the sidebar-toggle button.
+  // breakpoints. It sits right after the always-visible search icon: on desktop
+  // before the theme/settings group, on mobile before the nav-drawer trigger.
   const languageSwitcherIsland = languageSwitcher ? (
     <Island
       name="language-switcher"
@@ -178,27 +176,17 @@ export function SsrLayout({
 
   const headerControls = (
     <>
-      {/* Desktop controls: search + theme + settings. On mobile these all
-          collapse into the nav drawer trigger below — the mobile header keeps
-          only the language switcher + the panel-right button. The desktop group
-          splits around the always-visible switcher so it reads search → language
-          → theme → settings. */}
-      {languageSwitcherIsland ? (
-        <>
-          <div class="hidden items-center gap-1 md:flex">{search}</div>
-          {languageSwitcherIsland}
-          <div class="hidden items-center gap-1 md:flex">
-            {themeToggle}
-            {settings}
-          </div>
-        </>
-      ) : (
-        <div class="hidden items-center gap-1 md:flex">
-          {search}
-          {themeToggle}
-          {settings}
-        </div>
-      )}
+      {/* Search and the language switcher stay visible on ALL breakpoints —
+          they read search → language. Theme + settings are desktop-only; on
+          mobile they collapse into the nav drawer trigger below. So the mobile
+          header keeps search + the (optional) language switcher + the
+          panel-right button. */}
+      <div class="flex items-center gap-1">{search}</div>
+      {languageSwitcherIsland}
+      <div class="hidden items-center gap-1 md:flex">
+        {themeToggle}
+        {settings}
+      </div>
       {/* Mobile-only drawer trigger; the drawer hosts theme/settings + the page list. */}
       {nav.length > 0 && (
         <div class="md:hidden">
