@@ -99,13 +99,12 @@ v5 は、残っている `theme_opts` key や v4 の option 名に対して **�
 | `default_theme` | — | 削除 | Light/dark token sets + runtime toggle; picker なし。 |
 | `base_url` | `basePath` | renamed | links に prefix される site root。 |
 | `title` | `siteName` | 変更 | String **または** logo set `{ default, dark, light, alt }`。 |
-| `menu` | `menu` | 変更 | 再構成: `{ id?, title?, link/href?, icon?, target?, class? }` — `icon` と `id` built-ins を追加; `target`/`class` は引き続きサポート。 |
+| `menu` | `menu` | 変更 | 再構成: `{ id?, title?, link/href?, icon?, target?, class? }` — `icon` と `id` built-ins を追加。 |
 | `sections` | `sectionOrder` | renamed | sidebar sections を filter + order。 |
 | `create_style` | `customCss` | renamed | Inline CSS（theme stylesheet の後に load）。 |
 | `include_css` / `add_style_path` | `customCssFile` | renamed/変更 | CSS file → content-hashed asset link。 |
 | `add_scripts` | `customJs` | renamed | Inline JS（最後に実行）。 |
 | `include_js` / `add_script_path` | `customJsFile` | renamed/変更 | JS file → content-hashed asset。 |
-| `favicon` | `favicon` | kept | file path; theme がそれを copy し `<link rel="icon">` を emit します。 |
 | `homepageTitle` | — | 削除 | Home `<title>` は README / `docs/index.md` + `siteName` から derive。 |
 | `includeFilesListInHomepage` | — | 削除 | Source Files section が files を列挙。 |
 | `meta` | `meta` | 変更 | 再び supported — attribute maps の array → `<head>` の `<meta>` tags。[`meta`](/theme/configuration#meta) を参照。 |
@@ -118,8 +117,7 @@ v5 は、残っている `theme_opts` key や v4 の option 名に対して **�
 > [!NOTE]
 > **menu** が再構成されました: v4 の entry `{ title, link, target, class, id }` は
 > v5 の `{ id?, title?, link (or href)?, icon?, target?, class? }` になります —
-> `target`/`class` は引き続き使え、`icon`（`lucide:<name>` / `simpleicons:<name>`）
-> を追加できます。v5 では、
+> `icon`（`lucide:<name>` / `simpleicons:<name>`）を追加できます。v5 では、
 > `id` は built-ins も選択し（`{ id: "home" }`、`{ id: "source" }`）、`menu` は
 > `sectionOrder` より優先されます。[`menu`](/theme/configuration#menu) と
 > [Structure your sidebar](/guides/structure-your-sidebar) を参照してください。

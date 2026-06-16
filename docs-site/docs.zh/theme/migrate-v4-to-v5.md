@@ -94,13 +94,12 @@ npx serve <destination>   # Pagefind full-text search needs HTTP
 | `default_theme` | — | 已移除 | 明/暗 token 集 + 运行时切换；没有选择器。 |
 | `base_url` | `basePath` | 已重命名 | 站点根路径，作为前缀加到链接上。 |
 | `title` | `siteName` | 已变更 | 字符串**或**一个 logo 集 `{ default, dark, light, alt }`。 |
-| `menu` | `menu` | 已变更 | 已重塑：`{ id?, title?, link/href?, icon?, target?, class? }` —— 新增 `icon` 与 `id` 内置项；`target`/`class` 仍受支持。 |
+| `menu` | `menu` | 已变更 | 已重塑：`{ id?, title?, link/href?, icon?, target?, class? }` —— 新增 `icon` 与 `id` 内置项。 |
 | `sections` | `sectionOrder` | 已重命名 | 筛选并排序侧边栏区块。 |
 | `create_style` | `customCss` | 已重命名 | 内联 CSS（在主题样式表之后加载）。 |
 | `include_css` / `add_style_path` | `customCssFile` | 已重命名/已变更 | CSS 文件 → 带内容哈希的资源链接。 |
 | `add_scripts` | `customJs` | 已重命名 | 内联 JS（最后运行）。 |
 | `include_js` / `add_script_path` | `customJsFile` | 已重命名/已变更 | JS 文件 → 带内容哈希的资源。 |
-| `favicon` | `favicon` | 已保留 | 一个文件路径；主题会复制它并输出 `<link rel="icon">`。 |
 | `homepageTitle` | — | 已移除 | 首页 `<title>` 由 README / `docs/index.md` + `siteName` 派生。 |
 | `includeFilesListInHomepage` | — | 已移除 | Source Files 区块会列出文件。 |
 | `meta` | `meta` | 已变更 | 再次受支持 —— 一个由 attribute map 组成的数组 → `<head>` 中的 `<meta>` tags。参见 [`meta`](/theme/configuration#meta)。 |
@@ -112,8 +111,7 @@ npx serve <destination>   # Pagefind full-text search needs HTTP
 
 > [!NOTE]
 > **menu** 已重塑：v4 条目 `{ title, link, target, class, id }` 变为
-> v5 的 `{ id?, title?, link (or href)?, icon?, target?, class? }`——`target`/`class`
-> 仍然可用，并可加上一个
+> v5 的 `{ id?, title?, link (or href)?, icon?, target?, class? }`——可加上一个
 > `icon`（`lucide:<name>` / `simpleicons:<name>`）。在 v5 中，`id` 还可选择内置项
 > （`{ id: "home" }`、`{ id: "source" }`），并且 `menu` 优先于
 > `sectionOrder`。参见 [`menu`](/theme/configuration#menu) 和

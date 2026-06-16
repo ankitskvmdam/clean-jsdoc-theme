@@ -97,13 +97,12 @@ you mean?" संकेत के साथ) और build करता रहत
 | `default_theme` | — | हटाया गया | Light/dark token sets + runtime toggle; कोई picker नहीं। |
 | `base_url` | `basePath` | renamed | links पर prefix किया जाने वाला site root। |
 | `title` | `siteName` | बदला गया | String **या** एक logo set `{ default, dark, light, alt }`। |
-| `menu` | `menu` | बदला गया | फिर से ढाला गया: `{ id?, title?, link/href?, icon?, target?, class? }` — `icon` + `id` built-ins जुड़े; `target`/`class` अब भी समर्थित। |
+| `menu` | `menu` | बदला गया | फिर से ढाला गया: `{ id?, title?, link/href?, icon?, target?, class? }` — `icon` + `id` built-ins जुड़े। |
 | `sections` | `sectionOrder` | renamed | sidebar sections को filter + order करें। |
 | `create_style` | `customCss` | renamed | Inline CSS (theme stylesheet के बाद load होता है)। |
 | `include_css` / `add_style_path` | `customCssFile` | renamed/बदला गया | CSS file → content-hashed asset link। |
 | `add_scripts` | `customJs` | renamed | Inline JS (अंत में चलता है)। |
 | `include_js` / `add_script_path` | `customJsFile` | renamed/बदला गया | JS file → content-hashed asset। |
-| `favicon` | `favicon` | रखा गया | एक file path; theme इसे copy करता है + `<link rel="icon">` emit करता है। |
 | `homepageTitle` | — | हटाया गया | Home `<title>` README / `docs/index.md` + `siteName` से derive होता है। |
 | `includeFilesListInHomepage` | — | हटाया गया | Source Files section files सूचीबद्ध करता है। |
 | `meta` | `meta` | बदला गया | फिर से समर्थित — attribute maps की एक array → `<head>` में `<meta>` tags। देखें [`meta`](/theme/configuration#meta)। |
@@ -115,9 +114,8 @@ you mean?" संकेत के साथ) और build करता रहत
 
 > [!NOTE]
 > **menu** फिर से ढाला गया: एक v4 entry `{ title, link, target, class, id }` एक
-> v5 `{ id?, title?, link (or href)?, icon?, target?, class? }` बन जाती है —
-> `target`/`class` अब भी काम करते हैं, और आप एक `icon`
-> (`lucide:<name>` / `simpleicons:<name>`) जोड़ते हैं। v5 में, `id` built-ins
+> v5 `{ id?, title?, link (or href)?, icon?, target?, class? }` बन जाती है — आप एक
+> `icon` (`lucide:<name>` / `simpleicons:<name>`) जोड़ते हैं। v5 में, `id` built-ins
 > भी चुनता है (`{ id: "home" }`, `{ id: "source" }`), और एक `menu`, `sectionOrder`
 > पर वरीयता लेता है। देखें [`menu`](/theme/configuration#menu) और
 > [Structure your sidebar](/guides/structure-your-sidebar)।
