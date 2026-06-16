@@ -19,8 +19,9 @@ import { openCodesandbox } from './playground/codesandbox';
 
 /**
  * Per-provider display name + inlined brand glyph + opener. The icons are
- * `currentColor` Preact components (see `./icons/`), so they track the menu
- * item's text color and the light/dark theme for free.
+ * `currentColor` Preact components (see `./icons/`), rendered in the muted
+ * foreground color (`text-muted-foreground` → `--clean-fg-muted`) so they sit
+ * quieter than the item label and swap light/dark for free.
  */
 const PROVIDERS: Record<
   PlaygroundProvider,
@@ -76,7 +77,7 @@ export function PlaygroundMenu({ providers, code = '', options = {} }: Playgroun
               key={provider}
               onSelect={() => meta.open(code, options[provider] ?? {})}
             >
-              <Icon size={16} class="shrink-0" />
+              <Icon size={16} class="shrink-0 text-muted-foreground" />
               {t('chrome.playground.openInProvider', { provider: meta.label })}
             </DropdownMenuItem>
           );
