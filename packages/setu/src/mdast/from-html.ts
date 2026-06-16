@@ -1,6 +1,7 @@
 import type {
   BlockContent,
   Blockquote,
+  Code,
   DefinitionContent,
   PhrasingContent,
   Root,
@@ -13,7 +14,13 @@ import { fromMarkdown } from 'mdast-util-from-markdown';
 import { gfmFromMarkdown } from 'mdast-util-gfm';
 import { toHast } from 'mdast-util-to-hast';
 import { gfm } from 'micromark-extension-gfm';
-import { callout, step, steps, tab, tabs } from './builders';
+import { callout, code, playground, step, steps, tab, tabs } from './builders';
+import {
+  KNOWN_PROVIDERS,
+  parsePlaygroundSpec,
+  resolvePlaygroundOpts,
+  type PlaygroundSpec,
+} from '../playground';
 
 /**
  * GitHub-style alert keyword → rang callout variant. A prose blockquote whose
@@ -107,10 +114,11 @@ interface ContainerItem {
  */
 type Segment =
   | { kind: 'plain'; raw: string }
-  | { kind: 'steps' | 'tabs'; items: ContainerItem[]; group?: string };
+  | { kind: 'steps' | 'tabs'; items: ContainerItem[]; group?: string }
+  | { kind: 'playground'; spec: PlaygroundSpec; raw: string };
 
-/** Matches a top-level `<steps …>` / `<tabs …>` opening tag (case-insensitive). */
-const CONTAINER_OPEN = /<(steps|tabs)(\s[^>]*)?>/i;
+/** Matches a top-level `<steps …>` / `<tabs …>` / `<playground …>` opening tag. */
+const CONTAINER_OPEN = /<(steps|tabs|playground)(\s[^>]*)?>/i;
 
 /** Read a quoted attribute (`name="…"` / `name='…'`) off an opening tag. */
 function readAttr(openTag: string, name: string): string | undefined {
@@ -189,7 +197,7 @@ function splitContainers(raw: string): Segment[] {
       if (rest.length > 0) segments.push({ kind: 'plain', raw: rest });
       break;
     }
-    const name = open[1].toLowerCase() as 'steps' | 'tabs';
+    const name = open[1].toLowerCase() as 'steps' | 'tabs' | 'playground';
     const openEnd = open.index + open[0].length;
     const closeEnd = findMatchingClose(rest, name, openEnd);
     if (closeEnd === -1) {
@@ -203,16 +211,24 @@ function splitContainers(raw: string): Segment[] {
 
     const close = new RegExp(`</${name}(\\s[^>]*)?>\\s*$`, 'i');
     const inner = rest.slice(openEnd, closeEnd).replace(close, '');
-    const itemName = name === 'steps' ? 'step' : 'tab';
-    const items = parseItems(inner, itemName);
-    if (items.length > 0) {
-      // `group` (tabs only) opts the block into cross-block sync; read off the
-      // container's own opening tag (`open[0]`).
-      const group = name === 'tabs' ? readAttr(open[0], 'group') || undefined : undefined;
-      segments.push({ kind: name, items, group });
+    if (name === 'playground') {
+      // The opening tag's attributes ARE the playground config (same token
+      // grammar as the `@playground` tag / fence); the inner content holds the
+      // single fenced code block, lowered when the segment expands.
+      const spec = parsePlaygroundSpec((open[2] ?? '').trim());
+      segments.push({ kind: 'playground', spec, raw: inner });
     } else {
-      // Degenerate container (no items) — keep its source as plain text.
-      segments.push({ kind: 'plain', raw: rest.slice(open.index, closeEnd) });
+      const itemName = name === 'steps' ? 'step' : 'tab';
+      const items = parseItems(inner, itemName);
+      if (items.length > 0) {
+        // `group` (tabs only) opts the block into cross-block sync; read off the
+        // container's own opening tag (`open[0]`).
+        const group = name === 'tabs' ? readAttr(open[0], 'group') || undefined : undefined;
+        segments.push({ kind: name, items, group });
+      } else {
+        // Degenerate container (no items) — keep its source as plain text.
+        segments.push({ kind: 'plain', raw: rest.slice(open.index, closeEnd) });
+      }
     }
 
     rest = rest.slice(closeEnd);
@@ -243,6 +259,28 @@ function expandContainers(
   for (const seg of splitContainers(raw)) {
     if (seg.kind === 'plain') {
       out.push(...plainFn(seg.raw));
+    } else if (seg.kind === 'playground') {
+      // Re-parse the inner content (so a fenced code block lowers to a `code`
+      // node) and wrap the FIRST code node in a `<Playground>`. Prose bare configs
+      // fall back to ALL providers (KNOWN_PROVIDERS). When the config warrants no
+      // wrapper or there's no code, the inner content passes through unchanged so
+      // nothing is dropped.
+      const inner = recurseFn(seg.raw);
+      const opts = resolvePlaygroundOpts(seg.spec, KNOWN_PROVIDERS);
+      const idx = inner.findIndex((n) => n.type === 'code');
+      if (opts && idx !== -1) {
+        // A <playground> is meant to hold ONE fenced code block; if an author
+        // nests more, only the first is wrapped (the rest pass through as plain
+        // code), warned-and-continue like the rest of the parser.
+        const codeCount = inner.reduce((n, node) => n + (node.type === 'code' ? 1 : 0), 0);
+        if (codeCount > 1) {
+          console.warn(
+            `[setu:playground] <playground> wraps only the first code block; ${codeCount - 1} additional fence(s) left unwrapped`
+          );
+        }
+        inner[idx] = playground(opts, inner[idx] as Code);
+      }
+      out.push(...inner);
     } else if (seg.kind === 'steps') {
       out.push(steps(seg.items.map((it) => step(it.label, asBlocks(recurseFn(it.raw))))));
     } else {
@@ -332,7 +370,7 @@ export function htmlToMdastBlocks(html: string | null | undefined): RootContent[
  * (not the public {@link htmlToMdastBlocks}) so a plain segment isn't re-scanned
  * for containers.
  */
-function markdownBlocksPlain(md: string): RootContent[] {
+function convertMarkdownSegment(md: string): RootContent[] {
   const mdast = fromMarkdown(md, {
     extensions: [gfm()],
     mdastExtensions: [gfmFromMarkdown()],
@@ -342,6 +380,107 @@ function markdownBlocksPlain(md: string): RootContent[] {
   const hast = toHast(mdast, { allowDangerousHtml: true });
   const html = toHtml(hast, { allowDangerousHtml: true });
   return htmlBlocksPlain(html);
+}
+
+/** Matches a fenced-code OPEN line: optional ≤3-space indent + ``` / ~~~ run + info. */
+const FENCE_OPEN = /^([ \t]{0,3})(`{3,}|~{3,})[ \t]*([^\n]*)$/;
+
+/**
+ * One slice of a raw Markdown segment: a `plain` run handed to the normal
+ * converter, or a `fence` whose info string carried a `playground` meta token.
+ */
+type FenceSegment =
+  | { kind: 'plain'; raw: string }
+  | { kind: 'fence'; lang: string; spec: PlaygroundSpec; body: string };
+
+/**
+ * Scan a raw Markdown string for fenced code blocks whose info string is
+ * `<lang> playground …` and split it into `plain` runs + `fence` segments. This
+ * runs on the RAW Markdown (docs + Markdown tutorials) BEFORE the HTML round-trip
+ * in {@link convertMarkdownSegment}, because that round-trip drops a fence's
+ * `meta` (only the language survives as a `language-*` class). A string with no
+ * playground fence returns a single `plain` segment, so the common path stays
+ * byte-identical. Unterminated fences are left in the plain run.
+ */
+function splitPlaygroundFences(md: string): FenceSegment[] {
+  const lines = md.split('\n');
+  const segments: FenceSegment[] = [];
+  let plain: string[] = [];
+  const flush = (): void => {
+    if (plain.length > 0) {
+      segments.push({ kind: 'plain', raw: plain.join('\n') });
+      plain = [];
+    }
+  };
+
+  let i = 0;
+  while (i < lines.length) {
+    const open = FENCE_OPEN.exec(lines[i]);
+    const tokens = open ? open[3].trim().split(/\s+/).filter(Boolean) : [];
+    // `playground` may be the FIRST token (no language — ```` ```playground … ````)
+    // or the SECOND (language-prefixed — ```` ```js playground … ````). Anything
+    // else is a normal fence.
+    const pgIdx = tokens[0] === 'playground' ? 0 : tokens[1] === 'playground' ? 1 : -1;
+    if (open && pgIdx !== -1) {
+      const indent = open[1];
+      const fenceChar = open[2][0];
+      const fenceLen = open[2].length;
+      const closeRe = new RegExp(`^[ \\t]{0,3}\\${fenceChar}{${fenceLen},}[ \\t]*$`);
+      const bodyLines: string[] = [];
+      let j = i + 1;
+      let closed = false;
+      for (; j < lines.length; j++) {
+        if (closeRe.test(lines[j])) {
+          closed = true;
+          break;
+        }
+        // Markdown strips the opening fence's indent from each body line.
+        bodyLines.push(indent && lines[j].startsWith(indent) ? lines[j].slice(indent.length) : lines[j]);
+      }
+      if (closed) {
+        flush();
+        segments.push({
+          kind: 'fence',
+          // A first-token `playground` carries no language; otherwise the first
+          // token is the language and `playground` + spec follow it.
+          lang: pgIdx === 1 ? tokens[0] : '',
+          spec: parsePlaygroundSpec(tokens.slice(pgIdx + 1).join(' ')),
+          body: bodyLines.join('\n'),
+        });
+        i = j + 1;
+        continue;
+      }
+      // Unterminated — fall through and treat the open line as plain text.
+    }
+    plain.push(lines[i]);
+    i++;
+  }
+  flush();
+  return segments;
+}
+
+/**
+ * Plain-Markdown converter with the playground-fence pre-scan layered on. A
+ * ```` ```js playground … ```` fence becomes a `<Playground>`-wrapped `code`
+ * node (bare prose configs default to ALL providers); every other run goes
+ * through {@link convertMarkdownSegment}'s HTML round-trip. With no playground
+ * fence the whole string takes the fast path, byte-identical to before.
+ */
+function markdownBlocksPlain(md: string): RootContent[] {
+  const segments = splitPlaygroundFences(md);
+  if (segments.length === 1 && segments[0].kind === 'plain') return convertMarkdownSegment(md);
+
+  const out: RootContent[] = [];
+  for (const seg of segments) {
+    if (seg.kind === 'plain') {
+      if (seg.raw.trim().length > 0) out.push(...convertMarkdownSegment(seg.raw));
+    } else {
+      const opts = resolvePlaygroundOpts(seg.spec, KNOWN_PROVIDERS);
+      const codeNode = code(seg.lang || null, seg.body);
+      out.push(opts ? playground(opts, codeNode) : codeNode);
+    }
+  }
+  return out;
 }
 
 /**

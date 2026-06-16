@@ -12,11 +12,13 @@ import {
   li,
   link,
   p,
+  playground,
   sourceLink,
   strong,
   text,
   ul,
 } from './builders';
+import type { PlaygroundOpts } from '../playground';
 import { htmlToMdastBlocks, htmlToMdastInline, markdownToMdastInline } from './from-html';
 import { resolveSlotText, type SlotResolver } from '../slots';
 
@@ -93,7 +95,8 @@ const EXAMPLE_FENCE_RE = /^(`{3,}|~{3,})([^\n]*)\n([\s\S]*?)\n?\1[ \t]*$/;
 export function examplesBlocks(
   doclet: TDoclet,
   lang: string = 'js',
-  slots?: SlotResolver
+  slots?: SlotResolver,
+  playgroundOpts?: PlaygroundOpts | null
 ): RootContent[] {
   const out: RootContent[] = [];
   let exampleIndex = -1;
@@ -136,7 +139,13 @@ export function examplesBlocks(
     }
 
     if (caption) out.push(p(...markdownToMdastInline(caption)));
-    if (src.length > 0) out.push(code(exampleLang, src));
+    if (src.length > 0) {
+      // The caption (translatable prose) stays OUTSIDE the wrapper; only the code
+      // fence is wrapped, so Shiki still highlights it and the dropdown/filename/
+      // highlight ride on the `<Playground>` attributes.
+      const codeNode = code(exampleLang, src);
+      out.push(playgroundOpts ? playground(playgroundOpts, codeNode) : codeNode);
+    }
   }
   return out;
 }
@@ -706,6 +715,13 @@ export interface DocletBlocksOptions {
   /** Resolves a `@tutorial` name to its guide page href + display title. */
   resolveTutorial?: (name: string) => { href: string; title: string } | null;
   /**
+   * Resolves a doclet's `@playground` tag (+ the site-wide playground config)
+   * into the wrapper opts for its `@example` blocks, or `null` for none. Threaded
+   * like {@link DocletBlocksOptions.sourceLink}; omit for no playground (the
+   * byte-identical default).
+   */
+  playgroundFor?: (doclet: TDoclet) => PlaygroundOpts | null;
+  /**
    * Translatable-prose resolver: collects each description/summary/example-
    * caption slot and (when stamping a locale) substitutes its translation.
    * Omitted for the byte-identical default build. See {@link SlotResolver}.
@@ -808,7 +824,8 @@ export function docletBlocks(
   }
 
   if (!skip.has('examples')) {
-    const ex = examplesBlocks(doclet, options.exampleLang ?? 'js', options.slots);
+    const pg = options.playgroundFor?.(doclet) ?? undefined;
+    const ex = examplesBlocks(doclet, options.exampleLang ?? 'js', options.slots, pg);
     if (ex.length > 0) {
       blocks.push(p(strong(text('Example'))));
       blocks.push(...ex);
