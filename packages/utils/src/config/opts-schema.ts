@@ -1,8 +1,8 @@
 /**
  * zod schemas for the theme option surface — the recognized `siteName`,
- * `fonts`, `menu`, `copyPage`, `pageNav`, `sectionOrder`, `docGroups`,
- * `defaultDocGroup`, `clubSidebarItems`, `aiPrompt`, and `basePath` opts the
- * JSDoc bridge accepts.
+ * `fonts`, `menu`, `copyPage`, `pageNav`, `playground`, `sectionOrder`,
+ * `docGroups`, `defaultDocGroup`, `clubSidebarItems`, `aiPrompt`, and
+ * `basePath` opts the JSDoc bridge accepts.
  *
  * These mirror the theme-relevant subset of `clean-jsdoc-theme`'s `JSDocOpts`
  * and the lenient `normalize*` / `prepareSiteName` helpers in `publish.ts`, but
@@ -111,6 +111,28 @@ export type TPageNavConfigOpt = z.infer<typeof PageNavConfigSchema>;
 /** `pageNav` is a boolean shorthand OR a config object. */
 export const PageNavSchema = z.union([z.boolean(), PageNavConfigSchema]);
 
+// ── playground ───────────────────────────────────────────────────────────────
+
+/** Valid code-playground providers (mirrors `PlaygroundProvider`). */
+export const PLAYGROUND_PROVIDERS = ['codepen', 'jsfiddle', 'codesandbox'] as const;
+
+/**
+ * `playground` config — mirrors `PlaygroundConfig`. `enableForAllExamples` opts
+ * every `@example` in; `providers` is the default provider set + order; the
+ * per-provider records hold site-wide runtime options. The records are lenient
+ * (`z.unknown()` values) so each provider's API can grow without schema churn.
+ */
+export const PlaygroundSchema = z
+  .object({
+    enableForAllExamples: z.boolean().optional(),
+    providers: z.array(z.enum(PLAYGROUND_PROVIDERS)).optional(),
+    codepen: z.record(z.string(), z.unknown()).optional(),
+    jsfiddle: z.record(z.string(), z.unknown()).optional(),
+    codesandbox: z.record(z.string(), z.unknown()).optional(),
+  })
+  .strip();
+export type TPlaygroundOpt = z.infer<typeof PlaygroundSchema>;
+
 // ── footer ───────────────────────────────────────────────────────────────────
 
 /**
@@ -173,6 +195,7 @@ export const THEME_OPT_KEYS = [
   'menu',
   'copyPage',
   'pageNav',
+  'playground',
   'sectionOrder',
   'docGroups',
   'defaultDocGroup',

@@ -25,6 +25,7 @@ export type IslandName =
   | 'language-switcher'
   | 'code-viewer'
   | 'embed'
+  | 'playground'
   | 'tabs';
 
 /** Type-safe prop bag per island. Server-render and hydration share this map. */
@@ -57,6 +58,11 @@ export interface IslandPropsMap {
   // marker's `data-*` attributes, not the JSON props payload, so the prop bag
   // is empty here. The loader reads `data-*` back into `EmbedProps` at hydrate.
   embed: Record<string, never>;
+  // In-content island (like `embed`): the enabled provider list rides on the
+  // marker's `data-*`, the code is read from the sibling `<pre>`, and the
+  // site-wide per-provider options come from a separate per-page JSON payload —
+  // so this prop bag is empty (no `data-island-id` entry).
+  playground: Record<string, never>;
   // In-content island (like `embed`): the `<Tabs>`/`<Tab>` markup — the tablist
   // buttons and panels — is fully SSR-rendered inside the marker, so there is no
   // JSON props payload. The island enhancer reads the tabs/panels back out of
