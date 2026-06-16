@@ -42,7 +42,9 @@
     "playground": {
       "enableForAllExamples": false,
       "providers": ["codepen", "jsfiddle", "codesandbox"],
-      "codepen": { "js_pre_processor": "babel" }
+      "codepen": {
+        "js_pre_processor": "babel"
+      }
     },
     "menu": [
       {
