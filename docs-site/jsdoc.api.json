@@ -18,6 +18,9 @@
       "dark": "./assets/clean-jsdoc-theme-white.svg",
       "alt": "clean-jsdoc-theme API"
     },
+    "playground": {
+      "providers": ["codepen", "jsfiddle", "codesandbox"]
+    },
     "clubSidebarItems": true,
     "menu": [
       {
