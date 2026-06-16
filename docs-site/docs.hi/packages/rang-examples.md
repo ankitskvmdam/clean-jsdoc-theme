@@ -98,7 +98,7 @@ defaultMdxComponents['MemberHeading'];
 इसलिए एक `type` वाला markdown blockquote और setu का `<Callout type="…">` दोनों
 एक ही renderer पर उतरते हैं, और एक fenced code block एक highlighted `CodeBlock`
 बन जाता है। आप इनका user-facing पक्ष authoring docs में देख सकते हैं:
-[Callouts](/authoring/callouts) और [Tabs](/authoring/tabs)।
+[Callouts](/components/callouts) और [Tabs](/components/tabs)।
 
 dwar इस map को render से पहले किसी भी override के साथ merge करता है — इसका
 `mergeMdxComponents` पहले `defaultMdxComponents` को spread करता है, फिर override
@@ -206,5 +206,5 @@ point।
   क्यों मौजूद है।
 - [dwar सिंहावलोकन](/packages/dwar-overview) — वह package जो इन components को
   server-render और bundle करता है।
-- [Callouts](/authoring/callouts) · [Tabs](/authoring/tabs) — ऊपर के MDX components
+- [Callouts](/components/callouts) · [Tabs](/components/tabs) — ऊपर के MDX components
   का user-facing पक्ष।

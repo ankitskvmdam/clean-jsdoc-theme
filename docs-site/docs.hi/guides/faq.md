@@ -14,7 +14,7 @@ embed करना, समृद्ध doc comments लिखना, और क�
 
 theme किसी भी page में एक sandboxed `<iframe>` डाल सकता है — एक CodePen, एक
 YouTube video, एक StackBlitz, या कोई भी साइट। इसे लिखने के दो तरीके हैं, और वे
-[एक config grammar](/authoring/embeds) साझा करते हैं:
+[एक config grammar](/guides/embeds) साझा करते हैं:
 
 - **prose में** (README, guides, `docs` folder) — एक ` ```iframe ` fenced block।
 - **एक doc comment में** — `@iframe <url> key=value` block tag।
@@ -95,7 +95,7 @@ export function render() {}
 
 default रूप से, हाँ — theme बदलने पर embed URL दोबारा हल किया जाता है (एक `{theme}`
 token swap किया जाता है, या `?theme-id=<theme>` जोड़ा जाता है)। `themed=false` के
-साथ बाहर निकलें। पूर्ण reference: [Embeds & live demos](/authoring/embeds)।
+साथ बाहर निकलें। पूर्ण reference: [Embeds & live demos](/guides/embeds)।
 
 ## समृद्ध doc comments
 
@@ -118,7 +118,7 @@ export function connect() {}
 
 markers चार styles में मैप होते हैं: `[!NOTE]` / `[!INFO]` / `[!IMPORTANT]` →
 info, `[!TIP]` / `[!SUCCESS]` → tip, `[!WARNING]` / `[!CAUTION]` → warning, और
-`[!ERROR]` / `[!DANGER]` → error। देखें [Callouts](/authoring/callouts)।
+`[!ERROR]` / `[!DANGER]` → error। देखें [Callouts](/components/callouts)।
 
 ### क्या मैं एक comment में steps या tabs उपयोग कर सकता हूँ?
 
@@ -151,8 +151,8 @@ info, `[!TIP]` / `[!SUCCESS]` → tip, `[!WARNING]` / `[!CAUTION]` → warning, 
  */
 `````
 
-पूर्ण syntax और blank-line नियम के लिए देखें [Steps](/authoring/steps) और
-[Tabs](/authoring/tabs), और इसे render होते देखने के लिए live
+पूर्ण syntax और blank-line नियम के लिए देखें [Steps](/components/steps) और
+[Tabs](/components/tabs), और इसे render होते देखने के लिए live
 [sample-api module page](/api-docs/module/sample-api)।
 
 ### deprecation notices के बारे में क्या?

@@ -1,7 +1,7 @@
 ---
 title: 步骤
-group: Authoring
-order: 2
+group: Components
+order: 3
 ---
 
 # 步骤
@@ -177,6 +177,6 @@ block 和一个 `[!INFO]` callout：
 
 ## 另请参阅
 
-- [Tabs](/authoring/tabs)——同级的 tabbed-view container。
-- [Callouts](/authoring/callouts)——用于 `[!NOTE]` 风格的 notices。
+- [Tabs](/components/tabs)——同级的 tabbed-view container。
+- [Callouts](/components/callouts)——用于 `[!NOTE]` 风格的 notices。
 - [Build a guides site](/guides/build-a-guides-site)——了解 prose 页面所在之处。

@@ -1,7 +1,7 @@
 ---
 title: Steps
-group: Authoring
-order: 2
+group: Components
+order: 3
 ---
 
 # Steps
@@ -179,6 +179,6 @@ The same markup works in a JSDoc / TypeDoc **description**. Here is the
 
 ## See also
 
-- [Tabs](/authoring/tabs) — the sibling tabbed-view container.
-- [Callouts](/authoring/callouts) for `[!NOTE]`-style notices.
+- [Tabs](/components/tabs) — the sibling tabbed-view container.
+- [Callouts](/components/callouts) for `[!NOTE]`-style notices.
 - [Build a guides site](/guides/build-a-guides-site) for where prose pages live.

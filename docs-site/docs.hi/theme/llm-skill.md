@@ -53,8 +53,8 @@ folder में
 `clean-jsdoc-theme` default JSDoc template नहीं है, और सामान्य "JSDoc theme" ज्ञान
 से काम करने वाला assistant विवरण ग़लत कर देगा — यह भूल जाएगा कि
 [`plugins/markdown`](/theme/jsdoc-getting-started) ज़रूरी है, यह चूक जाएगा कि custom
-tags को [`allowUnknownTags`](/authoring/custom-tags) चाहिए, या मान लेगा कि spaces
-एक [`@category`](/authoring/custom-tags) path को nest करते हैं जबकि केवल `/` करता
+tags को [`allowUnknownTags`](/components/overview) चाहिए, या मान लेगा कि spaces
+एक [`@category`](/components/overview) path को nest करते हैं जबकि केवल `/` करता
 है।
 
 > [!TIP]
@@ -156,4 +156,4 @@ source के विरुद्ध verified है, इसलिए एक त�
 - [JSDoc Getting Started](/theme/jsdoc-getting-started) ·
   [TypeDoc Getting Started](/theme/typedoc-getting-started) — build सेट करें।
 - [Structure your sidebar](/guides/structure-your-sidebar) और
-  [Authoring](/authoring/callouts) — वे गहरे विवरण जिन्हें skill संक्षिप्त करती है।
+  [Authoring](/components/callouts) — वे गहरे विवरण जिन्हें skill संक्षिप्त करती है।

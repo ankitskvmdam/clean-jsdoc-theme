@@ -1,7 +1,7 @@
 ---
 title: 嵌入内容与实时演示
-group: Authoring
-order: 4
+group: Guides
+order: 7
 ---
 
 # 嵌入内容与实时演示
@@ -142,7 +142,7 @@ component 应用其默认值）。rang 在
 
 ## 另请参阅
 
-- [Custom tags](/authoring/custom-tags) —— `@iframe` 与 `@category` /
+- [Custom tags](/components/overview) —— `@iframe` 与 `@category` /
   `@order` 一起使用，以及 `allowUnknownTags` 的要求。
-- [Callouts](/authoring/callouts)、[Steps](/authoring/steps)、
-  [Tabs](/authoring/tabs) —— 其他撰写原语（authoring primitives）。
+- [Callouts](/components/callouts)、[Steps](/components/steps)、
+  [Tabs](/components/tabs) —— 其他撰写原语（authoring primitives）。

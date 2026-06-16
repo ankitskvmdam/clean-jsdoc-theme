@@ -129,7 +129,7 @@ render します — これは
 の styled renderers に map し、加えて setu が emit する **capitalized** な
 components を map に通します: `Callout`、`Embed`、`SourceLink`、`MemberMeta`、
 `MemberHeading`、`Steps` / `Step`、そして `Tabs` / `Tab`。(これらの user-facing な
-側面については、[Callouts](/authoring/callouts) と [Tabs](/authoring/tabs) を
+側面については、[Callouts](/components/callouts) と [Tabs](/components/tabs) を
 参照してください。)
 
 ## dwar はどのように consume するか

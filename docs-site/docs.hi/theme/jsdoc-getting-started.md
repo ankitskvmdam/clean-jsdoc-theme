@@ -163,7 +163,7 @@ opts: {
   लिखे Markdown जोड़ें।
 - **[Structure your sidebar](/guides/structure-your-sidebar)** — `@category`,
   `@order`, और sidebar options।
-- **[Authoring](/authoring/callouts)** — callouts, steps, tabs, और embeds जिन्हें
+- **[Authoring](/components/callouts)** — callouts, steps, tabs, और embeds जिन्हें
   आप comments और prose में इस्तेमाल कर सकते हैं।
 - **[Localize your docs](/guides/localize-your-docs)** — site को कई भाषाओं में
   ship करें।

@@ -162,5 +162,5 @@ order: 3
 ## 接下来去哪里
 
 - 精细调整合并后的侧边栏：[Structure your sidebar](/guides/structure-your-sidebar)。
-- 符号上的 group/order 标签：[Custom tags](/authoring/custom-tags)。
+- 符号上的 group/order 标签：[Custom tags](/components/overview)。
 - 每个选项的详细说明：[Configuration](/theme/configuration)。

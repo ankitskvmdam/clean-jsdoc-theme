@@ -1,7 +1,7 @@
 ---
 title: Embeds & live demos
-group: Authoring
-order: 4
+group: Guides
+order: 7
 ---
 
 # Embeds & live demos
@@ -141,7 +141,7 @@ Both the live iframe and the click-to-load poster work with **no JavaScript** (a
 
 ## See also
 
-- [Custom tags](/authoring/custom-tags) — `@iframe` alongside `@category` /
+- [Custom tags](/components/overview) — `@iframe` alongside `@category` /
   `@order`, and the `allowUnknownTags` requirement.
-- [Callouts](/authoring/callouts), [Steps](/authoring/steps),
-  [Tabs](/authoring/tabs) — the other authoring primitives.
+- [Callouts](/components/callouts), [Steps](/components/steps),
+  [Tabs](/components/tabs) — the other authoring primitives.

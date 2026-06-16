@@ -151,7 +151,7 @@ localization workflow अपनी locales को उसी `cleanJsdocTheme` bl
   लिखे Markdown जोड़ें।
 - **[Structure your sidebar](/guides/structure-your-sidebar)** — grouping और
   ordering के levers।
-- **[Authoring](/authoring/callouts)** — callouts, steps, tabs, और embeds।
+- **[Authoring](/components/callouts)** — callouts, steps, tabs, और embeds।
 - **[अपने docs को localize करें](/guides/localize-your-docs)** — कई-भाषा workflow
   (extract TypeDoc पर काम करता है; localized builds आज केवल JSDoc के लिए हैं)।
 - **[Packages](/#the-packages)** — साझा `setu → dwar` pipeline (और

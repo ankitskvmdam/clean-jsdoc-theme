@@ -1,7 +1,7 @@
 ---
 title: Steps
-group: Authoring
-order: 2
+group: Components
+order: 3
 ---
 
 # Steps
@@ -184,7 +184,7 @@ walkthrough で、`<tabs>` install block と `[!INFO]` callout を伴います:
 
 ## こちらも参照
 
-- [Tabs](/authoring/tabs) — 兄弟の tabbed-view container。
-- [Callouts](/authoring/callouts) — `[!NOTE]`-style の notices について。
+- [Tabs](/components/tabs) — 兄弟の tabbed-view container。
+- [Callouts](/components/callouts) — `[!NOTE]`-style の notices について。
 - [Build a guides site](/guides/build-a-guides-site) — prose pages が置かれる場所
   について。

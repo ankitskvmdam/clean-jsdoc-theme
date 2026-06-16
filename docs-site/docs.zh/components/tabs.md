@@ -1,7 +1,7 @@
 ---
 title: 标签页
-group: Authoring
-order: 3
+group: Components
+order: 4
 ---
 
 # 标签页
@@ -154,6 +154,6 @@ pnpm add clean-jsdoc-theme
 
 ## 另请参阅
 
-- [Steps](/authoring/steps) —— 同级的步骤容器（你可以在某个 step 内嵌套标签页）。
-- [Callouts](/authoring/callouts) —— 用于 `[!NOTE]` 风格的提示。
+- [Steps](/components/steps) —— 同级的步骤容器（你可以在某个 step 内嵌套标签页）。
+- [Callouts](/components/callouts) —— 用于 `[!NOTE]` 风格的提示。
 - [Structure your sidebar](/guides/structure-your-sidebar) —— 了解指南页面如何分组。

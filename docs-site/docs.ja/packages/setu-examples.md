@@ -131,7 +131,7 @@ source comments や docs files に書くものが、ここで manifest structure
   `@class` でさえ — その kind section 内で position します。parse は
   [`generate-site.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/generate-site.ts)
   で行われます。参照: [sidebar を構造化する](/guides/structure-your-sidebar)
-  と [Custom tags](/authoring/custom-tags)。
+  と [Custom tags](/components/overview)。
 - **README → home。** あなたの README（JSDoc/TypeDoc によって HTML に rendered）は
   slug `''` の home page になります。
   [`buildReadmePage`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/guide-view.ts)

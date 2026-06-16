@@ -150,7 +150,7 @@ localization 工作流在同一个 `cleanJsdocTheme` 块中声明它的 locale
   加入手写的 Markdown。
 - **[Structure your sidebar](/guides/structure-your-sidebar)** —— 分组与
   排序的控制项。
-- **[Authoring](/authoring/callouts)** —— callouts、steps、tabs 以及 embeds。
+- **[Authoring](/components/callouts)** —— callouts、steps、tabs 以及 embeds。
 - **[Localize your docs](/guides/localize-your-docs)** —— 多语言
   工作流（extract 在 TypeDoc 上可用；本地化构建目前仅支持 JSDoc）。
 - **[Packages](/#the-packages)** —— 共享的 `setu → dwar` 流水线（以及

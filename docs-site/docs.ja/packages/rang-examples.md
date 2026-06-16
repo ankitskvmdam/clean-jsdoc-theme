@@ -98,7 +98,7 @@ defaultMdxComponents['MemberHeading'];
 したがって、`type` 付きの markdown blockquote と setu の `<Callout type="…">` は
 どちらも同じ renderer に到達し、fenced code block は highlighted な `CodeBlock` に
 なります。これらの user-facing な側面は authoring docs で確認できます:
-[Callouts](/authoring/callouts) と [Tabs](/authoring/tabs)。
+[Callouts](/components/callouts) と [Tabs](/components/tabs)。
 
 dwar は render の前にこの map を任意の override と merge します — その
 `mergeMdxComponents` はまず `defaultMdxComponents` を spread し、それから override を
@@ -204,5 +204,5 @@ point ではなく、予約された前向きな surface とみなしてくだ�
   存在するか。
 - [dwar 概要](/packages/dwar-overview) — これらの components を server-render し
   bundle する package。
-- [Callouts](/authoring/callouts) · [Tabs](/authoring/tabs) — 上記の MDX components の
+- [Callouts](/components/callouts) · [Tabs](/components/tabs) — 上記の MDX components の
   user-facing な側面。

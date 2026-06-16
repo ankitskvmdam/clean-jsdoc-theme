@@ -1,7 +1,7 @@
 ---
 title: Steps
-group: Authoring
-order: 2
+group: Components
+order: 3
 ---
 
 # Steps
@@ -182,6 +182,6 @@ comment है जो live demo को चलाता है — `Cache` class 
 
 ## ये भी देखें
 
-- [Tabs](/authoring/tabs) — सहोदर tabbed-view container।
-- [Callouts](/authoring/callouts) — `[!NOTE]`-style notices के लिए।
+- [Tabs](/components/tabs) — सहोदर tabbed-view container।
+- [Callouts](/components/callouts) — `[!NOTE]`-style notices के लिए।
 - [Build a guides site](/guides/build-a-guides-site) — जहाँ prose pages रहती हैं।

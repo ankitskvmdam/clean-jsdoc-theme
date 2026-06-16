@@ -1,13 +1,13 @@
 ---
 title: "@order"
-group: Authoring/Custom tags
-order: 7
+group: Components
+order: 5
 ---
 
 # `@order` — sort any symbol within its group
 
 `@order N` is a standalone **within-group sort key** for any symbol. The inline
-[`@category … order=`](/authoring/custom-tags/category#inline-order) only applies
+[`@category … order=`](/components/category#inline-order) only applies
 to a symbol that **has** a `@category`; `@order` works on a symbol that lives in
 its plain **kind section** too — a `@module`, `@class`, `@namespace`, etc. with
 no category:
@@ -24,7 +24,7 @@ falling back to alphabetical order.
 
 > [!IMPORTANT]
 > `@order` is an unknown tag — set `tags.allowUnknownTags: true` in your
-> `jsdoc.json` or JSDoc strips it. See the [overview](/authoring/custom-tags).
+> `jsdoc.json` or JSDoc strips it. See the [overview](/components/overview).
 > (TypeDoc needs no flag.)
 
 ## When to use which
@@ -67,7 +67,7 @@ see [Build a guides site](/guides/build-a-guides-site).
 
 ## See also
 
-- [Custom tags overview](/authoring/custom-tags) — the full tag list +
+- [Components overview](/components/overview) — the full tag list +
   `allowUnknownTags`.
-- [`@category`](/authoring/custom-tags/category) — grouping (and inline `order=`).
+- [`@category`](/components/category) — grouping (and inline `order=`).
 - [Structure your sidebar](/guides/structure-your-sidebar) — the full ordering model.

@@ -1,7 +1,7 @@
 ---
 title: Callouts
-group: Authoring
-order: 1
+group: Components
+order: 2
 ---
 
 # Callouts
@@ -188,7 +188,7 @@ markdown blockquote は 1 つの component を共有します — `type` が set
 
 ## こちらも参照
 
-- [Steps](/authoring/steps) と [Tabs](/authoring/tabs) — その他の prose
+- [Steps](/components/steps) と [Tabs](/components/tabs) — その他の prose
   authoring containers。
-- [Embeds & live demos](/authoring/embeds) — `<Embed>` / `@iframe` について。
-- [Custom tags](/authoring/custom-tags) — `@category`、`@order`、`@iframe` について。
+- [Embeds & live demos](/guides/embeds) — `<Embed>` / `@iframe` について。
+- [Custom tags](/components/overview) — `@category`、`@order`、`@iframe` について。

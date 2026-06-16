@@ -1,7 +1,7 @@
 ---
 title: Callouts
-group: Authoring
-order: 1
+group: Components
+order: 2
 ---
 
 # Callouts
@@ -183,7 +183,7 @@ the variant survive serialization to dwar (a plain `>` quote can't carry it).
 
 ## See also
 
-- [Steps](/authoring/steps) and [Tabs](/authoring/tabs) — the other prose
+- [Steps](/components/steps) and [Tabs](/components/tabs) — the other prose
   authoring containers.
-- [Embeds & live demos](/authoring/embeds) for `<Embed>` / `@iframe`.
-- [Custom tags](/authoring/custom-tags) for `@category`, `@order`, and `@iframe`.
+- [Embeds & live demos](/guides/embeds) for `<Embed>` / `@iframe`.
+- [Custom tags](/components/overview) for `@category`, `@order`, and `@iframe`.

@@ -1,7 +1,7 @@
 ---
 title: Embeds & live demos
-group: Authoring
-order: 4
+group: Guides
+order: 7
 ---
 
 # Embeds & live demos
@@ -149,7 +149,7 @@ iframe が含まれています）。
 
 ## こちらも参照
 
-- [Custom tags](/authoring/custom-tags) — `@category` / `@order` と並ぶ
+- [Custom tags](/components/overview) — `@category` / `@order` と並ぶ
   `@iframe`、そして `allowUnknownTags` の要件。
-- [Callouts](/authoring/callouts), [Steps](/authoring/steps),
-  [Tabs](/authoring/tabs) — その他の authoring primitives。
+- [Callouts](/components/callouts), [Steps](/components/steps),
+  [Tabs](/components/tabs) — その他の authoring primitives。

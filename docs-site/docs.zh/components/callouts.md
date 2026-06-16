@@ -1,7 +1,7 @@
 ---
 title: 提示框
-group: Authoring
-order: 1
+group: Components
+order: 2
 ---
 
 # 提示框
@@ -181,7 +181,7 @@ styling。正是这个首字母大写的名称，让 variant 在 serialization �
 
 ## 另请参阅
 
-- [Steps](/authoring/steps) 和 [Tabs](/authoring/tabs) —— 其他 prose authoring
+- [Steps](/components/steps) 和 [Tabs](/components/tabs) —— 其他 prose authoring
   containers。
-- [Embeds & live demos](/authoring/embeds) —— 用于 `<Embed>` / `@iframe`。
-- [Custom tags](/authoring/custom-tags) —— 用于 `@category`、`@order` 和 `@iframe`。
+- [Embeds & live demos](/guides/embeds) —— 用于 `<Embed>` / `@iframe`。
+- [Custom tags](/components/overview) —— 用于 `@category`、`@order` 和 `@iframe`。

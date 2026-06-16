@@ -69,9 +69,9 @@ search index, और हर page का एक साथी `.md` — कही�
   [API reference](/guides/build-an-api-reference),
   [दोनों को मिलाएँ](/guides/combine-guides-and-api), और
   [अपने sidebar की संरचना करें](/guides/structure-your-sidebar)।
-- **Authoring** — [callouts](/authoring/callouts), [steps](/authoring/steps),
-  [tabs](/authoring/tabs), [embeds](/authoring/embeds), और
-  [custom tags](/authoring/custom-tags) जिन्हें आप prose और doc comments में
+- **Authoring** — [callouts](/components/callouts), [steps](/components/steps),
+  [tabs](/components/tabs), [embeds](/guides/embeds), और
+  [custom tags](/components/overview) जिन्हें आप prose और doc comments में
   इस्तेमाल कर सकते हैं।
 - **[Packages](/#the-packages)** — building blocks, अगर आप internals को समझना या
   विस्तृत करना चाहते हैं।

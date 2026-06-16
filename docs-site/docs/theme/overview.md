@@ -67,9 +67,9 @@ search index, and a companion `.md` for every page — ready to deploy anywhere.
   [API reference](/guides/build-an-api-reference),
   [combine the two](/guides/combine-guides-and-api), and
   [structure your sidebar](/guides/structure-your-sidebar).
-- **Authoring** — [callouts](/authoring/callouts), [steps](/authoring/steps),
-  [tabs](/authoring/tabs), [embeds](/authoring/embeds), and
-  [custom tags](/authoring/custom-tags) you can use in prose and doc comments.
+- **Authoring** — [callouts](/components/callouts), [steps](/components/steps),
+  [tabs](/components/tabs), [embeds](/guides/embeds), and
+  [custom tags](/components/overview) you can use in prose and doc comments.
 - **[Packages](/#the-packages)** — the building blocks, if you want to understand
   or extend the internals.
 

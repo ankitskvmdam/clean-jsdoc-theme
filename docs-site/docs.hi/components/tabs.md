@@ -1,7 +1,7 @@
 ---
 title: Tabs
-group: Authoring
-order: 3
+group: Components
+order: 4
 ---
 
 # Tabs
@@ -166,8 +166,8 @@ module page पर install tabs उसके `@module` comment में ही 
 
 ## ये भी देखें
 
-- [Steps](/authoring/steps) — सहोदर stepper container (आप किसी step के अंदर tabs
+- [Steps](/components/steps) — सहोदर stepper container (आप किसी step के अंदर tabs
   nest कर सकते हैं)।
-- [Callouts](/authoring/callouts) — `[!NOTE]`-style notices के लिए।
+- [Callouts](/components/callouts) — `[!NOTE]`-style notices के लिए।
 - [Structure your sidebar](/guides/structure-your-sidebar) — guide pages कैसे
   group की जाती हैं इसके लिए।

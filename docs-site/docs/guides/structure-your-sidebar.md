@@ -14,7 +14,7 @@ exact rules that decide the order. Once you see that **every entry carries a
 
 > [!NOTE]
 > The two source tags below — `@category` and `@order` — are documented in depth
-> on [Custom tags](/authoring/custom-tags). This page covers how they (and the
+> on [Custom tags](/components/overview). This page covers how they (and the
 > config options) feed the sidebar; it doesn't re-document the tag syntax in full.
 
 ## The unified model
@@ -86,7 +86,7 @@ specific, co-located declaration). See `readOrder` in
 > [!NOTE]
 > Both `@category` and `@order` are **unknown tags** — your config must set
 > `tags.allowUnknownTags: true` (every example config in this repo does). Full
-> syntax on [Custom tags](/authoring/custom-tags).
+> syntax on [Custom tags](/components/overview).
 
 ## Lever 3 — nested groups (`/`-paths)
 
@@ -216,7 +216,7 @@ frontmatter on your guides, and you control the sidebar top to bottom.
 
 ## Where to go next
 
-- The `@category` / `@order` tag reference: [Custom tags](/authoring/custom-tags).
+- The `@category` / `@order` tag reference: [Custom tags](/components/overview).
 - The full option list: [Configuration](/theme/configuration).
 - The two workflows this ties together:
   [Build a guides site](/guides/build-a-guides-site) ·

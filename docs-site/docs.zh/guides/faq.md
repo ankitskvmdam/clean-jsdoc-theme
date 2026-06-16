@@ -13,7 +13,7 @@ order: 6
 
 主题可以在任何页面中插入一个沙箱化的 `<iframe>` —— 一个 CodePen、一个 YouTube
 视频、一个 StackBlitz，或任意站点。有两种编写方式，它们
-共享[同一套 config 语法](/authoring/embeds)：
+共享[同一套 config 语法](/guides/embeds)：
 
 - **在正文中**（README、guides、`docs` 文件夹）—— 一个 ` ```iframe ` 围栏代码块。
 - **在 doc comment 中** —— `@iframe <url> key=value` block tag。
@@ -92,7 +92,7 @@ export function render() {}
 
 默认会 —— 主题切换时会重新解析 embed URL（会替换一个
 `{theme}` token，或追加 `?theme-id=<theme>`）。用
-`themed=false` 退出此行为。完整参考：[Embeds & live demos](/authoring/embeds)。
+`themed=false` 退出此行为。完整参考：[Embeds & live demos](/guides/embeds)。
 
 ## 更丰富的 doc comments
 
@@ -115,7 +115,7 @@ export function connect() {}
 
 这些标记映射到四种样式：`[!NOTE]` / `[!INFO]` / `[!IMPORTANT]` → info，
 `[!TIP]` / `[!SUCCESS]` → tip，`[!WARNING]` / `[!CAUTION]` → warning，以及
-`[!ERROR]` / `[!DANGER]` → error。参见 [Callouts](/authoring/callouts)。
+`[!ERROR]` / `[!DANGER]` → error。参见 [Callouts](/components/callouts)。
 
 ### 我能在 comment 中使用 steps 或 tabs 吗？
 
@@ -148,8 +148,8 @@ export function connect() {}
  */
 `````
 
-完整语法和空行规则参见 [Steps](/authoring/steps) 和
-[Tabs](/authoring/tabs)，渲染效果可见实时的
+完整语法和空行规则参见 [Steps](/components/steps) 和
+[Tabs](/components/tabs)，渲染效果可见实时的
 [sample-api module page](/api-docs/module/sample-api)。
 
 ### 弃用通知怎么办？

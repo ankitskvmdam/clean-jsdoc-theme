@@ -1,7 +1,7 @@
 ---
 title: Callouts
-group: Authoring
-order: 1
+group: Components
+order: 2
 ---
 
 # Callouts
@@ -188,7 +188,7 @@ dwar तक serialization के दौरान बचाए रखती ह�
 
 ## ये भी देखें
 
-- [Steps](/authoring/steps) और [Tabs](/authoring/tabs) — अन्य prose authoring
+- [Steps](/components/steps) और [Tabs](/components/tabs) — अन्य prose authoring
   containers।
-- [Embeds & live demos](/authoring/embeds) — `<Embed>` / `@iframe` के लिए।
-- [Custom tags](/authoring/custom-tags) — `@category`, `@order`, और `@iframe` के लिए।
+- [Embeds & live demos](/guides/embeds) — `<Embed>` / `@iframe` के लिए।
+- [Custom tags](/components/overview) — `@category`, `@order`, और `@iframe` के लिए।

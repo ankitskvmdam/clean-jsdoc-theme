@@ -1,6 +1,6 @@
 ---
 title: "@category"
-group: Authoring/Custom tags
+group: Components
 order: 6
 ---
 
@@ -21,7 +21,7 @@ export class Parser {}
 > [!IMPORTANT]
 > `@category` is an unknown tag — set `tags.allowUnknownTags: true` in your
 > `jsdoc.json` or JSDoc strips it before the theme runs. See the
-> [overview](/authoring/custom-tags). (TypeDoc needs no flag.)
+> [overview](/components/overview). (TypeDoc needs no flag.)
 
 ## The path grammar
 
@@ -100,10 +100,10 @@ export class Cache {}             // → Advanced ▸ Internals, order 10
 
 ## Combining with `@order`
 
-`order=` inline on `@category` and the standalone [`@order`](/authoring/custom-tags/order)
+`order=` inline on `@category` and the standalone [`@order`](/components/order)
 tag both feed the same sort key. When a symbol has **both**, the inline
 `@category … order=` **wins** — see
-[the precedence rule on the `@order` page](/authoring/custom-tags/order#precedence-category--order-wins).
+[the precedence rule on the `@order` page](/components/order#precedence-category--order-wins).
 
 ## How it shapes the sidebar
 
@@ -116,7 +116,7 @@ nested paths, leaf-vs-branch ordering, `clubSidebarItems`, `sectionOrder`,
 
 ## See also
 
-- [Custom tags overview](/authoring/custom-tags) — the full tag list +
+- [Components overview](/components/overview) — the full tag list +
   `allowUnknownTags`.
-- [`@order`](/authoring/custom-tags/order) — ordering symbols without a category.
+- [`@order`](/components/order) — ordering symbols without a category.
 - [Structure your sidebar](/guides/structure-your-sidebar) — how groups + order combine.

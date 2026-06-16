@@ -51,7 +51,7 @@ A few things to know:
 
 Add `@playground` to a doc comment, next to an `@example`. The grammar is a list
 of whitespace-separated tokens (the same parser as
-[`@iframe`](/authoring/embeds)):
+[`@iframe`](/guides/embeds)):
 
 ```js
 /**
@@ -118,7 +118,7 @@ render(out);
 > sources that arrive as raw Markdown (`docs`, Markdown tutorials). The
 > `<playground>` container survives that normalization, so reach for it in the
 > README. Leave a blank line around the inner fence (same rule as
-> [`<steps>`/`<tabs>`](/authoring/steps)).
+> [`<steps>`/`<tabs>`](/components/steps)).
 
 A bare prose `playground` (no provider tokens) offers **all** providers — prose
 has no access to the site-wide `providers` default.
@@ -143,7 +143,7 @@ To recolor the header strip or the highlighted-line tint, set the `codeHeaderBg`
 
 ## See also
 
-- [Custom tags](/authoring/custom-tags) — `@playground` alongside `@iframe` /
+- [Custom tags](/components/overview) — `@playground` alongside `@iframe` /
   `@category` / `@order`, and the `allowUnknownTags` requirement.
-- [Embeds & live demos](/authoring/embeds) — `@iframe` / ` ```iframe ` for
+- [Embeds & live demos](/guides/embeds) — `@iframe` / ` ```iframe ` for
   embedding an **existing** pen, video, or live demo by URL.

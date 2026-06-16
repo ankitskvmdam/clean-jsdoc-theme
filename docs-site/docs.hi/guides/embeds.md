@@ -1,7 +1,7 @@
 ---
 title: Embeds & live demos
-group: Authoring
-order: 4
+group: Guides
+order: 7
 ---
 
 # Embeds & live demos
@@ -145,7 +145,7 @@ component अपने defaults लागू करे)। rang
 
 ## ये भी देखें
 
-- [Custom tags](/authoring/custom-tags) — `@category` / `@order` के साथ-साथ
+- [Custom tags](/components/overview) — `@category` / `@order` के साथ-साथ
   `@iframe`, और `allowUnknownTags` आवश्यकता।
-- [Callouts](/authoring/callouts), [Steps](/authoring/steps),
-  [Tabs](/authoring/tabs) — अन्य authoring primitives।
+- [Callouts](/components/callouts), [Steps](/components/steps),
+  [Tabs](/components/tabs) — अन्य authoring primitives।

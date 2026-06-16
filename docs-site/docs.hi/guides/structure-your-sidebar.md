@@ -14,7 +14,7 @@ path और एक वैकल्पिक `order` रखती है**, ब�
 
 > [!NOTE]
 > नीचे दिए गए दो source tags — `@category` और `@order` —
-> [Custom tags](/authoring/custom-tags) पर गहराई से प्रलेखित हैं। यह page इस पर
+> [Custom tags](/components/overview) पर गहराई से प्रलेखित हैं। यह page इस पर
 > है कि वे (और config options) sidebar को कैसे feed करते हैं; यह tag syntax को
 > पूरी तरह दोबारा प्रलेखित नहीं करता।
 
@@ -90,7 +90,7 @@ inline `order=` option केवल उस symbol पर काम करता 
 > [!NOTE]
 > `@category` और `@order` दोनों **unknown tags** हैं — आपके config को
 > `tags.allowUnknownTags: true` सेट करना चाहिए (इस repo का हर example config करता
-> है)। पूर्ण syntax [Custom tags](/authoring/custom-tags) पर।
+> है)। पूर्ण syntax [Custom tags](/components/overview) पर।
 
 ## लीवर 3 — nested groups (`/`-paths)
 
@@ -228,7 +228,7 @@ frontmatter के साथ मिलाएँ, और आप sidebar को �
 
 ## आगे कहाँ जाएँ
 
-- `@category` / `@order` tag reference: [Custom tags](/authoring/custom-tags)।
+- `@category` / `@order` tag reference: [Custom tags](/components/overview)।
 - पूरी option सूची: [Configuration](/theme/configuration)।
 - वे दो workflows जिन्हें यह एक साथ बाँधता है:
   [Build a guides site](/guides/build-a-guides-site) ·

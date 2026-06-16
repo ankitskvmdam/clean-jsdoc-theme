@@ -105,7 +105,7 @@ npx serve <destination>   # Pagefind full-text search needs HTTP
 | `includeFilesListInHomepage` | — | 已移除 | Source Files 区块会列出文件。 |
 | `meta` | — | 已移除 | 没有自定义 `<meta>` 注入。 |
 | `search` | — | 已移除 | 始终开启的模糊搜索 + 可选的 Pagefind。 |
-| `codepen` | — | 已移除 | 使用 [`@iframe`](/authoring/embeds) 嵌入。 |
+| `codepen` | — | 已移除 | 使用 [`@iframe`](/guides/embeds) 嵌入。 |
 | `static_dir` | — | 已移除 | 使用 JSDoc 自身的静态文件配置。 |
 | `footer` | — | 已移除 | 由 `siteName` / `pkg` 派生。 |
 | `exclude_inherited`, `displayModuleHeader`, `sort`, `shouldRemoveScrollbarStyle` | — | 已移除 | 没有等价项。 |
@@ -175,7 +175,7 @@ npx serve <destination>   # Pagefind full-text search needs HTTP
 
 - [**与你的 API 并列的散文指南**](/guides/combine-guides-and-api) — `docs` +
   `docGroups`，与本站点使用的是同一套管线。
-- [**创作基本元素**](/authoring/callouts) — 在注释和散文中使用 callouts、
+- [**创作基本元素**](/components/callouts) — 在注释和散文中使用 callouts、
   steps、tabs 和实时嵌入。
 - [**侧边栏结构**](/guides/structure-your-sidebar) — `@category` / `@order`
   标签、`clubSidebarItems`、`menu`。

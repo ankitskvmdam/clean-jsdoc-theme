@@ -15,9 +15,9 @@
     "readme": "./README.md",
     "favicon": "./assets/logo-small.svg",
     "docs": "./docs",
-    "docGroups": ["Packages", "Using the Theme", "Guides", "Authoring"],
+    "docGroups": ["Packages", "Using the Theme", "Guides", "Components"],
     "defaultDocGroup": "Docs",
-    "sectionOrder": ["Using the Theme", "Guides", "Authoring", "Packages"],
+    "sectionOrder": ["Using the Theme", "Guides", "Components", "Packages"],
     "locales": [
       { "code": "en", "name": "English" },
       { "code": "hi", "name": "हिन्दी" },

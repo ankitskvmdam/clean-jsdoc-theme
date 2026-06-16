@@ -131,7 +131,7 @@ here. A few connections worth knowing:
   untagged `@class` — within its kind section. Parsed in
   [`generate-site.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/generate-site.ts).
   See [Structure your sidebar](/guides/structure-your-sidebar) and
-  [Custom tags](/authoring/custom-tags).
+  [Custom tags](/components/overview).
 - **README → home.** Your README (rendered to HTML by JSDoc/TypeDoc) becomes the
   home page at slug `''`, via
   [`buildReadmePage`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/guide-view.ts).

@@ -125,7 +125,7 @@ setu 生产了模型；dwar 渲染它。二者从不互相导入——它们
   未加标签的 `@class`——使其位于所属 kind 区段内。解析逻辑见
   [`generate-site.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/generate-site.ts)。
   参阅 [组织你的侧边栏](/guides/structure-your-sidebar) 和
-  [自定义标签](/authoring/custom-tags)。
+  [自定义标签](/components/overview)。
 - **README → 首页。** 你的 README（由 JSDoc/TypeDoc 渲染为 HTML）会成为
   slug 为 `''` 的首页，经由
   [`buildReadmePage`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/guide-view.ts)。

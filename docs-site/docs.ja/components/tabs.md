@@ -1,7 +1,7 @@
 ---
 title: Tabs
-group: Authoring
-order: 3
+group: Components
+order: 4
 ---
 
 # Tabs
@@ -168,8 +168,8 @@ module page にある install tabs は、その `@module` comment の中に直�
 
 ## こちらも参照
 
-- [Steps](/authoring/steps) — 兄弟の stepper container（step の内側に tabs を
+- [Steps](/components/steps) — 兄弟の stepper container（step の内側に tabs を
   nest できます）。
-- [Callouts](/authoring/callouts) — `[!NOTE]`-style の notices について。
+- [Callouts](/components/callouts) — `[!NOTE]`-style の notices について。
 - [Structure your sidebar](/guides/structure-your-sidebar) — guide pages がどう
   group 化されるかについて。

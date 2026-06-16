@@ -1,7 +1,7 @@
 ---
 title: FAQ
 group: Guides
-order: 7
+order: 8
 ---
 
 # FAQ
@@ -14,7 +14,7 @@ Each recipe links to the page with the full details.
 
 The theme can drop a sandboxed `<iframe>` into any page — a CodePen, a YouTube
 video, a StackBlitz, or any site. There are two ways to author one, and they
-share [one config grammar](/authoring/embeds):
+share [one config grammar](/guides/embeds):
 
 - **In prose** (README, guides, the `docs` folder) — an ` ```iframe ` fenced block.
 - **In a doc comment** — the `@iframe <url> key=value` block tag.
@@ -114,7 +114,7 @@ works with no JavaScript at all.
 
 By default, yes — the embed URL is re-resolved when the theme changes (a
 `{theme}` token is swapped, or `?theme-id=<theme>` is appended). Opt out with
-`themed=false`. Full reference: [Embeds & live demos](/authoring/embeds).
+`themed=false`. Full reference: [Embeds & live demos](/guides/embeds).
 
 ## Richer doc comments
 
@@ -137,7 +137,7 @@ export function connect() {}
 
 The markers map to four styles: `[!NOTE]` / `[!INFO]` / `[!IMPORTANT]` → info,
 `[!TIP]` / `[!SUCCESS]` → tip, `[!WARNING]` / `[!CAUTION]` → warning, and
-`[!ERROR]` / `[!DANGER]` → error. See [Callouts](/authoring/callouts).
+`[!ERROR]` / `[!DANGER]` → error. See [Callouts](/components/callouts).
 
 ### Can I use steps or tabs in a comment?
 
@@ -170,7 +170,7 @@ dedicated tag, you write the markup directly:
  */
 `````
 
-See [Steps](/authoring/steps) and [Tabs](/authoring/tabs) for the full syntax and
+See [Steps](/components/steps) and [Tabs](/components/tabs) for the full syntax and
 the blank-line rule, and the live
 [sample-api module page](/api-docs/module/sample-api) for it rendered.
 
@@ -210,7 +210,7 @@ before the theme runs** — your categories collapse to the default kind section
 ```
 
 (TypeDoc has no such restriction — it passes these through.) See [Custom
-tags](/authoring/custom-tags) for the full list.
+tags](/components/overview) for the full list.
 
 ### How do I add hand-written guides next to the API reference?
 

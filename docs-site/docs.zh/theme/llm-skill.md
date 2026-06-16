@@ -49,8 +49,8 @@ order: 5
 `clean-jsdoc-theme` 并不是默认的 JSDoc template，一个依据通用 "JSDoc theme"
 知识工作的助手会把细节搞错 —— 它会忘记
 [`plugins/markdown`](/theme/jsdoc-getting-started) 是必需的、会遗漏自定义标签
-需要 [`allowUnknownTags`](/authoring/custom-tags)，或者会以为空格能嵌套一条
-[`@category`](/authoring/custom-tags) 路径，而实际上只有 `/` 才可以。
+需要 [`allowUnknownTags`](/components/overview)，或者会以为空格能嵌套一条
+[`@category`](/components/overview) 路径，而实际上只有 `/` 才可以。
 
 > [!TIP]
 > 把 skill 前置，能把一来一回的拉锯（"那个 option 不存在……"、"换成这个试试
@@ -145,4 +145,4 @@ revision 与已发布的副本作比较、把你已安装的主题版本与 npm 
 - [JSDoc Getting Started](/theme/jsdoc-getting-started) ·
   [TypeDoc Getting Started](/theme/typedoc-getting-started) —— 搭建构建流程。
 - [Structure your sidebar](/guides/structure-your-sidebar) 与
-  [Authoring](/authoring/callouts) —— skill 所浓缩的那些深入讲解。
+  [Authoring](/components/callouts) —— skill 所浓缩的那些深入讲解。

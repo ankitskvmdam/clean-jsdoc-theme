@@ -95,7 +95,7 @@ defaultMdxComponents['MemberHeading'];
 So a markdown blockquote with a `type` and setu's `<Callout type="…">` both land
 on the same renderer, and a fenced code block becomes a highlighted `CodeBlock`.
 You can see the user-facing side of these in the authoring docs:
-[Callouts](/authoring/callouts) and [Tabs](/authoring/tabs).
+[Callouts](/components/callouts) and [Tabs](/components/tabs).
 
 dwar merges this map with any override before rendering — its `mergeMdxComponents`
 spreads `defaultMdxComponents` first, then the override on top
@@ -199,5 +199,5 @@ them as a reserved, forward-looking surface, not a working override point.
   the package exists.
 - [dwar Overview](/packages/dwar-overview) — the package that server-renders and
   bundles these components.
-- [Callouts](/authoring/callouts) · [Tabs](/authoring/tabs) — the user-facing
+- [Callouts](/components/callouts) · [Tabs](/components/tabs) — the user-facing
   side of the MDX components above.

@@ -14,7 +14,7 @@ entry が `group` path と任意の `order` を持つ** ことが見えれば、
 
 > [!NOTE]
 > 以下の 2 つの source tags — `@category` と `@order` — は
-> [Custom tags](/authoring/custom-tags) で詳しく文書化されています。この page では
+> [Custom tags](/components/overview) で詳しく文書化されています。この page では
 > それら（および config options）が sidebar をどう feed するかをカバーします; tag
 > syntax を全面的に再文書化するものではありません。
 
@@ -88,7 +88,7 @@ section** に属する symbol（素の `@class`、`@module`、…）を配置す
 > [!NOTE]
 > `@category` と `@order` はどちらも **unknown tags** です — config で
 > `tags.allowUnknownTags: true` を設定する必要があります（この repo のすべての example
-> config がそうしています）。完全な syntax は [Custom tags](/authoring/custom-tags) に。
+> config がそうしています）。完全な syntax は [Custom tags](/components/overview) に。
 
 ## レバー 3 — nested groups（`/`-paths）
 
@@ -223,7 +223,7 @@ cleanJsdocTheme: {
 
 ## 次に進む先
 
-- `@category` / `@order` tag リファレンス: [Custom tags](/authoring/custom-tags)。
+- `@category` / `@order` tag リファレンス: [Custom tags](/components/overview)。
 - 完全な option 一覧: [Configuration](/theme/configuration)。
 - これが結び付ける 2 つの workflow:
   [Build a guides site](/guides/build-a-guides-site) ·

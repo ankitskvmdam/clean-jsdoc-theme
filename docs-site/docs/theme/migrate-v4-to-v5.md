@@ -107,7 +107,7 @@ errors while you migrate, then relax it.
 | `includeFilesListInHomepage` | — | removed | The Source Files section lists files. |
 | `meta` | `meta` | changed | Supported again — an array of attribute maps → `<meta>` tags in `<head>`. See [`meta`](/theme/configuration#meta). |
 | `search` | — | removed | Always-on fuzzy search + optional Pagefind. |
-| `codepen` | `playground` | changed | v4 prefilled a CodePen from `@example`; v5 generalizes it to [`playground`](/guides/add-playgrounds) — open an example in CodePen, JSFiddle, or CodeSandbox via `opts.playground` + the `@playground` tag. (To embed an existing pen by URL, use [`@iframe`](/authoring/embeds).) |
+| `codepen` | `playground` | changed | v4 prefilled a CodePen from `@example`; v5 generalizes it to [`playground`](/guides/add-playgrounds) — open an example in CodePen, JSFiddle, or CodeSandbox via `opts.playground` + the `@playground` tag. (To embed an existing pen by URL, use [`@iframe`](/guides/embeds).) |
 | `static_dir` | — | removed | Use JSDoc's own static-file config. |
 | `footer` | `footer` | changed | Supported again — an inline HTML string or `{ file: "./footer.html" }`. Style it with `customCss` / `customCssFile`. See [`footer`](/theme/configuration#footer). |
 | `exclude_inherited`, `displayModuleHeader`, `sort`, `shouldRemoveScrollbarStyle` | — | removed | No equivalent. |
@@ -178,7 +178,7 @@ Migration is also an upgrade. Once you're on v5, reach for:
 
 - [**Prose guides beside your API**](/guides/combine-guides-and-api) — `docs` +
   `docGroups`, the same pipeline this site uses.
-- [**Authoring primitives**](/authoring/callouts) — callouts, steps, tabs, and
+- [**Authoring primitives**](/components/callouts) — callouts, steps, tabs, and
   live embeds in comments and prose.
 - [**Sidebar structure**](/guides/structure-your-sidebar) — `@category` / `@order`
   tags, `clubSidebarItems`, `menu`.

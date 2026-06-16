@@ -164,7 +164,7 @@ translate → `build`) については
   Markdown を追加します。
 - **[Structure your sidebar](/guides/structure-your-sidebar)** — `@category`、
   `@order`、そして sidebar options。
-- **[Authoring](/authoring/callouts)** — comments や prose で使える callouts、steps、
+- **[Authoring](/components/callouts)** — comments や prose で使える callouts、steps、
   tabs、embeds。
 - **[Localize your docs](/guides/localize-your-docs)** — site を複数言語で ship
   します。

@@ -1,7 +1,7 @@
 ---
 title: Tabs
-group: Authoring
-order: 3
+group: Components
+order: 4
 ---
 
 # Tabs
@@ -159,8 +159,8 @@ live demo's module page are authored right in its `@module` comment:
 
 ## See also
 
-- [Steps](/authoring/steps) — the sibling stepper container (you can nest tabs
+- [Steps](/components/steps) — the sibling stepper container (you can nest tabs
   inside a step).
-- [Callouts](/authoring/callouts) for `[!NOTE]`-style notices.
+- [Callouts](/components/callouts) for `[!NOTE]`-style notices.
 - [Structure your sidebar](/guides/structure-your-sidebar) for how guide pages
   are grouped.

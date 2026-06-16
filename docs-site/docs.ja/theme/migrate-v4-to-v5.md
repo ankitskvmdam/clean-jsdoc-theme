@@ -110,7 +110,7 @@ v5 は、残っている `theme_opts` key や v4 の option 名に対して **�
 | `includeFilesListInHomepage` | — | 削除 | Source Files section が files を列挙。 |
 | `meta` | — | 削除 | custom `<meta>` injection なし。 |
 | `search` | — | 削除 | 常時 on の fuzzy search + 省略可能な Pagefind。 |
-| `codepen` | — | 削除 | [`@iframe`](/authoring/embeds) embeds を使用。 |
+| `codepen` | — | 削除 | [`@iframe`](/guides/embeds) embeds を使用。 |
 | `static_dir` | — | 削除 | JSDoc 自身の static-file config を使用。 |
 | `footer` | — | 削除 | `siteName` / `pkg` から derive。 |
 | `exclude_inherited`, `displayModuleHeader`, `sort`, `shouldRemoveScrollbarStyle` | — | 削除 | 相当なし。 |
@@ -180,7 +180,7 @@ v5 は、残っている `theme_opts` key や v4 の option 名に対して **�
 
 - [**API のそばに Prose guides**](/guides/combine-guides-and-api) — `docs` +
   `docGroups`、このサイトが使っているのと同じ pipeline。
-- [**Authoring primitives**](/authoring/callouts) — comments と prose の中の
+- [**Authoring primitives**](/components/callouts) — comments と prose の中の
   callouts、steps、tabs、live embeds。
 - [**Sidebar structure**](/guides/structure-your-sidebar) — `@category` / `@order`
   tags、`clubSidebarItems`、`menu`。

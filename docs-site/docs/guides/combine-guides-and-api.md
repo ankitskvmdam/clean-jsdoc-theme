@@ -166,5 +166,5 @@ resolvers in
 ## Where to go next
 
 - Fine-tune the merged sidebar: [Structure your sidebar](/guides/structure-your-sidebar).
-- The group/order tags on symbols: [Custom tags](/authoring/custom-tags).
+- The group/order tags on symbols: [Custom tags](/components/overview).
 - Every option in detail: [Configuration](/theme/configuration).
