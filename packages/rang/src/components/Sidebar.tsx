@@ -137,14 +137,17 @@ function NavLink({
   // long wrapped labels read correctly.
   const align = node.icon ? 'items-center' : '';
 
-  // External menu link (carries an absolute `href`): open in a new tab.
+  // External menu link (carries an absolute `href`): opens in a new tab by
+  // default; a menu entry's `target`/`class` override the target and add classes.
   if (node.external && node.href) {
+    const target = node.target || '_blank';
     return (
       <a
         href={node.href}
-        target="_blank"
-        rel="noopener noreferrer"
-        class={cn(ITEM_BASE, ITEM_INACTIVE, align)}
+        target={target}
+        // Keep the new-tab safety rel only when actually opening a new tab.
+        rel={target === '_blank' ? 'noopener noreferrer' : undefined}
+        class={cn(ITEM_BASE, ITEM_INACTIVE, align, node.class)}
       >
         {icon}
         {label}
@@ -166,8 +169,9 @@ function NavLink({
   return (
     <a
       href={withBase(basePath, '/' + node.slug)}
+      target={node.target || undefined}
       aria-current={isCurrent ? 'page' : undefined}
-      class={cn(ITEM_BASE, align, isCurrent ? ITEM_ACTIVE : ITEM_INACTIVE)}
+      class={cn(ITEM_BASE, align, isCurrent ? ITEM_ACTIVE : ITEM_INACTIVE, node.class)}
     >
       {icon}
       {label}

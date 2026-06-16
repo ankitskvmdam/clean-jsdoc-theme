@@ -396,7 +396,8 @@ cleanJsdocTheme: { clubSidebarItems: true }
 
 **预期值：** 一个由条目组成的数组。每个条目都是一个对象，包含 `title`、
 一个 `link`（或 `href`）、一个可选的 `id`，以及一个可选的 `icon`——`lucide:<name>`
-或 `simpleicons:<name>`，从 CDN 加载。
+或 `simpleicons:<name>`，从 CDN 加载。还有两个可选字段用于控制链接呈现：`target`
+（链接 target——外部链接默认为 `_blank`）和 `class`（合并到所渲染链接上的额外 CSS 类）。
 
 <tabs group="tool">
 
@@ -407,6 +408,8 @@ opts: {
   menu: [
     { title: "Home", link: "/", icon: "lucide:home" },
     { title: "GitHub", link: "https://github.com/you/repo", icon: "simpleicons:github" },
+    // 在同一标签页打开 + 加上自定义类以便通过 customCss 设置样式：
+    { title: "Changelog", link: "/changelog", target: "_self", class: "menu-changelog" },
   ],
 }
 ```
@@ -420,6 +423,7 @@ cleanJsdocTheme: {
   menu: [
     { title: "Home", link: "/", icon: "lucide:home" },
     { title: "GitHub", link: "https://github.com/you/repo", icon: "simpleicons:github" },
+    { title: "Changelog", link: "/changelog", target: "_self", class: "menu-changelog" },
   ],
 }
 ```

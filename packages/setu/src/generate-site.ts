@@ -506,6 +506,10 @@ const EXTERNAL_ICON = 'lucide:external-link';
  * `lucide:<name>` (bundled set), see {@link NavNode.icon}. When omitted it
  * defaults by role: home→`lucide:home`, source→`lucide:code-xml`,
  * external→`lucide:external-link`.
+ *
+ * `target` and `class` are optional link presentation: `target` overrides the
+ * link target (an external entry still defaults to `_blank`), and `class` adds
+ * CSS class(es) to the rendered link.
  */
 export interface MenuItem {
   /** Built-in id (`home` / `source`), or — for an external link — its Simple Icons slug. */
@@ -518,6 +522,13 @@ export interface MenuItem {
   href?: string;
   /** Icon name/slug for the entry. */
   icon?: string;
+  /**
+   * Link `target` attribute (e.g. `_blank`, `_self`). Overrides the default — an
+   * external link still defaults to `_blank` when this is omitted.
+   */
+  target?: string;
+  /** Extra CSS class(es) merged onto the rendered menu link. */
+  class?: string;
 }
 
 /** Inputs for {@link assembleNav}: the per-source nav pieces + the section order. */
@@ -1023,10 +1034,25 @@ function resolveMenuItem(
   const title = item.title?.trim();
   const id = item.id?.trim();
   const icon = item.icon?.trim();
+  const target = item.target?.trim();
+  const linkClass = item.class?.trim();
+  // Optional presentation fields, attached only when set so untouched entries
+  // stay byte-identical.
+  const extra = {
+    ...(target ? { target } : {}),
+    ...(linkClass ? { class: linkClass } : {}),
+  };
 
   if (id === HOME_MENU_ID) {
     if (!home) return null;
-    return { ...home, label: title || home.label, icon: icon || HOME_ICON, menu: true, order };
+    return {
+      ...home,
+      label: title || home.label,
+      icon: icon || HOME_ICON,
+      menu: true,
+      order,
+      ...extra,
+    };
   }
   if (id && (SOURCE_MENU_IDS as readonly string[]).includes(id)) {
     if (!source) return null;
@@ -1036,6 +1062,7 @@ function resolveMenuItem(
       icon: icon || SOURCE_ICON,
       menu: true,
       order,
+      ...extra,
     };
   }
 
@@ -1049,6 +1076,7 @@ function resolveMenuItem(
       icon: icon || EXTERNAL_ICON,
       menu: true,
       order,
+      ...extra,
     };
   }
 

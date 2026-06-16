@@ -250,6 +250,18 @@ describe('normalizeMenu', () => {
   it('drops entries with neither id nor link, and non-objects', () => {
     expect(normalizeMenu([{ title: 'orphan' }, 'nope', null, { icon: 'github' }])).toBeUndefined();
   });
+
+  it('keeps `target` and `class` (trimmed) when present', () => {
+    expect(
+      normalizeMenu([
+        { id: 'github', link: 'https://x.y', target: ' _self ', class: ' menu-gh ' },
+        { id: 'home' }, // no target/class → neither key emitted
+      ])
+    ).toEqual([
+      { id: 'github', link: 'https://x.y', target: '_self', class: 'menu-gh' },
+      { id: 'home' },
+    ]);
+  });
 });
 
 describe('normalizeDocGroups', () => {

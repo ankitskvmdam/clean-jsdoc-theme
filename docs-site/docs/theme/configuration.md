@@ -398,7 +398,9 @@ Custom links pinned above the sidebar navigation.
 
 **Expected:** an array of entries. Each is an object with `title`, a `link` (or
 `href`), an optional `id`, and an optional `icon` — `lucide:<name>` or
-`simpleicons:<name>`, loaded from a CDN.
+`simpleicons:<name>`, loaded from a CDN. Two optional fields control link
+presentation: `target` (the link target — an external link defaults to `_blank`)
+and `class` (extra CSS class(es) merged onto the rendered link).
 
 <tabs group="tool">
 
@@ -409,6 +411,8 @@ opts: {
   menu: [
     { title: "Home", link: "/", icon: "lucide:home" },
     { title: "GitHub", link: "https://github.com/you/repo", icon: "simpleicons:github" },
+    // Open in the same tab + tag with a custom class for styling via customCss:
+    { title: "Changelog", link: "/changelog", target: "_self", class: "menu-changelog" },
   ],
 }
 ```
@@ -422,6 +426,7 @@ cleanJsdocTheme: {
   menu: [
     { title: "Home", link: "/", icon: "lucide:home" },
     { title: "GitHub", link: "https://github.com/you/repo", icon: "simpleicons:github" },
+    { title: "Changelog", link: "/changelog", target: "_self", class: "menu-changelog" },
   ],
 }
 ```

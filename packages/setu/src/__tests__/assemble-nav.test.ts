@@ -269,4 +269,34 @@ describe('assembleNav — menu (top region) + sections below', () => {
     // Sections still render.
     expect(nav.some((n) => n.group === 'Classes')).toBe(true);
   });
+
+  it('threads `target` and `class` onto external and built-in menu entries', () => {
+    const nav = assembleNav({
+      home: HOME,
+      source: SOURCE,
+      menu: [
+        { id: 'home', target: '_self', class: 'menu-home' },
+        { id: 'gh', link: 'https://github.com/x/y', target: '_top', class: 'menu-gh' },
+      ],
+    });
+    expect(nav.find((n) => n.slug === '')).toMatchObject({
+      target: '_self',
+      class: 'menu-home',
+    });
+    expect(nav.find((n) => n.href === 'https://github.com/x/y')).toMatchObject({
+      external: true,
+      target: '_top',
+      class: 'menu-gh',
+    });
+  });
+
+  it('omits `target`/`class` when not supplied (entries stay clean)', () => {
+    const nav = assembleNav({
+      home: HOME,
+      menu: [{ id: 'gh', link: 'https://github.com/x/y' }],
+    });
+    const gh = nav.find((n) => n.href === 'https://github.com/x/y')!;
+    expect(gh).not.toHaveProperty('target');
+    expect(gh).not.toHaveProperty('class');
+  });
 });

@@ -401,7 +401,9 @@ sidebar navigation の上にピン留めされる custom links です。
 
 **期待される値:** entries の array。各 entry は object で、`title`、`link`（または
 `href`）、省略可能な `id`、省略可能な `icon` を持ちます — `icon` は
-`lucide:<name>` または `simpleicons:<name>` で、CDN から load されます。
+`lucide:<name>` または `simpleicons:<name>` で、CDN から load されます。link の
+表示を制御する省略可能な 2 つの field: `target`（link の target — external link は
+既定で `_blank`）と `class`（render される link に merge される追加の CSS class）。
 
 <tabs group="tool">
 
@@ -412,6 +414,8 @@ opts: {
   menu: [
     { title: "Home", link: "/", icon: "lucide:home" },
     { title: "GitHub", link: "https://github.com/you/repo", icon: "simpleicons:github" },
+    // 同じ tab で開く + customCss で style するための custom class を付与:
+    { title: "Changelog", link: "/changelog", target: "_self", class: "menu-changelog" },
   ],
 }
 ```
@@ -425,6 +429,7 @@ cleanJsdocTheme: {
   menu: [
     { title: "Home", link: "/", icon: "lucide:home" },
     { title: "GitHub", link: "https://github.com/you/repo", icon: "simpleicons:github" },
+    { title: "Changelog", link: "/changelog", target: "_self", class: "menu-changelog" },
   ],
 }
 ```

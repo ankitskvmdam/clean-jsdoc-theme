@@ -400,7 +400,9 @@ sidebar navigation के ऊपर pin किए गए custom links।
 
 **अपेक्षित:** entries की एक array। हर एक एक object है जिसमें `title`, एक `link` (या
 `href`), एक वैकल्पिक `id`, और एक वैकल्पिक `icon` — `lucide:<name>` या
-`simpleicons:<name>`, एक CDN से load होता है।
+`simpleicons:<name>`, एक CDN से load होता है। दो वैकल्पिक fields link की
+presentation को नियंत्रित करते हैं: `target` (link target — external link डिफ़ॉल्ट रूप
+से `_blank`) और `class` (rendered link पर merge की गई अतिरिक्त CSS class(es))।
 
 <tabs group="tool">
 
@@ -411,6 +413,8 @@ opts: {
   menu: [
     { title: "Home", link: "/", icon: "lucide:home" },
     { title: "GitHub", link: "https://github.com/you/repo", icon: "simpleicons:github" },
+    // उसी tab में खोलें + customCss से styling के लिए एक custom class दें:
+    { title: "Changelog", link: "/changelog", target: "_self", class: "menu-changelog" },
   ],
 }
 ```
@@ -424,6 +428,7 @@ cleanJsdocTheme: {
   menu: [
     { title: "Home", link: "/", icon: "lucide:home" },
     { title: "GitHub", link: "https://github.com/you/repo", icon: "simpleicons:github" },
+    { title: "Changelog", link: "/changelog", target: "_self", class: "menu-changelog" },
   ],
 }
 ```

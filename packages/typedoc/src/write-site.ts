@@ -167,6 +167,8 @@ function normalizeMenu(raw: unknown): MenuItem[] | undefined {
           : undefined;
     if (link) item.link = link;
     if (typeof o.icon === 'string' && o.icon.trim()) item.icon = o.icon.trim();
+    if (typeof o.target === 'string' && o.target.trim()) item.target = o.target.trim();
+    if (typeof o.class === 'string' && o.class.trim()) item.class = o.class.trim();
     if (item.id || item.link) out.push(item);
   }
   return out.length > 0 ? out : undefined;

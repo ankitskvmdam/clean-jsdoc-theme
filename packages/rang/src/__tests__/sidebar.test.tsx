@@ -140,6 +140,42 @@ describe('Sidebar — menu region (icons + external links)', () => {
     expect(html).toContain('rel="noopener noreferrer"');
   });
 
+  it('honors a menu entry `target` override and merges its `class`', () => {
+    // An external entry pointing back into the site, forced to open in the same
+    // tab and tagged with a custom class.
+    const html = render(
+      <Sidebar
+        nav={[
+          {
+            label: 'Changelog',
+            href: 'https://example.com/changelog',
+            external: true,
+            target: '_self',
+            class: 'menu-changelog',
+            menu: true,
+          },
+        ]}
+        currentSlug=""
+      />
+    );
+    expect(html).toContain('target="_self"');
+    // _self is not a new tab, so the noopener rel is dropped.
+    expect(html).not.toContain('rel="noopener noreferrer"');
+    expect(html).toContain('menu-changelog');
+  });
+
+  it('applies `target`/`class` to a built-in internal menu link', () => {
+    const html = render(
+      <Sidebar
+        nav={[{ label: 'Home', slug: '', target: '_self', class: 'menu-home', menu: true }]}
+        currentSlug=""
+      />
+    );
+    expect(html).toContain('href="/"');
+    expect(html).toContain('target="_self"');
+    expect(html).toContain('menu-home');
+  });
+
   it('paints a simpleicons: glyph with the fg token via a CSS mask', () => {
     const html = render(<Sidebar nav={menuNav} currentSlug="" />);
     // Silhouette SVG used as a mask (no baked-in color in the URL)...

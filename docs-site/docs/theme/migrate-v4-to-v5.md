@@ -96,7 +96,7 @@ errors while you migrate, then relax it.
 | `default_theme` | — | removed | Light/dark token sets + runtime toggle; no picker. |
 | `base_url` | `basePath` | renamed | Site root prefixed onto links. |
 | `title` | `siteName` | changed | String **or** a logo set `{ default, dark, light, alt }`. |
-| `menu` | `menu` | changed | Reshaped: `{ id?, title?, link/href?, icon? }`; `target`/`class` dropped. |
+| `menu` | `menu` | changed | Reshaped: `{ id?, title?, link/href?, icon?, target?, class? }` — adds `icon` + `id` built-ins; `target`/`class` still supported. |
 | `sections` | `sectionOrder` | renamed | Filter + order sidebar sections. |
 | `create_style` | `customCss` | renamed | Inline CSS (loads after the theme stylesheet). |
 | `include_css` / `add_style_path` | `customCssFile` | renamed/changed | CSS file → content-hashed asset link. |
@@ -114,7 +114,8 @@ errors while you migrate, then relax it.
 
 > [!NOTE]
 > The **menu** reshaped: a v4 entry `{ title, link, target, class, id }` becomes a
-> v5 `{ id?, title?, link (or href)?, icon? }` — drop `target`/`class`, add an
+> v5 `{ id?, title?, link (or href)?, icon?, target?, class? }` — `target`/`class`
+> still work, and you add an
 > `icon` (`lucide:<name>` / `simpleicons:<name>`). In v5, `id` also selects
 > built-ins (`{ id: "home" }`, `{ id: "source" }`), and a `menu` takes precedence
 > over `sectionOrder`. See [`menu`](/theme/configuration#menu) and

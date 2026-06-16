@@ -21,6 +21,14 @@ export interface NavNode {
   /** True for an external link entry (`href` set) — render with `target="_blank"`. */
   external?: boolean;
   /**
+   * Link `target` attribute for a menu entry (e.g. `_blank`, `_self`). When
+   * omitted, an external entry still defaults to `_blank`; an internal one omits
+   * the attribute.
+   */
+  target?: string;
+  /** Extra CSS class(es) merged onto a menu entry's rendered link. */
+  class?: string;
+  /**
    * Icon for the entry (menu items only), as a prefixed `source:code` string:
    * `simpleicons:<slug>` renders the `cdn.simpleicons.org` glyph painted with
    * the `fg` theme token (CSS-masked, so it swaps light/dark on its own), and

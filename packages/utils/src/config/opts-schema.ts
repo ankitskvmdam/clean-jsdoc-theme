@@ -74,6 +74,10 @@ export const MenuItemSchema = z
     link: z.string().optional(),
     href: z.string().optional(),
     icon: z.string().optional(),
+    /** Link `target` attribute (e.g. `_blank`, `_self`). */
+    target: z.string().optional(),
+    /** Extra CSS class(es) merged onto the rendered menu link. */
+    class: z.string().optional(),
   })
   .strip();
 export type TMenuItemOpt = z.infer<typeof MenuItemSchema>;
