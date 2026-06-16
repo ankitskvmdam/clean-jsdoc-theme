@@ -1,7 +1,7 @@
 ---
 title: FAQ
 group: Guides
-order: 6
+order: 8
 ---
 
 # FAQ
@@ -37,6 +37,27 @@ https://codepen.io/USER/embed/PEN_ID title="CodePen demo" height=400
 > [!TIP]
 > CodePen で **Embed** を開き、`<iframe src="…">` snippet から URL をコピーします。
 > 読者が click するまで軽い poster を表示するには `clickToLoad=true` を追加します。
+
+### 読者が example を CodePen / JSFiddle / CodeSandbox で開けるようにするには？
+
+`@iframe` は **既存の** pen を URL で embed します。`@example` の **コードを開く**
+には — 事前入力済みで、pen も不要 — 代わりに **playground** feature を使います:
+`opts.playground` で on にし、example に `@playground` を付けます:
+
+```js
+/**
+ * @example
+ * const out = resize(img, 200);
+ * @playground codepen jsfiddle filename=resize.js highlight=1
+ */
+export function resize(img, width) {}
+```
+
+code block の header に **"Open Code in"** dropdown（CodePen / JSFiddle /
+CodeSandbox）が付きます。すべて client-side で — API key は不要です。prose の中でも
+機能します（` ```js playground ` fence または `<playground>` block）。完全な
+ウォークスルー: [Add a playground](/components/playground)。（`@playground` は
+`@iframe` と同じく `tags.allowUnknownTags: true` を必要とします。）
 
 ### YouTube video を embed するには？
 
@@ -179,11 +200,42 @@ symbol には `@category` / `@order`、guide pages には frontmatter `group` / 
 そして `sectionOrder` option を使います。[Structure your
 sidebar](/guides/structure-your-sidebar) があらゆるレバーをカバーします。
 
+### `@category` / `@order` / `@playground` / `@iframe` tags が動かない
+
+最も可能性の高い原因: あなたの `jsdoc.json` で **`tags.allowUnknownTags` が `true`
+になっていない** こと。これらはすべて基本の JSDoc が定義しない tags なので、JSDoc は
+**theme が走る前にそれらを取り除いてしまいます** — categories は default の kind
+sections に潰れ、`@order` は何もせず、`@playground` / `@iframe` は決して render され
+ません。flag を設定してください:
+
+```json
+{ "tags": { "allowUnknownTags": true } }
+```
+
+（TypeDoc にはそうした制限はありません — これらをそのまま通します。）完全な一覧は
+[Custom tags](/components/overview) を参照してください。
+
 ### API reference の隣に手書きの guides を追加するには？
 
 `opts.docs` を Markdown の folder に指し示します。[Build a guides
 site](/guides/build-a-guides-site) と [Combine guides +
 API](/guides/combine-guides-and-api) を参照してください。
+
+### favicon を設定するには？
+
+[`favicon`](/theme/configuration#favicon) を image file に指し示します。theme は
+それを content-hashed な asset に copy し、すべての page の `<head>` に
+`<link rel="icon">` を追加します:
+
+```json5
+opts: { favicon: "./assets/logo.svg" }
+```
+
+これが **SVG** favicon を使う方法です — browsers は root の `favicon.ico` しか自動
+発見せず、SVG は決して発見しないため、theme が emit する `<link>` が必要になります。
+（SVG なら、その中の `@media (prefers-color-scheme: dark)` block によって light/dark
+に適応させることもできます。）v4 の `favicon` option は v5 の初期に一時的に外され
+ましたが、戻っています。
 
 ### "copy page" / "open in LLM" ボタンを無効にするには？
 

@@ -4,144 +4,84 @@ group: Components
 order: 1
 ---
 
-# Custom tags
+# Components
+
+ドキュメントを **authoring** するときに手を伸ばす building blocks です — prose
+（README、tutorials、`docs` files）の中でも、JSDoc / TypeDoc の doc comments の中
+でも使えます。これらは 2 つの flavour に分かれます:
+
+- **Visual components** — prose や comment に差し込むと、より richな UI 要素として
+  render される markup です（callouts、steppers、tabs、live embeds、実行可能な
+  playgrounds）。
+- **Custom tags** — 基本の JSDoc/TypeDoc が定義しない doc-comment block tags で、
+  theme がこれらを読み取って sidebar を形作ったり、あなたの code から live content
+  を埋め込んだりします。
+
+## Visual components
+
+prose の中でも doc-comment description の中でも同じやり方で authoring します
+（同じ converter を通って流れます）:
+
+| Component | What it does | Page |
+| --- | --- | --- |
+| **Callouts** | Note / tip / warning / error admonitions (GitHub-style `> [!TIP]`). | [Callouts](/components/callouts) |
+| **Steps** | A numbered `<steps>` / `<step>` stepper. | [Steps](/components/steps) |
+| **Tabs** | A tabbed `<tabs>` / `<tab>` view. | [Tabs](/components/tabs) |
+| **Embeds** | A sandboxed `<iframe>` live demo — a ` ```iframe ` fence or the `@iframe` tag. | [Embeds](/components/embeds) |
+| **Playgrounds** | "Open in CodePen / JSFiddle / CodeSandbox" from an `@example` or a code fence. | [Playground](/components/playground) |
+
+## Custom tags
+
+基本の JSDoc と TypeDoc が定義しない block tags です — theme はあなたの source
+comments からそれらを読み取ります。2 つは sidebar を形作り、2 つは live content を
+埋め込みます（そして prose の相当物を持ちます）:
+
+| Tag | What it does | Page |
+| --- | --- | --- |
+| `@category <path> [order=N]` | Put a symbol's page in an explicit sidebar group (and optionally order it). | [@category](/components/category) |
+| `@order N` | A standalone within-group sort key for **any** symbol. | [@order](/components/order) |
+| `@iframe <url> key=value` | Embed a sandboxed live demo from a source comment. | [Embeds](/components/embeds) |
+| `@playground <providers> [filename=] [highlight=]` | Open an `@example` in a live playground. | [Playground](/components/playground) |
+
+### まず custom tags を有効にする — `allowUnknownTags`
+
+setup の手順は **1 つ** だけで、これらの tags が「動かない」最大の理由でもありま
+す: 基本の JSDoc は、認識しない tag を theme が走る **前** に取り除いてしまいます。
+あなたの `jsdoc.json` で unknown tags を on にしてください:
+
+```json
+{
+  "tags": { "allowUnknownTags": true }
+}
+```
+
+これがないと、`@category` は default の kind sections に潰れ、`@order` は何もせず、
+`@iframe` / `@playground` は決して render されません — しかも静かに。この site の
+[`jsdoc.json`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/docs-site/jsdoc.json)
+はこれを設定しています。
 
 > [!NOTE]
-> **どこで使えるか — source comments。** これらは JSDoc/TypeDoc の doc-comment
-> tags で、あなたの source 内に書きます。Prose pages にはそれらに相当するものが
-> あります: `group` / `order` frontmatter は `@category` / `@order` を反映し、
-> ` ```iframe ` fence は `@iframe` を反映します（[Embeds](/components/embeds)
-> を参照）。
+> **TypeDoc にはそうした flag は不要です** — これらの tags をそのまま通します。
+> `allowUnknownTags` の要件は JSDoc に限られます。
 
-Theme は、基本の JSDoc や TypeDoc が提供しないいくつかの doc-comment block tags
-を読み取ります。これらは sidebar を形作り、source comments が live demos を埋め
-込めるようにします:
+## Tags vs. prose — 2 つの入り口
 
-- **`@category <path> [order=N]`** — ある symbol の page を明示的な sidebar
-  group に置きます（さらに任意で順序付けします）。
-- **`@order N`** — 任意の symbol のための独立した within-group sort key。
-- **`@iframe <url> key=value`** — source comment から live demo を埋め込みます。
+custom tags は **source-comment** 版です。代わりに prose を書いているとき（README、
+tutorial、`docs` file）には、同じ能力が tags なしで利用できます:
 
-Category/order の parsing は
-[`generate-site.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/generate-site.ts)
-にあります（`parseCategory` / `readOrder`）。`@iframe` は
-[`doclet.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/mdast/doclet.ts)
-で処理されます。
-
-> [!IMPORTANT]
-> これら 3 つはすべて **unknown tags** です — 基本の JSDoc はこれらを定義しません。
-> あなたの config は `jsdoc.json` で `tags.allowUnknownTags: true` を set する
-> 必要があります（この site の
-> [`jsdoc.json`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/docs-site/jsdoc.json)
-> はそうしています）。これがないと、JSDoc は theme が動く前にこれらの tags を
-> 取り除いてしまいます。
-
-## `@category` — symbol を group 化する
-
-`@category` は、ある symbol の生成された page を、その既定の kind section
-（Classes、Modules、…）の代わりに、明示的な sidebar group に置きます:
-
-```ts
-/**
- * @category Core
- */
-export class Parser {}
-```
-
-### Path tokens は space で結合される。nest するのは `/` のみ
-
-ここは微妙な部分で、正しく理解する価値があります。`parseCategory` は tag text を
-whitespace で分割し、その後:
-
-- 素の tokens の **先頭の連なり** が **group path** であり、**単一の space で
-  結合**されます。したがって `@category Getting Started` は文字どおり
-  `Getting Started` という名前の 1 つのフラットな group です — space は名前の
-  一部のまま残ります。
-- Parsing は `=` を含む最初の token で **options** へ切り替わります。そこから先
-  はすべて `key=value` です。
-- group を **nest** するのは文字どおりの **`/`** です — `Core/Parsing` は page を
-  **Core ▸ Parsing** の下に nest します。Spaces は nest しません。
-
-```ts
-/** @category Core/Parsing order=1 */
-export class Lexer {}
-```
-
-これは `Lexer` を **Core ▸ Parsing** の下に置き、その subgroup の中で最初に
-順序付けします。ある symbol で最初の `@category` が勝ちます。
-
-### Inline `order=`
-
-現在 `@category` の唯一の option は `order` です — within-group sort key です。
-order が無い、または非数値の場合は undefined のまま残されます（page は最後に、
-alphabetically に並びます。tag が付いていない page と同様です）。
-
-## `@order` — 任意の symbol を順序付けする
-
-inline の `order=` option は `@category` を **持つ** symbol にのみ適用されます。
-自身の **kind section** に置かれる symbol — category のない素の `@module`、
-`@class`、`@namespace` — を配置するには、独立した `@order` tag を使います:
-
-```ts
-/**
- * @module config
- * @order 1
- */
-```
-
-値が無い、または非数値の場合は undefined のまま残されます（最後に並びます）。
-[`generate-site.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/generate-site.ts)
-の `readOrder` を参照してください。
-
-### 優先順位: `@category … order=` が `@order` に勝つ
-
-ある symbol が `@category … order=` option と独立した `@order` の **両方** を
-持つ場合、inline の `@category` order が **勝ちます** — それはより具体的で、
-同じ場所に書かれた declaration だからです。解決された order は
-`renderContainerPage` で `category?.order ?? readOrder(doclet)` として計算されます。
-両方とも sidebar が読み取るのと同じ `frontmatter.order` に渡されます。
-
-```ts
-/**
- * `order=1` (from @category) wins; the @order 9 below is ignored here.
- * @category Core order=1
- * @order 9
- */
-export class Parser {}
-```
-
-## `@iframe` — source から live demo を埋め込む
-
-`@iframe` は、prose の ` ```iframe ` fence が使うのと同じ grammar を用いて、
-doc comment から直接 sandboxed iframe を埋め込みます:
-
-```js
-/**
- * @iframe https://example.com/embed/demo title="Live demo" height=420
- */
-export function render() {}
-```
-
-有効な `@iframe` はそれぞれ、symbol の `@example` section の後に `<Embed>` を
-render します。無効な config（非 `https`、URL なし）は破棄されます。完全な
-config grammar — 受け入れられる URL schemes、すべての option、そして
-`themed` / `{theme}` の挙動 — は [Embeds & live demos](/components/embeds) に
-documented されています。
-
-## `@category` と `@order` が sidebar をどう形作るか
-
-これらの tags は、theme の単一の sidebar ordering engine に渡される lever のうち
-の 2 つです — すべての entry が `group` path と任意の `order` を運びます。
-[Structure your sidebar](/guides/structure-your-sidebar) はモデル全体を扱います:
-nested な `/`-paths、leaf-vs-branch ordering、`clubSidebarItems`、`sectionOrder`、
-`docGroups`、そして `menu`。この page は tag syntax だけです。あちらの page は
-ピースがどう組み合わさるかです。
+- **`group` / `order` frontmatter** は guide page 上で `@category` / `@order` を
+  反映します（[Build a guides site](/guides/build-a-guides-site) を参照）。
+- ` ```iframe ` **fence** は `@iframe` を反映します（[Embeds](/components/embeds)
+  を参照）。
+- ` ```js playground ` **fence** と `<playground>` **container** は `@playground`
+  を反映します（[Playground](/components/playground) を参照）。
 
 ## こちらも参照
 
-- [Structure your sidebar](/guides/structure-your-sidebar) — 完全な sidebar
-  ordering model。
-- [Embeds & live demos](/components/embeds) — `@iframe` config grammar の全体。
-- [Configuration](/theme/configuration) — `sectionOrder`、`docGroups`、その仲間。
-- [Build a guides site](/guides/build-a-guides-site) — guide-page frontmatter
-  （`group` / `order`）、これらの tags の prose 版。
+- [Structure your sidebar](/guides/structure-your-sidebar) — `@category` /
+  `@order` が `sectionOrder`、`docGroups`、`clubSidebarItems`、`menu` とどう組み合わ
+  さるか。
+- [Embeds](/components/embeds) — 共有の `@iframe` / ` ```iframe ` の config
+  grammar の全体。
+- [Playground](/components/playground) — `@playground` feature の全体:
+  `opts.playground`、prose 版、そして provider ごとの options。

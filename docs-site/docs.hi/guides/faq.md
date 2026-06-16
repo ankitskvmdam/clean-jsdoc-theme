@@ -1,7 +1,7 @@
 ---
 title: FAQ
 group: Guides
-order: 6
+order: 8
 ---
 
 # FAQ
@@ -37,6 +37,28 @@ https://codepen.io/USER/embed/PEN_ID title="CodePen demo" height=400
 > [!TIP]
 > CodePen पर, **Embed** खोलें और `<iframe src="…">` snippet से URL copy करें।
 > पाठक के click करने तक एक हल्का poster दिखाने के लिए `clickToLoad=true` जोड़ें।
+
+### मैं पाठकों को किसी example को CodePen / JSFiddle / CodeSandbox में कैसे खुलवाऊँ?
+
+`@iframe` URL से एक **मौजूदा** pen embed करता है। किसी **`@example` के code** को
+खोलने के लिए — पहले से भरा हुआ, बिना किसी pen के — इसके बजाय **playground** feature
+उपयोग करें: इसे `opts.playground` में चालू करें, फिर example को `@playground` से tag
+करें:
+
+```js
+/**
+ * @example
+ * const out = resize(img, 200);
+ * @playground codepen jsfiddle filename=resize.js highlight=1
+ */
+export function resize(img, width) {}
+```
+
+code block के header में एक **"Open Code in"** dropdown (CodePen / JSFiddle /
+CodeSandbox) आ जाता है, सब client-side — कोई API key नहीं। यह prose में भी काम
+करता है (एक ` ```js playground ` fence या एक `<playground>` block)। पूरा
+walkthrough: [Add a playground](/components/playground)। (`@playground` को
+`tags.allowUnknownTags: true` चाहिए, ठीक `@iframe` की तरह।)
 
 ### मैं एक YouTube video कैसे embed करूँ?
 
@@ -179,11 +201,43 @@ symbols पर `@category` / `@order`, guide pages पर frontmatter `group` / 
 और `sectionOrder` option उपयोग करें। [Structure your
 sidebar](/guides/structure-your-sidebar) हर लीवर को कवर करता है।
 
+### मेरे `@category` / `@order` / `@playground` / `@iframe` tags काम नहीं कर रहे
+
+सबसे संभावित कारण: आपके `jsdoc.json` में **`tags.allowUnknownTags` `true` नहीं
+है**। ये सभी ऐसे tags हैं जिन्हें आधार JSDoc परिभाषित नहीं करता, इसलिए वह
+**theme के चलने से पहले इन्हें छील देता है** — आपकी categories default kind sections
+में सिमट जाती हैं, `@order` कुछ नहीं करता, और `@playground` / `@iframe` कभी render
+नहीं होते। flag सेट करें:
+
+```json
+{ "tags": { "allowUnknownTags": true } }
+```
+
+(TypeDoc पर ऐसी कोई पाबंदी नहीं — यह इन्हें पास-थ्रू कर देता है।) पूरी सूची के लिए
+देखें [Custom tags](/components/overview)।
+
 ### मैं API reference के बगल में हाथ से लिखे guides कैसे जोड़ूँ?
 
 `opts.docs` को Markdown के एक folder की ओर इंगित करें। देखें [Build a guides
 site](/guides/build-a-guides-site) और [Combine guides +
 API](/guides/combine-guides-and-api)।
+
+### मैं एक favicon कैसे सेट करूँ?
+
+[`favicon`](/theme/configuration#favicon) को किसी image file की ओर इंगित करें।
+theme इसे एक content-hashed asset में copy करता है और हर page के `<head>` में एक
+`<link rel="icon">` जोड़ता है:
+
+```json5
+opts: { favicon: "./assets/logo.svg" }
+```
+
+एक **SVG** favicon उपयोग करने का यही तरीका है — browsers केवल एक root
+`favicon.ico` को auto-discover करते हैं, कभी किसी SVG को नहीं, इसलिए इसे theme द्वारा
+emit किए गए `<link>` की ज़रूरत होती है। (एक SVG अपने अंदर एक
+`@media (prefers-color-scheme: dark)` block के ज़रिये light/dark के अनुसार ढल भी
+सकता है।) v4 का `favicon` option v5 की शुरुआत में थोड़े समय के लिए हटा दिया गया था
+और वापस आ गया है।
 
 ### मैं "copy page" / "open in LLM" बटन कैसे बंद करूँ?
 
