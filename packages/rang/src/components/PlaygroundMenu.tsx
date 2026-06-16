@@ -1,3 +1,4 @@
+import type { ComponentType } from 'preact';
 import { CodeXml, ChevronDown } from 'lucide-preact';
 import { useTranslation } from '@clean-jsdoc-theme/bhasha';
 import type { PlaygroundProvider } from '@clean-jsdoc-theme/utils';
@@ -8,45 +9,31 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from './DropdownMenu';
-import { SimpleIcon } from './SimpleIcon';
+import { CodepenIcon } from './icons/CodepenIcon';
+import { JsfiddleIcon } from './icons/JsfiddleIcon';
+import { CodesandboxIcon } from './icons/CodesandboxIcon';
 import { cn } from '../lib/cn';
 import { openCodepen } from './playground/codepen';
 import { openJsfiddle } from './playground/jsfiddle';
 import { openCodesandbox } from './playground/codesandbox';
 
-/** Per-provider display name + Simple Icons slug + opener. */
+/**
+ * Per-provider display name + inlined brand glyph + opener. The icons are
+ * `currentColor` Preact components (see `./icons/`), so they track the menu
+ * item's text color and the light/dark theme for free.
+ */
 const PROVIDERS: Record<
   PlaygroundProvider,
-  { label: string; slug: string; open: (code: string, options: Record<string, unknown>) => void }
-> = {
-  codepen: { label: 'CodePen', slug: 'codepen', open: openCodepen },
-  jsfiddle: { label: 'JSFiddle', slug: 'jsfiddle', open: openJsfiddle },
-  codesandbox: { label: 'CodeSandbox', slug: 'codesandbox', open: openCodesandbox },
-};
-
-// CodePen's own brand logos (the Simple Icons mask doesn't render its monogram
-// reliably) — the black wordmark for light mode, white for dark, swapped via the
-// `dark:` variant ([data-theme="dark"]) with CSS only.
-const CODEPEN_LOGO_LIGHT = 'https://blog.codepen.io/wp-content/uploads/2023/09/logo-black.png';
-const CODEPEN_LOGO_DARK = 'https://blog.codepen.io/wp-content/uploads/2023/09/logo-white.png';
-
-/** Provider glyph: CodePen uses its brand logo image; the rest use Simple Icons. */
-function ProviderIcon({ provider, slug }: { provider: PlaygroundProvider; slug: string }) {
-  if (provider === 'codepen') {
-    return (
-      <>
-        <img src={CODEPEN_LOGO_LIGHT} alt="" aria-hidden="true" class="h-4 w-auto shrink-0 dark:hidden" />
-        <img
-          src={CODEPEN_LOGO_DARK}
-          alt=""
-          aria-hidden="true"
-          class="hidden h-4 w-auto shrink-0 dark:block"
-        />
-      </>
-    );
+  {
+    label: string;
+    Icon: ComponentType<{ size?: number; class?: string }>;
+    open: (code: string, options: Record<string, unknown>) => void;
   }
-  return <SimpleIcon slug={slug} />;
-}
+> = {
+  codepen: { label: 'CodePen', Icon: CodepenIcon, open: openCodepen },
+  jsfiddle: { label: 'JSFiddle', Icon: JsfiddleIcon, open: openJsfiddle },
+  codesandbox: { label: 'CodeSandbox', Icon: CodesandboxIcon, open: openCodesandbox },
+};
 
 export interface PlaygroundMenuProps {
   /** Enabled providers, in render order. */
@@ -83,12 +70,13 @@ export function PlaygroundMenu({ providers, code = '', options = {} }: Playgroun
         {providers.map((provider) => {
           const meta = PROVIDERS[provider];
           if (!meta) return null;
+          const { Icon } = meta;
           return (
             <DropdownMenuItem
               key={provider}
               onSelect={() => meta.open(code, options[provider] ?? {})}
             >
-              <ProviderIcon provider={provider} slug={meta.slug} />
+              <Icon size={16} class="shrink-0" />
               {t('chrome.playground.openInProvider', { provider: meta.label })}
             </DropdownMenuItem>
           );
