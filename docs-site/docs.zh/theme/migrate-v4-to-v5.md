@@ -100,14 +100,14 @@ npx serve <destination>   # Pagefind full-text search needs HTTP
 | `include_css` / `add_style_path` | `customCssFile` | 已重命名/已变更 | CSS 文件 → 带内容哈希的资源链接。 |
 | `add_scripts` | `customJs` | 已重命名 | 内联 JS（最后运行）。 |
 | `include_js` / `add_script_path` | `customJsFile` | 已重命名/已变更 | JS 文件 → 带内容哈希的资源。 |
-| `favicon` | — | 已移除 | 使用 JSDoc 自身的静态文件复制。 |
+| `favicon` | `favicon` | 已保留 | 一个文件路径；主题会复制它并输出 `<link rel="icon">`。 |
 | `homepageTitle` | — | 已移除 | 首页 `<title>` 由 README / `docs/index.md` + `siteName` 派生。 |
 | `includeFilesListInHomepage` | — | 已移除 | Source Files 区块会列出文件。 |
-| `meta` | — | 已移除 | 没有自定义 `<meta>` 注入。 |
+| `meta` | `meta` | 已变更 | 再次受支持 —— 一个由 attribute map 组成的数组 → `<head>` 中的 `<meta>` tags。参见 [`meta`](/theme/configuration#meta)。 |
 | `search` | — | 已移除 | 始终开启的模糊搜索 + 可选的 Pagefind。 |
-| `codepen` | — | 已移除 | 使用 [`@iframe`](/components/embeds) 嵌入。 |
+| `codepen` | `playground` | 已变更 | v4 从 `@example` 预填一个 CodePen；v5 将其泛化为 [`playground`](/components/playground) —— 通过 `opts.playground` + `@playground` tag，在 CodePen、JSFiddle 或 CodeSandbox 中打开一个示例。（要通过 URL 嵌入一个现成的 pen，请使用 [`@iframe`](/components/embeds)。） |
 | `static_dir` | — | 已移除 | 使用 JSDoc 自身的静态文件配置。 |
-| `footer` | — | 已移除 | 由 `siteName` / `pkg` 派生。 |
+| `footer` | `footer` | 已变更 | 再次受支持 —— 一个内联 HTML 字符串或 `{ file: "./footer.html" }`。用 `customCss` / `customCssFile` 为其设置样式。参见 [`footer`](/theme/configuration#footer)。 |
 | `exclude_inherited`, `displayModuleHeader`, `sort`, `shouldRemoveScrollbarStyle` | — | 已移除 | 没有等价项。 |
 
 > [!NOTE]
@@ -158,8 +158,9 @@ npx serve <destination>   # Pagefind full-text search needs HTTP
       { title: "GitHub", link: "https://github.com/me/lib", icon: "simpleicons:github" },
     ],
     sectionOrder: ["Classes", "Modules", "Global"],
+    footer: "© My Library",
     customCssFile: "./static/custom.css",
-    // dropped: default_theme (auto), search (always on), footer (derived)
+    // dropped: default_theme (auto), search (always on)
     docs: "./docs", // optional v5 upside
   },
 }

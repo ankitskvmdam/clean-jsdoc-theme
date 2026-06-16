@@ -155,6 +155,40 @@ cleanJsdocTheme: { basePath: "/my-library" } // served at example.com/my-library
 
 </tabs>
 
+### `favicon`
+
+一个指向 favicon 图片的路径。桥接器会把它复制为一个带内容哈希的
+`_assets/` 资源，并向每个页面的 `<head>` 中输出一个 `<link rel="icon">`（其
+`type` 由扩展名派生 —— `.svg` → `image/svg+xml`）。
+
+**预期值：** 一个文件路径字符串（`.svg`、`.png`、`.ico`……），相对于工作
+目录。省略 → 不输出 favicon 链接。
+
+<tabs group="tool">
+
+<tab label="JSDoc (jsdoc.json)">
+
+```json5
+opts: { favicon: "./assets/logo-small.svg" }
+```
+
+</tab>
+
+<tab label="TypeDoc (typedoc.json)">
+
+```json5
+cleanJsdocTheme: { favicon: "./assets/logo-small.svg" }
+```
+
+</tab>
+
+</tabs>
+
+> [!TIP]
+> **SVG** favicon 需要这个选项 —— 浏览器只会自动发现根目录下的
+> `favicon.ico`，绝不会自动发现 SVG。一个 SVG 图标还可以通过其内部的
+> `@media (prefers-color-scheme: dark)` block 来适配浅色/深色。
+
 ## 内容来源
 
 ### `readme`
@@ -476,6 +510,13 @@ cleanJsdocTheme: {
 | `accent`    | 链接、聚焦环、主按钮                            |
 | `accentFg`  | `accent` 背景上的文本/图标                      |
 | `border`    | 细线和分隔线                                    |
+| `codeHeaderBg`    | 代码块 header 条的背景                    |
+| `codeHeaderFg`    | 代码块 header 标签文本                    |
+| `codeHighlightBg` | 高亮代码行的背景（`@playground` / `highlight=`） |
+
+这三个 `code*` 键为代码块的外壳配色 —— header 条（其背景 + `CODE`/文件名标签）
+以及高亮行上的着色。它们在浅色下默认为一种中性的 `#f7f7f7` 等效色，在深色下
+默认为提亮的灰色，因此你只需在匹配自定义调色板时才设置它们。
 
 <tabs group="tool">
 

@@ -10,14 +10,14 @@ description: >-
 
 # Migrate clean-jsdoc-theme v4 → v5
 
-<!-- skill-revision: 2026-06-13 -->
+<!-- skill-revision: 2026-06-16 -->
 
 This skill walks a project from **clean-jsdoc-theme v4 to v5**. v5 is a ground-up
 rewrite: it server-renders every page, emits a companion `.md` per page, ships
 built-in search, a source viewer, and an `opts.docs` prose pipeline. The config
 surface changed significantly — this is the procedure to port it safely.
 
-> **Skill revision:** `2026-06-13`. The canonical, exhaustive reference is the
+> **Skill revision:** `2026-06-16`. The canonical, exhaustive reference is the
 > repo's [`MIGRATION.md`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/MIGRATION.md)
 > and the machine-readable [`migration-map.json`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/migration-map.json).
 > If you can fetch them, prefer their current contents over anything cached here.
@@ -111,8 +111,10 @@ is a runtime toggle) or moved to JSDoc's own config (`static_dir`).
 Migration doesn't require these, but they're the reason to be on v5 — offer them
 (see the umbrella skill for syntax): `docs` + `docGroups` (a prose-guides
 directory beside the API), `fonts`, `siteName` logo sets, `copyPage` / `aiPrompt`
-(LLM actions), `@category` / `@order` for sidebar structure, `@iframe` embeds, and
-the source viewer (`templates.default.outputSourceFiles`).
+(LLM actions), `@category` / `@order` for sidebar structure, `@iframe` embeds +
+`@playground` runnable examples (CodePen/JSFiddle/CodeSandbox — the generalized
+successor to v4's `codepen`), `favicon`, and the source viewer
+(`templates.default.outputSourceFiles`).
 
 </step>
 

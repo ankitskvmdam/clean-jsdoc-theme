@@ -4,135 +4,76 @@ group: Components
 order: 1
 ---
 
-# 自定义标签
+# Components
+
+在**编写**文档时你会用到的构建块 —— 既用于正文（你的 README、tutorials 和 `docs`
+文件），也用于 JSDoc / TypeDoc doc comments。它们分为两类：
+
+- **Visual components** —— 你放进正文或 comment 的标记，会渲染为更丰富的 UI 元素
+  （callouts、steppers、tabs、实时 embeds、可运行的 playgrounds）。
+- **Custom tags** —— 基础 JSDoc/TypeDoc 并不定义的 doc-comment block tags，主题会读取
+  它们来塑造侧边栏，或从你的代码嵌入实时内容。
+
+## Visual components
+
+在正文和 doc-comment descriptions 中以相同方式编写（它们经由同一个 converter 流转）：
+
+| Component | What it does | Page |
+| --- | --- | --- |
+| **Callouts** | Note / tip / warning / error 提示框（GitHub 风格的 `> [!TIP]`）。 | [Callouts](/components/callouts) |
+| **Steps** | 一个带编号的 `<steps>` / `<step>` stepper。 | [Steps](/components/steps) |
+| **Tabs** | 一个带标签页的 `<tabs>` / `<tab>` 视图。 | [Tabs](/components/tabs) |
+| **Embeds** | 一个沙箱化的 `<iframe>` 实时演示 —— 一个 ` ```iframe ` fence 或 `@iframe` tag。 | [Embeds](/components/embeds) |
+| **Playgrounds** | 从一个 `@example` 或代码 fence “在 CodePen / JSFiddle / CodeSandbox 中打开”。 | [Playground](/components/playground) |
+
+## Custom tags
+
+基础 JSDoc 和 TypeDoc 并不定义的 block tags —— 主题会从你的 source comments 中读取它们。
+其中两个塑造侧边栏；另外两个嵌入实时内容（并且有正文等价物）：
+
+| Tag | What it does | Page |
+| --- | --- | --- |
+| `@category <path> [order=N]` | 把一个 symbol 的页面放入一个明确的侧边栏 group（并可选地为其排序）。 | [@category](/components/category) |
+| `@order N` | 适用于**任何** symbol 的独立 within-group 排序键。 | [@order](/components/order) |
+| `@iframe <url> key=value` | 从一条 source comment 嵌入一个沙箱化的实时演示。 | [Embeds](/components/embeds) |
+| `@playground <providers> [filename=] [highlight=]` | 在一个实时 playground 中打开一个 `@example`。 | [Playground](/components/playground) |
+
+### 先启用 custom tags —— `allowUnknownTags`
+
+只有**一个**设置步骤，而它正是这些 tags “不起作用”的最常见原因：基础 JSDoc 会在主题
+运行**之前**就把任何它无法识别的 tag 剥离掉。在你的 `jsdoc.json` 中开启 unknown tags：
+
+```json
+{
+  "tags": { "allowUnknownTags": true }
+}
+```
+
+没有它，`@category` 会塌缩为默认的 kind sections，`@order` 不起任何作用，而 `@iframe` /
+`@playground` 永远不会渲染 —— 而且是静默的。本站点的
+[`jsdoc.json`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/docs-site/jsdoc.json)
+就设置了它。
 
 > [!NOTE]
-> **它在哪里生效 —— source comments。** 这些是 JSDoc/TypeDoc 的 doc-comment
-> tags，写在你的 source 中。Prose pages 有对应的等价物：`group` / `order`
-> frontmatter 对应 `@category` / `@order`，而 ` ```iframe ` fence 对应
-> `@iframe`（参见 [Embeds](/components/embeds)）。
+> **TypeDoc 不需要这样的 flag** —— 它会原样传递这些 tags。`allowUnknownTags`
+> 这一要求仅针对 JSDoc。
 
-主题会读取一些基础 JSDoc 和 TypeDoc 不提供的 doc-comment block tags。它们塑造
-侧边栏，并让 source comments 能够嵌入实时演示：
+## Tags vs. prose —— 两种入口
 
-- **`@category <path> [order=N]`** —— 把一个 symbol 的页面放入一个明确的侧边栏
-  group（并可选地为其排序）。
-- **`@order N`** —— 适用于任何 symbol 的独立 within-group 排序键。
-- **`@iframe <url> key=value`** —— 从 source comment 嵌入一个实时演示。
+custom tags 是 **source-comment** 形式。当你改为编写正文时（一个 README、一个 tutorial，
+或一个 `docs` 文件），无需 tags 也能获得相同的能力：
 
-Category/order 解析位于
-[`generate-site.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/generate-site.ts)
-（`parseCategory` / `readOrder`）；`@iframe` 在
-[`doclet.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/mdast/doclet.ts)
-中处理。
+- **`group` / `order` frontmatter** 在 guide 页面上对应 `@category` / `@order`
+  （参见 [Build a guides site](/guides/build-a-guides-site)）。
+- ` ```iframe ` **fence** 对应 `@iframe`（参见 [Embeds](/components/embeds)）。
+- ` ```js playground ` **fence** 和 `<playground>` **container** 对应
+  `@playground`（参见 [Playground](/components/playground)）。
 
-> [!IMPORTANT]
-> 这三个都是 **unknown tags** —— 基础 JSDoc 并不定义它们。你的 config
-> 必须在 `jsdoc.json` 中设置 `tags.allowUnknownTags: true`（本站点的
-> [`jsdoc.json`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/docs-site/jsdoc.json)
-> 就是这样做的）。否则 JSDoc 会在主题运行之前就把这些 tags 剥离掉。
+## See also
 
-## `@category` —— 为一个 symbol 分组
-
-`@category` 把一个 symbol 生成的页面放入一个明确的侧边栏 group，而不是其默认的
-kind section（Classes、Modules、…）：
-
-```ts
-/**
- * @category Core
- */
-export class Parser {}
-```
-
-### Path tokens 以空格连接；只有 `/` 进行嵌套
-
-这是微妙的部分，值得正确理解。`parseCategory` 把 tag text 按空白字符拆分，然后：
-
-- 普通 tokens 的**前导序列**就是 **group path**，**以单个空格连接**。所以
-  `@category Getting Started` 是一个扁平的 group，其名称字面上就是
-  `Getting Started` —— 空格仍是名称的一部分。
-- 解析在第一个含有 `=` 的 token 处切换为 **options**。从那里开始的所有内容
-  都是 `key=value`。
-- 字面上的 **`/`** 才是真正**嵌套**一个 group 的东西 —— `Core/Parsing` 会把页面
-  嵌套到 **Core ▸ Parsing** 之下。空格不会嵌套。
-
-```ts
-/** @category Core/Parsing order=1 */
-export class Lexer {}
-```
-
-这会把 `Lexer` 放到 **Core ▸ Parsing** 之下，并在该 subgroup 中排在最前。一个
-symbol 上的第一个 `@category` 胜出。
-
-### 行内 `order=`
-
-目前 `@category` 唯一的 option 是 `order` —— 即 within-group 排序键。缺失或非数字
-的 `order` 会被保留为 undefined（该页面会排在最后，按字母顺序排列，就像一个
-未加 tag 的页面）。
-
-## `@order` —— 为任何 symbol 排序
-
-行内 `order=` option 只适用于**拥有** `@category` 的 symbol。要为一个位于其
-**kind section** 中的 symbol 定位 —— 即没有 category 的普通 `@module`、`@class`、
-`@namespace` —— 请使用独立的 `@order` tag：
-
-```ts
-/**
- * @module config
- * @order 1
- */
-```
-
-缺失或非数字的值会被保留为 undefined（排在最后）。参见
-[`generate-site.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/generate-site.ts)
-中的 `readOrder`。
-
-### 优先级：`@category … order=` 胜过 `@order`
-
-当一个 symbol **同时**携带 `@category … order=` option 和独立的 `@order` 时，
-行内 `@category` order **胜出** —— 它是更具体、共处一处的声明。解析得到的 order
-在 `renderContainerPage` 中按 `category?.order ?? readOrder(doclet)` 计算。两者
-都馈入侧边栏所读取的同一个 `frontmatter.order`。
-
-```ts
-/**
- * `order=1` (from @category) wins; the @order 9 below is ignored here.
- * @category Core order=1
- * @order 9
- */
-export class Parser {}
-```
-
-## `@iframe` —— 从 source 嵌入实时演示
-
-`@iframe` 直接从一个 doc comment 嵌入一个 sandboxed iframe，使用与 prose
-` ```iframe ` fence 相同的语法：
-
-```js
-/**
- * @iframe https://example.com/embed/demo title="Live demo" height=420
- */
-export function render() {}
-```
-
-每个有效的 `@iframe` 会在 symbol 的 `@example` section 之后渲染一个 `<Embed>`；
-无效的 configs（非 `https`、无 URL）会被丢弃。完整的 config 语法 —— 接受的 URL
-schemes、每个 option，以及 `themed` / `{theme}` 行为 —— 都记录在
-[Embeds & live demos](/components/embeds) 上。
-
-## `@category` 和 `@order` 如何塑造侧边栏
-
-这些 tags 是馈入主题单一侧边栏排序引擎的两个杠杆 —— 每个 entry 都携带一个
-`group` path 和一个可选的 `order`。
-[Structure your sidebar](/guides/structure-your-sidebar) 涵盖了完整的模型：
-嵌套的 `/`-paths、leaf-vs-branch 排序、`clubSidebarItems`、`sectionOrder`、
-`docGroups` 和 `menu`。本页只讲 tag 语法；那一页讲各部分如何组合。
-
-## 参见
-
-- [Structure your sidebar](/guides/structure-your-sidebar) —— 完整的侧边栏
-  排序模型。
-- [Embeds & live demos](/components/embeds) —— 完整的 `@iframe` config 语法。
-- [Configuration](/theme/configuration) —— `sectionOrder`、`docGroups` 及相关项。
-- [Build a guides site](/guides/build-a-guides-site) —— guide-page frontmatter
-  （`group` / `order`），即这些 tags 的 prose 对应物。
+- [Structure your sidebar](/guides/structure-your-sidebar) —— `@category` /
+  `@order` 如何与 `sectionOrder`、`docGroups`、`clubSidebarItems` 和 `menu` 组合。
+- [Embeds](/components/embeds) —— 完整的共享 `@iframe` / ` ```iframe `
+  config 语法。
+- [Playground](/components/playground) —— 完整的 `@playground` 功能：
+  `opts.playground`、正文形式，以及各 provider 的选项。
