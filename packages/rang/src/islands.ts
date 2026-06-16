@@ -9,6 +9,7 @@ import { CtrlK } from './components/CtrlK';
 import { CodeTabs } from './components/CodeTabs';
 import { CodeViewer } from './components/CodeViewer';
 import { EmbedBody } from './components/Embed';
+import { PlaygroundMenu } from './components/PlaygroundMenu';
 import { CopyBtn } from './components/CopyBtn';
 import { CopyPageButton } from './components/CopyPageButton';
 import { ThemeToggle } from './components/ThemeToggle';
@@ -30,6 +31,9 @@ export const ISLAND_REGISTRY: Record<IslandName, ComponentType<any>> = {
   // In-content island: the loader mounts `EmbedBody` (the marker's children)
   // onto the `data-island="embed"` marker, reading config from its `data-*`.
   embed: EmbedBody,
+  // In-content island: the loader reads `data-providers` + the page payload +
+  // the sibling <pre>, then mounts `PlaygroundMenu` onto the marker.
+  playground: PlaygroundMenu,
   'copy-btn': CopyBtn,
   'copy-page': CopyPageButton,
   'theme-toggle': ThemeToggle,

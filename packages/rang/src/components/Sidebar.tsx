@@ -5,6 +5,7 @@ import { useTranslation } from '@clean-jsdoc-theme/bhasha';
 import type { NavNode } from '@clean-jsdoc-theme/utils';
 import { withBase } from '@clean-jsdoc-theme/utils';
 import { cn } from '../lib/cn';
+import { SimpleIcon } from './SimpleIcon';
 
 export interface SidebarProps {
   nav: NavNode[];
@@ -89,15 +90,7 @@ function NavIcon({ icon }: { icon?: string }) {
   const code = sep === -1 ? icon : icon.slice(sep + 1);
 
   if (source === 'simpleicons' && code) {
-    const url = `https://cdn.simpleicons.org/${encodeURIComponent(code)}`;
-    const mask = `url(${url}) center / contain no-repeat`;
-    return (
-      <span
-        aria-hidden="true"
-        class="inline-block h-4 w-4 shrink-0 bg-(--clean-fg)"
-        style={{ mask, WebkitMask: mask, opacity: 0.8 }}
-      />
-    );
+    return <SimpleIcon slug={code} />;
   }
 
   // lucide (or any unrecognized prefix): bundled set, unknown → external-link.
