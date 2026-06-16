@@ -108,7 +108,7 @@ you mean?" संकेत के साथ) और build करता रहत
 | `includeFilesListInHomepage` | — | हटाया गया | Source Files section files सूचीबद्ध करता है। |
 | `meta` | — | हटाया गया | कोई custom `<meta>` injection नहीं। |
 | `search` | — | हटाया गया | हमेशा-on fuzzy search + वैकल्पिक Pagefind। |
-| `codepen` | — | हटाया गया | [`@iframe`](/guides/embeds) embeds इस्तेमाल करें। |
+| `codepen` | — | हटाया गया | [`@iframe`](/components/embeds) embeds इस्तेमाल करें। |
 | `static_dir` | — | हटाया गया | JSDoc की अपनी static-file config इस्तेमाल करें। |
 | `footer` | — | हटाया गया | `siteName` / `pkg` से derive होता है। |
 | `exclude_inherited`, `displayModuleHeader`, `sort`, `shouldRemoveScrollbarStyle` | — | हटाया गया | कोई समतुल्य नहीं। |

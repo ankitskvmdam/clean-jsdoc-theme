@@ -1,7 +1,7 @@
 ---
 title: 标签页
 group: Components
-order: 4
+order: 6
 ---
 
 # 标签页

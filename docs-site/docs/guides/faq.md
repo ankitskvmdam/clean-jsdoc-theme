@@ -14,7 +14,7 @@ Each recipe links to the page with the full details.
 
 The theme can drop a sandboxed `<iframe>` into any page — a CodePen, a YouTube
 video, a StackBlitz, or any site. There are two ways to author one, and they
-share [one config grammar](/guides/embeds):
+share [one config grammar](/components/embeds):
 
 - **In prose** (README, guides, the `docs` folder) — an ` ```iframe ` fenced block.
 - **In a doc comment** — the `@iframe <url> key=value` block tag.
@@ -55,7 +55,7 @@ export function resize(img, width) {}
 The code block's header gains an **"Open Code in"** dropdown (CodePen / JSFiddle /
 CodeSandbox), all client-side — no API key. It also works in prose (a
 ` ```js playground ` fence or a `<playground>` block). Full walkthrough:
-[Add a playground](/guides/add-playgrounds). (`@playground` needs
+[Add a playground](/components/playground). (`@playground` needs
 `tags.allowUnknownTags: true`, same as `@iframe`.)
 
 ### How do I embed a YouTube video?
@@ -114,7 +114,7 @@ works with no JavaScript at all.
 
 By default, yes — the embed URL is re-resolved when the theme changes (a
 `{theme}` token is swapped, or `?theme-id=<theme>` is appended). Opt out with
-`themed=false`. Full reference: [Embeds & live demos](/guides/embeds).
+`themed=false`. Full reference: [Embeds & live demos](/components/embeds).
 
 ## Richer doc comments
 

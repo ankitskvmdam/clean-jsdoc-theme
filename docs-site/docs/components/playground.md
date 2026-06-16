@@ -1,10 +1,10 @@
 ---
-title: Add a playground
-group: Guides
-order: 6
+title: Playground
+group: Components
+order: 2
 ---
 
-# Add a playground — open examples in CodePen / JSFiddle / CodeSandbox
+# Playground
 
 In this guide you'll let readers run your examples without leaving the docs. With
 the **playground** feature on, a code block grows an **"Open Code in"** button in
@@ -51,7 +51,7 @@ A few things to know:
 
 Add `@playground` to a doc comment, next to an `@example`. The grammar is a list
 of whitespace-separated tokens (the same parser as
-[`@iframe`](/guides/embeds)):
+[`@iframe`](/components/embeds)):
 
 ```js
 /**
@@ -145,5 +145,5 @@ To recolor the header strip or the highlighted-line tint, set the `codeHeaderBg`
 
 - [Custom tags](/components/overview) — `@playground` alongside `@iframe` /
   `@category` / `@order`, and the `allowUnknownTags` requirement.
-- [Embeds & live demos](/guides/embeds) — `@iframe` / ` ```iframe ` for
+- [Embeds & live demos](/components/embeds) — `@iframe` / ` ```iframe ` for
   embedding an **existing** pen, video, or live demo by URL.

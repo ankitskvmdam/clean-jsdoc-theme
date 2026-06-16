@@ -10,7 +10,7 @@ order: 1
 > **它在哪里生效 —— source comments。** 这些是 JSDoc/TypeDoc 的 doc-comment
 > tags，写在你的 source 中。Prose pages 有对应的等价物：`group` / `order`
 > frontmatter 对应 `@category` / `@order`，而 ` ```iframe ` fence 对应
-> `@iframe`（参见 [Embeds](/guides/embeds)）。
+> `@iframe`（参见 [Embeds](/components/embeds)）。
 
 主题会读取一些基础 JSDoc 和 TypeDoc 不提供的 doc-comment block tags。它们塑造
 侧边栏，并让 source comments 能够嵌入实时演示：
@@ -118,7 +118,7 @@ export function render() {}
 每个有效的 `@iframe` 会在 symbol 的 `@example` section 之后渲染一个 `<Embed>`；
 无效的 configs（非 `https`、无 URL）会被丢弃。完整的 config 语法 —— 接受的 URL
 schemes、每个 option，以及 `themed` / `{theme}` 行为 —— 都记录在
-[Embeds & live demos](/guides/embeds) 上。
+[Embeds & live demos](/components/embeds) 上。
 
 ## `@category` 和 `@order` 如何塑造侧边栏
 
@@ -132,7 +132,7 @@ schemes、每个 option，以及 `themed` / `{theme}` 行为 —— 都记录在
 
 - [Structure your sidebar](/guides/structure-your-sidebar) —— 完整的侧边栏
   排序模型。
-- [Embeds & live demos](/guides/embeds) —— 完整的 `@iframe` config 语法。
+- [Embeds & live demos](/components/embeds) —— 完整的 `@iframe` config 语法。
 - [Configuration](/theme/configuration) —— `sectionOrder`、`docGroups` 及相关项。
 - [Build a guides site](/guides/build-a-guides-site) —— guide-page frontmatter
   （`group` / `order`），即这些 tags 的 prose 对应物。

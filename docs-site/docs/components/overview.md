@@ -26,8 +26,8 @@ through one converter):
 | **Callouts** | Note / tip / warning / error admonitions (GitHub-style `> [!TIP]`). | [Callouts](/components/callouts) |
 | **Steps** | A numbered `<steps>` / `<step>` stepper. | [Steps](/components/steps) |
 | **Tabs** | A tabbed `<tabs>` / `<tab>` view. | [Tabs](/components/tabs) |
-| **Embeds** | A sandboxed `<iframe>` live demo — a ` ```iframe ` fence or the `@iframe` tag. | [Embeds & live demos](/guides/embeds) |
-| **Playgrounds** | "Open in CodePen / JSFiddle / CodeSandbox" from an `@example` or a code fence. | [Add a playground](/guides/add-playgrounds) |
+| **Embeds** | A sandboxed `<iframe>` live demo — a ` ```iframe ` fence or the `@iframe` tag. | [Embeds](/components/embeds) |
+| **Playgrounds** | "Open in CodePen / JSFiddle / CodeSandbox" from an `@example` or a code fence. | [Playground](/components/playground) |
 
 ## Custom tags
 
@@ -39,8 +39,8 @@ equivalents):
 | --- | --- | --- |
 | `@category <path> [order=N]` | Put a symbol's page in an explicit sidebar group (and optionally order it). | [@category](/components/category) |
 | `@order N` | A standalone within-group sort key for **any** symbol. | [@order](/components/order) |
-| `@iframe <url> key=value` | Embed a sandboxed live demo from a source comment. | [Embeds & live demos](/guides/embeds) |
-| `@playground <providers> [filename=] [highlight=]` | Open an `@example` in a live playground. | [Add a playground](/guides/add-playgrounds) |
+| `@iframe <url> key=value` | Embed a sandboxed live demo from a source comment. | [Embeds](/components/embeds) |
+| `@playground <providers> [filename=] [highlight=]` | Open an `@example` in a live playground. | [Playground](/components/playground) |
 
 ### Enable custom tags first — `allowUnknownTags`
 
@@ -71,15 +71,15 @@ available without tags:
 
 - **`group` / `order` frontmatter** mirror `@category` / `@order` on a guide page
   (see [Build a guides site](/guides/build-a-guides-site)).
-- the ` ```iframe ` **fence** mirrors `@iframe` (see [Embeds](/guides/embeds)).
+- the ` ```iframe ` **fence** mirrors `@iframe` (see [Embeds](/components/embeds)).
 - the ` ```js playground ` **fence** and the `<playground>` **container** mirror
-  `@playground` (see [Add a playground](/guides/add-playgrounds)).
+  `@playground` (see [Playground](/components/playground)).
 
 ## See also
 
 - [Structure your sidebar](/guides/structure-your-sidebar) — how `@category` /
   `@order` combine with `sectionOrder`, `docGroups`, `clubSidebarItems`, and `menu`.
-- [Embeds & live demos](/guides/embeds) — the shared `@iframe` / ` ```iframe `
+- [Embeds](/components/embeds) — the shared `@iframe` / ` ```iframe `
   config grammar in full.
-- [Add a playground](/guides/add-playgrounds) — the full `@playground` feature:
+- [Playground](/components/playground) — the full `@playground` feature:
   `opts.playground`, prose forms, and per-provider options.

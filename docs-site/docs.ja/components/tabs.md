@@ -1,7 +1,7 @@
 ---
 title: Tabs
 group: Components
-order: 4
+order: 6
 ---
 
 # Tabs

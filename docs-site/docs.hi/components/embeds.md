@@ -1,7 +1,7 @@
 ---
-title: Embeds & live demos
-group: Guides
-order: 7
+title: Embeds
+group: Components
+order: 3
 ---
 
 # Embeds & live demos

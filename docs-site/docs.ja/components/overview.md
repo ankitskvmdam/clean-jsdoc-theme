@@ -10,7 +10,7 @@ order: 1
 > **どこで使えるか — source comments。** これらは JSDoc/TypeDoc の doc-comment
 > tags で、あなたの source 内に書きます。Prose pages にはそれらに相当するものが
 > あります: `group` / `order` frontmatter は `@category` / `@order` を反映し、
-> ` ```iframe ` fence は `@iframe` を反映します（[Embeds](/guides/embeds)
+> ` ```iframe ` fence は `@iframe` を反映します（[Embeds](/components/embeds)
 > を参照）。
 
 Theme は、基本の JSDoc や TypeDoc が提供しないいくつかの doc-comment block tags
@@ -125,7 +125,7 @@ export function render() {}
 有効な `@iframe` はそれぞれ、symbol の `@example` section の後に `<Embed>` を
 render します。無効な config（非 `https`、URL なし）は破棄されます。完全な
 config grammar — 受け入れられる URL schemes、すべての option、そして
-`themed` / `{theme}` の挙動 — は [Embeds & live demos](/guides/embeds) に
+`themed` / `{theme}` の挙動 — は [Embeds & live demos](/components/embeds) に
 documented されています。
 
 ## `@category` と `@order` が sidebar をどう形作るか
@@ -141,7 +141,7 @@ nested な `/`-paths、leaf-vs-branch ordering、`clubSidebarItems`、`sectionOr
 
 - [Structure your sidebar](/guides/structure-your-sidebar) — 完全な sidebar
   ordering model。
-- [Embeds & live demos](/guides/embeds) — `@iframe` config grammar の全体。
+- [Embeds & live demos](/components/embeds) — `@iframe` config grammar の全体。
 - [Configuration](/theme/configuration) — `sectionOrder`、`docGroups`、その仲間。
 - [Build a guides site](/guides/build-a-guides-site) — guide-page frontmatter
   （`group` / `order`）、これらの tags の prose 版。

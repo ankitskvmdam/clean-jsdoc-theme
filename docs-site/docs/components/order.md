@@ -1,7 +1,7 @@
 ---
 title: "@order"
 group: Components
-order: 5
+order: 7
 ---
 
 # `@order` — sort any symbol within its group

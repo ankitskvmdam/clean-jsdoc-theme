@@ -14,7 +14,7 @@ embed करना, समृद्ध doc comments लिखना, और क�
 
 theme किसी भी page में एक sandboxed `<iframe>` डाल सकता है — एक CodePen, एक
 YouTube video, एक StackBlitz, या कोई भी साइट। इसे लिखने के दो तरीके हैं, और वे
-[एक config grammar](/guides/embeds) साझा करते हैं:
+[एक config grammar](/components/embeds) साझा करते हैं:
 
 - **prose में** (README, guides, `docs` folder) — एक ` ```iframe ` fenced block।
 - **एक doc comment में** — `@iframe <url> key=value` block tag।
@@ -95,7 +95,7 @@ export function render() {}
 
 default रूप से, हाँ — theme बदलने पर embed URL दोबारा हल किया जाता है (एक `{theme}`
 token swap किया जाता है, या `?theme-id=<theme>` जोड़ा जाता है)। `themed=false` के
-साथ बाहर निकलें। पूर्ण reference: [Embeds & live demos](/guides/embeds)।
+साथ बाहर निकलें। पूर्ण reference: [Embeds & live demos](/components/embeds)।
 
 ## समृद्ध doc comments
 

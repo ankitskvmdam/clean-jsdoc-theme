@@ -1,7 +1,7 @@
 ---
 title: "@category"
 group: Components
-order: 6
+order: 8
 ---
 
 # `@category` — group a symbol in the sidebar

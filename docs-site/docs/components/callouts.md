@@ -1,7 +1,7 @@
 ---
 title: Callouts
 group: Components
-order: 2
+order: 4
 ---
 
 # Callouts
@@ -185,5 +185,5 @@ the variant survive serialization to dwar (a plain `>` quote can't carry it).
 
 - [Steps](/components/steps) and [Tabs](/components/tabs) — the other prose
   authoring containers.
-- [Embeds & live demos](/guides/embeds) for `<Embed>` / `@iframe`.
+- [Embeds & live demos](/components/embeds) for `<Embed>` / `@iframe`.
 - [Custom tags](/components/overview) for `@category`, `@order`, and `@iframe`.

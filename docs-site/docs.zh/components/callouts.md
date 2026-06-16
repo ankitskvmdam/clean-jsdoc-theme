@@ -1,7 +1,7 @@
 ---
 title: 提示框
 group: Components
-order: 2
+order: 4
 ---
 
 # 提示框
@@ -183,5 +183,5 @@ styling。正是这个首字母大写的名称，让 variant 在 serialization �
 
 - [Steps](/components/steps) 和 [Tabs](/components/tabs) —— 其他 prose authoring
   containers。
-- [Embeds & live demos](/guides/embeds) —— 用于 `<Embed>` / `@iframe`。
+- [Embeds & live demos](/components/embeds) —— 用于 `<Embed>` / `@iframe`。
 - [Custom tags](/components/overview) —— 用于 `@category`、`@order` 和 `@iframe`。

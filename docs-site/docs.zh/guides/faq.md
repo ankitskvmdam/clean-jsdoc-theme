@@ -13,7 +13,7 @@ order: 6
 
 主题可以在任何页面中插入一个沙箱化的 `<iframe>` —— 一个 CodePen、一个 YouTube
 视频、一个 StackBlitz，或任意站点。有两种编写方式，它们
-共享[同一套 config 语法](/guides/embeds)：
+共享[同一套 config 语法](/components/embeds)：
 
 - **在正文中**（README、guides、`docs` 文件夹）—— 一个 ` ```iframe ` 围栏代码块。
 - **在 doc comment 中** —— `@iframe <url> key=value` block tag。
@@ -92,7 +92,7 @@ export function render() {}
 
 默认会 —— 主题切换时会重新解析 embed URL（会替换一个
 `{theme}` token，或追加 `?theme-id=<theme>`）。用
-`themed=false` 退出此行为。完整参考：[Embeds & live demos](/guides/embeds)。
+`themed=false` 退出此行为。完整参考：[Embeds & live demos](/components/embeds)。
 
 ## 更丰富的 doc comments
 

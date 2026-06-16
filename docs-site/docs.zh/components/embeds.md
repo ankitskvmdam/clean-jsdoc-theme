@@ -1,7 +1,7 @@
 ---
-title: 嵌入内容与实时演示
-group: Guides
-order: 7
+title: Embeds
+group: Components
+order: 3
 ---
 
 # 嵌入内容与实时演示

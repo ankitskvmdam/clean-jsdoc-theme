@@ -1,10 +1,10 @@
 ---
-title: Embeds & live demos
-group: Guides
-order: 7
+title: Embeds
+group: Components
+order: 3
 ---
 
-# Embeds & live demos
+# Embeds
 
 > [!NOTE]
 > **Where this works — prose & API docs.** Author an embed in prose with the

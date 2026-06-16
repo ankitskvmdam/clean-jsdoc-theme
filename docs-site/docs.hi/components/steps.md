@@ -1,7 +1,7 @@
 ---
 title: Steps
 group: Components
-order: 3
+order: 5
 ---
 
 # Steps

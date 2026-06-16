@@ -70,7 +70,7 @@ search index, और हर page का एक साथी `.md` — कही�
   [दोनों को मिलाएँ](/guides/combine-guides-and-api), और
   [अपने sidebar की संरचना करें](/guides/structure-your-sidebar)।
 - **Authoring** — [callouts](/components/callouts), [steps](/components/steps),
-  [tabs](/components/tabs), [embeds](/guides/embeds), और
+  [tabs](/components/tabs), [embeds](/components/embeds), और
   [custom tags](/components/overview) जिन्हें आप prose और doc comments में
   इस्तेमाल कर सकते हैं।
 - **[Packages](/#the-packages)** — building blocks, अगर आप internals को समझना या

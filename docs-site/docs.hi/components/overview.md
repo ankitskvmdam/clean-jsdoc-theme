@@ -11,7 +11,7 @@ order: 1
 > हैं, जो आपके source में लिखे जाते हैं। Prose pages के पास इनके समतुल्य हैं:
 > `group` / `order` frontmatter `@category` / `@order` को प्रतिबिंबित करते हैं,
 > और ` ```iframe ` fence `@iframe` को प्रतिबिंबित करता है
-> ([Embeds](/guides/embeds) देखें)।
+> ([Embeds](/components/embeds) देखें)।
 
 Theme कुछ ऐसे doc-comment block tags पढ़ता है जो आधार JSDoc और TypeDoc आपको नहीं
 देते। ये sidebar को आकार देते हैं और source comments को live demos embed करने
@@ -126,7 +126,7 @@ export function render() {}
 प्रत्येक मान्य `@iframe` symbol के `@example` section के बाद एक `<Embed>` render
 करता है; अमान्य configs (non-`https`, बिना URL) हटा दिए जाते हैं। पूरा config
 grammar — स्वीकृत URL schemes, हर option, और `themed` / `{theme}` व्यवहार —
-[Embeds & live demos](/guides/embeds) पर documented है।
+[Embeds & live demos](/components/embeds) पर documented है।
 
 ## `@category` और `@order` sidebar को कैसे आकार देते हैं
 
@@ -141,7 +141,7 @@ nested `/`-paths, leaf-vs-branch ordering, `clubSidebarItems`, `sectionOrder`,
 
 - [Structure your sidebar](/guides/structure-your-sidebar) — पूरा sidebar
   ordering model।
-- [Embeds & live demos](/guides/embeds) — `@iframe` config grammar पूरी तरह।
+- [Embeds & live demos](/components/embeds) — `@iframe` config grammar पूरी तरह।
 - [Configuration](/theme/configuration) — `sectionOrder`, `docGroups`, और साथी।
 - [Build a guides site](/guides/build-a-guides-site) — guide-page frontmatter
   (`group` / `order`), इन tags का prose समकक्ष।

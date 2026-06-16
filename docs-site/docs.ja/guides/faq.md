@@ -14,7 +14,7 @@ comments の書き方、そしていくつかのよくある configuration の�
 
 theme は、任意の page に sandboxed な `<iframe>` を差し込めます — CodePen、YouTube
 video、StackBlitz、あるいは任意のサイト。書き方は 2 通りあり、それらは
-[1 つの config grammar](/guides/embeds) を共有します:
+[1 つの config grammar](/components/embeds) を共有します:
 
 - **prose の中**（README、guides、`docs` folder）— ` ```iframe ` の fenced block。
 - **doc comment の中** — `@iframe <url> key=value` block tag。
@@ -95,7 +95,7 @@ export function render() {}
 
 default では、はい — theme が変わると embed URL が再解決されます（`{theme}` token が
 入れ替えられるか、`?theme-id=<theme>` が付加されます）。`themed=false` でオプトアウト
-できます。完全なリファレンス: [Embeds & live demos](/guides/embeds)。
+できます。完全なリファレンス: [Embeds & live demos](/components/embeds)。
 
 ## より豊かな doc comments
 

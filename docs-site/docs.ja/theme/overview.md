@@ -72,7 +72,7 @@ HTML、islands、search index、そしてすべての page の companion `.md` �
   [両者を組み合わせる](/guides/combine-guides-and-api)、そして
   [sidebar を構成する](/guides/structure-your-sidebar)。
 - **Authoring** — prose や doc comments で使える [callouts](/components/callouts)、
-  [steps](/components/steps)、[tabs](/components/tabs)、[embeds](/guides/embeds)、
+  [steps](/components/steps)、[tabs](/components/tabs)、[embeds](/components/embeds)、
   そして [custom tags](/components/overview)。
 - **[Packages](/#the-packages)** — internals を理解したり拡張したりしたい場合の
   building blocks。

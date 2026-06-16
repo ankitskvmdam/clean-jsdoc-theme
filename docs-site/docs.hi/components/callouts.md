@@ -1,7 +1,7 @@
 ---
 title: Callouts
 group: Components
-order: 2
+order: 4
 ---
 
 # Callouts
@@ -190,5 +190,5 @@ dwar तक serialization के दौरान बचाए रखती ह�
 
 - [Steps](/components/steps) और [Tabs](/components/tabs) — अन्य prose authoring
   containers।
-- [Embeds & live demos](/guides/embeds) — `<Embed>` / `@iframe` के लिए।
+- [Embeds & live demos](/components/embeds) — `<Embed>` / `@iframe` के लिए।
 - [Custom tags](/components/overview) — `@category`, `@order`, और `@iframe` के लिए।
