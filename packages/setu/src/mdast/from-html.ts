@@ -416,44 +416,60 @@ function splitPlaygroundFences(md: string): FenceSegment[] {
   let i = 0;
   while (i < lines.length) {
     const open = FENCE_OPEN.exec(lines[i]);
-    const tokens = open ? open[3].trim().split(/\s+/).filter(Boolean) : [];
+    if (!open) {
+      plain.push(lines[i]);
+      i++;
+      continue;
+    }
+
+    const tokens = open[3].trim().split(/\s+/).filter(Boolean);
     // `playground` may be the FIRST token (no language — ```` ```playground … ````)
     // or the SECOND (language-prefixed — ```` ```js playground … ````). Anything
     // else is a normal fence.
     const pgIdx = tokens[0] === 'playground' ? 0 : tokens[1] === 'playground' ? 1 : -1;
-    if (open && pgIdx !== -1) {
-      const indent = open[1];
-      const fenceChar = open[2][0];
-      const fenceLen = open[2].length;
-      const closeRe = new RegExp(`^[ \\t]{0,3}\\${fenceChar}{${fenceLen},}[ \\t]*$`);
-      const bodyLines: string[] = [];
-      let j = i + 1;
-      let closed = false;
-      for (; j < lines.length; j++) {
-        if (closeRe.test(lines[j])) {
-          closed = true;
-          break;
-        }
-        // Markdown strips the opening fence's indent from each body line.
-        bodyLines.push(indent && lines[j].startsWith(indent) ? lines[j].slice(indent.length) : lines[j]);
+    const indent = open[1];
+    const fenceChar = open[2][0];
+    const fenceLen = open[2].length;
+    // A closing fence is the same char, at least as long (CommonMark), ≤3 indent.
+    const closeRe = new RegExp(`^[ \\t]{0,3}\\${fenceChar}{${fenceLen},}[ \\t]*$`);
+    let closeIdx = -1;
+    for (let j = i + 1; j < lines.length; j++) {
+      if (closeRe.test(lines[j])) {
+        closeIdx = j;
+        break;
       }
-      if (closed) {
-        flush();
-        segments.push({
-          kind: 'fence',
-          // A first-token `playground` carries no language; otherwise the first
-          // token is the language and `playground` + spec follow it.
-          lang: pgIdx === 1 ? tokens[0] : '',
-          spec: parsePlaygroundSpec(tokens.slice(pgIdx + 1).join(' ')),
-          body: bodyLines.join('\n'),
-        });
-        i = j + 1;
-        continue;
-      }
-      // Unterminated — fall through and treat the open line as plain text.
     }
-    plain.push(lines[i]);
-    i++;
+
+    // Unterminated fence: treat just the open line as plain and keep scanning
+    // (later lines may still be valid markdown / a real playground fence).
+    if (closeIdx === -1) {
+      plain.push(lines[i]);
+      i++;
+      continue;
+    }
+
+    if (pgIdx !== -1) {
+      // Markdown strips the opening fence's indent from each body line.
+      const bodyLines = lines
+        .slice(i + 1, closeIdx)
+        .map((l) => (indent && l.startsWith(indent) ? l.slice(indent.length) : l));
+      flush();
+      segments.push({
+        kind: 'fence',
+        // A first-token `playground` carries no language; otherwise the first
+        // token is the language and `playground` + spec follow it.
+        lang: pgIdx === 1 ? tokens[0] : '',
+        spec: parsePlaygroundSpec(tokens.slice(pgIdx + 1).join(' ')),
+        body: bodyLines.join('\n'),
+      });
+    } else {
+      // A NORMAL fenced code block — keep the WHOLE block (open…close) as plain,
+      // verbatim. Crucially we do NOT scan inside it, so a `playground` fence that
+      // is merely being *displayed* inside an outer fence (e.g. a ```` ```` md
+      // example block on a docs page) is left as literal text, not lowered.
+      for (let k = i; k <= closeIdx; k++) plain.push(lines[k]);
+    }
+    i = closeIdx + 1;
   }
   flush();
   return segments;

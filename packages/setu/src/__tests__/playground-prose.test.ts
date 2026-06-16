@@ -82,6 +82,27 @@ describe('markdownToMdastBlocks — playground fence', () => {
     const nodes = markdownToMdastBlocks('```js playground codepen\nresize();\n');
     expect(nodes.some(isPlayground)).toBe(false);
   });
+
+  it('does NOT lower a playground fence merely DISPLAYED inside an outer fence', () => {
+    // A 4-backtick ````md block on a docs page that shows the ```js playground
+    // syntax literally. The inner fence must stay literal text, not be lowered —
+    // otherwise the page renders two/nested code blocks.
+    const md =
+      '````markdown\n' +
+      '```js playground codepen filename=demo.js highlight=2\n' +
+      'const out = resize(img, 200);\n' +
+      'render(out);\n' +
+      '```\n' +
+      '````\n';
+    const nodes = markdownToMdastBlocks(md);
+    expect(nodes.some(isPlayground)).toBe(false);
+    // One code block (the outer fence), carrying the inner fence as literal text.
+    const code = nodes.find((n) => (n as { type: string }).type === 'code') as {
+      value: string;
+    };
+    expect(code).toBeTruthy();
+    expect(code.value).toContain('```js playground codepen');
+  });
 });
 
 describe('<playground> container — works on HTML (README) too', () => {
