@@ -25,6 +25,7 @@ import type {
   CopyPageConfig,
   PageNavConfig,
   MetaTag,
+  OutputFile,
   SiteManifest,
   SiteName,
   ThemeConfig,
@@ -300,6 +301,30 @@ async function resolveFooter(
     }
   }
   return undefined;
+}
+
+/**
+ * Resolve `block.favicon` (a file path) into a served `_assets/` href + the file
+ * to write, so dwar emits the `<link rel="icon">` and `render()` stays pure. The
+ * source extension is preserved (dwar derives the link `type` from it). A
+ * missing/unreadable file is warned about and dropped. Mirrors the JSDoc bridge's
+ * `resolveFavicon` (TypeDoc assets aren't content-hashed, matching its logos).
+ */
+async function resolveFavicon(
+  raw: unknown,
+  logger: AdaptApp['logger']
+): Promise<{ href: string; files: OutputFile[] } | undefined> {
+  if (typeof raw !== 'string' || raw.trim().length === 0) return undefined;
+  const file = raw.trim();
+  let bytes: Buffer;
+  try {
+    bytes = await readFile(resolvePath(file));
+  } catch {
+    logger.warn(`[clean-jsdoc-theme] could not read favicon ('${file}'); omitting it.`);
+    return undefined;
+  }
+  const servedPath = `_assets/favicon${extname(file) || '.ico'}`;
+  return { href: servedPath, files: [{ path: servedPath, contents: bytes }] };
 }
 
 /** Attributes that identify a `<meta>` tag (so an entry must carry at least one). */
@@ -636,18 +661,22 @@ export async function writeSite(
   // Custom footer (v4 parity): inline HTML or `{ file }` read here → resolved
   // string on the theme, so render() stays pure. Unset/empty → default footer.
   const footer = await resolveFooter(block.footer, logger);
+  // Favicon (v4 parity): copied to an `_assets` asset here (the I/O layer); dwar
+  // emits the `<link rel="icon">`, so render() stays pure. Unset → none.
+  const favicon = await resolveFavicon(block.favicon, logger);
   const meta = normalizeMeta(block.meta, logger);
   const result = await render(manifest, {
     theme: {
       ...resolveTheme(block, siteName, fonts),
       ...(footer ? { footer } : {}),
+      ...(favicon ? { favicon: favicon.href } : {}),
       ...(meta ? { meta } : {}),
     },
     destination,
     islandCacheDir,
   });
 
-  const outputFiles = [...result.files, ...logoFiles];
+  const outputFiles = [...result.files, ...logoFiles, ...(favicon?.files ?? [])];
   await writeOutputFiles(destination, outputFiles);
 
   // Next.js-style build report: where the files landed, page/asset counts, and

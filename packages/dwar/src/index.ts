@@ -215,6 +215,7 @@ async function renderPage(
     jsLinks?: string[];
     js?: string;
     meta?: MetaTag[];
+    favicon?: string;
   },
   neighbors: PageNeighbors | undefined,
   inlineSvgs: Record<string, string>,
@@ -362,6 +363,7 @@ async function renderPage(
     customJsLinks: custom.jsLinks,
     customJs: custom.js,
     meta: custom.meta,
+    favicon: custom.favicon,
     playground: playgroundOptions,
     lang: locale?.code,
     i18n: i18nPayload,
@@ -496,6 +498,7 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
     jsLinks: theme.customJsLinks,
     js: theme.customJs?.trim() || undefined,
     meta: theme.meta,
+    favicon: theme.favicon,
   };
   // The fuzzy-search index the cmdk island fetches. Build-id stamped so it
   // cache-busts alongside the stylesheet/chunks.

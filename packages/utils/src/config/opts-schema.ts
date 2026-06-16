@@ -202,6 +202,7 @@ export const THEME_OPT_KEYS = [
   'clubSidebarItems',
   'aiPrompt',
   'basePath',
+  'favicon',
   'footer',
   'meta',
   'locales',

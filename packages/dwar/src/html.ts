@@ -33,6 +33,11 @@ export interface HtmlDocumentOptions {
   /** Optional base path. */
   basePath?: string;
   /**
+   * Favicon href (already resolved + base-path-prefixed by the bridge). Emitted
+   * as `<link rel="icon">` in `<head>`; the `type` is derived from the extension.
+   */
+  favicon?: string;
+  /**
    * Site-wide per-provider playground options (`ThemeConfig.playground`'s
    * `codepen`/`jsfiddle`/`codesandbox` records). Emitted as a single
    * `<script data-playground-config>` JSON payload — but only on pages that
@@ -72,6 +77,24 @@ export interface HtmlDocumentOptions {
    * default locale. Omitted for a normal build.
    */
   hreflang?: { alternates: Array<{ code: string; href: string }>; defaultLocale: string };
+}
+
+/** Map a favicon file extension to its `<link>` `type` (empty when unknown → omit). */
+function faviconType(href: string): string {
+  const ext = href.split('?')[0].split('#')[0].split('.').pop()?.toLowerCase() ?? '';
+  if (ext === 'svg') return 'image/svg+xml';
+  if (ext === 'png') return 'image/png';
+  if (ext === 'ico') return 'image/x-icon';
+  if (ext === 'gif') return 'image/gif';
+  if (ext === 'jpg' || ext === 'jpeg') return 'image/jpeg';
+  return '';
+}
+
+/** Build the `<link rel="icon">` for the configured favicon (empty when unset). */
+function buildFaviconLink(favicon?: string): string {
+  if (!favicon) return '';
+  const type = faviconType(favicon);
+  return `<link rel="icon"${type ? ` type="${type}"` : ''} href="${escapeHtml(favicon)}" />`;
 }
 
 /** Build the `<link rel="alternate" hreflang>` tags (incl. `x-default`). */
@@ -279,6 +302,7 @@ export function renderHtmlDocument(opts: HtmlDocumentOptions): string {
       ? `<meta name="description" content="${description}" />`
       : '') +
     authorMetaHtml +
+    buildFaviconLink(opts.favicon) +
     buildHreflangLinks(opts.hreflang) +
     `<script>${themeScript}</script>` +
     buildGoogleFontsLinks(fonts) +

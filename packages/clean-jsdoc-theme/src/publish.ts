@@ -318,6 +318,14 @@ interface JSDocOpts {
    */
   footer?: unknown;
   /**
+   * Favicon (`jsdoc.json` `"opts": { "favicon": "./icon.svg" }`). A path to an
+   * image file (`.svg`/`.png`/`.ico`/…), relative to the working dir. The bridge
+   * copies it to a content-hashed `_assets/` asset and emits a `<link rel="icon">`
+   * in every page's `<head>`. Needed for an SVG favicon (browsers only
+   * auto-discover a root `favicon.ico`). Omit for none.
+   */
+  favicon?: unknown;
+  /**
    * Site-wide custom `<meta>` tags (`jsdoc.json` `"opts": { "meta": [...] }`). An
    * array of attribute maps — each object's key/value pairs become one `<meta>`
    * tag in `<head>` (`{ name, content }`, `{ property, content }`, …). dwar
@@ -613,6 +621,36 @@ export async function resolveFooter(raw: unknown): Promise<string | undefined> {
     }
   }
   return undefined;
+}
+
+/**
+ * Resolve `opts.favicon` (a file path) into a served `_assets/` href + the file
+ * to write — the bridge is the I/O layer, so dwar only sees the final URL and
+ * `render()` stays pure. The asset name is content-hashed (cache-busted) unless
+ * `hash` is off, and the source extension is preserved so dwar can derive the
+ * `<link>` `type`. A missing/unreadable file is warned about and dropped
+ * (resilient, like the logo/custom-asset paths). Exported for testing.
+ */
+export async function resolveFavicon(
+  raw: unknown,
+  hash: boolean,
+  hrefForServed: (servedPath: string) => string
+): Promise<{ href: string; files: OutputFile[] } | undefined> {
+  if (typeof raw !== 'string' || raw.trim().length === 0) return undefined;
+  const trimmed = raw.trim();
+  let bytes: Buffer;
+  try {
+    bytes = await readFile(resolvePath(trimmed));
+  } catch {
+    console.warn(`clean-jsdoc-theme: could not read favicon ('${trimmed}'); omitting it.`);
+    return undefined;
+  }
+  const ext = extname(trimmed) || '.ico';
+  const base = basename(trimmed, extname(trimmed)) || 'favicon';
+  const name = hash ? `${base}.${contentHash(bytes)}${ext}` : `${base}${ext}`;
+  const servedPath = `_assets/${name}`;
+  // The OutputFile `path` stays relative; only the served href gets the prefix.
+  return { href: hrefForServed(servedPath), files: [{ path: servedPath, contents: bytes }] };
 }
 
 /** Attributes that identify a `<meta>` tag (so an entry must carry at least one). */
@@ -1733,6 +1771,10 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   // is read here (the I/O layer) → a resolved string on the theme, so render()
   // stays pure. Unset/empty → default footer.
   const footer = await resolveFooter(opts.footer);
+  // Favicon (v4 parity, restored): the file is copied to a content-hashed
+  // `_assets` asset here (the I/O layer) and dwar emits the `<link rel="icon">`,
+  // so render() stays pure. Hashed like the other custom assets. Unset → none.
+  const favicon = await resolveFavicon(opts.favicon, opts.hashCustomAssets !== false, hrefForServed);
   // Site-wide custom <meta> tags. Validated/normalized here (junk dropped +
   // warned); dwar does the escaping + de-dupe against its head defaults.
   const meta = normalizeMeta(opts.meta);
@@ -1747,6 +1789,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
         ...resolveTheme(opts, siteName, fonts, basePath, buildSpec?.locale),
         ...customAssets.theme,
         ...(footer ? { footer } : {}),
+        ...(favicon ? { favicon: favicon.href } : {}),
         ...(meta ? { meta } : {}),
       },
       destination: absoluteDestination,
@@ -1768,7 +1811,13 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
     })
   );
 
-  const outputFiles = [...result.files, ...logoFiles, ...customAssets.files, ...docImageFiles];
+  const outputFiles = [
+    ...result.files,
+    ...logoFiles,
+    ...customAssets.files,
+    ...docImageFiles,
+    ...(favicon?.files ?? []),
+  ];
   await progress.stage('Writing files', () => writeOutputFiles(absoluteDestination, outputFiles));
 
   // Next.js-style build report: where the files landed, page/asset counts, and

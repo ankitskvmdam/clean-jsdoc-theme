@@ -142,6 +142,15 @@ export interface ThemeConfig {
   /** Base path under which the site is served (e.g. `/docs/`). */
   basePath?: string;
   /**
+   * Favicon URL, emitted as `<link rel="icon">` in every page's `<head>`. This
+   * is the **resolved** href: the opts layer accepts a file path, but the bridge
+   * copies it to a content-hashed `_assets/` asset and threads only the served
+   * URL here, so `render()` stays pure (no file I/O). dwar derives the link
+   * `type` from the extension (`.svg` → `image/svg+xml`, …). Omit for none — an
+   * SVG favicon needs this link (browsers only auto-discover a root `favicon.ico`).
+   */
+  favicon?: string;
+  /**
    * Custom prompt for the copy-page button's "Open in ChatGPT/Claude/Perplexity"
    * actions. `{siteName}`, `{url}`, and `{mdUrl}` (the page's raw Markdown link)
    * placeholders are substituted at click time. Only the prompt + links are sent
