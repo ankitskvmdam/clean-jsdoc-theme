@@ -32,6 +32,14 @@ export interface HtmlDocumentOptions {
   islandChunks: Record<string, string>;
   /** Optional base path. */
   basePath?: string;
+  /**
+   * Site-wide per-provider playground options (`ThemeConfig.playground`'s
+   * `codepen`/`jsfiddle`/`codesandbox` records). Emitted as a single
+   * `<script data-playground-config>` JSON payload — but only on pages that
+   * actually contain a `playground` marker — for the playground island to read.
+   * Omitted when the feature is off, so those pages stay byte-identical.
+   */
+  playground?: Record<string, unknown>;
   /** Google Fonts family names to load for headings, body, and code. */
   fonts?: { heading: string; body: string; mono: string };
   /** Stylesheet hrefs (content-hashed custom-CSS assets), `<link>`ed after the theme stylesheet so they can override. */
@@ -251,6 +259,13 @@ export function renderHtmlDocument(opts: HtmlDocumentOptions): string {
   );
   const authorMetaHtml = authorMeta.map(renderMetaTag).join('');
 
+  // Site-wide playground options, emitted once per page — but only when the body
+  // actually carries a playground marker, so pages without one stay byte-identical.
+  const playgroundConfig =
+    opts.playground && bodyHtml.includes('data-island="playground"')
+      ? escapeJsonForScript(JSON.stringify(opts.playground))
+      : undefined;
+
   return (
     `<!doctype html>` +
     `<html lang="${escapeHtml(lang)}">` +
@@ -278,6 +293,9 @@ export function renderHtmlDocument(opts: HtmlDocumentOptions): string {
     `<body>` +
     bodyHtml +
     `<script type="application/json" data-island-props>${propsPayload}</script>` +
+    (playgroundConfig
+      ? `<script type="application/json" data-playground-config>${playgroundConfig}</script>`
+      : '') +
     `<script type="module">${loaderScript}</script>` +
     `<script>${getHeadingAnchorsScript()}</script>` +
     `<script>${getScrollbarScript()}</script>` +

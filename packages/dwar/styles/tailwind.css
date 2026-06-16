@@ -230,3 +230,24 @@ main p:has(a img):has(a + a) img,
 main p:has(img + img) img {
   margin-block: 0.2rem;
 }
+
+/*
+ * Highlighted code lines. rang tags a Shiki `.line` span with `data-highlighted`
+ * when an `@playground` / prose `highlight=` list names it (rang also adds a
+ * text-width tint class, so this degrades gracefully without the rules below).
+ * Two fixes: (1) make the tint span the FULL line width and bleed into the
+ * <pre>'s `p-4` (1rem) horizontal padding; (2) beat Shiki's inline span
+ * background — including the dark-mode `[data-theme='dark'] .shiki span { …
+ * !important }` rule above. Only a code block that actually has a highlight is
+ * switched to a grid (each `.line` becomes a full-width row; the inter-line "\n"
+ * text nodes collapse), so every other code block stays byte-identical.
+ * Unlayered + !important so it wins over the layered base rules.
+ */
+.shiki code:has(.line[data-highlighted]) {
+  display: grid;
+}
+.shiki code .line[data-highlighted] {
+  margin-inline: -1rem;
+  padding-inline: 1rem;
+  background-color: color-mix(in oklch, var(--clean-accent) 12%, transparent) !important;
+}

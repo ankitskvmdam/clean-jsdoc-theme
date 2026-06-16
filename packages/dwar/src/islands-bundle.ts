@@ -46,6 +46,7 @@ const ALL_ISLANDS: IslandName[] = [
   'settings',
   'code-viewer',
   'embed',
+  'playground',
   'tabs',
   // NB: `language-switcher` is intentionally NOT here — it's bundled only for a
   // localized build (render() adds it when opts.locale is set), so a normal

@@ -31,6 +31,10 @@ describe('getIslandChunkEntrySource() — copy-btn', () => {
   // nothing.)
   it('derives the text from the sibling <pre>, not a per-island payload entry', () => {
     const src = getIslandChunkEntrySource('copy-btn');
+    // The marker now lives in the code-block header, so the lookup resolves the
+    // <pre> via the enclosing card (data-code-card), falling back to the parent
+    // for the borderless CodeTabs layout.
+    expect(src).toContain('data-code-card');
     expect(src).toContain("querySelector('pre')");
     expect(src).toContain('hydrate(');
     // No per-island props lookup (copy-btn has no data-island-id entry); it may
@@ -69,6 +73,30 @@ describe('getIslandChunkEntrySource() — embed', () => {
     expect(result.entryPaths.embed).toMatch(/^_islands\/embed-[A-Za-z0-9]+\.js$/);
     const entry = result.files.find((f) => f.path === result.entryPaths.embed);
     expect(entry, 'missing embed entry chunk').toBeDefined();
+    expect(entry!.byteSize).toBeGreaterThan(0);
+  });
+});
+
+describe('getIslandChunkEntrySource() — playground', () => {
+  // playground is an in-content island like embed: provider list on the marker's
+  // data-providers, code from the card's <pre>, site-wide options from a
+  // data-playground-config page payload — no per-island data-island-id entry.
+  it('reads providers/code/options from the DOM (not a per-island payload entry)', () => {
+    const src = getIslandChunkEntrySource('playground');
+    expect(src).toContain('querySelectorAll(\'[data-island="playground"]\')');
+    expect(src).toContain('data-providers');
+    expect(src).toContain('data-code-card');
+    expect(src).toContain('data-playground-config');
+    expect(src).toContain('hydrate(');
+    expect(src).not.toContain('data-island-id');
+    expect(src).toContain('__i18n');
+  });
+
+  it('bundles into a non-empty playground chunk', async () => {
+    const result = await bundleIslands({ islands: ['playground'] });
+    expect(result.entryPaths.playground).toMatch(/^_islands\/playground-[A-Za-z0-9]+\.js$/);
+    const entry = result.files.find((f) => f.path === result.entryPaths.playground);
+    expect(entry, 'missing playground entry chunk').toBeDefined();
     expect(entry!.byteSize).toBeGreaterThan(0);
   });
 });

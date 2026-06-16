@@ -81,8 +81,12 @@ function hydrateAll() {
   if (!Component) return;
   const i18n = __readI18n();
   document.querySelectorAll('[data-island="copy-btn"]').forEach((el) => {
-    const wrapper = el.parentElement;
-    const pre = wrapper && wrapper.querySelector('pre');
+    // The marker sits in the code-block header (bordered mode) — whose parent
+    // does NOT contain the <pre> — or in a borderless wrapper that DOES (e.g.
+    // CodeTabs panels). Prefer the enclosing card (data-code-card); fall back to
+    // the marker's parent so both layouts resolve the sibling <pre>.
+    const scope = el.closest('[data-code-card]') || el.parentElement;
+    const pre = scope && scope.querySelector('pre');
     const text = pre ? pre.textContent || '' : '';
     hydrate(__seed(h(Component, { text }), i18n), el);
   });
@@ -128,6 +132,45 @@ function hydrateAll() {
     const themed = d('data-themed');
     if (themed != null) props.themed = themed;
     hydrate(__seed(h(Component, props), i18n), el);
+  });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', hydrateAll, { once: true });
+} else {
+  hydrateAll();
+}
+`;
+  }
+
+  // playground is an in-content island like embed: no data-island-id / payload
+  // entry. The enabled provider list rides on the marker's `data-providers`, the
+  // example code is read from the code-block card's <pre>, and the SITE-WIDE
+  // per-provider options come from a separate per-page `data-playground-config`
+  // JSON script (emitted only when a page has a playground marker). We merge the
+  // three into PlaygroundMenu's props and hydrate it onto the marker.
+  if (name === 'playground') {
+    return `import { hydrate, h } from 'preact';
+import { ISLAND_REGISTRY, LanguageProvider, createI18n } from '@clean-jsdoc-theme/rang';
+${I18N_SEED}
+function readPlaygroundConfig() {
+  const el = document.querySelector('script[data-playground-config]');
+  if (!el || !el.textContent) return {};
+  try { return JSON.parse(el.textContent) || {}; } catch (_) { return {}; }
+}
+
+function hydrateAll() {
+  const Component = ISLAND_REGISTRY['playground'];
+  if (!Component) return;
+  const i18n = __readI18n();
+  const options = readPlaygroundConfig();
+  document.querySelectorAll('[data-island="playground"]').forEach((el) => {
+    const providers = (el.getAttribute('data-providers') || '').split(/\\s+/).filter(Boolean);
+    // The example code lives in the sibling <pre> under the code-block card.
+    const card = el.closest('[data-code-card]');
+    const pre = card && card.querySelector('pre');
+    const code = pre ? pre.textContent || '' : '';
+    hydrate(__seed(h(Component, { providers, code, options }), i18n), el);
   });
 }
 
