@@ -47,6 +47,7 @@ class DataProcessor extends BaseEntity {
    * @iframe https://www.youtube.com/embed/Q9Ix1najiHI?si=2vA7GvwpHjDslEAS title="Bihar tourism" clickToLoad=true width=560 height=315
    * @example const proc = new DataProcessor('main');
    * await proc.process(['a', 'b']);
+   * @playground codepen jsfiddle filename=processor.js highlight=1
    */
   async process(data) {
     // Implementation logic

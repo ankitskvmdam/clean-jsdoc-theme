@@ -73,7 +73,7 @@ removed | new`.
 | `sections`                      | `sectionOrder`           | renamed | Same idea (filter + order sidebar sections). v5 key is `sectionOrder`; "Home" and "Source Files" are always shown regardless.                                                                                                                                                                               |
 | `meta`                          | `meta`                   | changed | Supported again. Same shape as v4 — an array of attribute maps (`{ name, content }`, `{ property, content }`, …), each rendered as a `<meta>` tag in `<head>`. dwar escapes the values and de-dupes against its own defaults (an author `description` replaces the auto one).                                |
 | `search`                        | —                        | removed | Search is always on in v5 (built-in fuzzy index + optional Pagefind); there is no enable/disable opt.                                                                                                                                                                                                       |
-| `codepen`                       | —                        | removed | No CodePen prefill option. v5 has sandboxed embeds via the `@iframe` tag / `iframe` prose fence instead.                                                                                                                                                                                                    |
+| `codepen`                       | `playground`             | changed | v4 prefilled a CodePen from `@example` (CodePen only). v5 generalizes this to `opts.playground` + the `@playground` block tag — open an example in **CodePen, JSFiddle, or CodeSandbox** (client-side, no API key), plus `filename`/line-highlight. (To embed an *existing* pen by URL, use the `@iframe` tag / `iframe` prose fence.)                                          |
 | `static_dir`                    | —                        | removed | No theme-level static-dir copying. Use JSDoc's own static-file config.                                                                                                                                                                                                                                      |
 | `create_style`                  | `customCss`              | renamed | Inline custom CSS string. Injected as a `<style>` after the theme stylesheet (so it overrides).                                                                                                                                                                                                             |
 | `include_css`                   | `customCssFile`          | renamed | Custom CSS file(s) (path or array). Each copied as-is to `_assets/<name>.<hash>.css` (content hash → cacheable), linked after the theme stylesheet.                                                                                                                                                         |
@@ -229,7 +229,6 @@ For each: the v5 replacement, or "no replacement."
 | `favicon`                                         | No replacement opt (use JSDoc's static-file copy).                     |
 | `homepageTitle`                                   | Home `<title>` derived from README/`docs/index.md` + `siteName`.       |
 | `search` toggle                                   | Always-on fuzzy search + optional Pagefind (no opt).                   |
-| `codepen`                                         | `@iframe` block tag / `iframe` prose fence (sandboxed embeds).         |
 | `static_dir`                                      | JSDoc's own static-file copying.                                       |
 | `create_style` / `include_css` / `add_style_path` | Renamed → `customCss` (inline) / `customCssFile` (file path or array). |
 | `add_scripts` / `include_js` / `add_script_path`  | Renamed → `customJs` (inline) / `customJsFile` (file path or array).   |
@@ -263,6 +262,10 @@ Short overview; see `ARCHITECTURE.md` for the authoritative detail.
 - **`@iframe` embeds** — sandboxed iframes via the `@iframe` block tag (needs
   `tags.allowUnknownTags: true`) or an `iframe` prose fence. See ARCHITECTURE
   "`@clean-jsdoc-theme/setu`".
+- **`playground` (the v4 `codepen` successor)** — `opts.playground` + the
+  `@playground` tag / ` ```js playground ` fence / `<playground>` container add an
+  "Open Code in" dropdown (CodePen/JSFiddle/CodeSandbox, client-side) to a code
+  block, plus a `filename` header and line `highlight`ing.
 - **`siteName` logo sets + `fonts`** — text or `{ default, dark, light, alt }`
   logos (local paths copied to output); Google-Fonts `heading`/`body` + a CSS
   `mono` stack.
@@ -305,7 +308,7 @@ canonical copy is `migration-map.json` at the repo root; it is mirrored here.
     "sections": { "v5": "sectionOrder", "status": "renamed" },
     "meta": { "v5": "meta", "status": "changed" },
     "search": { "v5": null, "status": "removed" },
-    "codepen": { "v5": null, "status": "removed" },
+    "codepen": { "v5": "playground", "status": "changed" },
     "static_dir": { "v5": null, "status": "removed" },
     "create_style": { "v5": "customCss", "status": "renamed" },
     "add_style_path": { "v5": "customCssFile", "status": "changed" },

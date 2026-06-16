@@ -389,9 +389,9 @@ rang/src/
                           #   `Code` (MDX `code`); also serves CodeTabs + standalone
 ```
 
-**Islands** (`IslandName`, 14): `sidebar`, `mobile-nav`, `toc`, `toc-mobile`,
+**Islands** (`IslandName`, 15): `sidebar`, `mobile-nav`, `toc`, `toc-mobile`,
 `cmdk`, `code-tabs`, `copy-btn`, `copy-page`, `theme-toggle`, `settings`,
-`language-switcher`, `code-viewer`, `embed`, `tabs`.
+`language-switcher`, `code-viewer`, `embed`, `playground`, `tabs`.
 Each renders meaningful SSR HTML, then progressively enhances after hydration.
 The `cmdk` palette lazily fetches the search index on first open and ranks hits
 with a fuzzy matcher (`search-utils`) across weighted fields — title (highest,
@@ -424,7 +424,15 @@ poster `<button>` (+ `<noscript>` fallback) that swaps in the iframe on click.
 Theme sync is **on by default** (opt out with `themed=false`): the URL is
 re-resolved off `<html data-theme>` via the same `MutationObserver` pattern —
 a `{theme}` token is swapped, else `?theme-id=<theme>` is appended unless the
-author already declared a `theme-id` query param.
+author already declared a `theme-id` query param. The `playground` island
+(in-content, like `embed`/`copy-btn`) is the "Open Code in" dropdown in a code
+block's header: it reads the enabled providers from the marker's `data-providers`,
+the code from the card's `<pre>`, and the site-wide per-provider options from a
+per-page `data-playground-config` payload, then opens the example prefilled in
+CodePen / JSFiddle / CodeSandbox via a client-side form POST / parameterized link
+(no backend). The `<Playground>` wrapper (setu) also drives the code block's
+`filename` header label and line `highlight`ing through a Preact context the
+`CodeBlock` reads at SSR.
 
 ### `@clean-jsdoc-theme/dwar` — `SiteManifest` → HTML/CSS/JS
 

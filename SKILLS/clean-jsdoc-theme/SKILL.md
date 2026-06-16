@@ -238,6 +238,9 @@ let the user opt in.
 - **Per-tool / per-platform variants** (npm vs pnpm, JSDoc vs TypeDoc) as separate
   code blocks → **`<tabs>`** with a shared `group` to sync them.
 - **A linked CodePen / StackBlitz / demo** → an **embed** (` ```iframe ` / `@iframe`).
+- **An `@example` readers should run/edit** → a **playground** (`opts.playground` +
+  `@playground codepen jsfiddle …`): an "Open Code in" dropdown (CodePen/JSFiddle/
+  CodeSandbox); also `filename=` / `highlight=` on any code block.
 - **A long, flat sidebar, or symbols in the wrong section** → **`@category` /
   `@order`** on the symbols and `group` / `order` frontmatter on guides, plus
   `sectionOrder` / `clubSidebarItems` to shape the top level.

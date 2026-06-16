@@ -39,6 +39,11 @@
       "Tutorials"
     ],
     "clubSidebarItems": true,
+    "playground": {
+      "enableForAllExamples": false,
+      "providers": ["codepen", "jsfiddle", "codesandbox"],
+      "codepen": { "js_pre_processor": "babel" }
+    },
     "menu": [
       {
         "title": "Home",

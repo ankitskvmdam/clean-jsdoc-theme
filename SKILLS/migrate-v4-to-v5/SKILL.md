@@ -98,9 +98,9 @@ over `sectionOrder`** and owns the whole top region of the sidebar.
 
 Delete options with no v5 equivalent and tell the user what replaced them
 ([§3](#3-removed-features)): `default_theme`, `favicon`, `homepageTitle`,
-`includeFilesListInHomepage`, `search`, `codepen`, `static_dir`,
+`includeFilesListInHomepage`, `search`, `static_dir`,
 `exclude_inherited`, `displayModuleHeader`, `sort`, `shouldRemoveScrollbarStyle`.
-(`footer` and `meta` are **not** removed in v5 — map them, see
+(`footer`, `meta`, and `codepen` are **not** removed in v5 — map them, see
 [§2](#2-option-mapping).) Most are now automatic (search is always on; light/dark
 is a runtime toggle) or moved to JSDoc's own config (`static_dir`, `favicon`).
 
@@ -134,7 +134,7 @@ the source viewer (`templates.default.outputSourceFiles`).
 | `sections` | `sectionOrder` | renamed | Filter + order sidebar sections. |
 | `meta` | `meta` | changed | Supported again — array of attribute maps → `<meta>` tags in `<head>` (same shape as v4). |
 | `search` | — | removed | Always-on fuzzy search + optional Pagefind. |
-| `codepen` | — | removed | Use `@iframe` tag / ` ```iframe ` fence (sandboxed embeds). |
+| `codepen` | `playground` | changed | v4 prefilled a CodePen from `@example`; v5 generalizes it to `opts.playground` + the `@playground` tag (CodePen/JSFiddle/CodeSandbox). For an existing pen by URL, use `@iframe`. |
 | `static_dir` | — | removed | Use JSDoc's own static-file config. |
 | `create_style` | `customCss` | renamed | Inline CSS, injected after the theme stylesheet. |
 | `include_css` | `customCssFile` | renamed | CSS file(s); copied to a content-hashed `_assets/` link. |
@@ -156,7 +156,6 @@ A machine-readable version of this exact map (for codemods) lives at
 
 - `default_theme` / `fallback-*` → built-in light/dark + runtime toggle (no opt).
 - `search` toggle → always on (fuzzy + optional Pagefind).
-- `codepen` → `@iframe` block tag / ` ```iframe ` prose fence.
 - `static_dir` / `favicon` → JSDoc's own static-file copying.
 - `homepageTitle`, `includeFilesListInHomepage`, `exclude_inherited`,
   `displayModuleHeader`, `sort`, `shouldRemoveScrollbarStyle` → no replacement opt.

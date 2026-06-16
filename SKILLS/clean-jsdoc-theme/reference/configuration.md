@@ -51,6 +51,7 @@ See [content-and-sidebar.md](content-and-sidebar.md) for the full ordering model
 | `footer` | string \| `{ file }` | Custom footer HTML, rendered in place of the default footer on every page. Inline string or `{ file: "./footer.html" }` (read at build time). Trusted, author-controlled HTML; style it with `customCss`/`customCssFile`. |
 | `meta` | `Array<{ [attr]: value }>` | Site-wide custom `<meta>` tags. Each object's key/value pairs become one `<meta>` (`{ name, content }`, `{ property, content }`, …). Theme defaults (charset/viewport/auto description) emit first; an author entry sharing a `name`/`property`/`http-equiv`/`charset` replaces the default (no dupes). Values escaped; invalid attr names dropped. |
 | `hashCustomAssets` | boolean | Content-hash custom-asset filenames for cache-busting. Default `true`. |
+| `playground` | boolean \| `{ enableForAllExamples?, providers?, codepen?, jsfiddle?, codesandbox? }` | Adds an "Open Code in" dropdown (CodePen/JSFiddle/CodeSandbox, client-side) to code-block headers. Off by default → byte-identical. `providers` ⊂ `codepen`/`jsfiddle`/`codesandbox`; per-provider records are site-wide options. Per-block opt-in via the `@playground` tag / ` ```js playground ` fence / `<playground>` (also `filename=`/`highlight=`); `enableForAllExamples` opts every `@example` in. See [authoring.md](authoring.md). |
 
 ## Localization
 

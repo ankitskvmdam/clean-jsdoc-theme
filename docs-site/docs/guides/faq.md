@@ -37,6 +37,27 @@ https://codepen.io/USER/embed/PEN_ID title="CodePen demo" height=400
 > On CodePen, open **Embed** and copy the URL from the `<iframe src="…">`
 > snippet. Add `clickToLoad=true` to show a light poster until the reader clicks.
 
+### How do I let readers open an example in CodePen / JSFiddle / CodeSandbox?
+
+`@iframe` embeds an **existing** pen by URL. To open the **code from an
+`@example`** — prefilled, no pen needed — use the **playground** feature instead:
+turn it on in `opts.playground`, then tag the example with `@playground`:
+
+```js
+/**
+ * @example
+ * const out = resize(img, 200);
+ * @playground codepen jsfiddle filename=resize.js highlight=1
+ */
+export function resize(img, width) {}
+```
+
+The code block's header gains an **"Open Code in"** dropdown (CodePen / JSFiddle /
+CodeSandbox), all client-side — no API key. It also works in prose (a
+` ```js playground ` fence or a `<playground>` block). Full reference:
+[Playground](/authoring/playground). (`@playground` needs
+`tags.allowUnknownTags: true`, same as `@iframe`.)
+
 ### How do I embed a YouTube video?
 
 Use the **embed** URL (`https://www.youtube.com/embed/VIDEO_ID`) and give it a
