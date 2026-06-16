@@ -12,6 +12,7 @@
     "destination": "dist/clean-jsdoc-theme/api-docs",
     "recurse": true,
     "template": "./node_modules/clean-jsdoc-theme/dist",
+    "favicon": "./assets/logo-small.svg",
     "readme": "./README.md",
     "siteName": {
       "light": "./assets/clean-jsdoc-theme.svg",
@@ -31,7 +32,7 @@
       },
       {
         "title": "clean-jsdoc-theme Guide",
-        "link": "../../clean-jsdoc-theme",
+        "link": "https://ankdev.me/clean-jsdoc-theme",
         "id": "clean-jsdoc-theme-guide",
         "icon": "lucide:website"
       },

@@ -49,6 +49,7 @@ export const MAX_CONCURRENCY = 32;
  * q.on('drain', () => console.log('done'));
  * q.push({ id: 't1', run: async () => doWork() });
  * await q.drain();
+ * @playground
  *
  * @since 1.1.0
  * @version 1.3.0
@@ -120,6 +121,8 @@ export class Queue {
    * for (const task of queue.tasks()) {
    *   console.log(task.id satisfies string);
    * }
+   *
+   * @playground
    */
   *tasks() {
     yield* this._pending;

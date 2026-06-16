@@ -42,6 +42,7 @@
  * const cache = new Cache({ maxSize: 2 });
  * cache.set('a', 1).set('b', 2);
  * cache.get('a'); // => 1, and 'a' is now most-recently-used
+ * @playground
  *
  * @see {@link CacheOptions}
  * @see {@link createCache} for a one-shot factory
