@@ -18,7 +18,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, extname, resolve as resolvePath } from 'node:path';
 import salty from '@jsdoc/salty';
 import { generateSite } from '@clean-jsdoc-theme/setu';
-import type { MenuItem, SourceFileInput } from '@clean-jsdoc-theme/setu';
+import type { MenuItem, PlaygroundSiteConfig, SourceFileInput } from '@clean-jsdoc-theme/setu';
 import { render, runPagefindAgainstDir } from '@clean-jsdoc-theme/dwar';
 import type {
   CopyPageAction,
@@ -37,7 +37,7 @@ import {
   toExtractManifest,
   validateThemeOpts,
 } from '@clean-jsdoc-theme/utils';
-import type { FontSet, TDoclet, ValidatedFonts } from '@clean-jsdoc-theme/utils';
+import type { FontSet, PlaygroundProvider, TDoclet, ValidatedFonts } from '@clean-jsdoc-theme/utils';
 import { reflectionsToDoclets } from './reflection-to-doclets';
 import { markdownToHtml, partsToMarkdown } from './comment';
 import { writeOutputFiles } from './write-output-files';
@@ -113,12 +113,14 @@ function resolveTheme(
     typeof block.aiPrompt === 'string' && block.aiPrompt.trim() ? block.aiPrompt.trim() : undefined;
   const copyPage = normalizeCopyPage(block.copyPage);
   const pageNav = normalizePageNav(block.pageNav);
+  const playground = normalizePlayground(block.playground);
 
   return {
     ...defaultTheme,
     ...(aiPrompt ? { aiPrompt } : {}),
     ...(copyPage ? { copyPage } : {}),
     ...(pageNav ? { pageNav } : {}),
+    ...(playground ? { playground: playground.theme } : {}),
     tokens: {
       ...defaultTheme.tokens,
       fonts: resolveFontSet(fonts, locale),
@@ -215,6 +217,58 @@ function normalizePageNav(raw: unknown): PageNavConfig | undefined {
   if (typeof raw !== 'object') return undefined;
   const enabled = (raw as Record<string, unknown>).enabled;
   return typeof enabled === 'boolean' ? { enabled } : undefined;
+}
+
+/** Valid code-playground providers (mirrors utils' `PlaygroundProvider`). */
+const PLAYGROUND_PROVIDERS: readonly PlaygroundProvider[] = ['codepen', 'jsfiddle', 'codesandbox'];
+
+/** A site-wide per-provider options record, or `undefined` for a non-object. */
+function playgroundOptionRecord(raw: unknown): Record<string, unknown> | undefined {
+  return raw && typeof raw === 'object' && !Array.isArray(raw)
+    ? (raw as Record<string, unknown>)
+    : undefined;
+}
+
+/**
+ * Validate `block.playground` into its two consumer slices, or `undefined` when
+ * off (absent or `false`). `true`/`{}` turns it on with defaults. The `site`
+ * slice feeds setu's `@playground` resolver; the `theme` slice becomes
+ * `ThemeConfig.playground`. Copied from the JSDoc bridge's `normalizePlayground`
+ * (the two bridges don't cross-import).
+ */
+function normalizePlayground(
+  raw: unknown
+): { site: PlaygroundSiteConfig; theme: NonNullable<ThemeConfig['playground']> } | undefined {
+  if (raw == null || raw === false) return undefined;
+  const o = raw === true ? {} : raw;
+  if (typeof o !== 'object' || Array.isArray(o)) return undefined;
+  const obj = o as Record<string, unknown>;
+
+  const site: PlaygroundSiteConfig = {};
+  if (obj.enableForAllExamples === true) site.enableForAllExamples = true;
+  if (Array.isArray(obj.providers)) {
+    const providers: PlaygroundProvider[] = [];
+    for (const p of obj.providers) {
+      if (
+        typeof p === 'string' &&
+        (PLAYGROUND_PROVIDERS as readonly string[]).includes(p) &&
+        !providers.includes(p as PlaygroundProvider)
+      ) {
+        providers.push(p as PlaygroundProvider);
+      }
+    }
+    if (providers.length > 0) site.providers = providers;
+  }
+
+  const theme: NonNullable<ThemeConfig['playground']> = { enabled: true };
+  const codepen = playgroundOptionRecord(obj.codepen);
+  const jsfiddle = playgroundOptionRecord(obj.jsfiddle);
+  const codesandbox = playgroundOptionRecord(obj.codesandbox);
+  if (codepen) theme.codepen = codepen;
+  if (jsfiddle) theme.jsfiddle = jsfiddle;
+  if (codesandbox) theme.codesandbox = codesandbox;
+
+  return { site, theme };
 }
 
 /**
@@ -521,6 +575,8 @@ export async function writeSite(
   const sectionOrder = normalizeSectionOrder(block.sectionOrder);
   const menu = normalizeMenu(block.menu);
   const clubSidebarItems = block.clubSidebarItems === true;
+  // Enablement slice → setu's `@playground` resolver (runtime slice → the theme).
+  const playground = normalizePlayground(block.playground);
 
   const manifest = generateSite(collection, {
     ...(pkg ? { pkg } : {}),
@@ -529,6 +585,7 @@ export async function writeSite(
     ...(sectionOrder ? { sectionOrder } : {}),
     ...(menu ? { menu } : {}),
     ...(clubSidebarItems ? { clubSidebarItems } : {}),
+    ...(playground ? { playground: playground.site } : {}),
   });
 
   // Localization extract mode (aadesh, Phase 3): when CLEAN_JSDOC_THEME_EXTRACT

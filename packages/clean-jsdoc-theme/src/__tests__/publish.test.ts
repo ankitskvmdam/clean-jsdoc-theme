@@ -12,6 +12,7 @@ import {
   normalizeDocGroups,
   normalizeMenu,
   normalizeMeta,
+  normalizePlayground,
   normalizeSectionOrder,
   outputSourceFilesEnabled,
   resolveFooter,
@@ -280,6 +281,62 @@ describe('normalizeColors', () => {
     expect(normalizeColors(['red'])).toBeUndefined();
     expect(normalizeColors({ nope: 'x' })).toBeUndefined();
     expect(normalizeColors({})).toBeUndefined();
+  });
+});
+
+describe('normalizePlayground', () => {
+  it('is off (undefined) when absent or false', () => {
+    expect(normalizePlayground(undefined)).toBeUndefined();
+    expect(normalizePlayground(null)).toBeUndefined();
+    expect(normalizePlayground(false)).toBeUndefined();
+  });
+
+  it('turns on with defaults for `true` / `{}` (feature on, opt-in per @example)', () => {
+    expect(normalizePlayground(true)).toEqual({ site: {}, theme: { enabled: true } });
+    expect(normalizePlayground({})).toEqual({ site: {}, theme: { enabled: true } });
+  });
+
+  it('reads enableForAllExamples + provider selection (order preserved, deduped, unknowns dropped)', () => {
+    expect(
+      normalizePlayground({
+        enableForAllExamples: true,
+        providers: ['jsfiddle', 'codepen', 'jsfiddle', 'bogus', 42],
+      })
+    ).toEqual({
+      site: { enableForAllExamples: true, providers: ['jsfiddle', 'codepen'] },
+      theme: { enabled: true },
+    });
+  });
+
+  it('threads per-provider option records into the theme slice only', () => {
+    expect(
+      normalizePlayground({
+        providers: ['codepen'],
+        codepen: { js_external: 'https://x/y.js', js_pre_processor: 'babel' },
+        jsfiddle: 'nope',
+        codesandbox: { dependencies: { lodash: '4' } },
+      })
+    ).toEqual({
+      site: { providers: ['codepen'] },
+      theme: {
+        enabled: true,
+        codepen: { js_external: 'https://x/y.js', js_pre_processor: 'babel' },
+        codesandbox: { dependencies: { lodash: '4' } },
+      },
+    });
+  });
+
+  it('ignores junk providers / non-array providers and a non-object/array input', () => {
+    expect(normalizePlayground({ providers: 'codepen' })).toEqual({
+      site: {},
+      theme: { enabled: true },
+    });
+    expect(normalizePlayground({ providers: ['bogus'] })).toEqual({
+      site: {},
+      theme: { enabled: true },
+    });
+    expect(normalizePlayground('on')).toBeUndefined();
+    expect(normalizePlayground(['codepen'])).toBeUndefined();
   });
 });
 
