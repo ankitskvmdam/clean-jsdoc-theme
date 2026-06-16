@@ -1028,7 +1028,18 @@ export function normalizePlayground(
 }
 
 /** The palette keys a user may override under `opts.colors` / `opts.darkColors`. */
-const COLOR_KEYS = ['bg', 'bgMuted', 'fg', 'fgMuted', 'accent', 'accentFg', 'border'] as const;
+const COLOR_KEYS = [
+  'bg',
+  'bgMuted',
+  'fg',
+  'fgMuted',
+  'accent',
+  'accentFg',
+  'border',
+  'codeHeaderBg',
+  'codeHeaderFg',
+  'codeHighlightBg',
+] as const;
 
 /**
  * Validate a user `colors`/`darkColors` object from `jsdoc.json` into a clean

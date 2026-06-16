@@ -252,3 +252,13 @@ main p:has(img + img) img {
   padding-inline: 1rem;
   background-color: var(--clean-code-highlight-bg) !important;
 }
+/*
+ * The per-token spans inside a highlighted line also match the dark-mode
+ * `[data-theme='dark'] .shiki span { background-color:#0b0c0e !important }`
+ * rule above, which would paint over the line tint and hide it. This selector's
+ * higher specificity (0,3,2 vs 0,2,1) clears their background so the line's own
+ * highlight shows through; the syntax `color` is untouched. A no-op in light.
+ */
+.shiki code .line[data-highlighted] span {
+  background-color: transparent !important;
+}

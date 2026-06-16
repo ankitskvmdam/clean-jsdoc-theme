@@ -44,14 +44,14 @@ export function buildThemeVariableCss(tokens: ThemeTokens): string {
     `--clean-accent:${colors.accent};` +
     `--clean-accent-fg:${colors.accentFg};` +
     `--clean-border:${colors.border};` +
-    // Code-block chrome (header strip + highlighted-line tint). Fixed neutral
-    // surfaces — light is #f7f7f7 (a hair off the white code body); dark uses
-    // elevated greys so the header reads above the pinned dark code surface
-    // (#0b0c0e) and a highlighted line stays visible. Not part of the themeable
-    // palette by design — code chrome is intentionally consistent.
-    `--clean-code-header-bg:oklch(0.973 0 0);` +
-    `--clean-code-header-fg:oklch(0.45 0 0);` +
-    `--clean-code-highlight-bg:oklch(0.973 0 0);` +
+    // Code-block chrome (header strip + highlighted-line tint). Overridable via
+    // `colors`/`darkColors`; the defaults are neutral surfaces — light is
+    // #f7f7f7 (a hair off the white code body); dark uses elevated greys so the
+    // header reads above the pinned dark code surface (#0b0c0e) and a
+    // highlighted line stays visible.
+    `--clean-code-header-bg:${colors.codeHeaderBg ?? 'oklch(0.973 0 0)'};` +
+    `--clean-code-header-fg:${colors.codeHeaderFg ?? 'oklch(0.45 0 0)'};` +
+    `--clean-code-highlight-bg:${colors.codeHighlightBg ?? 'oklch(0.973 0 0)'};` +
     // Content links are pure black (light) / white (dark) by design — not the
     // grey fg. The underline inherits this via currentColor.
     `--clean-link:oklch(0 0 0);` +
@@ -60,9 +60,9 @@ export function buildThemeVariableCss(tokens: ThemeTokens): string {
     `--clean-font-mono:${monoStack};` +
     `}`;
 
-  // Dark code-chrome surfaces, shared by both dark-block branches below: a header
-  // strip above the pinned #0b0c0e code surface and a clearly-visible highlight.
-  const darkCode =
+  // Dark code-chrome fallbacks, used when the dark palette doesn't override them:
+  // a header strip above the pinned #0b0c0e code surface and a visible highlight.
+  const darkCodeFixed =
     `--clean-code-header-bg:oklch(0.2 0 0);` +
     `--clean-code-header-fg:oklch(0.72 0 0);` +
     `--clean-code-highlight-bg:oklch(0.28 0 0);`;
@@ -80,7 +80,9 @@ export function buildThemeVariableCss(tokens: ThemeTokens): string {
       `--clean-accent:${d.accent};` +
       `--clean-accent-fg:${d.accentFg};` +
       `--clean-border:${d.border};` +
-      darkCode +
+      `--clean-code-header-bg:${d.codeHeaderBg ?? 'oklch(0.2 0 0)'};` +
+      `--clean-code-header-fg:${d.codeHeaderFg ?? 'oklch(0.72 0 0)'};` +
+      `--clean-code-highlight-bg:${d.codeHighlightBg ?? 'oklch(0.28 0 0)'};` +
       `--clean-link:oklch(1 0 0);` +
       `}`;
   } else {
@@ -91,7 +93,7 @@ export function buildThemeVariableCss(tokens: ThemeTokens): string {
       `--clean-bg-muted:${colors.fgMuted};` +
       `--clean-fg:${colors.bg};` +
       `--clean-fg-muted:${colors.bgMuted};` +
-      darkCode +
+      darkCodeFixed +
       `--clean-link:oklch(1 0 0);` +
       `}`;
   }

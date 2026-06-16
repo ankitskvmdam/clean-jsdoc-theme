@@ -117,4 +117,28 @@ describe('render() — playground', () => {
     expect(lineChunks[2]).toContain('3');
     expect(html.match(/data-highlighted/g)?.length).toBe(2);
   });
+
+  it('resets token-span backgrounds inside a highlighted line (dark-mode tint fix)', async () => {
+    const result = await render(makePlaygroundManifest(), { theme: themeWithPlayground });
+    const css = asString(result.files.find((f) => f.path.endsWith('.css'))!);
+    // The rule that clears per-token span backgrounds so the line's own
+    // highlight shows in dark mode (where `.shiki span` is force-painted).
+    expect(css).toContain('data-highlighted] span');
+  });
+
+  it('emits the code-chrome vars, overridable via colors/darkColors', async () => {
+    const themed: ThemeConfig = {
+      ...themeWithPlayground,
+      tokens: {
+        ...themeWithPlayground.tokens,
+        colors: { ...themeWithPlayground.tokens.colors, codeHeaderBg: 'rebeccapurple' },
+      },
+    };
+    const result = await render(makePlaygroundManifest(), { theme: themed });
+    const css = asString(result.files.find((f) => f.path.endsWith('.css'))!);
+    // The user override wins in :root …
+    expect(css).toContain('--clean-code-header-bg:rebeccapurple');
+    // … and the others keep their defaults.
+    expect(css).toContain('--clean-code-highlight-bg:oklch(0.973 0 0)');
+  });
 });

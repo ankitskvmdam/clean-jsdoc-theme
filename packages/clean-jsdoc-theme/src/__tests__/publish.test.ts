@@ -275,6 +275,20 @@ describe('normalizeColors', () => {
     expect(normalizeColors({ bg: 'red', nope: 'x', fg: 42, border: '  ' })).toEqual({ bg: 'red' });
   });
 
+  it('keeps the code-chrome palette keys', () => {
+    expect(
+      normalizeColors({
+        codeHeaderBg: '#f7f7f7',
+        codeHeaderFg: 'oklch(0.45 0 0)',
+        codeHighlightBg: '#f7f7f7',
+      })
+    ).toEqual({
+      codeHeaderBg: '#f7f7f7',
+      codeHeaderFg: 'oklch(0.45 0 0)',
+      codeHighlightBg: '#f7f7f7',
+    });
+  });
+
   it('returns undefined for non-objects, arrays, and inputs with no usable keys', () => {
     expect(normalizeColors(undefined)).toBeUndefined();
     expect(normalizeColors('red')).toBeUndefined();

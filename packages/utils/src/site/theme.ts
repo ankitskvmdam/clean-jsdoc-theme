@@ -18,6 +18,12 @@ export interface ThemeColors {
   accent: string;
   accentFg: string;
   border: string;
+  /** Code-block header strip background. Optional — defaults to a neutral surface. */
+  codeHeaderBg?: string;
+  /** Code-block header label text (the `CODE`/filename label). Optional. */
+  codeHeaderFg?: string;
+  /** Highlighted code-line background (`@playground` / `highlight=`). Optional. */
+  codeHighlightBg?: string;
 }
 
 /** Visual design tokens consumed by both Tailwind generation and runtime themes. */
