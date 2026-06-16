@@ -479,6 +479,14 @@ can override just `bg` and keep every other default.
 | `accent`    | Links, focus rings, primary buttons             |
 | `accentFg`  | Text/icon on an `accent` background             |
 | `border`    | Hairlines and dividers                          |
+| `codeHeaderBg`    | Code-block header strip background        |
+| `codeHeaderFg`    | Code-block header label text              |
+| `codeHighlightBg` | Highlighted code-line background (`@playground` / `highlight=`) |
+
+The three `code*` keys style the code-block chrome — the header strip (its
+background + the `CODE`/filename label) and the tint on a highlighted line. They
+default to a neutral `#f7f7f7`-equivalent in light and elevated greys in dark, so
+you only set them to match a custom palette.
 
 <tabs group="tool">
 

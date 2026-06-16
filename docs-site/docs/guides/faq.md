@@ -1,7 +1,7 @@
 ---
 title: FAQ
 group: Guides
-order: 6
+order: 7
 ---
 
 # FAQ
@@ -54,8 +54,8 @@ export function resize(img, width) {}
 
 The code block's header gains an **"Open Code in"** dropdown (CodePen / JSFiddle /
 CodeSandbox), all client-side — no API key. It also works in prose (a
-` ```js playground ` fence or a `<playground>` block). Full reference:
-[Playground](/authoring/playground). (`@playground` needs
+` ```js playground ` fence or a `<playground>` block). Full walkthrough:
+[Add a playground](/guides/add-playgrounds). (`@playground` needs
 `tags.allowUnknownTags: true`, same as `@iframe`.)
 
 ### How do I embed a YouTube video?
@@ -197,6 +197,20 @@ fallback) — see [`siteName`](/theme/configuration#sitename).
 Use `@category` / `@order` on symbols, frontmatter `group` / `order` on guide
 pages, and the `sectionOrder` option. [Structure your
 sidebar](/guides/structure-your-sidebar) covers every lever.
+
+### My `@category` / `@order` / `@playground` / `@iframe` tags aren't working
+
+The most likely cause: **`tags.allowUnknownTags` isn't `true`** in your
+`jsdoc.json`. These are all tags base JSDoc doesn't define, so it **strips them
+before the theme runs** — your categories collapse to the default kind sections,
+`@order` does nothing, and `@playground` / `@iframe` never render. Set the flag:
+
+```json
+{ "tags": { "allowUnknownTags": true } }
+```
+
+(TypeDoc has no such restriction — it passes these through.) See [Custom
+tags](/authoring/custom-tags) for the full list.
 
 ### How do I add hand-written guides next to the API reference?
 

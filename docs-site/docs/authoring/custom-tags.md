@@ -19,6 +19,8 @@ give you. They shape the sidebar and let source comments embed live demos:
   group (and optionally order it).
 - **`@order N`** — a standalone within-group sort key for any symbol.
 - **`@iframe <url> key=value`** — embed a live demo from a source comment.
+- **`@playground <providers> [filename=] [highlight=]`** — open an `@example` in
+  a live playground (CodePen / JSFiddle / CodeSandbox).
 
 Category/order parsing lives in
 [`generate-site.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/generate-site.ts)
@@ -26,7 +28,7 @@ Category/order parsing lives in
 [`doclet.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/mdast/doclet.ts).
 
 > [!IMPORTANT]
-> All three are **unknown tags** — base JSDoc doesn't define them. Your config
+> All four are **unknown tags** — base JSDoc doesn't define them. Your config
 > must set `tags.allowUnknownTags: true` in `jsdoc.json` (this site's
 > [`jsdoc.json`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/docs-site/jsdoc.json)
 > does). Without it JSDoc strips these tags before the theme runs.
@@ -120,6 +122,26 @@ invalid configs (non-`https`, no URL) are dropped. The full config grammar —
 accepted URL schemes, every option, and the `themed` / `{theme}` behavior — is
 documented on [Embeds & live demos](/authoring/embeds).
 
+## `@playground` — open an example in a playground
+
+`@playground` turns an `@example` into a launchpad: the code block's header gains
+an **"Open Code in"** dropdown that opens the code, prefilled, in CodePen,
+JSFiddle, or CodeSandbox. It uses the same whitespace-token grammar — bare
+provider names plus `filename=` / `highlight=` options:
+
+```js
+/**
+ * @example
+ * const out = resize(img, 200);
+ * @playground codepen jsfiddle filename=resize.js highlight=1
+ */
+export function resize(img, width) {}
+```
+
+The feature is off until you enable `playground` in your `opts`. The full
+walkthrough — enabling it, the token table, the prose forms, and per-provider
+options — is in [Add a playground](/guides/add-playgrounds).
+
 ## How `@category` and `@order` shape the sidebar
 
 These tags are two of the levers that feed the theme's single sidebar ordering
@@ -133,6 +155,8 @@ pieces combine.
 
 - [Structure your sidebar](/guides/structure-your-sidebar) — the full sidebar
   ordering model.
+- [Add a playground](/guides/add-playgrounds) — the `@playground` tag, prose
+  forms, and provider options in full.
 - [Embeds & live demos](/authoring/embeds) — the `@iframe` config grammar in
   full.
 - [Configuration](/theme/configuration) — `sectionOrder`, `docGroups`, and friends.
