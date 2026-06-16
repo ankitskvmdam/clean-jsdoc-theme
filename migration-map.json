@@ -8,7 +8,7 @@
   "v4ToV5": {
     "default_theme": { "v5": null, "status": "removed" },
     "base_url": { "v5": "basePath", "status": "renamed" },
-    "favicon": { "v5": null, "status": "removed" },
+    "favicon": { "v5": "favicon", "status": "kept" },
     "homepageTitle": { "v5": null, "status": "removed" },
     "title": { "v5": "siteName", "status": "changed" },
     "includeFilesListInHomepage": { "v5": null, "status": "removed" },

@@ -102,7 +102,7 @@ errors while you migrate, then relax it.
 | `include_css` / `add_style_path` | `customCssFile` | renamed/changed | CSS file → content-hashed asset link. |
 | `add_scripts` | `customJs` | renamed | Inline JS (runs last). |
 | `include_js` / `add_script_path` | `customJsFile` | renamed/changed | JS file → content-hashed asset. |
-| `favicon` | — | removed | Use JSDoc's own static-file copying. |
+| `favicon` | `favicon` | kept | A file path; the theme copies it + emits `<link rel="icon">`. |
 | `homepageTitle` | — | removed | Home `<title>` derives from README / `docs/index.md` + `siteName`. |
 | `includeFilesListInHomepage` | — | removed | The Source Files section lists files. |
 | `meta` | `meta` | changed | Supported again — an array of attribute maps → `<meta>` tags in `<head>`. See [`meta`](/theme/configuration#meta). |

@@ -97,12 +97,12 @@ over `sectionOrder`** and owns the whole top region of the sidebar.
 <step label="Remove what's gone">
 
 Delete options with no v5 equivalent and tell the user what replaced them
-([§3](#3-removed-features)): `default_theme`, `favicon`, `homepageTitle`,
+([§3](#3-removed-features)): `default_theme`, `homepageTitle`,
 `includeFilesListInHomepage`, `search`, `static_dir`,
 `exclude_inherited`, `displayModuleHeader`, `sort`, `shouldRemoveScrollbarStyle`.
-(`footer`, `meta`, and `codepen` are **not** removed in v5 — map them, see
+(`footer`, `meta`, `codepen`, and `favicon` are **not** removed in v5 — map them, see
 [§2](#2-option-mapping).) Most are now automatic (search is always on; light/dark
-is a runtime toggle) or moved to JSDoc's own config (`static_dir`, `favicon`).
+is a runtime toggle) or moved to JSDoc's own config (`static_dir`).
 
 </step>
 
@@ -126,7 +126,7 @@ the source viewer (`templates.default.outputSourceFiles`).
 | --- | --- | --- | --- |
 | `default_theme` | — | removed | Light/dark token sets + runtime toggle; no picker. |
 | `base_url` | `basePath` | renamed | Site root prefixed onto links. Default `/`. |
-| `favicon` | — | removed | Use JSDoc's own static-file copying. |
+| `favicon` | `favicon` | kept | A file path; theme copies it + emits `<link rel="icon">` (needed for SVG). |
 | `homepageTitle` | — | removed | Home `<title>` derives from README/`docs/index.md` + `siteName`. |
 | `title` | `siteName` | changed | String **or** logo set `{ default, dark, light, alt }`. |
 | `includeFilesListInHomepage` | — | removed | The Source Files section lists files instead. |
@@ -156,7 +156,7 @@ A machine-readable version of this exact map (for codemods) lives at
 
 - `default_theme` / `fallback-*` → built-in light/dark + runtime toggle (no opt).
 - `search` toggle → always on (fuzzy + optional Pagefind).
-- `static_dir` / `favicon` → JSDoc's own static-file copying.
+- `static_dir` → JSDoc's own static-file copying. (`favicon` is back as an opt.)
 - `homepageTitle`, `includeFilesListInHomepage`, `exclude_inherited`,
   `displayModuleHeader`, `sort`, `shouldRemoveScrollbarStyle` → no replacement opt.
 

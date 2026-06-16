@@ -292,6 +292,21 @@ A few things worth knowing:
   cards aren't supported yet).
 - Values are escaped automatically, so quotes and angle brackets are safe.
 
+### How do I set a favicon?
+
+Point [`favicon`](/theme/configuration#favicon) at an image file. The theme copies
+it to a content-hashed asset and adds a `<link rel="icon">` to every page's
+`<head>`:
+
+```json5
+opts: { favicon: "./assets/logo.svg" }
+```
+
+This is the way to use an **SVG** favicon — browsers only auto-discover a root
+`favicon.ico`, never an SVG, so it needs the `<link>` the theme emits. (An SVG
+can even adapt to light/dark via a `@media (prefers-color-scheme: dark)` block
+inside it.) The v4 `favicon` option was briefly dropped early in v5 and is back.
+
 ### How do I turn off the "copy page" / "open in LLM" button?
 
 Configure or disable it with [`copyPage`](/theme/configuration#copypage).

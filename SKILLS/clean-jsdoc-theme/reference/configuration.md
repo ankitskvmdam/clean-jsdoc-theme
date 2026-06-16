@@ -18,6 +18,7 @@ Contents: [Site & identity](#site--identity) · [Content sources](#content-sourc
 | --- | --- | --- |
 | `siteName` | string \| logo set | Header title. Logo set: `{ light, dark, default, alt }` (URLs or local paths; dark/light swap via CSS). Defaults to the package `name`. Local logos are copied to content-hashed `_assets/`. |
 | `basePath` | string | Root path prefixed onto every internal link/asset, for sub-path hosting (`/my-lib`). Default `""`. |
+| `favicon` | string | Path to a favicon image (`.svg`/`.png`/`.ico`/…). The theme copies it to a content-hashed `_assets/` file and emits `<link rel="icon">` (type derived from the extension). Needed for an SVG favicon — browsers only auto-discover a root `favicon.ico`. |
 
 ## Content sources
 

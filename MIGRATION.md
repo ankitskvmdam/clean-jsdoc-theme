@@ -65,7 +65,7 @@ removed | new`.
 | ------------------------------- | ------------------------ | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `default_theme`                 | — (auto light/dark)      | removed | No theme-name picker. v5 ships light + dark token sets and a runtime toggle; no `fallback-*`/forced-default option. Customize via theme tokens, not an opt.                                                                                                                                                 |
 | `base_url`                      | `basePath`               | renamed | Same intent (site root prefixed onto links). v5 key is `basePath`; renderer default is `/`.                                                                                                                                                                                                                 |
-| `favicon`                       | —                        | removed | No `favicon` option. (Use JSDoc's own static-file copying if you need to ship one.)                                                                                                                                                                                                                         |
+| `favicon`                       | `favicon`                | kept    | A path to an image file; the theme copies it to a content-hashed asset and emits a `<link rel="icon">` (needed for an SVG favicon).                                                                                                                                                                          |
 | `homepageTitle`                 | —                        | removed | No dedicated homepage-title option; the home page derives its `<title>` from the README/`docs/index.md` + `siteName` suffix.                                                                                                                                                                                |
 | `title`                         | `siteName`               | changed | v4 `title` set the sidebar title (HTML or string). v5 `siteName` is a string **or** a logo set `{ default, dark, light, alt }`; local image paths are copied to the output. Shown in header/footer + appended to each page `<title>`.                                                                       |
 | `includeFilesListInHomepage`    | —                        | removed | No file-list-on-homepage toggle. The Source Files section (when source viewing is on) lists files instead.                                                                                                                                                                                                  |
@@ -226,7 +226,6 @@ For each: the v5 replacement, or "no replacement."
 | Removed v4 feature                                | v5 replacement                                                         |
 | ------------------------------------------------- | ---------------------------------------------------------------------- |
 | `default_theme` / `fallback-*`                    | Built-in light/dark token sets + runtime toggle (no opt).              |
-| `favicon`                                         | No replacement opt (use JSDoc's static-file copy).                     |
 | `homepageTitle`                                   | Home `<title>` derived from README/`docs/index.md` + `siteName`.       |
 | `search` toggle                                   | Always-on fuzzy search + optional Pagefind (no opt).                   |
 | `static_dir`                                      | JSDoc's own static-file copying.                                       |
@@ -300,7 +299,7 @@ canonical copy is `migration-map.json` at the repo root; it is mirrored here.
   "v4ToV5": {
     "default_theme": { "v5": null, "status": "removed" },
     "base_url": { "v5": "basePath", "status": "renamed" },
-    "favicon": { "v5": null, "status": "removed" },
+    "favicon": { "v5": "favicon", "status": "kept" },
     "homepageTitle": { "v5": null, "status": "removed" },
     "title": { "v5": "siteName", "status": "changed" },
     "includeFilesListInHomepage": { "v5": null, "status": "removed" },
