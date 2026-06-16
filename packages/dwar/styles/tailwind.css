@@ -230,3 +230,37 @@ main p:has(a img):has(a + a) img,
 main p:has(img + img) img {
   margin-block: 0.2rem;
 }
+
+/*
+ * Highlighted code lines. rang tags a Shiki `.line` span with `data-highlighted`
+ * when an `@playground` / prose `highlight=` list names it; the tint colour comes
+ * from `--clean-code-highlight-bg` (a neutral #f7f7f7 in light, an elevated grey
+ * in dark — see css.ts), so it stays visible in both themes.
+ *
+ * These rules MUST live inside `@layer base`. The dark-mode rule above
+ * (`[data-theme='dark'] .shiki span { background:#0b0c0e !important }`) is in
+ * `@layer base`, and for `!important` declarations the cascade compares LAYER
+ * order BEFORE specificity — a layered `!important` beats any *unlayered*
+ * `!important` no matter how specific (so even `html body pre.shiki … !important`
+ * loses to it). Putting these in the SAME layer drops back to specificity, where
+ * the highlighted-line selectors (0,3,1 / 0,3,2) win over the dark rule's (0,2,1).
+ *
+ * (1) the line tint bleeds full-width into the <pre>'s `p-4` (1rem) padding;
+ * (2) the per-token spans inside a highlighted line clear their dark `#0b0c0e`
+ *     background so the line tint shows through (syntax `color` is untouched;
+ *     a no-op in light); (3) only a block that actually has a highlight switches
+ *     to a grid (full-width rows), so every other code block stays identical.
+ */
+@layer base {
+  .shiki code:has(.line[data-highlighted]) {
+    display: grid;
+  }
+  .shiki code .line[data-highlighted] {
+    margin-inline: -1rem;
+    padding-inline: 1rem;
+    background-color: var(--clean-code-highlight-bg) !important;
+  }
+  .shiki code .line[data-highlighted] span {
+    background-color: transparent !important;
+  }
+}

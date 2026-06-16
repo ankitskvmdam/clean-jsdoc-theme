@@ -163,7 +163,7 @@ A build with no `locales` is unaffected. See
   Markdown to the same site.
 - **[Structure your sidebar](/guides/structure-your-sidebar)** — `@category`,
   `@order`, and the sidebar options.
-- **[Authoring](/authoring/callouts)** — callouts, steps, tabs, and embeds you
+- **[Authoring](/components/callouts)** — callouts, steps, tabs, and embeds you
   can use in comments and prose.
 - **[Localize your docs](/guides/localize-your-docs)** — ship the site in
   multiple languages.

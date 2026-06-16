@@ -157,6 +157,40 @@ cleanJsdocTheme: { basePath: "/my-library" } // served at example.com/my-library
 
 </tabs>
 
+### `favicon`
+
+A path to a favicon image. The bridge copies it to a content-hashed
+`_assets/` asset and emits a `<link rel="icon">` (with a `type` derived from the
+extension — `.svg` → `image/svg+xml`) into every page's `<head>`.
+
+**Expected:** a string file path (`.svg`, `.png`, `.ico`, …), relative to the
+working dir. Omitted → no favicon link.
+
+<tabs group="tool">
+
+<tab label="JSDoc (jsdoc.json)">
+
+```json5
+opts: { favicon: "./assets/logo-small.svg" }
+```
+
+</tab>
+
+<tab label="TypeDoc (typedoc.json)">
+
+```json5
+cleanJsdocTheme: { favicon: "./assets/logo-small.svg" }
+```
+
+</tab>
+
+</tabs>
+
+> [!TIP]
+> An **SVG** favicon needs this option — browsers only auto-discover a root
+> `favicon.ico`, never an SVG. An SVG icon can also adapt to light/dark with a
+> `@media (prefers-color-scheme: dark)` block inside the SVG.
+
 ## Content sources
 
 ### `readme`
@@ -479,6 +513,14 @@ can override just `bg` and keep every other default.
 | `accent`    | Links, focus rings, primary buttons             |
 | `accentFg`  | Text/icon on an `accent` background             |
 | `border`    | Hairlines and dividers                          |
+| `codeHeaderBg`    | Code-block header strip background        |
+| `codeHeaderFg`    | Code-block header label text              |
+| `codeHighlightBg` | Highlighted code-line background (`@playground` / `highlight=`) |
+
+The three `code*` keys style the code-block chrome — the header strip (its
+background + the `CODE`/filename label) and the tint on a highlighted line. They
+default to a neutral `#f7f7f7`-equivalent in light and elevated greys in dark, so
+you only set them to match a custom palette.
 
 <tabs group="tool">
 

@@ -50,8 +50,8 @@ It covers, end to end:
 `clean-jsdoc-theme` isn't the default JSDoc template, and an assistant working
 from generic "JSDoc theme" knowledge will get the details wrong — it'll forget
 that [`plugins/markdown`](/theme/jsdoc-getting-started) is required, miss that
-custom tags need [`allowUnknownTags`](/authoring/custom-tags), or assume spaces
-nest a [`@category`](/authoring/custom-tags) path when only `/` does.
+custom tags need [`allowUnknownTags`](/components/overview), or assume spaces
+nest a [`@category`](/components/overview) path when only `/` does.
 
 > [!TIP]
 > Front-loading the skill turns a back-and-forth ("that option doesn't exist…",
@@ -149,4 +149,4 @@ and features.
 - [JSDoc Getting Started](/theme/jsdoc-getting-started) ·
   [TypeDoc Getting Started](/theme/typedoc-getting-started) — set up the build.
 - [Structure your sidebar](/guides/structure-your-sidebar) and
-  [Authoring](/authoring/callouts) — the deep dives the skill condenses.
+  [Authoring](/components/callouts) — the deep dives the skill condenses.

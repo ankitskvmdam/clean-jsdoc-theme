@@ -150,7 +150,7 @@ block (`locales` + `defaultLocale`) and runs through the `clean-jsdoc` CLI — s
   Markdown to the same site.
 - **[Structure your sidebar](/guides/structure-your-sidebar)** — grouping and
   ordering levers.
-- **[Authoring](/authoring/callouts)** — callouts, steps, tabs, and embeds.
+- **[Authoring](/components/callouts)** — callouts, steps, tabs, and embeds.
 - **[Localize your docs](/guides/localize-your-docs)** — the multi-language
   workflow (extract works on TypeDoc; localized builds are JSDoc-only today).
 - **[Packages](/#the-packages)** — how the shared `setu → dwar` pipeline (and the

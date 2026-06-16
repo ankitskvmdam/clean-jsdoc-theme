@@ -4,9 +4,11 @@ import {
   buildGlobalsView,
   computeBuildId,
   enumerateLongnamesByKind,
+  makePlaygroundResolver,
   renderContainerPage,
   splitLongnameForSlug,
   type MenuItem,
+  type PlaygroundSiteConfig,
 } from './generate-site';
 import { getContainerView, mergeContainerViews, type ContainerView } from './class-view';
 import { slugifyPath } from '@clean-jsdoc-theme/utils';
@@ -139,6 +141,15 @@ export interface GenerateSiteOptions {
    */
   clubSidebarItems?: boolean;
   /**
+   * Site-wide code-playground enablement: `enableForAllExamples` opts every
+   * `@example` in, and `providers` is the default provider set + order a bare
+   * `@playground` (or `enableForAllExamples`) falls back to. The per-provider
+   * runtime options are NOT here — they're a dwar/browser concern. When omitted,
+   * `@playground` tags are ignored (feature off → byte-identical output). See
+   * {@link makePlaygroundResolver}.
+   */
+  playground?: PlaygroundSiteConfig;
+  /**
    * Translatable-prose slot resolver (localization Phase 2). When omitted, the
    * build is byte-identical to before but still emits the slot template in
    * `manifest.slots`. When set with a `translate`, each API description/summary/
@@ -260,17 +271,23 @@ export function generateSite(collection: unknown, opts?: GenerateSiteOptions): S
     translate: opts?.slots?.translate,
   };
 
+  // Per-doclet `@playground` resolver (undefined when the feature is off, so the
+  // output stays byte-identical). Built once and threaded into every API page.
+  const playgroundFor = makePlaygroundResolver(opts?.playground);
+
   // --- Pass 3: render -------------------------------------------------------
   //
   // Render each surviving spec from its already-built view (views are not
   // rebuilt), threading `sourceLink`, the registry-backed `resolveLink`, the
-  // `@tutorial` resolver, and the slot resolver (collect + per-locale translate).
+  // `@tutorial` resolver, the slot resolver (collect + per-locale translate), and
+  // the `@playground` resolver.
   const apiPages: Page[] = specs.map((s) =>
     renderContainerPage(s.view, s.kind, s.longname, s.slug, {
       sourceLink,
       resolveLink,
       resolveTutorial,
       slots,
+      playgroundFor,
     })
   );
 
@@ -426,13 +443,23 @@ export {
   enumerateLongnamesByKind,
   extractHeadings,
   HOME_MENU_ID,
+  makePlaygroundResolver,
   renderContainerPage,
   SOURCE_MENU_IDS,
   splitLongnameForSlug,
   TUTORIALS_SECTION,
   type AssembleNavOptions,
   type MenuItem,
+  type PlaygroundSiteConfig,
 } from './generate-site';
+
+export {
+  KNOWN_PROVIDERS,
+  parsePlaygroundSpec,
+  resolvePlaygroundOpts,
+  type PlaygroundOpts,
+  type PlaygroundSpec,
+} from './playground';
 
 export {
   buildDocPages,

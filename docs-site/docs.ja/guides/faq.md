@@ -14,7 +14,7 @@ comments の書き方、そしていくつかのよくある configuration の�
 
 theme は、任意の page に sandboxed な `<iframe>` を差し込めます — CodePen、YouTube
 video、StackBlitz、あるいは任意のサイト。書き方は 2 通りあり、それらは
-[1 つの config grammar](/authoring/embeds) を共有します:
+[1 つの config grammar](/components/embeds) を共有します:
 
 - **prose の中**（README、guides、`docs` folder）— ` ```iframe ` の fenced block。
 - **doc comment の中** — `@iframe <url> key=value` block tag。
@@ -95,7 +95,7 @@ export function render() {}
 
 default では、はい — theme が変わると embed URL が再解決されます（`{theme}` token が
 入れ替えられるか、`?theme-id=<theme>` が付加されます）。`themed=false` でオプトアウト
-できます。完全なリファレンス: [Embeds & live demos](/authoring/embeds)。
+できます。完全なリファレンス: [Embeds & live demos](/components/embeds)。
 
 ## より豊かな doc comments
 
@@ -118,7 +118,7 @@ export function connect() {}
 
 marker は 4 つの style に対応します: `[!NOTE]` / `[!INFO]` / `[!IMPORTANT]` → info、
 `[!TIP]` / `[!SUCCESS]` → tip、`[!WARNING]` / `[!CAUTION]` → warning、そして
-`[!ERROR]` / `[!DANGER]` → error。[Callouts](/authoring/callouts) を参照してください。
+`[!ERROR]` / `[!DANGER]` → error。[Callouts](/components/callouts) を参照してください。
 
 ### comment の中で steps や tabs を使える？
 
@@ -151,8 +151,8 @@ tag はなく、markup を直接書きます:
  */
 `````
 
-完全な syntax と blank-line の規則については [Steps](/authoring/steps) と
-[Tabs](/authoring/tabs) を、render された姿を見るには live の
+完全な syntax と blank-line の規則については [Steps](/components/steps) と
+[Tabs](/components/tabs) を、render された姿を見るには live の
 [sample-api module page](/api-docs/module/sample-api) を参照してください。
 
 ### deprecation notice はどうする？

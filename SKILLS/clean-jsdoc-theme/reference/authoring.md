@@ -6,7 +6,8 @@ dedicated block tag for steps/tabs/callouts — you write the same markup in eit
 place and it flows through one converter.
 
 Contents: [Callouts](#callouts) · [Steps](#steps) · [Tabs](#tabs) ·
-[Embeds](#embeds) · [Custom doc-comment tags](#custom-doc-comment-tags).
+[Embeds](#embeds) · [Playground](#playground-open-in) · [Custom doc-comment
+tags](#custom-doc-comment-tags).
 
 ## Callouts
 
@@ -121,6 +122,49 @@ Source-comment block tag (requires `tags.allowUnknownTags: true`):
   is appended. Opt out with `themed=false`. Both live and click-to-load work with
   no JS (`<noscript>` fallback).
 
+## Playground (open in)
+
+Turn a code block into a launchpad: its header gains an **"Open Code in"**
+dropdown that opens the code prefilled in **CodePen** / **JSFiddle** /
+**CodeSandbox** (client-side form POST / link — no backend, no API key). The same
+tag also sets a **`filename`** header label and **line highlighting**, which work
+with or without providers.
+
+Turn it on in `jsdoc.json` `opts` (off by default → byte-identical output):
+
+```json5
+opts: {
+  playground: {
+    enableForAllExamples: false,          // true → every @example; opt out per-tag with `none`
+    providers: ["codepen", "jsfiddle", "codesandbox"],  // default + order
+    codepen: { js_pre_processor: "babel" }              // site-wide per-provider options
+  }
+}
+```
+
+Three authoring forms, **one token grammar** (bare providers + `none`/`off`,
+`filename=<name>`, `highlight=1,4,8`):
+
+- **`@playground` block tag** on an `@example` (requires
+  `tags.allowUnknownTags: true`):
+
+  ```js
+  /**
+   * @example
+   * const out = resize(img, 200);
+   * @playground codepen jsfiddle filename=resize.js highlight=1
+   */
+  ```
+
+- **` ```js playground … ` fence** — in the `docs` directory + Markdown tutorials.
+- **`<playground …>` container** — works everywhere incl. README/HTML tutorials
+  (the fence form's meta is stripped in README; the container survives). Same
+  blank-line rule as `<steps>`/`<tabs>`.
+
+A bare prose `playground` offers all providers (prose has no site-wide
+`providers` default). v1 limitation: per-provider **options** are site-wide — an
+example/fence picks *which* providers, not their options.
+
 ## Custom doc-comment tags
 
 All three are **unknown tags** → require `tags.allowUnknownTags: true` in
@@ -136,6 +180,7 @@ All three are **unknown tags** → require `tags.allowUnknownTags: true` in
   `@module`/`@class` in its kind section. When both are present,
   `@category … order=` wins over a standalone `@order`.
 - **`@iframe`** — see [Embeds](#embeds) above.
+- **`@playground`** — see [Playground](#playground-open-in) above.
 
 See [content-and-sidebar.md](content-and-sidebar.md) for how `@category`/`@order`
 feed the sidebar.

@@ -108,7 +108,7 @@ you mean?" संकेत के साथ) और build करता रहत
 | `includeFilesListInHomepage` | — | हटाया गया | Source Files section files सूचीबद्ध करता है। |
 | `meta` | — | हटाया गया | कोई custom `<meta>` injection नहीं। |
 | `search` | — | हटाया गया | हमेशा-on fuzzy search + वैकल्पिक Pagefind। |
-| `codepen` | — | हटाया गया | [`@iframe`](/authoring/embeds) embeds इस्तेमाल करें। |
+| `codepen` | — | हटाया गया | [`@iframe`](/components/embeds) embeds इस्तेमाल करें। |
 | `static_dir` | — | हटाया गया | JSDoc की अपनी static-file config इस्तेमाल करें। |
 | `footer` | — | हटाया गया | `siteName` / `pkg` से derive होता है। |
 | `exclude_inherited`, `displayModuleHeader`, `sort`, `shouldRemoveScrollbarStyle` | — | हटाया गया | कोई समतुल्य नहीं। |
@@ -178,7 +178,7 @@ Migration एक upgrade भी है। एक बार v5 पर आने �
 
 - [**अपने API के साथ Prose guides**](/guides/combine-guides-and-api) — `docs` +
   `docGroups`, वही pipeline जो यह site इस्तेमाल करती है।
-- [**Authoring primitives**](/authoring/callouts) — comments और prose में callouts,
+- [**Authoring primitives**](/components/callouts) — comments और prose में callouts,
   steps, tabs, और live embeds।
 - [**Sidebar structure**](/guides/structure-your-sidebar) — `@category` / `@order`
   tags, `clubSidebarItems`, `menu`।

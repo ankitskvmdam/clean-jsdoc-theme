@@ -155,6 +155,6 @@ tags on your symbols for finer control. That's its own topic —
 
 - Add hand-written guides alongside the reference:
   [Combine guides + API](/guides/combine-guides-and-api).
-- Custom source tags (`@category`, `@order`): [Custom tags](/authoring/custom-tags).
+- Custom source tags (`@category`, `@order`): [Custom tags](/components/overview).
 - Every option in detail: [Configuration](/theme/configuration).
 - The package internals: [Packages](/#the-packages).

@@ -210,6 +210,35 @@ export const embed = (spec: EmbedSpec): MdxJsxFlowElement => {
 };
 
 /**
+ * A code playground — rang's `Playground` context wrapper emitted as an MDX JSX
+ * element (`<Playground …>` wrapping a single fenced `code` child). Like
+ * `callout`, the capitalized name routes it through the `components` map, and
+ * `mdxJsxToMarkdown` (wired in `mdx.ts`) serializes the attributes + re-serializes
+ * the code child as a real fence — so Shiki still highlights it and the LLM `.md`
+ * keeps a clean fenced block under a small wrapper.
+ *
+ * Attributes (each omitted when empty): `providers` (space-joined provider ids
+ * driving the "Open Code in" dropdown), `filename` (header label), and
+ * `highlight` (comma-joined 1-based line numbers).
+ */
+export const playground = (
+  opts: { providers: readonly string[]; filename?: string; highlight?: readonly number[] },
+  child: Code
+): MdxJsxFlowElement => {
+  const attributes: MdxJsxAttribute[] = [];
+  if (opts.providers.length > 0) {
+    attributes.push({ type: 'mdxJsxAttribute', name: 'providers', value: opts.providers.join(' ') });
+  }
+  if (opts.filename) {
+    attributes.push({ type: 'mdxJsxAttribute', name: 'filename', value: opts.filename });
+  }
+  if (opts.highlight && opts.highlight.length > 0) {
+    attributes.push({ type: 'mdxJsxAttribute', name: 'highlight', value: opts.highlight.join(',') });
+  }
+  return { type: 'mdxJsxFlowElement', name: 'Playground', attributes, children: [child] };
+};
+
+/**
  * A source-location caption — rang's `SourceLink` emitted as a self-closing MDX
  * JSX element (`<SourceLink href="…" label="…" />`). Capitalized so MDX routes
  * it through the `components` map (same round-trip as `callout`/`embed`); the

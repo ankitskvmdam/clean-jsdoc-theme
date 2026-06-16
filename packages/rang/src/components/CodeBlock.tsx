@@ -1,6 +1,9 @@
 import type { ComponentChildren, VNode } from 'preact';
-import { isValidElement } from 'preact';
+import { cloneElement, isValidElement } from 'preact';
+import { useTranslation } from '@clean-jsdoc-theme/bhasha';
 import { CopyBtn } from './CopyBtn';
+import { PlaygroundMenu } from './PlaygroundMenu';
+import { usePlayground } from './Playground';
 import { cx, textContent, type BaseProps } from './mdx-utils';
 
 interface CodeVNodeProps {
@@ -35,10 +38,39 @@ export interface CodeBlockProps {
 }
 
 /**
+ * Mark the `highlight`ed lines of a Shiki-rendered `<code>`. Shiki wraps each
+ * source line in a `<span class="line">` (separated by `"\n"` text nodes), so we
+ * count element children and clone the ones whose 1-based index is requested,
+ * tagging them with a `data-highlighted` marker. The tint colour + full-width
+ * bleed come entirely from dwar's CSS layer (keyed off the attribute, using
+ * `--clean-code-highlight-bg`), so the highlight stays visible in both themes.
+ * Non-element nodes (the `"\n"` separators) pass through untouched. A no-op when
+ * `lines` is empty.
+ */
+function highlightLines(children: ComponentChildren, lines: readonly number[]): ComponentChildren {
+  if (lines.length === 0) return children;
+  const want = new Set(lines);
+  const nodes = Array.isArray(children) ? children : [children];
+  let lineNo = 0;
+  return nodes.map((child) => {
+    if (!isValidElement(child)) return child;
+    lineNo += 1;
+    if (!want.has(lineNo)) return child;
+    return cloneElement(child as VNode<Record<string, unknown>>, {
+      'data-highlighted': '',
+    });
+  });
+}
+
+/**
  * The single block-code renderer. It is the MDX `pre` component (handles a
  * `<code>` child + Shiki's class/style) and also serves standalone / `CodeTabs`
- * use via a raw `code` string + `lang`. Owns the bordered wrapper, the hover
- * copy button, and the `copy-btn` island marker that dwar's loader hydrates.
+ * use via a raw `code` string + `lang`. In bordered mode it owns the card + a
+ * header bar (a `CODE`/filename label on the left; the copy control and, when a
+ * `<Playground>` wrapper supplies providers, the "Open Code in" dropdown on the
+ * right). The `copy-btn` / `playground` island markers dwar's loader hydrates
+ * live in that header. Unbordered mode (e.g. `CodeTabs` panels) keeps the old
+ * borderless body with a floating hover copy button.
  */
 export function CodeBlock({
   code,
@@ -50,6 +82,8 @@ export function CodeBlock({
   class: klass,
   style,
 }: CodeBlockProps) {
+  const { t } = useTranslation();
+  const pg = usePlayground();
   const codeVNode = isValidElement(children) ? (children as VNode<CodeVNodeProps>) : null;
 
   // Code-less <pre> (rare): render plainly, with no copy button.
@@ -62,7 +96,8 @@ export function CodeBlock({
   }
 
   // MDX mode: unwrap the <code> vnode. Standalone mode: use the raw string.
-  const content = codeVNode ? codeVNode.props?.children : code;
+  const rawContent = codeVNode ? codeVNode.props?.children : code;
+  const content = codeVNode ? highlightLines(rawContent, pg?.highlight ?? []) : rawContent;
   const codeClass = codeVNode
     ? cx(codeVNode.props?.className ?? codeVNode.props?.class) || undefined
     : lang
@@ -71,32 +106,66 @@ export function CodeBlock({
   const preClass = cx(className ?? klass);
   const text = codeVNode ? textContent(children) : (code ?? '');
 
-  return (
-    <div
-      class={
-        bordered
-          ? 'group relative my-4 overflow-hidden rounded-2xl border border-(--clean-border) bg-background'
-          : 'group relative'
-      }
+  const pre = (
+    <pre
+      class={`m-0 overflow-x-auto p-4 text-sm leading-relaxed ${preClass}`.trimEnd()}
+      style={style as never}
+      tabIndex={0}
     >
-      {showCopy && text && (
-        // `data-island="copy-btn"` marks this for dwar's loader to hydrate. The
-        // chunk derives its `text` from the sibling <pre>, so no per-page props
-        // payload is needed (unlike the layout islands).
-        <div
-          data-island="copy-btn"
-          class="absolute right-2 top-2 z-10 opacity-0 transition-opacity group-hover:opacity-100"
-        >
-          <CopyBtn text={text} />
+      <code class={codeClass}>{content}</code>
+    </pre>
+  );
+
+  // Unbordered (e.g. CodeTabs panels): keep the borderless body + floating copy
+  // button — the outer container owns the chrome, so no header here.
+  if (!bordered) {
+    return (
+      <div class="group relative">
+        {showCopy && text && (
+          <div
+            data-island="copy-btn"
+            class="absolute right-2 top-2 z-10 opacity-0 transition-opacity group-hover:opacity-100"
+          >
+            <CopyBtn text={text} />
+          </div>
+        )}
+        {pre}
+      </div>
+    );
+  }
+
+  const providers = pg?.providers ?? [];
+  const label = pg?.filename || t('chrome.code.label');
+
+  return (
+    // `data-code-card` lets dwar's island loader find the sibling <pre> for the
+    // header's `copy-btn` / `playground` markers (they read the code from it).
+    <div
+      data-code-card
+      class="my-4 overflow-hidden rounded-2xl border border-(--clean-border) bg-background"
+    >
+      <div class="flex items-center justify-between gap-1 border-b border-(--clean-border) bg-(--clean-code-header-bg) p-1">
+        <span class="truncate pl-1 font-mono text-[10px] font-medium tracking-wide text-(--clean-code-header-fg) uppercase">
+          {label}
+        </span>
+        <div class="flex shrink-0 items-center gap-1">
+          {/* `data-island="copy-btn"` marks this for dwar's loader to hydrate;
+              the chunk derives `text` from the sibling <pre>, so no props payload. */}
+          {showCopy && text && (
+            <div data-island="copy-btn">
+              <CopyBtn text={text} />
+            </div>
+          )}
+          {/* `data-island="playground"`: the loader reads `data-providers` + the
+              sibling <pre> + the page payload, then hydrates PlaygroundMenu. */}
+          {providers.length > 0 && (
+            <div data-island="playground" data-providers={providers.join(' ')}>
+              <PlaygroundMenu providers={providers} />
+            </div>
+          )}
         </div>
-      )}
-      <pre
-        class={`m-0 overflow-x-auto p-4 text-sm leading-relaxed ${preClass}`.trimEnd()}
-        style={style as never}
-        tabIndex={0}
-      >
-        <code class={codeClass}>{content}</code>
-      </pre>
+      </div>
+      {pre}
     </div>
   );
 }

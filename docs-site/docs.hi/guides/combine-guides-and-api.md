@@ -174,5 +174,5 @@ tutorials name द्वारा — देखें
 ## आगे कहाँ जाएँ
 
 - merged sidebar को बारीकी से ट्यून करें: [Structure your sidebar](/guides/structure-your-sidebar)।
-- symbols पर group/order tags: [Custom tags](/authoring/custom-tags)।
+- symbols पर group/order tags: [Custom tags](/components/overview)।
 - हर option विस्तार से: [Configuration](/theme/configuration)।

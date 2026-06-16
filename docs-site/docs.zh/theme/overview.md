@@ -67,9 +67,9 @@ order: 1
   [API 参考](/guides/build-an-api-reference)、
   [将两者结合](/guides/combine-guides-and-api)，以及
   [构建你的侧边栏结构](/guides/structure-your-sidebar)。
-- **创作** — [callout](/authoring/callouts)、[step](/authoring/steps)、
-  [tab](/authoring/tabs)、[embed](/authoring/embeds)，以及
-  [自定义标签](/authoring/custom-tags)，你可以在正文和文档注释中使用它们。
+- **创作** — [callout](/components/callouts)、[step](/components/steps)、
+  [tab](/components/tabs)、[embed](/components/embeds)，以及
+  [自定义标签](/components/overview)，你可以在正文和文档注释中使用它们。
 - **[包](/#the-packages)** — 这些构建模块，适合想要理解
   或扩展内部实现的你。
 

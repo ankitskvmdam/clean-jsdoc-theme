@@ -127,8 +127,8 @@ script click संभालता है (देखें
 के styled renderers पर map करता है, साथ ही उन **capitalized** components पर जिन्हें
 setu उत्सर्जित करता है ताकि वे map से route हों: `Callout`, `Embed`, `SourceLink`,
 `MemberMeta`, `MemberHeading`, `Steps` / `Step`, और `Tabs` / `Tab`। (इनके
-user-facing पहलू के लिए देखें [Callouts](/authoring/callouts) और
-[Tabs](/authoring/tabs)।)
+user-facing पहलू के लिए देखें [Callouts](/components/callouts) और
+[Tabs](/components/tabs)।)
 
 ## dwar इसका उपभोग कैसे करता है
 

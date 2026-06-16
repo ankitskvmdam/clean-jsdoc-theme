@@ -161,7 +161,7 @@ opts: {
   Markdown 加入同一个站点。
 - **[Structure your sidebar](/guides/structure-your-sidebar)** —— `@category`、
   `@order`，以及 sidebar 选项。
-- **[Authoring](/authoring/callouts)** —— callouts、steps、tabs 以及 embeds，
+- **[Authoring](/components/callouts)** —— callouts、steps、tabs 以及 embeds，
   你可以在 comments 和正文中使用它们。
 - **[Localize your docs](/guides/localize-your-docs)** —— 以多种语言发布站点。
 - 偏好 TypeScript？请参阅 **[TypeDoc Getting Started](/theme/typedoc-getting-started)** ——

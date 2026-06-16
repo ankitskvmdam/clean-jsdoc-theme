@@ -50,8 +50,8 @@ skills をサポートする agents にそのまま落とし込めますが、�
 
 `clean-jsdoc-theme` は default の JSDoc template ではありません。一般的な「JSDoc
 theme」の知識から作業する assistant は細部を間違えます — [`plugins/markdown`](/theme/jsdoc-getting-started)
-が必須であることを忘れたり、custom tags に [`allowUnknownTags`](/authoring/custom-tags)
-が必要なことを見落としたり、[`@category`](/authoring/custom-tags) の path を nest
+が必須であることを忘れたり、custom tags に [`allowUnknownTags`](/components/overview)
+が必要なことを見落としたり、[`@category`](/components/overview) の path を nest
 するのは `/` だけなのに space が nest すると思い込んだりします。
 
 > [!TIP]
@@ -152,4 +152,4 @@ update を提案します。theme を upgrade した後は、新しい options �
 - [JSDoc Getting Started](/theme/jsdoc-getting-started) ·
   [TypeDoc Getting Started](/theme/typedoc-getting-started) — build をセットアップ。
 - [Structure your sidebar](/guides/structure-your-sidebar) と
-  [Authoring](/authoring/callouts) — skill が凝縮している深掘り。
+  [Authoring](/components/callouts) — skill が凝縮している深掘り。

@@ -52,10 +52,14 @@ export interface CleanJsdocThemeBlock {
   copyPage?: unknown;
   /** Prev/next page pager config (boolean or `{ enabled? }`). */
   pageNav?: unknown;
+  /** Code-playground config (boolean or `{ enableForAllExamples?, providers?, codepen?, jsfiddle?, codesandbox? }`). */
+  playground?: unknown;
   /** Custom AI prompt for the copy-page button. */
   aiPrompt?: unknown;
   /** Custom footer — inline HTML string OR `{ file }` (read from disk by the bridge). */
   footer?: unknown;
+  /** Favicon — a path to an image file the bridge copies + links as `<link rel="icon">`. */
+  favicon?: unknown;
   /** Site-wide custom `<meta>` tags — an array of attribute maps. */
   meta?: unknown;
   /** Escalate validation errors (bad font / unknown key) to a hard failure. */
@@ -75,7 +79,7 @@ export function declareThemeOption(app: Application): void {
     name: OPTION_NAME,
     help:
       'clean-jsdoc-theme options (siteName, fonts, sectionOrder, menu, ' +
-      'clubSidebarItems, copyPage, pageNav, aiPrompt, footer, meta, strict).',
+      'clubSidebarItems, copyPage, pageNav, playground, aiPrompt, footer, favicon, meta, strict).',
     type: ParameterType.Object,
     defaultValue: {},
   };

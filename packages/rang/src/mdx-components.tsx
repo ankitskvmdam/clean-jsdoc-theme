@@ -12,6 +12,7 @@ import type { ComponentType } from 'preact';
 import { makeHeading } from './components/mdx-utils';
 import { CodeBlock as MdxPre, Code as MdxCode } from './components/CodeBlock';
 import { Embed } from './components/Embed';
+import { Playground } from './components/Playground';
 import { Steps, Step } from './components/Steps';
 import { Tabs, Tab } from './components/Tabs';
 import {
@@ -63,6 +64,12 @@ export const defaultMdxComponents: Record<string, ComponentType<any>> = {
   // self-closing `<Embed src="…" …/>`. Capitalized so MDX routes it here; the
   // component renders the `data-island="embed"` marker dwar's loader hydrates.
   Embed,
+  // setu emits a playground-enabled code block as `<Playground providers …>`
+  // wrapping a fenced `code` (the `@playground` tag / prose fence / <playground>
+  // container). Capitalized so MDX routes it here; the component is an SSR-only
+  // context carrier — the nested CodeBlock reads it for the filename header,
+  // line highlight, and the "Open Code in" dropdown.
+  Playground,
   // setu emits the per-member/class "Source: file:line" caption as
   // `<SourceLink href="…" label="…" />`. Capitalized so MDX routes it here; the
   // component renders a small 12px muted caption with a `file:line` link.

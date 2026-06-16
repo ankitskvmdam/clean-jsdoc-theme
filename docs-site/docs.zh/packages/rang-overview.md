@@ -124,7 +124,7 @@ HTML 的每一个字节——[`Layout`](https://github.com/ankitskvmdam/clean-js
 的带样式渲染器上，外加 setu 发出的那些**首字母大写**组件，以便它们也经由该映射进行路由：
 `Callout`、`Embed`、`SourceLink`、`MemberMeta`、`MemberHeading`、`Steps` /
 `Step`，以及 `Tabs` / `Tab`。（关于这些组件面向用户的一面，参见
-[Callouts](/authoring/callouts) 和 [Tabs](/authoring/tabs)。）
+[Callouts](/components/callouts) 和 [Tabs](/components/tabs)。）
 
 ## dwar 如何消费它
 

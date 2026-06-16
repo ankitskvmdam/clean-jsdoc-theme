@@ -14,6 +14,12 @@ import { bucketClassMembers, getContainerView, type ContainerView } from './clas
 import { filterDoclets } from './doclet';
 import { containerViewToMdast } from './mdast/class-view';
 import type { DocletBlocksOptions } from './mdast/doclet';
+import {
+  KNOWN_PROVIDERS,
+  parsePlaygroundSpec,
+  resolvePlaygroundOpts,
+  type PlaygroundOpts,
+} from './playground';
 import { resolveLinkTags } from './mdast/link-tags';
 import { resolveSlotText } from './slots';
 import { toMdx } from './mdx';
@@ -104,6 +110,40 @@ function readOrder(doclet: { tags?: { title?: string; text?: string }[] }): numb
   if (!text) return undefined;
   const num = Number(text);
   return Number.isFinite(num) ? num : undefined;
+}
+
+/** Site-wide playground enablement passed into {@link generateSite}. */
+export interface PlaygroundSiteConfig {
+  /** Opt every `@example` in (using {@link PlaygroundSiteConfig.providers}). */
+  enableForAllExamples?: boolean;
+  /** Default provider set + order for a bare `@playground` / `enableForAllExamples`. */
+  providers?: PlaygroundOpts['providers'];
+}
+
+/**
+ * Build the per-doclet `@playground` resolver from the site-wide config — the
+ * §3.3 resolution table. A doclet's `@playground` tag (parsed via
+ * {@link parsePlaygroundSpec}) wins: an explicit provider list is used as-is, a
+ * bare tag falls back to the default set, and `none`/`off` opts out (but still
+ * wraps for a `filename`/`highlight`). With no tag, `enableForAllExamples` opts
+ * the example in with the default set; otherwise no wrapper. Returns `undefined`
+ * when there is no config at all (feature off → byte-identical output).
+ */
+export function makePlaygroundResolver(
+  config: PlaygroundSiteConfig | undefined
+): ((doclet: TDoclet) => PlaygroundOpts | null) | undefined {
+  if (!config) return undefined;
+  const defaults = config.providers && config.providers.length > 0 ? config.providers : [...KNOWN_PROVIDERS];
+  const enableAll = config.enableForAllExamples ?? false;
+  return (doclet: TDoclet) => {
+    const tag = doclet.tags?.find((t) => t.title === 'playground');
+    if (tag) {
+      const raw = typeof tag.value === 'string' ? tag.value : (tag.text ?? '');
+      return resolvePlaygroundOpts(parsePlaygroundSpec(raw), defaults);
+    }
+    if (enableAll) return { providers: [...defaults], highlight: [] };
+    return null;
+  };
 }
 
 /** Concatenate the text content of a heading node's inline children. */
@@ -217,6 +257,8 @@ interface RenderOptions {
   resolveTutorial?: DocletBlocksOptions['resolveTutorial'];
   /** Translatable-prose slot resolver (collect + per-locale translate). */
   slots?: DocletBlocksOptions['slots'];
+  /** Per-doclet `@playground` resolver (see {@link makePlaygroundResolver}). */
+  playgroundFor?: DocletBlocksOptions['playgroundFor'];
 }
 
 /**
@@ -233,9 +275,15 @@ export function renderContainerPage(
   kind: PageKind,
   longname: string,
   slug: string,
-  { sourceLink, resolveLink, resolveTutorial, slots }: RenderOptions = {}
+  { sourceLink, resolveLink, resolveTutorial, slots, playgroundFor }: RenderOptions = {}
 ): Page {
-  const tree = containerViewToMdast(view, { sourceLink, resolveLink, resolveTutorial, slots });
+  const tree = containerViewToMdast(view, {
+    sourceLink,
+    resolveLink,
+    resolveTutorial,
+    slots,
+    playgroundFor,
+  });
   if (resolveLink) resolveLinkTags(tree, resolveLink);
 
   const title = view.doclet.name ?? view.doclet.longname ?? longname;

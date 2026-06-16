@@ -103,6 +103,8 @@ export const EN_CHROME = {
     next: 'Next',
   },
   code: {
+    /** Header label shown on a code block when it has no `filename`. */
+    label: 'CODE',
     /** Accessible label for the code-variant tablist. */
     variantsLabel: 'Code variants',
     /** Copy-to-clipboard button accessible label (idle). */
@@ -147,6 +149,12 @@ export const EN_CHROME = {
   language: {
     /** Accessible label + tooltip for the language switcher. */
     label: 'Language',
+  },
+  playground: {
+    /** Trigger label + menu accessible label for the "open in playground" dropdown. */
+    openIn: 'Open Code in',
+    /** A single playground provider menu item, carrying the provider name. */
+    openInProvider: 'Open in {provider}',
   },
 } as const;
 

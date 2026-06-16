@@ -79,6 +79,15 @@ export type { CodeViewerProps } from './components/CodeViewer';
 export { CopyBtn } from './components/CopyBtn';
 export type { CopyBtnProps } from './components/CopyBtn';
 
+export { SimpleIcon } from './components/SimpleIcon';
+export type { SimpleIconProps } from './components/SimpleIcon';
+
+export { Playground, PlaygroundContext, usePlayground } from './components/Playground';
+export type { PlaygroundProps, PlaygroundContextValue } from './components/Playground';
+
+export { PlaygroundMenu } from './components/PlaygroundMenu';
+export type { PlaygroundMenuProps } from './components/PlaygroundMenu';
+
 export { CopyPageButton } from './components/CopyPageButton';
 export type { CopyPageButtonProps } from './components/CopyPageButton';
 

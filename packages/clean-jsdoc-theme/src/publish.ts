@@ -20,7 +20,14 @@ import type {
   ThemeColors,
   ThemeConfig,
 } from '@clean-jsdoc-theme/dwar';
-import type { DocInput, MenuItem, SourceFileInput, TutorialInput } from '@clean-jsdoc-theme/setu';
+import type {
+  DocInput,
+  MenuItem,
+  PlaygroundSiteConfig,
+  SourceFileInput,
+  TutorialInput,
+} from '@clean-jsdoc-theme/setu';
+import type { PlaygroundProvider } from '@clean-jsdoc-theme/utils';
 import { writeOutputFiles } from './write-output-files';
 
 // JSDoc's tutorial source-type enum (jsdoc/lib/jsdoc/tutorial.js): HTML = 1,
@@ -293,6 +300,16 @@ interface JSDocOpts {
    */
   pageNav?: unknown;
   /**
+   * Code-playground config (`jsdoc.json` `"opts": { "playground": … }`). Either
+   * a boolean (`true` turns it on with defaults; absent/`false` = off) or an
+   * object `{ enableForAllExamples?, providers?, codepen?, jsfiddle?,
+   * codesandbox? }`. `providers` picks which of CodePen/JSFiddle/CodeSandbox an
+   * `@example` (or prose code block) can be opened in; the per-provider records
+   * hold their site-wide runtime options. When set, `@playground` tags are
+   * honored; when off, they're ignored (byte-identical output).
+   */
+  playground?: unknown;
+  /**
    * Custom site footer (`jsdoc.json` `"opts": { "footer": … }`). Either an
    * inline HTML string (v4 parity) or `{ "file": "./footer.html" }` (read from
    * disk by the bridge). Rendered into rang's footer slot in place of the
@@ -300,6 +317,14 @@ interface JSDocOpts {
    * Omit for the default footer.
    */
   footer?: unknown;
+  /**
+   * Favicon (`jsdoc.json` `"opts": { "favicon": "./icon.svg" }`). A path to an
+   * image file (`.svg`/`.png`/`.ico`/…), relative to the working dir. The bridge
+   * copies it to a content-hashed `_assets/` asset and emits a `<link rel="icon">`
+   * in every page's `<head>`. Needed for an SVG favicon (browsers only
+   * auto-discover a root `favicon.ico`). Omit for none.
+   */
+  favicon?: unknown;
   /**
    * Site-wide custom `<meta>` tags (`jsdoc.json` `"opts": { "meta": [...] }`). An
    * array of attribute maps — each object's key/value pairs become one `<meta>`
@@ -446,6 +471,9 @@ function resolveTheme(
     typeof opts.aiPrompt === 'string' && opts.aiPrompt.trim() ? opts.aiPrompt.trim() : undefined;
   const copyPage = normalizeCopyPage(opts.copyPage);
   const pageNav = normalizePageNav(opts.pageNav);
+  // Only the runtime (per-provider options) slice belongs in the theme; the
+  // enablement slice goes to setu (see the siteOptions assembly).
+  const playground = normalizePlayground(opts.playground);
 
   // Color overrides merge per-key over the default palettes, so supplying only
   // `colors.bg` keeps every other default color. `darkColors` layers over the
@@ -459,6 +487,7 @@ function resolveTheme(
     ...(aiPrompt ? { aiPrompt } : {}),
     ...(copyPage ? { copyPage } : {}),
     ...(pageNav ? { pageNav } : {}),
+    ...(playground ? { playground: playground.theme } : {}),
     tokens: {
       ...defaultTheme.tokens,
       colors: { ...defaultTheme.tokens.colors, ...(colors ?? {}) },
@@ -592,6 +621,36 @@ export async function resolveFooter(raw: unknown): Promise<string | undefined> {
     }
   }
   return undefined;
+}
+
+/**
+ * Resolve `opts.favicon` (a file path) into a served `_assets/` href + the file
+ * to write — the bridge is the I/O layer, so dwar only sees the final URL and
+ * `render()` stays pure. The asset name is content-hashed (cache-busted) unless
+ * `hash` is off, and the source extension is preserved so dwar can derive the
+ * `<link>` `type`. A missing/unreadable file is warned about and dropped
+ * (resilient, like the logo/custom-asset paths). Exported for testing.
+ */
+export async function resolveFavicon(
+  raw: unknown,
+  hash: boolean,
+  hrefForServed: (servedPath: string) => string
+): Promise<{ href: string; files: OutputFile[] } | undefined> {
+  if (typeof raw !== 'string' || raw.trim().length === 0) return undefined;
+  const trimmed = raw.trim();
+  let bytes: Buffer;
+  try {
+    bytes = await readFile(resolvePath(trimmed));
+  } catch {
+    console.warn(`clean-jsdoc-theme: could not read favicon ('${trimmed}'); omitting it.`);
+    return undefined;
+  }
+  const ext = extname(trimmed) || '.ico';
+  const base = basename(trimmed, extname(trimmed)) || 'favicon';
+  const name = hash ? `${base}.${contentHash(bytes)}${ext}` : `${base}${ext}`;
+  const servedPath = `_assets/${name}`;
+  // The OutputFile `path` stays relative; only the served href gets the prefix.
+  return { href: hrefForServed(servedPath), files: [{ path: servedPath, contents: bytes }] };
 }
 
 /** Attributes that identify a `<meta>` tag (so an entry must carry at least one). */
@@ -950,8 +1009,75 @@ export function normalizePageNav(raw: unknown): PageNavConfig | undefined {
   return typeof enabled === 'boolean' ? { enabled } : undefined;
 }
 
+/** Valid code-playground providers (mirrors utils' `PlaygroundProvider`). */
+const PLAYGROUND_PROVIDERS: readonly PlaygroundProvider[] = ['codepen', 'jsfiddle', 'codesandbox'];
+
+/** A site-wide per-provider options record, or `undefined` for a non-object. */
+function playgroundOptionRecord(raw: unknown): Record<string, unknown> | undefined {
+  return raw && typeof raw === 'object' && !Array.isArray(raw)
+    ? (raw as Record<string, unknown>)
+    : undefined;
+}
+
+/**
+ * Validate `opts.playground` into its two consumer slices, or `undefined` when
+ * the feature is off (absent or `false`). `playground: true` / `{}` turns it on
+ * with defaults — every provider available, opt-in per `@playground`. The
+ * **`site`** slice feeds setu's `@playground` resolver (enablement + provider
+ * selection); the **`theme`** slice becomes `ThemeConfig.playground` (the
+ * site-wide per-provider runtime options dwar hands the browser island). Unknown
+ * providers/keys are dropped (lenient, like {@link normalizeCopyPage}). setu
+ * gates on the `site` slice's presence, so returning `undefined` keeps output
+ * byte-identical.
+ */
+export function normalizePlayground(
+  raw: unknown
+): { site: PlaygroundSiteConfig; theme: NonNullable<ThemeConfig['playground']> } | undefined {
+  if (raw == null || raw === false) return undefined;
+  const o = raw === true ? {} : raw;
+  if (typeof o !== 'object' || Array.isArray(o)) return undefined;
+  const obj = o as Record<string, unknown>;
+
+  const site: PlaygroundSiteConfig = {};
+  if (obj.enableForAllExamples === true) site.enableForAllExamples = true;
+  if (Array.isArray(obj.providers)) {
+    const providers: PlaygroundProvider[] = [];
+    for (const p of obj.providers) {
+      if (
+        typeof p === 'string' &&
+        (PLAYGROUND_PROVIDERS as readonly string[]).includes(p) &&
+        !providers.includes(p as PlaygroundProvider)
+      ) {
+        providers.push(p as PlaygroundProvider);
+      }
+    }
+    if (providers.length > 0) site.providers = providers;
+  }
+
+  const theme: NonNullable<ThemeConfig['playground']> = { enabled: true };
+  const codepen = playgroundOptionRecord(obj.codepen);
+  const jsfiddle = playgroundOptionRecord(obj.jsfiddle);
+  const codesandbox = playgroundOptionRecord(obj.codesandbox);
+  if (codepen) theme.codepen = codepen;
+  if (jsfiddle) theme.jsfiddle = jsfiddle;
+  if (codesandbox) theme.codesandbox = codesandbox;
+
+  return { site, theme };
+}
+
 /** The palette keys a user may override under `opts.colors` / `opts.darkColors`. */
-const COLOR_KEYS = ['bg', 'bgMuted', 'fg', 'fgMuted', 'accent', 'accentFg', 'border'] as const;
+const COLOR_KEYS = [
+  'bg',
+  'bgMuted',
+  'fg',
+  'fgMuted',
+  'accent',
+  'accentFg',
+  'border',
+  'codeHeaderBg',
+  'codeHeaderFg',
+  'codeHighlightBg',
+] as const;
 
 /**
  * Validate a user `colors`/`darkColors` object from `jsdoc.json` into a clean
@@ -1563,6 +1689,9 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   const sectionOrder = normalizeSectionOrder(opts.sectionOrder);
   const menu = normalizeMenu(opts.menu);
   const clubSidebarItems = opts.clubSidebarItems === true;
+  // The enablement slice (provider selection + enableForAllExamples) gates setu's
+  // `@playground` handling; the runtime slice is threaded into the theme instead.
+  const playground = normalizePlayground(opts.playground);
 
   const siteOptions = {
     ...(pkg ? { pkg } : {}),
@@ -1576,6 +1705,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
     ...(sectionOrder ? { sectionOrder } : {}),
     ...(menu ? { menu } : {}),
     ...(clubSidebarItems ? { clubSidebarItems } : {}),
+    ...(playground ? { playground: playground.site } : {}),
   };
   // Build mode stamps the locale's API translations in; a normal build doesn't.
   const manifest = await progress.stage('Generating pages', () =>
@@ -1641,6 +1771,10 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   // is read here (the I/O layer) → a resolved string on the theme, so render()
   // stays pure. Unset/empty → default footer.
   const footer = await resolveFooter(opts.footer);
+  // Favicon (v4 parity, restored): the file is copied to a content-hashed
+  // `_assets` asset here (the I/O layer) and dwar emits the `<link rel="icon">`,
+  // so render() stays pure. Hashed like the other custom assets. Unset → none.
+  const favicon = await resolveFavicon(opts.favicon, opts.hashCustomAssets !== false, hrefForServed);
   // Site-wide custom <meta> tags. Validated/normalized here (junk dropped +
   // warned); dwar does the escaping + de-dupe against its head defaults.
   const meta = normalizeMeta(opts.meta);
@@ -1655,6 +1789,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
         ...resolveTheme(opts, siteName, fonts, basePath, buildSpec?.locale),
         ...customAssets.theme,
         ...(footer ? { footer } : {}),
+        ...(favicon ? { favicon: favicon.href } : {}),
         ...(meta ? { meta } : {}),
       },
       destination: absoluteDestination,
@@ -1676,7 +1811,13 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
     })
   );
 
-  const outputFiles = [...result.files, ...logoFiles, ...customAssets.files, ...docImageFiles];
+  const outputFiles = [
+    ...result.files,
+    ...logoFiles,
+    ...customAssets.files,
+    ...docImageFiles,
+    ...(favicon?.files ?? []),
+  ];
   await progress.stage('Writing files', () => writeOutputFiles(absoluteDestination, outputFiles));
 
   // Next.js-style build report: where the files landed, page/asset counts, and

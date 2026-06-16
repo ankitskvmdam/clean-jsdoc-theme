@@ -600,6 +600,49 @@ describe('generateSite — docs', () => {
   });
 });
 
+describe('generateSite — @playground threading (end-to-end)', () => {
+  // A documented global function with an @example and an @playground tag. This
+  // exercises the full path: generateSite opts → makePlaygroundResolver →
+  // renderContainerPage/docletBlocks (the `...options` spread that carries
+  // `playgroundFor`) → examplesBlocks → the <Playground> wrapper in the body.
+  const docletsWithExample = [
+    {
+      kind: 'function',
+      name: 'resize',
+      longname: 'resize',
+      scope: 'global',
+      comment: '/** fn */',
+      description: 'Resize an image.',
+      examples: ['resize(img, 200);'],
+      tags: [{ title: 'playground', text: 'codepen', value: 'codepen' }],
+    },
+  ];
+
+  function globalsBody(manifest: ReturnType<typeof generateSite>): string {
+    const page = manifest.pages.find((p) => p.body.includes('name="resize"'));
+    expect(page).toBeTruthy();
+    return page!.body;
+  }
+
+  it('wraps the example in a <Playground> when a playground config is passed', () => {
+    const manifest = generateSite(makeCollection(docletsWithExample), {
+      playground: { providers: ['codepen'] },
+    });
+    const body = globalsBody(manifest);
+    expect(body).toContain('<Playground');
+    expect(body).toContain('providers="codepen"');
+    expect(body).toContain('resize(img, 200);');
+  });
+
+  it('is byte-identical (no <Playground>) when no playground config is passed', () => {
+    const manifest = generateSite(makeCollection(docletsWithExample));
+    const body = globalsBody(manifest);
+    expect(body).not.toContain('<Playground');
+    // The example still renders as a plain fenced code block.
+    expect(body).toContain('resize(img, 200);');
+  });
+});
+
 describe('generateMdx (legacy wrapper)', () => {
   it('returns one body string per page, matching generateSite', () => {
     const collection = getJSDocTaffyData();

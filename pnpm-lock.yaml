@@ -306,6 +306,9 @@ importers:
       lucide-preact:
         specifier: ^1.17.0
         version: 1.17.0(preact@10.29.2)
+      lz-string:
+        specifier: ^1.5.0
+        version: 1.5.0
       preact:
         specifier: ^10.22.0
         version: 10.29.2

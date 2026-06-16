@@ -13,7 +13,7 @@ order: 4
 
 > [!NOTE]
 > 下面这两个源标签 —— `@category` 和 `@order` —— 在
-> [Custom tags](/authoring/custom-tags) 中有深入的文档说明。本页面讲的是它们（以及
+> [Custom tags](/components/overview) 中有深入的文档说明。本页面讲的是它们（以及
 > config 选项）如何馈入侧边栏；它不会完整地重新记录这些标签的语法。
 
 ## 统一模型
@@ -82,7 +82,7 @@ section** 中的 symbol（一个普通的 `@class`、`@module`、…）定位，
 > [!NOTE]
 > `@category` 和 `@order` 都是 **unknown tags** —— 你的 config 必须设置
 > `tags.allowUnknownTags: true`（本 repo 中的每个示例 config 都设置了）。完整语法见
-> [Custom tags](/authoring/custom-tags)。
+> [Custom tags](/components/overview)。
 
 ## 杠杆 3 —— 嵌套分组（`/`-路径）
 
@@ -209,7 +209,7 @@ frontmatter 结合起来，你就能从上到下掌控整个侧边栏。
 
 ## 接下来去哪里
 
-- `@category` / `@order` 标签参考：[Custom tags](/authoring/custom-tags)。
+- `@category` / `@order` 标签参考：[Custom tags](/components/overview)。
 - 完整的选项列表：[Configuration](/theme/configuration)。
 - 本页面串联起来的两条工作流：
   [Build a guides site](/guides/build-a-guides-site) ·

@@ -152,7 +152,7 @@ localization workflow は、その locales を同じ `cleanJsdocTheme` block 内
   Markdown を追加します。
 - **[Structure your sidebar](/guides/structure-your-sidebar)** — グループ化と順序
   付けのレバー。
-- **[Authoring](/authoring/callouts)** — callouts、steps、tabs、embeds。
+- **[Authoring](/components/callouts)** — callouts、steps、tabs、embeds。
 - **[Localize your docs](/guides/localize-your-docs)** — 複数言語のワークフロー
   (extract は TypeDoc で動作します。localized builds は今のところ JSDoc 専用です)。
 - **[Packages](/#the-packages)** — 共有の `setu → dwar` pipeline (および

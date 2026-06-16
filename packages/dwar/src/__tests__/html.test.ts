@@ -20,6 +20,31 @@ function doc(extra: Record<string, unknown>): string {
   });
 }
 
+describe('renderHtmlDocument — favicon', () => {
+  it('omits the icon link when no favicon is set', () => {
+    expect(doc({})).not.toContain('rel="icon"');
+  });
+
+  it('emits a typed <link rel="icon"> for an SVG favicon', () => {
+    const html = doc({ favicon: '/docs/_assets/logo.abc123.svg' });
+    expect(html).toContain(
+      '<link rel="icon" type="image/svg+xml" href="/docs/_assets/logo.abc123.svg" />'
+    );
+  });
+
+  it('derives the type from the extension (.png / .ico)', () => {
+    expect(doc({ favicon: '/i.png' })).toContain('<link rel="icon" type="image/png" href="/i.png" />');
+    expect(doc({ favicon: '/i.ico' })).toContain(
+      '<link rel="icon" type="image/x-icon" href="/i.ico" />'
+    );
+  });
+
+  it('omits the type for an unknown extension but still links it', () => {
+    const html = doc({ favicon: '/i.weird' });
+    expect(html).toContain('<link rel="icon" href="/i.weird" />');
+  });
+});
+
 describe('renderHtmlDocument — custom CSS/JS', () => {
   it('omits custom tags entirely when nothing is provided', () => {
     const html = doc({});

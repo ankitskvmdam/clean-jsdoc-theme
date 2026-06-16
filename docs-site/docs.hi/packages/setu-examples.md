@@ -131,7 +131,7 @@ type पर मिलते हैं।
   section के भीतर।
   [`generate-site.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/generate-site.ts)
   में parse किया जाता है। देखें [अपना sidebar structure करें](/guides/structure-your-sidebar)
-  और [Custom tags](/authoring/custom-tags)।
+  और [Custom tags](/components/overview)।
 - **README → home.** आपका README (JSDoc/TypeDoc द्वारा HTML में rendered) slug `''`
   पर home page बन जाता है,
   [`buildReadmePage`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/guide-view.ts)

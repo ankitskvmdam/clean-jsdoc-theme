@@ -164,6 +164,6 @@ Namespaces、Mixins、Interfaces、Typedefs、Globals、…）。
 
 - reference の隣に手書きの guides を追加する:
   [Combine guides + API](/guides/combine-guides-and-api)。
-- カスタム source tags（`@category`、`@order`）: [Custom tags](/authoring/custom-tags)。
+- カスタム source tags（`@category`、`@order`）: [Custom tags](/components/overview)。
 - すべての option を詳しく: [Configuration](/theme/configuration)。
 - package の内部: [Packages](/#the-packages)。

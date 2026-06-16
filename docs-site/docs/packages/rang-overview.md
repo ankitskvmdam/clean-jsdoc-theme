@@ -127,7 +127,7 @@ and
 plus the **capitalized** components setu emits so they route through the map:
 `Callout`, `Embed`, `SourceLink`, `MemberMeta`, `MemberHeading`, `Steps` /
 `Step`, and `Tabs` / `Tab`. (For the user-facing side of these, see
-[Callouts](/authoring/callouts) and [Tabs](/authoring/tabs).)
+[Callouts](/components/callouts) and [Tabs](/components/tabs).)
 
 ## How dwar consumes it
 

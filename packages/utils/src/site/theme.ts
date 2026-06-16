@@ -18,6 +18,12 @@ export interface ThemeColors {
   accent: string;
   accentFg: string;
   border: string;
+  /** Code-block header strip background. Optional — defaults to a neutral surface. */
+  codeHeaderBg?: string;
+  /** Code-block header label text (the `CODE`/filename label). Optional. */
+  codeHeaderFg?: string;
+  /** Highlighted code-line background (`@playground` / `highlight=`). Optional. */
+  codeHighlightBg?: string;
 }
 
 /** Visual design tokens consumed by both Tailwind generation and runtime themes. */
@@ -86,6 +92,28 @@ export interface PageNavConfig {
   enabled?: boolean;
 }
 
+/** The code-playground providers an `@example` / prose fence can be opened in. */
+export type PlaygroundProvider = 'codepen' | 'jsfiddle' | 'codesandbox';
+
+/**
+ * Code-playground configuration. `enabled` gates the feature; the per-provider
+ * records are the **site-wide** runtime options forwarded to each provider when
+ * a code block is opened (CodePen `js_external`/`js_pre_processor`/…, JSFiddle
+ * `resources`/`wrap`, CodeSandbox dependencies). They're passed verbatim to the
+ * browser island via dwar's page payload — there are no per-example overrides at
+ * this layer (a block only picks *which* providers).
+ */
+export interface PlaygroundConfig {
+  /** Whether the playground feature is active at all. */
+  enabled?: boolean;
+  /** Site-wide CodePen "define" prefill options. */
+  codepen?: Record<string, unknown>;
+  /** Site-wide JSFiddle post options. */
+  jsfiddle?: Record<string, unknown>;
+  /** Site-wide CodeSandbox define options. */
+  codesandbox?: Record<string, unknown>;
+}
+
 /**
  * Component override: either a Preact component, or a file path (string) that
  * dwar will compile + import at render time. See Q8.
@@ -114,6 +142,15 @@ export interface ThemeConfig {
   /** Base path under which the site is served (e.g. `/docs/`). */
   basePath?: string;
   /**
+   * Favicon URL, emitted as `<link rel="icon">` in every page's `<head>`. This
+   * is the **resolved** href: the opts layer accepts a file path, but the bridge
+   * copies it to a content-hashed `_assets/` asset and threads only the served
+   * URL here, so `render()` stays pure (no file I/O). dwar derives the link
+   * `type` from the extension (`.svg` → `image/svg+xml`, …). Omit for none — an
+   * SVG favicon needs this link (browsers only auto-discover a root `favicon.ico`).
+   */
+  favicon?: string;
+  /**
    * Custom prompt for the copy-page button's "Open in ChatGPT/Claude/Perplexity"
    * actions. `{siteName}`, `{url}`, and `{mdUrl}` (the page's raw Markdown link)
    * placeholders are substituted at click time. Only the prompt + links are sent
@@ -128,6 +165,14 @@ export interface ThemeConfig {
    * `{ enabled: false }` to opt out.
    */
   pageNav?: PageNavConfig;
+  /**
+   * Code-playground config: which providers a code block can be opened in
+   * (CodePen / JSFiddle / CodeSandbox) plus their site-wide runtime options.
+   * dwar serializes this into a per-page JSON payload the `playground` island
+   * reads — so `render()` stays pure (it only serializes config it's handed).
+   * Omit (or `{ enabled: false }`) to leave the feature off.
+   */
+  playground?: PlaygroundConfig;
   /**
    * Author-supplied footer HTML, rendered into rang's footer slot in place of
    * the default `Footer` on every page. This is the **resolved** value: the

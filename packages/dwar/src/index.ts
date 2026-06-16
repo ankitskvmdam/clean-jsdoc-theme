@@ -215,10 +215,12 @@ async function renderPage(
     jsLinks?: string[];
     js?: string;
     meta?: MetaTag[];
+    favicon?: string;
   },
   neighbors: PageNeighbors | undefined,
   inlineSvgs: Record<string, string>,
-  locale: RenderLocale | undefined
+  locale: RenderLocale | undefined,
+  playgroundOptions: Record<string, unknown> | undefined
 ): Promise<{ file: OutputFile; search: SearchEntry; islands: IslandRecord[] }> {
   const islands: IslandRecord[] = [];
 
@@ -361,6 +363,8 @@ async function renderPage(
     customJsLinks: custom.jsLinks,
     customJs: custom.js,
     meta: custom.meta,
+    favicon: custom.favicon,
+    playground: playgroundOptions,
     lang: locale?.code,
     i18n: i18nPayload,
     // hreflang reuses the switcher's per-page cross-locale URLs.
@@ -452,6 +456,18 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
   // are computed once from the nav reading order and looked up per page.
   const neighborsBySlug = computeNeighbors(manifest, theme.pageNav?.enabled !== false);
 
+  // Site-wide playground options (the per-provider records only). Threaded to
+  // each page's shell, which emits them as a `data-playground-config` payload —
+  // but only on pages that actually carry a playground marker (see html.ts), so
+  // pages (and whole sites) without a playground stay byte-identical.
+  const playgroundOptions: Record<string, unknown> | undefined = theme.playground
+    ? Object.fromEntries(
+        (['codepen', 'jsfiddle', 'codesandbox'] as const)
+          .filter((p) => theme.playground?.[p])
+          .map((p) => [p, theme.playground![p]])
+      )
+    : undefined;
+
   const css = buildCss(theme.tokens, manifest.buildId);
   const cssHref = withBase(basePath, '/' + css.path);
 
@@ -482,6 +498,7 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
     jsLinks: theme.customJsLinks,
     js: theme.customJs?.trim() || undefined,
     meta: theme.meta,
+    favicon: theme.favicon,
   };
   // The fuzzy-search index the cmdk island fetches. Build-id stamped so it
   // cache-busts alongside the stylesheet/chunks.
@@ -552,7 +569,8 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
         custom,
         neighborsBySlug.get(page.slug),
         inlineSvgs,
-        opts.locale
+        opts.locale,
+        playgroundOptions
       );
       const hidden = page.frontmatter.hidden;
       return {
