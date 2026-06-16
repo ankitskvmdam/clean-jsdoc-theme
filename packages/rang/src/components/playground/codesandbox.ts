@@ -1,4 +1,9 @@
-import { compressToBase64 } from 'lz-string';
+// `lz-string` is a pure-CommonJS module: a *named* ESM import (`{ compressToBase64 }`)
+// typechecks but throws at runtime when Node loads rang's ESM dist for SSR
+// ("Named export not found"). The default-import interop reads the whole
+// module.exports object, which works for both the SSR dynamic-import path and
+// the esbuild island bundle.
+import LZString from 'lz-string';
 import { submitForm } from './submit';
 
 /** The CodeSandbox `sandboxes/define` endpoint. */
@@ -24,7 +29,7 @@ export function buildCodesandboxParameters(
     'index.js': { content: code },
     'package.json': { content: JSON.stringify({ dependencies }) },
   };
-  return compressToBase64(JSON.stringify({ files }));
+  return LZString.compressToBase64(JSON.stringify({ files }));
 }
 
 /** Open the example in a new CodeSandbox tab (POST form). */
