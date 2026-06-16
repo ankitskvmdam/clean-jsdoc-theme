@@ -163,9 +163,8 @@ export function DropdownMenuContent({
   label,
   class: cls,
 }: DropdownMenuContentProps) {
-  const { open, contentRef, menuId, triggerId } = useDropdown('DropdownMenuContent');
-  // Outer positioning layer. The shift lives here (not on the animated content),
-  // so the enter zoom/fade transform and the collision transform don't collide.
+  const { open, triggerRef, contentRef, menuId, triggerId } = useDropdown('DropdownMenuContent');
+  // Outer positioning layer, positioned `fixed` (see below).
   const positionerRef = useRef<HTMLDivElement>(null);
 
   // Focus the first item when the menu opens (roving focus from there on).
@@ -174,28 +173,42 @@ export function DropdownMenuContent({
     contentRef.current?.querySelector<HTMLElement>(MENU_ITEM_SELECTOR)?.focus();
   }, [open]);
 
-  // Collision-aware horizontal placement: align to the preferred edge, then —
-  // if the menu would spill past either viewport edge — nudge it back inside.
-  // Runs before paint (so there's no visible jump) and again on resize.
+  // Fixed-position placement anchored to the trigger. Using `position: fixed`
+  // (not `absolute`) lets the menu escape any ancestor with `overflow: hidden` —
+  // e.g. a code-block card — that would otherwise clip it when the code content
+  // is short. Coordinates are computed from the trigger's viewport rect: below
+  // it by default, flipped above when it would overflow the bottom, and clamped
+  // within the viewport horizontally. Recomputed before paint (no visible jump)
+  // and on resize/scroll (capture, to catch nested scrollers) so it tracks the
+  // trigger.
   useLayoutEffect(() => {
     if (!open) return;
     const positioner = positionerRef.current;
-    if (!positioner) return;
-    const fit = (): void => {
-      positioner.style.transform = 'none';
-      const rect = positioner.getBoundingClientRect();
-      const viewport = document.documentElement.clientWidth;
-      let dx = 0;
-      if (rect.left < COLLISION_PADDING) dx = COLLISION_PADDING - rect.left;
-      else if (rect.right > viewport - COLLISION_PADDING) {
-        dx = viewport - COLLISION_PADDING - rect.right;
+    const trigger = triggerRef.current;
+    if (!positioner || !trigger) return;
+    const place = (): void => {
+      const tr = trigger.getBoundingClientRect();
+      const menuW = positioner.offsetWidth;
+      const menuH = positioner.offsetHeight;
+      const vw = document.documentElement.clientWidth;
+      const vh = document.documentElement.clientHeight;
+      let top = tr.bottom + 4;
+      if (top + menuH > vh - COLLISION_PADDING && tr.top - 4 - menuH >= COLLISION_PADDING) {
+        top = tr.top - 4 - menuH;
       }
-      if (dx) positioner.style.transform = `translateX(${Math.round(dx)}px)`;
+      let left = align === 'end' ? tr.right - menuW : tr.left;
+      left = Math.min(Math.max(COLLISION_PADDING, left), vw - COLLISION_PADDING - menuW);
+      positioner.style.top = `${Math.round(top)}px`;
+      positioner.style.left = `${Math.round(left)}px`;
     };
-    fit();
-    window.addEventListener('resize', fit);
-    return () => window.removeEventListener('resize', fit);
-  }, [open]);
+    place();
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+    return () => {
+      window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
+    };
+  }, [open, align]);
 
   if (!open) return null;
 
@@ -221,10 +234,7 @@ export function DropdownMenuContent({
   };
 
   return (
-    <div
-      ref={positionerRef}
-      class={cn('absolute z-50 mt-1', align === 'end' ? 'right-0' : 'left-0')}
-    >
+    <div ref={positionerRef} class="fixed z-50">
       <div
         ref={contentRef}
         id={menuId}

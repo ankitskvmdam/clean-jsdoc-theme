@@ -24,6 +24,30 @@ const PROVIDERS: Record<
   codesandbox: { label: 'CodeSandbox', slug: 'codesandbox', open: openCodesandbox },
 };
 
+// CodePen's own brand logos (the Simple Icons mask doesn't render its monogram
+// reliably) — the black wordmark for light mode, white for dark, swapped via the
+// `dark:` variant ([data-theme="dark"]) with CSS only.
+const CODEPEN_LOGO_LIGHT = 'https://blog.codepen.io/wp-content/uploads/2023/09/logo-black.png';
+const CODEPEN_LOGO_DARK = 'https://blog.codepen.io/wp-content/uploads/2023/09/logo-white.png';
+
+/** Provider glyph: CodePen uses its brand logo image; the rest use Simple Icons. */
+function ProviderIcon({ provider, slug }: { provider: PlaygroundProvider; slug: string }) {
+  if (provider === 'codepen') {
+    return (
+      <>
+        <img src={CODEPEN_LOGO_LIGHT} alt="" aria-hidden="true" class="h-4 w-auto shrink-0 dark:hidden" />
+        <img
+          src={CODEPEN_LOGO_DARK}
+          alt=""
+          aria-hidden="true"
+          class="hidden h-4 w-auto shrink-0 dark:block"
+        />
+      </>
+    );
+  }
+  return <SimpleIcon slug={slug} />;
+}
+
 export interface PlaygroundMenuProps {
   /** Enabled providers, in render order. */
   providers: PlaygroundProvider[];
@@ -48,7 +72,7 @@ export function PlaygroundMenu({ providers, code = '', options = {} }: Playgroun
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        class={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'gap-1')}
+        class={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'gap-1 rounded-lg')}
         aria-label={t('chrome.playground.openIn')}
       >
         <CodeXml size={14} aria-hidden="true" />
@@ -64,7 +88,7 @@ export function PlaygroundMenu({ providers, code = '', options = {} }: Playgroun
               key={provider}
               onSelect={() => meta.open(code, options[provider] ?? {})}
             >
-              <SimpleIcon slug={meta.slug} />
+              <ProviderIcon provider={provider} slug={meta.slug} />
               {t('chrome.playground.openInProvider', { provider: meta.label })}
             </DropdownMenuItem>
           );

@@ -233,8 +233,9 @@ main p:has(img + img) img {
 
 /*
  * Highlighted code lines. rang tags a Shiki `.line` span with `data-highlighted`
- * when an `@playground` / prose `highlight=` list names it (rang also adds a
- * text-width tint class, so this degrades gracefully without the rules below).
+ * when an `@playground` / prose `highlight=` list names it; the tint colour comes
+ * entirely from `--clean-code-highlight-bg` (a neutral #f7f7f7 in light, an
+ * elevated grey in dark — see css.ts), so it stays visible in both themes.
  * Two fixes: (1) make the tint span the FULL line width and bleed into the
  * <pre>'s `p-4` (1rem) horizontal padding; (2) beat Shiki's inline span
  * background — including the dark-mode `[data-theme='dark'] .shiki span { …
@@ -249,5 +250,5 @@ main p:has(img + img) img {
 .shiki code .line[data-highlighted] {
   margin-inline: -1rem;
   padding-inline: 1rem;
-  background-color: color-mix(in oklch, var(--clean-accent) 12%, transparent) !important;
+  background-color: var(--clean-code-highlight-bg) !important;
 }

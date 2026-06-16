@@ -37,16 +37,15 @@ export interface CodeBlockProps {
   style?: unknown;
 }
 
-// Highlighted-line tint — matches the active sidebar item (primary, dark-aware).
-const HIGHLIGHT_LINE_CLASS = 'bg-primary/10 dark:bg-primary-light/10';
-
 /**
- * Tint the `highlight`ed lines of a Shiki-rendered `<code>`. Shiki wraps each
+ * Mark the `highlight`ed lines of a Shiki-rendered `<code>`. Shiki wraps each
  * source line in a `<span class="line">` (separated by `"\n"` text nodes), so we
  * count element children and clone the ones whose 1-based index is requested,
- * appending {@link HIGHLIGHT_LINE_CLASS} + a `data-highlighted` marker (dwar's
- * CSS layer can make the tint full-bleed off that attribute). Non-element nodes
- * (the `"\n"` separators) pass through untouched. A no-op when `lines` is empty.
+ * tagging them with a `data-highlighted` marker. The tint colour + full-width
+ * bleed come entirely from dwar's CSS layer (keyed off the attribute, using
+ * `--clean-code-highlight-bg`), so the highlight stays visible in both themes.
+ * Non-element nodes (the `"\n"` separators) pass through untouched. A no-op when
+ * `lines` is empty.
  */
 function highlightLines(children: ComponentChildren, lines: readonly number[]): ComponentChildren {
   if (lines.length === 0) return children;
@@ -57,10 +56,7 @@ function highlightLines(children: ComponentChildren, lines: readonly number[]): 
     if (!isValidElement(child)) return child;
     lineNo += 1;
     if (!want.has(lineNo)) return child;
-    const props = (child as VNode<CodeVNodeProps>).props;
-    const existing = cx(props?.class ?? props?.className);
     return cloneElement(child as VNode<Record<string, unknown>>, {
-      class: `${existing} ${HIGHLIGHT_LINE_CLASS}`.trim(),
       'data-highlighted': '',
     });
   });
@@ -148,8 +144,8 @@ export function CodeBlock({
       data-code-card
       class="my-4 overflow-hidden rounded-2xl border border-(--clean-border) bg-background"
     >
-      <div class="flex items-center justify-between gap-2 border-b border-(--clean-border) bg-(--clean-bg-muted) px-4 py-2">
-        <span class="truncate font-mono text-xs font-medium tracking-wide text-(--clean-fg-muted) uppercase">
+      <div class="flex items-center justify-between gap-1 border-b border-(--clean-border) bg-(--clean-code-header-bg) p-1">
+        <span class="truncate pl-1 font-mono text-[10px] font-medium tracking-wide text-(--clean-code-header-fg) uppercase">
           {label}
         </span>
         <div class="flex shrink-0 items-center gap-1">

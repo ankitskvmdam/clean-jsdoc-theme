@@ -109,10 +109,10 @@ describe('CodeBlock under <Playground>', () => {
         h(CodeBlock, { children: shikiCode(['one', 'two', 'three']) })
       )
     );
-    // Exactly one line tinted, and it carries the highlight marker.
+    // Exactly one line marked (the tint colour is applied by dwar's CSS layer
+    // off this attribute, not a class here).
     expect(html.match(/data-highlighted/g)?.length).toBe(1);
-    expect(html).toContain('bg-primary/10');
-    // The tinted line is the second one.
+    // The marked line is the second one.
     expect(html).toMatch(/data-highlighted[^>]*>two</);
   });
 
