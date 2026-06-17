@@ -85,9 +85,6 @@ npx serve dist
 - **FAQ & recipes** — [**ankdev.me/clean-jsdoc-theme/guides/faq**](https://ankdev.me/clean-jsdoc-theme/guides/faq): how to embed CodePen / YouTube / sites, write rich doc comments (callouts, steps), and common config tweaks.
 - **Live demo** — [**ankdev.me/clean-jsdoc-theme/api-docs**](https://ankdev.me/clean-jsdoc-theme/api-docs): a real generated API reference, so you can see the output before installing.
 
-> **v5 is in alpha.** To stay on v4, pin `"clean-jsdoc-theme": "^4"` in your
-> `package.json`. Every past release is tagged, so you can check out the matching
-> git tag to browse the v4 source.
 
 ## License
 
