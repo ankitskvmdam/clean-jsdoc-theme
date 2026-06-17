@@ -1,5 +1,9 @@
 ## Change Log
 
+### In version 4.3.3
+
+1. Remove the v5 developer message that was printed to the console during JSDoc generation. [#332](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/332)
+
 ### In version 4.2.0
 
 1. Add an option to include files list in homepage. Previously we are including it by default. From now the developer has to explicitly ask for it. For more [see](https:/github.com/ankitskvmdam/clean-jsdoc-theme#add-files-list-in-homepage)

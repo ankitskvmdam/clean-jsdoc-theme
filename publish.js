@@ -1101,10 +1101,4 @@ exports.publish = async function (taffyData, opts, tutorials) {
             })
         );
     }
-
-    console.log(
-        '\n[clean-jsdoc-theme] We are working on v5 — a ground-up rewrite! ' +
-            'If you have suggestions or ideas, feel free to share them here: ' +
-            'https://github.com/ankitskvmdam/clean-jsdoc-theme/discussions/309\n'
-    );
 };
