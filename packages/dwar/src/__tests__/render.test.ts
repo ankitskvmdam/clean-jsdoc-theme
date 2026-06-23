@@ -756,4 +756,39 @@ describe('render() — issue #333: render-error diagnostics', () => {
     // The reported line points at that line in the body (1-based).
     expect(err.snippet).toContain(`${err.line} |`);
   });
+
+  // The exact failure from issue #333: an aggregated Globals page where one
+  // symbol's doc comment has an unbalanced inline-code backtick straddling a
+  // blank line, with a `{...}` between the ticks. The brace-escaping pre-pass
+  // treats the whole run as code (so the brace survives), but a Markdown code
+  // span can't cross a paragraph break — so MDX reads `{...}` as a flow
+  // expression and acorn rejects it. This is the v4→v5 trap: v4 rendered the
+  // description as raw HTML and never choked.
+  it('reproduces "Could not parse expression with acorn" and locates it', async () => {
+    const m = makeManifest();
+    m.pages.push({
+      slug: 'global',
+      frontmatter: { title: 'Globals', kind: 'guide', description: 'Aggregated globals.' },
+      body: [
+        '# Globals',
+        '',
+        '## getConfig',
+        '',
+        'Pass `{ port: 8080 } to override just the port',
+        '',
+        'and keep the `rest`.',
+      ].join('\n'),
+      headings: [],
+    });
+    const result = await render(m, { theme: minimalTheme });
+    const err = result.errors!.find((e) => e.slug === 'global')!;
+    expect(err.message).toBe('Could not parse expression with acorn');
+    expect(typeof err.line).toBe('number');
+    // The snippet shows the offending line so the symbol is locatable on a big
+    // aggregated page — the whole point of the issue #333 diagnostics fix.
+    expect(err.snippet).toContain('Pass `{ port: 8080 } to override just the port');
+    // And the page is skipped, never thrown — the Globals page just goes missing,
+    // which is exactly why the reporter saw "no globals".
+    expect(result.files.map((f) => f.path)).not.toContain('global/index.html');
+  });
 });
