@@ -54,4 +54,35 @@ describe('escapeStrayBraces', () => {
     const out = escapeStrayBraces(preprocessJsdocInlineTags('{@link base#x} and {base#y}'));
     expect(out).toBe('`@link base#x` and \\{base#y\\}');
   });
+
+  it('allows a code span to cross a single line break', () => {
+    // CommonMark code spans may span lines — just not a blank line.
+    const out = escapeStrayBraces('a `code {x}\nmore {y}` b');
+    expect(out).toBe('a `code {x}\nmore {y}` b'); // braces inside the span untouched
+  });
+
+  it('does not let an unbalanced backtick swallow a later brace across a blank line', () => {
+    // issue #333 / dwv: an odd backtick run desyncs naive pairing. The stray
+    // backtick on the first line has no equal-length partner before the blank
+    // line, so it stays literal and the brace in the next paragraph is escaped.
+    const out = escapeStrayBraces('open `unclosed tick\n\nlater {x: 1} brace');
+    expect(out).toContain('later \\{x: 1\\} brace');
+  });
+
+  it('reproduces the dwv splitKeyValueString shape: braces escape past a stray tick', () => {
+    // The real failure: line 1 opens a backtick that pairs with the FIRST tick on
+    // line 2 (single line break, allowed); the SECOND tick on line 2 is then a
+    // lone tick. Across the following blank line, a separate comment's object
+    // example must still be escaped, not swallowed as code.
+    const src = [
+      'Split key/value string: `key0=val00&key0=val01&key1=val10',
+      '  will return `{key0 : [val00, val01], key1 : val1}`.',
+      '',
+      'returns { base : root, query : [ key0 : [val00] ] }',
+    ].join('\n');
+    const out = escapeStrayBraces(src);
+    // The object example after the blank line is escaped (would otherwise be an
+    // MDX expression → acorn failure).
+    expect(out).toContain('returns \\{ base : root, query : [ key0 : [val00] ] \\}');
+  });
 });

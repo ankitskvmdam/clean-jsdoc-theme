@@ -133,6 +133,16 @@ export function preprocessJsdocInlineTags(source: string): string {
  * left untouched — MDX doesn't parse expressions there, and escaping would leak
  * visible backslashes. Run this AFTER {@link preprocessJsdocInlineTags} so the
  * inline-code spans it produces for `{@link}` are protected here.
+ *
+ * The inline-code matcher mirrors CommonMark's rule that a code span **cannot
+ * contain a blank line** (a code span lives within one paragraph). This matters
+ * on a big aggregated page (e.g. Globals): a single unbalanced backtick in one
+ * doc comment must not pair with a far-away backtick in another, swallowing
+ * everything between as "code" and leaving its braces un-escaped — MDX, which
+ * stops a code span at the blank line, would then read those braces as a JS
+ * expression and abort the page (issue #333, dwv `splitKeyValueString`). So a
+ * stray backtick that has no equal-length partner before the next blank line is
+ * left literal, and the braces around it are escaped like any other prose.
  */
 export function escapeStrayBraces(source: string): string {
   // Keep leading YAML frontmatter verbatim (braces there are YAML, not MDX).
@@ -140,9 +150,13 @@ export function escapeStrayBraces(source: string): string {
   const prefix = fm ? fm[0] : '';
   const body = fm ? source.slice(fm[0].length) : source;
 
-  // Single scan: a fenced code block, OR an inline code span (matched backtick
-  // runs), OR a lone brace. Code matches pass through; lone braces get escaped.
-  const re = /(```[\s\S]*?```|~~~[\s\S]*?~~~)|(`+)(?:[\s\S]*?)\2|([{}])/g;
+  // Single scan: a fenced code block, OR an inline code span, OR a lone brace.
+  // Code matches pass through; lone braces get escaped. The inline-code content
+  // `(?:[^\n]|\n(?![ \t\r]*\n))*?` allows single line breaks (CommonMark code
+  // spans may span lines) but never a blank line — so an unclosed backtick can't
+  // run past a paragraph break and mis-swallow another comment's braces.
+  const re =
+    /(```[\s\S]*?```|~~~[\s\S]*?~~~)|(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?\2|([{}])/g;
   const escaped = body.replace(re, (m, _fence, _ticks, brace) => (brace ? `\\${brace}` : m));
   return prefix + escaped;
 }
