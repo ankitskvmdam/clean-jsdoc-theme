@@ -71,6 +71,45 @@ function mergeMdxComponents(override?: Record<string, unknown>): MdxComponentMap
   return { ...defaultMdxComponents, ...(override as MdxComponentMap) };
 }
 
+/** A positioned thrown error (e.g. MDX's `VFileMessage`) carries a numeric line. */
+interface PositionedError {
+  line: number;
+  column?: number;
+}
+
+/**
+ * Narrow a thrown value to one carrying a numeric `line` (MDX compile failures
+ * throw a `VFileMessage`, whose `.line`/`.column` point at the source position).
+ * Other failures have no position and fall through to a bare slug + message.
+ */
+function isPositionedError(err: unknown): err is PositionedError {
+  return typeof (err as { line?: unknown }).line === 'number';
+}
+
+/**
+ * A small numbered code-frame around `line` in `body`, for locating a render
+ * failure on a large aggregated page (e.g. Globals). Emits the `context` lines
+ * on either side of `line`, each with a right-aligned 1-based gutter and ` | `,
+ * and — when `column` is known — a caret row under the offending line aligned to
+ * it. The line is exact (the MDX pre-passes preserve line counts); the caret
+ * column is best-effort (earlier same-line escapes may shift it). See issue #333.
+ */
+export function codeFrame(body: string, line: number, column?: number, context = 2): string {
+  const lines = body.split('\n');
+  const start = Math.max(1, line - context);
+  const end = Math.min(lines.length, line + context);
+  const gutterWidth = String(end).length;
+  const out: string[] = [];
+  for (let n = start; n <= end; n++) {
+    out.push(`${String(n).padStart(gutterWidth)} | ${lines[n - 1] ?? ''}`);
+    if (n === line && typeof column === 'number' && column >= 1) {
+      // Caret aligned under `column`, beneath an empty gutter of the same width.
+      out.push(`${' '.repeat(gutterWidth)} | ${' '.repeat(column - 1)}^`);
+    }
+  }
+  return out.join('\n');
+}
+
 /**
  * Bounded-concurrency `map`: runs `fn` over `items` with at most `limit` tasks
  * in flight, and returns results in the SAME order as `items` (result[i] for
@@ -584,10 +623,24 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
         members: hidden ? undefined : memberSearchEntries(page),
       };
     } catch (err) {
-      return {
-        ok: false,
-        error: { slug: page.slug, message: err instanceof Error ? err.message : String(err) },
-      };
+      const message = err instanceof Error ? err.message : String(err);
+      // A positioned error (MDX's VFileMessage) carries the source location —
+      // surface it plus a code-frame so a failure on a big aggregated page
+      // (e.g. Globals) is locatable. Non-positioned errors keep slug + message.
+      if (isPositionedError(err) && page.body) {
+        const { line, column } = err;
+        return {
+          ok: false,
+          error: {
+            slug: page.slug,
+            message,
+            line,
+            column,
+            snippet: codeFrame(page.body, line, column),
+          },
+        };
+      }
+      return { ok: false, error: { slug: page.slug, message } };
     }
   };
 

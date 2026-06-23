@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { render } from '../index';
+import { render, codeFrame } from '../index';
 import { makeManifest, minimalTheme } from './fixtures';
-import type { OutputFile } from '@clean-jsdoc-theme/utils';
+import type { OutputFile, SiteManifest } from '@clean-jsdoc-theme/utils';
 
 function asString(file: OutputFile): string {
   return typeof file.contents === 'string'
@@ -639,5 +639,156 @@ describe('render() — header controls visibility (mobile + desktop)', () => {
     expect(wrapperClassFor(home, 'language-switcher')).toBeNull();
     // And search remains visible alongside it on every breakpoint.
     expect(wrapperClassFor(home, 'cmdk')).not.toContain('hidden');
+  });
+});
+
+describe('codeFrame', () => {
+  const body = ['line one', 'line two', 'line three', 'line four', 'line five'].join('\n');
+
+  it('emits a numbered gutter around the target line', () => {
+    const frame = codeFrame(body, 3);
+    expect(frame).toContain('1 | line one');
+    expect(frame).toContain('3 | line three');
+    expect(frame).toContain('5 | line five');
+  });
+
+  it('clamps the context window at the start of the file', () => {
+    const frame = codeFrame(body, 1).split('\n');
+    // No line 0; the window starts at line 1 and extends `context` lines down.
+    expect(frame[0]).toBe('1 | line one');
+    expect(frame.some((l) => l.startsWith('3 |'))).toBe(true);
+    expect(frame.some((l) => l.startsWith('4 |'))).toBe(false);
+  });
+
+  it('clamps the context window at the end of the file', () => {
+    const frame = codeFrame(body, 5).split('\n');
+    expect(frame.some((l) => l.startsWith('2 |'))).toBe(false);
+    expect(frame[frame.length - 1]).toBe('5 | line five');
+  });
+
+  it('aligns a caret under the column when given', () => {
+    const frame = codeFrame(body, 3, 6).split('\n');
+    const targetIdx = frame.findIndex((l) => l.startsWith('3 |'));
+    const caretRow = frame[targetIdx + 1];
+    // Gutter width is 1 here ("5"), so the caret row is `" | " + (col-1) spaces + ^`.
+    expect(caretRow).toBe('  | ' + ' '.repeat(5) + '^');
+  });
+
+  it('omits the caret row when no column is given', () => {
+    const frame = codeFrame(body, 3).split('\n');
+    expect(frame.every((l) => !l.includes('^'))).toBe(true);
+  });
+
+  it('widens the gutter for multi-digit line numbers', () => {
+    const long = Array.from({ length: 12 }, (_, i) => `row ${i + 1}`).join('\n');
+    const frame = codeFrame(long, 10).split('\n');
+    // End line is 12 (two digits), so single-digit numbers are right-padded.
+    expect(frame).toContain(' 8 | row 8');
+    expect(frame).toContain('12 | row 12');
+  });
+});
+
+describe('render() — issue #333: index name clash', () => {
+  function manifestWithIndexSymbol(): SiteManifest {
+    const m = makeManifest();
+    m.pages.push({
+      slug: 'index',
+      frontmatter: { title: 'index', kind: 'class', description: 'A class named index.' },
+      body: `# index\n\nA documented symbol literally named index.\n`,
+      headings: [],
+    });
+    m.nav.push({ label: 'index', slug: 'index' });
+    return m;
+  }
+
+  it('emits distinct paths for the home page and an "index"-named symbol', async () => {
+    const result = await render(manifestWithIndexSymbol(), { theme: minimalTheme });
+    const paths = result.files.map((f) => f.path);
+    expect(paths).toContain('index.html'); // home
+    expect(paths).toContain('index/index.html'); // the symbol
+    // The companion .md files follow the same split.
+    expect(paths).toContain('index.md');
+    expect(paths).toContain('index/index.md');
+  });
+
+  it('does not let the "index" symbol overwrite the home page', async () => {
+    const result = await render(manifestWithIndexSymbol(), { theme: minimalTheme });
+    const home = asString(result.files.find((f) => f.path === 'index.html')!);
+    const symbol = asString(result.files.find((f) => f.path === 'index/index.html')!);
+    expect(home).toContain('home');
+    expect(home).not.toContain('A documented symbol literally named index');
+    expect(symbol).toContain('A documented symbol literally named index');
+  });
+});
+
+describe('render() — issue #333: render-error diagnostics', () => {
+  function manifestWithBadPage(): SiteManifest {
+    const m = makeManifest();
+    // An angle-bracket autolink is MDX-hostile: `<https:` reads as a JSX tag and
+    // acorn rejects it. It survives the brace-escaping pre-pass (no braces), so
+    // the page fails to compile with a positioned VFileMessage.
+    m.pages.push({
+      slug: 'bad',
+      frontmatter: { title: 'Bad', kind: 'guide', description: 'A page that will not compile.' },
+      body: `# Bad page\n\nIntro line.\n\nSee <https://example.com> for more.\n`,
+      headings: [],
+    });
+    m.nav.push({ label: 'Bad', slug: 'bad' });
+    return m;
+  }
+
+  it('skips the bad page (not thrown) and still renders the good pages', async () => {
+    const result = await render(manifestWithBadPage(), { theme: minimalTheme });
+    const paths = result.files.map((f) => f.path);
+    expect(paths).toContain('index.html'); // home still rendered
+    expect(paths).not.toContain('bad/index.html'); // bad page skipped
+    expect(result.errors).toBeDefined();
+    expect(result.errors!.some((e) => e.slug === 'bad')).toBe(true);
+  });
+
+  it('enriches the RenderError with line, column, and a code-frame snippet', async () => {
+    const result = await render(manifestWithBadPage(), { theme: minimalTheme });
+    const err = result.errors!.find((e) => e.slug === 'bad')!;
+    expect(typeof err.line).toBe('number');
+    expect(err.snippet).toBeTruthy();
+    // The snippet locates the offending source line.
+    expect(err.snippet).toContain('See <https://example.com> for more.');
+    // The reported line points at that line in the body (1-based).
+    expect(err.snippet).toContain(`${err.line} |`);
+  });
+
+  // The exact failure from issue #333: an aggregated Globals page where one
+  // symbol's doc comment has an unbalanced inline-code backtick straddling a
+  // blank line, with a `{...}` between the ticks. The brace-escaping pre-pass
+  // treats the whole run as code (so the brace survives), but a Markdown code
+  // span can't cross a paragraph break — so MDX reads `{...}` as a flow
+  // expression and acorn rejects it. This is the v4→v5 trap: v4 rendered the
+  // description as raw HTML and never choked.
+  it('reproduces "Could not parse expression with acorn" and locates it', async () => {
+    const m = makeManifest();
+    m.pages.push({
+      slug: 'global',
+      frontmatter: { title: 'Globals', kind: 'guide', description: 'Aggregated globals.' },
+      body: [
+        '# Globals',
+        '',
+        '## getConfig',
+        '',
+        'Pass `{ port: 8080 } to override just the port',
+        '',
+        'and keep the `rest`.',
+      ].join('\n'),
+      headings: [],
+    });
+    const result = await render(m, { theme: minimalTheme });
+    const err = result.errors!.find((e) => e.slug === 'global')!;
+    expect(err.message).toBe('Could not parse expression with acorn');
+    expect(typeof err.line).toBe('number');
+    // The snippet shows the offending line so the symbol is locatable on a big
+    // aggregated page — the whole point of the issue #333 diagnostics fix.
+    expect(err.snippet).toContain('Pass `{ port: 8080 } to override just the port');
+    // And the page is skipped, never thrown — the Globals page just goes missing,
+    // which is exactly why the reporter saw "no globals".
+    expect(result.files.map((f) => f.path)).not.toContain('global/index.html');
   });
 });

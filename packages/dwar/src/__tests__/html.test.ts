@@ -160,8 +160,8 @@ describe('htmlPathFor', () => {
   it('returns index.html for an empty slug', () => {
     expect(htmlPathFor('')).toBe('index.html');
   });
-  it('returns index.html for the literal "index" slug', () => {
-    expect(htmlPathFor('index')).toBe('index.html');
+  it('gives a symbol named "index" its own directory (not the site root)', () => {
+    expect(htmlPathFor('index')).toBe('index/index.html');
   });
   it('treats slug as a directory', () => {
     expect(htmlPathFor('guide/intro')).toBe('guide/intro/index.html');
@@ -176,6 +176,9 @@ describe('mdPathFor', () => {
     expect(mdPathFor('')).toBe('index.md');
     expect(mdPathFor('guide/intro')).toBe('guide/intro/index.md');
     expect(mdPathFor('/foo/bar/')).toBe('foo/bar/index.md');
+  });
+  it('gives a symbol named "index" its own .md (not the home .md)', () => {
+    expect(mdPathFor('index')).toBe('index/index.md');
   });
 });
 

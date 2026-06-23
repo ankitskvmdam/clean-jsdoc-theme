@@ -380,10 +380,14 @@ export function extractSearchText(mdxBody: string, max = 20000): string {
   return text.length > max ? text.slice(0, max) : text;
 }
 
-/** Slug → output HTML path. Empty/root slug becomes `index.html`. */
+/**
+ * Slug → output HTML path. Only the empty/root slug (the home page) maps to
+ * `index.html`; a symbol literally named `index` keeps its own slug and lands at
+ * `index/index.html` (`/index/`), so it can't clobber the home page (issue #333).
+ */
 export function htmlPathFor(slug: string): string {
   const clean = slug.replace(/^\/+|\/+$/g, '');
-  if (clean === '' || clean === 'index') return 'index.html';
+  if (clean === '') return 'index.html';
   return `${clean}/index.html`;
 }
 
