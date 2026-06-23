@@ -1,0 +1,48 @@
+# Socket (socket.dev) configuration.
+#
+# Scope: this controls the Socket GitHub App's checks on THIS repo's PRs. It does
+# NOT change what shows on the public socket.dev/npm package page — that comes
+# from the published tarball and is managed via dashboard triage (see NOTE below).
+#
+# clean-jsdoc-theme is a documentation-theme build. The published packages are
+# pure `dist/` output with **no install scripts, no native code, and no
+# telemetry** (verified). The alerts disabled below are inherent to that build
+# (compiled bundles + documented opt-in network features) and are intentionally
+# downgraded so the checks focus on genuinely new supply-chain risk. The
+# high-signal alerts (installScripts, telemetry, hasNativeCode, gptMalware,
+# gptDidYouMean / typosquat, httpDependency, unmaintained) are deliberately left
+# ENABLED. shellAccess also stays enabled repo-wide and is disabled only for the
+# one package that legitimately needs it (see packages/aadesh/socket.yml).
+version: 2
+
+issueRules:
+  # Compiled output, not hand-obfuscation: dwar inlines the prebuilt Tailwind CSS
+  # as a single string (generated/utility-css.ts) and the islands are esbuild
+  # bundles — both read as "minified"/"obfuscated".
+  minifiedFile: false
+  obfuscatedFile: false
+
+  # Documented, opt-in / lazy UI features only: the fuzzy search index fetch, the
+  # lazy Monaco source viewer (jsdelivr CDN), Google Fonts, brand icons
+  # (simpleicons), and sandboxed embed iframes. No data is exfiltrated.
+  networkAccess: false
+
+  # publish.ts is CJS and dynamic-`import()`s the ESM packages by file:// URL, and
+  # the tsup ESM bundle carries the standard `__require` interop shim. (The old
+  # `new Function('import.meta.url')` eval shim was removed — `usesEval` no longer
+  # needs an exception.)
+  dynamicRequire: false
+
+  # The build reads CLEAN_JSDOC_THEME_EXTRACT / cwd to drive extract-vs-build
+  # mode. No secrets or credentials are read.
+  envVars: false
+
+# Local fixtures and the dogfood docs site are never published to npm, so keep
+# them out of the repo scan (they pull in dev-only deps and example content).
+projectIgnorePaths:
+  - 'examples/**'
+  - 'docs-site/**'
+
+# NOTE: to clear the alerts on the *public* socket.dev/npm/package page, mark them
+# as ignored in the Socket org dashboard (Organization → Alerts → triage). The
+# repo socket.yml above does not affect the public package report.

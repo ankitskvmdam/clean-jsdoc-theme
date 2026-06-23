@@ -90,6 +90,16 @@ describe('escapeStrayBraces', () => {
     // MDX expression → acorn failure).
     expect(out).toContain('returns \\{ base : root, query : [ key0 : [val00] ] \\}');
   });
+
+  it('treats a longer backtick run inside a span as content, not a premature close', () => {
+    // The ``` is literal content of the `…` span; a brace OUTSIDE still escapes.
+    expect(escapeStrayBraces('see ` ```x ` then {y}')).toBe('see ` ```x ` then \\{y\\}');
+  });
+
+  it('ignores a backslash-escaped backtick (literal, not a span opener)', () => {
+    // `\`` is a literal backtick, so it does not open a span — the {y} still escapes.
+    expect(escapeStrayBraces('a \\` then {y}')).toBe('a \\` then \\{y\\}');
+  });
 });
 
 describe('findStrayBackticks', () => {
@@ -113,6 +123,22 @@ describe('findStrayBackticks', () => {
   it('ignores backticks inside fenced code blocks and frontmatter', () => {
     const src = '---\ntag: `x\n---\n\n```\nlone ` inside fence\n```\n\nclean prose';
     expect(findStrayBackticks(src)).toEqual([]);
+  });
+
+  it('does NOT flag a longer backtick run inside a code span (CommonMark)', () => {
+    // Regression: `` ` ```iframe ` `` is a valid single-backtick span whose content
+    // is the literal ```iframe — the inner ``` must not be read as a premature
+    // closer that leaves dangling backticks (the markdown-examples tutorial case).
+    expect(findStrayBackticks('Use an ` ```iframe ` fenced block')).toEqual([]);
+    // A double-backtick span containing a single backtick is also balanced.
+    expect(findStrayBackticks('the `` ` `` character')).toEqual([]);
+  });
+
+  it('ignores backslash-escaped backticks (literal, not delimiters)', () => {
+    // e.g. a table cell that displays the backtick character, or a trailing
+    // escaped backtick after a balanced span — neither is a real delimiter.
+    expect(findStrayBackticks('| Backtick | \\` |')).toEqual([]);
+    expect(findStrayBackticks('span `x` then a literal \\` backtick')).toEqual([]);
   });
 
   it('flags the orphan tick in the dwv splitKeyValueString shape', () => {

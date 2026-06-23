@@ -154,9 +154,13 @@ export function escapeStrayBraces(source: string): string {
   // Code matches pass through; lone braces get escaped. The inline-code content
   // `(?:[^\n]|\n(?![ \t\r]*\n))*?` allows single line breaks (CommonMark code
   // spans may span lines) but never a blank line — so an unclosed backtick can't
-  // run past a paragraph break and mis-swallow another comment's braces.
+  // run past a paragraph break and mis-swallow another comment's braces. A
+  // delimiter run is bounded by `(?<![`\\])…(?!`)` so it (a) closes only on a
+  // *maximal* run of exactly N — a longer run inside (e.g. ``` in a `…` span) is
+  // literal content — and (b) ignores a backslash-escaped backtick (`\``), which
+  // is a literal backtick per CommonMark, not a delimiter.
   const re =
-    /(```[\s\S]*?```|~~~[\s\S]*?~~~)|(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?\2|([{}])/g;
+    /(```[\s\S]*?```|~~~[\s\S]*?~~~)|(?<![`\\])(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\2(?!`)|([{}])/g;
   const escaped = body.replace(re, (m, _fence, _ticks, brace) => (brace ? `\\${brace}` : m));
   return prefix + escaped;
 }
@@ -185,9 +189,13 @@ export function findStrayBackticks(source: string): StrayBacktick[] {
   const out: StrayBacktick[] = [];
   // Skip leading YAML frontmatter (backticks there aren't MDX inline code).
   const fm = /^---\n[\s\S]*?\n---\n/.exec(source);
-  // Fenced block | balanced inline span (group 3 = its ticks) | leftover run (group 4).
+  // Fenced block | balanced inline span (group 3 = its ticks) | leftover run
+  // (group 4). A delimiter run is bounded by `(?<![`\\])…(?!`)`: it closes only on
+  // a maximal run of exactly N (a longer run inside a span, e.g. ``` in
+  // `` ` ```x ` ``, is literal content) and ignores backslash-escaped backticks
+  // (`\``, a literal backtick) — both match CommonMark, avoiding false strays.
   const re =
-    /(```[\s\S]*?```|~~~[\s\S]*?~~~)|((`+)(?:[^\n]|\n(?![ \t\r]*\n))*?\3)|(`+)/g;
+    /(```[\s\S]*?```|~~~[\s\S]*?~~~)|(?<![`\\])((`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`))|(?<![`\\])(`+)/g;
   re.lastIndex = fm ? fm[0].length : 0;
   let m: RegExpExecArray | null;
   while ((m = re.exec(source)) !== null) {

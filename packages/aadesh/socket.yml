@@ -1,0 +1,13 @@
+# Folder-scoped Socket config for @clean-jsdoc-theme/aadesh.
+#
+# aadesh is the theme's i18n CLI (published binary `clean-jsdoc`). It legitimately
+# spawns the real build pipeline as a child process — in *extract* mode to harvest
+# translatable strings, and once per locale in *build* mode to stamp translations
+# back in. That child_process use is the whole point of the tool, not a risk, so
+# `shellAccess` is disabled here only. It stays ENABLED everywhere else in the repo
+# (the root socket.yml does not disable it), so the rendering packages still get
+# the check.
+version: 2
+
+issueRules:
+  shellAccess: false

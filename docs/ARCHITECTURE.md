@@ -213,9 +213,17 @@ stays as a final safety net so any tag that still reaches MDX compile can't brea
 the page. The resolver also has a **unique short-name fallback**: a bare authored
 name (`{@link BaseEntity}`) resolves to its symbol only when that short name is
 unambiguous across the whole registry — ambiguous names refuse to resolve rather
-than guess. Known v1 limitation (see `docs/plan-link-resolution.md`): member
-anchors are bare `slugifyHeading(name)` without the per-page dedup counter, so a
-member whose heading slug collides on its page may get a slightly-off anchor.
+than guess. The same resolver also links **type names** (v4 parity): every
+parameter / property / return / throws type, a field's `Type:` line, and the
+`@augments`/`@implements`/`@mixes` relations are tokenized (`linkifyTypeExpression`
+in `mdast/doclet.ts`) and each identifier that resolves to a documented symbol
+becomes an anchor — `@param {BaseEntity}` links to its page, a member type to its
+`slug#anchor` — while built-ins (`string`, `Array`) and unresolved names stay
+inert code/text, byte-identical to before (no resolver → no links, so the
+localization-extract path is unaffected). Known v1 limitation (see
+`docs/plan-link-resolution.md`): member anchors are bare `slugifyHeading(name)`
+without the per-page dedup counter, so a member whose heading slug collides on its
+page may get a slightly-off anchor.
 
 Source files are a third output, gated by the bridge's `outputSourceFiles` flag
 (default on). When enabled, every documented source file becomes a hidden

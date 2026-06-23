@@ -7,7 +7,7 @@ import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { basename, dirname, extname, join as joinPath, resolve as resolvePath } from 'node:path';
-import { pathToFileURL, fileURLToPath } from 'node:url';
+import { pathToFileURL } from 'node:url';
 import type {
   CopyPageAction,
   CopyPageConfig,
@@ -35,24 +35,13 @@ import { writeOutputFiles } from './write-output-files';
 // read it.
 const JSDOC_TUTORIAL_TYPE_MARKDOWN = 2;
 
-// Absolute path of the running module. The `new Function` wrapper around
-// `import.meta` keeps the CJS parser from rejecting it.
+// Absolute path of the running module. `__filename` is native in the CJS build
+// and injected into the ESM build by tsup's `shims` option (from
+// import.meta.url), so this resolves in both without an eval/`new Function` shim.
 function anchorPath(): string {
   if (typeof __filename === 'string') return __filename;
-  try {
-    const getEsmUrl = new Function(
-      'try { return import.meta && import.meta.url; } catch { return undefined; }'
-    ) as () => string | undefined;
-    const url = getEsmUrl();
-    if (typeof url === 'string' && url.startsWith('file://')) {
-      return fileURLToPath(url);
-    }
-  } catch {
-    // fall through to the throw below.
-  }
   throw new Error(
-    'clean-jsdoc-theme: could not determine the running module path ' +
-      '(neither __filename nor import.meta.url resolved).'
+    'clean-jsdoc-theme: could not determine the running module path (__filename is unavailable).'
   );
 }
 
