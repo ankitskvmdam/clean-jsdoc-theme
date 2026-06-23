@@ -39,6 +39,7 @@ function makeContainerView(doclet: TDoclet, kind: ContainerView['kind'] = 'class
     staticMethods: [],
     instanceFields: [],
     staticFields: [],
+    accessors: [],
     enums: [],
     events: [],
     other: [],

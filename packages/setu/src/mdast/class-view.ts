@@ -1,7 +1,7 @@
-import type { Root, RootContent } from 'mdast';
+import type { PhrasingContent, Root, RootContent } from 'mdast';
 import { ClassMember, ClassView, ContainerView, MemberBuckets } from '../class-view';
 import { slugifyHeading, TDocletParam } from '@clean-jsdoc-theme/utils';
-import { h, hr, inlineCode, memberHeading, memberMeta, p, root, strong, text } from './builders';
+import { h, hr, inlineCode, li, link, memberHeading, memberMeta, p, root, strong, text, ul } from './builders';
 import {
   docletBlocks,
   DocletBlocksOptions,
@@ -17,6 +17,14 @@ export interface ClassViewToMdastOptions extends DocletBlocksOptions {
   pageHeadingLevel?: 1 | 2;
   /** Drop empty member sections from output. Default: true. */
   hideEmptySections?: boolean;
+  /**
+   * Document-model flavor. `'typedoc'` switches a class's member sections to
+   * TypeDoc labels (Constructors/Properties/Methods/Accessors), renders enum
+   * pages with an "Enumeration Members" section, and turns a module/namespace
+   * page into a kind-grouped index of links to its exports. `'jsdoc'` (default)
+   * keeps the original sections — byte-identical output.
+   */
+  flavor?: 'jsdoc' | 'typedoc';
 }
 
 interface SectionSpec {
@@ -38,6 +46,109 @@ export function defaultSections(buckets: MemberBuckets): SectionSpec[] {
     { title: 'Events', members: buckets.events },
     { title: 'Other', members: buckets.other },
   ];
+}
+
+/**
+ * TypeDoc-flavored member sections for a class/interface/mixin — TypeDoc's
+ * labels (Properties / Accessors / Methods, plus static variants + Events). The
+ * Constructor(s) section is emitted separately by {@link containerViewToMdast}.
+ * Empty sections drop out via {@link memberSections}' `hideEmptySections`.
+ */
+export function typedocClassSections(buckets: MemberBuckets): SectionSpec[] {
+  return [
+    { title: 'Properties', members: buckets.instanceFields },
+    { title: 'Accessors', members: buckets.accessors },
+    { title: 'Methods', members: buckets.instanceMethods },
+    { title: 'Static Properties', members: buckets.staticFields },
+    { title: 'Static Methods', members: buckets.staticMethods },
+    { title: 'Events', members: buckets.events },
+    { title: 'Other', members: buckets.other },
+  ];
+}
+
+/** Enum page: every member collapsed under one "Enumeration Members" section. */
+export function enumMemberSections(buckets: MemberBuckets): SectionSpec[] {
+  return [
+    {
+      title: 'Enumeration Members',
+      members: [
+        ...buckets.staticFields,
+        ...buckets.instanceFields,
+        ...buckets.enums,
+        ...buckets.other,
+      ],
+    },
+  ];
+}
+
+/**
+ * Child-symbol → index section label, in TypeDoc display order. A member is
+ * placed under the FIRST group it matches (so an `isEnum` symbol lands in
+ * Enumerations, never Variables).
+ */
+const TYPEDOC_INDEX_GROUPS: { label: string; match: (m: ClassMember) => boolean }[] = [
+  { label: 'Enumerations', match: (m) => m.isEnum === true || m.kind === 'enum' },
+  { label: 'Classes', match: (m) => m.kind === 'class' },
+  { label: 'Interfaces', match: (m) => m.kind === 'interface' },
+  { label: 'Type Aliases', match: (m) => m.kind === 'typedef' },
+  { label: 'Functions', match: (m) => m.kind === 'function' },
+  { label: 'Variables', match: (m) => m.kind === 'variable' || m.kind === 'member' },
+  { label: 'Namespaces', match: (m) => m.kind === 'namespace' },
+  { label: 'Mixins', match: (m) => m.kind === 'mixin' },
+];
+
+/**
+ * A module/namespace page under the typedoc flavor: a kind-grouped index of
+ * LINKS to the exports that each own a standalone page, instead of inlining
+ * their member bodies (matching default TypeDoc's module page). An export whose
+ * longname doesn't resolve falls back to inert code.
+ */
+export function moduleIndexBlocks(
+  view: ContainerView,
+  options: ClassViewToMdastOptions
+): RootContent[] {
+  const members: ClassMember[] = [
+    ...view.instanceMethods,
+    ...view.staticMethods,
+    ...view.instanceFields,
+    ...view.staticFields,
+    ...view.accessors,
+    ...view.enums,
+    ...view.events,
+    ...view.other,
+  ];
+  if (members.length === 0) return [];
+
+  // Assign each member to the first matching group, preserving member order.
+  const grouped = new Map<string, ClassMember[]>();
+  for (const m of members) {
+    const group = TYPEDOC_INDEX_GROUPS.find((g) => g.match(m));
+    if (!group) continue;
+    const arr = grouped.get(group.label);
+    if (arr) arr.push(m);
+    else grouped.set(group.label, [m]);
+  }
+  if (grouped.size === 0) return [];
+
+  const resolve = options.resolveLink;
+  const blocks: RootContent[] = [hr()];
+  for (const { label } of TYPEDOC_INDEX_GROUPS) {
+    const items = grouped.get(label);
+    if (!items || items.length === 0) continue;
+    blocks.push(h(2, text(label)));
+    blocks.push(
+      ul(
+        items.map((m) => {
+          const name = m.name ?? m.longname ?? '(anonymous)';
+          const resolved = m.longname ? (resolve?.(m.longname) ?? null) : null;
+          const child: PhrasingContent =
+            resolved && !resolved.external ? link(resolved.href, inlineCode(name)) : inlineCode(name);
+          return li(p(child));
+        })
+      )
+    );
+  }
+  return blocks;
 }
 
 /**
@@ -191,8 +302,10 @@ export function containerViewToMdast(
   const pageLevel = options.pageHeadingLevel ?? 1;
   const blocks: RootContent[] = [];
 
-  // Title
-  blocks.push(h(pageLevel, text(view.doclet.name ?? view.doclet.longname ?? 'Class')));
+  // Title — fall back to a capitalized kind word when a doclet carries neither
+  // a name nor a longname (rare), instead of the old hardcoded "Class".
+  const titleFallback = view.kind.charAt(0).toUpperCase() + view.kind.slice(1);
+  blocks.push(h(pageLevel, text(view.doclet.name ?? view.doclet.longname ?? titleFallback)));
 
   // Extends/Implements/Mixes
   blocks.push(...classRelationsBlocks(view.doclet));
@@ -258,18 +371,53 @@ export function containerViewToMdast(
     const ctorSigParams: TDocletParam[] = view.constructorParams.length
       ? view.constructorParams
       : view.constructorParamNames.map((name) => ({ name }));
-    blocks.push(hr(), h(2, text('Constructor')));
+    blocks.push(hr(), h(2, text(options.flavor === 'typedoc' ? 'Constructors' : 'Constructor')));
     blocks.push(p(inlineCode(constructorSignature(ctorName, ctorSigParams))));
     blocks.push(...ctorDescription);
     if (ctorParams) blocks.push(p(strong(text('Parameters'))), ctorParams);
   }
 
-  // Members, bucketed.
-  const sections = defaultSections(view);
-  if (sections.some((s) => s.members.length > 0)) blocks.push(hr());
-  blocks.push(...memberSections(sections, options));
+  // Members. Under the typedoc flavor the layout is kind-specific (a links index
+  // for modules/namespaces, "Enumeration Members" for enums, TypeDoc labels for
+  // classes); the jsdoc default keeps the original bucketed sections.
+  if (options.flavor === 'typedoc') {
+    blocks.push(...typedocMemberBlocks(view, options));
+  } else {
+    const sections = defaultSections(view);
+    if (sections.some((s) => s.members.length > 0)) blocks.push(hr());
+    blocks.push(...memberSections(sections, options));
+  }
 
   return root(...blocks);
+}
+
+/**
+ * TypeDoc-flavored member rendering for a container, dispatched by kind:
+ * module/namespace → a kind-grouped links index ({@link moduleIndexBlocks});
+ * enum → an "Enumeration Members" section; class/interface/mixin → TypeDoc
+ * labels ({@link typedocClassSections}); function/variable/typedef carry their
+ * content in the body (params/returns/type/properties) and have no member
+ * sections.
+ */
+function typedocMemberBlocks(view: ContainerView, options: ClassViewToMdastOptions): RootContent[] {
+  if (view.kind === 'module' || view.kind === 'namespace') {
+    return moduleIndexBlocks(view, options);
+  }
+  let sections: SectionSpec[] | null = null;
+  if (view.kind === 'enum') sections = enumMemberSections(view);
+  else if (
+    view.kind === 'class' ||
+    view.kind === 'interface' ||
+    view.kind === 'mixin' ||
+    view.kind === 'global'
+  ) {
+    sections = typedocClassSections(view);
+  }
+  if (!sections) return [];
+  const out: RootContent[] = [];
+  if (sections.some((s) => s.members.length > 0)) out.push(hr());
+  out.push(...memberSections(sections, options));
+  return out;
 }
 
 /**

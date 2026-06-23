@@ -183,7 +183,9 @@ describe('reflectionsToDoclets — kinds', () => {
     expect(byLongname('square')?.kind).toBe('function');
     expect(byLongname('Foo#render')?.kind).toBe('function');
     expect(byLongname('Foo#count')?.kind).toBe('member');
-    expect(byLongname('VERSION')?.kind).toBe('member');
+    // A top-level variable is its own page kind (typedoc flavor); class fields
+    // stay `member`.
+    expect(byLongname('VERSION')?.kind).toBe('variable');
     expect(byLongname('Foo#doubled')?.kind).toBe('member');
   });
 
@@ -423,9 +425,9 @@ describe('reflectionsToDoclets — namespaces', () => {
     expect(radius.scope).toBe('instance');
   });
 
-  it('nests a namespaced constant as a static member', () => {
+  it('maps a namespaced constant to a static variable under its namespace', () => {
     const pi = byLongname('module:Shapes.PI')!;
-    expect(pi.kind).toBe('member');
+    expect(pi.kind).toBe('variable');
     expect(pi.memberof).toBe('module:Shapes');
     expect(pi.scope).toBe('static');
   });

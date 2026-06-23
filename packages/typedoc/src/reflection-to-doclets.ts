@@ -229,13 +229,14 @@ function docletKind(reflection: Reflection): TDocletKind | null {
   if (reflection.kindOf(ReflectionKind.Enum)) return 'enum';
   if (reflection.kindOf(ReflectionKind.TypeAlias)) return 'typedef';
   if (reflection.kindOf(ReflectionKind.Function | ReflectionKind.Method)) return 'function';
+  // A top-level variable is its own page kind under the typedoc flavor; class
+  // fields are `Property` (→ member), never `Variable`, so this only catches
+  // module/global values.
+  if (reflection.kindOf(ReflectionKind.Variable)) return 'variable';
   // Enum members render as static member entries under the enum (`Roles.ADMIN`).
   if (
     reflection.kindOf(
-      ReflectionKind.Property |
-        ReflectionKind.Variable |
-        ReflectionKind.Accessor |
-        ReflectionKind.EnumMember
+      ReflectionKind.Property | ReflectionKind.Accessor | ReflectionKind.EnumMember
     )
   )
     return 'member';

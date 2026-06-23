@@ -114,6 +114,9 @@ export const DocletKindSchema = z.enum([
   'package',
   'param',
   'typedef',
+  // A top-level value with its own page under the TypeDoc bridge's typedoc
+  // flavor. JSDoc never emits this kind (it uses `member`/`constant`).
+  'variable',
 ]);
 
 export type TDocletKind = z.infer<typeof DocletKindSchema>;

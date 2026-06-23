@@ -13,6 +13,7 @@ const emptyBuckets = {
   staticMethods: [],
   instanceFields: [],
   staticFields: [],
+  accessors: [],
   enums: [],
   events: [],
   other: [],
