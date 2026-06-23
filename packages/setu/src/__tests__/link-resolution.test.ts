@@ -241,3 +241,90 @@ describe('container merge — same-slug class doclets are merged, not dropped', 
     expect(workerBody).toContain(`(/${slug})`);
   });
 });
+
+describe('link resolution — type names link to the symbol they reference (v4 parity)', () => {
+  /**
+   * `Box` references the documented class `Widget` from every type-bearing slot:
+   * a constructor param, a method param + return, an instance field's type, and
+   * the `@augments` relation. Each must hyperlink to `Widget`'s page (`/widget`).
+   * A built-in (`string`) type must NOT link — it has no registered symbol.
+   */
+  function typeRefCollection(): TJSDocSaltyCollection<TDoclet> {
+    return makeCollection([
+      {
+        kind: 'class',
+        name: 'Widget',
+        longname: 'Widget',
+        scope: 'global',
+        comment: '/** A widget. */',
+        classdesc: 'A widget.',
+      },
+      {
+        kind: 'class',
+        name: 'Box',
+        longname: 'Box',
+        scope: 'global',
+        comment: '/** A box. @augments Widget @param {Widget} seed */',
+        classdesc: 'A box.',
+        augments: ['Widget'],
+        params: [{ name: 'seed', type: { names: ['Widget'] }, description: 'Initial widget.' }],
+      },
+      {
+        kind: 'member',
+        name: 'current',
+        longname: 'Box#current',
+        memberof: 'Box',
+        scope: 'instance',
+        comment: '/** Current widget. */',
+        description: 'Current widget.',
+        type: { names: ['Widget'] },
+      },
+      {
+        kind: 'function',
+        name: 'wrap',
+        longname: 'Box#wrap',
+        memberof: 'Box',
+        scope: 'instance',
+        comment: '/** Wrap. */',
+        description: 'Wrap a widget.',
+        params: [
+          { name: 'item', type: { names: ['Widget'] }, description: 'The widget.' },
+          { name: 'label', type: { names: ['string'] }, description: 'A label.' },
+        ],
+        returns: [{ type: { names: ['Widget'] }, description: 'The wrapped widget.' }],
+      },
+    ]);
+  }
+
+  it('links a constructor param type (plain-text style) to the symbol page', () => {
+    const body = bodyOf(generateSite(typeRefCollection()), 'Box');
+    // The Parameters list renders the type as plain text, so the link has a
+    // plain-text label.
+    expect(body).toContain('[Widget](/widget)');
+  });
+
+  it('links a method param and return type (code style) to the symbol page', () => {
+    const body = bodyOf(generateSite(typeRefCollection()), 'Box');
+    // Returns/throws + a member field render the type as monospaced code, so the
+    // link wraps an inline-code label.
+    expect(body).toContain('[`Widget`](/widget)');
+  });
+
+  it('links an instance field `Type:` to the symbol page', () => {
+    const body = bodyOf(generateSite(typeRefCollection()), 'Box');
+    expect(body).toContain('**Type**');
+    expect(body).toContain('[`Widget`](/widget)');
+  });
+
+  it('links the @augments relation to the base class', () => {
+    const body = bodyOf(generateSite(typeRefCollection()), 'Box');
+    expect(body).toContain('[`Widget`](/widget)');
+    expect(body).toContain('Extends');
+  });
+
+  it('leaves a built-in type unlinked', () => {
+    const body = bodyOf(generateSite(typeRefCollection()), 'Box');
+    expect(body).not.toContain('[string]');
+    expect(body).not.toContain('[`string`]');
+  });
+});

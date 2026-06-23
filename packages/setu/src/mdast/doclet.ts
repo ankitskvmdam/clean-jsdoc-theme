@@ -44,6 +44,84 @@ export function typeExpressionString(type: TDocletTypeProperty | undefined): str
   return type.names.join(' | ');
 }
 
+type LinkResolver = (target: string) => ResolvedLink | null;
+
+/**
+ * Identifier-path token inside a type expression: a run of word chars plus the
+ * JSDoc namepath separators (`.` `~` `#` `:` `/`) and `$`. Structural syntax —
+ * `< > ( ) [ ] | , ? ! * = space` — falls in the gaps between matches, so
+ * `Array.<MyClass> | null` yields the candidate tokens `Array.`, `MyClass`,
+ * `null` (the `.` after `Array` rides along and simply fails to resolve).
+ */
+const TYPE_TOKEN_RE = /[\w$./~#:]+/g;
+
+/**
+ * Render a type expression string as phrasing content, hyperlinking each token
+ * that resolves to a documented symbol — restoring the v4 behaviour where a
+ * `@param {MyClass}` type linked to the `MyClass` page (members resolve to their
+ * `slug#anchor` too). `style` picks the look of the non-link/link text: `'code'`
+ * for the monospaced contexts (returns, the "Type" field) and `'text'` for the
+ * plain-text parenthetical in the Parameters list.
+ *
+ * Stays byte-identical to the old single-node rendering whenever nothing links:
+ * with no resolver, or when no token resolves, it returns one `inlineCode`/`text`
+ * node holding the whole string — so the localization-extract path and any
+ * resolver-less caller are unaffected.
+ */
+function linkifyTypeExpression(
+  s: string,
+  resolveLink: LinkResolver | undefined,
+  style: 'code' | 'text'
+): PhrasingContent[] {
+  const base = style === 'code' ? inlineCode : text;
+  if (!resolveLink) return [base(s)];
+
+  const out: PhrasingContent[] = [];
+  let cursor = 0;
+  let pending = '';
+  let linked = false;
+  const flush = (): void => {
+    if (pending !== '') {
+      out.push(base(pending));
+      pending = '';
+    }
+  };
+
+  TYPE_TOKEN_RE.lastIndex = 0;
+  let match = TYPE_TOKEN_RE.exec(s);
+  while (match) {
+    const token = match[0];
+    const resolved = resolveLink(token);
+    if (resolved && !resolved.external) {
+      pending += s.slice(cursor, match.index);
+      flush();
+      out.push(link(resolved.href, base(token)));
+      linked = true;
+    } else {
+      pending += s.slice(cursor, match.index) + token;
+    }
+    cursor = match.index + token.length;
+    match = TYPE_TOKEN_RE.exec(s);
+  }
+  pending += s.slice(cursor);
+  flush();
+
+  return linked ? out : [base(s)];
+}
+
+/**
+ * Type expression of a doclet as link-aware phrasing content, or `null` when the
+ * doclet carries no type. See {@link linkifyTypeExpression} for the link rules.
+ */
+function typeExpressionPhrasing(
+  type: TDocletTypeProperty | undefined,
+  resolveLink: LinkResolver | undefined,
+  style: 'code' | 'text'
+): PhrasingContent[] | null {
+  if (!type || !type.names || type.names.length === 0) return null;
+  return linkifyTypeExpression(type.names.join(' | '), resolveLink, style);
+}
+
 // ── Description ─────────────────────────────────────────────────────────────
 
 /**
@@ -330,6 +408,12 @@ export function relationsBlocks(doclet: TDoclet): RootContent[] {
 export interface ParamSlotCtx {
   slots?: SlotResolver;
   longname?: string;
+  /**
+   * Registry resolver for hyperlinking type names (param/return/property types)
+   * to the page/anchor of the symbol they reference. Omitted → types render as
+   * inert code/text, byte-identical to before.
+   */
+  resolveLink?: LinkResolver;
 }
 
 /**
@@ -427,9 +511,9 @@ function typedDescriptionInline(
   fieldPrefix: string,
   index: number
 ) {
-  const out = [];
-  const t = typeExpressionString(item.type);
-  if (t) out.push(inlineCode(t));
+  const out: PhrasingContent[] = [];
+  const typeNodes = typeExpressionPhrasing(item.type, ctx?.resolveLink, 'code');
+  if (typeNodes) out.push(...typeNodes);
   // No name on a return/throws entry → key by position.
   const desc = descriptionInline(item.description, ctx, fieldPrefix, String(index));
   if (desc.length > 0) {
@@ -483,15 +567,25 @@ function paramListItem(
 
   if (param.name) line.push(inlineCode(param.name));
 
-  const flags: string[] = [];
-  const t = typeExpressionString(param.type);
-  if (t) flags.push(t);
-  if (param.optional) flags.push('optional');
+  // The parenthetical is `(type, optional, default: value)`. The type is the
+  // only linkable piece, so it renders as phrasing (a plain-text link when it
+  // resolves) while optional/default stay flat text — concatenating to the same
+  // string as before when nothing links.
+  const typeNodes = typeExpressionPhrasing(param.type, ctx?.resolveLink, 'text');
+  const trailingFlags: string[] = [];
+  if (param.optional) trailingFlags.push('optional');
   if (param.defaultvalue !== undefined)
-    flags.push(`default: ${JSON.stringify(param.defaultvalue)}`);
-  if (flags.length > 0) {
+    trailingFlags.push(`default: ${JSON.stringify(param.defaultvalue)}`);
+  if (typeNodes || trailingFlags.length > 0) {
     if (line.length > 0) line.push(text(' '));
-    line.push(text(`(${flags.join(', ')})`));
+    line.push(text('('));
+    if (typeNodes) {
+      line.push(...typeNodes);
+      if (trailingFlags.length > 0) line.push(text(`, ${trailingFlags.join(', ')}`));
+    } else {
+      line.push(text(trailingFlags.join(', ')));
+    }
+    line.push(text(')'));
   }
 
   // The param NAME is the slot discriminator (stable across reorders, unlike an
@@ -776,8 +870,14 @@ export function docletBlocks(
     blocks.push(p(strong(text('Alias:')), text(' '), inlineCode(doclet.alias)));
   }
 
-  // Owning symbol + resolver for the translatable param/return descriptions.
-  const slotCtx: ParamSlotCtx = { slots: options.slots, longname: doclet.longname };
+  // Owning symbol + resolver for the translatable param/return descriptions,
+  // plus the link resolver so param/return/property type names hyperlink to the
+  // symbol they reference.
+  const slotCtx: ParamSlotCtx = {
+    slots: options.slots,
+    longname: doclet.longname,
+    resolveLink: options.resolveLink,
+  };
 
   if (!skip.has('params')) {
     const list = paramsList(doclet.params, slotCtx);
@@ -806,7 +906,8 @@ export function docletBlocks(
 
   // Type only when there's no params/returns (i.e. it's a field/event).
   if (!skip.has('type') && !doclet.params && !doclet.returns && doclet.type) {
-    blocks.push(p(strong(text('Type'))), p(inlineCode(doclet.type.names.join(' | '))));
+    const typeNodes = typeExpressionPhrasing(doclet.type, options.resolveLink, 'code');
+    if (typeNodes) blocks.push(p(strong(text('Type'))), p(...typeNodes));
   }
 
   if (!skip.has('default') && doclet.defaultvalue !== undefined) {

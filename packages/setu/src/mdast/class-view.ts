@@ -1,7 +1,7 @@
-import type { Root, RootContent } from 'mdast';
+import type { PhrasingContent, Root, RootContent } from 'mdast';
 import { ClassMember, ClassView, ContainerView, MemberBuckets } from '../class-view';
 import { slugifyHeading, TDocletParam } from '@clean-jsdoc-theme/utils';
-import { h, hr, inlineCode, memberHeading, memberMeta, p, root, strong, text } from './builders';
+import { h, hr, inlineCode, link, memberHeading, memberMeta, p, root, strong, text } from './builders';
 import {
   docletBlocks,
   DocletBlocksOptions,
@@ -154,9 +154,14 @@ export function memberSections(
 
 /**
  * "Extends" / "Implements" / "Mixes" lines for a class. Returns the blocks
- * that apply; empty if none.
+ * that apply; empty if none. Each referenced symbol hyperlinks to its page when
+ * `resolveLink` is supplied and the name resolves — otherwise it stays inert
+ * code, byte-identical to before.
  */
-export function classRelationsBlocks(doclet: ClassView['doclet']): RootContent[] {
+export function classRelationsBlocks(
+  doclet: ClassView['doclet'],
+  resolveLink?: DocletBlocksOptions['resolveLink']
+): RootContent[] {
   const lines: { label: string; refs: readonly string[] | undefined }[] = [
     { label: 'Extends', refs: doclet.augments },
     { label: 'Implements', refs: doclet.implements },
@@ -166,12 +171,11 @@ export function classRelationsBlocks(doclet: ClassView['doclet']): RootContent[]
   return lines
     .filter(({ refs }) => refs && refs.length > 0)
     .map(({ label, refs }) => {
-      const children: ReturnType<typeof inlineCode | typeof text | typeof strong>[] = [
-        strong(text(`${label}: `)),
-      ];
+      const children: PhrasingContent[] = [strong(text(`${label}: `))];
       refs!.forEach((r, i) => {
         if (i > 0) children.push(text(', '));
-        children.push(inlineCode(r));
+        const resolved = resolveLink?.(r) ?? null;
+        children.push(resolved && !resolved.external ? link(resolved.href, inlineCode(r)) : inlineCode(r));
       });
       return p(...children);
     });
@@ -195,7 +199,7 @@ export function containerViewToMdast(
   blocks.push(h(pageLevel, text(view.doclet.name ?? view.doclet.longname ?? 'Class')));
 
   // Extends/Implements/Mixes
-  blocks.push(...classRelationsBlocks(view.doclet));
+  blocks.push(...classRelationsBlocks(view.doclet, options.resolveLink));
 
   // Source link for the class declaration itself, when it resolves.
   const classSource = sourceLinkBlock(view.doclet, options);
@@ -234,7 +238,7 @@ export function containerViewToMdast(
     // member-level params on the same longname.
     const ctorParams = paramsList(
       view.constructorParams,
-      { slots: options.slots, longname: view.doclet.longname },
+      { slots: options.slots, longname: view.doclet.longname, resolveLink: options.resolveLink },
       'constructor.params'
     );
     // The separately-documented constructor description (only when a class has
