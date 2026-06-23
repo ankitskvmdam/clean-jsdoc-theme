@@ -18,7 +18,12 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, extname, resolve as resolvePath } from 'node:path';
 import salty from '@jsdoc/salty';
 import { generateSite } from '@clean-jsdoc-theme/setu';
-import type { MenuItem, PlaygroundSiteConfig, SourceFileInput } from '@clean-jsdoc-theme/setu';
+import type {
+  DocInput,
+  MenuItem,
+  PlaygroundSiteConfig,
+  SourceFileInput,
+} from '@clean-jsdoc-theme/setu';
 import { render, runPagefindAgainstDir } from '@clean-jsdoc-theme/dwar';
 import type {
   CopyPageAction,
@@ -42,6 +47,7 @@ import {
 import type { FontSet, PlaygroundProvider, TDoclet, ValidatedFonts } from '@clean-jsdoc-theme/utils';
 import { reflectionsToDoclets } from './reflection-to-doclets';
 import { markdownToHtml, partsToMarkdown } from './comment';
+import { collectDocs, resolveDocImages } from './docs';
 import { writeOutputFiles } from './write-output-files';
 import { KNOWN_NON_THEME_KEYS, readThemeOption } from './options';
 import type { CleanJsdocThemeBlock } from './options';
@@ -599,6 +605,23 @@ export async function writeSite(
   const pkg = await resolvePkg(project);
   const sources = await collectSourceFiles(doclets, logger);
 
+  // Prose docs (`cleanJsdocTheme.docs` directory) → pages at clean slugs, with
+  // their local images routed through the `_assets/` pipeline (the bridge is the
+  // I/O layer; setu/dwar stay disk-free). `docGroups` orders the doc-group
+  // sidebar sections; `defaultDocGroup` labels docs with no group of their own.
+  const docsDir =
+    typeof block.docs === 'string' && block.docs.trim().length > 0 ? block.docs.trim() : undefined;
+  const warn = (msg: string): void => logger.warn(msg);
+  const resolvedDocs = docsDir
+    ? await resolveDocImages(await collectDocs(docsDir, warn), docsDir, warn)
+    : { docs: [] as DocInput[], files: [] as OutputFile[], inlineSvgs: {} as Record<string, string> };
+  const docs = resolvedDocs.docs;
+  const docGroups = normalizeSectionOrder(block.docGroups);
+  const defaultDocGroup =
+    typeof block.defaultDocGroup === 'string' && block.defaultDocGroup.trim().length > 0
+      ? block.defaultDocGroup.trim()
+      : undefined;
+
   // Sidebar config from the block: `menu` (full control) > `sectionOrder`.
   const sectionOrder = normalizeSectionOrder(block.sectionOrder);
   const menu = normalizeMenu(block.menu);
@@ -610,6 +633,9 @@ export async function writeSite(
     ...(pkg ? { pkg } : {}),
     ...(readme ? { readme } : {}),
     ...(sources.length > 0 ? { sources } : {}),
+    ...(docs.length > 0 ? { docs } : {}),
+    ...(docGroups ? { docGroups } : {}),
+    ...(defaultDocGroup ? { defaultDocGroup } : {}),
     ...(sectionOrder ? { sectionOrder } : {}),
     ...(menu ? { menu } : {}),
     ...(clubSidebarItems ? { clubSidebarItems } : {}),
@@ -677,9 +703,19 @@ export async function writeSite(
     },
     destination,
     islandCacheDir,
+    // SVGs referenced by docs are inlined (theme-toggle-aware) rather than
+    // `<img>`-ed; an empty map is a no-op, so a docs-less build is unaffected.
+    ...(Object.keys(resolvedDocs.inlineSvgs).length > 0
+      ? { inlineSvgs: resolvedDocs.inlineSvgs }
+      : {}),
   });
 
-  const outputFiles = [...result.files, ...logoFiles, ...(favicon?.files ?? [])];
+  const outputFiles = [
+    ...result.files,
+    ...logoFiles,
+    ...(favicon?.files ?? []),
+    ...resolvedDocs.files,
+  ];
   await writeOutputFiles(destination, outputFiles);
 
   // Next.js-style build report: where the files landed, page/asset counts, and

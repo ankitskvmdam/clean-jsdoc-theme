@@ -622,9 +622,14 @@ typedoc/src/
 │                           #   salty.taffy → setu generateSite → dwar render →
 │                           #   write files → Pagefind. Threads validated siteName/
 │                           #   fonts + normalized sectionOrder/menu/clubSidebarItems/
-│                           #   copyPage/pageNav/aiPrompt through. Prints the utils
+│                           #   copyPage/pageNav/aiPrompt through, and walks the
+│                           #   `docs` dir (docs.ts) → docs + docGroups/
+│                           #   defaultDocGroup + inlineSvgs. Prints the utils
 │                           #   formatBuildReport (node:zlib gzip sizer — allowed here,
 │                           #   it's the bridge, not utils). Holds defaultTheme.
+├── docs.ts                 # prose-docs front-end (copied from the JSDoc bridge):
+│                           #   collectDocs (walk dir → DocInput[]) + resolveDocImages
+│                           #   (local images → content-hashed _assets/ + inline SVGs).
 ├── reflection-to-doclets.ts# THE adapter: ProjectReflection → flat TDoclet[].
 │                           #   Class/Interface/Function/Method/Property/Variable/
 │                           #   Accessor/Enum(+isEnum)/EnumMember/TypeAlias(typedef)/
@@ -638,8 +643,9 @@ typedoc/src/
 │                           #   → params/returns/throws/examples/deprecated/see/category.
 ├── types.ts                # TypeDoc Type → { names: [type.toString()] } (v1).
 ├── options.ts              # the cleanJsdocTheme ParameterType.Object declaration +
-│                           #   typed reader (siteName/fonts/sectionOrder/menu/
-│                           #   clubSidebarItems/copyPage/pageNav/aiPrompt/strict).
+│                           #   typed reader (siteName/fonts/sectionOrder/docs/
+│                           #   docGroups/defaultDocGroup/menu/clubSidebarItems/
+│                           #   copyPage/pageNav/aiPrompt/strict).
 └── write-output-files.ts   # mkdir -p + writeFile loop (copied from the JSDoc bridge).
 ```
 

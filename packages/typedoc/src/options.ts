@@ -13,6 +13,8 @@
  *     "siteName": "My Library",
  *     "fonts": { "heading": "Fraunces", "body": "Spline Sans" },
  *     "sectionOrder": ["Classes", "Interfaces", "Enums", "Typedefs"],
+ *     "docs": "docs",
+ *     "docGroups": ["Guides"],
  *     "menu": [{ "id": "home", "title": "Home", "link": "/" }],
  *     "clubSidebarItems": true,
  *     "copyPage": true,
@@ -44,6 +46,12 @@ export interface CleanJsdocThemeBlock {
   fonts?: unknown;
   /** Ordered sidebar section labels (filters + orders the API sections). */
   sectionOrder?: unknown;
+  /** Prose-docs directory (Markdown/HTML) rendered into pages alongside the API. */
+  docs?: unknown;
+  /** Top-level doc-group display order (the sidebar sections built from docs). */
+  docGroups?: unknown;
+  /** Fallback group label for a doc with no group of its own. */
+  defaultDocGroup?: unknown;
   /** Full sidebar menu (takes precedence over `sectionOrder`). */
   menu?: unknown;
   /** Club prefix-grouped sidebar entries into subtrees. */
@@ -78,8 +86,9 @@ export function declareThemeOption(app: Application): void {
   const declaration: DeclarationOption = {
     name: OPTION_NAME,
     help:
-      'clean-jsdoc-theme options (siteName, fonts, sectionOrder, menu, ' +
-      'clubSidebarItems, copyPage, pageNav, playground, aiPrompt, footer, favicon, meta, strict).',
+      'clean-jsdoc-theme options (siteName, fonts, sectionOrder, docs, docGroups, ' +
+      'defaultDocGroup, menu, clubSidebarItems, copyPage, pageNav, playground, ' +
+      'aiPrompt, footer, favicon, meta, strict).',
     type: ParameterType.Object,
     defaultValue: {},
   };
