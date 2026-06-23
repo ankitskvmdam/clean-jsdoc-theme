@@ -1,7 +1,7 @@
 /**
  * zod schemas for the theme option surface — the recognized `siteName`,
  * `fonts`, `menu`, `copyPage`, `pageNav`, `playground`, `sectionOrder`,
- * `docGroups`, `defaultDocGroup`, `clubSidebarItems`, `aiPrompt`, and
+ * `docs`, `docGroups`, `defaultDocGroup`, `clubSidebarItems`, `aiPrompt`, and
  * `basePath` opts the JSDoc bridge accepts.
  *
  * These mirror the theme-relevant subset of `clean-jsdoc-theme`'s `JSDocOpts`
@@ -201,6 +201,7 @@ export const THEME_OPT_KEYS = [
   'pageNav',
   'playground',
   'sectionOrder',
+  'docs',
   'docGroups',
   'defaultDocGroup',
   'clubSidebarItems',

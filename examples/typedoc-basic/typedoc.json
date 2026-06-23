@@ -7,6 +7,8 @@
   "outputs": [{ "name": "clean-jsdoc-theme", "path": "dist" }],
   "cleanJsdocTheme": {
     "siteName": "typedoc-basic",
+    "docs": "docs",
+    "docGroups": ["Guides"],
     "sectionOrder": [
       "Core",
       "Shapes",
@@ -16,7 +18,8 @@
       "Interfaces",
       "Enums",
       "Typedefs",
-      "Globals"
+      "Globals",
+      "Guides"
     ],
     "clubSidebarItems": true,
     "copyPage": true
