@@ -177,6 +177,31 @@ describe('flavor: typedoc — class sections + module index', () => {
     expect(body).toContain('[`greet`](/');
   });
 
+  it('resolves module-index links to the standalone page, never a module anchor', () => {
+    // Regression: a child symbol that owns a page must win over its
+    // `module#member` anchor in the link registry — else the index links point
+    // at anchors the (links-only) module page no longer has.
+    const m = generateSite(tsCollection(), { flavor: 'typedoc' });
+    const enumPage = pageByLongname(m, 'module:lib.Direction')!;
+    const moduleBody = pageByLongname(m, 'module:lib')!.body;
+    expect(moduleBody).toContain(`[\`Direction\`](/${enumPage.slug})`);
+    // No `#…` member anchor on any index link.
+    expect(moduleBody).not.toMatch(/\]\(\/[^)]*#[^)]*\)/);
+  });
+
+  it('keeps unlisted kind sections under typedoc even when sectionOrder omits them', () => {
+    // Regression: default TypeDoc always shows every kind; a user sectionOrder
+    // that lists only some kinds must not drop the rest (JSDoc still filters).
+    const m = generateSite(tsCollection(), {
+      flavor: 'typedoc',
+      sectionOrder: ['Classes', 'Interfaces'],
+    });
+    const labels = navLabels(m);
+    expect(labels).toContain('Functions');
+    expect(labels).toContain('Variables');
+    expect(labels).toContain('Enumerations');
+  });
+
   it('orders the sidebar with TypeDoc kind labels', () => {
     const m = generateSite(tsCollection(), { flavor: 'typedoc' });
     const labels = navLabels(m);

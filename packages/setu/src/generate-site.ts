@@ -1019,7 +1019,20 @@ export function assembleNav({
     alphaExtras.push(label);
   }
   alphaExtras.sort((a, b) => a.localeCompare(b));
-  const extras = [...docOrdered, ...alphaExtras];
+  // Under the typedoc flavor, a kind section must never be dropped just because a
+  // user-supplied `sectionOrder` didn't list it (default TypeDoc always shows
+  // every kind). Append any present-but-unlisted TypeDoc kind label, in the
+  // canonical TypeDoc order. JSDoc keeps its legacy "omitted kind = dropped"
+  // filter (this loop never runs for it), so its nav stays byte-identical.
+  const kindExtras: string[] = [];
+  if (flavor === 'typedoc') {
+    for (const label of TYPEDOC_SECTION_ORDER) {
+      if (inBase.has(label) || seenExtra.has(label) || !bySection.has(label)) continue;
+      seenExtra.add(label);
+      kindExtras.push(label);
+    }
+  }
+  const extras = [...docOrdered, ...alphaExtras, ...kindExtras];
   const order = extras.length > 0 ? [...baseOrder, ...extras] : baseOrder;
   const out: NavNode[] = [];
 

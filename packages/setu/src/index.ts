@@ -282,6 +282,19 @@ export function generateSite(collection: unknown, opts?: GenerateSiteOptions): S
   // → symbol B enumerated after A) resolve. Mirrors how `sourceLink` is built
   // first and threaded into pages.
   const registry: LinkRegistry = new Map();
+  // Under the typedoc flavor, enums/functions/variables/classes/interfaces each
+  // own a standalone page yet also appear in a module/namespace's member buckets.
+  // Pre-seed every page's OWN longname → its slug before the member walks, so a
+  // symbol that has its own page always resolves there (and never to a stale
+  // `module#member` anchor — which no longer exists, since a typedoc module page
+  // is a links index). Page keys only; member anchors are still added below. The
+  // JSDoc path skips this, so its registry build is byte-identical.
+  if (flavor === 'typedoc') {
+    for (const s of specs) {
+      const key = s.view.doclet.longname;
+      if (key && !registry.has(key)) registry.set(key, { slug: s.slug });
+    }
+  }
   for (const s of specs) {
     registerContainerView(registry, s.view, s.slug);
     // Merged-away longnames resolve to the surviving page (first-wins guard).
