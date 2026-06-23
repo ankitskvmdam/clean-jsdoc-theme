@@ -27,10 +27,10 @@ issueRules:
   # (simpleicons), and sandboxed embed iframes. No data is exfiltrated.
   networkAccess: false
 
-  # publish.ts is CJS and dynamic-`import()`s the ESM packages by file:// URL; the
-  # `new Function('import.meta.url')` shim exists only for the .mjs build (it is
-  # dead code in the CJS entry, which resolves via __filename first).
-  usesEval: false
+  # publish.ts is CJS and dynamic-`import()`s the ESM packages by file:// URL, and
+  # the tsup ESM bundle carries the standard `__require` interop shim. (The old
+  # `new Function('import.meta.url')` eval shim was removed — `usesEval` no longer
+  # needs an exception.)
   dynamicRequire: false
 
   # The build reads CLEAN_JSDOC_THEME_EXTRACT / cwd to drive extract-vs-build
