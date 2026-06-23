@@ -64,6 +64,9 @@ export interface Bar {
 
 /**
  * A top-level function.
+ *
+ * @remarks
+ * Uses integer multiplication; overflow is not checked.
  * @param n - input.
  * @returns the squared value.
  * @deprecated use something else
@@ -334,6 +337,13 @@ describe('reflectionsToDoclets — block tags', () => {
   it('@example on the class', () => {
     const foo = byLongname('Foo')!;
     expect(foo.examples?.[0]).toContain('new Foo(1)');
+  });
+
+  it('captures @remarks as a separate field (HTML)', () => {
+    const square = byLongname('square')!;
+    expect(square.remarks).toContain('overflow is not checked');
+    // Remarks are distinct from the summary/description.
+    expect(square.description ?? '').not.toContain('overflow is not checked');
   });
 
   it('@deprecated reason string', () => {

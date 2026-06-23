@@ -285,6 +285,7 @@ function adaptCallable(
   // TypeDoc puts a function/method's block tags on the call SIGNATURE comment,
   // not the reflection — adopt any the reflection itself didn't carry.
   if (!doclet.returns && sigFields.returns) doclet.returns = sigFields.returns;
+  if (!doclet.remarks && sigFields.remarks) doclet.remarks = sigFields.remarks;
   if (!doclet.examples && sigFields.examples) doclet.examples = sigFields.examples;
   if (!doclet.exceptions && sigFields.exceptions) doclet.exceptions = sigFields.exceptions;
   if (!doclet.see && sigFields.see) doclet.see = sigFields.see;

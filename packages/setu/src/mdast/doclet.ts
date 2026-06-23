@@ -683,6 +683,7 @@ export type DocletSection =
   | 'relations'
   | 'this'
   | 'alias'
+  | 'remarks'
   | 'typeParams'
   | 'params'
   | 'properties'
@@ -784,6 +785,13 @@ export function docletBlocks(
   }
 
   blocks.push(...descriptionBlocks(doclet, options.slots));
+
+  // `@remarks` — detailed prose shown as its own "Remarks" section after the
+  // description (matching TypeDoc). Only the TypeDoc bridge sets `remarks`, so
+  // JSDoc output is unchanged.
+  if (!skip.has('remarks') && doclet.remarks) {
+    blocks.push(p(strong(text('Remarks'))), ...htmlToMdastBlocks(doclet.remarks));
+  }
 
   if (!skip.has('deprecation')) {
     const dep = deprecationBlock(doclet);

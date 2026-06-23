@@ -200,6 +200,12 @@ export const DocletSchema = z.object({
   preserveName: z.boolean().optional(),
   properties: z.array(z.union([DocletEnumPropertySchema, DocletParamSchema])).optional(),
   readonly: z.boolean().optional(),
+  /**
+   * `@remarks` — detailed prose (HTML) shown as its own section after the
+   * summary/description, matching TypeDoc. Set by the TypeDoc bridge only; JSDoc
+   * has no `@remarks` field, so JSDoc output is unaffected.
+   */
+  remarks: z.string().optional(),
   requires: z.array(z.string()).optional(),
   returns: z.array(DocletParamSchema).optional(),
   scope: DocletScopeSchema.optional(),

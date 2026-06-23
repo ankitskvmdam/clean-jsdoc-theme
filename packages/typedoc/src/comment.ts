@@ -139,6 +139,8 @@ function tagContentToText(
 /** The subset of doclet fields derived from a comment's block tags + flags. */
 export interface CommentFields {
   description?: string;
+  /** `@remarks` — detailed prose (HTML), rendered as its own section. */
+  remarks?: string;
   examples?: string[];
   returns?: TDocletParam[];
   exceptions?: TDocletParam[];
@@ -200,6 +202,14 @@ export function commentFields(
         fields.deprecated = reason || true;
         break;
       }
+      case 'remarks':
+        // Detailed prose shown as its own "Remarks" section (HTML, like the
+        // description). TypeDoc renders this separately from the summary.
+        fields.remarks = tagContentToHtml(block.content, linkResolver);
+        break;
+      case 'privateremarks':
+        // Explicitly excluded from generated docs (TypeDoc drops it).
+        break;
       case 'see':
         see.push(tagContentToText(block.content, linkResolver));
         break;
@@ -278,6 +288,7 @@ export function flagFields(reflection: Reflection): FlagFields {
  * `paramDescriptions` map (callers apply those to `params` themselves).
  */
 export function applyCommentFields(doclet: TDoclet, fields: CommentFields): void {
+  if (fields.remarks) doclet.remarks = fields.remarks;
   if (fields.examples) doclet.examples = fields.examples;
   if (fields.returns) doclet.returns = fields.returns;
   if (fields.exceptions) doclet.exceptions = fields.exceptions;
