@@ -729,6 +729,13 @@ export interface DocletBlocksOptions {
    * Omitted for the byte-identical default build. See {@link SlotResolver}.
    */
   slots?: SlotResolver;
+  /**
+   * Document-model flavor. `'typedoc'` switches member rendering to full
+   * TypeScript signatures (a `ts` code block per member, with type parameters,
+   * parameter types, and return types). `'jsdoc'` (default/omitted) keeps the
+   * name-only heading signature — byte-identical.
+   */
+  flavor?: 'jsdoc' | 'typedoc';
 }
 
 /**

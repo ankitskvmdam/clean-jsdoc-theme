@@ -1,10 +1,11 @@
 import type { PhrasingContent, Root, RootContent } from 'mdast';
 import { ClassMember, ClassView, ContainerView, MemberBuckets } from '../class-view';
-import { slugifyHeading, TDocletParam } from '@clean-jsdoc-theme/utils';
-import { h, hr, inlineCode, li, link, memberHeading, memberMeta, p, root, strong, text, ul } from './builders';
+import { slugifyHeading, TDocletParam, TDocletTypeParam } from '@clean-jsdoc-theme/utils';
+import { code, h, hr, inlineCode, li, link, memberHeading, memberMeta, p, root, strong, text, ul } from './builders';
 import {
   docletBlocks,
   DocletBlocksOptions,
+  type DocletSection,
   paramsList,
   sourceLinkBlock,
   typeExpressionString,
@@ -186,6 +187,116 @@ export function constructorSignature(name: string, params: readonly TDocletParam
   return `new ${name}(${list})`;
 }
 
+// ── TypeScript signature rendering (typedoc flavor) ──────────────────────────
+//
+// Build the full TS signature default TypeDoc shows — `new Component<P extends
+// ComponentProps = ComponentProps, S extends object = object>(props: P):
+// Component<P, S>`, `addChild(child: Component): void`, `get state():
+// ComponentState`, `_props: P`. JSDoc never reaches this path (gated on the
+// typedoc flavor), so its `memberSignatureSuffix`/`constructorSignature`
+// rendering is untouched.
+
+/** Wrap a single-line signature onto multiple lines past this width. */
+const SIG_WRAP_WIDTH = 64;
+
+/** A type expression → its readable string (the `type.names`, `|`-joined). */
+function tsType(type: { names?: readonly string[] } | undefined): string {
+  return type?.names && type.names.length > 0 ? type.names.join(' | ') : '';
+}
+
+/** `<T extends C = D, …>` parts (one string per type parameter), or `[]`. */
+function tsTypeParamParts(typeParams: readonly TDocletTypeParam[] | undefined): string[] {
+  if (!typeParams || typeParams.length === 0) return [];
+  return typeParams.map((tp) => {
+    let s = tp.name;
+    if (tp.constraint) s += ` extends ${tp.constraint}`;
+    if (tp.default !== undefined && tp.default !== '') s += ` = ${tp.default}`;
+    return s;
+  });
+}
+
+/** `name: Type`, with `?` for optional and `...` for rest; top-level params only. */
+function tsParamParts(params: readonly TDocletParam[] | undefined): string[] {
+  if (!params) return [];
+  return params
+    .filter((pm) => pm.name && !pm.name.includes('.'))
+    .map((pm) => {
+      const base = pm.variable ? `...${pm.name}` : (pm.name as string);
+      const t = tsType(pm.type);
+      return `${base}${pm.optional ? '?' : ''}${t ? `: ${t}` : ''}`;
+    });
+}
+
+/**
+ * Assemble a callable signature, wrapping onto multiple lines (one type param /
+ * param per indented line) once the single-line form is long — matching how
+ * default TypeDoc lays out wide constructor/method signatures.
+ */
+function formatCallable(
+  prefix: string,
+  typeParamParts: readonly string[],
+  paramParts: readonly string[],
+  ret: string
+): string {
+  const tp = typeParamParts.length > 0 ? `<${typeParamParts.join(', ')}>` : '';
+  const single = `${prefix}${tp}(${paramParts.join(', ')})${ret}`;
+  if (single.length <= SIG_WRAP_WIDTH) return single;
+
+  const lines: string[] = [];
+  if (typeParamParts.length > 0) {
+    lines.push(`${prefix}<`);
+    for (const t of typeParamParts) lines.push(`    ${t},`);
+    lines.push('>(');
+  } else {
+    lines.push(`${prefix}(`);
+  }
+  for (const pm of paramParts) lines.push(`    ${pm},`);
+  lines.push(`)${ret}`);
+  return lines.join('\n');
+}
+
+/** The class instance type for a constructor's return, e.g. `Component<P, S>`. */
+function instanceType(className: string, typeParams: readonly TDocletTypeParam[] | undefined): string {
+  if (!typeParams || typeParams.length === 0) return className;
+  return `${className}<${typeParams.map((tp) => tp.name).join(', ')}>`;
+}
+
+/** Full TS constructor signature, e.g. `new Widget<T>(opts: T): Widget<T>`. */
+function tsConstructorSignature(
+  className: string,
+  typeParams: readonly TDocletTypeParam[] | undefined,
+  params: readonly TDocletParam[]
+): string {
+  return formatCallable(
+    `new ${className}`,
+    tsTypeParamParts(typeParams),
+    tsParamParts(params),
+    `: ${instanceType(className, typeParams)}`
+  );
+}
+
+/**
+ * Full TS signature for a member: a callable form for functions/methods
+ * (`name<T>(p: T): Ret`), `get name(): Type` for accessors, and `name: Type`
+ * for fields. Returns `null` when there's nothing meaningful to show.
+ */
+function tsMemberSignature(member: ClassMember): string | null {
+  const name = member.name;
+  if (!name) return null;
+  if (member.kind === 'function') {
+    const ret = tsType(member.returns?.[0]?.type);
+    return formatCallable(
+      name,
+      tsTypeParamParts(member.typeParams),
+      tsParamParts(member.params),
+      ret ? `: ${ret}` : ''
+    );
+  }
+  const t = tsType(member.type);
+  if (member.isAccessor) return `get ${name}()${t ? `: ${t}` : ''}`;
+  return t ? `${name}: ${t}` : name;
+}
+
 /**
  * Modifier / kind badges for a member, in display order. Mirrors
  * {@link modifiersBlock} but adds the scope (`static`) and `deprecated` flags,
@@ -223,7 +334,11 @@ export function memberBlocks(
   headingLevel: 2 | 3 | 4 = 3
 ): RootContent[] {
   const name = member.name ?? '(anonymous)';
-  const suffix = memberSignatureSuffix(member);
+  const typedoc = options.flavor === 'typedoc';
+  // JSDoc: the heading IS the signature (`process(data) -> ret`). TypeDoc: the
+  // heading is the bare name and the full TS signature renders as a `ts` code
+  // block below (matching default TypeDoc), so the anchor stays `#name` either way.
+  const suffix = typedoc ? undefined : memberSignatureSuffix(member);
   const out: RootContent[] = [
     memberHeading({
       id: slugifyHeading(name),
@@ -239,7 +354,16 @@ export function memberBlocks(
     out.push(memberMeta({ badges, sourceHref: resolved?.href, sourceLabel: resolved?.label }));
   }
 
-  out.push(...docletBlocks(member, { ...options, skip: [...(options.skip ?? []), 'modifiers'] }));
+  // TypeDoc: the full TS signature as a highlighted code block, then the body
+  // with the now-redundant "Type" field suppressed (the type is in the signature).
+  const skip: DocletSection[] = [...(options.skip ?? []), 'modifiers'];
+  if (typedoc) {
+    const sig = tsMemberSignature(member);
+    if (sig) out.push(code('ts', sig));
+    skip.push('type');
+  }
+
+  out.push(...docletBlocks(member, { ...options, skip }));
   return out;
 }
 
@@ -310,6 +434,14 @@ export function containerViewToMdast(
   // Extends/Implements/Mixes
   blocks.push(...classRelationsBlocks(view.doclet));
 
+  // Standalone function/variable pages (typedoc flavor): the full TS signature
+  // as a code block, right under the title — matching default TypeDoc, where a
+  // function page leads with `name<T>(p: T): Ret` and a variable with `name: T`.
+  if (options.flavor === 'typedoc' && (view.kind === 'function' || view.kind === 'variable')) {
+    const sig = tsMemberSignature(view.doclet);
+    if (sig) blocks.push(code('ts', sig));
+  }
+
   // Source link for the class declaration itself, when it resolves.
   const classSource = sourceLinkBlock(view.doclet, options);
   if (classSource) blocks.push(classSource);
@@ -371,10 +503,28 @@ export function containerViewToMdast(
     const ctorSigParams: TDocletParam[] = view.constructorParams.length
       ? view.constructorParams
       : view.constructorParamNames.map((name) => ({ name }));
-    blocks.push(hr(), h(2, text(options.flavor === 'typedoc' ? 'Constructors' : 'Constructor')));
-    blocks.push(p(inlineCode(constructorSignature(ctorName, ctorSigParams))));
-    blocks.push(...ctorDescription);
-    if (ctorParams) blocks.push(p(strong(text('Parameters'))), ctorParams);
+    if (options.flavor === 'typedoc') {
+      // TypeDoc layout: "Constructors" → a `constructor` member heading → the
+      // full TS call signature → description → Parameters → Returns (the class
+      // instance type). Class type parameters are already shown in the class
+      // body above, so they aren't repeated here.
+      blocks.push(hr(), h(2, text('Constructors')));
+      blocks.push(
+        memberHeading({ id: 'constructor', depth: 3, name: 'constructor', sig: 'constructor' })
+      );
+      blocks.push(code('ts', tsConstructorSignature(ctorName, view.doclet.typeParams, ctorSigParams)));
+      blocks.push(...ctorDescription);
+      if (ctorParams) blocks.push(p(strong(text('Parameters'))), ctorParams);
+      blocks.push(
+        p(strong(text('Returns'))),
+        p(inlineCode(instanceType(ctorName, view.doclet.typeParams)))
+      );
+    } else {
+      blocks.push(hr(), h(2, text('Constructor')));
+      blocks.push(p(inlineCode(constructorSignature(ctorName, ctorSigParams))));
+      blocks.push(...ctorDescription);
+      if (ctorParams) blocks.push(p(strong(text('Parameters'))), ctorParams);
+    }
   }
 
   // Members. Under the typedoc flavor the layout is kind-specific (a links index

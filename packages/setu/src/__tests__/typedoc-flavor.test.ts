@@ -213,7 +213,38 @@ describe('flavor: typedoc — class sections + module index', () => {
   });
 });
 
+describe('flavor: typedoc — full TS signatures', () => {
+  it('renders a function page signature with type params, param types, and return', () => {
+    const m = generateSite(tsCollection(), { flavor: 'typedoc' });
+    const body = pageByLongname(m, 'module:lib.greet')!.body;
+    expect(body).toContain('```ts');
+    expect(body).toContain('greet<T extends string>(name: string): string');
+  });
+
+  it('renders an accessor as `get name(): Type` and a field as `name: Type`', () => {
+    const m = generateSite(tsCollection(), { flavor: 'typedoc' });
+    const body = pageByLongname(m, 'module:lib.Widget')!.body;
+    expect(body).toContain('get size(): number');
+  });
+
+  it('renders a full constructor signature with a typed return', () => {
+    const m = generateSite(tsCollection(), { flavor: 'typedoc' });
+    const body = pageByLongname(m, 'module:lib.Widget')!.body;
+    expect(body).toContain('new Widget(): Widget');
+    expect(body).toContain('**Returns**');
+  });
+});
+
 describe('flavor: jsdoc (default) — byte-identical: no new pages, JSDoc labels', () => {
+  it('keeps member signatures in the heading (no per-member `ts` code block)', () => {
+    // The JSDoc path must NOT emit the TypeDoc-style signature code blocks; the
+    // signature stays in the member heading (`name(params) -> ret`).
+    const m = generateSite(tsCollection());
+    const body = pageByLongname(m, 'module:lib.Widget')!.body;
+    expect(body).not.toContain('```ts');
+  });
+
+
   it('does NOT create enum/function/variable pages without the typedoc flavor', () => {
     const m = generateSite(tsCollection());
     const kinds = m.pages.map((p) => p.frontmatter.kind);
