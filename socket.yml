@@ -11,7 +11,8 @@
 # downgraded so the checks focus on genuinely new supply-chain risk. The
 # high-signal alerts (installScripts, telemetry, hasNativeCode, gptMalware,
 # gptDidYouMean / typosquat, httpDependency, unmaintained) are deliberately left
-# ENABLED.
+# ENABLED. shellAccess also stays enabled repo-wide and is disabled only for the
+# one package that legitimately needs it (see packages/aadesh/socket.yml).
 version: 2
 
 issueRules:
@@ -31,10 +32,6 @@ issueRules:
   # dead code in the CJS entry, which resolves via __filename first).
   usesEval: false
   dynamicRequire: false
-
-  # @clean-jsdoc-theme/aadesh is the i18n CLI (`clean-jsdoc`); it spawns the build
-  # pipeline. Expected for a CLI; not present in the theme's render path.
-  shellAccess: false
 
   # The build reads CLEAN_JSDOC_THEME_EXTRACT / cwd to drive extract-vs-build
   # mode. No secrets or credentials are read.
