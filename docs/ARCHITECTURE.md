@@ -664,6 +664,26 @@ typedoc/src/
 The two bridges are independent leaf packages — pure helpers (`write-output-files`,
 `collectSourceFiles`) are copied, never cross-imported.
 
+**Document-model flavor (TypeDoc parity).** setu's `generateSite` takes a
+`flavor: 'jsdoc' | 'typedoc'` (default `'jsdoc'`); the TypeDoc bridge passes
+`'typedoc'`, the JSDoc bridge passes nothing — so **JSDoc output is
+byte-identical** and every parity behavior is gated. Under `'typedoc'`, setu
+matches default TypeDoc's structure: **enums, top-level functions, and variables
+each become a standalone page** in their own kind-section (a "Pass 1b" alongside
+the container pass; a function/variable that is a class/interface/enum *member*
+stays inside its owner), type aliases are labelled **"Type Aliases"** (vs
+"Typedefs"), class pages use TypeDoc section labels (**Constructors / Properties /
+Accessors / Methods** — accessors routed by the bridge's `isAccessor` flag), enum
+pages render an **"Enumeration Members"** section, and **module/namespace pages
+become a kind-grouped index of links** to their exports instead of inlining member
+bodies. Generics render a structured **"Type Parameters"** section from the
+doclet's `typeParams` (populated only by the TypeDoc bridge, so the section is
+safe to emit unconditionally). The link registry pre-seeds each page's own
+longname so a cross-reference always resolves to the symbol's page, never a stale
+`module#member` anchor; and the sidebar shows every kind section even when a
+user's `sectionOrder` omits some. Overloaded signatures are a known gap (only the
+first signature renders) — see the deferred follow-up.
+
 ### `@clean-jsdoc-theme/bhasha` — the pure i18n core
 
 The isomorphic (zero `node:*`) half of localization, imported by rang into the
