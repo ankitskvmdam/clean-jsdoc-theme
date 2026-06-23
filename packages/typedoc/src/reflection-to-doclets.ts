@@ -31,8 +31,9 @@ import type {
   ProjectReflection,
   Reflection,
   SignatureReflection,
+  TypeParameterReflection,
 } from 'typedoc';
-import type { TDoclet, TDocletKind, TDocletParam } from '@clean-jsdoc-theme/utils';
+import type { TDoclet, TDocletKind, TDocletParam, TDocletTypeParam } from '@clean-jsdoc-theme/utils';
 import {
   applyCommentFields,
   commentFields,
@@ -164,9 +165,22 @@ function adaptDeclaration(
   // Critical guard: never emit longname === memberof (the self-reference bug).
   if (memberof && memberof !== longname) doclet.memberof = memberof;
 
-  // An enum carries `isEnum` so setu buckets it as a member section (matching
-  // the JSDoc `@enum` shape), not as a standalone container page.
+  // An enum carries `isEnum` so setu buckets its members under the enum; under
+  // the typedoc flavor setu also gives the enum its own standalone page.
   if (reflection.kindOf(ReflectionKind.Enum)) doclet.isEnum = true;
+
+  // Tag accessors so setu can route them to an "Accessors" section (TypeDoc
+  // parity) instead of folding them into Fields. JSDoc never sets this flag.
+  if (reflection.kindOf(ReflectionKind.Accessor)) doclet.isAccessor = true;
+
+  // Structured generics → a real "Type Parameters" section. Type parameters live
+  // on the reflection for class/interface/type-alias and on the call signature
+  // for functions/methods.
+  const typeParams = adaptTypeParams(
+    reflection.typeParameters ?? reflection.signatures?.[0]?.typeParameters,
+    resolveLink
+  );
+  if (typeParams) doclet.typeParams = typeParams;
 
   // Flags (readonly / virtual / optional / access).
   Object.assign(doclet, flagFields(reflection));
@@ -382,6 +396,28 @@ function firstSignature(
   reflection: DeclarationReflection | undefined
 ): SignatureReflection | undefined {
   return reflection?.signatures?.[0];
+}
+
+/**
+ * Map a reflection's (or signature's) type parameters to structured
+ * `typeParams`. `constraint` is the `extends` bound and `default` the `= …`
+ * default, both kept as readable type strings (`type.toString()`, matching
+ * {@link typeToDocletType}'s v1 approach). Returns `undefined` for none so the
+ * caller can assign conditionally.
+ */
+function adaptTypeParams(
+  typeParameters: readonly TypeParameterReflection[] | undefined,
+  resolveLink: LinkResolver
+): TDocletTypeParam[] | undefined {
+  if (!typeParameters || typeParameters.length === 0) return undefined;
+  return typeParameters.map((tp) => {
+    const out: TDocletTypeParam = { name: tp.name };
+    if (tp.type) out.constraint = tp.type.toString();
+    if (tp.default) out.default = tp.default.toString();
+    const description = summaryToHtml(tp.comment, resolveLink);
+    if (description) out.description = description;
+    return out;
+  });
 }
 
 /** Map a signature's parameters to doclet params, merging in block-tag descriptions. */

@@ -152,6 +152,32 @@ function normalizeSectionOrder(raw: unknown): string[] | undefined {
 }
 
 /**
+ * JSDoc-ish sidebar labels a user might write in `sectionOrder` → the canonical
+ * TypeDoc kind-section labels setu emits under the typedoc flavor. So a config
+ * listing `Enums`/`Typedefs` still orders the `Enumerations`/`Type Aliases`
+ * sections. Case-insensitive; unknown labels (category/doc groups) pass through.
+ */
+const TYPEDOC_SECTION_ALIASES: Record<string, string> = {
+  enums: 'Enumerations',
+  enumerations: 'Enumerations',
+  typedefs: 'Type Aliases',
+  'type aliases': 'Type Aliases',
+  typealiases: 'Type Aliases',
+  classes: 'Classes',
+  interfaces: 'Interfaces',
+  functions: 'Functions',
+  variables: 'Variables',
+  namespaces: 'Namespaces',
+  modules: 'Modules',
+};
+
+/** Map each `sectionOrder` entry through {@link TYPEDOC_SECTION_ALIASES}. */
+function canonicalizeTypedocSectionOrder(order: string[] | undefined): string[] | undefined {
+  if (!order) return undefined;
+  return order.map((label) => TYPEDOC_SECTION_ALIASES[label.toLowerCase()] ?? label);
+}
+
+/**
  * Validate `block.menu` into a clean `MenuItem[]`, or `undefined` when there's no
  * usable menu. Copied from the JSDoc bridge's `normalizeMenu`: the link URL is
  * read from `link` (preferred) or `href`; only entries with an `id` or a link
@@ -623,13 +649,16 @@ export async function writeSite(
       : undefined;
 
   // Sidebar config from the block: `menu` (full control) > `sectionOrder`.
-  const sectionOrder = normalizeSectionOrder(block.sectionOrder);
+  // Section labels are canonicalized to TypeDoc's names so a config written with
+  // `Enums`/`Typedefs` still orders the `Enumerations`/`Type Aliases` sections.
+  const sectionOrder = canonicalizeTypedocSectionOrder(normalizeSectionOrder(block.sectionOrder));
   const menu = normalizeMenu(block.menu);
   const clubSidebarItems = block.clubSidebarItems === true;
   // Enablement slice → setu's `@playground` resolver (runtime slice → the theme).
   const playground = normalizePlayground(block.playground);
 
   const manifest = generateSite(collection, {
+    flavor: 'typedoc',
     ...(pkg ? { pkg } : {}),
     ...(readme ? { readme } : {}),
     ...(sources.length > 0 ? { sources } : {}),

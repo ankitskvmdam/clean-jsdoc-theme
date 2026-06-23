@@ -97,6 +97,20 @@ export type Point = {
 /** A data-handling callback. */
 export type DataHandler = (chunk: string, index: number) => boolean;
 
+/**
+ * Identity function.
+ * @typeParam T - the value type.
+ */
+export function identity<T>(x: T): T {
+  return x;
+}
+
+/** A generic container. */
+export class Box<T extends object = Record<string, unknown>> {
+  /** The boxed value. */
+  value?: T;
+}
+
 /** A nested namespace. */
 export namespace Shapes {
   /** A circle living in the namespace. */
@@ -281,6 +295,36 @@ describe('reflectionsToDoclets — params/returns/types', () => {
   it('accessor get-signature type → member type', () => {
     const doubled = byLongname('Foo#doubled')!;
     expect(doubled.type?.names).toEqual(['number']);
+  });
+
+  it('flags an accessor with isAccessor (so setu can route it to Accessors)', () => {
+    const doubled = byLongname('Foo#doubled')!;
+    expect(doubled.isAccessor).toBe(true);
+    // A plain field is never flagged.
+    expect(byLongname('Foo#count')?.isAccessor).toBeUndefined();
+  });
+});
+
+describe('reflectionsToDoclets — type parameters (generics)', () => {
+  it('captures a function signature type parameter (with its @typeParam description)', () => {
+    const identity = byLongname('identity')!;
+    expect(identity.typeParams).toHaveLength(1);
+    expect(identity.typeParams![0].name).toBe('T');
+    expect(identity.typeParams![0].description).toContain('the value type');
+  });
+
+  it('captures a class type parameter with constraint + default', () => {
+    const box = byLongname('Box')!;
+    expect(box.typeParams).toHaveLength(1);
+    const [t] = box.typeParams!;
+    expect(t.name).toBe('T');
+    expect(t.constraint).toBe('object');
+    // The default renders as a readable type string.
+    expect(t.default).toBeTruthy();
+  });
+
+  it('leaves typeParams undefined for a non-generic symbol', () => {
+    expect(byLongname('square')?.typeParams).toBeUndefined();
   });
 });
 

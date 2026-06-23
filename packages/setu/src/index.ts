@@ -67,6 +67,15 @@ interface ContainerSpec {
 
 /** Build-side options. */
 export interface GenerateSiteOptions {
+  /**
+   * Document-model flavor. `'jsdoc'` (default) keeps the JSDoc container/member
+   * model — enums/functions/variables stay members or land on the Globals page,
+   * sidebar kind labels are the JSDoc ones (`Typedefs`, …). `'typedoc'` matches
+   * default TypeDoc: enums, top-level functions, variables, and type aliases each
+   * get a standalone page in their own kind-section, with TypeDoc labels. Only
+   * the TypeDoc bridge passes `'typedoc'`, so JSDoc output is byte-identical.
+   */
+  flavor?: 'jsdoc' | 'typedoc';
   /** Optional package metadata to embed in the manifest. */
   pkg?: SiteManifest['pkg'];
   /**
