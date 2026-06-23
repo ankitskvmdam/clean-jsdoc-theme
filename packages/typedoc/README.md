@@ -80,10 +80,19 @@ its output in `typedoc.json`; theme options live under `cleanJsdocTheme`:
   "plugin": ["@clean-jsdoc-theme/typedoc"],
   "outputs": [{ "name": "clean-jsdoc-theme", "path": "dist" }],
   "cleanJsdocTheme": {
-    "siteName": "My Library"
+    "siteName": "My Library",
+    // Optional: a directory of hand-written Markdown/HTML guides rendered
+    // alongside the API (folder layout → URL + sidebar group; per-file
+    // frontmatter overrides; a root `index.md` becomes the home page).
+    "docs": "docs"
   }
 }
 ```
+
+> The home page comes from TypeDoc's own top-level `"readme"` option (or a root
+> `docs/index.md`). Both `readme` and the theme block sit at the top level of
+> `typedoc.json` — `readme` is TypeDoc's, the theme options nest under
+> `cleanJsdocTheme`.
 
 Build, then serve over HTTP (Pagefind needs HTTP to load its index):
 
