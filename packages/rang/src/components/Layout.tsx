@@ -79,8 +79,19 @@ export function Layout({
         {sidebar && (
           <aside class="hidden md:block">
             {/* `scrollbar-gutter: stable` + a small right padding keep the scrollbar
-                track clear of the nav labels (it used to overlap the text). */}
-            <div class="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto [scrollbar-gutter:stable] pr-2">
+                track clear of the nav labels (it used to overlap the text).
+                Sticky offset: clear the header (h-16). On the md–lg range the mobile
+                TOC bar (sticky top-16, h-12) ALSO shows above the sidebar, so when
+                it's present the offset drops to top-32 (header + bar + gap) — else
+                its first item hides under the bar. At lg the bar gives way to the
+                right rail, so we revert to top-20. */}
+            <div
+              class={`sticky overflow-y-auto [scrollbar-gutter:stable] pr-2 ${
+                tocMobile
+                  ? 'top-32 max-h-[calc(100vh-9rem)] lg:top-20 lg:max-h-[calc(100vh-6rem)]'
+                  : 'top-20 max-h-[calc(100vh-6rem)]'
+              }`}
+            >
               {sidebar}
             </div>
           </aside>
