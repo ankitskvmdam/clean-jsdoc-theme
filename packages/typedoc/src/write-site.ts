@@ -739,6 +739,12 @@ export async function writeSite(
     for (const e of result.errors) logger.warn(formatRenderError(e));
   }
 
+  // Non-fatal authoring warnings (e.g. unbalanced inline-code backticks).
+  if (result.warnings && result.warnings.length > 0) {
+    logger.warn(`[clean-jsdoc-theme] ${result.warnings.length} content warning(s) (non-fatal):`);
+    for (const w of result.warnings) logger.warn(formatRenderError(w));
+  }
+
   // Pagefind is optional; a missing/failing Pagefind must not break the build.
   try {
     await runPagefindAgainstDir(destination);

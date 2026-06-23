@@ -27,12 +27,32 @@ export interface RenderError {
 }
 
 /**
- * Format one skipped-page {@link RenderError} for a build log, so both bridges
- * (JSDoc + TypeDoc) print render failures identically. A positioned error shows
- * `slug (line L:C): message` followed by its indented code-frame snippet; an
- * unpositioned one falls back to the legacy `slug: message` single line.
+ * A non-fatal authoring issue found while rendering a page — e.g. an unbalanced
+ * inline-code backtick. Unlike a {@link RenderError} the page still renders; the
+ * bridge surfaces these so the author can fix the source. Same positional shape
+ * as `RenderError`, so {@link formatRenderError} prints both identically.
  */
-export function formatRenderError(error: RenderError, indent = '  '): string {
+export interface RenderWarning {
+  /** Slug of the page the issue was found on. */
+  slug: string;
+  /** Human-readable description of the issue. */
+  message: string;
+  /** 1-based source line in `page.body`, when known. */
+  line?: number;
+  /** 1-based source column in `page.body`, when known (best-effort). */
+  column?: number;
+  /** A few numbered lines of `page.body` around the issue, with a caret. */
+  snippet?: string;
+}
+
+/**
+ * Format one skipped-page {@link RenderError} (or a {@link RenderWarning}, which
+ * has the same shape) for a build log, so both bridges (JSDoc + TypeDoc) print
+ * them identically. A positioned entry shows `slug (line L:C): message` followed
+ * by its indented code-frame snippet; an unpositioned one falls back to the
+ * legacy `slug: message` single line.
+ */
+export function formatRenderError(error: RenderError | RenderWarning, indent = '  '): string {
   const hasLine = typeof error.line === 'number';
   const loc = hasLine
     ? ` (line ${error.line}${typeof error.column === 'number' ? `:${error.column}` : ''})`
@@ -57,6 +77,12 @@ export interface RenderResult {
    * failures here so the caller can surface them. Empty when all pages render.
    */
   errors?: RenderError[];
+  /**
+   * Non-fatal authoring issues found while rendering (e.g. unbalanced inline-code
+   * backticks). The pages still rendered — these are surfaced so the author can
+   * clean up the source. Empty/absent when nothing was flagged.
+   */
+  warnings?: RenderWarning[];
   stats: {
     /** Pages successfully rendered (excludes any in `errors`). */
     pageCount: number;

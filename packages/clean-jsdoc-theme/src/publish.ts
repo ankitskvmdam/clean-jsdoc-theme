@@ -1850,6 +1850,17 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
     }
   }
 
+  // Non-fatal authoring warnings (e.g. unbalanced inline-code backticks). The
+  // pages still rendered; we surface these so the author can clean up the source.
+  if (result.warnings && result.warnings.length > 0) {
+    console.warn(
+      `clean-jsdoc-theme: ${result.warnings.length} content warning(s) (non-fatal):`
+    );
+    for (const w of result.warnings) {
+      console.warn(formatRenderError(w));
+    }
+  }
+
   // Pagefind is optional; if the user doesn't have it installed we don't
   // want to fail the whole build. Surface the failure as a warning (the stage
   // marks ✗, then this note clarifies it's non-fatal).

@@ -785,4 +785,29 @@ describe('render() — issue #333: render-error diagnostics', () => {
     expect(result.errors?.some((e) => e.slug === 'global')).toBeFalsy();
     expect(result.files.map((f) => f.path)).toContain('global/index.html');
   });
+
+  it('surfaces an unbalanced backtick as a non-fatal warning (still renders)', async () => {
+    const m = makeManifest();
+    m.pages.push({
+      slug: 'globals',
+      frontmatter: { title: 'Globals', kind: 'guide', description: 'Aggregated globals.' },
+      body: ['# Globals', '', 'Pass `{ port: 8080 } to override the port', '', 'and keep the rest.'].join(
+        '\n'
+      ),
+      headings: [],
+    });
+    const result = await render(m, { theme: minimalTheme });
+    // The page renders…
+    expect(result.files.map((f) => f.path)).toContain('globals/index.html');
+    // …and the unbalanced backtick is reported as a located warning.
+    const warn = result.warnings?.find((w) => w.slug === 'globals' && typeof w.line === 'number');
+    expect(warn).toBeDefined();
+    expect(warn!.message).toMatch(/unbalanced inline-code backtick/);
+    expect(warn!.snippet).toContain('Pass `{ port: 8080 } to override the port');
+  });
+
+  it('emits no warnings for a clean page', async () => {
+    const result = await render(makeManifest(), { theme: minimalTheme });
+    expect(result.warnings).toBeUndefined();
+  });
 });
