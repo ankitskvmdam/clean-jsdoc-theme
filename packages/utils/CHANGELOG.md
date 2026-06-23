@@ -1,5 +1,7 @@
 # @clean-jsdoc-theme/utils
 
+## 5.0.3
+
 ## 5.0.2
 
 ### Patch Changes

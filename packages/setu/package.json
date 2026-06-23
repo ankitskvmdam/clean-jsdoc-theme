@@ -1,6 +1,6 @@
 {
   "name": "@clean-jsdoc-theme/setu",
-  "version": "5.0.2",
+  "version": "5.0.3",
   "description": "JSDoc doclet processing and MDX generation",
   "type": "module",
   "main": "./dist/index.js",

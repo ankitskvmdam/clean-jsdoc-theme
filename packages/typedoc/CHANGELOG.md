@@ -1,5 +1,13 @@
 # @clean-jsdoc-theme/typedoc
 
+## 5.0.3
+
+### Patch Changes
+
+- @clean-jsdoc-theme/utils@5.0.3
+- @clean-jsdoc-theme/setu@5.0.3
+- @clean-jsdoc-theme/dwar@5.0.3
+
 ## 5.0.2
 
 ### Patch Changes

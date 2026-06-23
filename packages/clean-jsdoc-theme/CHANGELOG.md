@@ -1,5 +1,36 @@
 # clean-jsdoc-theme
 
+## 5.0.3
+
+### Patch Changes
+
+- Patch release with bug fixes and a TypeDoc parity feature:
+  - **Fix — `index` name clash (#333):** a documented symbol named `index` no
+    longer overwrites the home page. It now renders at `/index/` like any other
+    container, so neither page is lost.
+  - **Improve — render diagnostics (#333):** when a page fails to compile, the
+    build now reports the exact `line:column` plus a code-frame snippet (instead
+    of just the slug), so the offending content is easy to locate on large
+    aggregated pages like Globals.
+  - **Fix — MDX brace escaping (#333):** inline-code detection now follows
+    CommonMark (a code span can't cross a blank line), so a single unbalanced
+    backtick in one doc comment can no longer desync escaping across a whole page
+    and abort it with "Could not parse expression with acorn".
+  - **Add — unbalanced-backtick warnings (#333):** unbalanced inline-code
+    backticks are surfaced as non-fatal build warnings pointing at the source
+    line, so the authoring slip is easy to find and fix.
+  - **Add — TypeDoc `docs` directory (#334):** the TypeDoc plugin now supports the
+    `docs` prose directory (plus `docGroups` / `defaultDocGroup`), matching the
+    JSDoc bridge — hand-written Markdown/HTML guides render alongside the API.
+  - **Fix — sidebar on tablet/iPad:** on widths where both the left sidebar and
+    the mobile table-of-contents bar are shown, the sidebar's first item is no
+    longer hidden behind the TOC bar.
+  - @clean-jsdoc-theme/utils@5.0.3
+  - @clean-jsdoc-theme/setu@5.0.3
+  - @clean-jsdoc-theme/rang@5.0.3
+  - @clean-jsdoc-theme/dwar@5.0.3
+  - @clean-jsdoc-theme/bhasha@5.0.3
+
 ## 5.0.2
 
 ### Patch Changes
