@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { collectUsedLangs, escapeStrayBraces, preprocessJsdocInlineTags } from '../mdx';
+import {
+  collectUsedLangs,
+  escapeStrayBraces,
+  findStrayBackticks,
+  preprocessJsdocInlineTags,
+} from '../mdx';
 
 describe('collectUsedLangs', () => {
   it('always includes the common documentation languages, even with no code', () => {
@@ -84,5 +89,41 @@ describe('escapeStrayBraces', () => {
     // The object example after the blank line is escaped (would otherwise be an
     // MDX expression → acorn failure).
     expect(out).toContain('returns \\{ base : root, query : [ key0 : [val00] ] \\}');
+  });
+});
+
+describe('findStrayBackticks', () => {
+  it('finds nothing in well-balanced prose', () => {
+    expect(findStrayBackticks('use `foo` and `bar` here')).toEqual([]);
+    expect(findStrayBackticks('no code at all, just prose')).toEqual([]);
+  });
+
+  it('flags an unbalanced backtick with its 1-based line/column', () => {
+    const stray = findStrayBackticks('line one\nopen `unclosed here\n\nnext para');
+    expect(stray).toHaveLength(1);
+    expect(stray[0].line).toBe(2);
+    expect(stray[0].column).toBe(6); // the backtick after "open "
+    expect(stray[0].lineText).toBe('open `unclosed here');
+  });
+
+  it('does not flag a span that legitimately crosses a single line break', () => {
+    expect(findStrayBackticks('a `code\nmore` b')).toEqual([]);
+  });
+
+  it('ignores backticks inside fenced code blocks and frontmatter', () => {
+    const src = '---\ntag: `x\n---\n\n```\nlone ` inside fence\n```\n\nclean prose';
+    expect(findStrayBackticks(src)).toEqual([]);
+  });
+
+  it('flags the orphan tick in the dwv splitKeyValueString shape', () => {
+    // `A` (line 1) pairs with the first tick on line 2; the second tick on line 2
+    // is the orphan that desynced everything downstream.
+    const src = [
+      'Split key/value string: `key0=val00&key0=val01&key1=val10',
+      '  will return `{key0 : [val00, val01], key1 : val1}`.',
+    ].join('\n');
+    const stray = findStrayBackticks(src);
+    expect(stray).toHaveLength(1);
+    expect(stray[0].line).toBe(2);
   });
 });

@@ -161,6 +161,51 @@ export function escapeStrayBraces(source: string): string {
   return prefix + escaped;
 }
 
+/** A backtick run that opened no inline-code span — i.e. an unbalanced backtick. */
+export interface StrayBacktick {
+  /** 1-based source line of the stray backtick run. */
+  line: number;
+  /** 1-based source column of the stray backtick run. */
+  column: number;
+  /** The full source line containing it (for a one-line snippet). */
+  lineText: string;
+}
+
+/**
+ * Find inline-code backtick runs that never get a matching closer before the
+ * next blank line — i.e. **unbalanced** backticks. {@link escapeStrayBraces} now
+ * leaves these literal (so they no longer break the page), but an unclosed
+ * `` `code` `` span is almost always an authoring slip, so the bridge surfaces
+ * them as a non-fatal warning. Mirrors `escapeStrayBraces`' tokenizer: fenced
+ * code blocks and YAML frontmatter are skipped (their backticks are legitimate),
+ * balanced spans are consumed, and whatever backtick run is left over is stray.
+ * Positions are 1-based, against the same `source` the `.md`/snippets use.
+ */
+export function findStrayBackticks(source: string): StrayBacktick[] {
+  const out: StrayBacktick[] = [];
+  // Skip leading YAML frontmatter (backticks there aren't MDX inline code).
+  const fm = /^---\n[\s\S]*?\n---\n/.exec(source);
+  // Fenced block | balanced inline span (group 3 = its ticks) | leftover run (group 4).
+  const re =
+    /(```[\s\S]*?```|~~~[\s\S]*?~~~)|((`+)(?:[^\n]|\n(?![ \t\r]*\n))*?\3)|(`+)/g;
+  re.lastIndex = fm ? fm[0].length : 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(source)) !== null) {
+    if (m[4] === undefined) continue; // only the leftover (stray) backtick run
+    const idx = m.index;
+    const lastNl = source.lastIndexOf('\n', idx - 1);
+    const line = source.slice(0, idx).split('\n').length;
+    const column = idx - lastNl;
+    const nextNl = source.indexOf('\n', idx);
+    out.push({
+      line,
+      column,
+      lineText: source.slice(lastNl + 1, nextNl === -1 ? source.length : nextNl),
+    });
+  }
+  return out;
+}
+
 /** Minimal hast shape — enough to walk headings without pulling in @types/hast. */
 interface HastNode {
   type: string;

@@ -20,8 +20,12 @@ Pagefind full-text index).
 - **`dwar.render()` is pure** — no `fs`, no `process.cwd`, no logging. The only
   disk touch is `runPagefindAgainstDir` (a separate post-write step).
 - **`dwar.render()` is resilient** — a single page that fails to compile (e.g.
-  MDX that won't parse) is skipped and reported in `RenderResult.errors`, never
-  thrown. One bad page can't abort the whole build; the bridge logs the skips.
+  MDX that won't parse) is skipped and reported in `RenderResult.errors` (with a
+  line/column + code-frame when the error is positioned), never thrown. One bad
+  page can't abort the whole build; the bridge logs the skips. Non-fatal
+  authoring slips that don't break the page — e.g. an unbalanced inline-code
+  backtick — are surfaced separately in `RenderResult.warnings` (same located
+  shape), so authors can clean up the source.
 - **Slug rules live once** (`utils/.../slug-rules.ts`) — used by both setu (nav)
   and dwar (heading anchors).
 - **Chrome markup lives once, in rang.** rang's `Layout`/`Header`/`Footer` own
@@ -83,7 +87,8 @@ utils/src/
 ├── site/
 │   ├── page.ts           # Page (+ 'source' kind & raw-source body), Frontmatter, Heading
 │   ├── manifest.ts       # SiteManifest, NavNode, SearchEntry
-│   ├── render.ts         # OutputFile, RenderOptions, RenderResult, RenderError
+│   ├── render.ts         # OutputFile, RenderOptions, RenderResult, RenderError,
+│   │                     #   RenderWarning + formatRenderError (shared by both bridges)
 │   ├── theme.ts          # ThemeTokens, ThemeColors, ThemeConfig, ComponentOverrides
 │   ├── site-name.ts      # SiteName (text | logo set) + siteNameText/resolveSiteLogo
 │   ├── islands.ts        # IslandName union + IslandPropsMap
@@ -445,7 +450,9 @@ a separate Pagefind step.
 dwar/src/
 ├── index.ts              # render(manifest, opts) → RenderResult  (entry). Renders
 │                         #   each page in try/catch — a page that fails to compile
-│                         #   is skipped + reported in RenderResult.errors, not thrown.
+│                         #   is skipped + reported in RenderResult.errors (codeFrame
+│                         #   snippet when positioned), not thrown. Also flags unbalanced
+│                         #   inline-code backticks into RenderResult.warnings (non-fatal).
 │                         #   kind:'source' pages skip MDX and mount the code-viewer
 │                         #   island directly (code stays in the SSR <pre>, off the payload)
 ├── layout.tsx            # SsrLayout — island-seam adapter: wraps islands in
@@ -461,7 +468,10 @@ dwar/src/
 │                         #   + rehype slug pass giving headings ids that mirror
 │                         #   setu's TOC exactly — slugifyHeading + per-page registry).
 │                         #   Pre-pass: {@link} → code spans + escapeStrayBraces (literal
-│                         #   {…} in JSDoc prose escaped so MDX won't read it as JS)
+│                         #   {…} in JSDoc prose escaped so MDX won't read it as JS;
+│                         #   inline-code matching follows CommonMark — a code span can't
+│                         #   cross a blank line — so a stray backtick can't desync a
+│                         #   whole page). findStrayBackticks flags those unbalanced ticks.
 ├── html.ts               # HTML document skeleton, slug→path, excerpt, payload escaping
 │                         #   + author <meta> tags (ThemeConfig.meta: defaults first,
 │                         #   de-dupe by identifying attr, escaped, invalid keys dropped)
@@ -568,7 +578,8 @@ clean-jsdoc-theme/src/
 │                         #   fall back to the default), unless opts.strict escalates
 │                         #   errors to a hard failure. Prints the utils formatBuildReport
 │                         #   (per-route sizes + gzip; node:zlib injected) after write,
-│                         #   plus any RenderResult.errors (skipped pages).
+│                         #   plus any RenderResult.errors (skipped pages) +
+│                         #   RenderResult.warnings (e.g. unbalanced backticks).
 │                         #   Collects source files from doclet meta (gated by
 │                         #   templates.default.outputSourceFiles, default on) → setu;
 │                         #   templates.default.sourceLinkToComment toggles whether a

@@ -16,7 +16,7 @@ src/
 ├── site/              # the setu↔dwar contract (types-first)
 │   ├── page.ts        # Page (+ PageKind, 'source' body), Frontmatter, Heading
 │   ├── manifest.ts    # SiteManifest, NavNode, SearchEntry, ExtractManifest, BuildSpec
-│   ├── render.ts      # OutputFile, RenderOptions, RenderResult, RenderError
+│   ├── render.ts      # OutputFile, RenderOptions, RenderResult, RenderError, RenderWarning
 │   ├── theme.ts       # ThemeTokens, ThemeColors, ThemeConfig, ComponentOverrides
 │   ├── site-name.ts   # SiteName (text | logo set) + siteNameText / resolveSiteLogo
 │   ├── islands.ts     # IslandName union + IslandPropsMap

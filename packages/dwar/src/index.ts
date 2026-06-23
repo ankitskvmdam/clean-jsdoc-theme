@@ -31,6 +31,7 @@ import type {
   RenderLocale,
   RenderOptions,
   RenderResult,
+  RenderWarning,
   SearchEntry,
   SiteManifest,
   SiteName,
@@ -43,6 +44,7 @@ import type {
 import {
   collectUsedLangs,
   compileMdxToComponent,
+  findStrayBackticks,
   type MdxComponentMap,
   type ShikiThemes,
 } from './mdx';
@@ -108,6 +110,36 @@ export function codeFrame(body: string, line: number, column?: number, context =
     }
   }
   return out.join('\n');
+}
+
+/** Cap per-page backtick warnings so a pathological page can't flood the log. */
+const MAX_BACKTICK_WARNINGS_PER_PAGE = 10;
+
+/**
+ * Turn a page body's unbalanced backticks (see {@link findStrayBackticks}) into
+ * non-fatal {@link RenderWarning}s with a one-line code-frame each. Capped per
+ * page; the overflow is summarized in a final entry so the count stays honest.
+ */
+function collectBacktickWarnings(slug: string, body: string): RenderWarning[] {
+  const stray = findStrayBackticks(body);
+  if (stray.length === 0) return [];
+  const shown = stray.slice(0, MAX_BACKTICK_WARNINGS_PER_PAGE);
+  const warnings: RenderWarning[] = shown.map((s) => ({
+    slug,
+    message:
+      'unbalanced inline-code backtick (no matching closing backtick before the next ' +
+      'blank line) — it renders literally; likely a missing closing backtick.',
+    line: s.line,
+    column: s.column,
+    snippet: codeFrame(body, s.line, s.column, 1),
+  }));
+  if (stray.length > shown.length) {
+    warnings.push({
+      slug,
+      message: `… and ${stray.length - shown.length} more unbalanced backtick(s) on this page.`,
+    });
+  }
+  return warnings;
 }
 
 /**
@@ -555,6 +587,7 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
   // (which stays one-per-page for RenderResult): both go into the JSON index.
   const memberEntries: SearchEntry[] = [];
   const errors: RenderError[] = [];
+  const warnings: RenderWarning[] = [];
   // Count HTML pages explicitly: each page may also emit a companion .md, which
   // must NOT inflate the page count (it's a per-page asset, not a page).
   let renderedPageCount = 0;
@@ -584,6 +617,7 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
         mdFile?: OutputFile;
         entry?: SearchEntry;
         members?: SearchEntry[];
+        warnings?: RenderWarning[];
       }
     | { ok: false; error: RenderError };
 
@@ -621,6 +655,9 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
         mdFile: page.body ? { path: mdPathFor(page.slug), contents: page.body } : undefined,
         entry: hidden ? undefined : entry,
         members: hidden ? undefined : memberSearchEntries(page),
+        // Non-fatal: flag unbalanced inline-code backticks so the author can fix
+        // the source (the page still rendered). Source-viewer pages have no body.
+        warnings: page.body ? collectBacktickWarnings(page.slug, page.body) : undefined,
       };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -657,6 +694,7 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
       if (result.mdFile) files.push(result.mdFile);
       if (result.entry) search.push(result.entry);
       if (result.members) memberEntries.push(...result.members);
+      if (result.warnings) warnings.push(...result.warnings);
     } else {
       errors.push(result.error);
     }
@@ -686,6 +724,7 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
     files,
     search,
     ...(errors.length > 0 ? { errors } : {}),
+    ...(warnings.length > 0 ? { warnings } : {}),
     stats: {
       pageCount: renderedPageCount,
       assetCount,
@@ -704,6 +743,8 @@ export type {
   OutputFile,
   RenderOptions,
   RenderResult,
+  RenderError,
+  RenderWarning,
   SiteManifest,
   Page,
   PageKind,
