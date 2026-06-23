@@ -148,6 +148,7 @@ const loadUtils = (): Promise<typeof import('@clean-jsdoc-theme/utils')> =>
     'createGoogleFontResolver',
     'formatDiagnostics',
     'formatBuildReport',
+    'formatRenderError',
     'normalizeBasePath',
     'withBase',
     'toExtractManifest',
@@ -1564,6 +1565,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
       createGoogleFontResolver,
       formatDiagnostics,
       formatBuildReport,
+      formatRenderError,
       normalizeBasePath,
       withBase,
       toExtractManifest,
@@ -1844,7 +1846,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
       `clean-jsdoc-theme: ${result.errors.length} page(s) failed to render and were skipped:`
     );
     for (const e of result.errors) {
-      console.warn(`  - ${e.slug}: ${e.message}`);
+      console.warn(formatRenderError(e));
     }
   }
 

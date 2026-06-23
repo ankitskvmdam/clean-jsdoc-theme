@@ -35,6 +35,7 @@ import {
   createGoogleFontResolver,
   formatBuildReport,
   formatDiagnostics,
+  formatRenderError,
   toExtractManifest,
   validateThemeOpts,
 } from '@clean-jsdoc-theme/utils';
@@ -699,7 +700,7 @@ export async function writeSite(
     logger.warn(
       `[clean-jsdoc-theme] ${result.errors.length} page(s) failed to render and were skipped:`
     );
-    for (const e of result.errors) logger.warn(`  - ${e.slug}: ${e.message}`);
+    for (const e of result.errors) logger.warn(formatRenderError(e));
   }
 
   // Pagefind is optional; a missing/failing Pagefind must not break the build.

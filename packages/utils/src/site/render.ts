@@ -18,6 +18,32 @@ export interface RenderError {
   slug: string;
   /** The error message (e.g. an MDX compile failure). */
   message: string;
+  /** 1-based source line of the failure, when the error carries a position. */
+  line?: number;
+  /** 1-based source column of the failure (best-effort — see issue #333 spec). */
+  column?: number;
+  /** A few numbered lines of `page.body` around the failure, with a caret. */
+  snippet?: string;
+}
+
+/**
+ * Format one skipped-page {@link RenderError} for a build log, so both bridges
+ * (JSDoc + TypeDoc) print render failures identically. A positioned error shows
+ * `slug (line L:C): message` followed by its indented code-frame snippet; an
+ * unpositioned one falls back to the legacy `slug: message` single line.
+ */
+export function formatRenderError(error: RenderError, indent = '  '): string {
+  const hasLine = typeof error.line === 'number';
+  const loc = hasLine
+    ? ` (line ${error.line}${typeof error.column === 'number' ? `:${error.column}` : ''})`
+    : '';
+  const header = `${indent}- ${error.slug}${loc}: ${error.message}`;
+  if (!error.snippet) return header;
+  const snippet = error.snippet
+    .split('\n')
+    .map((l) => `${indent}    ${l}`)
+    .join('\n');
+  return `${header}\n${snippet}`;
 }
 
 /** Aggregated result returned by `dwar.render`. Pure — no I/O is performed here. */
