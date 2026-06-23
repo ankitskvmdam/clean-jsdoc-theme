@@ -58,6 +58,24 @@ export const DocletParamSchema = z.object({
 });
 export type TDocletParam = z.infer<typeof DocletParamSchema>;
 
+// ── TYPE_PARAM_SCHEMA ────────────────────────────────────────────────────────
+
+/**
+ * A generic type parameter (`<T extends Base = Default>`). JSDoc has no native
+ * concept of these, so the JSDoc bridge never populates `typeParams`; the
+ * TypeDoc bridge fills it from each reflection's `typeParameters` so generics
+ * render as a structured "Type Parameters" section instead of only living in the
+ * signature string. `constraint` (the `extends` bound) and `default` are type
+ * expressions kept as plain strings.
+ */
+export const DocletTypeParamSchema = z.object({
+  name: z.string(),
+  constraint: z.string().optional(),
+  default: z.string().optional(),
+  description: z.string().nullable().optional(),
+});
+export type TDocletTypeParam = z.infer<typeof DocletTypeParamSchema>;
+
 // ── ENUM_PROPERTY_SCHEMA ─────────────────────────────────────────────────────
 
 export const DocletEnumPropertySchema = z.object({
@@ -154,6 +172,13 @@ export const DocletSchema = z.object({
   inherited: z.boolean().optional(),
   inherits: z.string().optional(),
   isEnum: z.boolean().optional(),
+  /**
+   * Set by the TypeDoc bridge on a getter/setter member so setu can route it to
+   * an "Accessors" section instead of folding it into Fields. JSDoc never sets
+   * it (accessors aren't a distinct JSDoc concept), so JSDoc bucketing is
+   * unchanged.
+   */
+  isAccessor: z.boolean().optional(),
   kind: DocletKindSchema.optional(),
   license: z.string().optional(),
   listens: z.array(EventRefSchema).optional(),
@@ -183,6 +208,8 @@ export const DocletSchema = z.object({
   todo: z.array(z.string()).optional(),
   tutorials: z.array(z.string()).optional(),
   type: DocletTypePropertySchema.optional(),
+  /** Structured generics (`<T extends … = …>`); TypeDoc-bridge-only. */
+  typeParams: z.array(DocletTypeParamSchema).optional(),
   undocumented: z.boolean().optional(),
   variable: z.boolean().nullable().optional(),
   variation: z.string().optional(),
