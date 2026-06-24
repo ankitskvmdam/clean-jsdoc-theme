@@ -74,7 +74,10 @@ export function useSignatureHighlight(): SignatureHighlighter | null {
  */
 export function SignatureCode({ code, class: cls }: { code?: string; class?: string }) {
   const highlight = useSignatureHighlight();
-  const className = cls ?? 'font-mono text-[0.95em]';
+  // `shiki-inline` is the hook dwar's CSS uses to swap each token's `color` to its
+  // `--shiki-dark` variable under [data-theme="dark"] — without the per-token dark
+  // background the block `.shiki` rule adds (wrong for an inline signature).
+  const className = `shiki-inline ${cls ?? 'font-mono text-[0.95em]'}`;
   if (highlight && code) {
     // shiki output is trusted (it's our own compile-time highlighter over a
     // signature string we generated), so injecting it is safe.

@@ -418,16 +418,18 @@ describe('containerViewToMdast — Constructor section (signature)', () => {
       ],
     });
     const json = flatText(containerViewToMdast(view));
-    expect(json).toContain('new Widget(id, [opts])');
+    // The constructor signature is the full TS call signature (shiki-highlighted
+    // inline), built from the documented `@param {T}` types.
+    expect(json).toContain('new Widget(id: string, opts?: object): Widget');
     // The Parameters table still renders alongside the signature.
     expect(json).toContain('Parameters');
   });
 
-  it('renders a bare `new Base()` when the constructor has neither params nor code metadata', () => {
+  it('renders a bare `new Base(): Base` when the constructor has neither params nor code metadata', () => {
     const view = makeContainerView({ kind: 'class', name: 'Base', classdesc: '<p>A base.</p>' });
     const json = flatText(containerViewToMdast(view));
     expect(json).toContain('Constructor');
-    expect(json).toContain('new Base()');
+    expect(json).toContain('new Base(): Base');
   });
 
   it('recovers undocumented constructor param names from code metadata for the signature', () => {
@@ -441,7 +443,7 @@ describe('containerViewToMdast — Constructor section (signature)', () => {
       meta: { code: { paramnames: ['options'] } },
     });
     const json = flatText(containerViewToMdast(view));
-    expect(json).toContain('new Base(options)');
+    expect(json).toContain('new Base(options): Base');
     expect(json).not.toContain('Parameters');
   });
 

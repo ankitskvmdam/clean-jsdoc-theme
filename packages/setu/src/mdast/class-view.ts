@@ -631,8 +631,11 @@ export function containerViewToMdast(
         p(inlineCode(instanceType(ctorName, view.doclet.typeParams)))
       );
     } else {
+      // JSDoc: "Constructor" section with the full TS call signature as a
+      // shiki-highlighted inline `<Signature>` (same look as the member
+      // headings), built from the documented `@param {T}` types.
       blocks.push(hr(), h(2, text('Constructor')));
-      blocks.push(p(inlineCode(constructorSignature(ctorName, ctorSigParams))));
+      blocks.push(signature(tsConstructorSignature(ctorName, view.doclet.typeParams, ctorSigParams)));
       blocks.push(...ctorDescription);
       if (ctorParams) blocks.push(p(strong(text('Parameters'))), ctorParams);
     }

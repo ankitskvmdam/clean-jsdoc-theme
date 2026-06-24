@@ -331,12 +331,14 @@ describe('flavor: typedoc — overloaded signatures', () => {
 
 describe('flavor: jsdoc (default) — byte-identical: no new pages, JSDoc labels', () => {
   it('keeps member signatures in the heading (no per-member `ts` code block)', () => {
-    // Neither flavor emits a signature code block anymore — the signature rides in
-    // the member heading (shiki-highlighted inline by rang).
+    // Neither flavor emits a signature code block anymore — a method/field signature
+    // rides in its member heading (shiki-highlighted inline by rang). (The class
+    // does carry a constructor <Signature>, which is expected.)
     const m = generateSite(tsCollection());
     const body = pageByLongname(m, 'module:lib.Widget')!.body;
     expect(body).not.toContain('```ts');
-    expect(body).not.toContain('<Signature');
+    // The render method is a member heading, not a Signature block.
+    expect(body).toContain('<MemberHeading');
   });
 
 
