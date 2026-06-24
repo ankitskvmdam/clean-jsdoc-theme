@@ -106,3 +106,25 @@ export function translate(point: Point, deltaOrDx: Point | number, dy?: number):
   }
   return { x: point.x + deltaOrDx.x, y: point.y + deltaOrDx.y };
 }
+
+/**
+ * Interpolate between two points — a deliberately wide signature to exercise the
+ * multi-line, tab-indented layout.
+ *
+ * @param from - the start point.
+ * @param to - the end point.
+ * @param t - progress in the range 0..1.
+ * @param easing - optional easing function name.
+ * @param clamp - whether to clamp `t` into 0..1.
+ * @returns the interpolated point.
+ */
+export function interpolate(
+  from: Point,
+  to: Point,
+  t: number,
+  easing?: string,
+  clamp?: boolean
+): Point {
+  const p = clamp ? Math.max(0, Math.min(1, t)) : t;
+  return { x: from.x + (to.x - from.x) * p, y: from.y + (to.y - from.y) * p };
+}

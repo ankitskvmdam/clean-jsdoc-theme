@@ -242,15 +242,18 @@ function formatCallable(
   const single = `${prefix}${tp}(${paramParts.join(', ')})${ret}`;
   if (single.length <= SIG_WRAP_WIDTH) return single;
 
+  // One type-param / param per line, each indented with a tab so the wrapped
+  // signature reads as an indented block (rang renders it `white-space: pre-wrap`,
+  // `tab-size: 2`). Matches how default TypeDoc lays out a wide signature.
   const lines: string[] = [];
   if (typeParamParts.length > 0) {
     lines.push(`${prefix}<`);
-    for (const t of typeParamParts) lines.push(`    ${t},`);
+    for (const t of typeParamParts) lines.push(`\t${t},`);
     lines.push('>(');
   } else {
     lines.push(`${prefix}(`);
   }
-  for (const pm of paramParts) lines.push(`    ${pm},`);
+  for (const pm of paramParts) lines.push(`\t${pm},`);
   lines.push(`)${ret}`);
   return lines.join('\n');
 }

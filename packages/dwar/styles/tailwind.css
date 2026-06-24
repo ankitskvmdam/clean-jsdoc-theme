@@ -228,6 +228,31 @@
     font-weight: var(--shiki-dark-font-weight) !important;
     text-decoration: var(--shiki-dark-text-decoration) !important;
   }
+
+  /*
+   * Inline signatures (shiki `structure: 'classic'` → one `<span class="line">`
+   * per line). A wide signature wraps onto multiple lines (setu's
+   * `formatCallable`); `pre-wrap` keeps those newlines but wraps a too-long line
+   * instead of overflowing on a narrow viewport.
+   *
+   * Indentation: MDX strips the leading tab from a multi-line JSX attribute value
+   * (the newline survives, the indent doesn't), so we indent in CSS instead —
+   * every line except the first (`name(`) and last (`): T`), which covers both
+   * parameters and wrapped type-parameter lines.
+   *
+   * Each parameter (`name: type`) is wrapped in `.sig-param` (a shiki decoration)
+   * and rendered slightly smaller than the function name, so a long parameter
+   * list reads as secondary detail.
+   */
+  .shiki-inline {
+    white-space: pre-wrap;
+  }
+  .shiki-inline .line:not(:first-child):not(:last-child) {
+    padding-left: 2ch;
+  }
+  .shiki-inline .sig-param {
+    font-size: 0.85em;
+  }
 }
 
 /*

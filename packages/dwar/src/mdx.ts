@@ -359,11 +359,96 @@ export async function createSignatureHighlighter(
     themes: [shiki.light, shiki.dark],
     langs: ['ts'],
   });
-  return (code: string): string =>
-    highlighter.codeToHtml(code, {
+  return (code: string): string => {
+    // `structure: 'classic'` keeps a `<span class="line">` per line WITH its
+    // leading whitespace — unlike `'inline'`, which trims each line's indent and
+    // turns the wrap into `<br>`s. A wide signature wraps onto tab-indented lines
+    // (setu's `formatCallable`), so we need that indentation preserved. We then
+    // strip shiki's outer `<pre>`/`<code>` wrapper (we don't want a code-block
+    // card or its background) and let rang's `<code class="shiki-inline">` host
+    // the line spans (`white-space: pre-wrap`, `tab-size: 2`).
+    const options = {
       lang: 'ts',
       themes: { light: shiki.light, dark: shiki.dark },
       defaultColor: 'light',
-      structure: 'inline',
-    });
+      structure: 'classic' as const,
+    };
+    // Wrap each parameter (`name: type`) in a `sig-param` span so CSS can render
+    // it slightly smaller than the function name. Best-effort + fail-safe: if the
+    // decorations don't apply (odd signature, shiki rejects a range), highlight
+    // without them rather than dropping the signature.
+    const decorations = signatureParamRanges(code).map((r) => ({
+      start: r.start,
+      end: r.end,
+      properties: { class: 'sig-param' },
+    }));
+    let html: string;
+    try {
+      html = highlighter.codeToHtml(code, decorations.length > 0 ? { ...options, decorations } : options);
+    } catch {
+      html = highlighter.codeToHtml(code, options);
+    }
+    return unwrapShikiBlock(html);
+  };
+}
+
+/**
+ * Strip shiki's outer `<pre …><code …>` … `</code></pre>` wrapper, returning just
+ * the inner `<span class="line">` markup. The signature is hosted inline by rang's
+ * own `<code>`, so the `<pre>` (and its background) is unwanted.
+ */
+function unwrapShikiBlock(html: string): string {
+  const start = html.indexOf('<code');
+  const open = start >= 0 ? html.indexOf('>', start) : -1;
+  const end = html.lastIndexOf('</code>');
+  if (open < 0 || end < 0 || end <= open) return html;
+  return html.slice(open + 1, end);
+}
+
+/**
+ * Character ranges of each parameter (`name: type`) inside a callable signature
+ * — drives the `sig-param` decoration that renders params a touch smaller than
+ * the function name. Best-effort and fail-safe: anything ambiguous (no parens,
+ * unbalanced nesting) yields `[]`, so the signature simply renders without the
+ * size tweak. Matching the outer `)` balances on parens only, so a function-type
+ * param (`cb: (x) => y`) is handled; the comma split tracks `()[]{}<>` nesting
+ * (skipping the `>` in `=>`) so `Map<K, V>` / tuples stay one parameter.
+ */
+export function signatureParamRanges(code: string): { start: number; end: number }[] {
+  const open = code.indexOf('(');
+  if (open < 0) return [];
+  let parenDepth = 0;
+  let close = -1;
+  for (let i = open; i < code.length; i++) {
+    if (code[i] === '(') parenDepth++;
+    else if (code[i] === ')' && --parenDepth === 0) {
+      close = i;
+      break;
+    }
+  }
+  if (close < 0 || close <= open + 1) return [];
+
+  const ranges: { start: number; end: number }[] = [];
+  const pushSeg = (from: number, to: number): void => {
+    let s = from;
+    let e = to;
+    while (s < e && /\s/.test(code[s])) s++;
+    while (e > s && /\s/.test(code[e - 1])) e--;
+    if (e > s) ranges.push({ start: s, end: e });
+  };
+  let depth = 0;
+  let segStart = open + 1;
+  for (let i = open + 1; i < close; i++) {
+    const c = code[i];
+    if (c === '(' || c === '[' || c === '{' || c === '<') depth++;
+    else if (c === ')' || c === ']' || c === '}') depth--;
+    else if (c === '>' && code[i - 1] !== '=') depth--;
+    else if (c === ',' && depth === 0) {
+      pushSeg(segStart, i);
+      segStart = i + 1;
+    }
+  }
+  pushSeg(segStart, close);
+  // Nesting didn't balance → don't trust the split.
+  return depth === 0 ? ranges : [];
 }
