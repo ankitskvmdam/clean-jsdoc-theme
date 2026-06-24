@@ -388,8 +388,10 @@ rang/src/
     │                     #   + SourceLink (Source: file:line caption),
     │                     #   MemberMeta (member row: modifier/kind chips left,
     │                     #   filename:line source pinned right), MemberHeading
-    │                     #   (h{depth} whose content is one <code> signature,
-    │                     #   explicit id so the anchor stays #name)
+    │                     #   (h{depth} whose content is one shiki-highlighted
+    │                     #   inline <code> signature, explicit id so the anchor
+    │                     #   stays #name) + Signature (standalone sig block) +
+    │                     #   SignatureCode/SignatureHighlightContext (shiki inline)
     └── CodeBlock.tsx     # block code (the MDX `pre`, used as MdxPre) + inline
                           #   `Code` (MDX `code`); also serves CodeTabs + standalone
 ```
@@ -666,8 +668,10 @@ The two bridges are independent leaf packages — pure helpers (`write-output-fi
 
 **Document-model flavor (TypeDoc parity).** setu's `generateSite` takes a
 `flavor: 'jsdoc' | 'typedoc'` (default `'jsdoc'`); the TypeDoc bridge passes
-`'typedoc'`, the JSDoc bridge passes nothing — so **JSDoc output is
-byte-identical** and every parity behavior is gated. Under `'typedoc'`, setu
+`'typedoc'`, the JSDoc bridge passes nothing — so the JSDoc **document model**
+(pages, sections, labels) is unchanged: every parity behavior below is
+flavor-gated. (Signature rendering, further down, is the one cross-cutting change
+that applies to both flavors.) Under `'typedoc'`, setu
 matches default TypeDoc's structure: **enums, top-level functions, and variables
 each become a standalone page** in their own kind-section (a "Pass 1b" alongside
 the container pass; a function/variable that is a class/interface/enum *member*
@@ -683,11 +687,25 @@ longname so a cross-reference always resolves to the symbol's page, never a stal
 `module#member` anchor; and the sidebar shows every kind section even when a
 user's `sectionOrder` omits some. **Overloaded** functions/methods render every
 call signature: the TypeDoc bridge keeps the first signature on the doclet and
-carries the rest on `overloads[]` (`reflection.signatures[1..]`); setu then stacks
-one `ts` signature block per overload, each with its own Type Parameters /
-Parameters / Returns (and an overload's own description), while the shared
-description/examples render once — matching default TypeDoc. JSDoc never sets
-`overloads`, so the JSDoc path and single-signature members are unchanged.
+carries the rest on `overloads[]` (`reflection.signatures[1..]`); setu then keeps
+the member heading a bare name and stacks one inline `<Signature>` per overload,
+each with its own Type Parameters / Parameters / Returns (and an overload's own
+description), while the shared description/examples render once — matching default
+TypeDoc. JSDoc never sets `overloads`, so single-signature members are unchanged.
+
+**Signature rendering (both flavors).** A member/constructor/function heading
+shows the **full TypeScript signature** (`addChild(child: Component): void`), built
+by setu (`tsMemberSignature` from each doclet's `typeParams`/`params`/`returns`
+types — JSDoc `@param {T}` types included) and carried in the `MemberHeading`
+`sig` attribute (the `name` attr still drives the TOC/anchor, so `#name` is
+unchanged). dwar highlights it **inline with shiki** via a
+`SignatureHighlightContext` provider (a dedicated `structure: 'inline'`
+highlighter created once per render, kept separate from the code-fence rehype
+pass), so the heading renders as a coloured `<code>` rather than a heavyweight
+code-block card. Standalone signatures (a top-level function/variable page, each
+overload) use the sibling `<Signature>` element through the same context.
+`escapeStrayBraces` skips MDX JSX tags so an object-type signature
+(`{ radius: number }`) survives un-escaped in the attribute.
 
 ### `@clean-jsdoc-theme/bhasha` — the pure i18n core
 

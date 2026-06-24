@@ -21,9 +21,9 @@ import {
   LanguageProvider,
   createI18n,
 } from '@clean-jsdoc-theme/rang';
-import type { PageNavLink } from '@clean-jsdoc-theme/rang';
+import type { PageNavLink, SignatureHighlighter } from '@clean-jsdoc-theme/rang';
 import { siteNameText, withBase } from '@clean-jsdoc-theme/utils';
-import { BasePathContext, InlineSvgContext } from '@clean-jsdoc-theme/rang';
+import { BasePathContext, InlineSvgContext, SignatureHighlightContext } from '@clean-jsdoc-theme/rang';
 import type {
   OutputFile,
   Page,
@@ -44,6 +44,7 @@ import type {
 import {
   collectUsedLangs,
   compileMdxToComponent,
+  createSignatureHighlighter,
   findStrayBackticks,
   type MdxComponentMap,
   type ShikiThemes,
@@ -280,6 +281,7 @@ async function renderPage(
   fonts: { heading: string; body: string; mono: string },
   shiki: ShikiThemes,
   langs: readonly string[],
+  highlightSignature: SignatureHighlighter | null,
   custom: {
     cssLinks?: string[];
     css?: string;
@@ -376,6 +378,9 @@ async function renderPage(
   // never hydrated as a whole — so the context value is baked into the markup
   // with no hydration concern. Islands (Step 4) rely on PROPS, not this context.
   const layoutVNode = h(
+    SignatureHighlightContext.Provider,
+    { value: highlightSignature },
+    h(
     BasePathContext.Provider,
     { value: basePath },
     h(
@@ -397,6 +402,7 @@ async function renderPage(
         },
         pageBody
       )
+    )
     )
   );
 
@@ -581,6 +587,16 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
   // (the dominant cost of the render stage — see mdx.ts collectUsedLangs).
   const usedLangs = collectUsedLangs(manifest.pages.map((p) => p.body ?? ''));
 
+  // Inline highlighter for member/function signatures (rang reads it via context
+  // to colour the heading <code>). Cosmetic, so a failure falls back to plain
+  // text rather than aborting the render.
+  let highlightSignature: SignatureHighlighter | null = null;
+  try {
+    highlightSignature = await createSignatureHighlighter(theme.tokens.shiki);
+  } catch {
+    highlightSignature = null;
+  }
+
   const files: OutputFile[] = [];
   const search: SearchEntry[] = [];
   // Deep-link entries for members/fields/methods, kept separate from `search`
@@ -639,6 +655,7 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
         theme.tokens.fonts,
         theme.tokens.shiki,
         usedLangs,
+        highlightSignature,
         custom,
         neighborsBySlug.get(page.slug),
         inlineSvgs,

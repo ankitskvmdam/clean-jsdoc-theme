@@ -1,7 +1,7 @@
 import type { PhrasingContent, Root, RootContent } from 'mdast';
 import { ClassMember, ClassView, ContainerView, MemberBuckets } from '../class-view';
 import { slugifyHeading, TDoclet, TDocletOverload, TDocletParam, TDocletTypeParam } from '@clean-jsdoc-theme/utils';
-import { code, h, hr, inlineCode, li, link, memberHeading, memberMeta, p, root, strong, text, ul } from './builders';
+import { h, hr, inlineCode, li, link, memberHeading, memberMeta, p, root, signature, strong, text, ul } from './builders';
 import {
   docletBlocks,
   DocletBlocksOptions,
@@ -349,7 +349,7 @@ const PER_SIGNATURE_SKIP: readonly DocletSection[] = [
 ];
 
 /**
- * One `ts` code block per call signature of an overloaded function/method — the
+ * One `<Signature>` per call signature of an overloaded function/method — the
  * first signature (from the doclet's own `typeParams`/`params`/`returns`) then
  * each `overloads[]` entry — each followed by that signature's Type Parameters /
  * Parameters / Returns (and an overload's own description). Matches default
@@ -370,7 +370,7 @@ function overloadSignatureBlocks(
   ];
   const out: RootContent[] = [];
   for (const sig of signatures) {
-    out.push(code('ts', tsCallableSignature(name, sig.typeParams, sig.params, sig.returns)));
+    out.push(signature(tsCallableSignature(name, sig.typeParams, sig.params, sig.returns)));
     // A synthetic doclet carrying only this signature's data, so docletBlocks
     // renders its Type Parameters / Parameters / Returns (and the overload's own
     // description, which isn't a skippable section).
@@ -426,18 +426,15 @@ export function memberBlocks(
   headingLevel: 2 | 3 | 4 = 3
 ): RootContent[] {
   const name = member.name ?? '(anonymous)';
-  const typedoc = options.flavor === 'typedoc';
-  // JSDoc: the heading IS the signature (`process(data) -> ret`). TypeDoc: the
-  // heading is the bare name and the full TS signature renders as a `ts` code
-  // block below (matching default TypeDoc), so the anchor stays `#name` either way.
-  const suffix = typedoc ? undefined : memberSignatureSuffix(member);
+  // The heading shows the full TypeScript signature (`addChild(child: Component):
+  // void`), shiki-highlighted inline by rang's MemberHeading — the same look in
+  // both flavors. The anchor stays `#name` (explicit id; the sig never feeds the
+  // slug). An overloaded member can't put N signatures in one heading, so it
+  // keeps a bare-name heading and stacks each signature as a `<Signature>` below.
+  const overloaded = options.flavor === 'typedoc' && hasOverloads(member);
+  const sig = overloaded ? name : (tsMemberSignature(member) ?? name);
   const out: RootContent[] = [
-    memberHeading({
-      id: slugifyHeading(name),
-      depth: headingLevel,
-      name,
-      sig: suffix ? `${name}${suffix}` : name,
-    }),
+    memberHeading({ id: slugifyHeading(name), depth: headingLevel, name, sig }),
   ];
 
   const badges = memberBadges(member);
@@ -446,21 +443,16 @@ export function memberBlocks(
     out.push(memberMeta({ badges, sourceHref: resolved?.href, sourceLabel: resolved?.label }));
   }
 
-  // TypeDoc: the full TS signature as a highlighted code block, then the body
-  // with the now-redundant "Type" field suppressed (the type is in the signature).
-  const skip: DocletSection[] = [...(options.skip ?? []), 'modifiers'];
-  if (typedoc && hasOverloads(member)) {
-    // Overloaded: the shared body (description/examples/…) renders once with its
+  // The type now lives in the heading signature, so the body's "Type" field is
+  // redundant in both flavors.
+  const skip: DocletSection[] = [...(options.skip ?? []), 'modifiers', 'type'];
+  if (overloaded) {
+    // The shared body (description/examples/…) renders once with its
     // per-signature sections suppressed, then every signature stacks below with
     // its own parameters/returns — matching default TypeDoc.
     out.push(...docletBlocks(member, { ...options, skip: [...skip, ...SHARED_BODY_SKIP_FOR_OVERLOADS] }));
     out.push(...overloadSignatureBlocks(member, options));
     return out;
-  }
-  if (typedoc) {
-    const sig = tsMemberSignature(member);
-    if (sig) out.push(code('ts', sig));
-    skip.push('type');
   }
 
   out.push(...docletBlocks(member, { ...options, skip }));
@@ -535,8 +527,9 @@ export function containerViewToMdast(
   blocks.push(...classRelationsBlocks(view.doclet));
 
   // Standalone function/variable pages (typedoc flavor): the full TS signature
-  // as a code block, right under the title — matching default TypeDoc, where a
-  // function page leads with `name<T>(p: T): Ret` and a variable with `name: T`.
+  // as a shiki-highlighted inline `<Signature>`, right under the title — matching
+  // default TypeDoc, where a function page leads with `name<T>(p: T): Ret` and a
+  // variable with `name: T`.
   const fnVarPage =
     options.flavor === 'typedoc' && (view.kind === 'function' || view.kind === 'variable');
   // An overloaded standalone function stacks every signature below the body
@@ -544,7 +537,7 @@ export function containerViewToMdast(
   const fnOverloaded = fnVarPage && view.kind === 'function' && hasOverloads(view.doclet);
   if (fnVarPage && !fnOverloaded) {
     const sig = tsMemberSignature(view.doclet);
-    if (sig) blocks.push(code('ts', sig));
+    if (sig) blocks.push(signature(sig));
   }
 
   // Source link for the class declaration itself, when it resolves.
@@ -617,15 +610,20 @@ export function containerViewToMdast(
       ? view.constructorParams
       : view.constructorParamNames.map((name) => ({ name }));
     if (options.flavor === 'typedoc') {
-      // TypeDoc layout: "Constructors" → a `constructor` member heading → the
-      // full TS call signature → description → Parameters → Returns (the class
-      // instance type). Class type parameters are already shown in the class
-      // body above, so they aren't repeated here.
+      // TypeDoc layout: "Constructors" → a `constructor` member heading whose
+      // signature is the full TS call signature (shiki-highlighted inline, same
+      // as a method heading) → description → Parameters → Returns (the class
+      // instance type). The anchor stays `#constructor` (name attr); class type
+      // parameters are already shown in the class body above, so not repeated.
       blocks.push(hr(), h(2, text('Constructors')));
       blocks.push(
-        memberHeading({ id: 'constructor', depth: 3, name: 'constructor', sig: 'constructor' })
+        memberHeading({
+          id: 'constructor',
+          depth: 3,
+          name: 'constructor',
+          sig: tsConstructorSignature(ctorName, view.doclet.typeParams, ctorSigParams),
+        })
       );
-      blocks.push(code('ts', tsConstructorSignature(ctorName, view.doclet.typeParams, ctorSigParams)));
       blocks.push(...ctorDescription);
       if (ctorParams) blocks.push(p(strong(text('Parameters'))), ctorParams);
       blocks.push(

@@ -217,8 +217,10 @@ describe('flavor: typedoc — full TS signatures', () => {
   it('renders a function page signature with type params, param types, and return', () => {
     const m = generateSite(tsCollection(), { flavor: 'typedoc' });
     const body = pageByLongname(m, 'module:lib.greet')!.body;
-    expect(body).toContain('```ts');
+    // The signature is a shiki-highlighted inline <Signature>, not a code block.
+    expect(body).toContain('<Signature');
     expect(body).toContain('greet<T extends string>(name: string): string');
+    expect(body).not.toContain('```ts');
   });
 
   it('renders an accessor as `get name(): Type` and a field as `name: Type`', () => {
@@ -296,8 +298,9 @@ describe('flavor: typedoc — overloaded signatures', () => {
     const body = pageByLongname(m, 'module:lib.parse')!.body;
     expect(body).toContain('parse(text: string): string');
     expect(body).toContain('parse(value: number): number');
-    // Two `ts` signature blocks, one per overload.
-    expect(body.match(/```ts/g)?.length).toBe(2);
+    // Two inline <Signature> blocks, one per overload (not code blocks).
+    expect(body.match(/<Signature/g)?.length).toBe(2);
+    expect(body).not.toContain('```ts');
   });
 
   it("renders each overload's own parameters and description", () => {
@@ -328,11 +331,12 @@ describe('flavor: typedoc — overloaded signatures', () => {
 
 describe('flavor: jsdoc (default) — byte-identical: no new pages, JSDoc labels', () => {
   it('keeps member signatures in the heading (no per-member `ts` code block)', () => {
-    // The JSDoc path must NOT emit the TypeDoc-style signature code blocks; the
-    // signature stays in the member heading (`name(params) -> ret`).
+    // Neither flavor emits a signature code block anymore — the signature rides in
+    // the member heading (shiki-highlighted inline by rang).
     const m = generateSite(tsCollection());
     const body = pageByLongname(m, 'module:lib.Widget')!.body;
     expect(body).not.toContain('```ts');
+    expect(body).not.toContain('<Signature');
   });
 
 

@@ -336,7 +336,9 @@ describe('memberBlocks', () => {
     expect(hattrs.id).toBe('process');
     expect(hattrs.name).toBe('process');
     expect(hattrs.depth).toBe('3');
-    expect(hattrs.sig).toBe('process(items) -> void');
+    // The heading now carries the full TS signature (shiki-highlighted inline by
+    // rang) instead of the old `name(params) -> ret` form — both flavors.
+    expect(hattrs.sig).toBe('process(items: string[]): void');
     // CRITICAL invariant: extractHeadings reads the explicit id + clean name, so
     // the anchor stays `#process` despite the displayed signature — TOC / search
     // / {@link} are unchanged.

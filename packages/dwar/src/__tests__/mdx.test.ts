@@ -39,6 +39,20 @@ describe('escapeStrayBraces', () => {
     expect(escapeStrayBraces('use `{ a: 1 }` here')).toBe('use `{ a: 1 }` here');
   });
 
+  it('leaves braces inside MDX JSX attribute values untouched (signature object types)', () => {
+    // setu emits signatures as JSX attributes; an object-type return like
+    // `{ radius: number }` is a literal attribute string, not an MDX expression.
+    const src = '<Signature code="scale(options: { radius: number }): Circle" />';
+    expect(escapeStrayBraces(src)).toBe(src);
+    // A generic signature carries `<`/`>` inside the quoted value — still one tag.
+    const generic = '<MemberHeading id="emit" depth="3" name="emit" sig="emit<T>(): { ok: T }" />';
+    expect(escapeStrayBraces(generic)).toBe(generic);
+    // …but a stray brace in the prose AROUND a tag is still escaped.
+    expect(escapeStrayBraces('text {x} <Signature code="f(): { y: T }" /> {z}')).toBe(
+      'text \\{x\\} <Signature code="f(): { y: T }" /> \\{z\\}'
+    );
+  });
+
   it('leaves braces inside fenced code blocks untouched', () => {
     const src = 'text {x}\n```js\nconst o = { a: 1 };\n```\nmore {y}';
     const out = escapeStrayBraces(src);

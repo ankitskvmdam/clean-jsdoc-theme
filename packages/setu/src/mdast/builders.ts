@@ -310,3 +310,18 @@ export const memberHeading = (opts: {
   ],
   children: [],
 });
+
+/**
+ * A standalone code signature — rang's `Signature`, emitted as a self-closing
+ * MDX JSX flow element. Used where a signature isn't a heading: a top-level
+ * function/variable page and each signature of an overloaded member. Like
+ * {@link memberHeading} it renders one shiki-highlighted inline `<code>`, but in
+ * its own block (no heading, no anchor). Embedded `"` is downgraded to `'` so
+ * the attribute can't terminate early.
+ */
+export const signature = (code: string): MdxJsxFlowElement => ({
+  type: 'mdxJsxFlowElement',
+  name: 'Signature',
+  attributes: [{ type: 'mdxJsxAttribute', name: 'code', value: code.replace(/"/g, "'") }],
+  children: [],
+});

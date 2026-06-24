@@ -126,8 +126,13 @@ export {
 export type { I18n, ChromeKey, Messages, InterpolationVars } from '@clean-jsdoc-theme/bhasha';
 
 export { defaultMdxComponents } from './mdx-components';
-export { HeaderSlotContext, BasePathContext, InlineSvgContext } from './components/mdx-utils';
-export type { HeaderSlot } from './components/mdx-utils';
+export {
+  HeaderSlotContext,
+  BasePathContext,
+  InlineSvgContext,
+  SignatureHighlightContext,
+} from './components/mdx-utils';
+export type { HeaderSlot, SignatureHighlighter } from './components/mdx-utils';
 export { ISLAND_REGISTRY } from './islands';
 
 export { useListKeyboardNav } from './hooks/use-list-keyboard-nav';

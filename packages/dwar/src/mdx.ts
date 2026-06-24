@@ -13,7 +13,8 @@ import { h, Fragment } from 'preact';
 import { jsx, jsxs } from 'preact/jsx-runtime';
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkGfm from 'remark-gfm';
-import { bundledLanguagesInfo } from 'shiki';
+import { bundledLanguagesInfo, createHighlighter } from 'shiki';
+import type { SignatureHighlighter } from '@clean-jsdoc-theme/rang';
 import { slugifyHeading } from '@clean-jsdoc-theme/utils';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -150,18 +151,26 @@ export function escapeStrayBraces(source: string): string {
   const prefix = fm ? fm[0] : '';
   const body = fm ? source.slice(fm[0].length) : source;
 
-  // Single scan: a fenced code block, OR an inline code span, OR a lone brace.
-  // Code matches pass through; lone braces get escaped. The inline-code content
-  // `(?:[^\n]|\n(?![ \t\r]*\n))*?` allows single line breaks (CommonMark code
-  // spans may span lines) but never a blank line — so an unclosed backtick can't
-  // run past a paragraph break and mis-swallow another comment's braces. A
-  // delimiter run is bounded by `(?<![`\\])…(?!`)` so it (a) closes only on a
-  // *maximal* run of exactly N — a longer run inside (e.g. ``` in a `…` span) is
-  // literal content — and (b) ignores a backslash-escaped backtick (`\``), which
-  // is a literal backtick per CommonMark, not a delimiter.
+  // Single scan: a fenced code block, OR an MDX JSX tag, OR an inline code span,
+  // OR a lone brace. Code + JSX-tag matches pass through; lone braces get escaped.
+  //
+  // The JSX-tag branch protects braces inside an attribute value — setu emits
+  // signatures as `<MemberHeading sig="fn(): { x: T }" />` / `<Signature
+  // code="…" />`, whose object-type braces are a literal string, not an MDX
+  // expression. setu downgrades any `"` inside an attribute to `'`, so `="[^"]*"`
+  // safely captures a value containing `{`, `}`, `<`, or `>`. (A bare `a < b` in
+  // prose isn't matched — a tag needs `<` immediately followed by a name.)
+  //
+  // The inline-code content `(?:[^\n]|\n(?![ \t\r]*\n))*?` allows single line
+  // breaks (CommonMark code spans may span lines) but never a blank line — so an
+  // unclosed backtick can't run past a paragraph break and mis-swallow another
+  // comment's braces. A delimiter run is bounded by `(?<![`\\])…(?!`)` so it (a)
+  // closes only on a *maximal* run of exactly N — a longer run inside (e.g. ```
+  // in a `…` span) is literal content — and (b) ignores a backslash-escaped
+  // backtick (`\``), which is a literal backtick per CommonMark, not a delimiter.
   const re =
-    /(```[\s\S]*?```|~~~[\s\S]*?~~~)|(?<![`\\])(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\2(?!`)|([{}])/g;
-  const escaped = body.replace(re, (m, _fence, _ticks, brace) => (brace ? `\\${brace}` : m));
+    /(```[\s\S]*?```|~~~[\s\S]*?~~~)|(<\/?[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][\w-]*(?:="[^"]*")?)*\s*\/?>)|(?<![`\\])(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`)|([{}])/g;
+  const escaped = body.replace(re, (m, _fence, _jsx, _ticks, brace) => (brace ? `\\${brace}` : m));
   return prefix + escaped;
 }
 
@@ -331,4 +340,30 @@ export async function compileMdxToComponent(
   (Wrapped as { displayName?: string }).displayName = 'MDXContent';
 
   return { Component: Wrapped as AnyComponent };
+}
+
+/**
+ * A shiki highlighter for member/function **signatures**, rendered inline in the
+ * heading (rang's `MemberHeading` / `Signature` read it via context). Separate
+ * from rehype-shiki's code-fence highlighting: `structure: 'inline'` drops the
+ * `<pre>`/`<code>`/line wrappers so the result is just the coloured token
+ * `<span>`s, which rang wraps in its own `<code>`. Dual themes encode both
+ * palettes (light inline, dark via `--shiki-dark`), staying in sync with the
+ * toggle exactly like the code fences. TypeScript is the one grammar loaded, so
+ * creation is cheap. Stays pure — shiki loads grammars/themes from bundled JS.
+ */
+export async function createSignatureHighlighter(
+  shiki: ShikiThemes
+): Promise<SignatureHighlighter> {
+  const highlighter = await createHighlighter({
+    themes: [shiki.light, shiki.dark],
+    langs: ['ts'],
+  });
+  return (code: string): string =>
+    highlighter.codeToHtml(code, {
+      lang: 'ts',
+      themes: { light: shiki.light, dark: shiki.dark },
+      defaultColor: 'light',
+      structure: 'inline',
+    });
 }
