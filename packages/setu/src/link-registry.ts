@@ -73,6 +73,7 @@ export function registerContainerView(
     view.staticMethods,
     view.instanceFields,
     view.staticFields,
+    view.accessors,
     view.enums,
     view.events,
     view.other,

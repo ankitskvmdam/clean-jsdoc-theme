@@ -1,10 +1,11 @@
 import type { PhrasingContent, Root, RootContent } from 'mdast';
 import { ClassMember, ClassView, ContainerView, MemberBuckets } from '../class-view';
-import { slugifyHeading, TDocletParam } from '@clean-jsdoc-theme/utils';
-import { h, hr, inlineCode, link, memberHeading, memberMeta, p, root, strong, text } from './builders';
+import { slugifyHeading, TDoclet, TDocletOverload, TDocletParam, TDocletTypeParam } from '@clean-jsdoc-theme/utils';
+import { h, hr, inlineCode, li, link, memberHeading, memberMeta, p, root, signature, strong, text, ul } from './builders';
 import {
   docletBlocks,
   DocletBlocksOptions,
+  type DocletSection,
   paramsList,
   sourceLinkBlock,
   typeExpressionString,
@@ -17,6 +18,14 @@ export interface ClassViewToMdastOptions extends DocletBlocksOptions {
   pageHeadingLevel?: 1 | 2;
   /** Drop empty member sections from output. Default: true. */
   hideEmptySections?: boolean;
+  /**
+   * Document-model flavor. `'typedoc'` switches a class's member sections to
+   * TypeDoc labels (Constructors/Properties/Methods/Accessors), renders enum
+   * pages with an "Enumeration Members" section, and turns a module/namespace
+   * page into a kind-grouped index of links to its exports. `'jsdoc'` (default)
+   * keeps the original sections — byte-identical output.
+   */
+  flavor?: 'jsdoc' | 'typedoc';
 }
 
 interface SectionSpec {
@@ -38,6 +47,109 @@ export function defaultSections(buckets: MemberBuckets): SectionSpec[] {
     { title: 'Events', members: buckets.events },
     { title: 'Other', members: buckets.other },
   ];
+}
+
+/**
+ * TypeDoc-flavored member sections for a class/interface/mixin — TypeDoc's
+ * labels (Properties / Accessors / Methods, plus static variants + Events). The
+ * Constructor(s) section is emitted separately by {@link containerViewToMdast}.
+ * Empty sections drop out via {@link memberSections}' `hideEmptySections`.
+ */
+export function typedocClassSections(buckets: MemberBuckets): SectionSpec[] {
+  return [
+    { title: 'Properties', members: buckets.instanceFields },
+    { title: 'Accessors', members: buckets.accessors },
+    { title: 'Methods', members: buckets.instanceMethods },
+    { title: 'Static Properties', members: buckets.staticFields },
+    { title: 'Static Methods', members: buckets.staticMethods },
+    { title: 'Events', members: buckets.events },
+    { title: 'Other', members: buckets.other },
+  ];
+}
+
+/** Enum page: every member collapsed under one "Enumeration Members" section. */
+export function enumMemberSections(buckets: MemberBuckets): SectionSpec[] {
+  return [
+    {
+      title: 'Enumeration Members',
+      members: [
+        ...buckets.staticFields,
+        ...buckets.instanceFields,
+        ...buckets.enums,
+        ...buckets.other,
+      ],
+    },
+  ];
+}
+
+/**
+ * Child-symbol → index section label, in TypeDoc display order. A member is
+ * placed under the FIRST group it matches (so an `isEnum` symbol lands in
+ * Enumerations, never Variables).
+ */
+const TYPEDOC_INDEX_GROUPS: { label: string; match: (m: ClassMember) => boolean }[] = [
+  { label: 'Enumerations', match: (m) => m.isEnum === true || m.kind === 'enum' },
+  { label: 'Classes', match: (m) => m.kind === 'class' },
+  { label: 'Interfaces', match: (m) => m.kind === 'interface' },
+  { label: 'Type Aliases', match: (m) => m.kind === 'typedef' },
+  { label: 'Functions', match: (m) => m.kind === 'function' },
+  { label: 'Variables', match: (m) => m.kind === 'variable' || m.kind === 'member' },
+  { label: 'Namespaces', match: (m) => m.kind === 'namespace' },
+  { label: 'Mixins', match: (m) => m.kind === 'mixin' },
+];
+
+/**
+ * A module/namespace page under the typedoc flavor: a kind-grouped index of
+ * LINKS to the exports that each own a standalone page, instead of inlining
+ * their member bodies (matching default TypeDoc's module page). An export whose
+ * longname doesn't resolve falls back to inert code.
+ */
+export function moduleIndexBlocks(
+  view: ContainerView,
+  options: ClassViewToMdastOptions
+): RootContent[] {
+  const members: ClassMember[] = [
+    ...view.instanceMethods,
+    ...view.staticMethods,
+    ...view.instanceFields,
+    ...view.staticFields,
+    ...view.accessors,
+    ...view.enums,
+    ...view.events,
+    ...view.other,
+  ];
+  if (members.length === 0) return [];
+
+  // Assign each member to the first matching group, preserving member order.
+  const grouped = new Map<string, ClassMember[]>();
+  for (const m of members) {
+    const group = TYPEDOC_INDEX_GROUPS.find((g) => g.match(m));
+    if (!group) continue;
+    const arr = grouped.get(group.label);
+    if (arr) arr.push(m);
+    else grouped.set(group.label, [m]);
+  }
+  if (grouped.size === 0) return [];
+
+  const resolve = options.resolveLink;
+  const blocks: RootContent[] = [hr()];
+  for (const { label } of TYPEDOC_INDEX_GROUPS) {
+    const items = grouped.get(label);
+    if (!items || items.length === 0) continue;
+    blocks.push(h(2, text(label)));
+    blocks.push(
+      ul(
+        items.map((m) => {
+          const name = m.name ?? m.longname ?? '(anonymous)';
+          const resolved = m.longname ? (resolve?.(m.longname) ?? null) : null;
+          const child: PhrasingContent =
+            resolved && !resolved.external ? link(resolved.href, inlineCode(name)) : inlineCode(name);
+          return li(p(child));
+        })
+      )
+    );
+  }
+  return blocks;
 }
 
 /**
@@ -73,6 +185,211 @@ export function constructorSignature(name: string, params: readonly TDocletParam
     })
     .join(', ');
   return `new ${name}(${list})`;
+}
+
+// ── TypeScript signature rendering (typedoc flavor) ──────────────────────────
+//
+// Build the full TS signature default TypeDoc shows — `new Component<P extends
+// ComponentProps = ComponentProps, S extends object = object>(props: P):
+// Component<P, S>`, `addChild(child: Component): void`, `get state():
+// ComponentState`, `_props: P`. JSDoc never reaches this path (gated on the
+// typedoc flavor), so its `memberSignatureSuffix`/`constructorSignature`
+// rendering is untouched.
+
+/** Wrap a single-line signature onto multiple lines past this width. */
+const SIG_WRAP_WIDTH = 64;
+
+/** A type expression → its readable string (the `type.names`, `|`-joined). */
+function tsType(type: { names?: readonly string[] } | undefined): string {
+  return type?.names && type.names.length > 0 ? type.names.join(' | ') : '';
+}
+
+/** `<T extends C = D, …>` parts (one string per type parameter), or `[]`. */
+function tsTypeParamParts(typeParams: readonly TDocletTypeParam[] | undefined): string[] {
+  if (!typeParams || typeParams.length === 0) return [];
+  return typeParams.map((tp) => {
+    let s = tp.name;
+    if (tp.constraint) s += ` extends ${tp.constraint}`;
+    if (tp.default !== undefined && tp.default !== '') s += ` = ${tp.default}`;
+    return s;
+  });
+}
+
+/** `name: Type`, with `?` for optional and `...` for rest; top-level params only. */
+function tsParamParts(params: readonly TDocletParam[] | undefined): string[] {
+  if (!params) return [];
+  return params
+    .filter((pm) => pm.name && !pm.name.includes('.'))
+    .map((pm) => {
+      const base = pm.variable ? `...${pm.name}` : (pm.name as string);
+      const t = tsType(pm.type);
+      return `${base}${pm.optional ? '?' : ''}${t ? `: ${t}` : ''}`;
+    });
+}
+
+/**
+ * Assemble a callable signature, wrapping onto multiple lines (one type param /
+ * param per indented line) once the single-line form is long — matching how
+ * default TypeDoc lays out wide constructor/method signatures.
+ */
+function formatCallable(
+  prefix: string,
+  typeParamParts: readonly string[],
+  paramParts: readonly string[],
+  ret: string
+): string {
+  const tp = typeParamParts.length > 0 ? `<${typeParamParts.join(', ')}>` : '';
+  const single = `${prefix}${tp}(${paramParts.join(', ')})${ret}`;
+  if (single.length <= SIG_WRAP_WIDTH) return single;
+
+  // One type-param / param per line, each indented with a tab so the wrapped
+  // signature reads as an indented block (rang renders it `white-space: pre-wrap`,
+  // `tab-size: 2`). Matches how default TypeDoc lays out a wide signature.
+  const lines: string[] = [];
+  if (typeParamParts.length > 0) {
+    lines.push(`${prefix}<`);
+    for (const t of typeParamParts) lines.push(`\t${t},`);
+    lines.push('>(');
+  } else {
+    lines.push(`${prefix}(`);
+  }
+  for (const pm of paramParts) lines.push(`\t${pm},`);
+  lines.push(`)${ret}`);
+  return lines.join('\n');
+}
+
+/** The class instance type for a constructor's return, e.g. `Component<P, S>`. */
+function instanceType(className: string, typeParams: readonly TDocletTypeParam[] | undefined): string {
+  if (!typeParams || typeParams.length === 0) return className;
+  return `${className}<${typeParams.map((tp) => tp.name).join(', ')}>`;
+}
+
+/** Full TS constructor signature, e.g. `new Widget<T>(opts: T): Widget<T>`. */
+function tsConstructorSignature(
+  className: string,
+  typeParams: readonly TDocletTypeParam[] | undefined,
+  params: readonly TDocletParam[]
+): string {
+  return formatCallable(
+    `new ${className}`,
+    tsTypeParamParts(typeParams),
+    tsParamParts(params),
+    `: ${instanceType(className, typeParams)}`
+  );
+}
+
+/** A callable signature `name<T>(p: T): Ret` from explicit signature parts. */
+function tsCallableSignature(
+  name: string,
+  typeParams: readonly TDocletTypeParam[] | undefined,
+  params: readonly TDocletParam[] | undefined,
+  returns: readonly TDocletParam[] | undefined
+): string {
+  const ret = tsType(returns?.[0]?.type);
+  return formatCallable(name, tsTypeParamParts(typeParams), tsParamParts(params), ret ? `: ${ret}` : '');
+}
+
+/**
+ * Full TS signature for a member: a callable form for functions/methods
+ * (`name<T>(p: T): Ret`), `get name(): Type` for accessors, and `name: Type`
+ * for fields. Returns `null` when there's nothing meaningful to show.
+ */
+function tsMemberSignature(member: ClassMember): string | null {
+  const name = member.name;
+  if (!name) return null;
+  if (member.kind === 'function') {
+    return tsCallableSignature(name, member.typeParams, member.params, member.returns);
+  }
+  const t = tsType(member.type);
+  if (member.isAccessor) return `get ${name}()${t ? `: ${t}` : ''}`;
+  return t ? `${name}: ${t}` : name;
+}
+
+/** A callable doclet (function/method) that carries overload signatures. */
+function hasOverloads(doclet: { overloads?: readonly TDocletOverload[] }): boolean {
+  return (doclet.overloads?.length ?? 0) > 0;
+}
+
+/**
+ * Sections rendered once on the shared member body when a callable is
+ * overloaded — its `ts` signatures (with per-signature type params / parameters
+ * / returns) move into {@link overloadSignatureBlocks}, so the shared body skips
+ * exactly those.
+ */
+const SHARED_BODY_SKIP_FOR_OVERLOADS: readonly DocletSection[] = [
+  'typeParams',
+  'params',
+  'returns',
+  'type',
+];
+
+/**
+ * Per-signature body sections: everything *except* the signature's own type
+ * params / parameters / returns is rendered once on the shared body, so a
+ * per-signature render skips it. (A signature's own `description` isn't a
+ * skippable section — it flows through {@link docletBlocks} — which is exactly
+ * how an overload's description renders under its own block.)
+ */
+const PER_SIGNATURE_SKIP: readonly DocletSection[] = [
+  'summary',
+  'modifiers',
+  'relations',
+  'this',
+  'alias',
+  'remarks',
+  'properties',
+  'yields',
+  'throws',
+  'type',
+  'default',
+  'fires',
+  'listens',
+  'examples',
+  'iframes',
+  'metadata',
+  'deprecation',
+  'inherited',
+];
+
+/**
+ * One `<Signature>` per call signature of an overloaded function/method — the
+ * first signature (from the doclet's own `typeParams`/`params`/`returns`) then
+ * each `overloads[]` entry — each followed by that signature's Type Parameters /
+ * Parameters / Returns (and an overload's own description). Matches default
+ * TypeDoc, which stacks every overload signature with its own parameters. The
+ * first signature's shared description/examples/etc. already render on the
+ * member body, so they aren't repeated here. Only reached under the typedoc
+ * flavor for a doclet that {@link hasOverloads}.
+ */
+function overloadSignatureBlocks(
+  doclet: ClassMember | ContainerView['doclet'],
+  options: DocletBlocksOptions
+): RootContent[] {
+  const name = doclet.name;
+  if (!name) return [];
+  const signatures: TDocletOverload[] = [
+    { typeParams: doclet.typeParams, params: doclet.params, returns: doclet.returns },
+    ...(doclet.overloads ?? []),
+  ];
+  const out: RootContent[] = [];
+  for (const sig of signatures) {
+    out.push(signature(tsCallableSignature(name, sig.typeParams, sig.params, sig.returns)));
+    // A synthetic doclet carrying only this signature's data, so docletBlocks
+    // renders its Type Parameters / Parameters / Returns (and the overload's own
+    // description, which isn't a skippable section).
+    const synthetic: TDoclet = {
+      kind: doclet.kind,
+      name,
+      longname: doclet.longname,
+      scope: doclet.scope,
+      typeParams: sig.typeParams,
+      params: sig.params,
+      returns: sig.returns,
+    };
+    if (sig.description) synthetic.description = sig.description;
+    out.push(...docletBlocks(synthetic, { ...options, skip: PER_SIGNATURE_SKIP }));
+  }
+  return out;
 }
 
 /**
@@ -112,14 +429,15 @@ export function memberBlocks(
   headingLevel: 2 | 3 | 4 = 3
 ): RootContent[] {
   const name = member.name ?? '(anonymous)';
-  const suffix = memberSignatureSuffix(member);
+  // The heading shows the full TypeScript signature (`addChild(child: Component):
+  // void`), shiki-highlighted inline by rang's MemberHeading — the same look in
+  // both flavors. The anchor stays `#name` (explicit id; the sig never feeds the
+  // slug). An overloaded member can't put N signatures in one heading, so it
+  // keeps a bare-name heading and stacks each signature as a `<Signature>` below.
+  const overloaded = options.flavor === 'typedoc' && hasOverloads(member);
+  const sig = overloaded ? name : (tsMemberSignature(member) ?? name);
   const out: RootContent[] = [
-    memberHeading({
-      id: slugifyHeading(name),
-      depth: headingLevel,
-      name,
-      sig: suffix ? `${name}${suffix}` : name,
-    }),
+    memberHeading({ id: slugifyHeading(name), depth: headingLevel, name, sig }),
   ];
 
   const badges = memberBadges(member);
@@ -128,7 +446,19 @@ export function memberBlocks(
     out.push(memberMeta({ badges, sourceHref: resolved?.href, sourceLabel: resolved?.label }));
   }
 
-  out.push(...docletBlocks(member, { ...options, skip: [...(options.skip ?? []), 'modifiers'] }));
+  // The type now lives in the heading signature, so the body's "Type" field is
+  // redundant in both flavors.
+  const skip: DocletSection[] = [...(options.skip ?? []), 'modifiers', 'type'];
+  if (overloaded) {
+    // The shared body (description/examples/…) renders once with its
+    // per-signature sections suppressed, then every signature stacks below with
+    // its own parameters/returns — matching default TypeDoc.
+    out.push(...docletBlocks(member, { ...options, skip: [...skip, ...SHARED_BODY_SKIP_FOR_OVERLOADS] }));
+    out.push(...overloadSignatureBlocks(member, options));
+    return out;
+  }
+
+  out.push(...docletBlocks(member, { ...options, skip }));
   return out;
 }
 
@@ -195,11 +525,27 @@ export function containerViewToMdast(
   const pageLevel = options.pageHeadingLevel ?? 1;
   const blocks: RootContent[] = [];
 
-  // Title
-  blocks.push(h(pageLevel, text(view.doclet.name ?? view.doclet.longname ?? 'Class')));
+  // Title — fall back to a capitalized kind word when a doclet carries neither
+  // a name nor a longname (rare), instead of the old hardcoded "Class".
+  const titleFallback = view.kind.charAt(0).toUpperCase() + view.kind.slice(1);
+  blocks.push(h(pageLevel, text(view.doclet.name ?? view.doclet.longname ?? titleFallback)));
 
   // Extends/Implements/Mixes
   blocks.push(...classRelationsBlocks(view.doclet, options.resolveLink));
+
+  // Standalone function/variable pages (typedoc flavor): the full TS signature
+  // as a shiki-highlighted inline `<Signature>`, right under the title — matching
+  // default TypeDoc, where a function page leads with `name<T>(p: T): Ret` and a
+  // variable with `name: T`.
+  const fnVarPage =
+    options.flavor === 'typedoc' && (view.kind === 'function' || view.kind === 'variable');
+  // An overloaded standalone function stacks every signature below the body
+  // (handled after docletBlocks); a single-signature one leads with its block.
+  const fnOverloaded = fnVarPage && view.kind === 'function' && hasOverloads(view.doclet);
+  if (fnVarPage && !fnOverloaded) {
+    const sig = tsMemberSignature(view.doclet);
+    if (sig) blocks.push(signature(sig));
+  }
 
   // Source link for the class declaration itself, when it resolves.
   const classSource = sourceLinkBlock(view.doclet, options);
@@ -216,8 +562,16 @@ export function containerViewToMdast(
   const skip: DocletBlocksOptions['skip'] =
     view.kind === 'class'
       ? [...(options.skip ?? []), 'params', 'returns', 'yields', 'throws', 'relations']
-      : [...(options.skip ?? []), 'relations'];
+      : fnOverloaded
+        ? [...(options.skip ?? []), 'relations', ...SHARED_BODY_SKIP_FOR_OVERLOADS]
+        : [...(options.skip ?? []), 'relations'];
   blocks.push(...docletBlocks(view.doclet, { ...options, skip }));
+
+  // Overloaded standalone function: stack each signature (with its own
+  // parameters/returns) after the shared body — matching default TypeDoc.
+  if (fnOverloaded) {
+    blocks.push(...overloadSignatureBlocks(view.doclet, options));
+  }
 
   // Constructor: every class page gets a Constructor section so the call
   // signature (e.g. `new Widget(id, [opts])`) always shows — conveying argument
@@ -262,18 +616,79 @@ export function containerViewToMdast(
     const ctorSigParams: TDocletParam[] = view.constructorParams.length
       ? view.constructorParams
       : view.constructorParamNames.map((name) => ({ name }));
-    blocks.push(hr(), h(2, text('Constructor')));
-    blocks.push(p(inlineCode(constructorSignature(ctorName, ctorSigParams))));
-    blocks.push(...ctorDescription);
-    if (ctorParams) blocks.push(p(strong(text('Parameters'))), ctorParams);
+    if (options.flavor === 'typedoc') {
+      // TypeDoc layout: "Constructors" → a `constructor` member heading whose
+      // signature is the full TS call signature (shiki-highlighted inline, same
+      // as a method heading) → description → Parameters → Returns (the class
+      // instance type). The anchor stays `#constructor` (name attr); class type
+      // parameters are already shown in the class body above, so not repeated.
+      blocks.push(hr(), h(2, text('Constructors')));
+      blocks.push(
+        memberHeading({
+          id: 'constructor',
+          depth: 3,
+          name: 'constructor',
+          sig: tsConstructorSignature(ctorName, view.doclet.typeParams, ctorSigParams),
+        })
+      );
+      blocks.push(...ctorDescription);
+      if (ctorParams) blocks.push(p(strong(text('Parameters'))), ctorParams);
+      blocks.push(
+        p(strong(text('Returns'))),
+        p(inlineCode(instanceType(ctorName, view.doclet.typeParams)))
+      );
+    } else {
+      // JSDoc: "Constructor" section with the full TS call signature as a
+      // shiki-highlighted inline `<Signature>` (same look as the member
+      // headings), built from the documented `@param {T}` types.
+      blocks.push(hr(), h(2, text('Constructor')));
+      blocks.push(signature(tsConstructorSignature(ctorName, view.doclet.typeParams, ctorSigParams)));
+      blocks.push(...ctorDescription);
+      if (ctorParams) blocks.push(p(strong(text('Parameters'))), ctorParams);
+    }
   }
 
-  // Members, bucketed.
-  const sections = defaultSections(view);
-  if (sections.some((s) => s.members.length > 0)) blocks.push(hr());
-  blocks.push(...memberSections(sections, options));
+  // Members. Under the typedoc flavor the layout is kind-specific (a links index
+  // for modules/namespaces, "Enumeration Members" for enums, TypeDoc labels for
+  // classes); the jsdoc default keeps the original bucketed sections.
+  if (options.flavor === 'typedoc') {
+    blocks.push(...typedocMemberBlocks(view, options));
+  } else {
+    const sections = defaultSections(view);
+    if (sections.some((s) => s.members.length > 0)) blocks.push(hr());
+    blocks.push(...memberSections(sections, options));
+  }
 
   return root(...blocks);
+}
+
+/**
+ * TypeDoc-flavored member rendering for a container, dispatched by kind:
+ * module/namespace → a kind-grouped links index ({@link moduleIndexBlocks});
+ * enum → an "Enumeration Members" section; class/interface/mixin → TypeDoc
+ * labels ({@link typedocClassSections}); function/variable/typedef carry their
+ * content in the body (params/returns/type/properties) and have no member
+ * sections.
+ */
+function typedocMemberBlocks(view: ContainerView, options: ClassViewToMdastOptions): RootContent[] {
+  if (view.kind === 'module' || view.kind === 'namespace') {
+    return moduleIndexBlocks(view, options);
+  }
+  let sections: SectionSpec[] | null = null;
+  if (view.kind === 'enum') sections = enumMemberSections(view);
+  else if (
+    view.kind === 'class' ||
+    view.kind === 'interface' ||
+    view.kind === 'mixin' ||
+    view.kind === 'global'
+  ) {
+    sections = typedocClassSections(view);
+  }
+  if (!sections) return [];
+  const out: RootContent[] = [];
+  if (sections.some((s) => s.members.length > 0)) out.push(hr());
+  out.push(...memberSections(sections, options));
+  return out;
 }
 
 /**

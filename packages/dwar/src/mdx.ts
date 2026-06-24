@@ -13,7 +13,8 @@ import { h, Fragment } from 'preact';
 import { jsx, jsxs } from 'preact/jsx-runtime';
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkGfm from 'remark-gfm';
-import { bundledLanguagesInfo } from 'shiki';
+import { bundledLanguagesInfo, createHighlighter } from 'shiki';
+import type { SignatureHighlighter } from '@clean-jsdoc-theme/rang';
 import { slugifyHeading } from '@clean-jsdoc-theme/utils';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -150,18 +151,26 @@ export function escapeStrayBraces(source: string): string {
   const prefix = fm ? fm[0] : '';
   const body = fm ? source.slice(fm[0].length) : source;
 
-  // Single scan: a fenced code block, OR an inline code span, OR a lone brace.
-  // Code matches pass through; lone braces get escaped. The inline-code content
-  // `(?:[^\n]|\n(?![ \t\r]*\n))*?` allows single line breaks (CommonMark code
-  // spans may span lines) but never a blank line — so an unclosed backtick can't
-  // run past a paragraph break and mis-swallow another comment's braces. A
-  // delimiter run is bounded by `(?<![`\\])…(?!`)` so it (a) closes only on a
-  // *maximal* run of exactly N — a longer run inside (e.g. ``` in a `…` span) is
-  // literal content — and (b) ignores a backslash-escaped backtick (`\``), which
-  // is a literal backtick per CommonMark, not a delimiter.
+  // Single scan: a fenced code block, OR an MDX JSX tag, OR an inline code span,
+  // OR a lone brace. Code + JSX-tag matches pass through; lone braces get escaped.
+  //
+  // The JSX-tag branch protects braces inside an attribute value — setu emits
+  // signatures as `<MemberHeading sig="fn(): { x: T }" />` / `<Signature
+  // code="…" />`, whose object-type braces are a literal string, not an MDX
+  // expression. setu downgrades any `"` inside an attribute to `'`, so `="[^"]*"`
+  // safely captures a value containing `{`, `}`, `<`, or `>`. (A bare `a < b` in
+  // prose isn't matched — a tag needs `<` immediately followed by a name.)
+  //
+  // The inline-code content `(?:[^\n]|\n(?![ \t\r]*\n))*?` allows single line
+  // breaks (CommonMark code spans may span lines) but never a blank line — so an
+  // unclosed backtick can't run past a paragraph break and mis-swallow another
+  // comment's braces. A delimiter run is bounded by `(?<![`\\])…(?!`)` so it (a)
+  // closes only on a *maximal* run of exactly N — a longer run inside (e.g. ```
+  // in a `…` span) is literal content — and (b) ignores a backslash-escaped
+  // backtick (`\``), which is a literal backtick per CommonMark, not a delimiter.
   const re =
-    /(```[\s\S]*?```|~~~[\s\S]*?~~~)|(?<![`\\])(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\2(?!`)|([{}])/g;
-  const escaped = body.replace(re, (m, _fence, _ticks, brace) => (brace ? `\\${brace}` : m));
+    /(```[\s\S]*?```|~~~[\s\S]*?~~~)|(<\/?[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][\w-]*(?:="[^"]*")?)*\s*\/?>)|(?<![`\\])(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`)|([{}])/g;
+  const escaped = body.replace(re, (m, _fence, _jsx, _ticks, brace) => (brace ? `\\${brace}` : m));
   return prefix + escaped;
 }
 
@@ -331,4 +340,115 @@ export async function compileMdxToComponent(
   (Wrapped as { displayName?: string }).displayName = 'MDXContent';
 
   return { Component: Wrapped as AnyComponent };
+}
+
+/**
+ * A shiki highlighter for member/function **signatures**, rendered inline in the
+ * heading (rang's `MemberHeading` / `Signature` read it via context). Separate
+ * from rehype-shiki's code-fence highlighting: `structure: 'inline'` drops the
+ * `<pre>`/`<code>`/line wrappers so the result is just the coloured token
+ * `<span>`s, which rang wraps in its own `<code>`. Dual themes encode both
+ * palettes (light inline, dark via `--shiki-dark`), staying in sync with the
+ * toggle exactly like the code fences. TypeScript is the one grammar loaded, so
+ * creation is cheap. Stays pure — shiki loads grammars/themes from bundled JS.
+ */
+export async function createSignatureHighlighter(
+  shiki: ShikiThemes
+): Promise<SignatureHighlighter> {
+  const highlighter = await createHighlighter({
+    themes: [shiki.light, shiki.dark],
+    langs: ['ts'],
+  });
+  return (code: string): string => {
+    // `structure: 'classic'` keeps a `<span class="line">` per line WITH its
+    // leading whitespace — unlike `'inline'`, which trims each line's indent and
+    // turns the wrap into `<br>`s. A wide signature wraps onto tab-indented lines
+    // (setu's `formatCallable`), so we need that indentation preserved. We then
+    // strip shiki's outer `<pre>`/`<code>` wrapper (we don't want a code-block
+    // card or its background) and let rang's `<code class="shiki-inline">` host
+    // the line spans (`white-space: pre-wrap`, `tab-size: 2`).
+    const options = {
+      lang: 'ts',
+      themes: { light: shiki.light, dark: shiki.dark },
+      defaultColor: 'light',
+      structure: 'classic' as const,
+    };
+    // Wrap each parameter (`name: type`) in a `sig-param` span so CSS can render
+    // it slightly smaller than the function name. Best-effort + fail-safe: if the
+    // decorations don't apply (odd signature, shiki rejects a range), highlight
+    // without them rather than dropping the signature.
+    const decorations = signatureParamRanges(code).map((r) => ({
+      start: r.start,
+      end: r.end,
+      properties: { class: 'sig-param' },
+    }));
+    let html: string;
+    try {
+      html = highlighter.codeToHtml(code, decorations.length > 0 ? { ...options, decorations } : options);
+    } catch {
+      html = highlighter.codeToHtml(code, options);
+    }
+    return unwrapShikiBlock(html);
+  };
+}
+
+/**
+ * Strip shiki's outer `<pre …><code …>` … `</code></pre>` wrapper, returning just
+ * the inner `<span class="line">` markup. The signature is hosted inline by rang's
+ * own `<code>`, so the `<pre>` (and its background) is unwanted.
+ */
+function unwrapShikiBlock(html: string): string {
+  const start = html.indexOf('<code');
+  const open = start >= 0 ? html.indexOf('>', start) : -1;
+  const end = html.lastIndexOf('</code>');
+  if (open < 0 || end < 0 || end <= open) return html;
+  return html.slice(open + 1, end);
+}
+
+/**
+ * Character ranges of each parameter (`name: type`) inside a callable signature
+ * — drives the `sig-param` decoration that renders params a touch smaller than
+ * the function name. Best-effort and fail-safe: anything ambiguous (no parens,
+ * unbalanced nesting) yields `[]`, so the signature simply renders without the
+ * size tweak. Matching the outer `)` balances on parens only, so a function-type
+ * param (`cb: (x) => y`) is handled; the comma split tracks `()[]{}<>` nesting
+ * (skipping the `>` in `=>`) so `Map<K, V>` / tuples stay one parameter.
+ */
+export function signatureParamRanges(code: string): { start: number; end: number }[] {
+  const open = code.indexOf('(');
+  if (open < 0) return [];
+  let parenDepth = 0;
+  let close = -1;
+  for (let i = open; i < code.length; i++) {
+    if (code[i] === '(') parenDepth++;
+    else if (code[i] === ')' && --parenDepth === 0) {
+      close = i;
+      break;
+    }
+  }
+  if (close < 0 || close <= open + 1) return [];
+
+  const ranges: { start: number; end: number }[] = [];
+  const pushSeg = (from: number, to: number): void => {
+    let s = from;
+    let e = to;
+    while (s < e && /\s/.test(code[s])) s++;
+    while (e > s && /\s/.test(code[e - 1])) e--;
+    if (e > s) ranges.push({ start: s, end: e });
+  };
+  let depth = 0;
+  let segStart = open + 1;
+  for (let i = open + 1; i < close; i++) {
+    const c = code[i];
+    if (c === '(' || c === '[' || c === '{' || c === '<') depth++;
+    else if (c === ')' || c === ']' || c === '}') depth--;
+    else if (c === '>' && code[i - 1] !== '=') depth--;
+    else if (c === ',' && depth === 0) {
+      pushSeg(segStart, i);
+      segStart = i + 1;
+    }
+  }
+  pushSeg(segStart, close);
+  // Nesting didn't balance → don't trust the split.
+  return depth === 0 ? ranges : [];
 }

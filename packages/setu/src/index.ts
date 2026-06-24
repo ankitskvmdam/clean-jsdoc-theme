@@ -67,6 +67,15 @@ interface ContainerSpec {
 
 /** Build-side options. */
 export interface GenerateSiteOptions {
+  /**
+   * Document-model flavor. `'jsdoc'` (default) keeps the JSDoc container/member
+   * model — enums/functions/variables stay members or land on the Globals page,
+   * sidebar kind labels are the JSDoc ones (`Typedefs`, …). `'typedoc'` matches
+   * default TypeDoc: enums, top-level functions, variables, and type aliases each
+   * get a standalone page in their own kind-section, with TypeDoc labels. Only
+   * the TypeDoc bridge passes `'typedoc'`, so JSDoc output is byte-identical.
+   */
+  flavor?: 'jsdoc' | 'typedoc';
   /** Optional package metadata to embed in the manifest. */
   pkg?: SiteManifest['pkg'];
   /**
@@ -171,6 +180,11 @@ export interface GenerateSiteOptions {
 export function generateSite(collection: unknown, opts?: GenerateSiteOptions): SiteManifest {
   validateCollectionOrThrow(collection);
 
+  // Document-model flavor. `'jsdoc'` (default) keeps the container/member model;
+  // `'typedoc'` gives enums/functions/variables their own pages with TypeDoc
+  // labels. Gated everywhere below, so the JSDoc path is byte-identical.
+  const flavor = opts?.flavor ?? 'jsdoc';
+
   // Source viewer model (pages + nav + the doclet→source link resolver). Built
   // first so its `resolve` can be threaded into each class page's mdast.
   const sourceModel = opts?.sources?.length
@@ -215,11 +229,39 @@ export function generateSite(collection: unknown, opts?: GenerateSiteOptions): S
     }
   }
 
+  // --- Pass 1b: standalone leaf pages (typedoc flavor only) ----------------
+  //
+  // TypeDoc treats enums, top-level functions, and module/global variables as
+  // first-class entities with their own pages. Enumerate them AFTER the
+  // container pass (so a container always wins a slug collision) and build a
+  // single-symbol page for each. A function/variable that is a MEMBER of a
+  // class/interface/mixin/enum is skipped — it stays inside its owner's page.
+  // The JSDoc flavor never enters this block, so its page set is unchanged.
+  if (flavor === 'typedoc') {
+    const memberOwners = new Set<string>();
+    for (const k of ['class', 'interface', 'mixin', 'enum'] as PageKind[]) {
+      for (const ln of enumerateLongnamesByKind(collection, k)) memberOwners.add(ln);
+    }
+    for (const kind of ['enum', 'function', 'variable'] as PageKind[]) {
+      for (const longname of enumerateLongnamesByKind(collection, kind)) {
+        const view = getContainerView(collection, longname, kind);
+        if (!view) continue;
+        const owner = view.doclet.memberof;
+        if (owner && memberOwners.has(owner)) continue; // a member, not a page
+        const slug = slugifyPath(splitLongnameForSlug(longname));
+        if (specsBySlug.has(slug)) continue; // a container already claimed it
+        const spec: ContainerSpec = { kind, longname, view, slug, aliases: [] };
+        specsBySlug.set(slug, spec);
+        specs.push(spec);
+      }
+    }
+  }
+
   // One aggregated "Globals" page: every global-scope symbol that doesn't get
   // its own container/typedef page, each rendered as a member section. Appended
   // to the spec list. Globals is synthetic, so it must NOT merge into a real
   // container — if its slug ('global') somehow collides with one, skip it.
-  const globals = buildGlobalsView(collection);
+  const globals = buildGlobalsView(collection, flavor);
   if (globals && !specsBySlug.has(globals.slug)) {
     const spec: ContainerSpec = {
       kind: 'global',
@@ -240,6 +282,19 @@ export function generateSite(collection: unknown, opts?: GenerateSiteOptions): S
   // → symbol B enumerated after A) resolve. Mirrors how `sourceLink` is built
   // first and threaded into pages.
   const registry: LinkRegistry = new Map();
+  // Under the typedoc flavor, enums/functions/variables/classes/interfaces each
+  // own a standalone page yet also appear in a module/namespace's member buckets.
+  // Pre-seed every page's OWN longname → its slug before the member walks, so a
+  // symbol that has its own page always resolves there (and never to a stale
+  // `module#member` anchor — which no longer exists, since a typedoc module page
+  // is a links index). Page keys only; member anchors are still added below. The
+  // JSDoc path skips this, so its registry build is byte-identical.
+  if (flavor === 'typedoc') {
+    for (const s of specs) {
+      const key = s.view.doclet.longname;
+      if (key && !registry.has(key)) registry.set(key, { slug: s.slug });
+    }
+  }
   for (const s of specs) {
     registerContainerView(registry, s.view, s.slug);
     // Merged-away longnames resolve to the surviving page (first-wins guard).
@@ -288,6 +343,7 @@ export function generateSite(collection: unknown, opts?: GenerateSiteOptions): S
       resolveTutorial,
       slots,
       playgroundFor,
+      flavor,
     })
   );
 
@@ -386,6 +442,7 @@ export function generateSite(collection: unknown, opts?: GenerateSiteOptions): S
     sectionOrder: opts?.sectionOrder,
     menu: opts?.menu,
     clubSidebarItems: opts?.clubSidebarItems ?? false,
+    flavor,
   });
 
   const manifest: SiteManifest = {

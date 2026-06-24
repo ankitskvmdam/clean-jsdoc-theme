@@ -11,6 +11,7 @@ import {
   normalizeColors,
   normalizeDocGroups,
   normalizeMenu,
+  cleanOutputDirEnabled,
   normalizeMeta,
   normalizePlayground,
   normalizeSectionOrder,
@@ -169,6 +170,29 @@ describe('outputSourceFilesEnabled', () => {
     expect(
       outputSourceFilesEnabled({ templates: { default: { outputSourceFiles: 1 } } } as never)
     ).toBe(true);
+  });
+});
+
+describe('cleanOutputDirEnabled', () => {
+  it('defaults to true when nothing disables it', () => {
+    expect(cleanOutputDirEnabled({} as never)).toBe(true);
+    expect(cleanOutputDirEnabled({ templates: { default: {} } } as never)).toBe(true);
+  });
+
+  it('honors opts.templates.default.cleanOutputDir === false', () => {
+    expect(
+      cleanOutputDirEnabled({ templates: { default: { cleanOutputDir: false } } } as never)
+    ).toBe(false);
+  });
+
+  it('stays true for any non-false value (true / truthy)', () => {
+    expect(
+      cleanOutputDirEnabled({ templates: { default: { cleanOutputDir: true } } } as never)
+    ).toBe(true);
+    // A non-boolean truthy value is not `=== false`, so it stays enabled.
+    expect(cleanOutputDirEnabled({ templates: { default: { cleanOutputDir: 1 } } } as never)).toBe(
+      true
+    );
   });
 });
 

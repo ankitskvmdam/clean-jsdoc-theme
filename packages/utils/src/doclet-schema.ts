@@ -58,6 +58,42 @@ export const DocletParamSchema = z.object({
 });
 export type TDocletParam = z.infer<typeof DocletParamSchema>;
 
+// ── TYPE_PARAM_SCHEMA ────────────────────────────────────────────────────────
+
+/**
+ * A generic type parameter (`<T extends Base = Default>`). JSDoc has no native
+ * concept of these, so the JSDoc bridge never populates `typeParams`; the
+ * TypeDoc bridge fills it from each reflection's `typeParameters` so generics
+ * render as a structured "Type Parameters" section instead of only living in the
+ * signature string. `constraint` (the `extends` bound) and `default` are type
+ * expressions kept as plain strings.
+ */
+export const DocletTypeParamSchema = z.object({
+  name: z.string(),
+  constraint: z.string().optional(),
+  default: z.string().optional(),
+  description: z.string().nullable().optional(),
+});
+export type TDocletTypeParam = z.infer<typeof DocletTypeParamSchema>;
+
+// ── OVERLOAD_SCHEMA ──────────────────────────────────────────────────────────
+
+/**
+ * One *additional* call signature of an overloaded function/method, beyond the
+ * first. JSDoc has no overloads, so only the TypeDoc bridge populates
+ * `overloads` (from `reflection.signatures[1..]`); the first signature stays on
+ * the doclet's own `typeParams`/`params`/`returns`, so non-overloaded output is
+ * unchanged. Each carries just the per-signature data that differs — generics,
+ * parameters, return type, and an optional signature-specific description.
+ */
+export const DocletOverloadSchema = z.object({
+  typeParams: z.array(DocletTypeParamSchema).optional(),
+  params: z.array(DocletParamSchema).optional(),
+  returns: z.array(DocletParamSchema).optional(),
+  description: z.string().nullable().optional(),
+});
+export type TDocletOverload = z.infer<typeof DocletOverloadSchema>;
+
 // ── ENUM_PROPERTY_SCHEMA ─────────────────────────────────────────────────────
 
 export const DocletEnumPropertySchema = z.object({
@@ -96,6 +132,9 @@ export const DocletKindSchema = z.enum([
   'package',
   'param',
   'typedef',
+  // A top-level value with its own page under the TypeDoc bridge's typedoc
+  // flavor. JSDoc never emits this kind (it uses `member`/`constant`).
+  'variable',
 ]);
 
 export type TDocletKind = z.infer<typeof DocletKindSchema>;
@@ -154,6 +193,13 @@ export const DocletSchema = z.object({
   inherited: z.boolean().optional(),
   inherits: z.string().optional(),
   isEnum: z.boolean().optional(),
+  /**
+   * Set by the TypeDoc bridge on a getter/setter member so setu can route it to
+   * an "Accessors" section instead of folding it into Fields. JSDoc never sets
+   * it (accessors aren't a distinct JSDoc concept), so JSDoc bucketing is
+   * unchanged.
+   */
+  isAccessor: z.boolean().optional(),
   kind: DocletKindSchema.optional(),
   license: z.string().optional(),
   listens: z.array(EventRefSchema).optional(),
@@ -168,10 +214,22 @@ export const DocletSchema = z.object({
   optional: z.boolean().nullable().optional(),
   override: z.boolean().optional(),
   overrides: z.string().optional(),
+  /**
+   * Additional call signatures of an overloaded function/method (the first lives
+   * on `params`/`returns`/`typeParams`). TypeDoc-bridge-only — JSDoc never sets
+   * it, so non-overloaded output is unchanged. See {@link DocletOverloadSchema}.
+   */
+  overloads: z.array(DocletOverloadSchema).optional(),
   params: z.array(DocletParamSchema).optional(),
   preserveName: z.boolean().optional(),
   properties: z.array(z.union([DocletEnumPropertySchema, DocletParamSchema])).optional(),
   readonly: z.boolean().optional(),
+  /**
+   * `@remarks` — detailed prose (HTML) shown as its own section after the
+   * summary/description, matching TypeDoc. Set by the TypeDoc bridge only; JSDoc
+   * has no `@remarks` field, so JSDoc output is unaffected.
+   */
+  remarks: z.string().optional(),
   requires: z.array(z.string()).optional(),
   returns: z.array(DocletParamSchema).optional(),
   scope: DocletScopeSchema.optional(),
@@ -183,6 +241,8 @@ export const DocletSchema = z.object({
   todo: z.array(z.string()).optional(),
   tutorials: z.array(z.string()).optional(),
   type: DocletTypePropertySchema.optional(),
+  /** Structured generics (`<T extends … = …>`); TypeDoc-bridge-only. */
+  typeParams: z.array(DocletTypeParamSchema).optional(),
   undocumented: z.boolean().optional(),
   variable: z.boolean().nullable().optional(),
   variation: z.string().optional(),

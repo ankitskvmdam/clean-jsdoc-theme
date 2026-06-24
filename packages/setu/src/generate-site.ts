@@ -259,6 +259,8 @@ interface RenderOptions {
   slots?: DocletBlocksOptions['slots'];
   /** Per-doclet `@playground` resolver (see {@link makePlaygroundResolver}). */
   playgroundFor?: DocletBlocksOptions['playgroundFor'];
+  /** Document-model flavor; `'typedoc'` switches member sections + module index. */
+  flavor?: 'jsdoc' | 'typedoc';
 }
 
 /**
@@ -275,7 +277,7 @@ export function renderContainerPage(
   kind: PageKind,
   longname: string,
   slug: string,
-  { sourceLink, resolveLink, resolveTutorial, slots, playgroundFor }: RenderOptions = {}
+  { sourceLink, resolveLink, resolveTutorial, slots, playgroundFor, flavor }: RenderOptions = {}
 ): Page {
   const tree = containerViewToMdast(view, {
     sourceLink,
@@ -283,6 +285,7 @@ export function renderContainerPage(
     resolveTutorial,
     slots,
     playgroundFor,
+    flavor,
   });
   if (resolveLink) resolveLinkTags(tree, resolveLink);
 
@@ -381,10 +384,17 @@ const GLOBALS_SLUG = 'global';
  * page into the link registry during its dedup pass before any body is rendered.
  */
 export function buildGlobalsView(
-  collection: TJSDocSaltyCollection<TDoclet>
+  collection: TJSDocSaltyCollection<TDoclet>,
+  flavor: 'jsdoc' | 'typedoc' = 'jsdoc'
 ): { view: ContainerView; slug: string } | null {
   const globals = filterDoclets(collection({ scope: 'global' }).get());
-  const remainder = globals.filter((d) => !GLOBALS_EXCLUDED_KINDS.has(d.kind ?? ''));
+  // Under the typedoc flavor, enums/functions/variables each get their own
+  // standalone page, so they must NOT also land on the aggregated Globals page.
+  const excluded =
+    flavor === 'typedoc'
+      ? new Set([...GLOBALS_EXCLUDED_KINDS, 'enum', 'function', 'variable'])
+      : GLOBALS_EXCLUDED_KINDS;
+  const remainder = globals.filter((d) => !excluded.has(d.kind ?? ''));
   if (remainder.length === 0) return null;
 
   const buckets = bucketClassMembers(remainder);
@@ -434,8 +444,22 @@ const SECTION_FOR_KIND: Partial<Record<PageKind, string>> = {
   mixin: 'Mixins',
   interface: 'Interfaces',
   typedef: 'Typedefs',
+  enum: 'Enumerations',
+  function: 'Functions',
+  variable: 'Variables',
   global: 'Globals',
 };
+
+/**
+ * The kind → section label, flavor-aware. Only `typedef` differs: TypeDoc calls
+ * it "Type Aliases" (matching default TypeDoc), JSDoc keeps "Typedefs". Every
+ * other label is identical across flavors. Kinds with no mapping return
+ * `undefined` (the caller falls back to {@link OTHER_SECTION}).
+ */
+function sectionForKind(kind: PageKind, flavor: 'jsdoc' | 'typedoc'): string | undefined {
+  if (flavor === 'typedoc' && kind === 'typedef') return 'Type Aliases';
+  return SECTION_FOR_KIND[kind];
+}
 
 /** Catch-all section label for page kinds with no explicit mapping. */
 const OTHER_SECTION = 'Other';
@@ -470,6 +494,26 @@ export const DEFAULT_SECTION_ORDER: readonly string[] = [
 ];
 
 /**
+ * Default sidebar section order under the typedoc flavor — matching default
+ * TypeDoc's module-index ordering (Enumerations, Classes, Interfaces, Type
+ * Aliases, Functions, Variables, then containers). Used when the consumer
+ * supplies no `sectionOrder`.
+ */
+export const TYPEDOC_SECTION_ORDER: readonly string[] = [
+  'Enumerations',
+  'Classes',
+  'Interfaces',
+  'Type Aliases',
+  'Functions',
+  'Variables',
+  'Namespaces',
+  'Mixins',
+  'Modules',
+  'Globals',
+  'Tutorials',
+];
+
+/**
  * The full `group` **path** a page belongs to. An explicit `frontmatter.group`
  * (from an API `@category` tag, or a doc/tutorial page's frontmatter) wins and
  * may be a `/`-path that nests the page; otherwise the page falls back to its
@@ -477,8 +521,8 @@ export const DEFAULT_SECTION_ORDER: readonly string[] = [
  * path segment is the top-level group (the bold sidebar title); see
  * {@link buildGroupTree}.
  */
-function sectionForPage(page: Page): string {
-  return page.frontmatter.group ?? SECTION_FOR_KIND[page.frontmatter.kind] ?? OTHER_SECTION;
+function sectionForPage(page: Page, flavor: 'jsdoc' | 'typedoc'): string {
+  return page.frontmatter.group ?? sectionForKind(page.frontmatter.kind, flavor) ?? OTHER_SECTION;
 }
 
 /** Built-in `id` for the home menu entry (resolved against the README home page). */
@@ -586,6 +630,13 @@ export interface AssembleNavOptions {
    * keeps its full label). See {@link clubNavTree}. Off by default.
    */
   clubSidebarItems?: boolean;
+  /**
+   * Document-model flavor. `'typedoc'` resolves kind labels with TypeDoc names
+   * (`Type Aliases`) and defaults to {@link TYPEDOC_SECTION_ORDER} when no
+   * `sectionOrder` is given; `'jsdoc'` (default) keeps the JSDoc labels +
+   * {@link DEFAULT_SECTION_ORDER}.
+   */
+  flavor?: 'jsdoc' | 'typedoc';
 }
 
 /** Child label for the entry that IS the bare prefix (e.g. the `queue` module). */
@@ -860,6 +911,7 @@ export function assembleNav({
   sectionOrder,
   menu,
   clubSidebarItems = false,
+  flavor = 'jsdoc',
 }: AssembleNavOptions): NavNode[] {
   // Flatten every source into one list of grouped entries carrying their FULL
   // group path (an `@category`/frontmatter group may be a `/`-path that nests
@@ -874,7 +926,7 @@ export function assembleNav({
   // `sectionOrder` filtering is unchanged.
   const categorySectionOrder: string[] = [];
   for (const p of apiPages) {
-    const path = sectionForPage(p);
+    const path = sectionForPage(p, flavor);
     const explicit = p.frontmatter.group !== undefined;
     if (explicit) {
       const top = splitGroupPath(path)[0];
@@ -941,7 +993,8 @@ export function assembleNav({
     bySection.set(top, nodes);
   }
 
-  const baseOrder = sectionOrder && sectionOrder.length > 0 ? sectionOrder : DEFAULT_SECTION_ORDER;
+  const defaultOrder = flavor === 'typedoc' ? TYPEDOC_SECTION_ORDER : DEFAULT_SECTION_ORDER;
+  const baseOrder = sectionOrder && sectionOrder.length > 0 ? sectionOrder : defaultOrder;
   // Fold doc-group section labels into the effective order, AFTER the base
   // (API) sections: `sectionOrder` stays authoritative for any label it already
   // lists; doc groups it omits are appended in `docGroups` order, then any
@@ -966,7 +1019,20 @@ export function assembleNav({
     alphaExtras.push(label);
   }
   alphaExtras.sort((a, b) => a.localeCompare(b));
-  const extras = [...docOrdered, ...alphaExtras];
+  // Under the typedoc flavor, a kind section must never be dropped just because a
+  // user-supplied `sectionOrder` didn't list it (default TypeDoc always shows
+  // every kind). Append any present-but-unlisted TypeDoc kind label, in the
+  // canonical TypeDoc order. JSDoc keeps its legacy "omitted kind = dropped"
+  // filter (this loop never runs for it), so its nav stays byte-identical.
+  const kindExtras: string[] = [];
+  if (flavor === 'typedoc') {
+    for (const label of TYPEDOC_SECTION_ORDER) {
+      if (inBase.has(label) || seenExtra.has(label) || !bySection.has(label)) continue;
+      seenExtra.add(label);
+      kindExtras.push(label);
+    }
+  }
+  const extras = [...docOrdered, ...alphaExtras, ...kindExtras];
   const order = extras.length > 0 ? [...baseOrder, ...extras] : baseOrder;
   const out: NavNode[] = [];
 

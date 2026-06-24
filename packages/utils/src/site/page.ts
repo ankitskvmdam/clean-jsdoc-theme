@@ -3,7 +3,15 @@
  * mixin, interface, typedef) plus index/guide pages. See architecture Q2.
  */
 
-/** Kind of page; drives URL grouping, layout choice, and sidebar bucketing. */
+/**
+ * Kind of page; drives URL grouping, layout choice, and sidebar bucketing.
+ *
+ * `enum` / `function` / `variable` are standalone-page kinds the TypeDoc bridge
+ * produces under the `'typedoc'` flavor (to match default TypeDoc, where these
+ * are first-class entities with their own pages). The JSDoc bridge never emits
+ * them — it keeps demoting enums/functions/variables to members — so JSDoc
+ * output is unchanged.
+ */
 export type PageKind =
   | 'class'
   | 'module'
@@ -11,6 +19,9 @@ export type PageKind =
   | 'mixin'
   | 'interface'
   | 'typedef'
+  | 'enum'
+  | 'function'
+  | 'variable'
   | 'global'
   | 'index'
   | 'guide'

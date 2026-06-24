@@ -309,6 +309,7 @@ describe('mergeContainerViews', () => {
     staticMethods: [] as ClassMember[],
     instanceFields: [] as ClassMember[],
     staticFields: [] as ClassMember[],
+    accessors: [] as ClassMember[],
     enums: [] as ClassMember[],
     events: [] as ClassMember[],
     other: [] as ClassMember[],

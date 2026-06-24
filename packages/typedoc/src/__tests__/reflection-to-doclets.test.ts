@@ -64,6 +64,9 @@ export interface Bar {
 
 /**
  * A top-level function.
+ *
+ * @remarks
+ * Uses integer multiplication; overflow is not checked.
  * @param n - input.
  * @returns the squared value.
  * @deprecated use something else
@@ -74,6 +77,23 @@ export function square(n: number): number {
 
 /** A top-level variable. */
 export const VERSION: string = '1.0.0';
+
+/**
+ * Combine two values — overloaded.
+ * @param a - first string.
+ * @param b - second string.
+ * @returns the joined string.
+ */
+export function combine(a: string, b: string): string;
+/**
+ * @param a - first number.
+ * @param b - second number.
+ * @returns the sum.
+ */
+export function combine(a: number, b: number): number;
+export function combine(a: unknown, b: unknown): unknown {
+  return (a as never) + (b as never);
+}
 
 /**
  * Direction of travel.
@@ -96,6 +116,20 @@ export type Point = {
 
 /** A data-handling callback. */
 export type DataHandler = (chunk: string, index: number) => boolean;
+
+/**
+ * Identity function.
+ * @typeParam T - the value type.
+ */
+export function identity<T>(x: T): T {
+  return x;
+}
+
+/** A generic container. */
+export class Box<T extends object = Record<string, unknown>> {
+  /** The boxed value. */
+  value?: T;
+}
 
 /** A nested namespace. */
 export namespace Shapes {
@@ -169,7 +203,9 @@ describe('reflectionsToDoclets — kinds', () => {
     expect(byLongname('square')?.kind).toBe('function');
     expect(byLongname('Foo#render')?.kind).toBe('function');
     expect(byLongname('Foo#count')?.kind).toBe('member');
-    expect(byLongname('VERSION')?.kind).toBe('member');
+    // A top-level variable is its own page kind (typedoc flavor); class fields
+    // stay `member`.
+    expect(byLongname('VERSION')?.kind).toBe('variable');
     expect(byLongname('Foo#doubled')?.kind).toBe('member');
   });
 
@@ -207,6 +243,26 @@ describe('reflectionsToDoclets — names/scope/separators', () => {
     const baz = byLongname('Bar#baz')!;
     expect(baz.memberof).toBe('Bar');
     expect(baz.scope).toBe('instance');
+  });
+});
+
+describe('reflectionsToDoclets — overloads', () => {
+  it('keeps the first signature on the doclet and the rest in overloads[]', () => {
+    const combine = byLongname('combine')!;
+    expect(combine.kind).toBe('function');
+    // First (string) signature lives on the doclet itself.
+    expect(combine.params?.[0]?.type?.names?.[0]).toContain('string');
+    expect(combine.returns?.[0]?.type?.names?.[0]).toContain('string');
+    // The implementation signature is excluded — only the second declared
+    // overload (number) rides on overloads[].
+    expect(combine.overloads?.length).toBe(1);
+    const overload = combine.overloads![0];
+    expect(overload.params?.[0]?.type?.names?.[0]).toContain('number');
+    expect(overload.returns?.[0]?.type?.names?.[0]).toContain('number');
+  });
+
+  it('leaves a non-overloaded function without overloads', () => {
+    expect(byLongname('square')?.overloads).toBeUndefined();
   });
 });
 
@@ -282,12 +338,49 @@ describe('reflectionsToDoclets — params/returns/types', () => {
     const doubled = byLongname('Foo#doubled')!;
     expect(doubled.type?.names).toEqual(['number']);
   });
+
+  it('flags an accessor with isAccessor (so setu can route it to Accessors)', () => {
+    const doubled = byLongname('Foo#doubled')!;
+    expect(doubled.isAccessor).toBe(true);
+    // A plain field is never flagged.
+    expect(byLongname('Foo#count')?.isAccessor).toBeUndefined();
+  });
+});
+
+describe('reflectionsToDoclets — type parameters (generics)', () => {
+  it('captures a function signature type parameter (with its @typeParam description)', () => {
+    const identity = byLongname('identity')!;
+    expect(identity.typeParams).toHaveLength(1);
+    expect(identity.typeParams![0].name).toBe('T');
+    expect(identity.typeParams![0].description).toContain('the value type');
+  });
+
+  it('captures a class type parameter with constraint + default', () => {
+    const box = byLongname('Box')!;
+    expect(box.typeParams).toHaveLength(1);
+    const [t] = box.typeParams!;
+    expect(t.name).toBe('T');
+    expect(t.constraint).toBe('object');
+    // The default renders as a readable type string.
+    expect(t.default).toBeTruthy();
+  });
+
+  it('leaves typeParams undefined for a non-generic symbol', () => {
+    expect(byLongname('square')?.typeParams).toBeUndefined();
+  });
 });
 
 describe('reflectionsToDoclets — block tags', () => {
   it('@example on the class', () => {
     const foo = byLongname('Foo')!;
     expect(foo.examples?.[0]).toContain('new Foo(1)');
+  });
+
+  it('captures @remarks as a separate field (HTML)', () => {
+    const square = byLongname('square')!;
+    expect(square.remarks).toContain('overflow is not checked');
+    // Remarks are distinct from the summary/description.
+    expect(square.description ?? '').not.toContain('overflow is not checked');
   });
 
   it('@deprecated reason string', () => {
@@ -379,9 +472,9 @@ describe('reflectionsToDoclets — namespaces', () => {
     expect(radius.scope).toBe('instance');
   });
 
-  it('nests a namespaced constant as a static member', () => {
+  it('maps a namespaced constant to a static variable under its namespace', () => {
     const pi = byLongname('module:Shapes.PI')!;
-    expect(pi.kind).toBe('member');
+    expect(pi.kind).toBe('variable');
     expect(pi.memberof).toBe('module:Shapes');
     expect(pi.scope).toBe('static');
   });

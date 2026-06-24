@@ -17,6 +17,9 @@
   ],
   "keywords": [
     "typedoc",
+    "typescript",
+    "documentation",
+    "generator",
     "typedoc-theme",
     "typedoc-plugin",
     "clean-jsdoc-theme"

@@ -159,7 +159,7 @@ Plan mapping: `isStatic→scope`, `isReadonly→readonly`, `isAbstract→virtual
 - `sources?: SourceReference[]` → use `sources[0]` for `meta` (filename/path/lineno).
 - `type?: SomeType` — value type for variable/property; return type for a signature.
 - `signatures?: SignatureReflection[]` — functions/methods (one per overload;
-  v1 uses the first).
+  the first drives the doclet, the rest become `overloads[]`).
 - `getSignature?` / `setSignature?: SignatureReflection` — accessors.
 - `indexSignatures?`, `typeParameters?: TypeParameterReflection[]`.
 - `defaultValue?: string` (function params, variables, properties → `defaultvalue`).

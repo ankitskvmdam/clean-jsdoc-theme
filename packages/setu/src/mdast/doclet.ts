@@ -1,6 +1,6 @@
 import type { List, ListItem, Paragraph, PhrasingContent, RootContent } from 'mdast';
 import type { MdxJsxFlowElement } from 'mdast-util-mdx-jsx';
-import { TDoclet, TDocletParam, TDocletTypeProperty } from '@clean-jsdoc-theme/utils';
+import { TDoclet, TDocletParam, TDocletTypeParam, TDocletTypeProperty } from '@clean-jsdoc-theme/utils';
 import type { ResolvedLink } from '../link-registry';
 import { parseEmbedConfig } from '../embed';
 import {
@@ -777,6 +777,8 @@ export type DocletSection =
   | 'relations'
   | 'this'
   | 'alias'
+  | 'remarks'
+  | 'typeParams'
   | 'params'
   | 'properties'
   | 'returns'
@@ -821,6 +823,34 @@ export interface DocletBlocksOptions {
    * Omitted for the byte-identical default build. See {@link SlotResolver}.
    */
   slots?: SlotResolver;
+  /**
+   * Document-model flavor. `'typedoc'` switches member rendering to full
+   * TypeScript signatures (a `ts` code block per member, with type parameters,
+   * parameter types, and return types). `'jsdoc'` (default/omitted) keeps the
+   * name-only heading signature — byte-identical.
+   */
+  flavor?: 'jsdoc' | 'typedoc';
+}
+
+/**
+ * `typeParams` (generics) rendered as a list: `` `T` `` ` extends `Constraint``
+ * ` = `Default`` — description`. Only the TypeDoc bridge ever populates
+ * `typeParams`, so this never fires on the JSDoc path.
+ */
+function typeParamsList(typeParams: readonly TDocletTypeParam[]): List {
+  return ul(
+    typeParams.map((tp) => {
+      const line: PhrasingContent[] = [inlineCode(tp.name)];
+      if (tp.constraint) line.push(text(' extends '), inlineCode(tp.constraint));
+      if (tp.default !== undefined && tp.default !== '') line.push(text(' = '), inlineCode(tp.default));
+      const desc = tp.description ? htmlToMdastInline(tp.description) : [];
+      if (desc.length > 0) {
+        line.push(text(' — '));
+        line.push(...desc);
+      }
+      return li(p(...line));
+    })
+  );
 }
 
 /**
@@ -857,6 +887,13 @@ export function docletBlocks(
 
   blocks.push(...descriptionBlocks(doclet, options.slots));
 
+  // `@remarks` — detailed prose shown as its own "Remarks" section after the
+  // description (matching TypeDoc). Only the TypeDoc bridge sets `remarks`, so
+  // JSDoc output is unchanged.
+  if (!skip.has('remarks') && doclet.remarks) {
+    blocks.push(p(strong(text('Remarks'))), ...htmlToMdastBlocks(doclet.remarks));
+  }
+
   if (!skip.has('deprecation')) {
     const dep = deprecationBlock(doclet);
     if (dep) blocks.push(dep);
@@ -868,6 +905,12 @@ export function docletBlocks(
 
   if (!skip.has('alias') && doclet.alias) {
     blocks.push(p(strong(text('Alias:')), text(' '), inlineCode(doclet.alias)));
+  }
+
+  // Generics ("Type Parameters") render before parameters — matching TypeDoc.
+  // Only the TypeDoc bridge sets `typeParams`, so JSDoc output is unchanged.
+  if (!skip.has('typeParams') && doclet.typeParams && doclet.typeParams.length > 0) {
+    blocks.push(p(strong(text('Type Parameters'))), typeParamsList(doclet.typeParams));
   }
 
   // Owning symbol + resolver for the translatable param/return descriptions,

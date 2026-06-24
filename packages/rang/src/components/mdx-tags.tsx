@@ -15,6 +15,7 @@ import {
   useHeaderSlot,
   BasePathContext,
   InlineSvgContext,
+  SignatureCode,
 } from './mdx-utils';
 import { Code } from './CodeBlock';
 
@@ -155,8 +156,9 @@ const MEMBER_HEADING_CLASS: Record<string, string> = {
 /**
  * A member heading emitted by setu as `<MemberHeading id depth name sig />`. It
  * renders an `h{depth}` whose entire content is a single `<code>` showing the
- * full signature (e.g. `process(data) -> Promise.<number>`), so the name and its
- * params/return read as one unit. The `id` is explicit — the displayed
+ * full TypeScript signature (e.g. `addChild(child: Component): void`), shiki-
+ * highlighted inline when dwar provides a highlighter, so the name and its
+ * params/return read as one coloured unit. The `id` is explicit — the displayed
  * signature never feeds the anchor slug (stays `#name`) — and the hover anchor
  * + scroll offset mirror `makeHeading`, so dwar's heading-anchors script and the
  * TOC treat it like any other heading.
@@ -170,8 +172,23 @@ export function MemberHeading({ id, depth, sig }: { id?: string; depth?: string;
       class={`group relative scroll-mt-20 ${id ? 'cursor-pointer' : ''} ${MEMBER_HEADING_CLASS[tag]}`}
     >
       {id ? <HeadingAnchor /> : null}
-      <Code>{sig}</Code>
+      <SignatureCode code={sig} class="font-mono font-normal" />
     </Tag>
+  );
+}
+
+/**
+ * A standalone code signature (not inside a heading) — emitted by setu as
+ * `<Signature code="…" />` for a top-level function/variable page and for each
+ * signature of an overloaded member. Same shiki-highlighted inline `<code>` as
+ * {@link MemberHeading}, in its own scrollable block so a wide signature can
+ * scroll instead of overflowing.
+ */
+export function Signature({ code }: { code?: string }) {
+  return (
+    <div class="my-3 overflow-x-auto">
+      <SignatureCode code={code} class="font-mono text-sm" />
+    </div>
   );
 }
 

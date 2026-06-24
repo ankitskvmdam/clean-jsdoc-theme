@@ -4,7 +4,47 @@ import {
   escapeStrayBraces,
   findStrayBackticks,
   preprocessJsdocInlineTags,
+  signatureParamRanges,
 } from '../mdx';
+
+describe('signatureParamRanges', () => {
+  /** Slice each returned range out of the source — easier to assert on. */
+  const params = (sig: string): string[] =>
+    signatureParamRanges(sig).map((r) => sig.slice(r.start, r.end));
+
+  it('returns each parameter (name + type), not the function name or parens', () => {
+    expect(params('reduce(query?: object, iterator: function): *')).toEqual([
+      'query?: object',
+      'iterator: function',
+    ]);
+  });
+
+  it('keeps a generic / tuple type as one parameter (top-level commas only)', () => {
+    expect(params('merge(a: Map<string, number>, b: [number, number]): void')).toEqual([
+      'a: Map<string, number>',
+      'b: [number, number]',
+    ]);
+  });
+
+  it('handles a function-type parameter (its own parens + `=>`)', () => {
+    expect(params('on(event: string, cb: (e: Event) => void): void')).toEqual([
+      'event: string',
+      'cb: (e: Event) => void',
+    ]);
+  });
+
+  it('trims the wrap indentation (newlines / tabs) off each range', () => {
+    expect(params('reduce(\n\tquery?: object,\n\titerator: function,\n): *')).toEqual([
+      'query?: object',
+      'iterator: function',
+    ]);
+  });
+
+  it('returns [] for a paren-less signature (a field) or an empty list', () => {
+    expect(signatureParamRanges('current: Widget')).toEqual([]);
+    expect(signatureParamRanges('reset(): void')).toEqual([]);
+  });
+});
 
 describe('collectUsedLangs', () => {
   it('always includes the common documentation languages, even with no code', () => {
@@ -37,6 +77,20 @@ describe('escapeStrayBraces', () => {
 
   it('leaves braces inside inline code spans untouched', () => {
     expect(escapeStrayBraces('use `{ a: 1 }` here')).toBe('use `{ a: 1 }` here');
+  });
+
+  it('leaves braces inside MDX JSX attribute values untouched (signature object types)', () => {
+    // setu emits signatures as JSX attributes; an object-type return like
+    // `{ radius: number }` is a literal attribute string, not an MDX expression.
+    const src = '<Signature code="scale(options: { radius: number }): Circle" />';
+    expect(escapeStrayBraces(src)).toBe(src);
+    // A generic signature carries `<`/`>` inside the quoted value — still one tag.
+    const generic = '<MemberHeading id="emit" depth="3" name="emit" sig="emit<T>(): { ok: T }" />';
+    expect(escapeStrayBraces(generic)).toBe(generic);
+    // …but a stray brace in the prose AROUND a tag is still escaped.
+    expect(escapeStrayBraces('text {x} <Signature code="f(): { y: T }" /> {z}')).toBe(
+      'text \\{x\\} <Signature code="f(): { y: T }" /> \\{z\\}'
+    );
   });
 
   it('leaves braces inside fenced code blocks untouched', () => {

@@ -3,7 +3,7 @@
 // JSDoc 4 → setu → dwar bridge. `publish(taffyData, opts, tutorials)` is the
 // entry JSDoc invokes; everything below orchestrates the four phase packages.
 
-import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { basename, dirname, extname, join as joinPath, resolve as resolvePath } from 'node:path';
@@ -371,8 +371,12 @@ interface JSDocOpts {
    *  - `sourceLinkToComment` — defaults to `false`. By default a `Source:`
    *    link lands on the first line of the declaration; set `true` to point it
    *    at the doclet's doc-comment line instead (the pre-v5 behavior).
+   *  - `cleanOutputDir` — defaults to `true`; set `false` to keep existing files
+   *    in the destination instead of emptying it before each build.
    */
-  templates?: { default?: { outputSourceFiles?: unknown; sourceLinkToComment?: unknown } };
+  templates?: {
+    default?: { outputSourceFiles?: unknown; sourceLinkToComment?: unknown; cleanOutputDir?: unknown };
+  };
   [key: string]: unknown;
 }
 
@@ -866,6 +870,28 @@ export function sourceLinkToCommentEnabled(opts: JSDocOpts): boolean {
   }
   if (opts?.templates?.default?.sourceLinkToComment === true) return true;
   return false;
+}
+
+/**
+ * Resolve `templates.default.cleanOutputDir`. Probed in the same priority order
+ * as {@link outputSourceFilesEnabled} (canonical `jsdoc/env` conf, then a nested
+ * `opts.templates` fallback). Defaults to `true` — the build empties its
+ * destination first so a page removed or renamed between runs (e.g. a deleted
+ * class, or a stale content-hashed `styles.<hash>.css`) doesn't linger in the
+ * served site. Resolves to `false` ONLY when one is exactly `=== false`.
+ */
+export function cleanOutputDirEnabled(opts: JSDocOpts): boolean {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const env = require('jsdoc/env') as {
+      conf?: { templates?: { default?: { cleanOutputDir?: unknown } } };
+    };
+    if (env?.conf?.templates?.default?.cleanOutputDir === false) return false;
+  } catch {
+    // `jsdoc/env` isn't resolvable (e.g. unit tests) — fall back to opts.
+  }
+  if (opts?.templates?.default?.cleanOutputDir === false) return false;
+  return true;
 }
 
 /**
@@ -1811,6 +1837,17 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
     ...docImageFiles,
     ...(favicon?.files ?? []),
   ];
+  // Empty the destination first so a page removed/renamed since the last build
+  // (or a stale content-hashed asset like `styles.<hash>.css`) doesn't linger in
+  // the served site. Default on; opt out with `templates.default.cleanOutputDir:
+  // false`. Skipped in localization build mode: each locale is a separate process
+  // writing the default site to the root and others to `root/<locale>`, so a
+  // recursive clean here would clobber a sibling locale's already-built output.
+  if (!buildSpec && cleanOutputDirEnabled(opts)) {
+    await progress.stage('Cleaning output', () =>
+      rm(absoluteDestination, { recursive: true, force: true })
+    );
+  }
   await progress.stage('Writing files', () => writeOutputFiles(absoluteDestination, outputFiles));
 
   // Next.js-style build report: where the files landed, page/asset counts, and

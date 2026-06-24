@@ -14,7 +14,7 @@
  * only; we never cross-import the bridge package).
  */
 import { gzipSync } from 'node:zlib';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, extname, resolve as resolvePath } from 'node:path';
 import salty from '@jsdoc/salty';
 import { generateSite } from '@clean-jsdoc-theme/setu';
@@ -149,6 +149,32 @@ function normalizeSectionOrder(raw: unknown): string[] | undefined {
     .map((s) => s.trim())
     .filter((s) => s.length > 0);
   return out.length > 0 ? out : undefined;
+}
+
+/**
+ * JSDoc-ish sidebar labels a user might write in `sectionOrder` → the canonical
+ * TypeDoc kind-section labels setu emits under the typedoc flavor. So a config
+ * listing `Enums`/`Typedefs` still orders the `Enumerations`/`Type Aliases`
+ * sections. Case-insensitive; unknown labels (category/doc groups) pass through.
+ */
+const TYPEDOC_SECTION_ALIASES: Record<string, string> = {
+  enums: 'Enumerations',
+  enumerations: 'Enumerations',
+  typedefs: 'Type Aliases',
+  'type aliases': 'Type Aliases',
+  typealiases: 'Type Aliases',
+  classes: 'Classes',
+  interfaces: 'Interfaces',
+  functions: 'Functions',
+  variables: 'Variables',
+  namespaces: 'Namespaces',
+  modules: 'Modules',
+};
+
+/** Map each `sectionOrder` entry through {@link TYPEDOC_SECTION_ALIASES}. */
+function canonicalizeTypedocSectionOrder(order: string[] | undefined): string[] | undefined {
+  if (!order) return undefined;
+  return order.map((label) => TYPEDOC_SECTION_ALIASES[label.toLowerCase()] ?? label);
 }
 
 /**
@@ -623,13 +649,16 @@ export async function writeSite(
       : undefined;
 
   // Sidebar config from the block: `menu` (full control) > `sectionOrder`.
-  const sectionOrder = normalizeSectionOrder(block.sectionOrder);
+  // Section labels are canonicalized to TypeDoc's names so a config written with
+  // `Enums`/`Typedefs` still orders the `Enumerations`/`Type Aliases` sections.
+  const sectionOrder = canonicalizeTypedocSectionOrder(normalizeSectionOrder(block.sectionOrder));
   const menu = normalizeMenu(block.menu);
   const clubSidebarItems = block.clubSidebarItems === true;
   // Enablement slice → setu's `@playground` resolver (runtime slice → the theme).
   const playground = normalizePlayground(block.playground);
 
   const manifest = generateSite(collection, {
+    flavor: 'typedoc',
     ...(pkg ? { pkg } : {}),
     ...(readme ? { readme } : {}),
     ...(sources.length > 0 ? { sources } : {}),
@@ -716,6 +745,14 @@ export async function writeSite(
     ...(favicon?.files ?? []),
     ...resolvedDocs.files,
   ];
+  // TypeDoc cleans only its own `out` (the default html output), never a custom
+  // `outputs` path — so without this, a page removed or renamed between builds
+  // (e.g. a symbol that graduates from the aggregated Globals page to its own
+  // standalone page) lingers as a stale file and shows up in the served site.
+  // Honor TypeDoc's `cleanOutputDir` (default true): empty the destination first.
+  if (app.options.getValue('cleanOutputDir') !== false) {
+    await rm(destination, { recursive: true, force: true });
+  }
   await writeOutputFiles(destination, outputFiles);
 
   // Next.js-style build report: where the files landed, page/asset counts, and

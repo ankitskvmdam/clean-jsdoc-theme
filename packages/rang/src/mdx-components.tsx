@@ -34,6 +34,7 @@ import {
   SourceLink,
   MemberMeta,
   MemberHeading,
+  Signature,
 } from './components/mdx-tags';
 
 // MDX is a heterogeneous element-name → component map; per-key prop shapes vary.
@@ -82,6 +83,10 @@ export const defaultMdxComponents: Record<string, ComponentType<any>> = {
   // an h{depth} whose content is one <code> showing the full signature, with an
   // explicit id so the anchor stays clean. Capitalized so MDX routes it here.
   MemberHeading,
+  // setu emits a standalone signature (top-level function/variable page, and each
+  // overload of a member) as `<Signature code="…" />` — a shiki-highlighted inline
+  // <code> in its own block. Capitalized so MDX routes it here.
+  Signature,
   // setu emits a numbered stepper as `<Steps>` wrapping `<Step label="…">`
   // children. Capitalized so MDX routes them here; `Steps` is SSR-only static
   // markup (no island), and `Step` is a logical marker `Steps` reads directly.

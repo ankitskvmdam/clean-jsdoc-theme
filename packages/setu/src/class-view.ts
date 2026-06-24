@@ -19,6 +19,12 @@ export interface MemberBuckets {
   staticMethods: ClassMember[];
   instanceFields: ClassMember[];
   staticFields: ClassMember[];
+  /**
+   * Getter/setter accessors (`isAccessor` doclets) — TypeDoc surfaces these in a
+   * dedicated "Accessors" section. JSDoc never sets `isAccessor`, so this bucket
+   * is always empty on the JSDoc path (its members stay in the field buckets).
+   */
+  accessors: ClassMember[];
   enums: ClassMember[];
   events: ClassMember[];
   /** Anything that did not match a bucket above (e.g. typedef nested under a class). */
@@ -76,6 +82,7 @@ export function bucketClassMembers(members: readonly ClassMember[]): MemberBucke
     staticMethods: [],
     instanceFields: [],
     staticFields: [],
+    accessors: [],
     enums: [],
     events: [],
     other: [],
@@ -86,6 +93,10 @@ export function bucketClassMembers(members: readonly ClassMember[]): MemberBucke
       buckets.events.push(m);
     } else if (m.isEnum) {
       buckets.enums.push(m);
+    } else if (m.isAccessor) {
+      // Accessors are `kind: 'member'`; route them out before the field branch.
+      // Only the TypeDoc bridge sets this flag, so JSDoc bucketing is unchanged.
+      buckets.accessors.push(m);
     } else if (m.kind === 'function') {
       (m.scope === 'static' ? buckets.staticMethods : buckets.instanceMethods).push(m);
     } else if (m.kind === 'member') {
@@ -250,6 +261,7 @@ function mergeMemberBuckets(a: MemberBuckets, b: MemberBuckets): MemberBuckets {
     'staticMethods',
     'instanceFields',
     'staticFields',
+    'accessors',
     'enums',
     'events',
     'other',

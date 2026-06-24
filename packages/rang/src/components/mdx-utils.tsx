@@ -52,6 +52,40 @@ export const BasePathContext = createContext<string>('/');
  */
 export const InlineSvgContext = createContext<Record<string, string>>({});
 
+/**
+ * Turns a TypeScript signature string into shiki-highlighted inline HTML (the
+ * coloured token `<span>`s, no `<pre>`/`<code>` wrapper). dwar provides it per
+ * render (shiki loads at compile time, keeping render() pure); when absent — unit
+ * tests, or a host that didn't wire it — signatures fall back to plain `<code>`.
+ */
+export type SignatureHighlighter = (code: string) => string;
+export const SignatureHighlightContext = createContext<SignatureHighlighter | null>(null);
+
+/** The signature highlighter dwar provided, or `null` for the plain fallback. */
+export function useSignatureHighlight(): SignatureHighlighter | null {
+  return useContext(SignatureHighlightContext);
+}
+
+/**
+ * A code signature rendered as an inline `<code>` — shiki-highlighted when a
+ * {@link SignatureHighlightContext} highlighter is available, otherwise plain
+ * text. Shared by {@link HeadingSignature-bearing} member headings and the
+ * standalone `Signature` block.
+ */
+export function SignatureCode({ code, class: cls }: { code?: string; class?: string }) {
+  const highlight = useSignatureHighlight();
+  // `shiki-inline` is the hook dwar's CSS uses to swap each token's `color` to its
+  // `--shiki-dark` variable under [data-theme="dark"] — without the per-token dark
+  // background the block `.shiki` rule adds (wrong for an inline signature).
+  const className = `shiki-inline ${cls ?? 'font-mono text-[0.95em]'}`;
+  if (highlight && code) {
+    // shiki output is trusted (it's our own compile-time highlighter over a
+    // signature string we generated), so injecting it is safe.
+    return <code class={className} dangerouslySetInnerHTML={{ __html: highlight(code) }} />;
+  }
+  return <code class={className}>{code}</code>;
+}
+
 /** Claim the header slot for the first heading rendered; returns its node once, else null. */
 export function useHeaderSlot(): ComponentChildren | null {
   const slot = useContext(HeaderSlotContext);

@@ -84,3 +84,47 @@ export function step(point: Point, direction: Direction): Point {
       return { x: point.x + 1, y: point.y };
   }
 }
+
+/**
+ * Translate a point — by a `{ dx, dy }` delta, or by separate `dx`/`dy` numbers.
+ *
+ * @param point - the starting point.
+ * @param delta - the offset to add to both axes.
+ * @returns a new, translated point.
+ */
+export function translate(point: Point, delta: Point): Point;
+/**
+ * @param point - the starting point.
+ * @param dx - the horizontal offset.
+ * @param dy - the vertical offset.
+ * @returns a new, translated point.
+ */
+export function translate(point: Point, dx: number, dy: number): Point;
+export function translate(point: Point, deltaOrDx: Point | number, dy?: number): Point {
+  if (typeof deltaOrDx === 'number') {
+    return { x: point.x + deltaOrDx, y: point.y + (dy ?? 0) };
+  }
+  return { x: point.x + deltaOrDx.x, y: point.y + deltaOrDx.y };
+}
+
+/**
+ * Interpolate between two points — a deliberately wide signature to exercise the
+ * multi-line, tab-indented layout.
+ *
+ * @param from - the start point.
+ * @param to - the end point.
+ * @param t - progress in the range 0..1.
+ * @param easing - optional easing function name.
+ * @param clamp - whether to clamp `t` into 0..1.
+ * @returns the interpolated point.
+ */
+export function interpolate(
+  from: Point,
+  to: Point,
+  t: number,
+  easing?: string,
+  clamp?: boolean
+): Point {
+  const p = clamp ? Math.max(0, Math.min(1, t)) : t;
+  return { x: from.x + (to.x - from.x) * p, y: from.y + (to.y - from.y) * p };
+}

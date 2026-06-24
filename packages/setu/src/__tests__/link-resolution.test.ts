@@ -310,9 +310,15 @@ describe('link resolution — type names link to the symbol they reference (v4 p
     expect(body).toContain('[`Widget`](/widget)');
   });
 
-  it('links an instance field `Type:` to the symbol page', () => {
+  it('shows an instance field type in its heading signature (supersedes the Type field)', () => {
     const body = bodyOf(generateSite(typeRefCollection()), 'Box');
-    expect(body).toContain('**Type**');
+    // A field's type now rides in the member heading signature (shiki-highlighted
+    // inline), so the separate "Type:" field is dropped — `current: Widget` shows
+    // the type at a glance. Param / return / relation types still link in their
+    // own tables (covered by the other cases here).
+    expect(body).toContain('current: Widget');
+    expect(body).not.toContain('**Type**');
+    // The method return/param still contribute a code-style link to Widget.
     expect(body).toContain('[`Widget`](/widget)');
   });
 
