@@ -14,7 +14,7 @@
  * only; we never cross-import the bridge package).
  */
 import { gzipSync } from 'node:zlib';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, extname, resolve as resolvePath } from 'node:path';
 import salty from '@jsdoc/salty';
 import { generateSite } from '@clean-jsdoc-theme/setu';
@@ -745,6 +745,14 @@ export async function writeSite(
     ...(favicon?.files ?? []),
     ...resolvedDocs.files,
   ];
+  // TypeDoc cleans only its own `out` (the default html output), never a custom
+  // `outputs` path — so without this, a page removed or renamed between builds
+  // (e.g. a symbol that graduates from the aggregated Globals page to its own
+  // standalone page) lingers as a stale file and shows up in the served site.
+  // Honor TypeDoc's `cleanOutputDir` (default true): empty the destination first.
+  if (app.options.getValue('cleanOutputDir') !== false) {
+    await rm(destination, { recursive: true, force: true });
+  }
   await writeOutputFiles(destination, outputFiles);
 
   // Next.js-style build report: where the files landed, page/asset counts, and
