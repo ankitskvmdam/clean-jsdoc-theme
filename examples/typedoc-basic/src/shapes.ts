@@ -53,6 +53,23 @@ export class Circle implements Shape {
   static unit(): Circle {
     return new Circle({ x: 0, y: 0 }, 1);
   }
+
+  /**
+   * Scale the circle — by a numeric factor, or to an explicit radius.
+   *
+   * @param factor - the multiplier to apply to the current radius.
+   * @returns a new, scaled circle.
+   */
+  scale(factor: number): Circle;
+  /**
+   * @param options - an explicit target radius.
+   * @returns a new circle at the given radius.
+   */
+  scale(options: { radius: number }): Circle;
+  scale(arg: number | { radius: number }): Circle {
+    const radius = typeof arg === 'number' ? this.radius * arg : arg.radius;
+    return new Circle(this.center, radius);
+  }
 }
 
 /**

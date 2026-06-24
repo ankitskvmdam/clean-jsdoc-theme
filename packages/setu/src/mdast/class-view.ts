@@ -1,6 +1,6 @@
 import type { PhrasingContent, Root, RootContent } from 'mdast';
 import { ClassMember, ClassView, ContainerView, MemberBuckets } from '../class-view';
-import { slugifyHeading, TDocletParam, TDocletTypeParam } from '@clean-jsdoc-theme/utils';
+import { slugifyHeading, TDoclet, TDocletOverload, TDocletParam, TDocletTypeParam } from '@clean-jsdoc-theme/utils';
 import { code, h, hr, inlineCode, li, link, memberHeading, memberMeta, p, root, strong, text, ul } from './builders';
 import {
   docletBlocks,
@@ -275,6 +275,17 @@ function tsConstructorSignature(
   );
 }
 
+/** A callable signature `name<T>(p: T): Ret` from explicit signature parts. */
+function tsCallableSignature(
+  name: string,
+  typeParams: readonly TDocletTypeParam[] | undefined,
+  params: readonly TDocletParam[] | undefined,
+  returns: readonly TDocletParam[] | undefined
+): string {
+  const ret = tsType(returns?.[0]?.type);
+  return formatCallable(name, tsTypeParamParts(typeParams), tsParamParts(params), ret ? `: ${ret}` : '');
+}
+
 /**
  * Full TS signature for a member: a callable form for functions/methods
  * (`name<T>(p: T): Ret`), `get name(): Type` for accessors, and `name: Type`
@@ -284,17 +295,98 @@ function tsMemberSignature(member: ClassMember): string | null {
   const name = member.name;
   if (!name) return null;
   if (member.kind === 'function') {
-    const ret = tsType(member.returns?.[0]?.type);
-    return formatCallable(
-      name,
-      tsTypeParamParts(member.typeParams),
-      tsParamParts(member.params),
-      ret ? `: ${ret}` : ''
-    );
+    return tsCallableSignature(name, member.typeParams, member.params, member.returns);
   }
   const t = tsType(member.type);
   if (member.isAccessor) return `get ${name}()${t ? `: ${t}` : ''}`;
   return t ? `${name}: ${t}` : name;
+}
+
+/** A callable doclet (function/method) that carries overload signatures. */
+function hasOverloads(doclet: { overloads?: readonly TDocletOverload[] }): boolean {
+  return (doclet.overloads?.length ?? 0) > 0;
+}
+
+/**
+ * Sections rendered once on the shared member body when a callable is
+ * overloaded — its `ts` signatures (with per-signature type params / parameters
+ * / returns) move into {@link overloadSignatureBlocks}, so the shared body skips
+ * exactly those.
+ */
+const SHARED_BODY_SKIP_FOR_OVERLOADS: readonly DocletSection[] = [
+  'typeParams',
+  'params',
+  'returns',
+  'type',
+];
+
+/**
+ * Per-signature body sections: everything *except* the signature's own type
+ * params / parameters / returns is rendered once on the shared body, so a
+ * per-signature render skips it. (A signature's own `description` isn't a
+ * skippable section — it flows through {@link docletBlocks} — which is exactly
+ * how an overload's description renders under its own block.)
+ */
+const PER_SIGNATURE_SKIP: readonly DocletSection[] = [
+  'summary',
+  'modifiers',
+  'relations',
+  'this',
+  'alias',
+  'remarks',
+  'properties',
+  'yields',
+  'throws',
+  'type',
+  'default',
+  'fires',
+  'listens',
+  'examples',
+  'iframes',
+  'metadata',
+  'deprecation',
+  'inherited',
+];
+
+/**
+ * One `ts` code block per call signature of an overloaded function/method — the
+ * first signature (from the doclet's own `typeParams`/`params`/`returns`) then
+ * each `overloads[]` entry — each followed by that signature's Type Parameters /
+ * Parameters / Returns (and an overload's own description). Matches default
+ * TypeDoc, which stacks every overload signature with its own parameters. The
+ * first signature's shared description/examples/etc. already render on the
+ * member body, so they aren't repeated here. Only reached under the typedoc
+ * flavor for a doclet that {@link hasOverloads}.
+ */
+function overloadSignatureBlocks(
+  doclet: ClassMember | ContainerView['doclet'],
+  options: DocletBlocksOptions
+): RootContent[] {
+  const name = doclet.name;
+  if (!name) return [];
+  const signatures: TDocletOverload[] = [
+    { typeParams: doclet.typeParams, params: doclet.params, returns: doclet.returns },
+    ...(doclet.overloads ?? []),
+  ];
+  const out: RootContent[] = [];
+  for (const sig of signatures) {
+    out.push(code('ts', tsCallableSignature(name, sig.typeParams, sig.params, sig.returns)));
+    // A synthetic doclet carrying only this signature's data, so docletBlocks
+    // renders its Type Parameters / Parameters / Returns (and the overload's own
+    // description, which isn't a skippable section).
+    const synthetic: TDoclet = {
+      kind: doclet.kind,
+      name,
+      longname: doclet.longname,
+      scope: doclet.scope,
+      typeParams: sig.typeParams,
+      params: sig.params,
+      returns: sig.returns,
+    };
+    if (sig.description) synthetic.description = sig.description;
+    out.push(...docletBlocks(synthetic, { ...options, skip: PER_SIGNATURE_SKIP }));
+  }
+  return out;
 }
 
 /**
@@ -357,6 +449,14 @@ export function memberBlocks(
   // TypeDoc: the full TS signature as a highlighted code block, then the body
   // with the now-redundant "Type" field suppressed (the type is in the signature).
   const skip: DocletSection[] = [...(options.skip ?? []), 'modifiers'];
+  if (typedoc && hasOverloads(member)) {
+    // Overloaded: the shared body (description/examples/…) renders once with its
+    // per-signature sections suppressed, then every signature stacks below with
+    // its own parameters/returns — matching default TypeDoc.
+    out.push(...docletBlocks(member, { ...options, skip: [...skip, ...SHARED_BODY_SKIP_FOR_OVERLOADS] }));
+    out.push(...overloadSignatureBlocks(member, options));
+    return out;
+  }
   if (typedoc) {
     const sig = tsMemberSignature(member);
     if (sig) out.push(code('ts', sig));
@@ -437,7 +537,12 @@ export function containerViewToMdast(
   // Standalone function/variable pages (typedoc flavor): the full TS signature
   // as a code block, right under the title — matching default TypeDoc, where a
   // function page leads with `name<T>(p: T): Ret` and a variable with `name: T`.
-  if (options.flavor === 'typedoc' && (view.kind === 'function' || view.kind === 'variable')) {
+  const fnVarPage =
+    options.flavor === 'typedoc' && (view.kind === 'function' || view.kind === 'variable');
+  // An overloaded standalone function stacks every signature below the body
+  // (handled after docletBlocks); a single-signature one leads with its block.
+  const fnOverloaded = fnVarPage && view.kind === 'function' && hasOverloads(view.doclet);
+  if (fnVarPage && !fnOverloaded) {
     const sig = tsMemberSignature(view.doclet);
     if (sig) blocks.push(code('ts', sig));
   }
@@ -457,8 +562,16 @@ export function containerViewToMdast(
   const skip: DocletBlocksOptions['skip'] =
     view.kind === 'class'
       ? [...(options.skip ?? []), 'params', 'returns', 'yields', 'throws', 'relations']
-      : [...(options.skip ?? []), 'relations'];
+      : fnOverloaded
+        ? [...(options.skip ?? []), 'relations', ...SHARED_BODY_SKIP_FOR_OVERLOADS]
+        : [...(options.skip ?? []), 'relations'];
   blocks.push(...docletBlocks(view.doclet, { ...options, skip }));
+
+  // Overloaded standalone function: stack each signature (with its own
+  // parameters/returns) after the shared body — matching default TypeDoc.
+  if (fnOverloaded) {
+    blocks.push(...overloadSignatureBlocks(view.doclet, options));
+  }
 
   // Constructor: every class page gets a Constructor section so the call
   // signature (e.g. `new Widget(id, [opts])`) always shows — conveying argument

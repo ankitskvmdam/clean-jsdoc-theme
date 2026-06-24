@@ -84,3 +84,25 @@ export function step(point: Point, direction: Direction): Point {
       return { x: point.x + 1, y: point.y };
   }
 }
+
+/**
+ * Translate a point — by a `{ dx, dy }` delta, or by separate `dx`/`dy` numbers.
+ *
+ * @param point - the starting point.
+ * @param delta - the offset to add to both axes.
+ * @returns a new, translated point.
+ */
+export function translate(point: Point, delta: Point): Point;
+/**
+ * @param point - the starting point.
+ * @param dx - the horizontal offset.
+ * @param dy - the vertical offset.
+ * @returns a new, translated point.
+ */
+export function translate(point: Point, dx: number, dy: number): Point;
+export function translate(point: Point, deltaOrDx: Point | number, dy?: number): Point {
+  if (typeof deltaOrDx === 'number') {
+    return { x: point.x + deltaOrDx, y: point.y + (dy ?? 0) };
+  }
+  return { x: point.x + deltaOrDx.x, y: point.y + deltaOrDx.y };
+}

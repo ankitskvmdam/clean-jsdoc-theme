@@ -33,7 +33,13 @@ import type {
   SignatureReflection,
   TypeParameterReflection,
 } from 'typedoc';
-import type { TDoclet, TDocletKind, TDocletParam, TDocletTypeParam } from '@clean-jsdoc-theme/utils';
+import type {
+  TDoclet,
+  TDocletKind,
+  TDocletOverload,
+  TDocletParam,
+  TDocletTypeParam,
+} from '@clean-jsdoc-theme/utils';
 import {
   applyCommentFields,
   commentFields,
@@ -269,8 +275,8 @@ function adaptCallable(
   resolveLink: LinkResolver
 ): void {
   const signatures = reflection.signatures ?? [];
-  // v1 uses the FIRST signature only; additional overloads are dropped (noted in
-  // the adapter's skip diagnostics is overkill — a count would go to the logger).
+  // The first signature drives the doclet's own params/returns/typeParams; any
+  // additional overloads are captured on `overloads[]` below.
   const signature = signatures[0];
   if (!signature) return;
 
@@ -311,6 +317,43 @@ function adaptCallable(
     if (returnType) ret.type = returnType;
     doclet.returns = [ret, ...(doclet.returns?.slice(1) ?? [])];
   }
+
+  // Overloads: every signature beyond the first becomes an `overloads[]` entry
+  // carrying its own generics / parameters / return type (and its own
+  // description — TypeDoc puts each overload's docs on its own signature
+  // comment). The first signature stays on the doclet itself, so a
+  // single-signature member is unchanged. setu renders these only under the
+  // typedoc flavor; the JSDoc path never sets `overloads`.
+  const overloads = signatures.slice(1).map((sig) => adaptOverload(sig, resolveLink));
+  if (overloads.length) doclet.overloads = overloads;
+}
+
+/** One overload signature → the per-signature data that differs from the first. */
+function adaptOverload(
+  signature: SignatureReflection,
+  resolveLink: LinkResolver
+): TDocletOverload {
+  const overload: TDocletOverload = {};
+
+  const typeParams = adaptTypeParams(signature.typeParameters, resolveLink);
+  if (typeParams) overload.typeParams = typeParams;
+
+  const fields = commentFields(signature.comment, resolveLink);
+  const params = adaptParameters(signature, fields.paramDescriptions, resolveLink);
+  if (params.length) overload.params = params;
+
+  const returnType = typeToDocletType(signature.type);
+  const existingReturn = fields.returns?.[0];
+  if (returnType || existingReturn) {
+    const ret: TDocletParam = { ...(existingReturn ?? {}) };
+    if (returnType) ret.type = returnType;
+    overload.returns = [ret];
+  }
+
+  const description = summaryToHtml(signature.comment, resolveLink);
+  if (description) overload.description = description;
+
+  return overload;
 }
 
 /**

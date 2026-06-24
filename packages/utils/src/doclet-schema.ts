@@ -76,6 +76,24 @@ export const DocletTypeParamSchema = z.object({
 });
 export type TDocletTypeParam = z.infer<typeof DocletTypeParamSchema>;
 
+// ── OVERLOAD_SCHEMA ──────────────────────────────────────────────────────────
+
+/**
+ * One *additional* call signature of an overloaded function/method, beyond the
+ * first. JSDoc has no overloads, so only the TypeDoc bridge populates
+ * `overloads` (from `reflection.signatures[1..]`); the first signature stays on
+ * the doclet's own `typeParams`/`params`/`returns`, so non-overloaded output is
+ * unchanged. Each carries just the per-signature data that differs — generics,
+ * parameters, return type, and an optional signature-specific description.
+ */
+export const DocletOverloadSchema = z.object({
+  typeParams: z.array(DocletTypeParamSchema).optional(),
+  params: z.array(DocletParamSchema).optional(),
+  returns: z.array(DocletParamSchema).optional(),
+  description: z.string().nullable().optional(),
+});
+export type TDocletOverload = z.infer<typeof DocletOverloadSchema>;
+
 // ── ENUM_PROPERTY_SCHEMA ─────────────────────────────────────────────────────
 
 export const DocletEnumPropertySchema = z.object({
@@ -196,6 +214,12 @@ export const DocletSchema = z.object({
   optional: z.boolean().nullable().optional(),
   override: z.boolean().optional(),
   overrides: z.string().optional(),
+  /**
+   * Additional call signatures of an overloaded function/method (the first lives
+   * on `params`/`returns`/`typeParams`). TypeDoc-bridge-only — JSDoc never sets
+   * it, so non-overloaded output is unchanged. See {@link DocletOverloadSchema}.
+   */
+  overloads: z.array(DocletOverloadSchema).optional(),
   params: z.array(DocletParamSchema).optional(),
   preserveName: z.boolean().optional(),
   properties: z.array(z.union([DocletEnumPropertySchema, DocletParamSchema])).optional(),

@@ -681,8 +681,13 @@ doclet's `typeParams` (populated only by the TypeDoc bridge, so the section is
 safe to emit unconditionally). The link registry pre-seeds each page's own
 longname so a cross-reference always resolves to the symbol's page, never a stale
 `module#member` anchor; and the sidebar shows every kind section even when a
-user's `sectionOrder` omits some. Overloaded signatures are a known gap (only the
-first signature renders) — see the deferred follow-up.
+user's `sectionOrder` omits some. **Overloaded** functions/methods render every
+call signature: the TypeDoc bridge keeps the first signature on the doclet and
+carries the rest on `overloads[]` (`reflection.signatures[1..]`); setu then stacks
+one `ts` signature block per overload, each with its own Type Parameters /
+Parameters / Returns (and an overload's own description), while the shared
+description/examples render once — matching default TypeDoc. JSDoc never sets
+`overloads`, so the JSDoc path and single-signature members are unchanged.
 
 ### `@clean-jsdoc-theme/bhasha` — the pure i18n core
 

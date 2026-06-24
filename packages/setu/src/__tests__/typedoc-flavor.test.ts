@@ -235,6 +235,97 @@ describe('flavor: typedoc — full TS signatures', () => {
   });
 });
 
+/**
+ * A module with an overloaded standalone function and an overloaded class
+ * method. Each first signature lives on the doclet; the extra signatures ride on
+ * `overloads[]` (the shape the TypeDoc bridge produces from `signatures[1..]`).
+ */
+function overloadCollection(): TJSDocSaltyCollection<TDoclet> {
+  return makeCollection([
+    { kind: 'module', name: 'lib', longname: 'module:lib', scope: 'global', comment: '/** Lib. */', description: 'The library.' },
+    {
+      kind: 'function',
+      name: 'parse',
+      longname: 'module:lib.parse',
+      memberof: 'module:lib',
+      scope: 'static',
+      comment: '/** Parse. */',
+      description: 'Parses input.',
+      params: [{ name: 'text', type: { names: ['string'] }, description: 'A string.' }],
+      returns: [{ type: { names: ['string'] } }],
+      overloads: [
+        {
+          params: [{ name: 'value', type: { names: ['number'] }, description: 'A number.' }],
+          returns: [{ type: { names: ['number'] } }],
+          description: 'Parses a number instead.',
+        },
+      ],
+    },
+    {
+      kind: 'class',
+      name: 'Box',
+      longname: 'module:lib.Box',
+      memberof: 'module:lib',
+      scope: 'static',
+      classdesc: 'A box.',
+      comment: '/** A box. */',
+    },
+    {
+      kind: 'function',
+      name: 'add',
+      longname: 'module:lib.Box#add',
+      memberof: 'module:lib.Box',
+      scope: 'instance',
+      comment: '/** Add. */',
+      description: 'Adds an item.',
+      params: [{ name: 'item', type: { names: ['string'] }, description: 'An item.' }],
+      returns: [{ type: { names: ['void'] } }],
+      overloads: [
+        {
+          params: [{ name: 'items', type: { names: ['Array.<string>'] }, description: 'Many items.' }],
+          returns: [{ type: { names: ['void'] } }],
+        },
+      ],
+    },
+  ]);
+}
+
+describe('flavor: typedoc — overloaded signatures', () => {
+  it('renders every signature of an overloaded standalone function', () => {
+    const m = generateSite(overloadCollection(), { flavor: 'typedoc' });
+    const body = pageByLongname(m, 'module:lib.parse')!.body;
+    expect(body).toContain('parse(text: string): string');
+    expect(body).toContain('parse(value: number): number');
+    // Two `ts` signature blocks, one per overload.
+    expect(body.match(/```ts/g)?.length).toBe(2);
+  });
+
+  it("renders each overload's own parameters and description", () => {
+    const m = generateSite(overloadCollection(), { flavor: 'typedoc' });
+    const body = pageByLongname(m, 'module:lib.parse')!.body;
+    // The shared (first-signature) description shows once; the overload's own
+    // description renders under its signature.
+    expect(body).toContain('Parses input.');
+    expect(body).toContain('Parses a number instead.');
+    expect(body).toContain('value');
+    expect(body).toContain('text');
+  });
+
+  it('renders every signature of an overloaded class method', () => {
+    const m = generateSite(overloadCollection(), { flavor: 'typedoc' });
+    const body = pageByLongname(m, 'module:lib.Box')!.body;
+    expect(body).toContain('add(item: string): void');
+    expect(body).toContain('add(items: Array.<string>): void');
+  });
+
+  it('JSDoc flavor ignores overloads (only the first signature, no `ts` blocks)', () => {
+    const m = generateSite(overloadCollection());
+    const body = pageByLongname(m, 'module:lib.Box')!.body;
+    expect(body).not.toContain('```ts');
+    expect(body).not.toContain('Array.<string>');
+  });
+});
+
 describe('flavor: jsdoc (default) — byte-identical: no new pages, JSDoc labels', () => {
   it('keeps member signatures in the heading (no per-member `ts` code block)', () => {
     // The JSDoc path must NOT emit the TypeDoc-style signature code blocks; the

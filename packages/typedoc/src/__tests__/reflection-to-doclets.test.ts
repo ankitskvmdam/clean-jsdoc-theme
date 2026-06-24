@@ -79,6 +79,23 @@ export function square(n: number): number {
 export const VERSION: string = '1.0.0';
 
 /**
+ * Combine two values — overloaded.
+ * @param a - first string.
+ * @param b - second string.
+ * @returns the joined string.
+ */
+export function combine(a: string, b: string): string;
+/**
+ * @param a - first number.
+ * @param b - second number.
+ * @returns the sum.
+ */
+export function combine(a: number, b: number): number;
+export function combine(a: unknown, b: unknown): unknown {
+  return (a as never) + (b as never);
+}
+
+/**
  * Direction of travel.
  * @category Core/Things
  */
@@ -226,6 +243,26 @@ describe('reflectionsToDoclets — names/scope/separators', () => {
     const baz = byLongname('Bar#baz')!;
     expect(baz.memberof).toBe('Bar');
     expect(baz.scope).toBe('instance');
+  });
+});
+
+describe('reflectionsToDoclets — overloads', () => {
+  it('keeps the first signature on the doclet and the rest in overloads[]', () => {
+    const combine = byLongname('combine')!;
+    expect(combine.kind).toBe('function');
+    // First (string) signature lives on the doclet itself.
+    expect(combine.params?.[0]?.type?.names?.[0]).toContain('string');
+    expect(combine.returns?.[0]?.type?.names?.[0]).toContain('string');
+    // The implementation signature is excluded — only the second declared
+    // overload (number) rides on overloads[].
+    expect(combine.overloads?.length).toBe(1);
+    const overload = combine.overloads![0];
+    expect(overload.params?.[0]?.type?.names?.[0]).toContain('number');
+    expect(overload.returns?.[0]?.type?.names?.[0]).toContain('number');
+  });
+
+  it('leaves a non-overloaded function without overloads', () => {
+    expect(byLongname('square')?.overloads).toBeUndefined();
   });
 });
 
