@@ -3,7 +3,7 @@
 // JSDoc 4 → setu → dwar bridge. `publish(taffyData, opts, tutorials)` is the
 // entry JSDoc invokes; everything below orchestrates the four phase packages.
 
-import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { basename, dirname, extname, join as joinPath, resolve as resolvePath } from 'node:path';
@@ -308,6 +308,14 @@ interface JSDocOpts {
    */
   footer?: unknown;
   /**
+   * Site public base URL (`jsdoc.json` `"opts": { "siteUrl": "https://example.com" }`).
+   * When set, the build emits a `sitemap.xml` at the output root listing every
+   * non-hidden page's canonical URL. Only the URL's origin is used — the deploy
+   * sub-path comes from `basePath` — so a bare origin or a full URL whose path
+   * equals `basePath` both work. Omit it for no sitemap.
+   */
+  siteUrl?: unknown;
+  /**
    * Favicon (`jsdoc.json` `"opts": { "favicon": "./icon.svg" }`). A path to an
    * image file (`.svg`/`.png`/`.ico`/…), relative to the working dir. The bridge
    * copies it to a content-hashed `_assets/` asset and emits a `<link rel="icon">`
@@ -375,7 +383,20 @@ interface JSDocOpts {
    *    in the destination instead of emptying it before each build.
    */
   templates?: {
-    default?: { outputSourceFiles?: unknown; sourceLinkToComment?: unknown; cleanOutputDir?: unknown };
+    default?: {
+      outputSourceFiles?: unknown;
+      sourceLinkToComment?: unknown;
+      cleanOutputDir?: unknown;
+      /**
+       * JSDoc's standard static-file passthrough
+       * (`templates.default.staticFiles`): `{ include, exclude, includePattern,
+       * excludePattern }`. Files matched by `include` are copied verbatim into
+       * the output (an include dir's contents land at the output root, JSDoc's
+       * mapping) AND their dirs become fallback search roots for image
+       * resolution, so a bare/relative reference to a static image resolves.
+       */
+      staticFiles?: unknown;
+    };
   };
   [key: string]: unknown;
 }
@@ -1296,87 +1317,538 @@ export async function collectDocs(dir: string): Promise<DocInput[]> {
 const DOC_IMAGE_RE = /(!\[[^\]]*\]\()([^)\s]+)((?:\s+"[^"]*")?\))/g;
 
 /**
- * Resolve the local images a doc references and route them through the same
- * content-hashed `_assets/` pipeline the logo and custom files use. For each
- * `![alt](src)` whose `src` points to a file on disk, the file is copied to
- * `_assets/<base>.<hash><ext>` (cache-busted, deduped across docs) and the `src`
- * is rewritten to the root-relative `/_assets/<base>.<hash><ext>` (rang's
- * `MdxImg` adds the base path, like it does for links). A `src` is resolved
- * relative to the project root when it starts with `/`, else relative to the
- * doc's own directory; absolute (`http(s):`, `data:`), `#`-anchor, and
- * unreadable srcs are left untouched (the last with a warning). Returns the docs
- * with rewritten content plus the asset files to write. The bridge is the I/O
- * layer here, so setu/dwar only ever see the final `_assets/` paths.
+ * HTML image: captures the `<img …src=` prefix (through the opening quote), the
+ * quote char, the src value, and the closing quote (a backreference to the
+ * opener). JSDoc's `plugins/markdown` renders a comment's `![alt](src)` to
+ * `<img src="…" alt="…">`, and prose can embed raw `<img>`; this matches both
+ * quote styles wherever `src` sits in the tag.
+ */
+const HTML_IMAGE_RE = /(<img\b[^>]*?\bsrc\s*=\s*(["']))([^"']*)(\2)/gi;
+
+/**
+ * A reusable local-image asset pipeline shared by every prose source (docs,
+ * tutorials, README, doclet comments). `resolve(src, baseDir)` copies a local
+ * image to `_assets/<base>.<hash><ext>` (content-hashed → cache-busted, deduped
+ * across all sources via the shared caches) and returns the root-relative
+ * `/_assets/…` href. It accumulates each copied file on `files`, each SVG's
+ * markup on `inlineSvgs` (keyed by the rewritten href, so the renderer can inline
+ * it — its `[data-theme]` styles then track the toggle), and the absolute source
+ * path of every copied image on `consumed` (so the static-file passthrough can
+ * skip re-copying an image it already served from `_assets/`).
+ *
+ * Resolution tries, in order: the doc-relative path (or project root for a
+ * `/`-rooted src), then — for the JSDoc `staticFiles` convention — each
+ * `staticDirs` root joined with the reference's output-relative name. So a bare
+ * `![x](classes-io.png)` whose file lives in a declared `staticFiles` dir still
+ * resolves and is hashed. External (`http(s):`, `data:`), `#`-anchor, and
+ * fully-unresolvable srcs yield `null` (the last warned once) so callers leave
+ * them untouched.
+ */
+export interface ImageCollector {
+  resolve(rawSrc: string, baseDir: string): Promise<string | null>;
+  readonly files: OutputFile[];
+  readonly inlineSvgs: Record<string, string>;
+  readonly consumed: Set<string>;
+}
+
+export function createImageCollector(staticDirs: readonly string[] = []): ImageCollector {
+  const files: OutputFile[] = [];
+  const inlineSvgs: Record<string, string> = {};
+  const consumed = new Set<string>();
+  const seenServed = new Set<string>();
+  // abs path → rewritten src (root-relative `/_assets/…`), or null if unreadable.
+  const cache = new Map<string, string | null>();
+  const warnedMisses = new Set<string>();
+
+  const resolve = async (rawSrc: string, baseDir: string): Promise<string | null> => {
+    const src = rawSrc.trim();
+    if (!src || isServableUrl(src) || src.startsWith('#') || src.startsWith('data:')) return null;
+    // Candidate absolute paths in priority order: the doc-relative / project-root
+    // location first, then each staticFiles dir joined with the output-relative
+    // name (leading slash stripped) as a fallback.
+    const primary = src.startsWith('/') ? resolvePath(src.slice(1)) : resolvePath(baseDir, src);
+    const candidates = [primary];
+    if (staticDirs.length > 0) {
+      const outName = src.replace(/^\/+/, '');
+      if (outName) for (const dir of staticDirs) candidates.push(resolvePath(dir, outName));
+    }
+
+    for (const abs of candidates) {
+      const cached = cache.get(abs);
+      if (cached !== undefined) {
+        if (cached) return cached; // already copied
+        continue; // known miss — try the next candidate
+      }
+      let bytes: Buffer;
+      try {
+        bytes = await readFile(abs);
+      } catch {
+        cache.set(abs, null);
+        continue;
+      }
+      const ext = extname(abs);
+      const served = `_assets/${basename(abs, ext) || 'asset'}.${contentHash(bytes)}${ext}`;
+      if (!seenServed.has(served)) {
+        seenServed.add(served);
+        files.push({ path: served, contents: bytes });
+      }
+      const href = '/' + served;
+      // SVGs are ALSO inlined: the renderer drops the markup into the page so its
+      // `[data-theme="dark"]` styles track the theme toggle (an `<img>`-loaded SVG
+      // only sees the OS color scheme). A responsive sizing style is injected onto
+      // the `<svg>` root; the `_assets/` copy still backs the companion `.md` link.
+      if (ext.toLowerCase() === '.svg') {
+        inlineSvgs[href] = bytes
+          .toString('utf8')
+          .replace(/<svg\b/, '<svg style="max-width:100%;height:auto;display:block"');
+      }
+      cache.set(abs, href);
+      consumed.add(abs);
+      return href;
+    }
+
+    if (!warnedMisses.has(src)) {
+      warnedMisses.add(src);
+      console.warn(
+        `clean-jsdoc-theme: could not read image '${src}' (looked in: ${candidates.join(', ')}); leaving it as-is.`
+      );
+    }
+    return null;
+  };
+
+  return { resolve, files, inlineSvgs, consumed };
+}
+
+/**
+ * Rewrite the local image references in `content` to their content-hashed
+ * `/_assets/…` paths, routing each through `collector`. Handles BOTH Markdown
+ * `![alt](src)` and raw HTML `<img src="…">` (JSDoc renders comment/tutorial
+ * images to the latter), so prose in either form is covered. Relative srcs
+ * resolve against `baseDir`, `/`-rooted srcs against the project root, and
+ * external/`data:`/anchor srcs are left untouched. Returns the original string
+ * unchanged when nothing was rewritten.
+ */
+/**
+ * Char ranges of Markdown/HTML **code** regions — fenced blocks (` ``` `/`~~~`),
+ * HTML `<pre>`/`<code>`, and inline backtick spans. Image references inside these
+ * are literal example syntax an author is *documenting*, not real images, so the
+ * rewriter skips them (no spurious copy/rewrite, no "could not read" warning).
+ * Order matters: the multi-line block forms come before the inline span so a
+ * fence isn't chopped at its first inner backtick.
+ */
+const CODE_REGION_RE =
+  /```[\s\S]*?```|~~~[\s\S]*?~~~|<pre[\s\S]*?<\/pre>|<code[^>]*>[\s\S]*?<\/code>|`[^`\n]+`/gi;
+
+/** Collect the [start, end) char ranges of code regions in `content`. */
+function codeRanges(content: string): Array<[number, number]> {
+  const ranges: Array<[number, number]> = [];
+  for (const m of content.matchAll(CODE_REGION_RE)) {
+    if (m.index !== undefined) ranges.push([m.index, m.index + m[0].length]);
+  }
+  return ranges;
+}
+
+/** Whether char offset `idx` falls inside any of the (sorted-ish) code ranges. */
+function indexInCode(idx: number, ranges: ReadonlyArray<[number, number]>): boolean {
+  for (const [s, e] of ranges) if (idx >= s && idx < e) return true;
+  return false;
+}
+
+async function rewriteImageRefs(
+  content: string,
+  baseDir: string,
+  collector: ImageCollector
+): Promise<string> {
+  if (!content) return content;
+  const ranges = codeRanges(content);
+  const map = new Map<string, string>();
+  const collect = async (re: RegExp, srcGroup: number): Promise<void> => {
+    for (const m of content.matchAll(re)) {
+      if (m.index !== undefined && indexInCode(m.index, ranges)) continue; // example syntax
+      const src = m[srcGroup];
+      if (map.has(src)) continue;
+      const href = await collector.resolve(src, baseDir);
+      if (href) map.set(src, href);
+    }
+  };
+  await collect(DOC_IMAGE_RE, 2);
+  await collect(HTML_IMAGE_RE, 3);
+  if (map.size === 0) return content;
+  return content
+    .replace(DOC_IMAGE_RE, (full, pre, src, post, offset: number) =>
+      !indexInCode(offset, ranges) && map.has(src) ? `${pre}${map.get(src)}${post}` : full
+    )
+    .replace(HTML_IMAGE_RE, (full, pre, _quote, src, close, offset: number) =>
+      !indexInCode(offset, ranges) && map.has(src) ? `${pre}${map.get(src)}${close}` : full
+    );
+}
+
+/**
+ * Resolve the local images a doc references and route them through the shared
+ * content-hashed `_assets/` pipeline (see {@link createImageCollector}). Each
+ * `![alt](src)` / `<img src>` whose `src` points to a file on disk is copied and
+ * its `src` rewritten to the root-relative `/_assets/<base>.<hash><ext>` (rang's
+ * `MdxImg` adds the base path, like it does for links), resolved relative to the
+ * project root when it starts with `/`, else relative to the doc's own directory.
+ * Returns the docs with rewritten content plus the asset files to write. The
+ * bridge is the I/O layer here, so setu/dwar only ever see the final `_assets/`
+ * paths.
  */
 export async function resolveDocImages(
   docs: DocInput[],
-  docsDir: string
+  docsDir: string,
+  collector: ImageCollector = createImageCollector()
 ): Promise<{ docs: DocInput[]; files: OutputFile[]; inlineSvgs: Record<string, string> }> {
-  if (docs.length === 0) return { docs, files: [], inlineSvgs: {} };
+  if (docs.length === 0) return { docs, files: collector.files, inlineSvgs: collector.inlineSvgs };
   const root = resolvePath(docsDir);
-  const files: OutputFile[] = [];
-  const seenServed = new Set<string>();
-  // Inline-SVG markup keyed by the rewritten src, so the renderer can inline the
-  // SVG (→ its `[data-theme]` styles follow the toggle) rather than `<img>` it.
-  const inlineSvgs: Record<string, string> = {};
-  // abs path → rewritten src (root-relative `/_assets/…`), or null if unreadable.
-  const cache = new Map<string, string | null>();
-
-  const resolveOne = async (rawSrc: string, docDir: string): Promise<string | null> => {
-    const src = rawSrc.trim();
-    if (!src || isServableUrl(src) || src.startsWith('#') || src.startsWith('data:')) return null;
-    const abs = src.startsWith('/') ? resolvePath(src.slice(1)) : resolvePath(docDir, src);
-    if (cache.has(abs)) return cache.get(abs) ?? null;
-    let bytes: Buffer;
-    try {
-      bytes = await readFile(abs);
-    } catch {
-      console.warn(
-        `clean-jsdoc-theme: could not read doc image '${src}' (resolved '${abs}'); leaving it as-is.`
-      );
-      cache.set(abs, null);
-      return null;
-    }
-    const ext = extname(abs);
-    const served = `_assets/${basename(abs, ext) || 'asset'}.${contentHash(bytes)}${ext}`;
-    if (!seenServed.has(served)) {
-      seenServed.add(served);
-      files.push({ path: served, contents: bytes });
-    }
-    const href = '/' + served;
-    // SVGs are ALSO inlined: the renderer drops the markup into the page so its
-    // `[data-theme="dark"]` styles track the theme toggle (an `<img>`-loaded SVG
-    // only sees the OS color scheme). A responsive sizing style is injected onto
-    // the `<svg>` root; the `_assets/` copy still backs the companion `.md` link.
-    if (ext.toLowerCase() === '.svg') {
-      inlineSvgs[href] = bytes
-        .toString('utf8')
-        .replace(/<svg\b/, '<svg style="max-width:100%;height:auto;display:block"');
-    }
-    cache.set(abs, href);
-    return href;
-  };
-
   const out: DocInput[] = [];
   for (const doc of docs) {
     const docDir = dirname(resolvePath(root, doc.path));
-    const map = new Map<string, string>();
-    for (const m of doc.content.matchAll(DOC_IMAGE_RE)) {
-      const src = m[2];
-      if (map.has(src)) continue;
-      const href = await resolveOne(src, docDir);
-      if (href) map.set(src, href);
+    const content = await rewriteImageRefs(doc.content, docDir, collector);
+    out.push(content === doc.content ? doc : { ...doc, content });
+  }
+  return { docs: out, files: collector.files, inlineSvgs: collector.inlineSvgs };
+}
+
+/**
+ * Resolve the local images referenced by tutorial content, routing them through
+ * the shared `collector` (the same content-hashed `_assets/` pipeline as docs).
+ * JSDoc reads every tutorial from a single directory, so each tutorial's relative
+ * srcs (`![x](../img/x.png)`, `<img src>`) resolve against `tutorialsDir`. Walks
+ * the resolved tree (sub-tutorials included), rewriting each node's content —
+ * Markdown or HTML; the tree shape is preserved. Returns a new tree (the input is
+ * left untouched). Exported for testing.
+ */
+export async function resolveTutorialImages(
+  tree: TutorialInput[],
+  tutorialsDir: string,
+  collector: ImageCollector
+): Promise<TutorialInput[]> {
+  const base = resolvePath(tutorialsDir);
+  const walk = async (node: TutorialInput): Promise<TutorialInput> => {
+    const content = await rewriteImageRefs(node.content, base, collector);
+    const children: TutorialInput[] = [];
+    for (const child of node.children ?? []) children.push(await walk(child));
+    return { ...node, content, children };
+  };
+  const out: TutorialInput[] = [];
+  for (const node of tree) out.push(await walk(node));
+  return out;
+}
+
+/**
+ * Doclet keys whose string values are raw source/code/meta, NOT rendered prose —
+ * never scanned for images (a stray `<img`/`![` there must not be rewritten).
+ */
+const DOCLET_IMAGE_SKIP_KEYS = new Set([
+  'meta',
+  'comment',
+  'examples',
+  'tags',
+  '___id',
+  '___s',
+]);
+
+/**
+ * Recursively rewrite the `<img>`/`![]()` image srcs in every prose string
+ * reachable from a doclet object, resolving against `baseDir`. Only strings that
+ * actually carry an image marker (`<img` or `![`) are touched — a cheap guard so
+ * names/identifiers/code are never scanned — and raw/code keys
+ * ({@link DOCLET_IMAGE_SKIP_KEYS}) are skipped entirely. Recurses into nested
+ * objects/arrays (e.g. `params[].description`). Mutates `node` in place.
+ */
+async function rewriteDocletStrings(
+  node: Record<string, unknown>,
+  baseDir: string,
+  collector: ImageCollector
+): Promise<void> {
+  for (const [key, value] of Object.entries(node)) {
+    if (DOCLET_IMAGE_SKIP_KEYS.has(key)) continue;
+    if (typeof value === 'string') {
+      if (value.includes('<img') || value.includes('![')) {
+        const rewritten = await rewriteImageRefs(value, baseDir, collector);
+        if (rewritten !== value) node[key] = rewritten;
+      }
+    } else if (Array.isArray(value)) {
+      for (let i = 0; i < value.length; i++) {
+        const item = value[i];
+        if (typeof item === 'string') {
+          if (item.includes('<img') || item.includes('![')) {
+            const rewritten = await rewriteImageRefs(item, baseDir, collector);
+            if (rewritten !== item) value[i] = rewritten;
+          }
+        } else if (item && typeof item === 'object') {
+          await rewriteDocletStrings(item as Record<string, unknown>, baseDir, collector);
+        }
+      }
+    } else if (value && typeof value === 'object') {
+      await rewriteDocletStrings(value as Record<string, unknown>, baseDir, collector);
     }
-    if (map.size === 0) {
-      out.push(doc);
+  }
+}
+
+/**
+ * Resolve the local images referenced inside JSDoc-comment prose (doclet
+ * descriptions, `@classdesc`, nested `@param`/`@property`/`@returns`
+ * descriptions, …) and route them through the shared `collector`. JSDoc's
+ * `plugins/markdown` has already turned a comment's `![alt](../img/x.png)` into
+ * an HTML `<img src="../img/x.png">` by the time `publish` runs, so each src is
+ * resolved **relative to that doclet's own source file** (`meta.path` — the
+ * directory of the file the comment lives in). Doclets are mutated IN PLACE:
+ * salty's `get()` hands out live object references, so the rewrite is visible
+ * when setu later reads the same collection. Resilient — a non-collection `data`
+ * or unreadable image is skipped (the latter warned), never fatal.
+ */
+export async function resolveDocletImages(
+  data: unknown,
+  collector: ImageCollector
+): Promise<void> {
+  if (typeof data !== 'function') return;
+  let doclets: unknown[] = [];
+  try {
+    doclets = (data as (q: unknown) => { get(): unknown[] })({}).get();
+  } catch {
+    try {
+      doclets = (data as () => { get(): unknown[] })().get();
+    } catch {
+      return;
+    }
+  }
+  if (!Array.isArray(doclets)) return;
+
+  for (const d of doclets) {
+    if (!d || typeof d !== 'object') continue;
+    const meta = (d as { meta?: { path?: unknown } }).meta;
+    // Without the source file's directory there's no base to resolve a relative
+    // src against, so skip (synthetic/global doclets often carry no meta.path).
+    if (!meta || typeof meta.path !== 'string' || meta.path.length === 0) continue;
+    await rewriteDocletStrings(d as Record<string, unknown>, meta.path, collector);
+  }
+}
+
+// ─── JSDoc `templates.default.staticFiles` passthrough ──────────────────────
+//
+// JSDoc's default template copies arbitrary files into the output via
+// `templates.default.staticFiles` (an include dir's CONTENTS land at the output
+// root). The theme honors that contract: matched files are copied verbatim
+// (covering non-image assets and references the image pipeline doesn't scan),
+// and the include dirs additionally become fallback search roots so a bare image
+// reference like `![x](classes-io.png)` — which only worked in stock JSDoc
+// because the file was copied to the flat output root — resolves through the
+// content-hashed `_assets/` pipeline here (v5 pages are nested, so the reference
+// also has to be rewritten, not just the file copied).
+
+/** Normalized `templates.default.staticFiles` config. */
+export interface StaticFilesConfig {
+  /** Resolved-as-given include paths (dirs or files), trimmed, non-empty. */
+  include: string[];
+  /** Paths to exclude (a file equal to, or under, an excluded dir is dropped). */
+  exclude: string[];
+  /** Regex (source string) a file's POSIX abs path must match to be included. */
+  includePattern?: string;
+  /** Regex (source string) that drops a file when its POSIX abs path matches. */
+  excludePattern?: string;
+}
+
+/**
+ * Normalize a raw `staticFiles` block into a {@link StaticFilesConfig}, or
+ * `undefined` when there's nothing to include. `include`/`exclude` accept a
+ * string or string[]; patterns are kept as source strings (compiled later, so a
+ * bad pattern fails open rather than throwing). Pure + exported for testing.
+ */
+export function normalizeStaticFilesConfig(raw: unknown): StaticFilesConfig | undefined {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const toStrArr = (v: unknown): string[] =>
+    (Array.isArray(v) ? v : typeof v === 'string' ? [v] : [])
+      .filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
+      .map((s) => s.trim());
+  const include = toStrArr(o.include);
+  if (include.length === 0) return undefined;
+  const includePattern =
+    typeof o.includePattern === 'string' && o.includePattern.trim().length > 0
+      ? o.includePattern
+      : undefined;
+  const excludePattern =
+    typeof o.excludePattern === 'string' && o.excludePattern.trim().length > 0
+      ? o.excludePattern
+      : undefined;
+  return {
+    include,
+    exclude: toStrArr(o.exclude),
+    ...(includePattern ? { includePattern } : {}),
+    ...(excludePattern ? { excludePattern } : {}),
+  };
+}
+
+/**
+ * Read `templates.default.staticFiles` from JSDoc's canonical `jsdoc/env` conf
+ * (the only place the root-level `templates` block lives at runtime), falling
+ * back to a nested `opts.templates.default.staticFiles`. Mirrors the probe order
+ * of {@link outputSourceFilesEnabled}. Returns `undefined` when unset/unusable.
+ */
+export function readStaticFilesConfig(opts: JSDocOpts): StaticFilesConfig | undefined {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const env = require('jsdoc/env') as {
+      conf?: { templates?: { default?: { staticFiles?: unknown } } };
+    };
+    const fromEnv = normalizeStaticFilesConfig(env?.conf?.templates?.default?.staticFiles);
+    if (fromEnv) return fromEnv;
+  } catch {
+    // `jsdoc/env` isn't resolvable (e.g. unit tests) — fall back to opts.
+  }
+  return normalizeStaticFilesConfig(opts?.templates?.default?.staticFiles);
+}
+
+/**
+ * Output-relative path (POSIX) for a static file under an include root: strip the
+ * resolved-root prefix so `<root>/img/sub/x.png` under root `<root>/img` →
+ * `sub/x.png` (JSDoc maps an include dir's contents to the output ROOT). When the
+ * include was a single FILE (`absFile === includeRootAbs`), the output name is its
+ * basename. Windows-aware: separators are normalized and the prefix match is
+ * case-insensitive (NTFS). Pure + exported for testing.
+ */
+export function staticFileOutputName(absFile: string, includeRootAbs: string): string {
+  const norm = (p: string): string => p.replace(/\\/g, '/').replace(/\/+$/, '');
+  const f = norm(absFile);
+  const root = norm(includeRootAbs);
+  const baseOf = (p: string): string => p.slice(p.lastIndexOf('/') + 1);
+  if (f === root) return baseOf(f); // single-file include
+  const prefix = root + '/';
+  return f.toLowerCase().startsWith(prefix.toLowerCase()) ? f.slice(prefix.length) : baseOf(f);
+}
+
+/**
+ * Whether a static file passes a config's filter — `includePattern` (must match),
+ * `excludePattern` (must not match), and `exclude` (file equal to, or nested
+ * under, an excluded path is dropped). Patterns are tested against the file's
+ * POSIX-normalized absolute path; a malformed pattern fails open (ignored). Pure
+ * + exported for testing.
+ */
+export function staticFileIncluded(absFile: string, config: StaticFilesConfig): boolean {
+  const norm = (p: string): string => resolvePath(p).replace(/\\/g, '/');
+  const fn = norm(absFile);
+  if (config.includePattern) {
+    try {
+      if (!new RegExp(config.includePattern).test(fn)) return false;
+    } catch {
+      /* bad pattern → ignore (fail open) */
+    }
+  }
+  if (config.excludePattern) {
+    try {
+      if (new RegExp(config.excludePattern).test(fn)) return false;
+    } catch {
+      /* bad pattern → ignore */
+    }
+  }
+  for (const ex of config.exclude) {
+    const exAbs = norm(ex);
+    if (fn === exAbs || fn.toLowerCase().startsWith(exAbs.toLowerCase() + '/')) return false;
+  }
+  return true;
+}
+
+/** Directory names skipped while walking a staticFiles tree (build/vcs noise). */
+const STATIC_DIR_SKIP = new Set(['node_modules', '.git', '.svn', '.hg']);
+
+/** One verbatim static-file copy entry. */
+export interface StaticFileEntry {
+  /** Output-relative POSIX path (where it lands under the destination). */
+  outputPath: string;
+  /** Absolute source path (matched against the image collector's `consumed`). */
+  absSource: string;
+  contents: Buffer;
+}
+
+/**
+ * Collect the files matched by a {@link StaticFilesConfig}: walk each include
+ * path (a directory recursively, or a single file), apply
+ * {@link staticFileIncluded}, and read each match. Returns the verbatim copy
+ * entries (output path = include-root-stripped, JSDoc's "contents → output root"
+ * mapping) plus the resolved `searchDirs` the image resolver uses as fallback
+ * roots (an include dir as-is; a file include's parent dir). Resilient: a missing
+ * include path / unreadable file is warned + skipped, never fatal. Exported for
+ * testing.
+ */
+export async function collectStaticFiles(
+  config: StaticFilesConfig,
+  warn: (message: string) => void = (m) => console.warn(m)
+): Promise<{ files: StaticFileEntry[]; searchDirs: string[] }> {
+  const files: StaticFileEntry[] = [];
+  const searchDirs = new Set<string>();
+  const seenOutput = new Set<string>(); // de-dup output paths across include roots
+
+  for (const inc of config.include) {
+    const root = resolvePath(inc);
+    let st: import('node:fs').Stats;
+    try {
+      st = await stat(root);
+    } catch {
+      warn(
+        `clean-jsdoc-theme: staticFiles include '${inc}' (resolved '${root}') was not found; skipping it.`
+      );
       continue;
     }
-    const content = doc.content.replace(DOC_IMAGE_RE, (full, pre, src, post) =>
-      map.has(src) ? `${pre}${map.get(src)}${post}` : full
-    );
-    out.push({ ...doc, content });
+
+    if (st.isDirectory()) {
+      searchDirs.add(root);
+      const walk = async (absDir: string): Promise<void> => {
+        let entries: import('node:fs').Dirent[];
+        try {
+          entries = await readdir(absDir, { withFileTypes: true });
+        } catch {
+          return;
+        }
+        for (const entry of entries) {
+          if (entry.name.startsWith('.')) continue;
+          const abs = joinPath(absDir, entry.name);
+          if (entry.isDirectory()) {
+            if (!STATIC_DIR_SKIP.has(entry.name)) await walk(abs);
+            continue;
+          }
+          if (!entry.isFile()) continue;
+          if (!staticFileIncluded(abs, config)) continue;
+          const outputPath = staticFileOutputName(abs, root);
+          if (seenOutput.has(outputPath)) continue;
+          let contents: Buffer;
+          try {
+            contents = await readFile(abs);
+          } catch (err) {
+            warn(
+              `clean-jsdoc-theme: could not read static file '${abs}' — ${(err as Error).message}; skipping.`
+            );
+            continue;
+          }
+          seenOutput.add(outputPath);
+          files.push({ outputPath, absSource: resolvePath(abs), contents });
+        }
+      };
+      await walk(root);
+    } else if (st.isFile()) {
+      // A file include's parent dir is the search root, so the image resolver can
+      // find it by the bare output name (its basename).
+      searchDirs.add(dirname(root));
+      if (!staticFileIncluded(root, config)) continue;
+      const outputPath = staticFileOutputName(root, root);
+      if (!seenOutput.has(outputPath)) {
+        try {
+          const contents = await readFile(root);
+          seenOutput.add(outputPath);
+          files.push({ outputPath, absSource: resolvePath(root), contents });
+        } catch (err) {
+          warn(
+            `clean-jsdoc-theme: could not read static file '${root}' — ${(err as Error).message}; skipping.`
+          );
+        }
+      }
+    }
   }
-  return { docs: out, files, inlineSvgs };
+
+  // Deterministic order so the manifest/output is stable build-to-build.
+  files.sort((a, b) => a.outputPath.localeCompare(b.outputPath));
+  return { files, searchDirs: [...searchDirs] };
 }
 
 /** The output of {@link resolveDocImages}: resolved docs + their image assets. */
@@ -1560,6 +2032,13 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   // rejection; we await them at their narrated stages below.
   const docsDir =
     typeof opts.docs === 'string' && opts.docs.trim().length > 0 ? opts.docs.trim() : undefined;
+  const tutorialsDir =
+    typeof opts.tutorials === 'string' && opts.tutorials.trim().length > 0
+      ? opts.tutorials.trim()
+      : undefined;
+  // JSDoc's `templates.default.staticFiles` (verbatim passthrough + image search
+  // fallback roots). `undefined` when unset, so the whole feature is inert then.
+  const staticCfg = readStaticFilesConfig(opts);
   const pkgPromise = resolvePkg(data, opts);
   const sourcesPromise: Promise<SourceFileInput[]> = outputSourceFilesEnabled(opts)
     ? collectSourceFiles(data)
@@ -1644,8 +2123,8 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
 
   // README (rendered to HTML by JSDoc into `opts.readme`) → home page; the
   // tutorials resolver tree → guide pages. Both flow through setu as ordinary
-  // pages. Note: local images referenced by README/tutorial Markdown are NOT
-  // copied into the output — use absolute/served URLs for those.
+  // pages. Local images they reference (and those in JSDoc-comment prose) are
+  // routed through the `_assets/` pipeline below, like `opts.docs` images.
   const readme =
     typeof opts.readme === 'string' && opts.readme.length > 0 ? opts.readme : undefined;
   const tutorialTree = normalizeTutorials(tutorials);
@@ -1660,42 +2139,70 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   // reads were started in the kickoff above (the bridge is the sanctioned I/O
   // layer; setu stays disk-free), so this stage just awaits the now-overlapped
   // work — narrated as a single step.
-  const { sources, docs, docImageFiles, inlineSvgs } = await progress.stage(
-    'Reading sources & docs',
-    async () => {
-      const [srcs, rawDocs] = await Promise.all([sourcesPromise, docsPromise]);
-      // Route the local images those docs reference through the content-hashed
-      // `_assets/` pipeline (copy + rewrite the src), so they cache-bust like the
-      // logo and custom assets. SVGs are additionally collected as inline markup
-      // so render() can drop them into the page (theme-toggle-aware) — see
-      // RenderOptions.inlineSvgs.
-      const base = docsDir
-        ? await resolveDocImages(rawDocs, docsDir)
-        : { docs: rawDocs, files: [] as OutputFile[], inlineSvgs: {} as Record<string, string> };
+  // JSDoc `templates.default.staticFiles` passthrough: collect the included
+  // files up front. Their dirs become fallback search roots for image resolution
+  // (so a bare `![x](classes-io.png)` whose file lives in a staticFiles dir still
+  // resolves + hashes), and the files themselves are copied verbatim to the
+  // output after render (covering non-image assets). Read once; `undefined` when
+  // the option is unset, so nothing changes for projects that don't use it.
+  const staticFiles = staticCfg
+    ? await progress.stage('Reading static files', () =>
+        collectStaticFiles(staticCfg, (m) => console.warn(m))
+      )
+    : undefined;
 
-      // Per-locale docs overlay (build mode): a locale's `docs.<locale>/` files
-      // win over the default docs by path; default-only docs fall back, so a
-      // partially-translated docs tree still renders the untranslated pages.
-      // Each set's images resolve against its OWN root, then merge.
-      if (!buildSpec?.docsDir) {
-        return {
-          sources: srcs,
-          docs: base.docs,
-          docImageFiles: base.files,
-          inlineSvgs: base.inlineSvgs,
-        };
-      }
-      const localeRaw = await collectDocs(buildSpec.docsDir);
-      const locale = await resolveDocImages(localeRaw, buildSpec.docsDir);
-      const merged = overlayDocs(base, locale);
-      return {
-        sources: srcs,
-        docs: merged.docs,
-        docImageFiles: merged.files,
-        inlineSvgs: merged.inlineSvgs,
-      };
+  // ONE image collector for the whole build: docs, tutorials, README, and doclet
+  // comments all route their local images through it (content-hashed `_assets/`,
+  // SVG-inlined, deduped across sources). `staticFiles.searchDirs` are the B2
+  // fallback roots. `consumed` (the source paths it copied) lets the verbatim
+  // static-file pass skip images it already served from `_assets/`.
+  const images = createImageCollector(staticFiles?.searchDirs ?? []);
+
+  const { sources, docs } = await progress.stage('Reading sources & docs', async () => {
+    const [srcs, rawDocs] = await Promise.all([sourcesPromise, docsPromise]);
+    // Route the local images those docs reference through the shared collector
+    // (copy + rewrite the src), so they cache-bust like the logo/custom assets.
+    const base = docsDir
+      ? await resolveDocImages(rawDocs, docsDir, images)
+      : { docs: rawDocs };
+
+    // Per-locale docs overlay (build mode): a locale's `docs.<locale>/` files win
+    // over the default docs by path; default-only docs fall back. Both sets'
+    // images accumulate on the shared collector; overlayDocs merges the content.
+    if (!buildSpec?.docsDir) return { sources: srcs, docs: base.docs };
+    const localeRaw = await collectDocs(buildSpec.docsDir);
+    const locale = await resolveDocImages(localeRaw, buildSpec.docsDir, images);
+    const merged = overlayDocs(
+      { docs: base.docs, files: [], inlineSvgs: {} },
+      { docs: locale.docs, files: [], inlineSvgs: {} }
+    );
+    return { sources: srcs, docs: merged.docs };
+  });
+
+  // Tutorials, the README, and JSDoc-comment (doclet) prose can all reference
+  // local images with relative paths (`![x](../img/x.png)` / `<img src>`); route
+  // them through the SAME shared collector. Tutorials resolve against the
+  // tutorials dir, the README against the project root (its usual home), and each
+  // doclet's images against its own source file's directory. Doclets are mutated
+  // IN PLACE (salty hands out live references) BEFORE `generateSite`/`stampSite`
+  // reads them.
+  const { tutorialTree: resolvedTutorials, readme: resolvedReadme } = await progress.stage(
+    'Resolving prose images',
+    async () => {
+      const tree =
+        tutorialsDir && tutorialTree.length > 0
+          ? await resolveTutorialImages(tutorialTree, tutorialsDir, images)
+          : tutorialTree;
+      const md = readme ? await rewriteImageRefs(readme, process.cwd(), images) : readme;
+      await resolveDocletImages(data, images);
+      return { tutorialTree: tree, readme: md };
     }
   );
+
+  // Every source's image assets now live on the one shared collector, deduped by
+  // served path; the inline-SVG map is keyed by rewritten src for the renderer.
+  const imageFiles = images.files;
+  const allInlineSvgs = images.inlineSvgs;
 
   const docGroups = normalizeDocGroups(opts.docGroups);
   const defaultDocGroup =
@@ -1714,8 +2221,8 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
 
   const siteOptions = {
     ...(pkg ? { pkg } : {}),
-    ...(readme ? { readme } : {}),
-    ...(tutorialTree.length > 0 ? { tutorials: tutorialTree } : {}),
+    ...(resolvedReadme ? { readme: resolvedReadme } : {}),
+    ...(resolvedTutorials.length > 0 ? { tutorials: resolvedTutorials } : {}),
     ...(sources.length > 0 ? { sources } : {}),
     ...(sources.length > 0 && sourceLinkToComment ? { sourceLinkToComment } : {}),
     ...(docs.length > 0 ? { docs } : {}),
@@ -1813,7 +2320,11 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
       },
       destination: absoluteDestination,
       islandCacheDir,
-      inlineSvgs,
+      inlineSvgs: allInlineSvgs,
+      // Emit sitemap.xml when a public site URL is configured (the protocol needs
+      // absolute URLs). In a localized build each locale's basePath yields that
+      // locale's URLs, so each locale dir gets its own sitemap.
+      ...(nonEmptyString(opts.siteUrl) ? { siteUrl: (opts.siteUrl as string).trim() } : {}),
       // Build mode: render chrome in the locale (SSR provider + island seeding)
       // and, with >1 locale, mount the language switcher.
       ...(buildSpec
@@ -1830,13 +2341,50 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
     })
   );
 
-  const outputFiles = [
+  const generatedFiles = [
     ...result.files,
     ...logoFiles,
     ...customAssets.files,
-    ...docImageFiles,
+    ...imageFiles,
     ...(favicon?.files ?? []),
   ];
+
+  // Static-file passthrough (A): copy each included file verbatim to its output
+  // path. Skip any file the image pipeline already consumed (it's served hashed
+  // from `_assets/`, so a root duplicate would be dead weight), and any path that
+  // would clobber a generated file or a reserved theme dir — generated output
+  // always wins; the collision is warned, never silently overwritten.
+  const staticOutputFiles: OutputFile[] = [];
+  if (staticFiles) {
+    const generatedPaths = new Set(generatedFiles.map((f) => f.path));
+    const RESERVED_PREFIXES = ['_assets/', '_islands/', 'pagefind/'];
+    let skippedConsumed = 0;
+    for (const f of staticFiles.files) {
+      if (images.consumed.has(f.absSource)) {
+        skippedConsumed++; // already hashed into `_assets/` and referenced there
+        continue;
+      }
+      if (
+        generatedPaths.has(f.outputPath) ||
+        RESERVED_PREFIXES.some((p) => f.outputPath.startsWith(p))
+      ) {
+        console.warn(
+          `clean-jsdoc-theme: static file '${f.outputPath}' would clobber generated output; skipping it.`
+        );
+        continue;
+      }
+      staticOutputFiles.push({ path: f.outputPath, contents: f.contents });
+    }
+    if (staticFiles.files.length > 0) {
+      console.log(
+        `clean-jsdoc-theme: staticFiles — copied ${staticOutputFiles.length} file(s) verbatim` +
+          (skippedConsumed > 0 ? ` (${skippedConsumed} served hashed via _assets/)` : '') +
+          '.'
+      );
+    }
+  }
+
+  const outputFiles = [...generatedFiles, ...staticOutputFiles];
   // Empty the destination first so a page removed/renamed since the last build
   // (or a stale content-hashed asset like `styles.<hash>.css`) doesn't linger in
   // the served site. Default on; opt out with `templates.default.cleanOutputDir:
