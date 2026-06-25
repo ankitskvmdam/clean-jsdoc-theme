@@ -1,5 +1,47 @@
 # clean-jsdoc-theme
 
+## 5.0.4
+
+### Patch Changes
+
+- TypeDoc support reaches parity with the JSDoc output, plus security hardening.
+
+  ### TypeDoc parity
+  - **Standalone pages** for enums, top-level functions, and variables, with
+    TypeDoc section labels (Constructors / Properties / Accessors / Methods) and an
+    "Enumeration Members" section; module/namespace pages become a kind-grouped
+    index of links.
+  - **Full TypeScript signatures** (shiki-highlighted inline) on
+    member/constructor/function headings, in both flavors. Overloaded
+    functions/methods render every call signature.
+  - **Declaration blocks** lead interface / type-alias / variable pages
+    (`interface Name { … }`, `Name = (p) => R`, `HTTP_STATUS: { … }`), and
+    object-literal constants now list every member with its own doc comment under
+    "Properties" instead of collapsing to one line.
+  - **Type names hyperlink** to the symbols they reference (v4 parity); generics
+    render a "Type Parameters" section; `@remarks` renders as its own section.
+  - New **`basePath`** option so a TypeDoc site can be served from a sub-directory
+    (every emitted URL — pages, assets, logos, favicon — is prefixed).
+
+  ### Security
+  - Removed the `new Function` **eval shim** from the module-path resolver — the
+    theme no longer evaluates code at runtime.
+  - Added `socket.yml` to triage build-inherent Socket alerts, dropped the
+    now-unneeded `usesEval` exception, and scoped the `shellAccess` rule to the
+    aadesh CLI.
+
+  ### Fixes
+  - `findStrayBackticks` no longer false-positives on valid inline code spans.
+  - Both bridges clean their output directory before writing, so stale/renamed
+    pages don't linger in the served site.
+  - Dark-theme colors for inline signatures; wrapped signature params are indented
+    and rendered slightly smaller; the JSDoc constructor section is unified.
+  - @clean-jsdoc-theme/utils@5.0.4
+  - @clean-jsdoc-theme/setu@5.0.4
+  - @clean-jsdoc-theme/rang@5.0.4
+  - @clean-jsdoc-theme/dwar@5.0.4
+  - @clean-jsdoc-theme/bhasha@5.0.4
+
 ## 5.0.3
 
 ### Patch Changes
