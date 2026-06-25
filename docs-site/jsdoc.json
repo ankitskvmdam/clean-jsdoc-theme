@@ -9,6 +9,7 @@
   "opts": {
     "encoding": "utf8",
     "basePath": "/clean-jsdoc-theme",
+    "siteUrl": "https://ankitskvmdam.github.io/clean-jsdoc-theme",
     "destination": "dist/clean-jsdoc-theme",
     "recurse": true,
     "template": "./node_modules/clean-jsdoc-theme/dist",
