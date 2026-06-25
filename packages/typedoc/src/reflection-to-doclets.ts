@@ -220,7 +220,7 @@ function adaptDeclaration(
   } else if (reflection.kindOf(ReflectionKind.Module | ReflectionKind.Namespace)) {
     // Container pages — no body of their own; members come from the walk.
   } else {
-    adaptValue(reflection, doclet);
+    adaptValue(reflection, doclet, resolveLink);
   }
 
   return doclet;
@@ -399,18 +399,10 @@ function adaptTypeAlias(
   // Object-literal alias: properties live directly on the alias's `children`
   // (TypeDoc 0.28) or on the inlined reflection-type declaration. Each → a
   // `properties[]` entry.
-  const children = reflection.children ?? declaration?.children;
-  if (children && children.length) {
+  const props = objectLiteralProperties(reflection, resolveLink);
+  if (props) {
     doclet.type = { names: ['Object'] };
-    doclet.properties = children.map((child) => {
-      const prop: TDocletParam = { name: child.name };
-      const propType = typeToDocletType(child.getSignature?.type ?? child.type);
-      if (propType) prop.type = propType;
-      if (child.flags?.isOptional) prop.optional = true;
-      const description = summaryToHtml(child.comment, resolveLink);
-      if (description) prop.description = description;
-      return prop;
-    });
+    doclet.properties = props;
     return;
   }
 
@@ -419,15 +411,68 @@ function adaptTypeAlias(
   if (docletType) doclet.type = docletType;
 }
 
+/**
+ * The members of an object-literal type, as `properties[]`, or `undefined` when
+ * the reflection isn't an object literal. Shared by `adaptTypeAlias` (a
+ * `type T = { … }`) and `adaptValue` (a `const C = { … } as const`) — both model
+ * the body as `children`, either directly on the reflection (TypeDoc 0.28
+ * inlines object-literal aliases) or on the inlined reflection-type declaration
+ * (a const object's `ReflectionType`). Each child → a `name`/`type`/`optional`/
+ * `description` entry, the same shape JSDoc's `@property` list uses.
+ */
+function objectLiteralProperties(
+  reflection: DeclarationReflection,
+  resolveLink: LinkResolver
+): TDocletParam[] | undefined {
+  const type = reflection.type;
+  const declaration =
+    type && type.type === 'reflection'
+      ? (type as { declaration?: DeclarationReflection }).declaration
+      : undefined;
+  // A function-type reflection (signatures, no member children) is NOT an object
+  // literal — leave it to the callable path.
+  if (declaration?.signatures?.length) return undefined;
+  const children = reflection.children ?? declaration?.children;
+  if (!children || children.length === 0) return undefined;
+  return children.map((child) => {
+    const prop: TDocletParam = { name: child.name };
+    const propType = typeToDocletType(child.getSignature?.type ?? child.type);
+    if (propType) prop.type = propType;
+    if (child.flags?.isOptional) prop.optional = true;
+    const description = summaryToHtml(child.comment, resolveLink);
+    if (description) prop.description = description;
+    return prop;
+  });
+}
+
 /** Property / variable / accessor: value type → `type`, default → `defaultvalue`. */
-function adaptValue(reflection: DeclarationReflection, doclet: TDoclet): void {
+function adaptValue(
+  reflection: DeclarationReflection,
+  doclet: TDoclet,
+  resolveLink: LinkResolver
+): void {
   // Accessor: prefer the get-signature's return type.
   const getSig = reflection.getSignature;
   const type = getSig?.type ?? reflection.type;
   const docletType = typeToDocletType(type);
   if (docletType) doclet.type = docletType;
 
-  if (reflection.defaultValue !== undefined) doclet.defaultvalue = reflection.defaultValue;
+  // A `const C = { … }` object literal carries its members as `properties[]`
+  // (each with its own doc comment) — the same recovery `adaptTypeAlias` does
+  // for `type T = { … }`. Accessors read their type off `getSignature`, so this
+  // only ever fires for an object-valued variable/property. setu renders these
+  // as a "Type declaration" section and expands the inline type signature.
+  if (!getSig) {
+    const props = objectLiteralProperties(reflection, resolveLink);
+    if (props) doclet.properties = props;
+  }
+
+  // TypeDoc emits `...` as a placeholder for an initializer it doesn't print
+  // (an object / complex value) — never a meaningful default, so don't carry it
+  // (it would render as a bare "Default: ..." line).
+  if (reflection.defaultValue !== undefined && reflection.defaultValue !== '...') {
+    doclet.defaultvalue = reflection.defaultValue;
+  }
 
   // An accessor with only a setter description: pull its summary if missing.
   if (!doclet.description && getSig?.comment) {

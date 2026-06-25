@@ -305,6 +305,119 @@ function tsMemberSignature(member: ClassMember): string | null {
   return t ? `${name}: ${t}` : name;
 }
 
+/**
+ * An object type literal `{ a: T; b?: U }` rebuilt from a doclet's `properties`,
+ * wrapping onto indented lines (one member per line) once the single-line form is
+ * long — matching how default TypeDoc lays out a wide object type. Nested
+ * `options.timeout`-style entries are dropped (only the top-level shape shows;
+ * the Properties section carries the full nesting). Used for the declaration
+ * block of an object-literal variable (`HTTP_STATUS: { … }`) and object-literal
+ * type alias.
+ */
+function objectLiteralFromProperties(properties: readonly TDocletParam[]): string {
+  const members = properties
+    .filter((p) => p.name && !p.name.includes('.'))
+    .map((p) => {
+      const t = tsType(p.type);
+      return `${p.name}${p.optional ? '?' : ''}${t ? `: ${t}` : ''}`;
+    });
+  if (members.length === 0) return '{}';
+  const single = `{ ${members.join('; ')} }`;
+  if (single.length <= SIG_WRAP_WIDTH) return single;
+  return `{\n${members.map((m) => `\t${m};`).join('\n')}\n}`;
+}
+
+/**
+ * Declaration block for a standalone variable page (typedoc flavor), e.g.
+ * `HTTP_STATUS: { OK: 200; … }` or `VERSION: string`. An object-literal value
+ * (its members recovered onto `properties` by the bridge) shows its shape; any
+ * other value falls back to the member signature (`name: Type`).
+ */
+function variableSignature(doclet: ContainerView['doclet']): string | null {
+  const name = doclet.name;
+  if (name && doclet.properties && doclet.properties.length > 0) {
+    return `${name}: ${objectLiteralFromProperties(doclet.properties as TDocletParam[])}`;
+  }
+  return tsMemberSignature(doclet as ClassMember);
+}
+
+/**
+ * Declaration block for a standalone type-alias (typedef) page (typedoc flavor),
+ * matching default TypeDoc's leading declaration. Three shapes:
+ *   - function-type alias → arrow form `Name<T> = (p: P) => R`,
+ *   - object-literal alias → `Name = { a: T; … }` (rebuilt from `properties`),
+ *   - anything else (union / primitive / reference) → `Name = <type string>`.
+ * Returns `null` when there's nothing meaningful to show.
+ */
+function typedefSignature(doclet: ContainerView['doclet']): string | null {
+  const name = doclet.name;
+  if (!name) return null;
+  const tpParts = tsTypeParamParts(doclet.typeParams);
+  const head = tpParts.length > 0 ? `${name}<${tpParts.join(', ')}>` : name;
+
+  // Function-type alias: `type Fn = (x: number) => boolean` — the bridge sets
+  // `type.names === ['function']` and lifts the signature's params/returns.
+  if (doclet.type?.names?.length === 1 && doclet.type.names[0] === 'function') {
+    const params = tsParamParts(doclet.params).join(', ');
+    const ret = tsType(doclet.returns?.[0]?.type) || 'void';
+    return `${head} = (${params}) => ${ret}`;
+  }
+
+  // Object-literal alias: rebuild `{ … }` from the recovered properties.
+  if (doclet.properties && doclet.properties.length > 0) {
+    return `${head} = ${objectLiteralFromProperties(doclet.properties as TDocletParam[])}`;
+  }
+
+  // Plain alias: a single readable type string (union / primitive / reference).
+  const t = tsType(doclet.type);
+  if (!t || t === 'Object') return null;
+  return `${head} = ${t}`;
+}
+
+/** One interface member rendered as a TS declaration line (`name?(p: P): R`). */
+function interfaceMemberLine(member: ClassMember): string {
+  const name = member.name ?? '';
+  const opt = member.optional ? '?' : '';
+  if (member.kind === 'function') {
+    const tp = tsTypeParamParts(member.typeParams);
+    const tpStr = tp.length > 0 ? `<${tp.join(', ')}>` : '';
+    const params = tsParamParts(member.params).join(', ');
+    const ret = tsType(member.returns?.[0]?.type);
+    return `${name}${opt}${tpStr}(${params})${ret ? `: ${ret}` : ''}`;
+  }
+  const t = tsType(member.type);
+  if (member.isAccessor) return `get ${name}()${t ? `: ${t}` : ''}`;
+  return `${name}${opt}${t ? `: ${t}` : ''}`;
+}
+
+/**
+ * Declaration block for a standalone interface page (typedoc flavor): the full
+ * `interface Name<T> extends Base { member; … }` overview default TypeDoc shows
+ * at the top, before the detailed member sections. Members come from the view's
+ * buckets (properties, then accessors, then methods, static last) so the block
+ * mirrors the page's own ordering. Always multiline so the shape reads clearly.
+ */
+function interfaceSignature(view: ContainerView): string {
+  const name = view.doclet.name ?? view.doclet.longname ?? 'Interface';
+  const tp = tsTypeParamParts(view.doclet.typeParams);
+  const tpStr = tp.length > 0 ? `<${tp.join(', ')}>` : '';
+  const ext =
+    view.doclet.augments && view.doclet.augments.length > 0
+      ? ` extends ${view.doclet.augments.join(', ')}`
+      : '';
+  const members: ClassMember[] = [
+    ...view.instanceFields,
+    ...view.accessors,
+    ...view.instanceMethods,
+    ...view.staticFields,
+    ...view.staticMethods,
+  ];
+  const head = `interface ${name}${tpStr}${ext}`;
+  if (members.length === 0) return `${head} {}`;
+  const lines = members.map((m) => `\t${interfaceMemberLine(m)};`);
+  return `${head} {\n${lines.join('\n')}\n}`;
+}
+
 /** A callable doclet (function/method) that carries overload signatures. */
 function hasOverloads(doclet: { overloads?: readonly TDocletOverload[] }): boolean {
   return (doclet.overloads?.length ?? 0) > 0;
@@ -533,18 +646,30 @@ export function containerViewToMdast(
   // Extends/Implements/Mixes
   blocks.push(...classRelationsBlocks(view.doclet, options.resolveLink));
 
-  // Standalone function/variable pages (typedoc flavor): the full TS signature
-  // as a shiki-highlighted inline `<Signature>`, right under the title — matching
-  // default TypeDoc, where a function page leads with `name<T>(p: T): Ret` and a
-  // variable with `name: T`.
+  // Standalone pages (typedoc flavor) lead with the symbol's declaration as a
+  // shiki-highlighted inline `<Signature>`, right under the title — matching
+  // default TypeDoc, where a function page leads with `name<T>(p: T): Ret`, a
+  // variable with `name: { … }`, a type alias with `Name = …`, and an interface
+  // with `interface Name { … }`.
   const fnVarPage =
     options.flavor === 'typedoc' && (view.kind === 'function' || view.kind === 'variable');
   // An overloaded standalone function stacks every signature below the body
   // (handled after docletBlocks); a single-signature one leads with its block.
   const fnOverloaded = fnVarPage && view.kind === 'function' && hasOverloads(view.doclet);
+  // Did we emit a typedef declaration block (`Name = …`)? If so its inline "Type"
+  // section below is redundant and gets skipped.
+  let typedefDeclEmitted = false;
   if (fnVarPage && !fnOverloaded) {
-    const sig = tsMemberSignature(view.doclet);
+    const sig = view.kind === 'variable' ? variableSignature(view.doclet) : tsMemberSignature(view.doclet);
     if (sig) blocks.push(signature(sig));
+  } else if (options.flavor === 'typedoc' && view.kind === 'typedef') {
+    const sig = typedefSignature(view.doclet);
+    if (sig) {
+      blocks.push(signature(sig));
+      typedefDeclEmitted = true;
+    }
+  } else if (options.flavor === 'typedoc' && view.kind === 'interface') {
+    blocks.push(signature(interfaceSignature(view)));
   }
 
   // Source link for the class declaration itself, when it resolves.
@@ -559,12 +684,23 @@ export function containerViewToMdast(
   // module, namespace, interface, mixin) have no Constructor section, so a
   // function-signature typedef's params/returns (and any container doclet's
   // own params/returns) must render here in the body.
-  const skip: DocletBlocksOptions['skip'] =
+  const skip: DocletSection[] =
     view.kind === 'class'
       ? [...(options.skip ?? []), 'params', 'returns', 'yields', 'throws', 'relations']
       : fnOverloaded
         ? [...(options.skip ?? []), 'relations', ...SHARED_BODY_SKIP_FOR_OVERLOADS]
         : [...(options.skip ?? []), 'relations'];
+  // The declaration block above already shows the type, so the inline "Type"
+  // section would just repeat it: drop it for an object-literal variable (whose
+  // members also list under "Properties") and for any typedef whose `Name = …`
+  // block was emitted.
+  const objectLiteralVariable =
+    options.flavor === 'typedoc' &&
+    view.kind === 'variable' &&
+    (view.doclet.properties?.length ?? 0) > 0;
+  if (objectLiteralVariable || typedefDeclEmitted) {
+    skip.push('type');
+  }
   blocks.push(...docletBlocks(view.doclet, { ...options, skip }));
 
   // Overloaded standalone function: stack each signature (with its own

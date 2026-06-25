@@ -655,7 +655,10 @@ typedoc/src/
 │                           #   Class/Interface/Function/Method/Property/Variable/
 │                           #   Accessor/Enum(+isEnum)/EnumMember/TypeAlias(typedef)/
 │                           #   Module/Namespace. Constructor params fold into the
-│                           #   class; Reference/re-exports deferred (logged). Matches
+│                           #   class; Reference/re-exports deferred (logged). An
+│                           #   object-literal value (type alias OR a `const … as
+│                           #   const` variable) recovers its members onto
+│                           #   properties[] (objectLiteralProperties). Matches
 │                           #   kinds via reflection.kindOf (bitflags), never ===.
 ├── names.ts                # synthesize longname/memberof/scope with #/./~ +
 │                           #   module: prefixes setu queries against.
@@ -700,6 +703,16 @@ the member heading a bare name and stacks one inline `<Signature>` per overload,
 each with its own Type Parameters / Parameters / Returns (and an overload's own
 description), while the shared description/examples render once — matching default
 TypeDoc. JSDoc never sets `overloads`, so single-signature members are unchanged.
+**Declaration blocks** lead each standalone page with the symbol's full
+declaration as a `<Signature>`, mirroring default TypeDoc's overview: a variable
+shows its value type (an object-literal `const` pretty-printed multiline,
+`HTTP_STATUS: { OK: 200; … }`), a type alias shows `Name = …` (function-type →
+arrow form `Name<T> = (p: P) => R`, object-literal → `{ … }`, else the type
+string), and an interface shows the `interface Name<T> extends … { member; … }`
+body built from its member buckets. An object-literal value's members are
+recovered onto `properties[]` by the bridge — the same path JSDoc's `@property`
+list uses — so they render as a "Properties" section (each member's own doc
+comment preserved), and the now-redundant inline "Type" section is dropped.
 
 **Signature rendering (both flavors).** A member/constructor/function heading
 shows the **full TypeScript signature** (`addChild(child: Component): void`), built

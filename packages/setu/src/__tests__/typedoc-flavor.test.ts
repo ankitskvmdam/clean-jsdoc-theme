@@ -357,3 +357,107 @@ describe('flavor: jsdoc (default) — byte-identical: no new pages, JSDoc labels
     expect(labels).not.toContain('Type Aliases');
   });
 });
+
+/**
+ * A module with the symbols whose standalone pages lead with a declaration block
+ * (default-TypeDoc parity): an object-literal variable (members recovered onto
+ * `properties`), a function-type type alias, a plain union alias, and an
+ * interface with a method + a field.
+ */
+function declCollection(): TJSDocSaltyCollection<TDoclet> {
+  return makeCollection([
+    { kind: 'module', name: 'lib', longname: 'module:lib', scope: 'global', comment: '/** Lib. */', description: 'The library.' },
+    {
+      kind: 'variable',
+      name: 'STATUS',
+      longname: 'module:lib.STATUS',
+      memberof: 'module:lib',
+      scope: 'static',
+      comment: '/** Codes. */',
+      description: 'Status codes.',
+      type: { names: ['Object'] },
+      properties: [
+        { name: 'OK', type: { names: ['200'] }, description: 'Okay.' },
+        { name: 'BAD', type: { names: ['400'] }, description: 'Bad.' },
+      ],
+    },
+    {
+      kind: 'typedef',
+      name: 'Handler',
+      longname: 'module:lib.Handler',
+      memberof: 'module:lib',
+      scope: 'static',
+      comment: '/** A handler. */',
+      description: 'Handles events.',
+      type: { names: ['function'] },
+      typeParams: [{ name: 'T' }],
+      params: [{ name: 'evt', type: { names: ['T'] }, description: 'The event.' }],
+      returns: [{ type: { names: ['void'] } }],
+    },
+    {
+      kind: 'typedef',
+      name: 'Mode',
+      longname: 'module:lib.Mode',
+      memberof: 'module:lib',
+      scope: 'static',
+      comment: '/** A mode. */',
+      description: 'The mode.',
+      type: { names: ["'a' | 'b'"] },
+    },
+    { kind: 'interface', name: 'Hooks', longname: 'module:lib.Hooks', memberof: 'module:lib', scope: 'static', comment: '/** Hooks. */', description: 'Lifecycle hooks.' },
+    {
+      kind: 'function',
+      name: 'onMount',
+      longname: 'module:lib.Hooks#onMount',
+      memberof: 'module:lib.Hooks',
+      scope: 'instance',
+      comment: '/** On mount. */',
+      description: 'Mounts.',
+      optional: true,
+      returns: [{ type: { names: ['void'] } }],
+    },
+    { kind: 'member', name: 'id', longname: 'module:lib.Hooks#id', memberof: 'module:lib.Hooks', scope: 'instance', comment: '/** Id. */', description: 'The id.', type: { names: ['string'] } },
+  ]);
+}
+
+describe('flavor: typedoc — declaration blocks', () => {
+  it('object-literal variable: shows the shape + a Properties list, no duplicate Type', () => {
+    const m = generateSite(declCollection(), { flavor: 'typedoc' });
+    const body = pageByLongname(m, 'module:lib.STATUS')!.body;
+    expect(body).toContain('<Signature');
+    expect(body).toContain('STATUS: {');
+    expect(body).toContain('OK: 200;');
+    // The recovered member docs render as a Properties list…
+    expect(body).toContain('**Properties**');
+    expect(body).toContain('Okay.');
+    // …so the redundant inline "Type" section is dropped.
+    expect(body).not.toContain('**Type**');
+  });
+
+  it('function-type alias: leads with an arrow signature', () => {
+    const m = generateSite(declCollection(), { flavor: 'typedoc' });
+    const body = pageByLongname(m, 'module:lib.Handler')!.body;
+    expect(body).toContain('Handler<T> = (evt: T) => void');
+  });
+
+  it('plain alias: leads with `Name = <type>` and drops the duplicate Type section', () => {
+    const m = generateSite(declCollection(), { flavor: 'typedoc' });
+    const body = pageByLongname(m, 'module:lib.Mode')!.body;
+    expect(body).toContain("Mode = 'a' | 'b'");
+    expect(body).not.toContain('**Type**');
+  });
+
+  it('interface: leads with an `interface Name { … }` overview block', () => {
+    const m = generateSite(declCollection(), { flavor: 'typedoc' });
+    const body = pageByLongname(m, 'module:lib.Hooks')!.body;
+    expect(body).toContain('interface Hooks {');
+    expect(body).toContain('onMount?(): void;');
+    expect(body).toContain('id: string;');
+  });
+
+  it('JSDoc flavor: no `Name = …` declaration block for a typedef', () => {
+    const m = generateSite(declCollection());
+    const handler = pageByLongname(m, 'module:lib.Handler');
+    if (handler) expect(handler.body).not.toContain('= (evt: T) =>');
+  });
+});
