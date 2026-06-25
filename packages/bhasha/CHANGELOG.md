@@ -1,5 +1,11 @@
 # @clean-jsdoc-theme/bhasha
 
+## 5.0.5
+
+### Patch Changes
+
+- @clean-jsdoc-theme/utils@5.0.5
+
 ## 5.0.4
 
 ### Patch Changes

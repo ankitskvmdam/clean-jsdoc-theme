@@ -1,5 +1,43 @@
 # clean-jsdoc-theme
 
+## 5.0.5
+
+### Patch Changes
+
+- Local images now resolve from every prose source, plus JSDoc `staticFiles`
+  support and a generated `sitemap.xml`.
+
+  ### Images
+  - Local images referenced from **tutorials, the README, and JSDoc / TypeScript
+    doc comments** (previously only `opts.docs`) are copied into the content-hashed
+    `_assets/` pipeline and the reference is rewritten — both Markdown `![](…)` and
+    raw `<img>`. Comment images resolve against each symbol's own source file; SVGs
+    are inlined so light/dark follows the theme toggle. Parity across the JSDoc and
+    TypeDoc bridges.
+  - JSDoc **`templates.default.staticFiles`** is honored: included files are copied
+    verbatim to the output root (JSDoc parity), and the include directories become
+    fallback search roots, so a bare reference like `![](classes-io.png)` resolves
+    and is hashed — no need to rewrite existing comments or tutorials. A file already
+    served from `_assets/` is not duplicated at the root.
+  - Image syntax shown **inside code spans / fenced blocks** is left literal — no
+    spurious copy, rewrite, or "could not read image" warning.
+
+  ### Sitemap
+  - New **`siteUrl`** option: when set, the build emits `sitemap.xml` at the output
+    root with one `<loc>` per non-hidden page. Only the URL's origin is used; the
+    deploy sub-path comes from `basePath`, so the two never double-count.
+
+  ### Security
+  - No runtime security-surface changes. Image and `staticFiles` resolution runs at
+    build time over author-declared paths only — no runtime evaluation and no new
+    network access; `siteUrl` is used solely to compose the absolute `<loc>` URLs in
+    `sitemap.xml`.
+  - @clean-jsdoc-theme/utils@5.0.5
+  - @clean-jsdoc-theme/setu@5.0.5
+  - @clean-jsdoc-theme/rang@5.0.5
+  - @clean-jsdoc-theme/dwar@5.0.5
+  - @clean-jsdoc-theme/bhasha@5.0.5
+
 ## 5.0.4
 
 ### Patch Changes
