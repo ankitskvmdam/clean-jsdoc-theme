@@ -1,5 +1,7 @@
 # examples/basic
 
+![Data flow from Source through DataProcessor to Output](./img/data-flow.svg)
+
 End-to-end fixture for `clean-jsdoc-theme` v5. A [`src/`](./src) of
 JSDoc-annotated source files — exercising modules, namespaces, classes,
 interfaces, mixins, typedefs, constants/enums, and globals, plus tutorials and a

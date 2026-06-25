@@ -6,10 +6,18 @@
     "include": ["./src", "./README.md"]
   },
   "plugins": ["plugins/markdown"],
+  "templates": {
+    "default": {
+      "staticFiles": {
+        "include": ["./img"]
+      }
+    }
+  },
   "opts": {
     "encoding": "utf8",
     "destination": "dist",
     "recurse": true,
+    "siteUrl": "https://clean-jsdoc-theme.example.com",
     "template": "./node_modules/clean-jsdoc-theme/dist",
     "readme": "./README.md",
     "tutorials": "./tutorials",

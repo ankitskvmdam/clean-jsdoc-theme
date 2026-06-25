@@ -75,6 +75,13 @@ interface ListenerEntry<T> {
  * - Async event handlers
  * - Wildcard event listening
  *
+ * A local image referenced from a TypeScript doc comment is copied into the
+ * built site and its path rewritten, just like in `docs` pages and the README.
+ * The diagram below lives in `img/event-flow.svg`, referenced from this source
+ * file (`src/services/`) with a `../../img/` relative path:
+ *
+ * ![Event flow from emit() through EventEmitter to Listeners](../../img/event-flow.svg)
+ *
  * @typeParam TEvents - Event map type defining event names and data types
  *
  * @example
