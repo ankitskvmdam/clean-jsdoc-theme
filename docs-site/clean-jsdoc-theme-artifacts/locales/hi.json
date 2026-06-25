@@ -54,6 +54,7 @@
       "next": "अगला"
     },
     "code": {
+      "label": "कोड",
       "variantsLabel": "कोड वेरिएंट",
       "copy": "क्लिपबोर्ड पर कॉपी करें",
       "copied": "क्लिपबोर्ड पर कॉपी किया गया",
@@ -84,6 +85,10 @@
     },
     "language": {
       "label": "भाषा"
+    },
+    "playground": {
+      "openIn": "कोड खोलें",
+      "openInProvider": "{provider} में खोलें"
     }
   },
   "api": {}

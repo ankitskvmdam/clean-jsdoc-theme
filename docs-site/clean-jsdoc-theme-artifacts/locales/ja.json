@@ -54,6 +54,7 @@
       "next": "次へ"
     },
     "code": {
+      "label": "コード",
       "variantsLabel": "コードバリアント",
       "copy": "クリップボードにコピー",
       "copied": "クリップボードにコピーしました",
@@ -84,6 +85,10 @@
     },
     "language": {
       "label": "言語"
+    },
+    "playground": {
+      "openIn": "コードを開く",
+      "openInProvider": "{provider} で開く"
     }
   },
   "api": {}

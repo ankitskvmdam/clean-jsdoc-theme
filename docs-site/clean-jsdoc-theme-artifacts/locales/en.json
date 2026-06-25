@@ -54,6 +54,7 @@
       "next": "Next"
     },
     "code": {
+      "label": "CODE",
       "variantsLabel": "Code variants",
       "copy": "Copy to clipboard",
       "copied": "Copied to clipboard",
@@ -84,6 +85,10 @@
     },
     "language": {
       "label": "Language"
+    },
+    "playground": {
+      "openIn": "Open Code in",
+      "openInProvider": "Open in {provider}"
     }
   },
   "api": {}
