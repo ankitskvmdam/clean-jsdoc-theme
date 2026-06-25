@@ -16,6 +16,12 @@
   HTTP. Serve the folder (`npx serve dist`).
 - **An embed didn't appear:** the URL must be `https://` or protocol-relative
   `//`. `http://` and relative paths are dropped (with a warning).
+- **An image doesn't show / "could not read image" warning:** a relative `src`
+  resolves against the file it's in (a doc/tutorial folder, or for a comment the
+  `.js`/`.ts` source); a root-relative `/…` against the project root. For an image
+  referenced by **bare name** (JSDoc), declare its folder in
+  `templates.default.staticFiles.include`. Image syntax shown *as an example* is
+  left literal inside a code span/fence. See [images.md](images.md).
 - **A page silently missing:** a page that fails to MDX-compile is skipped and
   reported in `RenderResult.errors` (the bridge logs it) — check the build output;
   it never aborts the whole build.

@@ -18,6 +18,7 @@ Contents: [Site & identity](#site--identity) · [Content sources](#content-sourc
 | --- | --- | --- |
 | `siteName` | string \| logo set | Header title. Logo set: `{ light, dark, default, alt }` (URLs or local paths; dark/light swap via CSS). Defaults to the package `name`. Local logos are copied to content-hashed `_assets/`. |
 | `basePath` | string | Root path prefixed onto every internal link/asset, for sub-path hosting (`/my-lib`). Default `""`. |
+| `siteUrl` | string | Public base URL (e.g. `https://example.com`). When set, the build emits `sitemap.xml` at the output root — one entry per non-hidden page. Only the URL's **origin** is used; the sub-path comes from `basePath` (the two never double-count). Omit → no sitemap. |
 | `favicon` | string | Path to a favicon image (`.svg`/`.png`/`.ico`/…). The theme copies it to a content-hashed `_assets/` file and emits `<link rel="icon">` (type derived from the extension). Needed for an SVG favicon — browsers only auto-discover a root `favicon.ico`. |
 
 ## Content sources
@@ -86,18 +87,25 @@ per-locale **prose** uses sibling files (`README.<code>.md`, `docs.<code>/`).
 ## JSDoc-only (under `templates.default`, NOT `opts`)
 
 ```json5
-templates: { default: { outputSourceFiles: false, sourceLinkToComment: true } }
+templates: { default: { outputSourceFiles: false, sourceLinkToComment: true, staticFiles: { include: ["resources/doc/img"] } } }
 ```
 
 - `outputSourceFiles` (default `true`) — generate the source-file viewer pages
   and `Source: file:line` links.
 - `sourceLinkToComment` (default `false`) — land a `Source:` link on the doc
   **comment** instead of the **declaration**.
+- `staticFiles` (`{ include, exclude?, includePattern?, excludePattern? }`) —
+  JSDoc's static-file passthrough. Included files are copied **verbatim** to the
+  output root, and the include dirs become **fallback search roots** for image
+  resolution, so a **bare** reference like `![](classes-io.png)` resolves and is
+  hashed into `_assets/`. See [images.md](images.md).
 
 ## Asset handling (automatic — no config)
 
-Any image referenced from docs/README with a relative or root-relative path is
+Local images referenced from **docs, tutorials, the README, and JSDoc/TypeScript
+doc comments** (relative or root-relative `src`, Markdown or raw `<img>`) are
 copied into `_assets/` under a **content-hashed** name and the ref is rewritten.
-`.svg` files are **inlined** into the page so their own `[data-theme="dark"]`
-styles can follow the in-page theme toggle (an `<img>` SVG can't). External
-(`https://`) and `data:` URLs are left untouched.
+`.svg` files are **inlined** so their own `[data-theme="dark"]` styles follow the
+in-page theme toggle (an `<img>` SVG can't). External (`https://`) and `data:`
+URLs are left untouched, as is image syntax shown inside code spans/fences. Full
+details (resolution rules, comments, `staticFiles`, sitemap): [images.md](images.md).

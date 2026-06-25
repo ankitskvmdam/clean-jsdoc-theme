@@ -4,7 +4,8 @@ description: >-
   Expert guidance for working with clean-jsdoc-theme v5 — the JSDoc/TypeDoc
   documentation theme. Use when setting up the theme, writing jsdoc.json or
   typedoc.json options, authoring docs/guides/READMEs (callouts, steps, tabs,
-  embeds, custom @category/@order/@iframe tags), structuring the sidebar,
+  embeds, custom @category/@order/@iframe tags), referencing images (local
+  images, JSDoc staticFiles, sitemap), structuring the sidebar,
   cross-linking with {@link}/@see, tuning theming/colors/fonts, localizing into
   multiple languages (the clean-jsdoc CLI / aadesh / bhasha), debugging a build,
   or contributing to the monorepo packages (utils, setu, rang, dwar).
@@ -12,7 +13,7 @@ description: >-
 
 # clean-jsdoc-theme — working skill
 
-<!-- skill-revision: 2026-06-25 -->
+<!-- skill-revision: 2026-06-26 -->
 
 This skill makes you an expert at **using and extending `clean-jsdoc-theme` v5**.
 Everything here is verified against the source. When a user is documenting a
@@ -27,12 +28,13 @@ matches the task** (don't load them all):
 | --- | --- |
 | Writing/validating `jsdoc.json` / `typedoc.json` options | [`reference/configuration.md`](reference/configuration.md) |
 | Authoring prose: callouts, steps, tabs, embeds, custom tags | [`reference/authoring.md`](reference/authoring.md) |
+| Referencing images / static assets, `staticFiles`, sitemap | [`reference/images.md`](reference/images.md) |
 | The docs directory, frontmatter, sidebar order, cross-links | [`reference/content-and-sidebar.md`](reference/content-and-sidebar.md) |
 | Multi-language / i18n: the `clean-jsdoc` CLI, per-locale prose + fonts | [`reference/localization.md`](reference/localization.md) |
 | Contributing to the packages (utils/setu/rang/dwar) | [`reference/architecture.md`](reference/architecture.md) |
 | A build misbehaves / something doesn't render | [`reference/troubleshooting.md`](reference/troubleshooting.md) |
 
-> **Skill revision:** `2026-06-25`. Versioned with the theme — see
+> **Skill revision:** `2026-06-26`. Versioned with the theme — see
 > [§6 Staying current](#6-staying-current) for how (and how often) to check for a
 > newer skill or theme release.
 >
@@ -165,7 +167,7 @@ inline (both JSDoc and TypeDoc).
 ```jsonc
 // JSDoc: opts.* | TypeDoc: cleanJsdocTheme.*  (identical values)
 {
-  siteName, basePath, favicon,
+  siteName, basePath, siteUrl, favicon,
   readme, docs, docGroups, defaultDocGroup, tutorials,
   sectionOrder, clubSidebarItems, menu,
   fonts, colors, darkColors,
@@ -175,7 +177,7 @@ inline (both JSDoc and TypeDoc).
   locales, defaultLocale,        // multi-language — see reference/localization.md
   strict, progress
 }
-// JSDoc-only, under templates.default.*:  outputSourceFiles, sourceLinkToComment
+// JSDoc-only, under templates.default.*:  outputSourceFiles, sourceLinkToComment, staticFiles
 ```
 
 Authoring (details in [`reference/authoring.md`](reference/authoring.md)):
@@ -186,6 +188,7 @@ Authoring (details in [`reference/authoring.md`](reference/authoring.md)):
 - Embed: ` ```iframe ` fence or `@iframe <https-url> key=value`.
 - Sidebar: `@category Core/Parsing order=1`, `@order N`, frontmatter `group`/`order`.
 - Cross-link: `{@link Symbol}`, `{@linkcode Symbol}`, `@see {@link Other}`.
+- Images: `![alt](./img/x.svg)` from docs/tutorials/README/**doc comments** → copied to `_assets/` (SVGs inlined, theme-aware); JSDoc `staticFiles` bare names resolve too ([`reference/images.md`](reference/images.md)).
 
 The two most common setup mistakes: missing `plugins/markdown` (JSDoc) and missing
 `tags.allowUnknownTags: true` (needed for `@category`/`@order`/`@iframe`). More in
@@ -259,6 +262,10 @@ let the user opt in.
   `sectionOrder` / `clubSidebarItems` to shape the top level.
 - **Cross-references written as bare text or code** → **`{@link Symbol}`** so it
   becomes a real, resolved anchor.
+- **A diagram/screenshot linked by absolute URL, or an architecture description
+  with no visual** → a **local image** (relative or root-relative `src`, even from
+  a doc comment): it's copied to `_assets/`, content-hashed, and — for SVGs —
+  inlined so light/dark follows the theme toggle ([`reference/images.md`](reference/images.md)).
 - **Undocumented params/returns** → the `@param` / `@returns` tags so the generated
   tables (and the constructor signature) fill in.
 - **A project that cares about AI consumption** → remind them every page already
