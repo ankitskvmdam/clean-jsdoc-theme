@@ -133,7 +133,8 @@ const DOC_IMAGE_RE = /(!\[[^\]]*\]\()([^)\s]+)((?:\s+"[^"]*")?\))/g;
 export async function resolveDocImages(
   docs: DocInput[],
   docsDir: string,
-  warn: Warn
+  warn: Warn,
+  hrefForServed: (servedPath: string) => string = (p) => '/' + p
 ): Promise<ResolvedDocs> {
   if (docs.length === 0) return { docs, files: [], inlineSvgs: {} };
   const root = resolvePath(docsDir);
@@ -164,7 +165,7 @@ export async function resolveDocImages(
       seenServed.add(served);
       files.push({ path: served, contents: bytes });
     }
-    const href = '/' + served;
+    const href = hrefForServed(served);
     if (ext.toLowerCase() === '.svg') {
       inlineSvgs[href] = bytes
         .toString('utf8')

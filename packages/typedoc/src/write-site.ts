@@ -41,8 +41,10 @@ import {
   formatBuildReport,
   formatDiagnostics,
   formatRenderError,
+  normalizeBasePath,
   toExtractManifest,
   validateThemeOpts,
+  withBase,
 } from '@clean-jsdoc-theme/utils';
 import type { FontSet, PlaygroundProvider, TDoclet, ValidatedFonts } from '@clean-jsdoc-theme/utils';
 import { reflectionsToDoclets } from './reflection-to-doclets';
@@ -115,6 +117,7 @@ function resolveTheme(
   block: CleanJsdocThemeBlock,
   siteName: SiteName | undefined,
   fonts: ValidatedFonts,
+  basePath: string,
   locale?: string
 ): ThemeConfig {
   const aiPrompt =
@@ -125,6 +128,7 @@ function resolveTheme(
 
   return {
     ...defaultTheme,
+    basePath,
     ...(aiPrompt ? { aiPrompt } : {}),
     ...(copyPage ? { copyPage } : {}),
     ...(pageNav ? { pageNav } : {}),
@@ -347,7 +351,8 @@ async function resolveFooter(
  */
 async function resolveFavicon(
   raw: unknown,
-  logger: AdaptApp['logger']
+  logger: AdaptApp['logger'],
+  hrefForServed: (servedPath: string) => string
 ): Promise<{ href: string; files: OutputFile[] } | undefined> {
   if (typeof raw !== 'string' || raw.trim().length === 0) return undefined;
   const file = raw.trim();
@@ -359,7 +364,7 @@ async function resolveFavicon(
     return undefined;
   }
   const servedPath = `_assets/favicon${extname(file) || '.ico'}`;
-  return { href: servedPath, files: [{ path: servedPath, contents: bytes }] };
+  return { href: hrefForServed(servedPath), files: [{ path: servedPath, contents: bytes }] };
 }
 
 /** Attributes that identify a `<meta>` tag (so an entry must carry at least one). */
@@ -413,7 +418,8 @@ function isServableUrl(value: string): boolean {
  */
 async function prepareSiteName(
   raw: SiteName | undefined,
-  logger: AdaptApp['logger']
+  logger: AdaptApp['logger'],
+  hrefForServed: (servedPath: string) => string
 ): Promise<{ siteName: SiteName | undefined; files: { path: string; contents: Buffer }[] }> {
   if (typeof raw === 'string') {
     const trimmed = raw.trim();
@@ -440,7 +446,7 @@ async function prepareSiteName(
       const buf = await readFile(abs);
       const served = `_assets/logo-${key}${extname(abs)}`;
       files.push({ path: served, contents: buf });
-      out[key] = `/${served}`;
+      out[key] = hrefForServed(served);
     } catch {
       logger.warn(
         `[clean-jsdoc-theme] could not read logo image for siteName.${key} ('${v}'); using it verbatim.`
@@ -631,6 +637,14 @@ export async function writeSite(
   const pkg = await resolvePkg(project);
   const sources = await collectSourceFiles(doclets, logger);
 
+  // Site root prefix so the output can be served from a sub-directory. Bad/empty
+  // input fails safe to '/' (the default), so an unset option is byte-identical.
+  // Every served asset href (logos, favicon, doc images) is prefixed through
+  // `hrefForServed`, exactly like the JSDoc bridge — in-content links (pages,
+  // source) are prefixed downstream by dwar from `theme.basePath`.
+  const basePath = normalizeBasePath(block.basePath);
+  const hrefForServed = (servedPath: string): string => withBase(basePath, '/' + servedPath);
+
   // Prose docs (`cleanJsdocTheme.docs` directory) → pages at clean slugs, with
   // their local images routed through the `_assets/` pipeline (the bridge is the
   // I/O layer; setu/dwar stay disk-free). `docGroups` orders the doc-group
@@ -639,7 +653,7 @@ export async function writeSite(
     typeof block.docs === 'string' && block.docs.trim().length > 0 ? block.docs.trim() : undefined;
   const warn = (msg: string): void => logger.warn(msg);
   const resolvedDocs = docsDir
-    ? await resolveDocImages(await collectDocs(docsDir, warn), docsDir, warn)
+    ? await resolveDocImages(await collectDocs(docsDir, warn), docsDir, warn, hrefForServed)
     : { docs: [] as DocInput[], files: [] as OutputFile[], inlineSvgs: {} as Record<string, string> };
   const docs = resolvedDocs.docs;
   const docGroups = normalizeSectionOrder(block.docGroups);
@@ -688,7 +702,7 @@ export async function writeSite(
 
   // Resolve siteName (text or logo set) + copy any local logo images so the
   // served paths are baked into the markup. The shape was validated above.
-  const { siteName, files: logoFiles } = await prepareSiteName(value.siteName, logger);
+  const { siteName, files: logoFiles } = await prepareSiteName(value.siteName, logger, hrefForServed);
 
   // Resilient font fallback: a family flagged `fonts/not-google` is dropped so
   // `resolveTheme` falls back to the default for that slot (the error was
@@ -721,11 +735,11 @@ export async function writeSite(
   const footer = await resolveFooter(block.footer, logger);
   // Favicon (v4 parity): copied to an `_assets` asset here (the I/O layer); dwar
   // emits the `<link rel="icon">`, so render() stays pure. Unset → none.
-  const favicon = await resolveFavicon(block.favicon, logger);
+  const favicon = await resolveFavicon(block.favicon, logger, hrefForServed);
   const meta = normalizeMeta(block.meta, logger);
   const result = await render(manifest, {
     theme: {
-      ...resolveTheme(block, siteName, fonts),
+      ...resolveTheme(block, siteName, fonts, basePath),
       ...(footer ? { footer } : {}),
       ...(favicon ? { favicon: favicon.href } : {}),
       ...(meta ? { meta } : {}),

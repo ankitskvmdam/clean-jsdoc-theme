@@ -669,7 +669,10 @@ typedoc/src/
 ├── options.ts              # the cleanJsdocTheme ParameterType.Object declaration +
 │                           #   typed reader (siteName/fonts/sectionOrder/docs/
 │                           #   docGroups/defaultDocGroup/menu/clubSidebarItems/
-│                           #   copyPage/pageNav/aiPrompt/strict).
+│                           #   copyPage/pageNav/aiPrompt/basePath/strict). basePath
+│                           #   (normalizeBasePath → theme.basePath) lets the output
+│                           #   serve from a sub-dir; every served asset href (logos/
+│                           #   favicon/doc images) is prefixed via withBase.
 └── write-output-files.ts   # mkdir -p + writeFile loop (copied from the JSDoc bridge).
 ```
 

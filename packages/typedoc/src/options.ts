@@ -70,6 +70,12 @@ export interface CleanJsdocThemeBlock {
   favicon?: unknown;
   /** Site-wide custom `<meta>` tags — an array of attribute maps. */
   meta?: unknown;
+  /**
+   * Site root path the renderer prefixes onto every emitted URL, so the output
+   * can be served from a sub-directory (e.g. `"/my-lib/api"`). A bare path or a
+   * full URL (its pathname is used); defaults to `"/"`.
+   */
+  basePath?: unknown;
   /** Escalate validation errors (bad font / unknown key) to a hard failure. */
   strict?: unknown;
   [key: string]: unknown;
@@ -88,7 +94,7 @@ export function declareThemeOption(app: Application): void {
     help:
       'clean-jsdoc-theme options (siteName, fonts, sectionOrder, docs, docGroups, ' +
       'defaultDocGroup, menu, clubSidebarItems, copyPage, pageNav, playground, ' +
-      'aiPrompt, footer, favicon, meta, strict).',
+      'aiPrompt, footer, favicon, meta, basePath, strict).',
     type: ParameterType.Object,
     defaultValue: {},
   };
