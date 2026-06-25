@@ -1,6 +1,6 @@
 {
   "$schema": "https://typedoc.org/schema.json",
-  "entryPoints": ["src/index.ts"],
+  "entryPoints": ["src/**"],
   "tsconfig": "tsconfig.json",
   "readme": "README.md",
   "plugin": ["@clean-jsdoc-theme/typedoc"],
@@ -9,19 +9,7 @@
     "siteName": "typedoc-basic",
     "docs": "docs",
     "docGroups": ["Guides"],
-    "sectionOrder": [
-      "Core",
-      "Shapes",
-      "Modules",
-      "Namespaces",
-      "Classes",
-      "Interfaces",
-      "Enums",
-      "Typedefs",
-      "Globals",
-      "Guides"
-    ],
-    "clubSidebarItems": true,
+    "clubSidebarItems": false,
     "copyPage": true
   }
 }
