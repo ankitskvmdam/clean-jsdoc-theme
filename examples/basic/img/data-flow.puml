@@ -1,0 +1,7 @@
+@startuml
+' Source for data-flow.svg. Declared via templates.default.staticFiles.include,
+' so it is copied verbatim to the built site's root (a non-image static file the
+' image pipeline does not touch).
+[Source] --> [DataProcessor]
+[DataProcessor] --> [Output]
+@enduml

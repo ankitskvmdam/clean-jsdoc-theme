@@ -5,6 +5,9 @@ import { afterAll, beforeAll, describe, it, expect, vi } from 'vitest';
 import {
   collectDocs,
   resolveDocImages,
+  resolveTutorialImages,
+  resolveDocletImages,
+  createImageCollector,
   overlayDocs,
   computeRelPaths,
   hasMarkdownPlugin,
@@ -492,7 +495,172 @@ describe('resolveDocImages', () => {
     vi.restoreAllMocks();
   });
 
+  it('rewrites raw HTML <img> srcs too (both quote styles)', async () => {
+    const docs = [
+      {
+        path: 'overview',
+        type: 'html' as const,
+        content: '<p><img src="./assets/diagram.svg" alt="d"></p>\n<img src=\'./assets/diagram.svg\' />',
+      },
+    ];
+    const { docs: out, files } = await resolveDocImages(docs, dir);
+    // Same image referenced twice → copied once, both srcs rewritten.
+    expect(files).toHaveLength(1);
+    const m = out[0].content.match(/\/_assets\/diagram\.[0-9a-f]{8}\.svg/g);
+    expect(m).toHaveLength(2);
+    expect(out[0].content).not.toContain('./assets/diagram.svg');
+  });
+
+  it('leaves image syntax inside code spans and fenced blocks untouched', async () => {
+    const docs = [
+      {
+        path: 'overview',
+        type: 'markdown' as const,
+        // The real image (top) resolves; the two shown AS EXAMPLES (inline code +
+        // fenced block) must be left verbatim, even though the file exists.
+        content:
+          '![real](./assets/diagram.svg)\n\n' +
+          'Write `![alt](./assets/diagram.svg)` to embed it.\n\n' +
+          '```md\n![alt](./assets/diagram.svg)\n```\n',
+      },
+    ];
+    const { docs: out, files } = await resolveDocImages(docs, dir);
+    // Only the real one was copied (deduped to a single asset).
+    expect(files).toHaveLength(1);
+    const rewritten = out[0].content.match(/\/_assets\/diagram\.[0-9a-f]{8}\.svg/g) ?? [];
+    expect(rewritten).toHaveLength(1); // just the top reference
+    // The code-span and fenced occurrences keep the literal source path.
+    expect(out[0].content).toContain('`![alt](./assets/diagram.svg)`');
+    expect(out[0].content).toContain('```md\n![alt](./assets/diagram.svg)\n```');
+  });
+
+  it('does not warn for an unreadable image shown only as code-example syntax', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const docs = [
+      { path: 'x', type: 'markdown' as const, content: 'Example: `![d](./nope.png)`\n' },
+    ];
+    const { files } = await resolveDocImages(docs, dir);
+    expect(files).toHaveLength(0);
+    expect(warn).not.toHaveBeenCalled(); // never attempted to read it
+    warn.mockRestore();
+  });
+
   it('returns docs unchanged when there are none', async () => {
     expect(await resolveDocImages([], dir)).toEqual({ docs: [], files: [], inlineSvgs: {} });
+  });
+});
+
+describe('resolveTutorialImages', () => {
+  let dir: string;
+
+  beforeAll(async () => {
+    // Tutorials live in `<dir>/tutorials`; the image is a sibling `<dir>/img`,
+    // referenced from a tutorial as `../img/x.svg` (the bug-report pattern).
+    dir = await mkdtemp(join(tmpdir(), 'cjt-tut-images-'));
+    await mkdir(join(dir, 'img'), { recursive: true });
+    await writeFile(join(dir, 'img', 'flow.svg'), '<svg/>', 'utf8');
+  });
+
+  afterAll(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it('copies + rewrites a relative tutorial image and recurses into children', async () => {
+    const tree = [
+      {
+        name: 'guide',
+        title: 'Guide',
+        type: 'markdown' as const,
+        content: '# Guide\n\n![Flow](../img/flow.svg)\n',
+        children: [
+          {
+            name: 'sub',
+            title: 'Sub',
+            type: 'html' as const,
+            content: '<img src="../img/flow.svg" alt="f">',
+            children: [],
+          },
+        ],
+      },
+    ];
+    const collector = createImageCollector();
+    const tutorialsDir = join(dir, 'tutorials');
+    const out = await resolveTutorialImages(tree, tutorialsDir, collector);
+    // Copied once (shared by parent + child via the collector cache).
+    expect(collector.files).toHaveLength(1);
+    expect(collector.files[0].path).toMatch(/^_assets\/flow\.[0-9a-f]{8}\.svg$/);
+    expect(out[0].content).toMatch(/!\[Flow\]\(\/_assets\/flow\.[0-9a-f]{8}\.svg\)/);
+    expect(out[0].children![0].content).toMatch(/src="\/_assets\/flow\.[0-9a-f]{8}\.svg"/);
+    // The SVG is also queued for inlining, keyed by the rewritten src.
+    expect(collector.inlineSvgs['/' + collector.files[0].path]).toContain('<svg style=');
+    // Input tree is left untouched (a new tree is returned).
+    expect(tree[0].content).toContain('../img/flow.svg');
+  });
+
+  it('leaves external srcs untouched', async () => {
+    const tree = [
+      { name: 'g', title: 'G', type: 'markdown' as const, content: '![x](https://e.com/i.png)', children: [] },
+    ];
+    const collector = createImageCollector();
+    const out = await resolveTutorialImages(tree, join(dir, 'tutorials'), collector);
+    expect(collector.files).toHaveLength(0);
+    expect(out[0].content).toContain('https://e.com/i.png');
+  });
+});
+
+describe('resolveDocletImages', () => {
+  let dir: string;
+
+  beforeAll(async () => {
+    dir = await mkdtemp(join(tmpdir(), 'cjt-doclet-images-'));
+    await mkdir(join(dir, 'src'), { recursive: true });
+    await mkdir(join(dir, 'img'), { recursive: true });
+    await writeFile(join(dir, 'img', 'diagram.png'), 'PNGBYTES', 'utf8');
+  });
+
+  afterAll(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  /** A minimal salty-like collection: `data().get()` returns live references. */
+  const salty = (items: unknown[]) => {
+    const fn = () => ({ get: () => items });
+    return fn as unknown;
+  };
+
+  it('rewrites <img> in a doclet description relative to its source file, in place', async () => {
+    // JSDoc's markdown plugin has already rendered `![d](../img/diagram.png)` to
+    // HTML by publish time; the src is relative to the comment's source file.
+    const doclet = {
+      longname: 'Foo',
+      description: '<p>Hello</p><img src="../img/diagram.png" alt="d">',
+      params: [{ name: 'x', description: '<img src="../img/diagram.png" alt="p">' }],
+      meta: { path: join(dir, 'src'), filename: 'foo.js' },
+    };
+    const collector = createImageCollector();
+    await resolveDocletImages(salty([doclet]), collector);
+    // Copied once (description + param share the image via the cache).
+    expect(collector.files).toHaveLength(1);
+    expect(collector.files[0].path).toMatch(/^_assets\/diagram\.[0-9a-f]{8}\.png$/);
+    // Mutated in place: setu will read these rewritten fields.
+    expect(doclet.description).toMatch(/src="\/_assets\/diagram\.[0-9a-f]{8}\.png"/);
+    expect(doclet.params[0].description).toMatch(/src="\/_assets\/diagram\.[0-9a-f]{8}\.png"/);
+  });
+
+  it('skips meta/comment/examples and doclets without meta.path', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const noMeta = { longname: 'Bar', description: '<img src="../img/diagram.png">' };
+    const codeOnly = {
+      longname: 'Baz',
+      examples: ['<img src="../img/diagram.png">'],
+      comment: '/** ![d](../img/diagram.png) */',
+      meta: { path: join(dir, 'src'), filename: 'baz.js' },
+    };
+    const collector = createImageCollector();
+    await resolveDocletImages(salty([noMeta, codeOnly]), collector);
+    expect(collector.files).toHaveLength(0); // nothing resolvable was scanned
+    expect(noMeta.description).toContain('../img/diagram.png'); // untouched (no meta.path)
+    expect(codeOnly.examples[0]).toContain('../img/diagram.png'); // examples skipped
+    vi.restoreAllMocks();
   });
 });

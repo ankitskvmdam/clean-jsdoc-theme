@@ -59,6 +59,7 @@ import {
 } from './html';
 import { bundleIslands, ALL_ISLANDS } from './islands-bundle';
 import { buildCss } from './css';
+import { buildSitemapXml } from './sitemap';
 
 /**
  * Injected from package.json at build time (see tsup.config.ts `define`). The
@@ -723,6 +724,19 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
   // Fuzzy-search index fetched by the cmdk island at runtime: page entries plus
   // member deep-links. (Pagefind's full-text bundle is a separate concern.)
   files.push({ path: searchIndexPath, contents: JSON.stringify([...search, ...memberEntries]) });
+
+  // sitemap.xml — one `<loc>` per non-hidden page (`search` is exactly that set:
+  // source-viewer pages are hidden, so they're excluded). Gated on `siteUrl`
+  // (the protocol needs absolute URLs); an unparseable URL yields no sitemap
+  // rather than a broken one.
+  if (opts.siteUrl) {
+    const sitemap = buildSitemapXml(
+      opts.siteUrl,
+      basePath,
+      search.map((entry) => entry.slug)
+    );
+    if (sitemap) files.push({ path: 'sitemap.xml', contents: sitemap });
+  }
 
   // Island chunks (bundled up front, before the page loop).
   let jsBytes = 0;

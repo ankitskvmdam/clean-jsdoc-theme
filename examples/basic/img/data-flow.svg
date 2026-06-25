@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 130" role="img" aria-label="Data flow: Source to DataProcessor to Output">
+  <style>
+    .box { fill: none; stroke: currentColor; stroke-width: 1.5; }
+    .label { fill: currentColor; font: 600 14px ui-sans-serif, system-ui, sans-serif; }
+    .arrow { stroke: currentColor; stroke-width: 1.5; fill: none; marker-end: url(#arrowhead); }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="currentColor" />
+    </marker>
+  </defs>
+  <rect class="box" x="8" y="45" width="120" height="40" rx="6" />
+  <text class="label" x="68" y="70" text-anchor="middle">Source</text>
+  <line class="arrow" x1="132" y1="65" x2="195" y2="65" />
+  <rect class="box" x="200" y="45" width="150" height="40" rx="6" />
+  <text class="label" x="275" y="70" text-anchor="middle">DataProcessor</text>
+  <line class="arrow" x1="354" y1="65" x2="417" y2="65" />
+  <rect class="box" x="392" y="45" width="120" height="40" rx="6" />
+  <text class="label" x="452" y="70" text-anchor="middle">Output</text>
+</svg>

@@ -157,6 +157,40 @@ cleanJsdocTheme: { basePath: "/my-library" } // served at example.com/my-library
 
 </tabs>
 
+### `siteUrl`
+
+Your site's public base URL. When set, the build emits a **`sitemap.xml`** at the
+output root — one entry per page (hidden source-viewer pages are excluded) — which
+you can submit to search engines or reference from `robots.txt`. Without it, no
+sitemap is generated.
+
+**Expected:** an absolute `http(s)` URL. Only its **origin** is used for each
+page's URL; the deploy sub-path comes from [`basePath`](#basepath), so the two
+never double-count — a bare origin (`https://example.com`) and a full URL whose
+path equals your `basePath` (`https://example.com/my-library`) both produce the
+same, correct `<loc>` entries. Omit it (the default) for no sitemap.
+
+<tabs group="tool">
+
+<tab label="JSDoc (jsdoc.json)">
+
+```json5
+opts: { siteUrl: "https://example.com", basePath: "/my-library" }
+// → sitemap.xml with https://example.com/my-library/… URLs
+```
+
+</tab>
+
+<tab label="TypeDoc (typedoc.json)">
+
+```json5
+cleanJsdocTheme: { siteUrl: "https://example.com", basePath: "/my-library" }
+```
+
+</tab>
+
+</tabs>
+
 ### `favicon`
 
 A path to a favicon image. The bridge copies it to a content-hashed
@@ -808,13 +842,14 @@ templates: { default: { sourceLinkToComment: true } }
 ### How assets are handled
 
 You don't configure this, but it's worth knowing how local files referenced from
-your docs and README are processed. Any image you link with a relative or
-root-relative path — `![diagram](./assets/flow.svg)` — is copied into the site's
-`_assets/` directory under a **content-hashed** name (e.g.
-`_assets/flow.3de65053.svg`) and the reference is rewritten to point at it. The
-hash is derived from the file's bytes, so an unchanged file keeps a stable,
+your docs, tutorials, README, and **API doc comments** are processed. Any image
+you link with a relative or root-relative path — `![diagram](./assets/flow.svg)` —
+is copied into the site's `_assets/` directory under a **content-hashed** name
+(e.g. `_assets/flow.3de65053.svg`) and the reference is rewritten to point at it.
+The hash is derived from the file's bytes, so an unchanged file keeps a stable,
 cacheable URL across builds and a changed one cache-busts automatically. External
-(`https://…`) and `data:` URLs are left untouched.
+(`https://…`) and `data:` URLs are left untouched. (See
+[Working with images](/guides/working-with-images) for the full guide.)
 
 `.svg` files get one extra step: their markup is **inlined** directly into the
 page rather than loaded through an `<img>`. That lets an SVG's own
@@ -824,6 +859,18 @@ SVG can only see the operating system's color scheme, never your site's toggle.
 Logos ([`siteName`](#sitename)) and
 [`customCssFile` / `customJsFile`](#customcssfile-and-customjsfile) ride the same
 content-hashed `_assets/` pipeline.
+
+#### JSDoc `staticFiles`
+
+If you use JSDoc's standard `templates.default.staticFiles.include` to ship a
+folder of images (the convention where files land at the output root and you
+reference them by bare name, e.g. `![diagram](classes-io.png)`), the theme
+honors it: those directories become **fallback search roots**, so a bare or
+root-relative reference resolves and flows through the same content-hashed
+`_assets/` pipeline above — no need to rewrite your comments to relative paths.
+Any **non-image** files in those directories are still copied **verbatim** to the
+site root, matching JSDoc's behavior. (A file the image pipeline already served
+from `_assets/` isn't copied to the root a second time.)
 
 ## Localization
 

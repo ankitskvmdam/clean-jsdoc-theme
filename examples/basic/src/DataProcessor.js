@@ -3,6 +3,14 @@
  * @summary Advanced data processing suite.
  * @description This class extends the {@link BaseEntity} to provide
  * async processing and event-driven updates.
+ *
+ * A local image referenced from a JSDoc comment is copied into the built site
+ * and its path rewritten, just like in tutorials and docs. The diagram below
+ * lives in `img/data-flow.svg` (a sibling of `src/`), so it is referenced with
+ * a `../img/` relative path:
+ *
+ * ![Data flow from Source through DataProcessor to Output](../img/data-flow.svg)
+ *
  * @tutorial processing-guide
  * @category Core/Processing order=1
  * @author Ankit Kumar <mailto:ankit@example.com>

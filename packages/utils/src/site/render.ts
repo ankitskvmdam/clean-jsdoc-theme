@@ -133,6 +133,15 @@ export interface RenderOptions {
    * output stays byte-identical.
    */
   locale?: RenderLocale;
+  /**
+   * The site's public base URL (e.g. `https://example.com` or
+   * `https://example.com/docs`). When set, dwar emits a `sitemap.xml` at the
+   * output root listing every non-hidden page's canonical URL. Only the URL's
+   * **origin** is used — the deploy sub-path comes from `theme.basePath`, so the
+   * two never double-count (a bare origin works, and so does a full URL whose
+   * path equals basePath). Omit it and no sitemap is emitted (today's behavior).
+   */
+  siteUrl?: string;
 }
 
 /** Active-locale chrome translations for a localized render. See {@link RenderOptions.locale}. */

@@ -498,6 +498,10 @@ dwar/src/
 ├── theme-script.ts       # pre-hydration <script>: theme + font-size/line-spacing
 ├── heading-anchors.ts    # inline <script>: delegated heading clicks → hash +
 │                         #   copy link; sets data-copied 3s for the check-icon swap
+├── sitemap.ts            # buildSitemapXml(siteUrl, basePath, slugs) — pure; one
+│                         #   <loc> per non-hidden page (origin from siteUrl,
+│                         #   sub-path from basePath). render() emits sitemap.xml
+│                         #   when opts.siteUrl is set
 ├── pagefind.ts           # runPagefindAgainstDir(destination)  — the only fs touch
 styles/
 └── tailwind.css          # Tailwind v4 input: @theme tokens, tw-animate-css, base
@@ -537,7 +541,12 @@ section), and a **prev/next pager** (rang's `PageNav`) below the body: dwar
 flattens `manifest.nav` into linear reading order (skipping external/menu
 entries), maps each non-hidden page to its neighbors, and renders the two cards
 (title + ≤100-char description). Gated by `ThemeConfig.pageNav` (on by default),
-never on source pages. The full-text Pagefind bundle is a separate post-write step.
+never on source pages. When `RenderOptions.siteUrl` is set, dwar also emits a
+**`sitemap.xml`** at the output root — one `<loc>` per non-hidden page (the same
+set as `RenderResult.search`, so hidden source-viewer pages are excluded), using
+`siteUrl`'s origin + `theme.basePath` + slug; an unparseable URL emits nothing
+rather than a broken sitemap. The full-text Pagefind bundle is a separate
+post-write step.
 
 **Custom CSS/JS.** `ThemeConfig` carries optional `customCss`/`customJs` (inline
 strings) and `customCssLinks`/`customJsLinks` (asset hrefs). Inline strings are
@@ -609,11 +618,32 @@ clean-jsdoc-theme/src/
 │                         #   *.html → DocInput[] w/ POSIX rel path + raw content; the
 │                         #   only place the docs tree is read) and threads docs +
 │                         #   opts.docGroups + opts.defaultDocGroup → setu.
-│                         #   resolveDocImages then routes every local image those docs
-│                         #   reference through the content-hashed _assets/ pipeline
-│                         #   (copy + rewrite src), and additionally collects each .svg's
+│                         #   A shared image pipeline (createImageCollector +
+│                         #   rewriteImageRefs) routes every LOCAL image — Markdown
+│                         #   ![](src) AND raw <img src> — referenced from docs
+│                         #   (resolveDocImages), tutorials (resolveTutorialImages,
+│                         #   base = tutorials dir), the README (base = cwd), and
+│                         #   JSDoc-comment prose (resolveDocletImages: mutates
+│                         #   doclets IN PLACE — salty hands out live refs — base =
+│                         #   each doclet's meta.path) through the content-hashed
+│                         #   _assets/ pipeline (copy + rewrite src to /_assets/…,
+│                         #   deduped across all sources), and collects each .svg's
 │                         #   markup into render()'s inlineSvgs map so it's inlined
-│                         #   (theme-toggle-aware) rather than <img>-ed.
+│                         #   (theme-toggle-aware) rather than <img>-ed. Image
+│                         #   syntax inside code spans / fenced blocks / <pre>/<code>
+│                         #   is skipped (CODE_REGION_RE), so literal ![](…) shown as
+│                         #   example syntax stays verbatim.
+│                         #   JSDoc templates.default.staticFiles is honored
+│                         #   (readStaticFilesConfig + collectStaticFiles): matched
+│                         #   files are copied VERBATIM to the output root (JSDoc
+│                         #   parity, for non-image assets), AND the include dirs
+│                         #   become fallback search roots for the image collector
+│                         #   — so a bare ![](classes-io.png) whose file lives in a
+│                         #   staticFiles dir still resolves + hashes (v5 pages are
+│                         #   nested, so the ref is rewritten, not just copied). A
+│                         #   verbatim copy is skipped when the image pipeline
+│                         #   already consumed it (served from _assets/), and when it
+│                         #   would clobber a generated path / reserved dir (warned).
 │                         #   Holds defaultTheme (OKLCH palette).
 └── write-output-files.ts # mkdir -p + writeFile loop (forward-slash → OS path)
 ```
@@ -645,12 +675,21 @@ typedoc/src/
 │                           #   fonts + normalized sectionOrder/menu/clubSidebarItems/
 │                           #   copyPage/pageNav/aiPrompt through, and walks the
 │                           #   `docs` dir (docs.ts) → docs + docGroups/
-│                           #   defaultDocGroup + inlineSvgs. Prints the utils
-│                           #   formatBuildReport (node:zlib gzip sizer — allowed here,
-│                           #   it's the bridge, not utils). Holds defaultTheme.
-├── docs.ts                 # prose-docs front-end (copied from the JSDoc bridge):
-│                           #   collectDocs (walk dir → DocInput[]) + resolveDocImages
-│                           #   (local images → content-hashed _assets/ + inline SVGs).
+│                           #   defaultDocGroup + inlineSvgs. Routes README +
+│                           #   symbol-comment images through the same _assets/
+│                           #   pipeline via one shared collector (resolveDocletImages
+│                           #   mutates doclets IN PLACE before generateSite; README
+│                           #   base = cwd), merging files (deduped) + inlineSvgs.
+│                           #   Prints the utils formatBuildReport (node:zlib gzip
+│                           #   sizer — allowed here, it's the bridge, not utils).
+│                           #   Holds defaultTheme.
+├── docs.ts                 # prose-docs front-end + shared local-image pipeline
+│                           #   (copied from the JSDoc bridge): collectDocs (walk dir
+│                           #   → DocInput[]) + createImageCollector/rewriteImageRefs
+│                           #   (Markdown ![](src) AND raw <img src> → content-hashed
+│                           #   _assets/ + inline SVGs; hrefForServed threads basePath)
+│                           #   + resolveDocImages (docs) + resolveDocletImages
+│                           #   (comment HTML, base = each symbol's meta.path).
 ├── reflection-to-doclets.ts# THE adapter: ProjectReflection → flat TDoclet[].
 │                           #   Class/Interface/Function/Method/Property/Variable/
 │                           #   Accessor/Enum(+isEnum)/EnumMember/TypeAlias(typedef)/

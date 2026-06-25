@@ -158,6 +158,40 @@ cleanJsdocTheme: { basePath: "/my-library" } // example.com/my-library/ पर s
 
 </tabs>
 
+### `siteUrl`
+
+आपकी site का सार्वजनिक base URL। सेट होने पर, build output root पर एक
+**`sitemap.xml`** emit करता है — हर page के लिए एक entry (hidden source-viewer
+pages को छोड़कर) — जिसे आप search engines को submit कर सकते हैं या `robots.txt`
+से reference कर सकते हैं। इसके बिना कोई sitemap नहीं बनता।
+
+**अपेक्षित:** एक पूर्ण `http(s)` URL। हर page के URL के लिए केवल इसका **origin**
+इस्तेमाल होता है; deploy sub-path [`basePath`](#basepath) से आता है, इसलिए दोनों
+कभी double-count नहीं होते — एक सादा origin (`https://example.com`) और एक पूरा URL
+जिसका path आपके `basePath` के बराबर हो (`https://example.com/my-library`), दोनों
+एक ही सही `<loc>` entries देते हैं। कोई sitemap न चाहिए तो इसे छोड़ दें (default)।
+
+<tabs group="tool">
+
+<tab label="JSDoc (jsdoc.json)">
+
+```json5
+opts: { siteUrl: "https://example.com", basePath: "/my-library" }
+// → https://example.com/my-library/… URLs वाला sitemap.xml
+```
+
+</tab>
+
+<tab label="TypeDoc (typedoc.json)">
+
+```json5
+cleanJsdocTheme: { siteUrl: "https://example.com", basePath: "/my-library" }
+```
+
+</tab>
+
+</tabs>
+
 ### `favicon`
 
 एक favicon image का path। bridge इसे एक content-hashed `_assets/` asset में copy
