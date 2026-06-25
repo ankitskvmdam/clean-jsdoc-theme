@@ -2,33 +2,33 @@
   "_version": 1,
   "chrome": {
     "common": {
-      "close": ""
+      "close": "閉じる"
     },
     "search": {
       "placeholder": "ドキュメントを検索...",
       "inputLabel": "検索クエリ",
       "triggerLabel": "検索",
-      "triggerTitle": "",
-      "dialogLabel": "",
-      "resultsLabel": "",
-      "recent": "",
-      "favorite": "",
-      "noResults": "",
-      "emptyHint": "",
-      "inContext": "",
-      "footerHint": "",
-      "saveToFavorites": "",
-      "removeFromFavorites": "",
-      "removeFromRecent": ""
+      "triggerTitle": "検索 (Ctrl K)",
+      "dialogLabel": "検索",
+      "resultsLabel": "検索結果",
+      "recent": "最近",
+      "favorite": "お気に入り",
+      "noResults": "一致するページがありません",
+      "emptyHint": "入力してドキュメントを検索",
+      "inContext": "{context} 内",
+      "footerHint": "↑↓ で移動 · ↵ で開く · esc で閉じる",
+      "saveToFavorites": "{title} をお気に入りに保存",
+      "removeFromFavorites": "{title} をお気に入りから削除",
+      "removeFromRecent": "{title} を最近の検索から削除"
     },
     "footer": {
       "repository": "リポジトリ"
     },
     "nav": {
       "docNavLabel": "ドキュメントナビゲーション",
-      "open": "",
-      "menu": "",
-      "drawerLabel": ""
+      "open": "ナビゲーションを開く",
+      "menu": "メニュー",
+      "drawerLabel": "ナビゲーション"
     },
     "toc": {
       "label": "このページの内容"
@@ -41,77 +41,82 @@
       "title": "設定",
       "fontSize": "文字サイズ",
       "lineSpacing": "行間",
-      "sizeSmall": "",
-      "sizeDefault": "",
-      "sizeLarge": "",
-      "spacingCompact": "",
-      "spacingDefault": "",
-      "spacingRelaxed": ""
+      "sizeSmall": "小",
+      "sizeDefault": "標準",
+      "sizeLarge": "大",
+      "spacingCompact": "狭い",
+      "spacingDefault": "標準",
+      "spacingRelaxed": "広い"
     },
     "pager": {
-      "label": "",
+      "label": "ページ送り",
       "previous": "前へ",
       "next": "次へ"
     },
     "code": {
-      "variantsLabel": "",
-      "copy": "",
-      "copied": "",
-      "copyShort": "",
-      "copiedShort": "",
-      "copyLink": ""
+      "label": "コード",
+      "variantsLabel": "コードバリアント",
+      "copy": "クリップボードにコピー",
+      "copied": "クリップボードにコピーしました",
+      "copyShort": "コピー",
+      "copiedShort": "コピーしました！",
+      "copyLink": "このセクションへのリンクをコピー"
     },
     "copyPage": {
-      "moreOptions": "",
-      "menuLabel": "",
+      "moreOptions": "その他のコピーオプション",
+      "menuLabel": "ページコピーのオプション",
       "copyTitle": "ページをコピー",
-      "copied": "",
-      "copyDescription": "",
-      "viewTitle": "",
-      "viewDescription": "",
-      "claudeTitle": "",
-      "claudeDescription": "",
-      "chatgptTitle": "",
-      "chatgptDescription": "",
-      "perplexityTitle": "",
-      "perplexityDescription": ""
+      "copied": "コピーしました",
+      "copyDescription": "LLM 向けにページを Markdown としてコピー",
+      "viewTitle": "Markdown を表示",
+      "viewDescription": "このページをプレーンテキストで表示",
+      "claudeTitle": "Claude で開く",
+      "claudeDescription": "このページについて Claude に質問",
+      "chatgptTitle": "ChatGPT で開く",
+      "chatgptDescription": "このページについて ChatGPT に質問",
+      "perplexityTitle": "Perplexity で開く",
+      "perplexityDescription": "このページについて Perplexity に質問"
     },
     "embed": {
-      "load": "",
-      "loadTitled": "",
-      "posterTitle": "",
-      "loadPill": ""
+      "load": "埋め込みコンテンツを読み込む",
+      "loadTitled": "埋め込みコンテンツを読み込む: {title}",
+      "posterTitle": "埋め込みコンテンツ",
+      "loadPill": "読み込む"
     },
     "language": {
       "label": "言語"
+    },
+    "playground": {
+      "openIn": "コードを開く",
+      "openInProvider": "{provider} で開く"
     }
   },
   "api": {
     "module:widget-kit#description": "<p>ローカライズ対応を示すための、小さく完全にドキュメント化されたサンプルモジュールです。</p><p>clean-jsdoc-theme は単一のソースからこの API リファレンスを複数の言語でレンダリングします。クラスやメソッドの説明、パラメータのドキュメント、例のキャプションはロケールごとに翻訳され、検索・サイドバー・目次・設定などの UI も同様にローカライズされます。タイトル横の地球儀から言語を切り替えてください。各ページは設定された各言語の対応ページにリンクし、未翻訳の項目は既定の言語にフォールバックします。</p>",
     "module:widget-kit#summary": "<p>ローカライズされた API ドキュメントを紹介するサンプルモジュール。</p>",
     "module:widget-kit.Widget#constructor.description": "<p>ウィジェットを作成します。</p>",
-    "module:widget-kit.Widget#constructor.params.id.description": "",
-    "module:widget-kit.Widget#constructor.params.options.description": "",
-    "module:widget-kit.Widget#constructor.params.options.disabled.description": "",
-    "module:widget-kit.Widget#constructor.params.options.label.description": "",
+    "module:widget-kit.Widget#constructor.params.id.description": "<p>ウィジェットの一意な識別子。</p>",
+    "module:widget-kit.Widget#constructor.params.options.description": "<p>任意の構成。</p>",
+    "module:widget-kit.Widget#constructor.params.options.disabled.description": "<p>ウィジェットを無効状態で開始するかどうか。</p>",
+    "module:widget-kit.Widget#constructor.params.options.label.description": "<p>ウィジェットに表示されるテキスト。</p>",
     "module:widget-kit.Widget#description": "<p>再利用可能な UI ウィジェット — このドキュメントサイトの実行例です。</p><p>各メンバー（コンストラクタ、フィールド、メソッド）が独自のセクションとしてレンダリングされ、コードはそのままに説明文だけが各ロケール向けに翻訳される様子を示します。</p>",
     "module:widget-kit.Widget#disabled#description": "<p>ウィジェットが現在無効かどうか。</p>",
     "module:widget-kit.Widget#examples.0.caption": "ウィジェットの作成とレンダリング",
     "module:widget-kit.Widget#id#description": "<p>ウィジェットの一意の識別子。</p>",
     "module:widget-kit.Widget#label#description": "<p>表示ラベル。指定がない場合は id。</p>",
-    "module:widget-kit.Widget#params.id.description": "",
-    "module:widget-kit.Widget#params.options.description": "",
-    "module:widget-kit.Widget#params.options.disabled.description": "",
-    "module:widget-kit.Widget#params.options.label.description": "",
+    "module:widget-kit.Widget#params.id.description": "<p>ウィジェットの一意な識別子。</p>",
+    "module:widget-kit.Widget#params.options.description": "<p>任意の構成。</p>",
+    "module:widget-kit.Widget#params.options.disabled.description": "<p>ウィジェットを無効状態で開始するかどうか。</p>",
+    "module:widget-kit.Widget#params.options.label.description": "<p>ウィジェットに表示されるテキスト。</p>",
     "module:widget-kit.Widget#render#description": "<p>ウィジェットを切り離された DOM 要素にレンダリングします。</p>",
-    "module:widget-kit.Widget#render#returns.0.description": "",
+    "module:widget-kit.Widget#render#returns.0.description": "<p>ウィジェットを表すボタン要素。</p>",
     "module:widget-kit.Widget#setDisabled#description": "<p>ウィジェットを有効または無効にします。</p>",
-    "module:widget-kit.Widget#setDisabled#params.disabled.description": "",
-    "module:widget-kit.Widget#setDisabled#returns.0.description": "",
+    "module:widget-kit.Widget#setDisabled#params.disabled.description": "<p>無効にするには <code>true</code>、有効にするには <code>false</code>。</p>",
+    "module:widget-kit.Widget#setDisabled#returns.0.description": "<p>ウィジェットのインスタンス。呼び出しをチェーンできます。</p>",
     "module:widget-kit.createWidget#description": "<p>プレーンな設定オブジェクトからウィジェットを作成する小さな便利関数です。</p>",
-    "module:widget-kit.createWidget#params.config.description": "",
-    "module:widget-kit.createWidget#params.config.id.description": "",
-    "module:widget-kit.createWidget#params.config.label.description": "",
-    "module:widget-kit.createWidget#returns.0.description": ""
+    "module:widget-kit.createWidget#params.config.description": "<p>ウィジェットの構成。</p>",
+    "module:widget-kit.createWidget#params.config.id.description": "<p>ウィジェットの一意な識別子。</p>",
+    "module:widget-kit.createWidget#params.config.label.description": "<p>ウィジェットに表示されるテキスト。</p>",
+    "module:widget-kit.createWidget#returns.0.description": "<p>新しいウィジェットのインスタンス。</p>"
   }
 }

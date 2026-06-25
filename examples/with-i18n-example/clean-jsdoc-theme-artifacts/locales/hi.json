@@ -2,33 +2,33 @@
   "_version": 1,
   "chrome": {
     "common": {
-      "close": ""
+      "close": "बंद करें"
     },
     "search": {
       "placeholder": "दस्तावेज़ खोजें...",
       "inputLabel": "खोज क्वेरी",
       "triggerLabel": "खोज",
-      "triggerTitle": "",
-      "dialogLabel": "",
-      "resultsLabel": "",
-      "recent": "",
-      "favorite": "",
-      "noResults": "",
-      "emptyHint": "",
-      "inContext": "",
-      "footerHint": "",
-      "saveToFavorites": "",
-      "removeFromFavorites": "",
-      "removeFromRecent": ""
+      "triggerTitle": "खोजें (Ctrl K)",
+      "dialogLabel": "खोजें",
+      "resultsLabel": "खोज परिणाम",
+      "recent": "हाल के",
+      "favorite": "पसंदीदा",
+      "noResults": "कोई मेल खाता पृष्ठ नहीं",
+      "emptyHint": "दस्तावेज़ खोजने के लिए टाइप करें",
+      "inContext": "{context} में",
+      "footerHint": "नेविगेट करने के लिए ↑↓ · खोलने के लिए ↵ · बंद करने के लिए esc",
+      "saveToFavorites": "{title} को पसंदीदा में सहेजें",
+      "removeFromFavorites": "{title} को पसंदीदा से हटाएं",
+      "removeFromRecent": "{title} को हाल की खोजों से हटाएं"
     },
     "footer": {
       "repository": "रिपॉज़िटरी"
     },
     "nav": {
       "docNavLabel": "दस्तावेज़ नेविगेशन",
-      "open": "",
-      "menu": "",
-      "drawerLabel": ""
+      "open": "नेविगेशन खोलें",
+      "menu": "मेन्यू",
+      "drawerLabel": "नेविगेशन"
     },
     "toc": {
       "label": "इस पृष्ठ पर"
@@ -41,77 +41,82 @@
       "title": "सेटिंग्स",
       "fontSize": "फ़ॉन्ट आकार",
       "lineSpacing": "पंक्ति अंतराल",
-      "sizeSmall": "",
-      "sizeDefault": "",
-      "sizeLarge": "",
-      "spacingCompact": "",
-      "spacingDefault": "",
-      "spacingRelaxed": ""
+      "sizeSmall": "छोटा",
+      "sizeDefault": "डिफ़ॉल्ट",
+      "sizeLarge": "बड़ा",
+      "spacingCompact": "संक्षिप्त",
+      "spacingDefault": "डिफ़ॉल्ट",
+      "spacingRelaxed": "विस्तृत"
     },
     "pager": {
-      "label": "",
+      "label": "पृष्ठ क्रमांकन",
       "previous": "पिछला",
       "next": "अगला"
     },
     "code": {
-      "variantsLabel": "",
-      "copy": "",
-      "copied": "",
-      "copyShort": "",
-      "copiedShort": "",
-      "copyLink": ""
+      "label": "कोड",
+      "variantsLabel": "कोड वेरिएंट",
+      "copy": "क्लिपबोर्ड पर कॉपी करें",
+      "copied": "क्लिपबोर्ड पर कॉपी किया गया",
+      "copyShort": "कॉपी करें",
+      "copiedShort": "कॉपी हो गया!",
+      "copyLink": "इस section का link कॉपी करें"
     },
     "copyPage": {
-      "moreOptions": "",
-      "menuLabel": "",
+      "moreOptions": "और copy विकल्प",
+      "menuLabel": "Page copy विकल्प",
       "copyTitle": "पृष्ठ कॉपी करें",
-      "copied": "",
-      "copyDescription": "",
-      "viewTitle": "",
-      "viewDescription": "",
-      "claudeTitle": "",
-      "claudeDescription": "",
-      "chatgptTitle": "",
-      "chatgptDescription": "",
-      "perplexityTitle": "",
-      "perplexityDescription": ""
+      "copied": "कॉपी हो गया",
+      "copyDescription": "LLMs के लिए page को Markdown के रूप में कॉपी करें",
+      "viewTitle": "Markdown देखें",
+      "viewDescription": "इस page को plain text के रूप में देखें",
+      "claudeTitle": "Claude में खोलें",
+      "claudeDescription": "इस page के बारे में Claude से पूछें",
+      "chatgptTitle": "ChatGPT में खोलें",
+      "chatgptDescription": "इस page के बारे में ChatGPT से पूछें",
+      "perplexityTitle": "Perplexity में खोलें",
+      "perplexityDescription": "इस page के बारे में Perplexity से पूछें"
     },
     "embed": {
-      "load": "",
-      "loadTitled": "",
-      "posterTitle": "",
-      "loadPill": ""
+      "load": "Embedded सामग्री load करें",
+      "loadTitled": "Embedded सामग्री load करें: {title}",
+      "posterTitle": "Embedded सामग्री",
+      "loadPill": "Load करें"
     },
     "language": {
       "label": "भाषा"
+    },
+    "playground": {
+      "openIn": "कोड खोलें",
+      "openInProvider": "{provider} में खोलें"
     }
   },
   "api": {
     "module:widget-kit#description": "<p>एक छोटा, पूरी तरह से प्रलेखित नमूना मॉड्यूल जो clean-jsdoc-theme के बहुभाषी समर्थन को दर्शाता है।</p><p>clean-jsdoc-theme एक ही स्रोत से इस API संदर्भ को कई भाषाओं में रेंडर करता है। क्लास और मेथड के विवरण, पैरामीटर दस्तावेज़ और उदाहरण कैप्शन प्रति लोकेल अनुवादित होते हैं, जबकि UI — खोज, साइडबार, विषय-सूची और सेटिंग्स — भी स्थानीयकृत होते हैं। शीर्षक के पास ग्लोब नियंत्रण से भाषा बदलें; प्रत्येक पृष्ठ हर कॉन्फ़िगर की गई भाषा में अपने समकक्ष से जुड़ता है, और जो अभी तक अनुवादित नहीं है वह डिफ़ॉल्ट भाषा पर लौट आता है।</p>",
     "module:widget-kit#summary": "<p>स्थानीयकृत API दस्तावेज़ दिखाने वाला एक नमूना मॉड्यूल।</p>",
     "module:widget-kit.Widget#constructor.description": "<p>एक विजेट बनाएँ।</p>",
-    "module:widget-kit.Widget#constructor.params.id.description": "",
-    "module:widget-kit.Widget#constructor.params.options.description": "",
-    "module:widget-kit.Widget#constructor.params.options.disabled.description": "",
-    "module:widget-kit.Widget#constructor.params.options.label.description": "",
+    "module:widget-kit.Widget#constructor.params.id.description": "<p>विजेट के लिए एक विशिष्ट पहचानकर्ता।</p>",
+    "module:widget-kit.Widget#constructor.params.options.description": "<p>वैकल्पिक कॉन्फ़िगरेशन।</p>",
+    "module:widget-kit.Widget#constructor.params.options.disabled.description": "<p>क्या विजेट निष्क्रिय अवस्था में शुरू होता है।</p>",
+    "module:widget-kit.Widget#constructor.params.options.label.description": "<p>विजेट के लिए दृश्यमान टेक्स्ट।</p>",
     "module:widget-kit.Widget#description": "<p>एक पुन: प्रयोज्य UI विजेट — इस दस्तावेज़ साइट का चालू उदाहरण।</p><p>यह दर्शाता है कि प्रत्येक प्रलेखित सदस्य (कंस्ट्रक्टर, फ़ील्ड और मेथड) अपना अलग खंड कैसे रेंडर करता है, और कोड वही रहते हुए उनका विवरण हर लोकेल के लिए कैसे अनुवादित होता है।</p>",
     "module:widget-kit.Widget#disabled#description": "<p>क्या विजेट वर्तमान में अक्षम है।</p>",
     "module:widget-kit.Widget#examples.0.caption": "एक विजेट बनाना और रेंडर करना",
     "module:widget-kit.Widget#id#description": "<p>विजेट का अद्वितीय पहचानकर्ता।</p>",
     "module:widget-kit.Widget#label#description": "<p>दृश्य लेबल, या न दिए जाने पर id।</p>",
-    "module:widget-kit.Widget#params.id.description": "",
-    "module:widget-kit.Widget#params.options.description": "",
-    "module:widget-kit.Widget#params.options.disabled.description": "",
-    "module:widget-kit.Widget#params.options.label.description": "",
+    "module:widget-kit.Widget#params.id.description": "<p>विजेट के लिए एक विशिष्ट पहचानकर्ता।</p>",
+    "module:widget-kit.Widget#params.options.description": "<p>वैकल्पिक कॉन्फ़िगरेशन।</p>",
+    "module:widget-kit.Widget#params.options.disabled.description": "<p>क्या विजेट निष्क्रिय अवस्था में शुरू होता है।</p>",
+    "module:widget-kit.Widget#params.options.label.description": "<p>विजेट के लिए दृश्यमान टेक्स्ट।</p>",
     "module:widget-kit.Widget#render#description": "<p>विजेट को एक अलग DOM तत्व में रेंडर करें।</p>",
-    "module:widget-kit.Widget#render#returns.0.description": "",
+    "module:widget-kit.Widget#render#returns.0.description": "<p>विजेट का प्रतिनिधित्व करने वाला एक बटन एलिमेंट।</p>",
     "module:widget-kit.Widget#setDisabled#description": "<p>विजेट को सक्षम या अक्षम करें।</p>",
-    "module:widget-kit.Widget#setDisabled#params.disabled.description": "",
-    "module:widget-kit.Widget#setDisabled#returns.0.description": "",
+    "module:widget-kit.Widget#setDisabled#params.disabled.description": "<p>निष्क्रिय करने के लिए <code>true</code>, सक्रिय करने के लिए <code>false</code>।</p>",
+    "module:widget-kit.Widget#setDisabled#returns.0.description": "<p>विजेट इंस्टेंस, ताकि कॉल्स को चेन किया जा सके।</p>",
     "module:widget-kit.createWidget#description": "<p>एक सादे कॉन्फ़िगरेशन ऑब्जेक्ट से विजेट बनाने वाला एक छोटा सुविधाजनक फ़ंक्शन।</p>",
-    "module:widget-kit.createWidget#params.config.description": "",
-    "module:widget-kit.createWidget#params.config.id.description": "",
-    "module:widget-kit.createWidget#params.config.label.description": "",
-    "module:widget-kit.createWidget#returns.0.description": ""
+    "module:widget-kit.createWidget#params.config.description": "<p>विजेट कॉन्फ़िगरेशन।</p>",
+    "module:widget-kit.createWidget#params.config.id.description": "<p>विजेट का विशिष्ट पहचानकर्ता।</p>",
+    "module:widget-kit.createWidget#params.config.label.description": "<p>विजेट के लिए दृश्यमान टेक्स्ट।</p>",
+    "module:widget-kit.createWidget#returns.0.description": "<p>एक नया विजेट इंस्टेंस।</p>"
   }
 }
