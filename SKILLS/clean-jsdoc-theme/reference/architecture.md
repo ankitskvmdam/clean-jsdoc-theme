@@ -21,10 +21,23 @@ rang** (one-way), **dwar.render() is pure** (the only disk touch is Pagefind),
 in utils**, and **chrome markup lives once in rang** (dwar's `SsrLayout` only wraps
 islands in `data-island` markers and fills rang's `Layout` slots).
 
-The 14 islands: `sidebar`, `mobile-nav`, `toc`, `toc-mobile`, `cmdk`, `code-tabs`,
+The 15 islands: `sidebar`, `mobile-nav`, `toc`, `toc-mobile`, `cmdk`, `code-tabs`,
 `copy-btn`, `copy-page`, `theme-toggle`, `settings`, `language-switcher`,
-`code-viewer`, `embed`, `tabs`. Each renders meaningful SSR HTML first, then
-progressively enhances. (`language-switcher` mounts only in a localized build.)
+`code-viewer`, `embed`, `playground`, `tabs`. Each renders meaningful SSR HTML
+first, then progressively enhances. (`language-switcher` mounts only in a
+localized build; `playground` is the "Open Code in" dropdown in a code block's
+header.)
+
+**TypeDoc parity (v5.0.x).** Both bridges feed the same setu → dwar core, but
+setu takes a `flavor: 'jsdoc' | 'typedoc'`. Under `'typedoc'` the *document model*
+matches default TypeDoc: enums/top-level functions/variables become standalone
+pages, type aliases are labelled "Type Aliases", class sections use TypeDoc labels
+(Constructors / Properties / Accessors / Methods), module/namespace pages are a
+kind-grouped index of links, and generics render a "Type Parameters" section.
+Overloads stack one `<Signature>` per call signature; standalone pages lead with a
+declaration block. **Signature rendering is cross-cutting (both flavors):** member
+headings show the full TypeScript signature, shiki-highlighted inline. The TypeDoc
+bridge also honors `basePath` for sub-directory deploys.
 
 **Build commands:**
 

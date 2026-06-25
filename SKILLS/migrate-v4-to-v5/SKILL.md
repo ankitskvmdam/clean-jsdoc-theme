@@ -10,14 +10,14 @@ description: >-
 
 # Migrate clean-jsdoc-theme v4 → v5
 
-<!-- skill-revision: 2026-06-16 -->
+<!-- skill-revision: 2026-06-25 -->
 
 This skill walks a project from **clean-jsdoc-theme v4 to v5**. v5 is a ground-up
 rewrite: it server-renders every page, emits a companion `.md` per page, ships
 built-in search, a source viewer, and an `opts.docs` prose pipeline. The config
 surface changed significantly — this is the procedure to port it safely.
 
-> **Skill revision:** `2026-06-16`. The canonical, exhaustive reference is the
+> **Skill revision:** `2026-06-25`. The canonical, exhaustive reference is the
 > repo's [`MIGRATION.md`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/MIGRATION.md)
 > and the machine-readable [`migration-map.json`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/migration-map.json).
 > If you can fetch them, prefer their current contents over anything cached here.
@@ -40,8 +40,8 @@ carry over, drop the rest, then optionally adopt v5's new features.
   setups where comment Markdown must be pre-rendered — verify against the user's
   pipeline. Keeping it is safe.)
 - Check the user really wants to move: to **stay on v4**, pin
-  `"clean-jsdoc-theme": "^4"`. v5 prereleases publish under the npm `next`
-  dist-tag, so `^4`/`latest` won't pull them.
+  `"clean-jsdoc-theme": "^4"`. v5 is now the npm `latest` (GA), so `@latest` pulls
+  it and an unpinned range will move to v5 on the next install.
 
 ## 1. Migration procedure
 
@@ -62,7 +62,7 @@ and/or `"clean-jsdoc-theme": "^4"` in `package.json`. Note every key under
 <step label="Bump the dependency">
 
 ```sh
-npm i -D clean-jsdoc-theme@latest   # or @next while v5 is in prerelease
+npm i -D clean-jsdoc-theme@latest   # v5 is the current `latest`
 ```
 
 Keep `template` pointing at `node_modules/clean-jsdoc-theme` (in v5 you may point

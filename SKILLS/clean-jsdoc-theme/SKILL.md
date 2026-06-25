@@ -12,7 +12,7 @@ description: >-
 
 # clean-jsdoc-theme — working skill
 
-<!-- skill-revision: 2026-06-14 -->
+<!-- skill-revision: 2026-06-25 -->
 
 This skill makes you an expert at **using and extending `clean-jsdoc-theme` v5**.
 Everything here is verified against the source. When a user is documenting a
@@ -32,7 +32,7 @@ matches the task** (don't load them all):
 | Contributing to the packages (utils/setu/rang/dwar) | [`reference/architecture.md`](reference/architecture.md) |
 | A build misbehaves / something doesn't render | [`reference/troubleshooting.md`](reference/troubleshooting.md) |
 
-> **Skill revision:** `2026-06-14`. Versioned with the theme — see
+> **Skill revision:** `2026-06-25`. Versioned with the theme — see
 > [§6 Staying current](#6-staying-current) for how (and how often) to check for a
 > newer skill or theme release.
 >
@@ -144,7 +144,19 @@ signature (`new ClassName(id, [opts])` — a parameter-less class still shows
 `new ClassName()`, and an undocumented constructor recovers its param names so
 `new ClassName(options)` still appears), the separately-documented constructor
 description (when the class and its `constructor` have *separate* doc comments),
-and the parameter table.
+and the parameter table. Every member/constructor heading now also shows the
+**full TypeScript signature** (`addChild(child: Component): void`), highlighted
+inline (both JSDoc and TypeDoc).
+
+> **TypeDoc projects render a slightly different document model** (v5.0.x parity
+> with default TypeDoc — automatic, no config): **enums, top-level functions, and
+> variables each become a standalone page** (not member sections), type aliases
+> are labelled "Type Aliases", class sections use TypeDoc labels
+> (Constructors / Properties / Accessors / Methods), module/namespace pages are a
+> kind-grouped **index of links** to their exports, generics get a **Type
+> Parameters** section, and **overloaded** functions stack one signature per
+> overload. Standalone pages lead with a full **declaration block**. JSDoc's model
+> (above) is unchanged.
 
 ---
 
@@ -153,11 +165,12 @@ and the parameter table.
 ```jsonc
 // JSDoc: opts.* | TypeDoc: cleanJsdocTheme.*  (identical values)
 {
-  siteName, basePath,
+  siteName, basePath, favicon,
   readme, docs, docGroups, defaultDocGroup, tutorials,
   sectionOrder, clubSidebarItems, menu,
   fonts, colors, darkColors,
   customCss, customJs, customCssFile, customJsFile, hashCustomAssets,
+  footer, meta, playground,
   copyPage, aiPrompt,
   locales, defaultLocale,        // multi-language — see reference/localization.md
   strict, progress
