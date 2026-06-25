@@ -1,0 +1,42 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["typedoc-src/index.ts"],
+  "tsconfig": "tsconfig.typedoc.json",
+  "readme": "typedoc-src/README.md",
+  "plugin": ["@clean-jsdoc-theme/typedoc"],
+  "outputs": [{ "name": "clean-jsdoc-theme", "path": "dist/clean-jsdoc-theme/typedoc-api-docs" }],
+  "cleanJsdocTheme": {
+    "basePath": "/clean-jsdoc-theme/typedoc-api-docs",
+    "favicon": "./assets/logo-small.svg",
+    "siteName": {
+      "light": "./assets/clean-jsdoc-theme.svg",
+      "dark": "./assets/clean-jsdoc-theme-white.svg",
+      "alt": "clean-jsdoc-theme TypeDoc API"
+    },
+    "playground": {
+      "providers": ["codepen", "jsfiddle", "codesandbox"]
+    },
+    "clubSidebarItems": true,
+    "copyPage": true,
+    "menu": [
+      {
+        "title": "Home",
+        "link": "/clean-jsdoc-theme/typedoc-api-docs",
+        "id": "home",
+        "icon": "lucide:home"
+      },
+      {
+        "title": "clean-jsdoc-theme Guide",
+        "link": "https://ankdev.me/clean-jsdoc-theme",
+        "id": "clean-jsdoc-theme-guide",
+        "icon": "lucide:website"
+      },
+      {
+        "title": "Github",
+        "link": "https://github.com/ankitskvmdam/clean-jsdoc-theme",
+        "id": "github",
+        "icon": "simpleicons:github"
+      }
+    ]
+  }
+}

@@ -3,21 +3,24 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build:theme": "pnpm exec turbo run build --filter=clean-jsdoc-theme --filter=@clean-jsdoc-theme/aadesh",
+    "build:theme": "pnpm exec turbo run build --filter=clean-jsdoc-theme --filter=@clean-jsdoc-theme/typedoc --filter=@clean-jsdoc-theme/aadesh",
     "extract": "clean-jsdoc i18n extract",
-    "build:docs": "clean-jsdoc build && jsdoc -c jsdoc.api.json",
-    "docs": "pnpm run build:theme && clean-jsdoc build && jsdoc -c jsdoc.api.json",
+    "build:docs": "clean-jsdoc build && jsdoc -c jsdoc.api.json && typedoc",
+    "docs": "pnpm run build:theme && clean-jsdoc build && jsdoc -c jsdoc.api.json && typedoc",
     "serve": "serve dist -l 3001 -c ../serve.json",
-    "dev": "pnpm run build:theme && concurrently -k -n pkgs,docs,serve \"pnpm exec turbo watch build --filter=clean-jsdoc-theme\" \"nodemon\" \"serve dist -l 3001 -c ../serve.json\"",
+    "dev": "pnpm run build:theme && concurrently -k -n pkgs,docs,serve \"pnpm exec turbo watch build --filter=clean-jsdoc-theme --filter=@clean-jsdoc-theme/typedoc\" \"nodemon\" \"serve dist -l 3001 -c ../serve.json\"",
     "clean-node-modules": "node ../scripts/clean.mjs node_modules",
     "i18n:prompt": "clean-jsdoc i18n prompt"
   },
   "devDependencies": {
     "@clean-jsdoc-theme/aadesh": "workspace:^",
+    "@clean-jsdoc-theme/typedoc": "workspace:^",
     "clean-jsdoc-theme": "workspace:^",
     "concurrently": "^9.0.0",
     "jsdoc": "^4.0.0",
     "nodemon": "^3.0.0",
-    "serve": "^14.0.0"
+    "serve": "^14.0.0",
+    "typedoc": "^0.28.0",
+    "typescript": "^5.5.0"
   }
 }

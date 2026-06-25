@@ -39,9 +39,15 @@
         "icon": "lucide:home"
       },
       {
-        "title": "API Example Page",
+        "title": "JSDoc API Example",
         "link": "/clean-jsdoc-theme/api-docs/",
         "id": "api-docs",
+        "icon": "lucide:website"
+      },
+      {
+        "title": "TypeDoc API Example",
+        "link": "/clean-jsdoc-theme/typedoc-api-docs/",
+        "id": "typedoc-api-docs",
         "icon": "lucide:website"
       },
       {

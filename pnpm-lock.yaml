@@ -56,6 +56,9 @@ importers:
       '@clean-jsdoc-theme/aadesh':
         specifier: workspace:^
         version: link:../packages/aadesh
+      '@clean-jsdoc-theme/typedoc':
+        specifier: workspace:^
+        version: link:../packages/typedoc
       clean-jsdoc-theme:
         specifier: workspace:^
         version: link:../packages/clean-jsdoc-theme
@@ -71,6 +74,12 @@ importers:
       serve:
         specifier: ^14.0.0
         version: 14.2.6
+      typedoc:
+        specifier: ^0.28.0
+        version: 0.28.19(typescript@5.9.3)
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
 
   examples/basic:
     devDependencies:

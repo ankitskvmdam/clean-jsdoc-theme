@@ -5,13 +5,17 @@
     "README.md",
     "jsdoc.json",
     "jsdoc.api.json",
+    "typedoc.json",
+    "tsconfig.typedoc.json",
+    "typedoc-src",
     "../packages/clean-jsdoc-theme/dist",
+    "../packages/typedoc/dist",
     "../packages/dwar/dist",
     "../packages/rang/dist",
     "../packages/setu/dist",
     "../packages/utils/dist"
   ],
-  "ext": "js,cjs,mjs,json,md,markdown,html",
+  "ext": "ts,js,cjs,mjs,json,md,markdown,html",
   "delay": 400,
-  "exec": "clean-jsdoc build && jsdoc -c jsdoc.api.json"
+  "exec": "clean-jsdoc build && jsdoc -c jsdoc.api.json && typedoc"
 }
