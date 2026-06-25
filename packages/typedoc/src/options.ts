@@ -76,6 +76,12 @@ export interface CleanJsdocThemeBlock {
    * full URL (its pathname is used); defaults to `"/"`.
    */
   basePath?: unknown;
+  /**
+   * Site public base URL (e.g. `"https://example.com"`). When set, the build
+   * emits a `sitemap.xml` listing every non-hidden page's canonical URL. Only the
+   * origin is used; the deploy sub-path comes from `basePath`.
+   */
+  siteUrl?: unknown;
   /** Escalate validation errors (bad font / unknown key) to a hard failure. */
   strict?: unknown;
   [key: string]: unknown;
@@ -94,7 +100,7 @@ export function declareThemeOption(app: Application): void {
     help:
       'clean-jsdoc-theme options (siteName, fonts, sectionOrder, docs, docGroups, ' +
       'defaultDocGroup, menu, clubSidebarItems, copyPage, pageNav, playground, ' +
-      'aiPrompt, footer, favicon, meta, basePath, strict).',
+      'aiPrompt, footer, favicon, meta, basePath, siteUrl, strict).',
     type: ParameterType.Object,
     defaultValue: {},
   };

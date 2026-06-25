@@ -49,7 +49,13 @@ import {
 import type { FontSet, PlaygroundProvider, TDoclet, ValidatedFonts } from '@clean-jsdoc-theme/utils';
 import { reflectionsToDoclets } from './reflection-to-doclets';
 import { markdownToHtml, partsToMarkdown } from './comment';
-import { collectDocs, resolveDocImages } from './docs';
+import {
+  collectDocs,
+  createImageCollector,
+  resolveDocImages,
+  resolveDocletImages,
+  rewriteImageRefs,
+} from './docs';
 import { writeOutputFiles } from './write-output-files';
 import { KNOWN_NON_THEME_KEYS, readThemeOption } from './options';
 import type { CleanJsdocThemeBlock } from './options';
@@ -628,22 +634,33 @@ export async function writeSite(
     logger.info(formatted);
   }
 
-  // Adapt → flat doclets → salty collection (the same shape setu consumes from
-  // the JSDoc path).
-  const doclets = reflectionsToDoclets(project, logger);
-  const collection = salty.taffy(doclets);
-
-  const readme = renderReadme(project);
-  const pkg = await resolvePkg(project);
-  const sources = await collectSourceFiles(doclets, logger);
-
   // Site root prefix so the output can be served from a sub-directory. Bad/empty
   // input fails safe to '/' (the default), so an unset option is byte-identical.
-  // Every served asset href (logos, favicon, doc images) is prefixed through
-  // `hrefForServed`, exactly like the JSDoc bridge — in-content links (pages,
-  // source) are prefixed downstream by dwar from `theme.basePath`.
+  // Every served asset href (logos, favicon, doc/comment images) is prefixed
+  // through `hrefForServed`, exactly like the JSDoc bridge — in-content links
+  // (pages, source) are prefixed downstream by dwar from `theme.basePath`.
   const basePath = normalizeBasePath(block.basePath);
   const hrefForServed = (servedPath: string): string => withBase(basePath, '/' + servedPath);
+  const warn = (msg: string): void => logger.warn(msg);
+
+  // Adapt → flat doclets. The README and symbol-comment prose can reference local
+  // images with relative paths (`![x](../img/x.png)` / `<img src>`); route them
+  // through the SAME content-hashed `_assets/` pipeline as `cleanJsdocTheme.docs`.
+  // Comment images resolve against each symbol's own source file (`meta.path`),
+  // the README against the project root (its usual home). The doclets are a
+  // bridge-owned array, so `resolveDocletImages` mutates them IN PLACE before
+  // `generateSite` reads them; one shared collector dedupes a shared image.
+  const doclets = reflectionsToDoclets(project, logger);
+  const proseImages = createImageCollector(warn, hrefForServed);
+  await resolveDocletImages(doclets, proseImages);
+  const collection = salty.taffy(doclets);
+
+  // The README's source dir isn't carried on the parts, so resolve its images
+  // against the project root, where a README almost always lives.
+  const rawReadme = renderReadme(project);
+  const readme = rawReadme ? await rewriteImageRefs(rawReadme, process.cwd(), proseImages) : rawReadme;
+  const pkg = await resolvePkg(project);
+  const sources = await collectSourceFiles(doclets, logger);
 
   // Prose docs (`cleanJsdocTheme.docs` directory) → pages at clean slugs, with
   // their local images routed through the `_assets/` pipeline (the bridge is the
@@ -651,11 +668,20 @@ export async function writeSite(
   // sidebar sections; `defaultDocGroup` labels docs with no group of their own.
   const docsDir =
     typeof block.docs === 'string' && block.docs.trim().length > 0 ? block.docs.trim() : undefined;
-  const warn = (msg: string): void => logger.warn(msg);
   const resolvedDocs = docsDir
     ? await resolveDocImages(await collectDocs(docsDir, warn), docsDir, warn, hrefForServed)
     : { docs: [] as DocInput[], files: [] as OutputFile[], inlineSvgs: {} as Record<string, string> };
   const docs = resolvedDocs.docs;
+
+  // Merge every source's image assets, deduped by served path (identical bytes →
+  // identical content-hashed name, so a shared image is written once), and union
+  // the inline-SVG maps the renderer substitutes by src.
+  const imageFiles = (() => {
+    const byPath = new Map<string, OutputFile>();
+    for (const f of [...resolvedDocs.files, ...proseImages.files]) byPath.set(f.path, f);
+    return [...byPath.values()];
+  })();
+  const inlineSvgs = { ...resolvedDocs.inlineSvgs, ...proseImages.inlineSvgs };
   const docGroups = normalizeSectionOrder(block.docGroups);
   const defaultDocGroup =
     typeof block.defaultDocGroup === 'string' && block.defaultDocGroup.trim().length > 0
@@ -746,10 +772,13 @@ export async function writeSite(
     },
     destination,
     islandCacheDir,
-    // SVGs referenced by docs are inlined (theme-toggle-aware) rather than
-    // `<img>`-ed; an empty map is a no-op, so a docs-less build is unaffected.
-    ...(Object.keys(resolvedDocs.inlineSvgs).length > 0
-      ? { inlineSvgs: resolvedDocs.inlineSvgs }
+    // SVGs referenced by docs/README/comments are inlined (theme-toggle-aware)
+    // rather than `<img>`-ed; an empty map is a no-op, so an image-less build is
+    // unaffected.
+    ...(Object.keys(inlineSvgs).length > 0 ? { inlineSvgs } : {}),
+    // Emit sitemap.xml when a public site URL is configured (needs absolute URLs).
+    ...(typeof block.siteUrl === 'string' && block.siteUrl.trim().length > 0
+      ? { siteUrl: block.siteUrl.trim() }
       : {}),
   });
 
@@ -757,7 +786,7 @@ export async function writeSite(
     ...result.files,
     ...logoFiles,
     ...(favicon?.files ?? []),
-    ...resolvedDocs.files,
+    ...imageFiles,
   ];
   // TypeDoc cleans only its own `out` (the default html output), never a custom
   // `outputs` path — so without this, a page removed or renamed between builds
