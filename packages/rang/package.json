@@ -11,6 +11,10 @@
   },
   "author": "Ankit Kumar (hello@ankdev.me)",
   "license": "MIT",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/ankitskvmdam"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

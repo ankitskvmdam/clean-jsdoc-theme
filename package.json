@@ -8,6 +8,10 @@
   },
   "author": "Ankit Kumar (hello@ankdev.me)",
   "license": "MIT",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/ankitskvmdam"
+  },
   "packageManager": "pnpm@9.0.0",
   "engines": {
     "node": ">=20",

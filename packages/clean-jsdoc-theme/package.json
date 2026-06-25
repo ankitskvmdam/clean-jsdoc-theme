@@ -28,6 +28,10 @@
   "author": "Ankit Kumar (hello@ankdev.me)",
   "homepage": "https://ankdev.me/clean-jsdoc-theme/theme/jsdoc-getting-started",
   "license": "MIT",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/ankitskvmdam"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",

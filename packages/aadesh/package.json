@@ -27,6 +27,10 @@
   },
   "author": "Ankit Kumar (hello@ankdev.me)",
   "license": "MIT",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/ankitskvmdam"
+  },
   "dependencies": {
     "@clean-jsdoc-theme/bhasha": "workspace:^",
     "@clean-jsdoc-theme/setu": "workspace:^",
