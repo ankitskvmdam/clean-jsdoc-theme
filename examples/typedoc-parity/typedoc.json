@@ -1,0 +1,17 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src/**"],
+  "tsconfig": "tsconfig.json",
+  "readme": "README.md",
+  "projectDocuments": ["documents/guide.md"],
+  "plugin": ["@clean-jsdoc-theme/typedoc"],
+  "outputs": [{ "name": "clean-jsdoc-theme", "path": "dist" }],
+  "cleanJsdocTheme": {
+    "siteName": "typedoc-basic",
+    "siteUrl": "https://typedoc-basic.example.com",
+    "docs": "docs",
+    "docGroups": ["Guides"],
+    "clubSidebarItems": false,
+    "copyPage": true
+  }
+}
