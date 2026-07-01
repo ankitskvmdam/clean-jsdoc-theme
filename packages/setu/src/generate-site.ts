@@ -514,6 +514,27 @@ export const TYPEDOC_SECTION_ORDER: readonly string[] = [
 ];
 
 /**
+ * Within-module member kind priority under the typedoc flavor — the exact order
+ * default TypeDoc lists a module's members in the nav (verified against the
+ * decoded stock-TypeDoc navigation tree): enums → classes → interfaces → type
+ * aliases → variables → functions, then alphabetical by name. Container kinds
+ * (module/namespace) nest as child nodes and are ordered separately (after the
+ * member leaves, alphabetically), so they need no entry here. A kind not listed
+ * sorts last among the leaves.
+ */
+const TYPEDOC_MEMBER_KIND_ORDER: Partial<Record<PageKind, number>> = {
+  enum: 0,
+  class: 1,
+  interface: 2,
+  typedef: 3,
+  variable: 4,
+  function: 5,
+};
+
+/** Kinds that act as a navigable-AND-expandable container node (module/namespace). */
+const TYPEDOC_CONTAINER_KINDS = new Set<PageKind>(['module', 'namespace']);
+
+/**
  * The full `group` **path** a page belongs to. An explicit `frontmatter.group`
  * (from an API `@category` tag, or a doc/tutorial page's frontmatter) wins and
  * may be a `/`-path that nests the page; otherwise the page falls back to its
@@ -876,6 +897,225 @@ export function clubNavTree(nodes: readonly NavNode[]): NavNode[] {
 }
 
 /**
+ * The owning-module path of an API page under the typedoc flavor, derived from
+ * its JSDoc longname. A module/namespace page's longname is `module:<path>`
+ * where `<path>` is the TypeDoc entry-point-relative name (e.g.
+ * `module:components/base/Component`) — strip the `module:` prefix. A member's
+ * longname is `<owner><sep><name>` (sep ∈ `.#~`); strip the trailing
+ * `<sep><name>` to get its owner. Returns the raw path string (still `/`- and
+ * possibly `.`-separated) or `undefined` when the longname is absent.
+ */
+function typedocModulePath(longname: string | undefined): string | undefined {
+  if (!longname) return undefined;
+  return longname.startsWith('module:') ? longname.slice('module:'.length) : longname;
+}
+
+/**
+ * One node under construction in the typedoc module tree. `pages` are the direct
+ * member leaves owned by a module node at this path (empty for a pure folder);
+ * `children` are the deeper path segments. `slug` is set only when a real
+ * module/namespace page lives at this exact path (→ a navigable container node);
+ * a folder segment leaves it undefined.
+ */
+interface ModuleTreeNode {
+  /** The single path segment this node represents (its display label pre-compaction). */
+  segment: string;
+  /** Module/namespace page slug when a container lives here; undefined for a folder. */
+  slug?: string;
+  /** Member leaves owned by the container at this path (already sorted at emit). */
+  members: { label: string; slug: string; kind: PageKind }[];
+  /** Child nodes keyed by their next path segment, in first-seen order. */
+  children: Map<string, ModuleTreeNode>;
+  order: string[];
+}
+
+const makeModuleTreeNode = (segment: string): ModuleTreeNode => ({
+  segment,
+  members: [],
+  children: new Map(),
+  order: [],
+});
+
+/** Split a typedoc module path (`components/base/Component`) into `/`-segments. */
+function splitModulePath(path: string): string[] {
+  return path
+    .split('/')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+}
+
+/**
+ * Build the module/folder-hierarchy sidebar tree for the **typedoc flavor** —
+ * mirroring default TypeDoc's navigation, replacing the kind buckets. Returns an
+ * ordered list of top-level nodes (folders and root modules), each tagged with
+ * `group = <its own label>` so the renderer groups it as its own contiguous
+ * section (as the kind sections were). This path is only reachable under
+ * `flavor === 'typedoc'` (see {@link assembleNav}); the JSDoc nav never calls it,
+ * so JSDoc output is byte-identical.
+ *
+ * Rules (matched against the decoded stock-TypeDoc tree):
+ * - **Group by owning module.** A member's nav position is under its owning
+ *   module/namespace (derived from its longname, {@link typedocModulePath}); the
+ *   kind label is NOT a group.
+ * - **Module = branch WITH slug.** A module/namespace page becomes a single node
+ *   carrying BOTH its `slug` (navigable) AND `children` (its members + nested
+ *   containers). It is NOT also emitted as a separate leaf — exactly one nav
+ *   entry per symbol.
+ * - **Folders from shared dir segments.** Intermediate `/`-segments with no
+ *   module page of their own become non-navigable folder branches (no slug).
+ * - **compactFolders.** A folder node (no slug) with exactly one child merges
+ *   into that child, prefixing the child's label with `folder/` (recursively) —
+ *   so a `base/` folder holding only the `Component` module renders as one node
+ *   labeled `base/Component` (slug intact). A module node never compacts.
+ * - **Members flat + kind-ordered** ({@link TYPEDOC_MEMBER_KIND_ORDER}), then
+ *   nested containers alphabetically; no per-kind sub-headings in the nav.
+ * - **Top level alphabetical** (documents are added separately, first, by the
+ *   caller).
+ */
+export function buildTypedocApiNav(apiPages: readonly Page[]): NavNode[] {
+  // Register every module/namespace longname so folder segments that ARE a real
+  // container become module nodes, and members can find their owner by walking up.
+  const moduleByLongname = new Set<string>();
+  for (const p of apiPages) {
+    if (TYPEDOC_CONTAINER_KINDS.has(p.frontmatter.kind) && p.frontmatter.longname) {
+      moduleByLongname.add(p.frontmatter.longname);
+    }
+  }
+
+  const root = makeModuleTreeNode('');
+  const ensurePath = (segments: string[]): ModuleTreeNode => {
+    let node = root;
+    for (const seg of segments) {
+      let child = node.children.get(seg);
+      if (!child) {
+        child = makeModuleTreeNode(seg);
+        node.children.set(seg, child);
+        node.order.push(seg);
+      }
+      node = child;
+    }
+    return node;
+  };
+
+  for (const p of apiPages) {
+    const kind = p.frontmatter.kind;
+    // The synthetic Globals page carries no longname/module path; TypeDoc has no
+    // such aggregate, so drop it from the module tree (its members already have
+    // their own pages under this flavor).
+    if (kind === 'global') continue;
+    const isContainer = TYPEDOC_CONTAINER_KINDS.has(kind);
+    if (isContainer) {
+      const path = typedocModulePath(p.frontmatter.longname);
+      if (!path) continue;
+      const node = ensurePath(splitModulePath(path));
+      node.slug = p.slug;
+      continue;
+    }
+    // A member: place it under its owning module node (the module path derived by
+    // stripping the trailing `<sep><name>` from its longname).
+    const ownerLongname = ownerModuleLongname(p.frontmatter.longname, moduleByLongname);
+    const ownerPath = typedocModulePath(ownerLongname);
+    if (ownerPath === undefined) continue;
+    const node = ensurePath(splitModulePath(ownerPath));
+    node.members.push({ label: p.frontmatter.title, slug: p.slug, kind });
+  }
+
+  // Emit a folder/module subtree into NavNodes, applying compactFolders and the
+  // ordering rules. `group` propagates the top-level section label onto every
+  // descendant leaf/branch so the renderer keeps the section contiguous.
+  const emit = (node: ModuleTreeNode, group: string): NavNode => {
+    // Member leaves, kind-ordered then alphabetical by label.
+    const memberNodes: NavNode[] = [...node.members]
+      .sort((a, b) => {
+        const ap = TYPEDOC_MEMBER_KIND_ORDER[a.kind] ?? Number.POSITIVE_INFINITY;
+        const bp = TYPEDOC_MEMBER_KIND_ORDER[b.kind] ?? Number.POSITIVE_INFINITY;
+        if (ap !== bp) return ap - bp;
+        return a.label.localeCompare(b.label);
+      })
+      .map((m) => ({ label: m.label, slug: m.slug, group }));
+
+    // Nested container/folder children, alphabetical by (possibly compacted) label.
+    const childNodes: NavNode[] = node.order
+      .map((seg) => compact(node.children.get(seg)!, group))
+      .sort((a, b) => a.label.localeCompare(b.label));
+
+    const children = [...memberNodes, ...childNodes];
+    const out: NavNode = { label: node.segment, group };
+    if (node.slug !== undefined) out.slug = node.slug;
+    if (children.length > 0) out.children = children;
+    return out;
+  };
+
+  // compactFolders: a folder node (no slug) with exactly one child folds into
+  // that child, prefixing the child's label (`base/Component`). Recursive. A
+  // node with a slug (a real module/namespace page) never compacts.
+  const compact = (node: ModuleTreeNode, group: string): NavNode => {
+    let emitted = emit(node, group);
+    while (
+      emitted.slug === undefined &&
+      emitted.children !== undefined &&
+      emitted.children.length === 1 &&
+      // Only fold into a child that is itself a branch/module (has children) or a
+      // navigable module — i.e. fold folder→module, not folder→member-leaf; a
+      // lone member under a folder keeps the folder (shouldn't happen for real
+      // TypeDoc output, but stays safe).
+      (emitted.children[0].children !== undefined || emitted.children[0].slug !== undefined)
+    ) {
+      const child = emitted.children[0];
+      emitted = { ...child, label: `${emitted.label}/${child.label}`, group };
+    }
+    return emitted;
+  };
+
+  // Top-level nodes, alphabetical; each tagged with its own label as the section
+  // group so it renders as its own contiguous sidebar section.
+  return root.order
+    .map((seg) => {
+      const node = compact(root.children.get(seg)!, seg);
+      // The compacted top-level label becomes the section group for the subtree.
+      return retagGroup(node, node.label);
+    })
+    .sort((a, b) => a.label.localeCompare(b.label));
+}
+
+/**
+ * Resolve a member page's owning module/namespace longname by walking UP its
+ * longname — stripping the trailing `<sep><name>` segment (sep ∈ `.#~`) — until
+ * the remainder is a registered container longname. This finds the nearest
+ * enclosing module/namespace even when the symbol nests below it
+ * (`module:m.Ns.Foo` → `module:m.Ns` when `Ns` is a namespace page, else
+ * `module:m`). Note `/` is NOT a separator — it is part of a module's own path
+ * name (`module:services/cache/Cache`), so it is never stripped. Returns
+ * `undefined` for a top-level symbol with no separator (no module owner).
+ */
+function ownerModuleLongname(
+  longname: string | undefined,
+  containers: ReadonlySet<string>
+): string | undefined {
+  if (!longname) return undefined;
+  let candidate = longname;
+  let firstOwner: string | undefined;
+  const sep = /^(.*)[.#~][^.#~]+$/;
+  while (true) {
+    const m = candidate.match(sep);
+    if (!m) break;
+    candidate = m[1];
+    if (firstOwner === undefined) firstOwner = candidate;
+    if (containers.has(candidate)) return candidate;
+  }
+  // No enclosing container matched — fall back to the direct owner (one strip),
+  // so a member always lands under some module node rather than vanishing.
+  return firstOwner;
+}
+
+/** Re-tag a node subtree's `group` to `group` (top-level section label). */
+function retagGroup(node: NavNode, group: string): NavNode {
+  const out: NavNode = { ...node, group };
+  if (node.children) out.children = node.children.map((c) => retagGroup(c, group));
+  return out;
+}
+
+/**
  * Assemble the final sidebar nav from its parts, honoring `sectionOrder`.
  *
  * Every entry carries a full `group` **path** — an `@category` tag (API pages)
@@ -901,7 +1141,17 @@ export function clubNavTree(nodes: readonly NavNode[]): NavNode[] {
  * Backward compatible: a collection with no `@category`/group and a kind-only
  * `sectionOrder` produces byte-identical nav to the pre-nesting builder.
  */
-export function assembleNav({
+export function assembleNav(options: AssembleNavOptions): NavNode[] {
+  // Under the typedoc flavor the sidebar mirrors default TypeDoc — a module/
+  // folder hierarchy instead of kind buckets — so it takes a wholly separate
+  // assembly path. The JSDoc path below is untouched (byte-identical); this
+  // branch is only reachable when the bridge passes `flavor: 'typedoc'`.
+  if (options.flavor === 'typedoc') return assembleTypedocNav(options);
+  return assembleJsdocNav(options);
+}
+
+/** JSDoc-flavor nav assembly — kind buckets + `@category`/doc-group nesting. */
+function assembleJsdocNav({
   apiPages = [],
   tutorials = [],
   docs = [],
@@ -1052,6 +1302,97 @@ export function assembleNav({
   if (home) out.push({ ...home, order: -1 });
   appendSections(out, bySection, order);
   if (source) out.push({ ...source, order: order.length + 1 });
+  return out;
+}
+
+/**
+ * Typedoc-flavor nav assembly — mirrors default TypeDoc's sidebar: documents
+ * first, then a module/folder hierarchy ({@link buildTypedocApiNav}) replacing
+ * the kind buckets, then tutorials, with Home first and Source Files last. Docs
+ * keep their own doc-group nesting (via {@link buildGroupTree}) and render before
+ * the module tree; tutorials keep theirs and render after. `sectionOrder` no
+ * longer governs the API tree here (default TypeDoc shows every module); it is
+ * still honored for doc-group / tutorial section ordering. This whole path is
+ * gated on `flavor === 'typedoc'`, so the JSDoc nav is byte-identical.
+ */
+function assembleTypedocNav({
+  apiPages = [],
+  tutorials = [],
+  docs = [],
+  docGroups = [],
+  home,
+  source,
+  sectionOrder,
+  menu,
+}: AssembleNavOptions): NavNode[] {
+  // The module/folder hierarchy for the API pages — the top-level sections that
+  // replace the kind buckets. Each top node is already tagged with its own label
+  // as `group` and the set is alphabetized.
+  const moduleNodes = buildTypedocApiNav(apiPages);
+
+  // Doc-group + tutorial sections, built with the SAME nesting machinery as the
+  // JSDoc path (so nested doc groups / sub-tutorials still work), then bucketed
+  // by their top-level label.
+  const auxEntries: GroupedEntry[] = [];
+  const docSectionOrder: string[] = [];
+  for (const d of docs) {
+    const path = d.group ?? DOCS_SECTION;
+    const top = splitGroupPath(path)[0] ?? DOCS_SECTION;
+    if (!docSectionOrder.includes(top)) docSectionOrder.push(top);
+    auxEntries.push({
+      leaf: { ...d },
+      path,
+      explicit: d.group !== undefined,
+      order: d.order,
+      sort: 'alpha',
+    });
+  }
+  for (const t of tutorials) {
+    const path = t.group ?? TUTORIALS_SECTION;
+    auxEntries.push({ leaf: { ...t }, path, explicit: path !== TUTORIALS_SECTION, sort: 'input' });
+  }
+  const byAuxTop = new Map<string, GroupedEntry[]>();
+  for (const e of auxEntries) {
+    const top = splitGroupPath(e.path)[0] ?? OTHER_SECTION;
+    const bucket = byAuxTop.get(top);
+    if (bucket) bucket.push(e);
+    else byAuxTop.set(top, [e]);
+  }
+  const docSections: NavNode[] = [];
+  const tutorialSections: NavNode[] = [];
+  // Doc groups render in `docGroups` order first, then first-seen; tutorials last.
+  const docOrder = [...docGroups.filter((g) => byAuxTop.has(g))];
+  for (const g of docSectionOrder) if (!docOrder.includes(g)) docOrder.push(g);
+  for (const top of docOrder) {
+    if (top === TUTORIALS_SECTION) continue;
+    const entries = byAuxTop.get(top);
+    if (entries && entries.length > 0) docSections.push(...buildGroupTree(top, entries));
+  }
+  const tutEntries = byAuxTop.get(TUTORIALS_SECTION);
+  if (tutEntries && tutEntries.length > 0) {
+    tutorialSections.push(...buildGroupTree(TUTORIALS_SECTION, tutEntries));
+  }
+  // Any user-named `sectionOrder` labels that are doc/tutorial sections keep the
+  // requested order among aux sections (kind labels there are ignored — the API
+  // tree owns the top level under typedoc).
+  void sectionOrder;
+
+  const out: NavNode[] = [];
+  if (menu && menu.length > 0) {
+    menu.forEach((item, i) => {
+      const node = resolveMenuItem(item, home, source, i);
+      if (node) out.push(node);
+    });
+    // Documents first, module hierarchy, then tutorials.
+    out.push(...docSections, ...moduleNodes, ...tutorialSections);
+    return out;
+  }
+
+  if (home) out.push({ ...home, order: -1 });
+  // Documents FIRST, then the module/folder hierarchy (alphabetical), then
+  // tutorials; Source Files last.
+  out.push(...docSections, ...moduleNodes, ...tutorialSections);
+  if (source) out.push({ ...source });
   return out;
 }
 

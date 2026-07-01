@@ -8,7 +8,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { default as salty } from '@jsdoc/salty';
-import type { TDoclet, TJSDocSaltyCollection } from '@clean-jsdoc-theme/utils';
+import type { NavNode, TDoclet, TJSDocSaltyCollection } from '@clean-jsdoc-theme/utils';
 import { generateSite } from '../index';
 
 function makeCollection(items: unknown[]): TJSDocSaltyCollection<TDoclet> {
@@ -189,27 +189,43 @@ describe('flavor: typedoc — class sections + module index', () => {
     expect(moduleBody).not.toMatch(/\]\(\/[^)]*#[^)]*\)/);
   });
 
-  it('keeps unlisted kind sections under typedoc even when sectionOrder omits them', () => {
-    // Regression: default TypeDoc always shows every kind; a user sectionOrder
-    // that lists only some kinds must not drop the rest (JSDoc still filters).
-    const m = generateSite(tsCollection(), {
+  it('a kind-label sectionOrder does NOT alter the module-hierarchy nav', () => {
+    // Under the typedoc flavor the sidebar mirrors default TypeDoc (a module/
+    // folder hierarchy), so `sectionOrder`'s kind list no longer governs the API
+    // tree — passing a kind-only order leaves the module nav unchanged. (This
+    // replaces the former "keeps unlisted kind sections" guard, whose premise —
+    // kind sections in the nav, filtered by sectionOrder — no longer applies.)
+    const withOrder = generateSite(tsCollection(), {
       flavor: 'typedoc',
       sectionOrder: ['Classes', 'Interfaces'],
     });
-    const labels = navLabels(m);
-    expect(labels).toContain('Functions');
-    expect(labels).toContain('Variables');
-    expect(labels).toContain('Enumerations');
+    const withoutOrder = generateSite(tsCollection(), { flavor: 'typedoc' });
+    // The top-level sidebar is the module node `lib`, unaffected by sectionOrder…
+    const tops = (m: ReturnType<typeof generateSite>) =>
+      (m.nav as NavNode[]).map((n) => n.label);
+    expect(tops(withOrder)).toEqual(tops(withoutOrder));
+    expect(tops(withOrder)).toContain('lib');
+    // …and kind labels are NOT top-level nav sections anymore (they live only on
+    // the module PAGE body, tested separately).
+    const labels = navLabels(withOrder);
+    expect(labels).not.toContain('Functions');
+    expect(labels).not.toContain('Enumerations');
+    expect(labels).not.toContain('Variables');
   });
 
-  it('orders the sidebar with TypeDoc kind labels', () => {
+  it('replaces the kind buckets with a module-hierarchy sidebar (no kind sections)', () => {
+    // Formerly "orders the sidebar with TypeDoc kind labels" — that model is gone.
+    // The nav now mirrors default TypeDoc: the top level is the module node
+    // (`lib`), not global kind buckets.
     const m = generateSite(tsCollection(), { flavor: 'typedoc' });
+    const lib = (m.nav as NavNode[]).find((n) => n.label === 'lib')!;
+    expect(lib.slug).toBe(pageByLongname(m, 'module:lib')!.slug); // navigable module node
+    expect(lib.children).toBeDefined(); // …and expandable (its members)
     const labels = navLabels(m);
-    expect(labels).toContain('Enumerations');
-    expect(labels).toContain('Functions');
-    expect(labels).toContain('Variables');
-    expect(labels).toContain('Type Aliases');
-    expect(labels).not.toContain('Typedefs');
+    // None of the old top-level kind sections survive in the nav.
+    for (const kind of ['Enumerations', 'Functions', 'Variables', 'Type Aliases', 'Typedefs']) {
+      expect(labels).not.toContain(kind);
+    }
   });
 });
 
@@ -680,5 +696,191 @@ describe('flavor: jsdoc (default) — no inheritance surfacing labels', () => {
       expect(p.body).not.toContain('Hierarchy');
       expect(p.body).not.toContain('Implementation of');
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Module-hierarchy sidebar nav (typedoc flavor) — mirrors default TypeDoc.
+// ---------------------------------------------------------------------------
+
+/**
+ * A TypeDoc-bridge-shaped collection that mirrors the decoded stock-TypeDoc nav
+ * tree (`td-nav.json`), scaled down: module names carry the entry-point-relative
+ * `/`-path, members are `module:<path>.<Name>`. Exercises folders
+ * (`components`, `services`), compactFolders (`components/base` holds only
+ * `Component`), a root module with no folder (`parity`), nested modules
+ * (`services/cache` ▸ `services/cache/Cache`), and the within-module kind order.
+ */
+function moduleTreeCollection(): TJSDocSaltyCollection<TDoclet> {
+  const mod = (path: string) => ({
+    kind: 'module' as const,
+    name: path,
+    longname: `module:${path}`,
+    scope: 'global' as const,
+    comment: `/** ${path}. */`,
+    description: `Module ${path}.`,
+  });
+  const member = (
+    modulePath: string,
+    kind: 'class' | 'interface' | 'enum' | 'typedef' | 'function' | 'variable',
+    name: string
+  ) => ({
+    kind,
+    name,
+    longname: `module:${modulePath}.${name}`,
+    memberof: `module:${modulePath}`,
+    scope: 'static' as const,
+    comment: `/** ${name}. */`,
+    description: `${name} in ${modulePath}.`,
+    ...(kind === 'enum' ? { isEnum: true } : {}),
+    ...(kind === 'typedef' ? { type: { names: ['Object'] } } : {}),
+    ...(kind === 'variable' ? { type: { names: ['string'] } } : {}),
+  });
+  return makeCollection([
+    // components/base/Component — one module under a single-child `base` folder.
+    mod('components/base/Component'),
+    member('components/base/Component', 'enum', 'ComponentState'),
+    member('components/base/Component', 'class', 'Component'),
+    member('components/base/Component', 'interface', 'ComponentEvent'),
+    member('components/base/Component', 'typedef', 'ComponentEventHandler'),
+    member('components/base/Component', 'function', 'compose'),
+    // components/Form — a sibling module (so `components` is NOT compacted).
+    mod('components/Form'),
+    member('components/Form', 'class', 'TextField'),
+    member('components/Form', 'interface', 'TextFieldProps'),
+    // parity — a root module (no folder wrapper), full kind spread.
+    mod('parity'),
+    member('parity', 'class', 'Widget'),
+    member('parity', 'class', 'Base'),
+    member('parity', 'interface', 'Named'),
+    member('parity', 'typedef', 'Mode'),
+    member('parity', 'variable', 'VERSION'),
+    member('parity', 'function', 'parse'),
+    member('parity', 'function', 'configure'),
+    // services/{cache, cache/Cache, EventEmitter} — folder + nested module.
+    mod('services/cache'),
+    mod('services/cache/Cache'),
+    member('services/cache/Cache', 'class', 'Cache'),
+    member('services/cache/Cache', 'interface', 'CacheOptions'),
+    mod('services/EventEmitter'),
+    member('services/EventEmitter', 'class', 'EventEmitter'),
+  ]);
+}
+
+/** Top-level section labels (module/folder nodes), in nav array order. */
+const topLevelLabels = (nav: NavNode[]): string[] => {
+  const seen: string[] = [];
+  for (const n of nav) {
+    const key = n.group ?? n.label;
+    if (!seen.includes(key)) seen.push(key);
+  }
+  return seen;
+};
+
+/** Find a top-level module/folder node by its label. */
+const topNode = (nav: NavNode[], label: string): NavNode | undefined =>
+  nav.find((n) => n.label === label);
+
+describe('flavor: typedoc — module-hierarchy sidebar nav', () => {
+  it('replaces kind buckets with module/folder sections at the top level', () => {
+    const m = generateSite(moduleTreeCollection(), { flavor: 'typedoc' });
+    const labels = topLevelLabels(m.nav as NavNode[]);
+    // The module/folder hierarchy, alphabetical.
+    expect(labels).toEqual(['components', 'parity', 'services']);
+    // No global kind buckets in the nav.
+    for (const kind of ['Classes', 'Interfaces', 'Enumerations', 'Functions', 'Variables']) {
+      expect(labels).not.toContain(kind);
+    }
+  });
+
+  it('makes a module node BOTH navigable (slug) AND a parent (children) — no duplicate leaf', () => {
+    const m = generateSite(moduleTreeCollection(), { flavor: 'typedoc' });
+    const parity = topNode(m.nav as NavNode[], 'parity')!;
+    const paritySlug = pageByLongname(m, 'module:parity')!.slug;
+    expect(parity.slug).toBe(paritySlug);
+    expect(parity.children).toBeDefined();
+    // The module appears EXACTLY once at the top level (not also as a leaf).
+    expect((m.nav as NavNode[]).filter((n) => n.label === 'parity')).toHaveLength(1);
+    // No child of the module repeats the module itself as a self-leaf.
+    expect(parity.children!.some((c) => c.slug === paritySlug)).toBe(false);
+  });
+
+  it('lists a module’s members flat, kind-ordered then alphabetical', () => {
+    const m = generateSite(moduleTreeCollection(), { flavor: 'typedoc' });
+    const parity = topNode(m.nav as NavNode[], 'parity')!;
+    // enum → class → interface → typedef → variable → function; then alpha.
+    expect(parity.children!.map((c) => c.label)).toEqual([
+      'Base',
+      'Widget', // classes (alpha)
+      'Named', // interface
+      'Mode', // type alias
+      'VERSION', // variable
+      'configure',
+      'parse', // functions (alpha)
+    ]);
+    // Every member leaf is a link (has slug), none is a branch.
+    expect(parity.children!.every((c) => c.slug && !c.children)).toBe(true);
+  });
+
+  it('compactFolders: a single-child folder folds into `base/Component`', () => {
+    const m = generateSite(moduleTreeCollection(), { flavor: 'typedoc' });
+    const components = topNode(m.nav as NavNode[], 'components')!;
+    // `components` is NOT compacted (it has two children: base/Component + Form).
+    expect(components.slug).toBeUndefined();
+    const childLabels = components.children!.map((c) => c.label).sort();
+    expect(childLabels).toEqual(['Form', 'base/Component']);
+    // The folded node keeps the module slug (navigable) and its members.
+    const compacted = components.children!.find((c) => c.label === 'base/Component')!;
+    expect(compacted.slug).toBe(pageByLongname(m, 'module:components/base/Component')!.slug);
+    expect(compacted.children!.map((c) => c.label)).toEqual([
+      'ComponentState',
+      'Component',
+      'ComponentEvent',
+      'ComponentEventHandler',
+      'compose',
+    ]);
+  });
+
+  it('nests a child module under its parent module (services/cache ▸ Cache)', () => {
+    const m = generateSite(moduleTreeCollection(), { flavor: 'typedoc' });
+    const services = topNode(m.nav as NavNode[], 'services')!;
+    // `services` is a folder (no slug) with `cache` + `EventEmitter`.
+    expect(services.slug).toBeUndefined();
+    const cache = services.children!.find((c) => c.label === 'cache')!;
+    // `cache` is a real module page (slug), and its only child is the nested
+    // `Cache` module (its re-export reference entries are dropped — out of scope).
+    expect(cache.slug).toBe(pageByLongname(m, 'module:services/cache')!.slug);
+    const nested = cache.children!.find((c) => c.label === 'Cache')!;
+    expect(nested.slug).toBe(pageByLongname(m, 'module:services/cache/Cache')!.slug);
+    expect(nested.children!.map((c) => c.label)).toEqual(['Cache', 'CacheOptions']);
+  });
+
+  it('places documents FIRST, before the module hierarchy', () => {
+    const m = generateSite(moduleTreeCollection(), {
+      flavor: 'typedoc',
+      docs: [{ path: 'guide', title: 'guide', content: 'Guide.', type: 'markdown', group: 'Guides' }],
+      docGroups: ['Guides'],
+    });
+    const nav = m.nav as NavNode[];
+    const firstModuleIdx = nav.findIndex((n) => n.label === 'components');
+    const guideIdx = nav.findIndex(
+      (n) => n.label === 'guide' || (n.children ?? []).some((c) => c.label === 'guide')
+    );
+    expect(guideIdx).toBeGreaterThanOrEqual(0);
+    expect(guideIdx).toBeLessThan(firstModuleIdx);
+  });
+});
+
+describe('flavor: jsdoc (default) — nav stays kind-bucketed (guard)', () => {
+  it('keeps global kind sections for the same collection (module hierarchy is typedoc-only)', () => {
+    const m = generateSite(moduleTreeCollection()); // default jsdoc
+    const labels = navLabels(m);
+    // JSDoc still buckets by kind, and shows the JSDoc container "Modules" label.
+    expect(labels).toContain('Classes');
+    expect(labels).toContain('Interfaces');
+    expect(labels).toContain('Modules');
+    // The typedoc-only module-hierarchy top nodes must NOT appear as groups.
+    expect(labels).not.toContain('parity');
+    expect(labels).not.toContain('components');
   });
 });
