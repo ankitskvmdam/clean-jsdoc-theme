@@ -281,18 +281,27 @@ export function commentFields(
   return fields;
 }
 
-/** Flag-derived doclet fields (`readonly`/`virtual`/`optional`/`access`). */
+/** Flag-derived doclet fields (`readonly`/`virtual`/`optional`/`access`/`async`). */
 export interface FlagFields {
   readonly?: boolean;
   virtual?: boolean;
   optional?: boolean;
   access?: TDocletAccess;
   scope?: TDocletScope;
+  async?: boolean;
 }
 
 /**
  * Map a reflection's `flags` onto doclet flags. `scope` is computed separately in
  * `names.ts`; this maps only the boolean/access flags.
+ *
+ * `async` is derived conservatively from the reflection's first signature (the
+ * installed TypeDoc version — see `NOTES.md` / `ReflectionFlags` in the `.d.ts` —
+ * exposes no `isAsync` flag at all, so we can't rely on flags for it). We treat a
+ * signature as async when its return type is a `Promise<...>` reference, which
+ * covers both `async` functions and plain functions that return a `Promise`
+ * explicitly. A signature with no resolvable type is left alone — a missing
+ * badge is preferable to a wrong one.
  */
 export function flagFields(reflection: Reflection): FlagFields {
   const flags = reflection.flags;
@@ -305,7 +314,26 @@ export function flagFields(reflection: Reflection): FlagFields {
   if (flags.isPrivate) out.access = 'private';
   else if (flags.isProtected) out.access = 'protected';
 
+  if (isAsyncReflection(reflection)) out.async = true;
+
   return out;
+}
+
+/** Reflections that can carry call signatures (methods/functions), narrowly. */
+interface SignatureBearing {
+  signatures?: readonly { type?: { type?: string; name?: string } }[];
+}
+
+/**
+ * Conservative async detection: true only when the reflection's first signature
+ * has a resolvable return type whose name is exactly `Promise` (a TypeDoc
+ * `ReferenceType`, `type.type === 'reference'`). Anything else (no signatures,
+ * no type, a differently-named type) is left `false` — see {@link flagFields}.
+ */
+function isAsyncReflection(reflection: Reflection): boolean {
+  const sig = (reflection as unknown as SignatureBearing).signatures?.[0];
+  const type = sig?.type;
+  return type?.type === 'reference' && type.name === 'Promise';
 }
 
 /**

@@ -698,3 +698,81 @@ export class Beta {}
     expect(beta?.tags?.find((t) => t.title === 'order')).toBeUndefined();
   });
 });
+
+describe('reflectionsToDoclets — async detection', () => {
+  let asyncDoclets: TDoclet[];
+  let tmp3: string;
+
+  beforeAll(async () => {
+    tmp3 = await mkdtemp(join(tmpdir(), 'cjt-typedoc-async-'));
+    const entry = join(tmp3, 'index.ts');
+    await writeFile(
+      entry,
+      `
+/** A store with an async loader. */
+export class Store {
+  /** Load the data. */
+  async load(): Promise<string> {
+    return 'data';
+  }
+
+  /** A synchronous getter. */
+  get(): string {
+    return 'data';
+  }
+
+  /** Returns a promise but is not declared async — still should be detected. */
+  fetchViaPromise(): Promise<number> {
+    return Promise.resolve(1);
+  }
+}
+`,
+      'utf8'
+    );
+    await writeFile(
+      join(tmp3, 'tsconfig.json'),
+      JSON.stringify({
+        compilerOptions: {
+          target: 'ES2020',
+          module: 'ESNext',
+          moduleResolution: 'Bundler',
+          strict: true,
+          skipLibCheck: true,
+        },
+        include: ['index.ts'],
+      }),
+      'utf8'
+    );
+    const app = await Application.bootstrap(
+      {
+        entryPoints: [posix(entry)],
+        tsconfig: posix(join(tmp3, 'tsconfig.json')),
+        skipErrorChecking: true,
+        logLevel: 'Error',
+      },
+      []
+    );
+    const converted = await app.convert();
+    if (!converted) throw new Error('typedoc convert() returned undefined');
+    asyncDoclets = reflectionsToDoclets(converted);
+  }, 60_000);
+
+  afterAll(async () => {
+    if (tmp3) await rm(tmp3, { recursive: true, force: true });
+  });
+
+  it('sets async on an async method', () => {
+    const load = asyncDoclets.find((d) => d.longname === 'Store#load');
+    expect(load?.async).toBe(true);
+  });
+
+  it('sets async on a non-async method that returns a Promise', () => {
+    const fetchViaPromise = asyncDoclets.find((d) => d.longname === 'Store#fetchViaPromise');
+    expect(fetchViaPromise?.async).toBe(true);
+  });
+
+  it('does not set async on a synchronous method', () => {
+    const get = asyncDoclets.find((d) => d.longname === 'Store#get');
+    expect(get?.async).toBeUndefined();
+  });
+});

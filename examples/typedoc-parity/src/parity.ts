@@ -57,6 +57,10 @@ export class Widget extends Base<number> implements Named {
   override toJSON(): { id: string } {
     return super.toJSON();
   }
+  /** Load this widget's data asynchronously. */
+  async load(): Promise<void> {
+    await Promise.resolve();
+  }
 }
 
 /**
