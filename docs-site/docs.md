@@ -42,7 +42,7 @@
 | --- | --- | --- |
 | Overview (1) | `theme/overview.md` | What the theme is and why it's split into packages; the `setu → dwar` pipeline at a high level. |
 | JSDoc Getting Started (2) | `theme/jsdoc-getting-started.md` | Install + configure the JSDoc template; minimal `jsdoc.json`. |
-| TypeDoc Getting Started (3) | `theme/typedoc-getting-started.md` | Install + configure the TypeDoc plugin (registered output). |
+| TypeDoc Getting Started (3) | `theme/typedoc-getting-started.md` | Install + configure the TypeDoc plugin (registered output). **Canonical home for TypeDoc-specific behavior:** the TypeDoc **sidebar model** (a module/folder hierarchy — unlike JSDoc's kind buckets) and **TypeDoc-specific rendering** — inheritance sections (Hierarchy / Implements / Implemented By) + Inherited-from / Overrides / Implementation-of member captions, `@group`, native TypeDoc `projectDocuments`, `@inheritDoc`, the async badge, object-literal→property-table expansion. Anchors: `#the-typedoc-sidebar`, `#typedoc-specific-rendering`. |
 | **Configuration (4)** | `theme/configuration.md` | **The full option reference** — every `opts` / `cleanJsdocTheme` key: `siteName`, `fonts`, `colors`/`darkColors`, `basePath`, `siteUrl`, `favicon`, `readme`, `docs`, `docGroups`, `defaultDocGroup`, `tutorials`, `sectionOrder`, `clubSidebarItems`, `menu`, `pageNav`, `copyPage`, `playground`, `customCss`/`customJs`(`File`), `hashCustomAssets`, `footer`, `meta`, `locales`/`defaultLocale`, plus "How assets are handled" (image pipeline + `staticFiles`). **Most config-option doc changes land here.** |
 | Use with an LLM (5) | `theme/llm-skill.md` | LLM-friendliness: companion `.md` per page, the copy-page button, the downloadable agent skill. |
 | Migrating v4 → v5 (6) | `theme/migrate-v4-to-v5.md` | v4 → v5 migration: breaking changes and option changes. |
@@ -53,7 +53,7 @@
 | Build an API reference (1) | `guides/build-an-api-reference.md` | Pure-API workflow — point the tool at source, generate reference. |
 | Build a guides site (2) | `guides/build-a-guides-site.md` | Prose-first workflow (how this very site is built). |
 | Combine guides + API (3) | `guides/combine-guides-and-api.md` | Hand-written guides + generated API in one site/sidebar/search. |
-| Structure your sidebar (4) | `guides/structure-your-sidebar.md` | The ordering engine: `sectionOrder`, `@category`, `@order`, `menu`, `clubSidebarItems`. |
+| Structure your sidebar (4) | `guides/structure-your-sidebar.md` | The ordering engine: `sectionOrder`, `@category`, `@order`, `menu`, `clubSidebarItems` — all **JSDoc-flavor**. Plus a **`#typedoc-flavor`** section: the TypeDoc API sidebar is a module/folder hierarchy where `@category`/`@order`/`sectionOrder`/`clubSidebarItems` have no effect (doc groups, `menu`, tutorials still apply). |
 | Localize your docs (5) | `guides/localize-your-docs.md` | i18n end-to-end: `locales`, the `clean-jsdoc` extract→translate→build flow, per-locale fonts, README/`docs.<locale>` overlays. |
 | Working with images (6) | `guides/working-with-images.md` | Local image resolution from docs/tutorials/README/JSDoc+TS comments; `templates.default.staticFiles`; SVG theme-aware inlining; code-example safety. |
 | FAQ (8) | `guides/faq.md` | Short practical answers to common questions. |
@@ -68,7 +68,7 @@
 | Steps (5) | `components/steps.md` | `<steps>` / `<step label>` numbered stepper. |
 | Tabs (6) | `components/tabs.md` | `<tabs>` / `<tab label>` tabbed view (also drives multi-tool code samples). |
 | @order (7) | `components/order.md` | The standalone `@order N` within-group sort key. |
-| @category (8) | `components/category.md` | `@category` — put a generated symbol page into an explicit sidebar group. |
+| @category (8) | `components/category.md` | `@category` — put a generated symbol page into an explicit sidebar group (**JSDoc sidebar**). Also documents **`@group`** (TypeDoc's sibling tag) and the caveat that neither drives the TypeDoc sidebar. |
 
 ### Packages (`packages/`) — one Overview (+ Examples) per published npm package
 | Page | File | Covers |
@@ -80,8 +80,19 @@
 | aadesh — Overview | `packages/aadesh-overview.md` | `@clean-jsdoc-theme/aadesh`: the `clean-jsdoc` CLI (localization commands). |
 | bhasha — Overview | `packages/bhasha-overview.md` | `@clean-jsdoc-theme/bhasha`: the pure, browser-safe i18n core (catalog, `t`, key scheme). |
 
+> **JSDoc vs TypeDoc flavor (cross-cutting).** Sidebar/ordering behavior differs
+> by tool. The **JSDoc** template uses the kind/`@category` grouping engine
+> (`sectionOrder`, `@category`, `@order`, `clubSidebarItems`). The **TypeDoc**
+> plugin's API sidebar is a **module/folder hierarchy** where those levers have
+> no effect (doc groups, `menu`, and tutorials still apply). When you change a
+> claim about the sidebar, TypeDoc rendering, or these tags/options, scope it by
+> flavor and keep the two TypeDoc homes in sync:
+> `theme/typedoc-getting-started.md` and the `#typedoc-flavor` section of
+> `guides/structure-your-sidebar.md`.
+
 ## Quick "where do I edit?" cheatsheet
 - **A theme option** (jsdoc.json key) → `theme/configuration.md` (and link from the relevant guide).
+- **TypeDoc-specific output/behavior** (the module-hierarchy sidebar; inheritance/Hierarchy/Implements sections; `@group`; `@inheritDoc`; native `projectDocuments`; the async badge; object-literal→property tables) → `theme/typedoc-getting-started.md`, plus the `#typedoc-flavor` section of `guides/structure-your-sidebar.md`. These are TypeDoc-flavor only — do **not** state them as JSDoc behavior.
 - **An authoring feature** (callouts, tabs, steps, embeds, playground, `@category`, `@order`) → the matching `components/<x>.md`.
 - **A workflow / how-to** → the matching `guides/<x>.md`.
 - **A package's purpose or API examples** → `packages/<pkg>-overview.md` / `packages/<pkg>-examples.md`.
