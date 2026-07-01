@@ -118,6 +118,17 @@ export type Point = {
 export type DataHandler = (chunk: string, index: number) => boolean;
 
 /**
+ * Configure something (inline object-literal param).
+ * @param opts - the options.
+ */
+export function configure(opts: { retries: number; label?: string; point: Point }): void {}
+
+/** Returns config (inline object-literal return type). */
+export function getConfig(): { retries: number; label?: string } {
+  return { retries: 1 };
+}
+
+/**
  * Identity function.
  * @typeParam T - the value type.
  */
@@ -513,6 +524,41 @@ describe('reflectionsToDoclets — type aliases', () => {
     expect(handler.params?.map((p) => p.name)).toEqual(['chunk', 'index']);
     expect(handler.params?.[0].type?.names).toEqual(['string']);
     expect(handler.returns?.[0].type?.names).toEqual(['boolean']);
+  });
+});
+
+describe('reflectionsToDoclets — inline object-literal params/returns', () => {
+  it('expands an inline object-literal param into properties', () => {
+    const configure = byLongname('configure')!;
+    const opts = configure.params?.find((p) => p.name === 'opts');
+    // The flat param signature is still present (setu keeps rendering it)…
+    expect(opts).toBeTruthy();
+    expect(opts?.type?.names?.[0]).toBeTruthy();
+    // …and the recovered members live on the doclet's `properties[]` (the same
+    // sink JSDoc's `@property` list and the object-literal type-alias/variable
+    // recovery already use), which setu renders as a Properties table.
+    const rows = configure.properties ?? [];
+    expect(rows.map((p) => p.name)).toEqual(expect.arrayContaining(['retries', 'label', 'point']));
+    const retries = rows.find((p) => p.name === 'retries');
+    expect(retries?.type?.names).toEqual(['number']);
+    expect(retries?.optional).toBeUndefined();
+    const label = rows.find((p) => p.name === 'label');
+    expect(label?.optional).toBe(true);
+    // Reference member keeps a bare, resolvable name — links to the real Point.
+    const point = rows.find((p) => p.name === 'point');
+    expect(point?.type?.names).toEqual(['Point']);
+  });
+
+  it('expands an inline object-literal RETURN type into properties', () => {
+    const getConfig = byLongname('getConfig')!;
+    expect(getConfig.returns?.[0]?.type?.names?.[0]).toBeTruthy();
+    const rows = getConfig.properties ?? [];
+    expect(rows.map((p) => p.name).sort()).toEqual(['label', 'retries']);
+  });
+
+  it('does not add properties[] for a plain (non-object-literal) param', () => {
+    const render = byLongname('Foo#render')!;
+    expect(render.properties).toBeUndefined();
   });
 });
 

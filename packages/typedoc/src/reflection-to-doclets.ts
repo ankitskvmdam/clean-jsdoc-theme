@@ -50,7 +50,7 @@ import {
   type LinkResolver,
 } from './comment';
 import { longnameOf, synthesizeName } from './names';
-import { typeToDocletType } from './types';
+import { objectLiteralMembers, objectLiteralMembersFromChildren, typeToDocletType } from './types';
 
 /** Result of an adapter run: the doclets plus counts of what was skipped. */
 export interface AdaptResult {
@@ -362,12 +362,40 @@ function adaptContainer(
   if (signature) {
     const params = adaptParameters(signature, new Map(), resolveLink);
     if (params.length) doclet.params = params;
+    const properties = signatureObjectLiteralProperties(signature, resolveLink);
+    if (properties) doclet.properties = properties;
   }
 
   const ext = baseLongnames(reflection.extendedTypes, resolveLink);
   if (ext.length) doclet.augments = ext;
   const impl = baseLongnames(reflection.implementedTypes, resolveLink);
   if (impl.length) doclet.implements = impl;
+}
+
+/**
+ * Recover `properties[]` for every inline object-literal type on a signature —
+ * each parameter typed as `{ a: T; b?: U }` and (when present) an object-literal
+ * return type. Reuses `types.ts`'s `objectLiteralMembers`, the SAME sink
+ * `objectLiteralProperties` uses for a type-alias/variable object literal — so a
+ * function/method's flat `params`/`returns` strings stay intact (setu keeps
+ * rendering the signature) while each object-literal member additionally lands
+ * in a property table. Multiple object-literal params/returns are concatenated;
+ * v1 doesn't disambiguate which param a given property came from (a later
+ * `TypeVisitor` phase could nest them per-param, as JSDoc's own
+ * `options.timeout`-style dotted params do).
+ */
+function signatureObjectLiteralProperties(
+  signature: SignatureReflection,
+  resolveLink: LinkResolver
+): TDocletParam[] | undefined {
+  const props: TDocletParam[] = [];
+  for (const param of signature.parameters ?? []) {
+    const members = objectLiteralMembers(param.type, resolveLink);
+    if (members) props.push(...members);
+  }
+  const returnMembers = objectLiteralMembers(signature.type, resolveLink);
+  if (returnMembers) props.push(...returnMembers);
+  return props.length ? props : undefined;
 }
 
 /** Function / method: read the first signature for params + return type. */
@@ -420,6 +448,11 @@ function adaptCallable(
     if (returnType) ret.type = returnType;
     doclet.returns = [ret, ...(doclet.returns?.slice(1) ?? [])];
   }
+
+  // Inline object-literal params/return: expand their members onto `properties[]`
+  // (setu renders it as a Properties table) alongside the flat params/returns.
+  const properties = signatureObjectLiteralProperties(signature, resolveLink);
+  if (properties) doclet.properties = properties;
 
   // Overloads: every signature beyond the first becomes an `overloads[]` entry
   // carrying its own generics / parameters / return type (and its own
@@ -496,6 +529,8 @@ function adaptTypeAlias(
     if (params.length) doclet.params = params;
     const returnType = typeToDocletType(signature.type);
     if (returnType) doclet.returns = [{ type: returnType }];
+    const properties = signatureObjectLiteralProperties(signature, resolveLink);
+    if (properties) doclet.properties = properties;
     return;
   }
 
@@ -520,8 +555,10 @@ function adaptTypeAlias(
  * `type T = { … }`) and `adaptValue` (a `const C = { … } as const`) — both model
  * the body as `children`, either directly on the reflection (TypeDoc 0.28
  * inlines object-literal aliases) or on the inlined reflection-type declaration
- * (a const object's `ReflectionType`). Each child → a `name`/`type`/`optional`/
- * `description` entry, the same shape JSDoc's `@property` list uses.
+ * (a const object's `ReflectionType`). The child → `TDocletParam` mapping itself
+ * is `types.ts`'s `objectLiteralMembersFromChildren` — the SAME sink
+ * {@link objectLiteralMembers} uses for an inline object-literal param/return
+ * type, so there is exactly one place that recovers object-literal members.
  */
 function objectLiteralProperties(
   reflection: DeclarationReflection,
@@ -537,15 +574,7 @@ function objectLiteralProperties(
   if (declaration?.signatures?.length) return undefined;
   const children = reflection.children ?? declaration?.children;
   if (!children || children.length === 0) return undefined;
-  return children.map((child) => {
-    const prop: TDocletParam = { name: child.name };
-    const propType = typeToDocletType(child.getSignature?.type ?? child.type);
-    if (propType) prop.type = propType;
-    if (child.flags?.isOptional) prop.optional = true;
-    const description = summaryToHtml(child.comment, resolveLink);
-    if (description) prop.description = description;
-    return prop;
-  });
+  return objectLiteralMembersFromChildren(children, resolveLink);
 }
 
 /** Property / variable / accessor: value type → `type`, default → `defaultvalue`. */

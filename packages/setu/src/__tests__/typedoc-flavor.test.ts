@@ -329,6 +329,58 @@ describe('flavor: typedoc — overloaded signatures', () => {
   });
 });
 
+/**
+ * A module with a `Point` typedef (the bridge's object-literal-alias recovery
+ * gives it `properties`) and a function whose parameter is typed `Point` — the
+ * TypeDoc-bridge-shaped result of an inline object-literal PARAM being expanded
+ * (Task 7): the flat `params[].type.names` still carries the bare reference name
+ * `Point` (exactly what `typeToDocletType`/`ReferenceType.toString()` emits),
+ * which `linkifyTypeExpression` tokenizes and resolves against the registry.
+ */
+function referenceLinkCollection(): TJSDocSaltyCollection<TDoclet> {
+  return makeCollection([
+    { kind: 'module', name: 'lib', longname: 'module:lib', scope: 'global', comment: '/** Lib. */', description: 'The library.' },
+    {
+      kind: 'typedef',
+      name: 'Point',
+      longname: 'module:lib.Point',
+      memberof: 'module:lib',
+      scope: 'static',
+      comment: '/** A point. */',
+      description: 'A coordinate.',
+      type: { names: ['Object'] },
+      properties: [
+        { name: 'x', type: { names: ['number'] }, description: 'Horizontal.' },
+        { name: 'y', type: { names: ['number'] }, description: 'Vertical.' },
+      ],
+    },
+    {
+      kind: 'function',
+      name: 'moveTo',
+      longname: 'module:lib.moveTo',
+      memberof: 'module:lib',
+      scope: 'static',
+      comment: '/** Move to. */',
+      description: 'Moves to a point.',
+      params: [{ name: 'p', type: { names: ['Point'] }, description: 'The point.' }],
+      returns: [{ type: { names: ['void'] } }],
+    },
+  ]);
+}
+
+describe('flavor: typedoc — reference type names stay linkable', () => {
+  it('renders a param typed `Point` as a link to the Point typedef page', () => {
+    const m = generateSite(referenceLinkCollection(), { flavor: 'typedoc' });
+    const pointPage = pageByLongname(m, 'module:lib.Point')!;
+    const body = pageByLongname(m, 'module:lib.moveTo')!.body;
+    // The bare reference name `Point` (as emitted by the bridge's
+    // `typeToDocletType`) resolves via the registry to the typedef's own page —
+    // no bridge/setu change needed, this is `linkifyTypeExpression`'s existing
+    // token-resolution behavior.
+    expect(body).toContain(`[Point](/${pointPage.slug})`);
+  });
+});
+
 describe('flavor: jsdoc (default) — byte-identical: no new pages, JSDoc labels', () => {
   it('keeps member signatures in the heading (no per-member `ts` code block)', () => {
     // Neither flavor emits a signature code block anymore — a method/field signature
