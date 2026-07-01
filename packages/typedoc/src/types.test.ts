@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { Application, ReflectionKind } from 'typedoc';
 import type { ParameterReflection, ProjectReflection, SignatureReflection } from 'typedoc';
-import { objectLiteralMembers, typeToDocletType } from './types';
+import { objectLiteralMembers } from './types';
 
 /**
  * A real `app.convert()` project exercising inline object-literal types on a
