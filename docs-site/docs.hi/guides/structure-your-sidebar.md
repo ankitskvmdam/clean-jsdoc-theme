@@ -12,11 +12,21 @@ sidebar कई लीवरों से इकट्ठी होती है 
 है, और वे ठीक नियम जो क्रम तय करते हैं। एक बार आप देख लें कि **हर entry एक `group`
 path और एक वैकल्पिक `order` रखती है**, बाकी अपने आप समझ आ जाता है।
 
+> [!IMPORTANT]
+> **यह एकीकृत मॉडल JSDoc template का व्यवहार है।** TypeDoc output अपनी
+> **API sidebar** अलग ढंग से बनाता है — एक module/folder पदानुक्रम, kind/category
+> groups नहीं — इसलिए `@category`, `@order`, `sectionOrder`, और
+> `clubSidebarItems` का **TypeDoc API tree पर कोई प्रभाव नहीं** पड़ता। अगर यही
+> configure कर रहे हैं तो सीधे [TypeDoc flavor](#typedoc-flavor) पर जाएँ। Doc
+> groups (`docGroups` + frontmatter), `menu`, और tutorials दोनों के लिए वैसे ही
+> काम करते हैं।
+
 > [!NOTE]
 > नीचे दिए गए दो source tags — `@category` और `@order` —
 > [Custom tags](/components/overview) पर गहराई से प्रलेखित हैं। यह page इस पर
 > है कि वे (और config options) sidebar को कैसे feed करते हैं; यह tag syntax को
-> पूरी तरह दोबारा प्रलेखित नहीं करता।
+> पूरी तरह दोबारा प्रलेखित नहीं करता। जब तक अन्यथा न बताया जाए, [TypeDoc
+> flavor](#typedoc-flavor) तक हर चीज़ **JSDoc template** का वर्णन करती है।
 
 ## एकीकृत मॉडल
 
@@ -39,6 +49,12 @@ path और एक वैकल्पिक `order` रखती है**, ब�
 हैं।
 
 ## लीवर 1 — `@category` के साथ एक symbol को group करें
+
+> [!NOTE]
+> **केवल JSDoc, sidebar के लिए।** `@category` अब भी TypeDoc bridge द्वारा parse
+> किया जाता है (जैसा [TypeDoc flavor](#typedoc-flavor) में बताया गया है), पर यह
+> TypeDoc API sidebar में किसी symbol के page को नहीं हिलाता — वह sidebar एक
+> module पदानुक्रम है, category groups नहीं।
 
 किसी source symbol को tag करें ताकि उसका page उसके kind section के बजाय एक
 स्पष्ट group में रखा जाए:
@@ -70,6 +86,11 @@ sorted। दो parsing सूक्ष्मताएँ, `parseCategory` म�
   `Getting Started` एक एकल flat group है जिसके label में एक space है।
 
 ## लीवर 2 — `@order` के साथ किसी भी symbol को क्रमित करें
+
+> [!NOTE]
+> **केवल JSDoc, sidebar के लिए।** `@order` का TypeDoc की API sidebar ordering
+> पर कोई प्रभाव नहीं पड़ता — within-module ordering वहाँ kind से तय होती है
+> ([TypeDoc flavor](#typedoc-flavor) देखें)।
 
 inline `order=` option केवल उस symbol पर काम करता है जिसके पास `@category` *हो*।
 ऐसे symbol को स्थान देने के लिए जो अपने **kind section** में रहता है (एक सादा
@@ -121,6 +142,10 @@ nesting `buildGroupTree` द्वारा बनाई जाती है
 
 ## लीवर 4 — `clubSidebarItems`
 
+> [!NOTE]
+> **केवल JSDoc, API tree के लिए।** `clubSidebarItems` का TypeDoc API sidebar पर
+> कोई प्रभाव नहीं पड़ता ([TypeDoc flavor](#typedoc-flavor) देखें)।
+
 [`clubSidebarItems`](/theme/configuration#clubsidebaritems) संबंधित entries को एक
 साझा parent के अंतर्गत समेट देता है, उनके label में **पहले `/` से पहले वाले path
 segment** के अनुसार — जैसे `queue`, `queue/Queue`, `queue/types` एक `queue`
@@ -143,6 +168,12 @@ Clubbing क्रम-सचेत भी है: एक clubbed parent अप�
 आगे न खींच ले।
 
 ## लीवर 5 — `sectionOrder`
+
+> [!NOTE]
+> **आंशिक रूप से केवल JSDoc।** `sectionOrder` का TypeDoc की **API** tree पर
+> कोई प्रभाव नहीं पड़ता — पर यह TypeDoc के **doc/tutorial groups** को अब भी उसी
+> तरह क्रमित करता है जैसे JSDoc के लिए करता है। [TypeDoc flavor](#typedoc-flavor)
+> देखें।
 
 [`sectionOrder`](/theme/configuration#sectionorder) **top-level** groups को
 क्रमित करता है — एक एकीकृत list जो kind labels, `@category` names, और doc-group
@@ -181,11 +212,57 @@ prose और API sections को यह कैसे अंतर्व्या
 [`generate-site.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/generate-site.ts)
 में `resolveMenuItem`; इस साइट का
 [`jsdoc.json`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/docs-site/jsdoc.json)
-एक `menu` का उपयोग करता है।
+एक `menu` का उपयोग करता है। यह TypeDoc पर भी वैसे ही लागू होता है।
+
+## TypeDoc flavor
+
+TypeDoc output अपनी **API sidebar** के लिए ऊपर वाले एकीकृत group/order मॉडल
+का उपयोग **नहीं** करता। यह इसके बजाय TypeDoc की अपनी default theme को mirror
+करता है — आपके source layout से बना एक module/folder पदानुक्रम, `@category`
+या kind buckets से नहीं:
+
+- **Top level = पहले आपके documents, फिर folders और modules**, alphabetically
+  — कोई top-level kind sections नहीं होते।
+- **Folders** आपके source की directory structure को mirror करते हैं। एक अकेले
+  child वाला folder उस child में **merge** हो जाता है (`compactFolders`) —
+  जैसे `base/` के नीचे एक अकेला `Component` `base/Component` के रूप में दिखता
+  है।
+- **हर module एक clickable, expandable node है** — उसका label module के page को
+  खोलता है, उसका chevron सदस्यों को दिखाने के लिए expand होता है।
+- **Members अपने module के नीचे nest होते हैं**, **kind** से क्रमित होकर
+  (Enumerations → Classes → Interfaces → Type Aliases → Variables →
+  Functions), फिर alphabetically। sidebar में कोई per-kind sub-headings नहीं
+  होते।
+- **Namespaces** उसी तरह nodes के रूप में nest होते हैं।
+
+पूरे rendering विवरण (Hierarchy/Implements sections, `@inheritDoc`, आदि)
+[TypeDoc Getting Started](/theme/typedoc-getting-started#the-typedoc-sidebar)
+पर हैं।
+
+### कौन से लीवर TypeDoc पर अब भी लागू होते हैं
+
+| Lever | TypeDoc **API** tree पर प्रभाव | बाकी जगह प्रभाव |
+| ----- | ----------------------------------- | ----------------- |
+| `@category` | कोई नहीं — module पदानुक्रम में किसी symbol को नहीं हिलाता | अब भी parse होता है |
+| `@group` | कोई नहीं — sidebar को नहीं चलाता | अब भी parse होता है (देखें [TypeDoc Getting Started](/theme/typedoc-getting-started#typedoc-specific-rendering)) |
+| `@order` | कोई नहीं — module के भीतर kind order तय है | — |
+| `sectionOrder` | कोई नहीं | अब भी **doc/tutorial groups** को क्रमित करता है |
+| `clubSidebarItems` | कोई नहीं | — |
+| `docGroups` / doc frontmatter `group`/`order` | — | **काम करता है** — prose doc groups को क्रमित करता है, API पदानुक्रम से पहले render होता है |
+| `menu` | — | **काम करता है** — JSDoc जैसा ही top-region व्यवहार |
+| Tutorials | — | **अब भी render होते हैं** |
+
+> [!NOTE]
+> एक `@category`/`@group`-driven TypeDoc API sidebar बहाल करना (TypeDoc की अपनी
+> opt-in category/group navigation जैसा) **फ़िलहाल configurable नहीं है**।
 
 ## इसे एक साथ रखना
 
-एक यथार्थवादी मिश्रित config:
+एक यथार्थवादी मिश्रित config। ध्यान दें कि नीचे `sectionOrder` और
+`clubSidebarItems` केवल **JSDoc** tab की API sidebar को प्रभावित करते हैं — TypeDoc
+tab पर वे अब भी doc groups/tutorials पर लागू होते हैं, पर API tree
+[TypeDoc flavor](#typedoc-flavor) में बताए गए module पदानुक्रम के रूप में ही
+render होता है, इन options के बावजूद।
 
 <tabs group="tool">
 <tab label="JSDoc (jsdoc.json)" value="JSDoc (jsdoc.json)">
@@ -209,10 +286,14 @@ opts: {
 
 ```json5
 cleanJsdocTheme: {
+  // "Core" और "Classes" यहाँ केवल doc-group / kind-label semantics को प्रभावित
+  // करते हैं जो TypeDoc API tree के लिए मौजूद नहीं हैं — ऊपर "TypeDoc flavor"
+  // देखें। केवल "Getting Started" और "Guides" (doc groups) वास्तव में यहाँ
+  // हिलते हैं।
   sectionOrder: ["Getting Started", "Core", "Classes", "Guides", "Modules"],
   docGroups: ["Getting Started", "Guides"],
   defaultDocGroup: "Docs",
-  clubSidebarItems: true,
+  clubSidebarItems: true, // TypeDoc API tree पर कोई प्रभाव नहीं
   menu: [
     { id: "home", title: "Home", icon: "lucide:home" },
     { title: "GitHub", link: "https://github.com/you/repo", icon: "simpleicons:github" },
@@ -223,8 +304,12 @@ cleanJsdocTheme: {
 </tab>
 </tabs>
 
-इसे अपनी classes पर `@category Core/Parsing order=1` और अपने guides पर `order:`
-frontmatter के साथ मिलाएँ, और आप sidebar को ऊपर से नीचे तक नियंत्रित करते हैं।
+**JSDoc** के लिए, इसे अपनी classes पर `@category Core/Parsing order=1` और अपने
+guides पर `order:` frontmatter के साथ मिलाएँ, और आप sidebar को ऊपर से नीचे तक
+नियंत्रित करते हैं। **TypeDoc** के लिए, API tree हमेशा
+[TypeDoc flavor](#typedoc-flavor) वाले module पदानुक्रम के रूप में render होता
+है — केवल आपके doc groups, `menu`, और tutorials ऊपर दिए options पर प्रतिक्रिया
+करते हैं।
 
 ## आगे कहाँ जाएँ
 
@@ -234,3 +319,5 @@ frontmatter के साथ मिलाएँ, और आप sidebar को �
   [Build a guides site](/guides/build-a-guides-site) ·
   [Build an API reference](/guides/build-an-api-reference) ·
   [Combine guides + API](/guides/combine-guides-and-api)।
+- TypeDoc sidebar + rendering पूरे विस्तार से:
+  [TypeDoc Getting Started](/theme/typedoc-getting-started)।

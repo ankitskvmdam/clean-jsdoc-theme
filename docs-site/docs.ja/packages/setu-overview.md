@@ -62,6 +62,9 @@ salty doclet collection を与えると、`generateSite`
 - **nav tree** — sidebar — は kind ごと、または authored な `@category` ごとに
   sections へグループ化され、`sectionOrder` / `@order` によって順序付けられます
   ([`assembleNav`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/generate-site.ts))。
+  （これは **JSDoc** flavor の nav です; TypeDoc flavor は代わりに module/folder
+  hierarchy を構築します — 参照:
+  [The TypeDoc sidebar](/theme/typedoc-getting-started#the-typedoc-sidebar)。）
 - **Resolved cross-references** は、すべての `{@link}` / `@see` / `@tutorial`
   に対して
   ([`link-registry.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/link-registry.ts))。

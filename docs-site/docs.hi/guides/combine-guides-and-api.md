@@ -98,6 +98,14 @@ ordering मशीनरी को feed करते हैं। यदि व�
   source files ───────▶ Source Files         ┘
 ```
 
+> [!NOTE]
+> नीचे वाला merge मॉडल — API kind sections + `@category` groups जो doc groups
+> के साथ बैठते हैं — **JSDoc** flavor है। **TypeDoc** के लिए, API हिस्सा इसके
+> बजाय एक module/folder पदानुक्रम है (doc groups, tutorials, और `menu` अब भी
+> बताए अनुसार merge होते हैं)। देखें
+> [The TypeDoc sidebar](/theme/typedoc-getting-started#the-typedoc-sidebar) और
+> [TypeDoc flavor](/guides/structure-your-sidebar#typedoc-flavor)।
+
 ## दोनों को एक साथ कैसे क्रमित किया जाता है
 
 यह वह हिस्सा है जिसे सही करना सार्थक है। प्रभावी top-level क्रम

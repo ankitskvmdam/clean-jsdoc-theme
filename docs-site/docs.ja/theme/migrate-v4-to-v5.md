@@ -183,7 +183,9 @@ v5 は、残っている `theme_opts` key や v4 の option 名に対して **�
 - [**Authoring primitives**](/components/callouts) — comments と prose の中の
   callouts、steps、tabs、live embeds。
 - [**Sidebar structure**](/guides/structure-your-sidebar) — `@category` / `@order`
-  tags、`clubSidebarItems`、`menu`。
+  tags、`clubSidebarItems`、`menu`。（これらは **JSDoc** の sidebar levers です —
+  TypeDoc の出力は代わりに module/folder hierarchy を使います。参照:
+  [TypeDoc flavor](/guides/structure-your-sidebar#typedoc-flavor)。）
 - [**LLM features**](/theme/llm-skill) — page ごとの companion `.md`、copy-page
   ボタン、`aiPrompt`。
 

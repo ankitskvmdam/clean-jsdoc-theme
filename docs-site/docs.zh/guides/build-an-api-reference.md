@@ -71,6 +71,12 @@ namespace 等各占一个页面，外加一个可选的源码文件查看器。
 
 ## 什么会成为页面
 
+> [!NOTE]
+> 下面描述的 kind-section 侧边栏是 **JSDoc** flavor 的行为。TypeDoc 也会
+> 构建这些相同的页面，但会以一种 module/folder 层级结构来呈现它们，而不是
+> kind sections —— 见
+> [The TypeDoc sidebar](/theme/typedoc-getting-started#the-typedoc-sidebar)。
+
 setu 会枚举你已记录文档的符号，并将每一个转换成一个页面。能获得
 **自己独立**页面的种类是**容器种类（container kinds）**，按以下顺序构建（参见
 [`packages/setu/src/index.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/index.ts)
@@ -151,6 +157,12 @@ Namespaces、Mixins、Interfaces、Typedefs、Globals 等）。用
 [`sectionOrder`](/theme/configuration#sectionorder) 覆盖它，并在你的符号上使用 `@category` / `@order`
 标签进行更精细的控制。这本身是一个独立的主题 ——
 [Structure your sidebar](/guides/structure-your-sidebar) 涵盖了每一个调节手段。
+
+> [!NOTE]
+> 上面的调节手段（`sectionOrder`、`@category`、`@order`）塑造的是
+> **JSDoc** 的 API 侧边栏。TypeDoc 的 API 侧边栏是一种 module/folder
+> 层级结构，不会被这些排序 —— 见
+> [TypeDoc flavor](/guides/structure-your-sidebar#typedoc-flavor)。
 
 ## 接下来去哪里
 

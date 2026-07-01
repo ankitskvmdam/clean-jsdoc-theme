@@ -74,6 +74,12 @@ page になるか、source viewer がどう動くかに焦点を当てます。t
 
 ## 何が page になるか
 
+> [!NOTE]
+> 下記の kind-section sidebar は **JSDoc** flavor です。TypeDoc もこれらと
+> 同じ pages をすべて構築しますが、kind sections ではなく module/folder
+> hierarchy として提示します — 参照:
+> [The TypeDoc sidebar](/theme/typedoc-getting-started#the-typedoc-sidebar)。
+
 setu はあなたの documented symbol を列挙し、それぞれを page に変えます。**それ自身の**
 page を得る kind は **container kinds** で、この順序で構築されます（
 [`packages/setu/src/index.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/index.ts)
@@ -159,6 +165,12 @@ Namespaces、Mixins、Interfaces、Typedefs、Globals、…）。
 制御には symbol に `@category` / `@order` tags を使います。これはそれ自体が 1 つの
 トピックです — [Structure your sidebar](/guides/structure-your-sidebar) があらゆる
 レバーをカバーします。
+
+> [!NOTE]
+> 上記のレバー（`sectionOrder`、`@category`、`@order`）は **JSDoc** API sidebar
+> を形作ります。TypeDoc API sidebar は module/folder hierarchy であり、これらに
+> よって順序付けられることはありません — 参照:
+> [TypeDoc flavor](/guides/structure-your-sidebar#typedoc-flavor)。
 
 ## 次に進む先
 

@@ -93,6 +93,14 @@ order: 3
   source files ───────▶ Source Files         ┘
 ```
 
+> [!NOTE]
+> 下面这个合并模型 —— API kind sections + `@category` 分组与 doc 分组
+> 并列 —— 是 **JSDoc** flavor 的行为。对于 **TypeDoc**，API 部分则是一种
+> module/folder 层级结构（doc groups、tutorials 和 `menu` 仍会如上所述
+> 合并进来）。见
+> [The TypeDoc sidebar](/theme/typedoc-getting-started#the-typedoc-sidebar) 和
+> [TypeDoc flavor](/guides/structure-your-sidebar#typedoc-flavor)。
+
 ## 两者如何一起排序
 
 这是值得用心做对的部分。生效的顶级顺序在

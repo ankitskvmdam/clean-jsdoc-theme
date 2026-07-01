@@ -25,6 +25,12 @@ order: 7
 > `tags.allowUnknownTags: true`，否则 JSDoc 会将其剥离。参见
 > [overview](/components/overview)。（TypeDoc 不需要 flag。）
 
+> [!NOTE]
+> 这个排序键适用于 **JSDoc** 侧边栏。`@order` 对 TypeDoc API 侧边栏没有
+> 任何效果 —— 在一个 module 内部，成员是按 kind 排序、然后按字母顺序
+> 排序的，而不是按 `@order`。见
+> [The TypeDoc sidebar](/theme/typedoc-getting-started#the-typedoc-sidebar)。
+
 ## 何时使用哪一个
 
 | Situation | Use |

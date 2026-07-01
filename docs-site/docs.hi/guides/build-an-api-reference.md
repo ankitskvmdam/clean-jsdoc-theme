@@ -73,6 +73,12 @@ namespace आदि एक page, साथ में एक वैकल्प�
 
 ## क्या page बनता है
 
+> [!NOTE]
+> नीचे बताई गई kind-section sidebar **JSDoc** flavor है। TypeDoc भी यही सभी
+> pages बनाता है, पर उन्हें kind sections के बजाय एक module/folder पदानुक्रम
+> में प्रस्तुत करता है — देखें
+> [The TypeDoc sidebar](/theme/typedoc-getting-started#the-typedoc-sidebar)।
+
 setu आपके documented symbols की गणना करता है और प्रत्येक को एक page में बदल देता
 है। जिन kinds को **अपना खुद का** page मिलता है, वे हैं **container kinds**, इस
 क्रम में बनाई गईं (देखें
@@ -160,6 +166,12 @@ Modules, Namespaces, Mixins, Interfaces, Typedefs, Globals, …)। इसे
 सूक्ष्म नियंत्रण के लिए अपने symbols पर `@category` / `@order` tags का उपयोग
 करें। यह अपने आप में एक विषय है —
 [Structure your sidebar](/guides/structure-your-sidebar) हर लीवर को कवर करता है।
+
+> [!NOTE]
+> ऊपर वाले लीवर (`sectionOrder`, `@category`, `@order`) **JSDoc** API sidebar
+> को आकार देते हैं। TypeDoc API sidebar एक module/folder पदानुक्रम है और इनसे
+> क्रमित नहीं होती — देखें
+> [TypeDoc flavor](/guides/structure-your-sidebar#typedoc-flavor)।
 
 ## आगे कहाँ जाएँ
 

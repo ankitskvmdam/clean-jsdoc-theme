@@ -401,12 +401,22 @@ cleanJsdocTheme: { sectionOrder: ["Getting Started", "Guides", "Classes", "Modul
 
 </tabs>
 
+> [!NOTE]
+> `sectionOrder` **doc/tutorial groups और JSDoc की API kind sections** को क्रमित
+> करता है। यह TypeDoc API tree को क्रमित **नहीं** करता — वह sidebar एक अपने
+> स्थिर क्रम वाला module/folder पदानुक्रम है। देखें
+> [TypeDoc flavor](/guides/structure-your-sidebar#typedoc-flavor)।
+
 ### `clubSidebarItems`
 
 संबंधित entries (जैसे एक module और उसके members) को एक साझा, collapsible parent के
 नीचे समेटें, पहले `/` से पहले वाले path segment के अनुसार समूहित।
 
 **अपेक्षित:** एक boolean। Default `false`।
+
+> [!NOTE]
+> `clubSidebarItems` का TypeDoc API tree पर कोई प्रभाव नहीं पड़ता। देखें
+> [TypeDoc flavor](/guides/structure-your-sidebar#typedoc-flavor)।
 
 <tabs group="tool">
 

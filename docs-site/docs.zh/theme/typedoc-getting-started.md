@@ -129,6 +129,73 @@ npx serve dist
 > **warn**（并附带一条 "did you mean?" 提示）—— 参见
 > [`strict`](/theme/configuration#strict) 以将其升级为 error。
 
+## The TypeDoc sidebar
+
+TypeDoc 输出的侧边栏**不**使用 JSDoc 模板的 kind-bucket 布局（顶层的
+"Classes"、"Interfaces"、"Enumerations" 等区块）。相反，它镜像的是
+**TypeDoc 自身的默认主题** —— 一种 module/folder 层级结构：
+
+- **顶层 = 你的 documents 在前，然后是 folders 和 modules**，按字母顺序排列。
+  没有顶层的 kind sections。
+- **Folders** 来自你源代码的目录结构。只有单个 child 的 folder 会被
+  **合并**进那个 child（`compactFolders`）—— 例如 `base/` 下的单个
+  `Component` 会显示为 `base/Component`，而不是两层嵌套。
+- **每个 module 都是一个可点击、可展开的节点**：点击其 label 会打开该
+  module 自己的页面；chevron 展开后会显示它的成员。
+- **成员嵌套在其所属的 module 下**，按 **kind** 排序 —— Enumerations →
+  Classes → Interfaces → Type Aliases → Variables → Functions —— 然后按
+  字母顺序排名称。侧边栏本身没有按 kind 划分的子标题（kind 分组仍会出现在
+  该 module 自己的页面正文中）。
+- **嵌套在某个 module 内的 Namespaces** 会以同样的方式呈现为嵌套节点。
+
+> [!IMPORTANT]
+> 这是一种与 JSDoc 模板不同的侧边栏模型。在
+> [Structure your sidebar](/guides/structure-your-sidebar) 中记录的排序
+> 杠杆 —— `@category`、`@order`、`sectionOrder`、`clubSidebarItems` —— **不会
+> 影响 TypeDoc 的 API 侧边栏**。上面描述的 module 层级结构掌管着它，与
+> TypeDoc 自身的默认行为一致（其中由 category/group 驱动的导航是可选启用的）。
+> 恢复一个由 category/group 驱动的 TypeDoc 导航，目前**尚不可配置**。
+>
+> 对 TypeDoc 仍然有效的：正文的**doc groups**（`docGroups` + 文档页面
+> frontmatter 中的 `group` / `order`）仍会渲染 —— 在 API 层级结构之前 ——
+> 并通过 `docGroups` 排序；**`menu`** 顶部区域仍然有效；tutorials 仍会渲染。
+> 完整细节见
+> [Structure your sidebar](/guides/structure-your-sidebar#typedoc-flavor)。
+
+## TypeDoc-specific rendering
+
+除了侧边栏之外，TypeDoc 输出还会渲染一些 JSDoc 模板不会渲染的内容，
+因为它们来自 TypeDoc 自身的分析：
+
+- **继承与关系。** Class 和 interface 页面会获得一个 **Hierarchy** 列表
+  （祖先链）、一个 **Implements** section，以及一个 **Implemented By**
+  section。各个成员会获得说明性文字 —— **Inherited from …**、
+  **Overrides …**、**Implementation of …** —— 指向相关的 symbol。
+- **`@group`。** 被识别为 `@category` 的同类标签。它会被解析，但 ——
+  与 `@category` 一样 —— 它**不会**驱动 TypeDoc 的默认侧边栏（见上文）。
+- **原生 TypeDoc `projectDocuments`。** 通过 TypeDoc 自身的
+  [`projectDocuments`](https://typedoc.org/options/input/#projectdocuments)
+  选项附加的 Markdown 文件会渲染为页面。这**与**本主题自己的
+  [`docs`](/theme/configuration#docs) 选项**不同**：
+  - [`docs`](/theme/configuration#docs) 是本主题的正文文档目录 —— 它对
+    JSDoc 和 TypeDoc 的工作方式相同。
+  - `projectDocuments` 是 TypeDoc 原生的输入，只有 TypeDoc 输出可用。
+
+  两者最终都会变成站点中普通的页面，因此请根据你想让哪个工具掌管
+  文件列表来做选择：如果想要一个共享、与工具无关的 guides 文件夹，
+  用 `docs`；如果你已经按 TypeDoc 原生的方式组织文档，用
+  `projectDocuments`。
+- **`@inheritDoc`。** 用 `{@inheritDoc Target}`（或在一个 overriding/
+  implementing 成员上单独写 `@inheritDoc`）记录文档的成员，会在其位置
+  显示目标的 description 以及 parameter/return 文档。TypeDoc 会解析该
+  引用；本主题渲染其结果内容 —— 与 TypeDoc 默认语义保持一致。
+- **Async 修饰符徽章。** 是 `async`（或返回 `Promise`）的方法，会在其
+  签名旁显示一个 **async** 修饰符徽章。
+- **Object-literal 类型展开。** 一个内联的 object-literal 类型 —— 出现在
+  参数、返回类型，或一个类型别名/变量上 —— 会展开成一个**属性表**：每个
+  成员一行，包含名称、类型、可选标记和描述。表格中的类型引用仍会**保持
+  链接**到其对应的文档页面。
+
 ## 多语言
 
 localization 工作流在同一个 `cleanJsdocTheme` 块中声明它的 locale
@@ -149,7 +216,7 @@ localization 工作流在同一个 `cleanJsdocTheme` 块中声明它的 locale
   **[Combine guides + API](/guides/combine-guides-and-api)** —— 在同一个站点中
   加入手写的 Markdown。
 - **[Structure your sidebar](/guides/structure-your-sidebar)** —— 分组与
-  排序的控制项。
+  排序的控制项（其 **TypeDoc flavor** 一节讲解了这与 JSDoc 有何不同）。
 - **[Authoring](/components/callouts)** —— callouts、steps、tabs 以及 embeds。
 - **[Localize your docs](/guides/localize-your-docs)** —— 多语言
   工作流（extract 在 TypeDoc 上可用；本地化构建目前仅支持 JSDoc）。

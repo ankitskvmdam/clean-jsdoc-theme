@@ -130,6 +130,83 @@ npx serve dist
 > **warn** するだけです ("did you mean?" のヒント付き)。これを error に格上げする
 > には [`strict`](/theme/configuration#strict) を参照してください。
 
+## The TypeDoc sidebar
+
+TypeDoc の出力の sidebar は、JSDoc template の kind-bucket layout（top-level の
+「Classes」「Interfaces」「Enumerations」…セクション）を使い**ません**。代わりに
+**TypeDoc 自身の default theme** を反映します — module/folder hierarchy です:
+
+- **Top level はまずあなたの documents、それから folders と modules**、
+  アルファベット順です。top-level の kind sections はありません。
+- **Folders** はあなたの source の directory structure から来ます。1 つの子しか
+  持たない folder は、その子に **merge** されます（`compactFolders`）— 例えば
+  `base/` の下に単独の `Component` がある場合、2 段の nested levels ではなく
+  `base/Component` として表示されます。
+- **各 module はクリック可能で展開可能な node です**: その label をクリックすると
+  module 自身の page が開き、chevron はそれを展開して members を表示します。
+- **Members はその module の下に nest され**、**kind** で順序付けられます —
+  Enumerations → Classes → Interfaces → Type Aliases → Variables → Functions —
+  その後 名前のアルファベット順です。sidebar 自体には kind ごとの sub-headings
+  はありません（kind grouping は module 自身の page body には依然として表れます）。
+- module 内部に nest された **Namespaces** は、同じ方法で nested nodes として
+  表れます。
+
+> [!IMPORTANT]
+> これは JSDoc template とは異なる sidebar モデルです。
+> [Structure your sidebar](/guides/structure-your-sidebar) に文書化されている
+> ordering levers — `@category`、`@order`、`sectionOrder`、`clubSidebarItems` —
+> は **TypeDoc API sidebar を形作りません**。上記の module hierarchy がそれを
+> 所有し、TypeDoc 自身の defaults に一致します（category/group に駆動される
+> navigation は opt-in です）。category/group に駆動される TypeDoc nav を復元
+> することは、**現在 configurable ではありません**。
+>
+> TypeDoc に対して依然として機能するもの: prose の **doc groups**（`docGroups` +
+> doc page の frontmatter `group` / `order`）は依然として render され — API
+> hierarchy の前に — `docGroups` を介して順序付けられます; **`menu`** の
+> top region は依然として機能します; tutorials は依然として render されます。
+> 完全な内訳は
+> [Structure your sidebar](/guides/structure-your-sidebar#typedoc-flavor)
+> を参照してください。
+
+## TypeDoc-specific rendering
+
+sidebar 以外にも、TypeDoc の出力は JSDoc template にはないいくつかのものを
+render します。TypeDoc 自身の分析から来るものだからです:
+
+- **Inheritance と関係性。** Class と interface の pages は **Hierarchy** list
+  （祖先の chain）、**Implements** section、**Implemented By** section を得ます。
+  個々の members は captions を得ます — **Inherited from …**、**Overrides …**、
+  **Implementation of …** — 関連する symbol を指します。
+- **`@group`。** `@category` の sibling として認識されます。parse はされますが、
+  `@category` と同様に、default の TypeDoc sidebar を駆動する**ことはありません**
+  （上記を参照）。
+- **Native TypeDoc `projectDocuments`。** TypeDoc 自身の
+  [`projectDocuments`](https://typedoc.org/options/input/#projectdocuments)
+  option を介して添付された Markdown files は pages として render されます。
+  これは theme 自身の [`docs`](/theme/configuration#docs) option とは
+  **異なります**:
+  - [`docs`](/theme/configuration#docs) は theme の prose-docs directory です —
+    JSDoc と TypeDoc の両方で同じように動作します。
+  - `projectDocuments` は TypeDoc-native な input で、TypeDoc の出力にのみ
+    利用可能です。
+
+  どちらも最終的には site の中の普通の pages になるので、どの tool に file list
+  を持たせたいかで選んでください: 共有された、tool-agnostic な guides folder
+  には `docs` を使い、すでに TypeDoc-native な方法で docs を整理しているなら
+  `projectDocuments` を使ってください。
+- **`@inheritDoc`。** `{@inheritDoc Target}`（あるいは、override/implement する
+  member 上の bare な `@inheritDoc`）で文書化された member は、その場所に target
+  の description と parameter/return docs を表示します。TypeDoc が reference を
+  resolve し、theme はその結果得られた content を render します —
+  default の TypeDoc semantics に一致します。
+- **Async modifier badge。** `async` な（あるいは `Promise` を返す）methods は、
+  その signature の隣に **async** modifier badge を表示します。
+- **Object-literal type の展開。** parameter、return type、あるいは
+  type alias/variable 上の inline な object-literal type は、**property table**
+  へと展開されます: member ごとに 1 行で、name、type、optional flag、
+  description を持ちます。table 内の type references は、それが文書化された
+  pages への **link** のままです。
+
 ## 複数言語
 
 localization workflow は、その locales を同じ `cleanJsdocTheme` block 内で宣言し
@@ -151,7 +228,8 @@ localization workflow は、その locales を同じ `cleanJsdocTheme` block 内
   **[Combine guides + API](/guides/combine-guides-and-api)** — 同じ site に手書きの
   Markdown を追加します。
 - **[Structure your sidebar](/guides/structure-your-sidebar)** — グループ化と順序
-  付けのレバー。
+  付けのレバー（これが JSDoc とどう異なるかについては、その **TypeDoc flavor**
+  section を参照してください）。
 - **[Authoring](/components/callouts)** — callouts、steps、tabs、embeds。
 - **[Localize your docs](/guides/localize-your-docs)** — 複数言語のワークフロー
   (extract は TypeDoc で動作します。localized builds は今のところ JSDoc 専用です)。

@@ -26,6 +26,13 @@ modules の中で最初に並ぶようになります。
 > 設定してください。さもないと JSDoc がそれを取り除きます。
 > [overview](/components/overview) を参照してください。（TypeDoc に flag は不要。）
 
+> [!NOTE]
+> この sort key は **JSDoc** sidebar に適用されます。`@order` は TypeDoc API
+> sidebar には効果がありません — module 内では、members は kind によって、
+> その後アルファベット順に並べられます。`@order` によってではありません。
+> [The TypeDoc sidebar](/theme/typedoc-getting-started#the-typedoc-sidebar)
+> を参照してください。
+
 ## どちらを使うか
 
 | Situation | Use |

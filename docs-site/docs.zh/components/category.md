@@ -23,6 +23,19 @@ export class Parser {}
 > `tags.allowUnknownTags: true`，否则 JSDoc 会在主题运行之前将其剥离。参见
 > [overview](/components/overview)。（TypeDoc 不需要 flag。）
 
+> [!NOTE]
+> 这个分组行为是针对 **JSDoc** 侧边栏的。在 **TypeDoc** flavor 下，
+> `@category` 仍会被解析，但**不会**影响 API 侧边栏 —— 那个侧边栏是一种
+> module/folder 层级结构。见
+> [The TypeDoc sidebar](/theme/typedoc-getting-started#the-typedoc-sidebar)。
+
+## `@group` —— TypeDoc 的对应标签
+
+`@group` 被识别为 `@category` 的同类标签（TypeDoc 自己的分组标签）。同样的
+警示也适用：它会被解析，但它同样不会塑造 TypeDoc 的 API 侧边栏 —— 见
+[The TypeDoc sidebar](/theme/typedoc-getting-started#the-typedoc-sidebar)。
+目前没有可选启用的方式让 `@category` / `@group` 驱动 TypeDoc 的侧边栏。
+
 ## path 语法
 
 `parseCategory`（位于

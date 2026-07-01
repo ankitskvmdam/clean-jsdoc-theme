@@ -95,6 +95,14 @@ source viewer を生成します — すべてが 1 つの nav に縫い合わ�
   source files ───────▶ Source Files         ┘
 ```
 
+> [!NOTE]
+> 下記の merge モデル — API kind sections + `@category` groups が doc groups
+> と並んで存在する — は **JSDoc** flavor です。**TypeDoc** の場合、API 部分は
+> 代わりに module/folder hierarchy になります（doc groups、tutorials、`menu`
+> は説明どおりに依然として merge されます）。参照:
+> [The TypeDoc sidebar](/theme/typedoc-getting-started#the-typedoc-sidebar) と
+> [TypeDoc flavor](/guides/structure-your-sidebar#typedoc-flavor)。
+
 ## 2 つをどう一緒に並べ替えるか
 
 ここは正しく押さえる価値のある部分です。有効な top-level の順序は

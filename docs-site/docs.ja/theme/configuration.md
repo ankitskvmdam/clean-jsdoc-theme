@@ -403,6 +403,12 @@ cleanJsdocTheme: { sectionOrder: ["Getting Started", "Guides", "Classes", "Modul
 
 </tabs>
 
+> [!NOTE]
+> `sectionOrder` は **doc/tutorial groups と JSDoc の API kind sections** を
+> 順序付けます。TypeDoc API tree を順序付ける**ことはありません** — その
+> sidebar は独自の固定された順序を持つ module/folder hierarchy です。
+> [TypeDoc flavor](/guides/structure-your-sidebar#typedoc-flavor) を参照してください。
+
 ### `clubSidebarItems`
 
 関連する entries（たとえば module とその members）を、共有の collapsible parent の
@@ -429,6 +435,10 @@ cleanJsdocTheme: { clubSidebarItems: true }
 </tab>
 
 </tabs>
+
+> [!NOTE]
+> `clubSidebarItems` は TypeDoc API tree には効果がありません。
+> [TypeDoc flavor](/guides/structure-your-sidebar#typedoc-flavor) を参照してください。
 
 ### `menu`
 

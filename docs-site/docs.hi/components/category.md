@@ -24,6 +24,21 @@ export class Parser {}
 > देता है। देखें [overview](/components/overview)। (TypeDoc को किसी flag की ज़रूरत
 > नहीं।)
 
+> [!NOTE]
+> यह grouping व्यवहार **JSDoc** sidebar के लिए है। **TypeDoc** flavor के अंतर्गत,
+> `@category` अब भी parse होता है पर API sidebar को प्रभावित **नहीं** करता —
+> वह sidebar इसके बजाय एक module/folder पदानुक्रम है। देखें
+> [The TypeDoc sidebar](/theme/typedoc-getting-started#the-typedoc-sidebar)।
+
+## `@group` — TypeDoc का समतुल्य tag
+
+`@group` को `@category` के सिबलिंग (TypeDoc का अपना grouping tag) के रूप में
+पहचाना जाता है। वही caveat लागू होती है: यह parse होता है, पर यह भी TypeDoc
+API sidebar को आकार नहीं देता — देखें
+[The TypeDoc sidebar](/theme/typedoc-getting-started#the-typedoc-sidebar)।
+आज `@category` / `@group` को TypeDoc sidebar को चलाने देने का कोई opt-in नहीं
+है।
+
 ## Path grammar
 
 `parseCategory` (in

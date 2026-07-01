@@ -197,6 +197,12 @@ export function connect() {}
 以及 `sectionOrder` 选项。[Structure your
 sidebar](/guides/structure-your-sidebar) 涵盖了每一个调节杆。
 
+> [!NOTE]
+> 这些调节杆控制的是 **JSDoc** 的 API 侧边栏。对于 **TypeDoc**，API
+> 侧边栏是一种 module/folder 层级结构 —— 只有 doc groups 和 `menu` 会
+> 响应上面的选项。见
+> [TypeDoc flavor](/guides/structure-your-sidebar#typedoc-flavor)。
+
 ### 我的 `@category` / `@order` / `@playground` / `@iframe` tags 不起作用
 
 最可能的原因：你的 `jsdoc.json` 中 **`tags.allowUnknownTags` 不是 `true`**。

@@ -23,6 +23,22 @@ export class Parser {}
 > を設定してください。さもないと JSDoc は theme が走る前にそれを取り除きます。
 > [overview](/components/overview) を参照してください。（TypeDoc に flag は不要。）
 
+> [!NOTE]
+> このグループ化の挙動は **JSDoc** sidebar のためのものです。**TypeDoc** flavor
+> の下では、`@category` は依然として parse されますが、API sidebar には
+> 影響**しません** — その sidebar は代わりに module/folder hierarchy です。
+> [The TypeDoc sidebar](/theme/typedoc-getting-started#the-typedoc-sidebar)
+> を参照してください。
+
+## `@group` — TypeDoc の相当物となる tag
+
+`@group` は `@category` の sibling として認識されます（TypeDoc 自身の
+grouping tag です）。同じ caveat が適用されます: parse はされますが、TypeDoc
+API sidebar を形作ることもありません — 参照:
+[The TypeDoc sidebar](/theme/typedoc-getting-started#the-typedoc-sidebar)。
+`@category` / `@group` が TypeDoc sidebar を駆動するようにする opt-in は、
+今のところありません。
+
 ## path の grammar
 
 `parseCategory`（[`generate-site.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/generate-site.ts)

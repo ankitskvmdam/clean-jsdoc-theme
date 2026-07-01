@@ -61,6 +61,9 @@ index)। setu पहला काम है, अलग किया गया �
 - **nav tree** — sidebar — kind द्वारा या एक authored `@category` द्वारा sections
   में समूहित, `sectionOrder` / `@order` द्वारा क्रमबद्ध
   ([`assembleNav`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/generate-site.ts))।
+  (यह **JSDoc**-flavor nav है; TypeDoc flavor इसके बजाय एक module/folder
+  पदानुक्रम बनाता है — देखें
+  [The TypeDoc sidebar](/theme/typedoc-getting-started#the-typedoc-sidebar)।)
 - **Resolved cross-references** हर `{@link}` / `@see` / `@tutorial` के लिए
   ([`link-registry.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/link-registry.ts))।
 

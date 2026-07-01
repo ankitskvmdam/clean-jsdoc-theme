@@ -200,6 +200,12 @@ symbol には `@category` / `@order`、guide pages には frontmatter `group` / 
 そして `sectionOrder` option を使います。[Structure your
 sidebar](/guides/structure-your-sidebar) があらゆるレバーをカバーします。
 
+> [!NOTE]
+> それらのレバーは **JSDoc** API sidebar を制御します。**TypeDoc** の場合、API
+> sidebar は module/folder hierarchy です — 上記の options に応答するのは
+> doc groups と `menu` だけです。参照:
+> [TypeDoc flavor](/guides/structure-your-sidebar#typedoc-flavor)。
+
 ### `@category` / `@order` / `@playground` / `@iframe` tags が動かない
 
 最も可能性の高い原因: あなたの `jsdoc.json` で **`tags.allowUnknownTags` が `true`

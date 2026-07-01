@@ -180,7 +180,9 @@ Migration एक upgrade भी है। एक बार v5 पर आने �
 - [**Authoring primitives**](/components/callouts) — comments और prose में callouts,
   steps, tabs, और live embeds।
 - [**Sidebar structure**](/guides/structure-your-sidebar) — `@category` / `@order`
-  tags, `clubSidebarItems`, `menu`।
+  tags, `clubSidebarItems`, `menu`। (ये **JSDoc** sidebar लीवर हैं — TypeDoc का
+  output इसके बजाय एक module/folder पदानुक्रम उपयोग करता है; देखें
+  [TypeDoc flavor](/guides/structure-your-sidebar#typedoc-flavor)।)
 - [**LLM features**](/theme/llm-skill) — प्रति page एक साथी `.md`, copy-page
   button, और `aiPrompt`।
 

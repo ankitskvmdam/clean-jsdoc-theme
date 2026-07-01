@@ -130,6 +130,84 @@ npx serve dist
 > **warn** करती हैं (एक "did you mean?" संकेत के साथ) — इसे error तक बढ़ाने के लिए
 > [`strict`](/theme/configuration#strict) देखें।
 
+## The TypeDoc sidebar
+
+TypeDoc output की sidebar JSDoc template के kind-bucket layout (top-level
+"Classes", "Interfaces", "Enumerations", … sections) का उपयोग **नहीं** करती।
+इसके बजाय यह **TypeDoc की अपनी default theme** को mirror करती है — एक
+module/folder पदानुक्रम:
+
+- **Top level = पहले आपके documents, फिर folders और modules**, alphabetically।
+  कोई top-level kind sections नहीं होते।
+- **Folders** आपके source की directory structure से आते हैं। एक अकेले child
+  वाला folder उस child में **merge** हो जाता है (`compactFolders`) — जैसे
+  `base/` के नीचे एक अकेला `Component` दो nested levels के बजाय
+  `base/Component` के रूप में दिखता है।
+- **हर module एक clickable, expandable node है**: उसके label पर क्लिक करने से
+  module का अपना page खुलता है; chevron उसे expand करके उसके members दिखाता
+  है।
+- **Members अपने module के नीचे nest होते हैं**, **kind** से क्रमित होकर —
+  Enumerations → Classes → Interfaces → Type Aliases → Variables → Functions —
+  फिर नाम से alphabetically। sidebar में स्वयं कोई per-kind sub-headings नहीं
+  होते (kind grouping module के अपने page body पर अब भी दिखती है)।
+- किसी module के भीतर nested **Namespaces** उसी तरह nested nodes के रूप में
+  दिखते हैं।
+
+> [!IMPORTANT]
+> यह JSDoc template की sidebar से एक अलग मॉडल है। [Structure your
+> sidebar](/guides/structure-your-sidebar) में प्रलेखित ordering लीवर —
+> `@category`, `@order`, `sectionOrder`, `clubSidebarItems` — **TypeDoc API
+> sidebar को आकार नहीं देते**। ऊपर वाला module पदानुक्रम ही इसका मालिक है, जो
+> TypeDoc के अपने defaults से मेल खाता है (जहाँ category/group-driven
+> navigation opt-in है)। एक category/group-driven TypeDoc nav बहाल करना
+> **फ़िलहाल configurable नहीं है**।
+>
+> TypeDoc के लिए क्या अब भी काम करता है: prose **doc groups** (`docGroups` +
+> किसी doc page की frontmatter `group` / `order`) अब भी render होते हैं — API
+> पदानुक्रम से पहले — और `docGroups` के ज़रिए क्रमित होते हैं; **`menu`**
+> top region अब भी काम करता है; tutorials अब भी render होते हैं। पूरा विवरण
+> देखें [Structure your sidebar](/guides/structure-your-sidebar#typedoc-flavor)।
+
+## TypeDoc-specific rendering
+
+sidebar से आगे, TypeDoc output कुछ ऐसी चीज़ें render करता है जो JSDoc template
+नहीं करता, क्योंकि वे TypeDoc के अपने analysis से आती हैं:
+
+- **Inheritance & relationships.** Class और interface pages को एक
+  **Hierarchy** list (ancestor chain), एक **Implements** section, और एक
+  **Implemented By** section मिलते हैं। व्यक्तिगत members को captions मिलते हैं
+  — **Inherited from …**, **Overrides …**, **Implementation of …** — जो
+  संबंधित symbol की ओर इंगित करते हैं।
+- **`@group`.** `@category` के सिबलिंग के रूप में पहचाना जाता है। यह parse
+  होता है, पर — `@category` की तरह ही — यह default TypeDoc sidebar को नहीं
+  चलाता (ऊपर देखें)।
+- **Native TypeDoc `projectDocuments`.** TypeDoc के अपने
+  [`projectDocuments`](https://typedoc.org/options/input/#projectdocuments)
+  option के ज़रिए attach की गई Markdown files pages के रूप में render होती
+  हैं। यह theme के अपने [`docs`](/theme/configuration#docs) option से
+  **अलग** है:
+  - [`docs`](/theme/configuration#docs) theme की prose-docs directory है — यह
+    JSDoc और TypeDoc दोनों के लिए एक जैसे काम करती है।
+  - `projectDocuments` एक TypeDoc-native input है, जो केवल TypeDoc output को
+    उपलब्ध है।
+
+  दोनों अंततः site में सामान्य pages बन जाते हैं, तो चुनें कि कौन सा tool file
+  list का मालिक हो: एक साझा, tool-agnostic guides folder के लिए `docs` उपयोग
+  करें; अगर आप अपने docs को पहले से TypeDoc-native तरीके से organize कर रहे
+  हैं तो `projectDocuments` उपयोग करें।
+- **`@inheritDoc`.** `{@inheritDoc Target}` से (या किसी overriding/implementing
+  member पर एक bare `@inheritDoc` से) प्रलेखित एक member अपने स्थान पर target
+  का description और parameter/return docs दिखाता है। TypeDoc reference को
+  resolve करता है; theme परिणामी content render करता है — default TypeDoc
+  semantics से मेल खाते हुए।
+- **Async modifier badge.** जो methods `async` हैं (या एक `Promise` लौटाते
+  हैं) उनके signature के बगल में एक **async** modifier badge दिखता है।
+- **Object-literal type expansion.** एक inline object-literal type — किसी
+  parameter पर, किसी return type पर, या एक type alias/variable पर — एक
+  **property table** में expand हो जाता है: प्रति member एक row, जिसमें name,
+  type, optional flag, और description होता है। table के अंदर type references
+  अपने प्रलेखित pages से **linked** बने रहते हैं।
+
 ## कई भाषाएँ
 
 localization workflow अपनी locales को उसी `cleanJsdocTheme` block में declare
@@ -150,7 +228,8 @@ localization workflow अपनी locales को उसी `cleanJsdocTheme` bl
   **[Combine guides + API](/guides/combine-guides-and-api)** — उसी site में हाथ से
   लिखे Markdown जोड़ें।
 - **[Structure your sidebar](/guides/structure-your-sidebar)** — grouping और
-  ordering के levers।
+  ordering के levers (यह JSDoc से कैसे अलग है यह जानने के लिए इसका **TypeDoc
+  flavor** section देखें)।
 - **[Authoring](/components/callouts)** — callouts, steps, tabs, और embeds।
 - **[अपने docs को localize करें](/guides/localize-your-docs)** — कई-भाषा workflow
   (extract TypeDoc पर काम करता है; localized builds आज केवल JSDoc के लिए हैं)।
