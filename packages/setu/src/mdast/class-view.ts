@@ -1,7 +1,7 @@
 import type { PhrasingContent, Root, RootContent } from 'mdast';
 import { ClassMember, ClassView, ContainerView, MemberBuckets } from '../class-view';
 import { slugifyHeading, TDoclet, TDocletOverload, TDocletParam, TDocletTypeParam } from '@clean-jsdoc-theme/utils';
-import { h, hr, inlineCode, li, link, memberHeading, memberMeta, p, root, signature, strong, text, ul } from './builders';
+import { emphasis, h, hr, inlineCode, li, link, memberHeading, memberMeta, p, root, signature, strong, text, ul } from './builders';
 import {
   docletBlocks,
   DocletBlocksOptions,
@@ -559,6 +559,11 @@ export function memberBlocks(
     out.push(memberMeta({ badges, sourceHref: resolved?.href, sourceLabel: resolved?.label }));
   }
 
+  // Inherited from / Overrides / Implementation of — typedoc flavor only (see
+  // memberRelationCaption's early return); emitted right after the heading/meta,
+  // before the member's body.
+  out.push(...memberRelationCaption(member, options));
+
   // The type now lives in the heading signature, so the body's "Type" field is
   // redundant in both flavors.
   const skip: DocletSection[] = [...(options.skip ?? []), 'modifiers', 'type'];
@@ -622,6 +627,92 @@ export function classRelationsBlocks(
       });
       return p(...children);
     });
+}
+
+/**
+ * Short display name for a namepath: the last segment after `.`/`#`/`~`.
+ */
+function shortRelationName(longname: string): string {
+  return longname.split(/[.#~]/).pop() ?? longname;
+}
+
+/**
+ * A namepath rendered as a link when it resolves to a documented page,
+ * otherwise inert code — same fallback rule as {@link classRelationsBlocks}.
+ */
+function relationLinkName(
+  longname: string,
+  resolveLink: DocletBlocksOptions['resolveLink']
+): PhrasingContent {
+  const resolved = resolveLink?.(longname) ?? null;
+  const shortName = shortRelationName(longname);
+  return resolved && !resolved.external ? link(resolved.href, inlineCode(shortName)) : inlineCode(shortName);
+}
+
+/**
+ * TypeDoc-only "Hierarchy" / "Implements" / "Implemented By" blocks for a
+ * class/interface page — built from `view.augments` (direct parent chain) and
+ * the doclet's `implements`/`implementations` (the inverse edge Task 1 attaches
+ * to an interface doclet, pointing at each class that implements it). ONLY
+ * called under `options.flavor === 'typedoc'` (see {@link typedocMemberBlocks}),
+ * so the JSDoc path never reaches this — `augments`/`implements` are rendered
+ * there via the pre-existing {@link classRelationsBlocks} "Extends:"/
+ * "Implements:" paragraph instead.
+ */
+function relationshipBlocks(view: ContainerView, options: ClassViewToMdastOptions): RootContent[] {
+  const resolveLink = options.resolveLink;
+  const out: RootContent[] = [];
+
+  const chain = [...view.augments].reverse();
+  if (chain.length > 0) {
+    const selfName = view.doclet.name ?? view.doclet.longname ?? '';
+    out.push(h(4, text('Hierarchy')));
+    out.push(
+      ul(
+        [...chain.map((ln) => li(p(relationLinkName(ln, resolveLink)))), li(p(inlineCode(selfName)))]
+      )
+    );
+  }
+
+  const impls = view.doclet.implements ?? [];
+  if (impls.length > 0) {
+    out.push(h(4, text('Implements')));
+    out.push(ul(impls.map((ln) => li(p(relationLinkName(ln, resolveLink))))));
+  }
+
+  const implementedBy = view.doclet.implementations ?? [];
+  if (implementedBy.length > 0) {
+    out.push(h(4, text('Implemented By')));
+    out.push(ul(implementedBy.map((ln) => li(p(relationLinkName(ln, resolveLink))))));
+  }
+
+  return out;
+}
+
+/**
+ * TypeDoc-only per-member caption — "Inherited from …" / "Overrides …" /
+ * "Implementation of …" — emitted right after a member's heading, before its
+ * body. Strictly gated on `options.flavor === 'typedoc'`: `inheritedFrom` is
+ * attached to inherited members by {@link getInheritedMembers} for BOTH
+ * flavors, and `overrides`/`implementationOf` live on the raw doclet for both
+ * flavors too, so without this early return the JSDoc path would regress.
+ * JSDoc already shows its own "Overrides:" line via {@link relationsBlocks} in
+ * `docletBlocks` — untouched by this helper.
+ */
+function memberRelationCaption(
+  member: ClassMember,
+  options: DocletBlocksOptions
+): RootContent[] {
+  if (options.flavor !== 'typedoc') return [];
+  const resolveLink = options.resolveLink;
+  const caption = (label: string, longname: string): RootContent => {
+    return p(emphasis(text(`${label} `)), relationLinkName(longname, resolveLink));
+  };
+  const out: RootContent[] = [];
+  if (member.inheritedFrom) out.push(caption('Inherited from', member.inheritedFrom));
+  if (member.overrides) out.push(caption('Overrides', member.overrides));
+  if (member.implementationOf) out.push(caption('Implementation of', member.implementationOf));
+  return out;
 }
 
 /**
@@ -822,6 +913,10 @@ function typedocMemberBlocks(view: ContainerView, options: ClassViewToMdastOptio
   }
   if (!sections) return [];
   const out: RootContent[] = [];
+  // Hierarchy / Implements / Implemented By — class & interface pages only.
+  if (view.kind === 'class' || view.kind === 'interface') {
+    out.push(...relationshipBlocks(view, options));
+  }
   if (sections.some((s) => s.members.length > 0)) out.push(hr());
   out.push(...memberSections(sections, options));
   return out;

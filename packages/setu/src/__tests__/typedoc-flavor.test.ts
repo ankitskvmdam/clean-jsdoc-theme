@@ -461,3 +461,141 @@ describe('flavor: typedoc — declaration blocks', () => {
     if (handler) expect(handler.body).not.toContain('= (evt: T) =>');
   });
 });
+
+/**
+ * A module with an interface (`Named`), a base class (`Base`) with an instance
+ * method, and a class (`Widget`) that extends `Base`, implements `Named`, and
+ * overrides `Base`'s method. `Named.implementations` points back at `Widget`
+ * (the TypeDoc-bridge-shaped inverse edge from Task 1).
+ */
+function inheritanceCollection(): TJSDocSaltyCollection<TDoclet> {
+  return makeCollection([
+    { kind: 'module', name: 'lib', longname: 'module:lib', scope: 'global', comment: '/** Lib. */', description: 'The library.' },
+    {
+      kind: 'interface',
+      name: 'Named',
+      longname: 'module:lib.Named',
+      memberof: 'module:lib',
+      scope: 'static',
+      comment: '/** Named. */',
+      description: 'Something with a name.',
+      implementations: ['module:lib.Widget'],
+    },
+    {
+      kind: 'function',
+      name: 'getName',
+      longname: 'module:lib.Named#getName',
+      memberof: 'module:lib.Named',
+      scope: 'instance',
+      comment: '/** Get name. */',
+      description: 'Returns the name.',
+      returns: [{ type: { names: ['string'] } }],
+    },
+    {
+      kind: 'class',
+      name: 'Base',
+      longname: 'module:lib.Base',
+      memberof: 'module:lib',
+      scope: 'static',
+      classdesc: 'A base class.',
+      comment: '/** A base class. */',
+    },
+    {
+      kind: 'function',
+      name: 'render',
+      longname: 'module:lib.Base#render',
+      memberof: 'module:lib.Base',
+      scope: 'instance',
+      comment: '/** Render. */',
+      description: 'Renders the base.',
+      returns: [{ type: { names: ['void'] } }],
+    },
+    {
+      kind: 'function',
+      name: 'toString',
+      longname: 'module:lib.Base#toString',
+      memberof: 'module:lib.Base',
+      scope: 'instance',
+      comment: '/** To string. */',
+      description: 'Stringifies the base.',
+      returns: [{ type: { names: ['string'] } }],
+    },
+    {
+      kind: 'class',
+      name: 'Widget',
+      longname: 'module:lib.Widget',
+      memberof: 'module:lib',
+      scope: 'static',
+      classdesc: 'A widget.',
+      comment: '/** A widget. */',
+      augments: ['module:lib.Base'],
+      implements: ['module:lib.Named'],
+    },
+    {
+      kind: 'function',
+      name: 'render',
+      longname: 'module:lib.Widget#render',
+      memberof: 'module:lib.Widget',
+      scope: 'instance',
+      comment: '/** Render. */',
+      description: 'Renders the widget.',
+      returns: [{ type: { names: ['void'] } }],
+      overrides: 'module:lib.Base#render',
+      override: true,
+    },
+    {
+      kind: 'function',
+      name: 'getName',
+      longname: 'module:lib.Widget#getName',
+      memberof: 'module:lib.Widget',
+      scope: 'instance',
+      comment: '/** Get name. */',
+      description: 'Returns the widget name.',
+      returns: [{ type: { names: ['string'] } }],
+      implementationOf: 'module:lib.Named#getName',
+    },
+  ]);
+}
+
+describe('flavor: typedoc — inheritance surfacing', () => {
+  it('shows Hierarchy and Implements on a class page', () => {
+    const m = generateSite(inheritanceCollection(), { flavor: 'typedoc' });
+    const body = pageByLongname(m, 'module:lib.Widget')!.body;
+    expect(body).toContain('Hierarchy');
+    expect(body).toContain('Implements');
+    expect(body).toContain('Base');
+    expect(body).toContain('Named');
+  });
+
+  it('shows Implemented By on an interface page', () => {
+    const m = generateSite(inheritanceCollection(), { flavor: 'typedoc' });
+    const body = pageByLongname(m, 'module:lib.Named')!.body;
+    expect(body).toContain('Implemented By');
+    expect(body).toContain('Widget');
+  });
+
+  it('captions inherited and overriding members', () => {
+    const m = generateSite(inheritanceCollection(), { flavor: 'typedoc' });
+    const body = pageByLongname(m, 'module:lib.Widget')!.body;
+    expect(body).toContain('Inherited from');
+    expect(body).toContain('Overrides');
+  });
+
+  it('captions a member implementing an interface method', () => {
+    const m = generateSite(inheritanceCollection(), { flavor: 'typedoc' });
+    const body = pageByLongname(m, 'module:lib.Widget')!.body;
+    expect(body).toContain('Implementation of');
+  });
+});
+
+describe('flavor: jsdoc (default) — no inheritance surfacing labels', () => {
+  it('does not emit Hierarchy/Implements/Implemented By/Implementation of under jsdoc flavor', () => {
+    const m = generateSite(inheritanceCollection(), {}); // default jsdoc
+    const pages = m.pages;
+    for (const p of pages) {
+      expect(p.body).not.toContain('Implemented By');
+      expect(p.body).not.toContain('Hierarchy');
+      expect(p.body).not.toContain('Implementation of');
+    }
+  });
+});
