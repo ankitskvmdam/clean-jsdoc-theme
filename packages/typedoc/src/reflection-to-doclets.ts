@@ -130,6 +130,15 @@ function walk(reflection: Reflection, result: AdaptResult, resolveLink: LinkReso
     if (reflection.kindOf(HANDLED)) {
       const doclet = adaptDeclaration(declaration, resolveLink);
       if (doclet) result.doclets.push(doclet);
+    } else if (reflection.kindOf(ReflectionKind.Document)) {
+      // `DocumentReflection`s (`projectDocuments`/`@document`) are NOT an
+      // unsupported/deferred kind — `writeSite`'s `collectProjectDocuments`
+      // feeds them into the same `DocInput[]` pipeline as `cleanJsdocTheme.docs`.
+      // (They live on `ContainerReflection.documents`, not `.children`, so this
+      // walk never actually reaches one today — but the check is kept so the
+      // skip tally stays accurate if that ever changes, e.g. via a future
+      // `childrenIncludingDocuments` walk.)
+      return;
     } else if (!reflection.kindOf(CONTAINER)) {
       // Not a container and not handled → a deferred symbol (a `Reference`
       // re-export, etc.). Record and skip cleanly; nothing under it is lost

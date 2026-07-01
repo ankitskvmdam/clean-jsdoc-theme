@@ -35,7 +35,8 @@ import type {
   SiteName,
   ThemeConfig,
 } from '@clean-jsdoc-theme/dwar';
-import type { Application, ProjectReflection } from 'typedoc';
+import { ReflectionKind } from 'typedoc';
+import type { Application, DocumentReflection, ProjectReflection } from 'typedoc';
 import {
   createGoogleFontResolver,
   formatBuildReport,
@@ -473,6 +474,41 @@ function renderReadme(project: ProjectReflection): string | undefined {
   return html || undefined;
 }
 
+/**
+ * Collect native TypeDoc docs (`projectDocuments` / `@document`) into the same
+ * `DocInput[]` shape `cleanJsdocTheme.docs` produces, so they flow through the
+ * identical docs pipeline — no new renderer. Each `DocumentReflection` (surfaced
+ * as `ReflectionKind.Document` on the project tree) becomes one `DocInput`:
+ * `path` is the document's `name` (TypeDoc derives it from the source file's
+ * basename, extension-stripped — matching `collectDocs`'s own slugs), `content`
+ * is its `content: CommentDisplayPart[]` rendered to markdown via the SAME
+ * `partsToMarkdown` helper the README/comment prose use, and `type` is
+ * `'markdown'` (TypeDoc documents are always Markdown-sourced). A reflection
+ * whose parts render to nothing (blank) is skipped — never emits an empty page.
+ */
+export function collectProjectDocuments(project: ProjectReflection): DocInput[] {
+  const docs: DocInput[] = [];
+  for (const reflection of project.getReflectionsByKind(ReflectionKind.Document)) {
+    const doc = reflection as DocumentReflection;
+    const md = partsToMarkdown(doc.content ?? []);
+    if (!md.trim()) continue;
+    docs.push({ path: doc.name, content: md, type: 'markdown' });
+  }
+  return docs;
+}
+
+/**
+ * Merge `projectDocuments` into the opts-walked docs, de-duped by `path` with
+ * the opts docs (`cleanJsdocTheme.docs`) winning a collision — an explicit
+ * directory entry is the more deliberate authoring surface.
+ */
+function mergeDocs(optsDocs: DocInput[], projectDocs: DocInput[]): DocInput[] {
+  if (projectDocs.length === 0) return optsDocs;
+  const byPath = new Map(optsDocs.map((d) => [d.path, d]));
+  for (const d of projectDocs) if (!byPath.has(d.path)) byPath.set(d.path, d);
+  return [...byPath.values()];
+}
+
 /** Extensions we treat as "source" worth emitting a viewer page for. */
 const SOURCE_EXTENSIONS = new Set(['.js', '.mjs', '.cjs', '.jsx', '.ts', '.mts', '.cts', '.tsx']);
 
@@ -671,7 +707,12 @@ export async function writeSite(
   const resolvedDocs = docsDir
     ? await resolveDocImages(await collectDocs(docsDir, warn), docsDir, warn, hrefForServed)
     : { docs: [] as DocInput[], files: [] as OutputFile[], inlineSvgs: {} as Record<string, string> };
-  const docs = resolvedDocs.docs;
+  // Native TypeDoc docs (`projectDocuments`/`@document`) → the same DocInput[]
+  // pipeline, merged with the opts-walked docs (opts win on a colliding path).
+  // These have no directory of their own for local-image resolution, so they
+  // aren't run through `resolveDocImages` — matching how a `@document` page's
+  // images are just ordinary already-resolved-by-TypeDoc HTML paths.
+  const docs = mergeDocs(resolvedDocs.docs, collectProjectDocuments(project));
 
   // Merge every source's image assets, deduped by served path (identical bytes →
   // identical content-hashed name, so a shared image is written once), and union
