@@ -160,6 +160,16 @@ export class Base {
   toJSON(): string {
     return JSON.stringify(this.label);
   }
+
+  /** Reset this thing to its initial state. */
+  reset(): void {
+    this.label = '';
+  }
+
+  /** Clone this thing. */
+  clone(): this {
+    return this;
+  }
 }
 
 /** Something with a name. */
@@ -183,6 +193,19 @@ export class Widget extends Base implements Named {
   /** @inheritDoc Base.toJSON */
   override toJSON(): string {
     return JSON.stringify(this.label);
+  }
+
+  /**
+   * Widget's own prose about resetting.
+   * @inheritDoc Base.reset
+   */
+  override reset(): void {
+    this.label = '';
+  }
+
+  /** Clones it. {@inheritDoc Base.clone} */
+  override clone(): this {
+    return this;
   }
 }
 `;
@@ -577,6 +600,29 @@ describe('reflectionsToDoclets — @inheritDoc resolution', () => {
   it('resolves a bare @inheritDoc (inline form, no target) from the implemented member', () => {
     const widgetName = byLongname('Widget#name')!;
     expect(widgetName.description).toContain('The name of this thing');
+  });
+
+  it('resolves an explicit-target @inheritDoc INLINE form ({@inheritDoc Target}) end-to-end', () => {
+    // Mirrors the block-tag assertion above, but for the inline
+    // `{@inheritDoc Base.clone}` form used inside `Widget.clone`'s prose.
+    // TypeDoc resolves it to the target's summary during conversion.
+    const widgetClone = doclets.find((d) => d.name === 'clone' && d.memberof === 'Widget')!;
+    expect(widgetClone.description).toContain('Clone this thing');
+  });
+
+  it('CHARACTERIZES TypeDoc overwriting a member’s OWN summary with the @inheritDoc target', () => {
+    // `Widget.reset` writes its own prose ("Widget's own prose about
+    // resetting.") AND carries `@inheritDoc Base.reset`. TypeDoc's converter
+    // OVERWRITES the member's own summary with the target's summary (it logs
+    // "Content in the summary section will be overwritten by the @inheritDoc
+    // tag") — it is NOT an "own-wins" / fill-only-empty merge. This test
+    // intentionally pins that real overwrite behavior: the doclet description
+    // is Base.reset's text, and the member's own prose is GONE. A future
+    // TypeDoc upgrade or bridge change that alters this will fail loudly here.
+    const widgetReset = doclets.find((d) => d.name === 'reset' && d.memberof === 'Widget')!;
+    expect(widgetReset.description).toContain('Reset this thing to its initial state');
+    expect(widgetReset.description).not.toContain('Widget’s own prose');
+    expect(widgetReset.description).not.toContain("Widget's own prose");
   });
 });
 
