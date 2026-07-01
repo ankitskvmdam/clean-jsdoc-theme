@@ -567,6 +567,16 @@ export function memberBlocks(
   // The type now lives in the heading signature, so the body's "Type" field is
   // redundant in both flavors.
   const skip: DocletSection[] = [...(options.skip ?? []), 'modifiers', 'type'];
+  // Under the typedoc flavor the caption above already renders "Inherited from"
+  // (from `inherits`, the `inherited` section) and "Overrides" (from `overrides`,
+  // part of the `relations` section) as short-name links — so suppress those
+  // body sections to avoid the raw-longname duplicate. TypeDoc members never
+  // carry member-level Extends/Implements/Mixes/Borrows (those are container-
+  // level, handled by relationshipBlocks), so dropping `relations` here loses
+  // nothing on the typedoc path. JSDoc keeps both sections → byte-identical.
+  if (options.flavor === 'typedoc') {
+    skip.push('inherited', 'relations');
+  }
   if (overloaded) {
     // The shared body (description/examples/…) renders once with its
     // per-signature sections suppressed, then every signature stacks below with
@@ -734,8 +744,17 @@ export function containerViewToMdast(
   const titleFallback = view.kind.charAt(0).toUpperCase() + view.kind.slice(1);
   blocks.push(h(pageLevel, text(view.doclet.name ?? view.doclet.longname ?? titleFallback)));
 
-  // Extends/Implements/Mixes
-  blocks.push(...classRelationsBlocks(view.doclet, options.resolveLink));
+  // Extends/Implements/Mixes — JSDoc flavor only. The typedoc flavor renders
+  // these as the nicer "Hierarchy"/"Implements"/"Implemented By" lists via
+  // relationshipBlocks (see typedocMemberBlocks), so running classRelationsBlocks
+  // here too would duplicate them (raw-longname paragraphs alongside the short-
+  // name lists). The TypeDoc bridge never sets `doclet.mixes` (mixins aren't a
+  // TypeDoc reflection concept — confirmed: no `mixes` write in
+  // packages/typedoc/src), so gating this off drops nothing on the typedoc path.
+  // JSDoc is unchanged → byte-identical.
+  if (options.flavor !== 'typedoc') {
+    blocks.push(...classRelationsBlocks(view.doclet, options.resolveLink));
+  }
 
   // Standalone pages (typedoc flavor) lead with the symbol's declaration as a
   // shiki-highlighted inline `<Signature>`, right under the title — matching

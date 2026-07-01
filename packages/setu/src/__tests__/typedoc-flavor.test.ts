@@ -615,8 +615,23 @@ describe('flavor: typedoc — inheritance surfacing', () => {
     const body = pageByLongname(m, 'module:lib.Widget')!.body;
     expect(body).toContain('Hierarchy');
     expect(body).toContain('Implements');
+    // Short names in the Hierarchy/Implements lists (not raw longnames).
     expect(body).toContain('Base');
     expect(body).toContain('Named');
+  });
+
+  it('does NOT also render the JSDoc-style Extends/Implements paragraphs (no duplicate)', () => {
+    const m = generateSite(inheritanceCollection(), { flavor: 'typedoc' });
+    const body = pageByLongname(m, 'module:lib.Widget')!.body;
+    // The tell-tale of classRelationsBlocks is the strong-label paragraph
+    // ("**Extends:** …") and the RAW `module:` longname (`inlineCode(r)`), which
+    // the nicer relationshipBlocks lists never emit (they use short names).
+    expect(body).not.toContain('Extends:');
+    expect(body).not.toContain('module:lib.Base');
+    expect(body).not.toContain('module:lib.Named');
+    // …while the Hierarchy/Implements/Implemented By lists are still present.
+    expect(body).toContain('Hierarchy');
+    expect(body).toContain('Implements');
   });
 
   it('shows Implemented By on an interface page', () => {
@@ -631,6 +646,22 @@ describe('flavor: typedoc — inheritance surfacing', () => {
     const body = pageByLongname(m, 'module:lib.Widget')!.body;
     expect(body).toContain('Inherited from');
     expect(body).toContain('Overrides');
+  });
+
+  it('does not double-render member captions (no raw-longname duplicate)', () => {
+    // Regression: the pre-existing `inheritedFromParagraph` ("Inherited from
+    // `module:lib.Base`") and `relationsBlocks` ("**Overrides:** …") in
+    // docletBlocks would duplicate the new short-name captions on typedoc
+    // members. They are skipped under typedoc, so exactly one "Inherited from"
+    // and one "Overrides" appear, and the raw member longname never shows.
+    const m = generateSite(inheritanceCollection(), { flavor: 'typedoc' });
+    const body = pageByLongname(m, 'module:lib.Widget')!.body;
+    expect(body.match(/Inherited from/g)?.length).toBe(1);
+    expect(body.match(/Overrides/g)?.length).toBe(1);
+    // The raw-longname forms (`module:lib.Base`, `module:lib.Base#render`) that
+    // the skipped body sections would have emitted must be absent.
+    expect(body).not.toContain('module:lib.Base');
+    expect(body).not.toContain('Overrides:'); // the strong-label relations form
   });
 
   it('captions a member implementing an interface method', () => {
