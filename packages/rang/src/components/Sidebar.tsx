@@ -219,22 +219,59 @@ interface NavEntryProps {
   onToggle: (key: string, open: boolean) => void;
 }
 
+/** Does `node` or any of its descendants carry `currentSlug`? */
+function holdsSlug(node: NavNode, currentSlug: string): boolean {
+  if (node.slug !== undefined && node.slug === currentSlug) return true;
+  return (node.children ?? []).some((c) => holdsSlug(c, currentSlug));
+}
+
 /**
  * A single sidebar row plus, when the node is a clubbed parent, its collapsible
- * child list. A parent (carries `children`) renders a toggle button with a
- * chevron and reveals its children only when open; a leaf renders a
- * {@link NavLink}. Clubs are collapsed by default, EXCEPT the one holding the
- * current page (so you can always see where you are); an explicit user toggle
- * (persisted in `openMap`) overrides that default. Owns its own `<li>`.
+ * child list. Three shapes:
+ *  - **folder** (`children`, no `slug`): a label-only toggle button with a
+ *    chevron; reveals its children only when open.
+ *  - **module** (`children` AND `slug` — TypeDoc's module/namespace nodes):
+ *    the SAME row, but the label is a real {@link NavLink} to the module's own
+ *    page, with a sibling chevron button that toggles the children — so the
+ *    label navigates and the chevron expands, independently.
+ *  - **leaf** (no `children`): a plain {@link NavLink}.
+ * Clubs are collapsed by default, EXCEPT the one holding the current page (its
+ * own slug or a descendant's — so you can always see where you are); an
+ * explicit user toggle (persisted in `openMap`) overrides that default. Owns
+ * its own `<li>`.
  */
 function NavEntry({ node, currentSlug, basePath, openMap, onToggle }: NavEntryProps) {
   const children = node.children;
   if (children && children.length > 0) {
     const key = clubKey(node);
-    const holdsActive = children.some((c) => c.slug !== undefined && c.slug === currentSlug);
+    const holdsActive = holdsSlug(node, currentSlug);
     const open = openMap[key] ?? holdsActive;
-    return (
-      <li class="my-0.5">
+    const toggle = (
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => onToggle(key, !open)}
+        aria-label={node.label}
+        class="flex shrink-0 items-center rounded-xl p-1.5 outline-offset-[-1px] cursor-pointer hover:bg-[var(--clean-bg-muted)]"
+      >
+        <ChevronRight
+          size={16}
+          aria-hidden="true"
+          class={cn('shrink-0 transition-transform', open && 'rotate-90')}
+        />
+      </button>
+    );
+    const row =
+      node.slug !== undefined ? (
+        // Module node (children + own slug): the label is a real link to the
+        // module's own page; the chevron is a SIBLING toggle button — two
+        // independent controls, neither nested inside the other.
+        <div class="flex items-center gap-x-1">
+          <NavLink node={node} currentSlug={currentSlug} basePath={basePath} />
+          {toggle}
+        </div>
+      ) : (
+        // Folder node (children, no slug): unchanged label-only toggle.
         <button
           type="button"
           aria-expanded={open}
@@ -248,6 +285,10 @@ function NavEntry({ node, currentSlug, basePath, openMap, onToggle }: NavEntryPr
             class={cn('ml-auto shrink-0 transition-transform', open && 'rotate-90')}
           />
         </button>
+      );
+    return (
+      <li class="my-0.5">
+        {row}
         {/* Children indented with a guide rail; only mounted while open. */}
         {open && (
           <ul class="m-0 mt-0.5 ml-4 list-none border-l border-(--clean-border) p-0 pl-2">

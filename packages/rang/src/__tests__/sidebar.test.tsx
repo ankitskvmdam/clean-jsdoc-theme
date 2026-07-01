@@ -85,6 +85,84 @@ describe('Sidebar', () => {
   });
 });
 
+describe('Sidebar — module node that is both a link and expandable (typedoc)', () => {
+  afterEach(() => {
+    cleanup();
+    localStorage.clear();
+  });
+
+  // A module node carries BOTH `slug` (the module page) and `children` (its
+  // exported members) — TypeDoc's default sidebar shape (Task 1 on this branch).
+  const MODULE_WITH_SLUG: NavNode[] = [
+    {
+      label: 'queue',
+      slug: 'modules/queue',
+      group: 'Modules',
+      children: [
+        { label: 'Queue', slug: 'classes/queue-queue', group: 'Modules' },
+        { label: 'QueueOptions', slug: 'interfaces/queue-options', group: 'Modules' },
+      ],
+    },
+  ];
+
+  it('renders both a navigable link to the module slug and a chevron toggle', () => {
+    const html = render(<Sidebar nav={MODULE_WITH_SLUG} currentSlug="" />);
+    // The label is a real link to the module's own page...
+    expect(html).toContain('href="/modules/queue"');
+    expect(html).toMatch(/<a[^>]*href="\/modules\/queue"[^>]*>(?:<[^>]*>)*queue/);
+    // ...and a sibling toggle control (not nested inside the link) exposes
+    // aria-expanded, so the link and the toggle are two separate interactive
+    // controls in the row.
+    expect(html).toContain('aria-expanded="false"');
+    expect(html).not.toMatch(/<a[^>]*href="\/modules\/queue"[^>]*>(?:(?!<\/a>).)*aria-expanded/s);
+  });
+
+  it('reveals children when the toggle is clicked, without navigating', () => {
+    const { getByRole, queryByRole } = mount(<Sidebar nav={MODULE_WITH_SLUG} currentSlug="" />);
+    // Collapsed by default (no descendant is current): only the module's own
+    // link is present, no child links yet.
+    expect(queryByRole('link', { name: 'Queue' })).toBeNull();
+    const moduleLink = getByRole('link', { name: 'queue' });
+    expect(moduleLink.getAttribute('href')).toBe('/modules/queue');
+
+    // The toggle is a separate control from the link.
+    const toggle = getByRole('button', { name: /queue/ });
+    expect(toggle.tagName).not.toBe('A');
+    fireEvent.click(toggle);
+
+    expect(getByRole('link', { name: 'Queue' })).toBeTruthy();
+    expect(getByRole('link', { name: 'QueueOptions' })).toBeTruthy();
+    // Clicking the toggle didn't remove or replace the module's own link.
+    expect(getByRole('link', { name: 'queue' }).getAttribute('href')).toBe('/modules/queue');
+  });
+
+  it('auto-expands when a descendant is the current page and highlights the descendant', () => {
+    const html = render(
+      <Sidebar nav={MODULE_WITH_SLUG} currentSlug="classes/queue-queue" />
+    );
+    expect(html).toContain('aria-expanded="true"');
+    expect(html).toContain('href="/classes/queue-queue"');
+    expect(html).toMatch(/aria-current="page"[^>]*>(?:<[^>]*>)*Queue/);
+  });
+
+  it('highlights the module link itself when its own slug is current', () => {
+    const html = render(<Sidebar nav={MODULE_WITH_SLUG} currentSlug="modules/queue" />);
+    expect(html).toMatch(/aria-current="page"[^>]*href="\/modules\/queue"|href="\/modules\/queue"[^>]*aria-current="page"/);
+  });
+
+  it('a folder node (children, no slug) still renders no link — label-only toggle', () => {
+    const html = render(<Sidebar nav={CLUB} currentSlug="" />);
+    expect(html).not.toContain('href="/queue"');
+    expect(html).toContain('aria-expanded');
+  });
+
+  it('a leaf node (no children) still renders a plain link', () => {
+    const html = render(<Sidebar nav={fixture} currentSlug="" />);
+    expect(html).toContain('href="/baseentity"');
+    expect(html).not.toMatch(/aria-expanded/);
+  });
+});
+
 describe('Sidebar — collapsible clubs (interactive)', () => {
   afterEach(() => {
     cleanup();
