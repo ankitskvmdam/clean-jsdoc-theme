@@ -1,11 +1,15 @@
 # clean-jsdoc-theme
 
 [![npm](https://img.shields.io/npm/v/clean-jsdoc-theme?logo=npm)](https://www.npmjs.com/package/clean-jsdoc-theme)
+[![typedoc plugin](https://img.shields.io/npm/v/@clean-jsdoc-theme/typedoc?logo=npm&label=%40clean-jsdoc-theme%2Ftypedoc)](https://www.npmjs.com/package/@clean-jsdoc-theme/typedoc)
+[![license](https://img.shields.io/npm/l/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/LICENSE)
+[![docs](https://img.shields.io/badge/docs-ankdev.me-005bff)](https://ankdev.me/clean-jsdoc-theme)
+[![live demo](https://img.shields.io/badge/live%20demo-api--docs-7c3aed)](https://ankdev.me/clean-jsdoc-theme/api-docs)
 [![sponsor](https://img.shields.io/badge/sponsor-%E2%9D%A4-db61a2?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/ankitskvmdam)
 
-If clean-jsdoc-theme saves you time, please consider [sponsoring its development](https://github.com/sponsors/ankitskvmdam) — it directly funds the v5 rewrite and ongoing maintenance.
+A fast, modern, LLM-friendly documentation theme for **JSDoc _and_ TypeDoc**. Point it at your source comments — and, optionally, a folder of Markdown guides — and v5 produces a static site: SSR-rendered chrome, lazy-hydrated Preact islands (sidebar, TOC, fuzzy command palette, theme toggle, settings, mobile nav, language switcher, copy-page button, code-block copy, tabbed code blocks, a Monaco source viewer), a co-located `.md` per page for LLMs, a built-in fuzzy search index (plus an optional Pagefind full-text index), and optional multi-language (i18n) builds — all framework-free, with no CSS or build config required to get started.
 
-A clean, responsive, and customizable theme for JSDoc. v5 emits a static site with SSR-rendered chrome, lazy-hydrated Preact islands (sidebar, TOC, fuzzy command palette, theme toggle, settings, mobile nav, language switcher, copy-page button, code-block copy, tabbed code blocks, a Monaco source viewer), a co-located `.md` per page for LLMs, a built-in fuzzy search index (plus an optional Pagefind full-text index), optional multi-language (i18n) builds, and an Astro-free, framework-free build.
+> If clean-jsdoc-theme saves you time, please consider [sponsoring its development](https://github.com/sponsors/ankitskvmdam) — it directly funds the v5 rewrite and ongoing maintenance.
 
 ---
 
@@ -30,6 +34,10 @@ Four boundary packages (utils → setu/rang → dwar), each independently testab
 
 ## Quickstart
 
+Both toolchains render through the same pipeline, so the output is identical — pick the entry point that matches your source. Serve over HTTP (Pagefind's full-text index needs HTTP to load).
+
+### JSDoc
+
 ```sh
 pnpm add -D clean-jsdoc-theme jsdoc
 ```
@@ -49,20 +57,48 @@ Minimal `jsdoc.json`:
 }
 ```
 
-Then:
-
 ```sh
 jsdoc -c jsdoc.json
 pnpm dlx serve dist
 ```
 
-The working example lives in [`examples/basic/`](./examples/basic) — `pnpm install && pnpm run docs` produces a static `dist/` covering every documentable kind, source-file viewers, tutorials, a README home page, the per-island ESM chunks, and a Pagefind index.
+### TypeDoc
+
+```sh
+pnpm add -D typedoc @clean-jsdoc-theme/typedoc
+```
+
+Minimal `typedoc.json` — load the plugin, select its **output**, and put theme options under `cleanJsdocTheme` (TypeDoc's counterpart to JSDoc's `opts`):
+
+```json
+{
+  "entryPoints": ["src/index.ts"],
+  "plugin": ["@clean-jsdoc-theme/typedoc"],
+  "outputs": [{ "name": "clean-jsdoc-theme", "path": "dist" }],
+  "cleanJsdocTheme": { "siteName": "My Library" }
+}
+```
+
+```sh
+typedoc
+pnpm dlx serve dist
+```
+
+Runnable fixtures — `pnpm install && pnpm run docs` in each: [`examples/basic/`](./examples/basic) (JSDoc, covering every documentable kind, source-file viewers, tutorials, a README home page, per-island ESM chunks, and a Pagefind index), [`examples/typedoc-basic/`](./examples/typedoc-basic) (TypeDoc), and [`examples/with-i18n-example/`](./examples/with-i18n-example) (a 3-locale build).
+
+## Documentation
+
+- **Guides & full reference** — [**ankdev.me/clean-jsdoc-theme**](https://ankdev.me/clean-jsdoc-theme): installation (JSDoc + TypeDoc), configuration, authoring, and theming.
+- **Live demo** — [**ankdev.me/clean-jsdoc-theme/api-docs**](https://ankdev.me/clean-jsdoc-theme/api-docs): a real generated API reference, so you can see the output before installing.
+- **FAQ & recipes** — [**ankdev.me/clean-jsdoc-theme/guides/faq**](https://ankdev.me/clean-jsdoc-theme/guides/faq): embedding CodePen / YouTube, rich doc comments (callouts, steps, tabs), and common config tweaks.
+- **LLM skill** — a downloadable [skill](https://ankdev.me/clean-jsdoc-theme/theme/llm-skill) (in [`SKILLS/`](./SKILLS)) that turns any coding assistant into a setup expert.
 
 ---
 
 ## Status
 
-- ✅ End-to-end JSDoc → HTML pipeline works against real source.
+- ✅ End-to-end **JSDoc → HTML** pipeline works against real source.
+- ✅ **TypeDoc** support via `@clean-jsdoc-theme/typedoc` — the same output from a TypeScript project, with a document model matching default TypeDoc (standalone enum/function/variable pages, module-hierarchy sidebar, overload signatures, inheritance sections). Localized *builds* are JSDoc-only today; string *extraction* works for both.
 - ✅ Page coverage for **all documentable kinds** — classes, interfaces, mixins, modules, namespaces, typedefs, and an aggregated globals page (events/enums/constants render as member sections).
 - ✅ README → home page, `--tutorials` → guide pages, documented source files → read-only Monaco viewer pages.
 - ✅ `{@link}` / `@see` cross-references resolved to real anchors (slug + member hash); external URLs open in a new tab.
