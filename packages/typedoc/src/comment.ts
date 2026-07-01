@@ -172,6 +172,11 @@ export function commentFields(
   const see: string[] = [];
   const author: string[] = [];
   const tags: TDocletTag[] = [];
+  // `@group` maps to the same `category` doclet tag setu uses for sidebar/section
+  // grouping, but `@category` must win if both are present — regardless of which
+  // tag appears first in the comment. Collect the group-derived tag separately
+  // and only fold it in below if no explicit `@category` tag was seen.
+  let groupCategoryTag: TDocletTag | undefined;
 
   for (const block of comment.blockTags) {
     const tag = block.tag.replace(/^@/, '').toLowerCase();
@@ -226,12 +231,23 @@ export function commentFields(
       case 'category':
         tags.push({ title: 'category', text: tagContentToText(block.content, linkResolver) });
         break;
+      case 'group':
+        // Reuse setu's category grouping (sidebar + section grouping). Folded in
+        // after the loop only if no explicit @category tag was seen (see above).
+        groupCategoryTag ??= { title: 'category', text: tagContentToText(block.content, linkResolver) };
+        break;
       default:
         // Unrecognized block tag — preserve it as a generic doclet tag so nothing
         // is silently lost (mirrors how JSDoc keeps unknown tags).
         tags.push({ title: tag, text: tagContentToText(block.content, linkResolver) });
         break;
     }
+  }
+
+  // Fold in the `@group`-derived category tag only if no explicit `@category`
+  // tag was present — matches setu's "first category wins" precedence.
+  if (groupCategoryTag && !tags.some((t) => t.title === 'category')) {
+    tags.push(groupCategoryTag);
   }
 
   // `@category` can also arrive as a modifier tag in some configs; and TypeDoc's
