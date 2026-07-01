@@ -20,6 +20,7 @@ LLM-friendly documentation site, generated from your TypeScript sources.
 [![issues](https://img.shields.io/github/issues/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues)
 [![contributors](https://img.shields.io/github/contributors/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors)
 [![sponsor](https://img.shields.io/badge/sponsor-%E2%9D%A4-db61a2?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/ankitskvmdam)
+[![socket](https://socket.dev/api/badge/npm/package/@clean-jsdoc-theme/typedoc)](https://socket.dev/npm/package/@clean-jsdoc-theme/typedoc)
 
 </div>
 
@@ -32,16 +33,6 @@ A TypeDoc plugin that feeds TypeDoc's reflections through the **same** pipeline 
 the JSDoc theme, so a TypeScript project gets identical output: server-rendered
 HTML, lazily-hydrated interactive islands, fuzzy + full-text search, light and
 dark themes, and a companion `.md` of every page for LLMs.
-
-> [!IMPORTANT]
-> **🧪 Developer preview — not a finished product yet.** This plugin already
-> generates the full site for a single language, but it's an early preview and
-> still has rough edges. Try it on real projects, and please tell us where it
-> falls short.
->
-> **This is where you come in.** A preview gets good fastest with community
-> input — **issues, reproductions, and pull requests are all genuinely welcome.**
-> See [Developer preview & contributing](#developer-preview--contributing-) below.
 
 ## Highlights
 
@@ -107,11 +98,9 @@ npx serve dist
 - **FAQ & recipes** — [**ankdev.me/clean-jsdoc-theme/guides/faq**](https://ankdev.me/clean-jsdoc-theme/guides/faq): how to embed CodePen / YouTube / sites, write rich doc comments (callouts, steps), and common config tweaks.
 - **Live demo** — [**ankdev.me/clean-jsdoc-theme/api-docs**](https://ankdev.me/clean-jsdoc-theme/api-docs): a real generated API reference, so you can see the output before installing.
 
-## Developer preview & contributing 🤝
+## Contributing 🤝
 
-`@clean-jsdoc-theme/typedoc` is a **developer preview** — we're shipping it early
-to learn what TypeScript projects actually need, not presenting it as the final
-word. So your feedback shapes it directly, and contributors are welcome:
+Feedback shapes this plugin directly, and contributors are welcome:
 
 - 🐛 **Hit a bug or odd output?** [Open an issue](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/new) with a small reproduction — that's the single most useful thing you can do.
 - 💡 **Missing something or have an idea?** Feature requests and questions are welcome in the [issue tracker](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues).

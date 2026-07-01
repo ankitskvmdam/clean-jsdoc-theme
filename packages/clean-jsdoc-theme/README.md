@@ -19,6 +19,7 @@ A fast, modern, LLM-friendly documentation theme for **JSDoc** and **TypeDoc**.
 [![issues](https://img.shields.io/github/issues/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues)
 [![contributors](https://img.shields.io/github/contributors/ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors)
 [![sponsor](https://img.shields.io/badge/sponsor-%E2%9D%A4-db61a2?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/ankitskvmdam)
+[![socket](https://socket.dev/api/badge/npm/package/clean-jsdoc-theme)](https://socket.dev/npm/package/clean-jsdoc-theme)
 
 </div>
 

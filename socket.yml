@@ -28,13 +28,24 @@ issueRules:
   networkAccess: false
 
   # publish.ts is CJS and dynamic-`import()`s the ESM packages by file:// URL, and
-  # the tsup ESM bundle carries the standard `__require` interop shim. (The old
-  # `new Function('import.meta.url')` eval shim was removed — `usesEval` no longer
-  # needs an exception.)
+  # the tsup ESM bundle carries the standard `__require` interop shim.
   dynamicRequire: false
 
-  # The build reads CLEAN_JSDOC_THEME_EXTRACT / cwd to drive extract-vs-build
-  # mode. No secrets or credentials are read.
+  # Transitive only: @mdx-js/mdx (a dwar dependency) executes its compiled MDX
+  # modules via `new Function(String(code))` — that is how MDX evaluates a page.
+  # No first-party theme code calls eval; the old `new Function('import.meta.url')`
+  # shim in publish was removed.
+  usesEval: false
+
+  # Writing the generated site (HTML/CSS/JS + a companion .md per page) to the
+  # output `destination` is the tool's entire purpose — `fs`/`fs/promises` is
+  # inherent to a documentation generator. No reads outside the JSDoc/TypeDoc
+  # inputs, the custom-CSS/footer/docs paths the user configures, and cwd.
+  filesystemAccess: false
+
+  # The build reads CLEAN_JSDOC_THEME_BUILD (per-locale build-spec path) and
+  # CLEAN_JSDOC_THEME_EXTRACT (extract mode), both set by the aadesh CLI, plus cwd
+  # for path resolution. No secrets or credentials are read.
   envVars: false
 
 # Local fixtures and the dogfood docs site are never published to npm, so keep
