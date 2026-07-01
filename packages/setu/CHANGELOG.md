@@ -1,5 +1,20 @@
 # @clean-jsdoc-theme/setu
 
+## 5.0.6
+
+### Patch Changes
+
+- TypeDoc output parity with TypeDoc's default theme. **TypeDoc flavor only — JSDoc output is unchanged (byte-identical).**
+  - **Sidebar** now mirrors TypeDoc's default theme: a module/folder hierarchy (folders from your source directory structure, single-child folders merged, clickable + expandable module nodes, members nested and ordered by kind) instead of the global kind buckets. Under the TypeDoc flavor the module hierarchy owns the API sidebar, so `@category` / `@group` / `@order` / `sectionOrder` / `clubSidebarItems` no longer shape it (they continue to work for the JSDoc template; doc groups, `menu`, and tutorials still apply for both).
+  - **Inheritance & relationships** on class/interface pages: `Hierarchy`, `Implements`, and `Implemented By` sections, plus `Inherited from` / `Overrides` / `Implementation of` member captions.
+  - **`@group`** tag recognized; **`@inheritDoc`** resolved; native TypeDoc **`projectDocuments`** rendered as pages; **async** modifier badge; inline **object-literal types** expanded into linked property tables.
+
+  Docs updated for all of the above in English, Hindi, Japanese, and Chinese.
+
+- Updated dependencies
+  - @clean-jsdoc-theme/utils@5.0.6
+  - @clean-jsdoc-theme/bhasha@5.0.6
+
 ## 5.0.5
 
 ### Patch Changes

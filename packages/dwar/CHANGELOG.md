@@ -1,5 +1,14 @@
 # @clean-jsdoc-theme/dwar
 
+## 5.0.6
+
+### Patch Changes
+
+- Updated dependencies
+  - @clean-jsdoc-theme/setu@5.0.6
+  - @clean-jsdoc-theme/rang@5.0.6
+  - @clean-jsdoc-theme/utils@5.0.6
+
 ## 5.0.5
 
 ### Patch Changes
