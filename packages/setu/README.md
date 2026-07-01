@@ -97,6 +97,12 @@ Slug rules (`slugifyHeading` / `slugifyPath`) live in `@clean-jsdoc-theme/utils`
 and are used by both setu (sidebar / TOC generation) and dwar (rendered heading
 anchors). Same rules → matching anchors on both sides.
 
+## Contributors
+
+Thanks to everyone who has helped build clean-jsdoc-theme.
+
+[![Contributors](https://contrib.rocks/image?repo=ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors)
+
 ## License
 
 MIT.

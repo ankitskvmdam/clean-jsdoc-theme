@@ -110,6 +110,12 @@ No contribution is too small — a typo fix, a repro, or a docs tweak all help.
 Verified against TypeDoc **0.28.x**. Thanks for helping make the TypeScript story
 as solid as the JSDoc one. ❤️
 
+## Contributors
+
+Thanks to everyone who has helped build clean-jsdoc-theme.
+
+[![Contributors](https://contrib.rocks/image?repo=ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors)
+
 ## License
 
 [MIT](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/LICENSE) © [Ankit Kumar](https://ankdev.me)

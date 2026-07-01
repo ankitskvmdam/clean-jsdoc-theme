@@ -108,6 +108,12 @@ content-hash dedup across locales are tracked follow-ups.
 A runnable three-locale (en / ja / hi) reference lives at
 [`examples/with-i18n-example`](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/examples/with-i18n-example).
 
+## Contributors
+
+Thanks to everyone who has helped build clean-jsdoc-theme.
+
+[![Contributors](https://contrib.rocks/image?repo=ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors)
+
 ## License
 
 MIT.

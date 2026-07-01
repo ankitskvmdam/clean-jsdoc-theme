@@ -99,6 +99,12 @@ preference inside an effect, so a pre-hydration inline script is required to set
 `data-theme` on `<html>` before first paint. dwar inlines this script
 automatically; standalone consumers should ship the equivalent.
 
+## Contributors
+
+Thanks to everyone who has helped build clean-jsdoc-theme.
+
+[![Contributors](https://contrib.rocks/image?repo=ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors)
+
 ## License
 
 MIT.

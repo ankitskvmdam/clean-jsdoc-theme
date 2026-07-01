@@ -89,6 +89,12 @@ SiteManifest ──► dwar.render ──► OutputFile[] ──► caller write
 - **CSS is compiled once at dwar's own build time.** `scripts/build-css.mjs` runs the Tailwind v4 CLI over rang's + dwar's source and inlines the result into `src/generated/utility-css.ts`. Tailwind never runs at the consumer's `jsdoc` build, so `render()` stays pure and users need no Tailwind config; only the `:root` / `[data-theme="dark"]` token block is emitted per `ThemeConfig` at render time.
 - A defensive `{@link Foo}` → `` `@link Foo` `` preprocessor in `src/mdx.ts` is kept as a safety net. setu now resolves links upstream, so only genuinely-unresolvable tags reach this code, where the inline-code fallback keeps the page compiling.
 
+## Contributors
+
+Thanks to everyone who has helped build clean-jsdoc-theme.
+
+[![Contributors](https://contrib.rocks/image?repo=ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors)
+
 ## License
 
 MIT.

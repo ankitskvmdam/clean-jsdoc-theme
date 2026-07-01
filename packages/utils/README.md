@@ -109,6 +109,12 @@ implementation guarantees the two agree. The `config/` logic lives here (rather
 than in a bridge) so JSDoc and TypeDoc validate options and print reports
 identically.
 
+## Contributors
+
+Thanks to everyone who has helped build clean-jsdoc-theme.
+
+[![Contributors](https://contrib.rocks/image?repo=ankitskvmdam/clean-jsdoc-theme)](https://github.com/ankitskvmdam/clean-jsdoc-theme/graphs/contributors)
+
 ## License
 
 MIT.
