@@ -219,10 +219,28 @@ interface NavEntryProps {
   onToggle: (key: string, open: boolean) => void;
 }
 
-/** Does `node` or any of its descendants carry `currentSlug`? */
-function holdsSlug(node: NavNode, currentSlug: string): boolean {
+/** Does `node` or any of its descendants (at any depth) carry `currentSlug`? */
+function containsSlug(node: NavNode, currentSlug: string): boolean {
   if (node.slug !== undefined && node.slug === currentSlug) return true;
-  return (node.children ?? []).some((c) => holdsSlug(c, currentSlug));
+  return (node.children ?? []).some((c) => containsSlug(c, currentSlug));
+}
+
+/**
+ * Should this branch auto-open for `currentSlug`? Two modes:
+ *  - `deepExpand` set (TypeDoc module/folder branches): open when ANY descendant
+ *    at any depth is the current page — so a deep member reveals its enclosing
+ *    folder+module.
+ *  - otherwise (JSDoc clubbed parents): the legacy DIRECT-children-only check —
+ *    open only when an immediate child link is current. Gating on `deepExpand`
+ *    keeps JSDoc SSR byte-identical at all `@category` nesting depths (a
+ *    descendant-recursive check would auto-open a 3-level category's middle
+ *    branch where the old code did not).
+ */
+function holdsSlug(node: NavNode, currentSlug: string): boolean {
+  if (node.deepExpand) {
+    return (node.children ?? []).some((c) => containsSlug(c, currentSlug));
+  }
+  return (node.children ?? []).some((c) => c.slug !== undefined && c.slug === currentSlug);
 }
 
 /**

@@ -997,6 +997,9 @@ export function buildTypedocApiNav(apiPages: readonly Page[]): NavNode[] {
     return node;
   };
 
+  // Root-scope symbols (no owning module) that still have their own page — they
+  // are surfaced as top-level nav leaves rather than dropped.
+  const rootSymbols: { label: string; slug: string; kind: PageKind }[] = [];
   for (const p of apiPages) {
     const kind = p.frontmatter.kind;
     // The synthetic Globals page carries no longname/module path; TypeDoc has no
@@ -1015,7 +1018,15 @@ export function buildTypedocApiNav(apiPages: readonly Page[]): NavNode[] {
     // stripping the trailing `<sep><name>` from its longname).
     const ownerLongname = ownerModuleLongname(p.frontmatter.longname, moduleByLongname);
     const ownerPath = typedocModulePath(ownerLongname);
-    if (ownerPath === undefined) continue;
+    if (ownerPath === undefined) {
+      // A genuine root-scope symbol (no enclosing module in its longname) whose
+      // page exists but has no owner to nest under. Surface it as a top-level nav
+      // leaf instead of silently dropping it from the sidebar.
+      if (p.frontmatter.longname) {
+        rootSymbols.push({ label: p.frontmatter.title, slug: p.slug, kind });
+      }
+      continue;
+    }
     const node = ensurePath(splitModulePath(ownerPath));
     node.members.push({ label: p.frontmatter.title, slug: p.slug, kind });
   }
@@ -1042,7 +1053,14 @@ export function buildTypedocApiNav(apiPages: readonly Page[]): NavNode[] {
     const children = [...memberNodes, ...childNodes];
     const out: NavNode = { label: node.segment, group };
     if (node.slug !== undefined) out.slug = node.slug;
-    if (children.length > 0) out.children = children;
+    // A branch node (folder or module with members/children) opts into deep
+    // auto-expand: the sidebar opens it when ANY descendant is the current page,
+    // so a deep member reveals its enclosing folder+module. TypeDoc-only — the
+    // JSDoc nav never sets `deepExpand`, keeping its legacy direct-children check.
+    if (children.length > 0) {
+      out.children = children;
+      out.deepExpand = true;
+    }
     return out;
   };
 
@@ -1067,15 +1085,30 @@ export function buildTypedocApiNav(apiPages: readonly Page[]): NavNode[] {
     return emitted;
   };
 
-  // Top-level nodes, alphabetical; each tagged with its own label as the section
-  // group so it renders as its own contiguous sidebar section.
-  return root.order
-    .map((seg) => {
-      const node = compact(root.children.get(seg)!, seg);
-      // The compacted top-level label becomes the section group for the subtree.
-      return retagGroup(node, node.label);
-    })
-    .sort((a, b) => a.label.localeCompare(b.label));
+  // Top-level nodes, alphabetical. Each top-level module/folder renders as a
+  // SINGLE nav row (matching default TypeDoc, which shows no top-level section
+  // header for modules/folders), so it must carry NO `group` — otherwise the
+  // renderer's contiguous-run grouping would also emit a bold self-named header
+  // above the row (a double-render). Nested descendants keep a `group` (via
+  // retagGroup) but that is inert: NavEntry renders children recursively, not
+  // through groupNav. Doc-group/tutorial section headers are unaffected — they
+  // are built separately in assembleTypedocNav.
+  const topNodes = root.order.map((seg) => {
+    const node = compact(root.children.get(seg)!, seg);
+    // Re-tag the subtree first (compaction changes the top label — a folded
+    // `base/Component` node's label differs from the pre-compaction `seg`), then
+    // strip the top node's own group so it renders headerless.
+    const retagged = retagGroup(node, node.label);
+    delete retagged.group;
+    return retagged;
+  });
+  // Root-scope symbols with no owning module become plain top-level leaves,
+  // sitting alongside the module/folder nodes (they carry no `group`, so they too
+  // render headerless).
+  for (const s of rootSymbols) {
+    topNodes.push({ label: s.label, slug: s.slug });
+  }
+  return topNodes.sort((a, b) => a.label.localeCompare(b.label));
 }
 
 /**
@@ -1108,7 +1141,13 @@ function ownerModuleLongname(
   return firstOwner;
 }
 
-/** Re-tag a node subtree's `group` to `group` (top-level section label). */
+/**
+ * Re-tag a node subtree's `group` to `group` (the top-level section label). A
+ * second pass is needed because compaction can change the top node's label
+ * (`base` folder folds into `base/Component`), so the group emitted during the
+ * first `emit` pass — keyed off the pre-compaction segment — no longer matches
+ * the final top label; this rewrites the whole subtree to the compacted label.
+ */
 function retagGroup(node: NavNode, group: string): NavNode {
   const out: NavNode = { ...node, group };
   if (node.children) out.children = node.children.map((c) => retagGroup(c, group));

@@ -869,6 +869,56 @@ describe('flavor: typedoc — module-hierarchy sidebar nav', () => {
     expect(guideIdx).toBeGreaterThanOrEqual(0);
     expect(guideIdx).toBeLessThan(firstModuleIdx);
   });
+
+  it('does NOT self-name a top-level module/folder as a group header (no double-render)', () => {
+    const m = generateSite(moduleTreeCollection(), { flavor: 'typedoc' });
+    const nav = m.nav as NavNode[];
+    // Every top-level module/folder node carries NO `group` — so the renderer
+    // draws each as a single row, not a bold self-named header PLUS a row.
+    for (const label of ['components', 'parity', 'services']) {
+      const node = nav.find((n) => n.label === label)!;
+      expect(node.group).toBeUndefined();
+    }
+    // Concretely: no top node's group equals its own label.
+    for (const n of nav) {
+      expect(n.group).not.toBe(n.label);
+    }
+  });
+
+  it('marks module/folder branch nodes deepExpand (typedoc-only auto-open)', () => {
+    const m = generateSite(moduleTreeCollection(), { flavor: 'typedoc' });
+    const nav = m.nav as NavNode[];
+    const parity = topNode(nav, 'parity')!;
+    // A branch (has children) opts into deep auto-expand...
+    expect(parity.children).toBeDefined();
+    expect(parity.deepExpand).toBe(true);
+    // ...as does a nested module branch.
+    const services = topNode(nav, 'services')!;
+    const cache = services.children!.find((c) => c.label === 'cache')!;
+    expect(cache.deepExpand).toBe(true);
+    // A member leaf (no children) does NOT.
+    const leaf = parity.children!.find((c) => c.label === 'Widget')!;
+    expect(leaf.children).toBeUndefined();
+    expect(leaf.deepExpand).toBeUndefined();
+  });
+
+  it('surfaces a root-scope symbol (no module owner) as a top-level nav leaf', () => {
+    // A bare top-level typedef whose longname has no `module:`/separator owner.
+    const collection = makeCollection([
+      { kind: 'module', name: 'lib', longname: 'module:lib', scope: 'global', comment: '/** Lib. */', description: 'Lib.' },
+      { kind: 'class', name: 'Thing', longname: 'module:lib.Thing', memberof: 'module:lib', scope: 'static', comment: '/** Thing. */', classdesc: 'A thing.' },
+      { kind: 'typedef', name: 'RootPoint', longname: 'RootPoint', scope: 'global', type: { names: ['Object'] }, comment: '/** A root point. */', description: 'Root point.' },
+    ]);
+    const m = generateSite(collection, { flavor: 'typedoc' });
+    const nav = m.nav as NavNode[];
+    const rootPage = pageByLongname(m, 'RootPoint')!;
+    expect(rootPage).toBeDefined();
+    const leaf = nav.find((n) => n.label === 'RootPoint');
+    expect(leaf).toBeDefined();
+    expect(leaf!.slug).toBe(rootPage.slug);
+    expect(leaf!.children).toBeUndefined();
+    expect(leaf!.group).toBeUndefined();
+  });
 });
 
 describe('flavor: jsdoc (default) — nav stays kind-bucketed (guard)', () => {

@@ -14,6 +14,13 @@ export interface NavNode {
   /** Sort order within siblings. */
   order?: number;
   /**
+   * TypeDoc-only: when set on a branch node, the sidebar auto-opens it if ANY
+   * descendant (not just a direct child) is the current page. JSDoc never sets
+   * this — its branches keep the legacy direct-children-only auto-open check, so
+   * JSDoc SSR output stays byte-identical. See rang's `NavEntry`.
+   */
+  deepExpand?: boolean;
+  /**
    * Absolute URL for an external menu link (e.g. a GitHub/npm link). Mutually
    * exclusive with `slug`; when set, the entry opens in a new tab.
    */

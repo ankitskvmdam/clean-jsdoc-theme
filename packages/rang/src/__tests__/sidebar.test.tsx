@@ -163,6 +163,79 @@ describe('Sidebar — module node that is both a link and expandable (typedoc)',
   });
 });
 
+describe('Sidebar — auto-expand gating (deepExpand)', () => {
+  afterEach(() => {
+    cleanup();
+    localStorage.clear();
+  });
+
+  // A TypeDoc folder → module → member chain. The folder + module branches carry
+  // `deepExpand` (as setu's buildTypedocApiNav sets); the member is a deep leaf.
+  const TYPEDOC_DEEP: NavNode[] = [
+    {
+      label: 'services',
+      deepExpand: true,
+      children: [
+        {
+          label: 'cache',
+          slug: 'modules/services-cache',
+          deepExpand: true,
+          children: [{ label: 'Cache', slug: 'classes/services-cache-cache' }],
+        },
+      ],
+    },
+  ];
+
+  it('deepExpand: a deep member page opens BOTH its ancestor folder and module', () => {
+    const html = render(<Sidebar nav={TYPEDOC_DEEP} currentSlug="classes/services-cache-cache" />);
+    // Both branch levels are expanded, so the current member is visible.
+    const expanded = html.match(/aria-expanded="true"/g) ?? [];
+    expect(expanded.length).toBe(2);
+    expect(html).toContain('href="/classes/services-cache-cache"');
+    expect(html).toMatch(/aria-current="page"[^>]*>(?:<[^>]*>)*Cache/);
+  });
+
+  // A JSDoc 3-level `@category A/B/C` shape: setu's buildGroupTree emits nested
+  // branch nodes with NO `deepExpand`. The leaf lives under the deepest branch.
+  const JSDOC_3LEVEL: NavNode[] = [
+    {
+      label: 'B',
+      group: 'A',
+      children: [
+        {
+          label: 'C',
+          group: 'A',
+          children: [{ label: 'Leaf', slug: 'a-b-c-leaf', group: 'A' }],
+        },
+      ],
+    },
+  ];
+
+  it('no deepExpand: a 3-level JSDoc category does NOT auto-open the middle branch', () => {
+    const html = render(<Sidebar nav={JSDOC_3LEVEL} currentSlug="a-b-c-leaf" />);
+    // The middle branch `B`'s only child is another BRANCH (`C`), not a link to
+    // the current slug — so the legacy direct-children-only check keeps it
+    // collapsed (byte-identical to the pre-recursion behavior). Neither branch
+    // opens, so the deep leaf link is not rendered.
+    expect(html).toContain('aria-expanded="false"');
+    expect(html).not.toContain('aria-expanded="true"');
+    expect(html).not.toContain('href="/a-b-c-leaf"');
+  });
+
+  it('no deepExpand: a 2-level JSDoc category DOES auto-open (direct child is current)', () => {
+    const nav: NavNode[] = [
+      {
+        label: 'B',
+        group: 'A',
+        children: [{ label: 'Leaf', slug: 'a-b-leaf', group: 'A' }],
+      },
+    ];
+    const html = render(<Sidebar nav={nav} currentSlug="a-b-leaf" />);
+    expect(html).toContain('aria-expanded="true"');
+    expect(html).toContain('href="/a-b-leaf"');
+  });
+});
+
 describe('Sidebar — collapsible clubs (interactive)', () => {
   afterEach(() => {
     cleanup();
