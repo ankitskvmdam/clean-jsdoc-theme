@@ -1364,9 +1364,10 @@ function assembleTypedocNav({
   sectionOrder,
   menu,
 }: AssembleNavOptions): NavNode[] {
-  // The module/folder hierarchy for the API pages — the top-level sections that
-  // replace the kind buckets. Each top node is already tagged with its own label
-  // as `group` and the set is alphabetized.
+  // The module/folder hierarchy for the API pages — the top-level nodes that
+  // replace the kind buckets. Top-level module/folder nodes carry NO `group` (so
+  // `groupNav` renders them as headerless single rows, not a self-named section),
+  // and the set is alphabetized.
   const moduleNodes = buildTypedocApiNav(apiPages);
 
   // Doc-group + tutorial sections, built with the SAME nesting machinery as the
