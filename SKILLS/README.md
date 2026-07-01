@@ -14,6 +14,7 @@ into your skills directory (e.g. `.claude/skills/<name>/`).
 | Skill | What it does |
 | --- | --- |
 | [`clean-jsdoc-theme`](./clean-jsdoc-theme/SKILL.md) | The umbrella skill — setup (JSDoc + TypeDoc), the full config reference, authoring (callouts/steps/tabs/embeds/custom tags), images & static assets (local images, `staticFiles`, sitemap), the docs directory + frontmatter, the sidebar model, cross-references, source links, the LLM features, theming, multi-language localization (the `clean-jsdoc` CLI), the package architecture, and gotchas. |
+| [`typedoc`](./typedoc/SKILL.md) | A focused **TypeDoc** skill for `@clean-jsdoc-theme/typedoc` — the plugin/output setup, the `cleanJsdocTheme` option block (and which options are, and aren't, wired for TypeDoc), the module-hierarchy sidebar, the TypeDoc document model (standalone enum/function/variable pages, overloads, declaration blocks), and TypeDoc-specific rendering (inheritance sections, `@group`, `@inheritDoc`, `projectDocuments`, object-literal expansion). Defers to the umbrella skill for shared topics. |
 | [`migrate-v4-to-v5`](./migrate-v4-to-v5/SKILL.md) | A step-by-step v4 → v5 migration procedure — lift options out of `opts.theme_opts`, rename the ones that carry over, drop the removed ones, reshape the `menu`, and verify the build. Distilled from `MIGRATION.md` + `migration-map.json`. |
 
 ## Planned
