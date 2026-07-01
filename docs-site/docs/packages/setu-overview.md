@@ -60,6 +60,9 @@ produces:
 - **The nav tree** — the sidebar — grouped into sections by kind or by an
   authored `@category`, ordered by `sectionOrder` / `@order`
   ([`assembleNav`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/generate-site.ts)).
+  (This is the **JSDoc**-flavor nav; the TypeDoc flavor instead builds a
+  module/folder hierarchy — see
+  [The TypeDoc sidebar](/theme/typedoc-getting-started#the-typedoc-sidebar).)
 - **Resolved cross-references** for every `{@link}` / `@see` / `@tutorial`
   ([`link-registry.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/link-registry.ts)).
 

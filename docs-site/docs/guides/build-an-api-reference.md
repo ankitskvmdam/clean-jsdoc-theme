@@ -71,6 +71,12 @@ Point `entryPoints` at your code and load the theme plugin. See
 
 ## What becomes a page
 
+> [!NOTE]
+> The kind-section sidebar described below is the **JSDoc** flavor. TypeDoc
+> builds each of these same pages too, but presents them in a module/folder
+> hierarchy rather than kind sections — see
+> [The TypeDoc sidebar](/theme/typedoc-getting-started#the-typedoc-sidebar).
+
 setu enumerates your documented symbols and turns each into a page. The kinds
 that get their **own** page are the **container kinds**, built in this order (see
 `CONTAINER_KINDS` in
@@ -150,6 +156,12 @@ Namespaces, Mixins, Interfaces, Typedefs, Globals, …). Override it with
 [`sectionOrder`](/theme/configuration#sectionorder), and use `@category` / `@order`
 tags on your symbols for finer control. That's its own topic —
 [Structure your sidebar](/guides/structure-your-sidebar) covers every lever.
+
+> [!NOTE]
+> The levers above (`sectionOrder`, `@category`, `@order`) shape the **JSDoc**
+> API sidebar. The TypeDoc API sidebar is a module/folder hierarchy and isn't
+> ordered by these — see
+> [TypeDoc flavor](/guides/structure-your-sidebar#typedoc-flavor).
 
 ## Where to go next
 

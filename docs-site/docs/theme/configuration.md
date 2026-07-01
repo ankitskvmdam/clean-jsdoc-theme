@@ -399,12 +399,22 @@ cleanJsdocTheme: { sectionOrder: ["Getting Started", "Guides", "Classes", "Modul
 
 </tabs>
 
+> [!NOTE]
+> `sectionOrder` orders **doc/tutorial groups and JSDoc's API kind sections**.
+> It does **not** order the TypeDoc API tree — that sidebar is a module/folder
+> hierarchy with its own fixed ordering. See
+> [TypeDoc flavor](/guides/structure-your-sidebar#typedoc-flavor).
+
 ### `clubSidebarItems`
 
 Collapse related entries (e.g. a module and its members) under a shared,
 collapsible parent, grouped by the path segment before the first `/`.
 
 **Expected:** a boolean. Defaults to `false`.
+
+> [!NOTE]
+> `clubSidebarItems` has no effect on the TypeDoc API tree. See
+> [TypeDoc flavor](/guides/structure-your-sidebar#typedoc-flavor).
 
 <tabs group="tool">
 

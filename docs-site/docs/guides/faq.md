@@ -198,6 +198,12 @@ Use `@category` / `@order` on symbols, frontmatter `group` / `order` on guide
 pages, and the `sectionOrder` option. [Structure your
 sidebar](/guides/structure-your-sidebar) covers every lever.
 
+> [!NOTE]
+> Those levers control the **JSDoc** API sidebar. For **TypeDoc**, the API
+> sidebar is a module/folder hierarchy — only doc groups and `menu` respond to
+> the options above. See
+> [TypeDoc flavor](/guides/structure-your-sidebar#typedoc-flavor).
+
 ### My `@category` / `@order` / `@playground` / `@iframe` tags aren't working
 
 The most likely cause: **`tags.allowUnknownTags` isn't `true`** in your

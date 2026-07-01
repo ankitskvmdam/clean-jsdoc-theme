@@ -23,6 +23,20 @@ export class Parser {}
 > `jsdoc.json` or JSDoc strips it before the theme runs. See the
 > [overview](/components/overview). (TypeDoc needs no flag.)
 
+> [!NOTE]
+> This grouping behavior is for the **JSDoc** sidebar. Under the **TypeDoc**
+> flavor, `@category` is still parsed but does **not** affect the API sidebar —
+> that sidebar is a module/folder hierarchy instead. See
+> [The TypeDoc sidebar](/theme/typedoc-getting-started#the-typedoc-sidebar).
+
+## `@group` — TypeDoc's equivalent tag
+
+`@group` is recognized as a sibling to `@category` (TypeDoc's own grouping tag).
+The same caveat applies: it's parsed, but it does not shape the TypeDoc API
+sidebar either — see
+[The TypeDoc sidebar](/theme/typedoc-getting-started#the-typedoc-sidebar). There
+is no opt-in today to make `@category` / `@group` drive the TypeDoc sidebar.
+
 ## The path grammar
 
 `parseCategory` (in

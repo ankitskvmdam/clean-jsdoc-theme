@@ -97,6 +97,14 @@ they share a group name.
   source files ───────▶ Source Files         ┘
 ```
 
+> [!NOTE]
+> The merge model below — API kind sections + `@category` groups sitting
+> alongside doc groups — is the **JSDoc** flavor. For **TypeDoc**, the API
+> portion is instead a module/folder hierarchy (doc groups, tutorials, and
+> `menu` still merge in as described). See
+> [The TypeDoc sidebar](/theme/typedoc-getting-started#the-typedoc-sidebar) and
+> [TypeDoc flavor](/guides/structure-your-sidebar#typedoc-flavor).
+
 ## How the two are ordered together
 
 This is the part worth getting right. The effective top-level order is built in

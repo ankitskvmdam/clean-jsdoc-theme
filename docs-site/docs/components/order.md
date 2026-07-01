@@ -27,6 +27,12 @@ falling back to alphabetical order.
 > `jsdoc.json` or JSDoc strips it. See the [overview](/components/overview).
 > (TypeDoc needs no flag.)
 
+> [!NOTE]
+> This sort key applies to the **JSDoc** sidebar. `@order` has no effect on the
+> TypeDoc API sidebar — within a module, members are ordered by kind and then
+> alphabetically, not by `@order`. See
+> [The TypeDoc sidebar](/theme/typedoc-getting-started#the-typedoc-sidebar).
+
 ## When to use which
 
 | Situation | Use |
