@@ -209,6 +209,38 @@ target?: Reflection | string | ReflectionSymbolId; tsLinkText?: string }`
   - `RelativeLinkDisplayPart { kind: 'relative-link'; text; target?: FileId;
 targetAnchor? }`.
 
+### 5a. `@inheritDoc` — verified by a real `app.convert()` (0.28.19), not docs
+
+TypeDoc's converter runs an internal `InheritDocPlugin` pass **before** our
+adapter ever sees the comment. Verified with three throwaway probes
+(`app.convert()` on tiny fixtures, comment dumped via `JSON.stringify`):
+
+- **Explicit target**, block form (`@inheritDoc Base.toJSON`, own line) AND
+  inline form (`{@inheritDoc Base.toJSON}` inside prose) — TypeDoc **fully
+  resolves it during conversion**: the member's own `comment.summary` is
+  **replaced** with the target's summary, and the target's block tags
+  (`@returns`, `@param`, …) are merged into the member's own `blockTags`. The
+  `@inheritDoc` tag itself is gone by the time `commentFields`/`summaryToHtml`
+  run — there is nothing left for the bridge to resolve. (TypeDoc logs a
+  `warning`: "Content in the summary section will be overwritten by the
+  @inheritDoc tag" — confirming it overwrites rather than merges the summary.)
+- **Bare `@inheritDoc`** (no target — inherit from `overwrites`/`inheritedFrom`)
+  — same outcome: fully resolved at conversion time, using the same
+  relationship the adapter already reads in `applyMemberRelations`.
+- **Unresolvable target** (`@inheritDoc DoesNotExist.toJSON`) — this is the
+  ONE case that survives into the comment our adapter sees. TypeDoc logs a
+  `warning` ("Failed to find … to inherit the comment from") and leaves a
+  residual block tag: `{ tag: '@inheritDoc', name: 'DoesNotExist.toJSON',
+  content: [] }`. `comment.summary` stays whatever the member itself wrote
+  (empty, if the comment was ONLY the tag).
+
+**Conclusion:** the bridge does not need a general-purpose `@inheritDoc`
+resolver for the common (resolvable) case — TypeDoc already did it, and
+`commentFields`/`summaryToHtml` pick up the merged result for free. The only
+thing to add is: treat a **residual, unresolved** `@inheritDoc` block tag as a
+no-op instead of falling into the generic "unknown tag" bucket (which would
+otherwise emit a useless `{title: 'inheritdoc', text: ''}` doclet tag).
+
 ## 6. Type hierarchy (`dist/lib/models/types.d.ts`)
 
 - `abstract class Type { abstract readonly type: keyof TypeKindMap;

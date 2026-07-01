@@ -152,6 +152,14 @@ export class Base {
   describe(): string {
     return this.label;
   }
+
+  /**
+   * Serialize this thing to JSON.
+   * @returns the JSON string.
+   */
+  toJSON(): string {
+    return JSON.stringify(this.label);
+  }
 }
 
 /** Something with a name. */
@@ -170,6 +178,11 @@ export class Widget extends Base implements Named {
   /** Describe this widget (overridden). */
   override describe(): string {
     return \`Widget: \${this.label}\`;
+  }
+
+  /** @inheritDoc Base.toJSON */
+  override toJSON(): string {
+    return JSON.stringify(this.label);
   }
 }
 `;
@@ -541,6 +554,29 @@ describe('reflectionsToDoclets — inheritance / relationships', () => {
     const name = byLongname('Widget#name')!;
     expect(name.implementationOf).toBeTruthy();
     expect(name.implementationOf).toContain('Named');
+  });
+});
+
+/**
+ * `@inheritDoc` (explicit target, block-tag form `@inheritDoc Base.toJSON`, and
+ * bare form with no target) is resolved by TypeDoc's OWN converter before our
+ * adapter ever sees the comment — verified via a real `app.convert()` dump
+ * (see NOTES.md §5a): the member's `comment.summary`/`blockTags` are replaced
+ * with the resolved target's, so `commentFields`/`summaryToHtml` pick up the
+ * merged result with no bridge-side resolver needed. These assertions guard
+ * that behavior against a TypeDoc upgrade silently changing it.
+ */
+describe('reflectionsToDoclets — @inheritDoc resolution', () => {
+  it('resolves an explicit-target @inheritDoc (block-tag form) from the target comment', () => {
+    const widgetToJson = doclets.find((d) => d.name === 'toJSON' && d.memberof === 'Widget')!;
+    expect(widgetToJson.description).toContain('Serialize this thing to JSON');
+    // The target's own @returns block tag rides along too.
+    expect(widgetToJson.returns?.[0]?.description).toContain('the JSON string');
+  });
+
+  it('resolves a bare @inheritDoc (inline form, no target) from the implemented member', () => {
+    const widgetName = byLongname('Widget#name')!;
+    expect(widgetName.description).toContain('The name of this thing');
   });
 });
 

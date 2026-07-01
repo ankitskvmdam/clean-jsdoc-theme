@@ -215,6 +215,15 @@ export function commentFields(
       case 'privateremarks':
         // Explicitly excluded from generated docs (TypeDoc drops it).
         break;
+      case 'inheritdoc':
+        // A RESOLVED `@inheritDoc` (explicit target or bare) never reaches this
+        // switch — TypeDoc's own converter merges the target's summary/block
+        // tags into this comment during `app.convert()` and drops the tag
+        // (verified in NOTES.md §5a). The only shape that survives is an
+        // UNRESOLVABLE target (`name` set, `content` empty); TypeDoc already
+        // logs its own warning for that, so silently drop it here rather than
+        // surface a useless `{title:'inheritdoc', text:''}` doclet tag.
+        break;
       case 'see':
         see.push(tagContentToText(block.content, linkResolver));
         break;

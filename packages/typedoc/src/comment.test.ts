@@ -10,6 +10,24 @@ function makeComment(
   return new Comment([], blockTags);
 }
 
+describe('commentFields — unresolved @inheritDoc', () => {
+  // TypeDoc's own converter resolves `@inheritDoc` (explicit target or bare)
+  // during `app.convert()` — by the time `commentFields` runs, a RESOLVED
+  // `@inheritDoc` has already been folded into `comment.summary`/`blockTags`
+  // and the tag itself is gone (verified in NOTES.md §5a). The one shape that
+  // survives into `commentFields` is an UNRESOLVABLE target: TypeDoc leaves a
+  // residual `{ tag: '@inheritDoc', name: '<target>', content: [] }` block tag
+  // and logs its own warning. `commentFields` must not surface that as a junk
+  // generic tag (`{title:'inheritdoc', text:''}`).
+  it('drops a residual (unresolved-target) @inheritDoc block tag instead of emitting a junk tag', () => {
+    const inheritDocTag = new CommentTag('@inheritDoc' as never, []);
+    inheritDocTag.name = 'DoesNotExist.toJSON';
+    const comment = new Comment([], [inheritDocTag]);
+    const fields = commentFields(comment);
+    expect(fields.tags?.find((t) => t.title === 'inheritdoc')).toBeUndefined();
+  });
+});
+
 describe('commentFields — @group / @category', () => {
   it('maps @group to a category tag', () => {
     const fields = commentFields(
