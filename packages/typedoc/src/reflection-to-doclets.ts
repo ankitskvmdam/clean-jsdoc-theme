@@ -30,7 +30,9 @@ import type {
   ParameterReflection,
   ProjectReflection,
   Reflection,
+  ReferenceType,
   SignatureReflection,
+  SomeType,
   TypeParameterReflection,
 } from 'typedoc';
 import type {
@@ -108,6 +110,7 @@ export function adaptProject(project: ProjectReflection, logger?: AdaptLogger): 
   };
 
   walk(project, result, resolveLink);
+  computeReverseImplementations(result.doclets);
 
   if (result.skipped.length && logger?.info) {
     const byKind = new Map<string, number>();
@@ -157,6 +160,26 @@ function safeLongname(reflection: Reflection): string {
   }
 }
 
+/**
+ * After the full flat doclet list is built, compute the reverse index: for
+ * every doclet that `implements` an interface, push its longname onto that
+ * interface's `implementations`. This can only run once every doclet exists,
+ * since a class earlier in the walk order may implement an interface that
+ * appears later (or vice versa).
+ */
+function computeReverseImplementations(doclets: TDoclet[]): void {
+  const byLongname = new Map(
+    doclets.filter((d) => d.longname).map((d) => [d.longname as string, d])
+  );
+  for (const d of doclets) {
+    for (const iface of d.implements ?? []) {
+      const target = byLongname.get(iface);
+      if (!target || !d.longname) continue;
+      (target.implementations ??= []).push(d.longname);
+    }
+  }
+}
+
 /** Map one handled declaration reflection to a doclet. */
 function adaptDeclaration(
   reflection: DeclarationReflection,
@@ -190,6 +213,11 @@ function adaptDeclaration(
 
   // Flags (readonly / virtual / optional / access).
   Object.assign(doclet, flagFields(reflection));
+
+  // Inheritance relations (override / inheritedFrom / implementationOf). TypeDoc
+  // puts these on the member reflection itself for properties, and on the first
+  // call signature for methods — read both so either shape is covered.
+  applyMemberRelations(reflection, doclet, resolveLink);
 
   // Source coords → meta (drives "Source: file:line" links + source pages).
   const meta = sourceMeta(reflection);
@@ -250,9 +278,70 @@ function docletKind(reflection: Reflection): TDocletKind | null {
 }
 
 /**
+ * Map a base-type list (`extendedTypes`/`implementedTypes`) to longnames. The
+ * common case is a `ReferenceType` resolved to an in-project reflection — use
+ * the same longname resolver as `{@link}`. An external / unresolved reference
+ * (or any other type shape) falls back to its readable `toString()`.
+ */
+function baseLongnames(
+  types: readonly SomeType[] | undefined,
+  resolveLink: LinkResolver
+): string[] {
+  const out: string[] = [];
+  for (const t of types ?? []) {
+    const ref = t as ReferenceType;
+    const ln = ref.reflection ? resolveLink(ref.reflection) : undefined;
+    out.push(ln || t.toString());
+  }
+  return out;
+}
+
+/**
+ * Resolve one `ReferenceType` relation link (`overwrites`/`inheritedFrom`/
+ * `implementationOf`) to a longname, falling back to the reference's own
+ * (unresolved) name when it doesn't point at an in-project reflection.
+ */
+function relationLongname(ref: ReferenceType, resolveLink: LinkResolver): string {
+  return (ref.reflection && resolveLink(ref.reflection)) || ref.name;
+}
+
+/**
+ * Member-level inheritance relations: `override`/`overrides`, `inherited`/
+ * `inherits`, and `implementationOf`. TypeDoc sets these on the member
+ * reflection for properties/accessors, and on the first call signature for
+ * methods — read both so either shape is covered.
+ */
+function applyMemberRelations(
+  reflection: DeclarationReflection,
+  doclet: TDoclet,
+  resolveLink: LinkResolver
+): void {
+  const signature = reflection.signatures?.[0];
+
+  const inheritedFrom = reflection.inheritedFrom ?? signature?.inheritedFrom;
+  if (inheritedFrom) {
+    doclet.inherited = true;
+    doclet.inherits = relationLongname(inheritedFrom, resolveLink);
+  }
+
+  const overwrites = reflection.overwrites ?? signature?.overwrites;
+  if (overwrites) {
+    doclet.override = true;
+    doclet.overrides = relationLongname(overwrites, resolveLink);
+  }
+
+  const implementationOf = reflection.implementationOf ?? signature?.implementationOf;
+  if (implementationOf) {
+    doclet.implementationOf = relationLongname(implementationOf, resolveLink);
+  }
+}
+
+/**
  * Class / interface: fold the constructor's first signature parameters into the
  * container doclet's `params` (so the Constructor section renders), without
- * emitting the Constructor as a member.
+ * emitting the Constructor as a member. Also carries `extends`/`implements`
+ * relationships (the reverse `implementations` index is computed later, once
+ * every doclet exists).
  */
 function adaptContainer(
   reflection: DeclarationReflection,
@@ -265,6 +354,11 @@ function adaptContainer(
     const params = adaptParameters(signature, new Map(), resolveLink);
     if (params.length) doclet.params = params;
   }
+
+  const ext = baseLongnames(reflection.extendedTypes, resolveLink);
+  if (ext.length) doclet.augments = ext;
+  const impl = baseLongnames(reflection.implementedTypes, resolveLink);
+  if (impl.length) doclet.implements = impl;
 }
 
 /** Function / method: read the first signature for params + return type. */

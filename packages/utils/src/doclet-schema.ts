@@ -189,6 +189,8 @@ export const DocletSchema = z.object({
   ignore: z.boolean().optional(),
   implementations: z.array(z.string()).optional(),
   implements: z.array(z.string()).optional(),
+  // TypeDoc-only: longname of the interface member this implements ("Implementation of").
+  implementationOf: z.string().optional(),
   inheritdoc: z.string().optional(),
   inherited: z.boolean().optional(),
   inherits: z.string().optional(),

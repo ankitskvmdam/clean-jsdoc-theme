@@ -142,6 +142,36 @@ export namespace Shapes {
   /** A namespaced constant. */
   export const PI = 3.14;
 }
+
+/** A base class. */
+export class Base {
+  /** A describable label. */
+  label: string = '';
+
+  /** Describe this thing. */
+  describe(): string {
+    return this.label;
+  }
+}
+
+/** Something with a name. */
+export interface Named {
+  /** The name of this thing. */
+  name: string;
+}
+
+/**
+ * A widget that extends {@link Base} and implements {@link Named}.
+ */
+export class Widget extends Base implements Named {
+  /** {@inheritDoc Named.name} */
+  name: string = '';
+
+  /** Describe this widget (overridden). */
+  override describe(): string {
+    return \`Widget: \${this.label}\`;
+  }
+}
 `;
 
 let project: ProjectReflection;
@@ -485,6 +515,32 @@ describe('adaptProject — skip diagnostics', () => {
     const result = adaptProject(project);
     expect(Array.isArray(result.doclets)).toBe(true);
     expect(Array.isArray(result.skipped)).toBe(true);
+  });
+});
+
+describe('reflectionsToDoclets — inheritance / relationships', () => {
+  it('carries extends/implements and reverse implementations', () => {
+    const widget = byLongname('Widget')!;
+    const named = byLongname('Named')!;
+    expect(widget.augments).toContain('Base');
+    expect(widget.implements).toEqual(expect.arrayContaining([expect.stringContaining('Named')]));
+    expect(named.implementations).toEqual(expect.arrayContaining([expect.stringContaining('Widget')]));
+  });
+
+  it('marks overrides and inheritedFrom on members', () => {
+    const describeMethod = doclets.find((d) => d.name === 'describe' && d.memberof === 'Widget')!;
+    expect(describeMethod.override).toBe(true);
+    expect(describeMethod.overrides).toBeTruthy();
+
+    const label = byLongname('Widget#label')!;
+    expect(label.inherited).toBe(true);
+    expect(label.inherits).toBeTruthy();
+  });
+
+  it('sets implementationOf on a member that implements an interface member', () => {
+    const name = byLongname('Widget#name')!;
+    expect(name.implementationOf).toBeTruthy();
+    expect(name.implementationOf).toContain('Named');
   });
 });
 
