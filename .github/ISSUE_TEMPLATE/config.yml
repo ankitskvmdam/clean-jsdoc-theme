@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or discussion
+    url: https://github.com/ankitskvmdam/clean-jsdoc-theme/discussions
+    about: Have a question, need help, or want to share an idea? Please start a discussion.
+  - name: Documentation
+    url: https://ankdev.me/clean-jsdoc-theme
+    about: Check the docs for setup, theme options, and guides before opening an issue.
+  - name: Report a security vulnerability
+    url: https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/SECURITY.md
+    about: Please do not file security issues publicly — see our security policy.

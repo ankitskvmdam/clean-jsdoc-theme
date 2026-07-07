@@ -1,0 +1,89 @@
+name: Bug report
+description: Report a bug or unexpected behavior in clean-jsdoc-theme
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report! Please search
+        [existing issues](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues)
+        first — it may already be reported or fixed.
+
+  - type: input
+    id: version
+    attributes:
+      label: Theme version
+      description: Which version of `clean-jsdoc-theme` (or `@clean-jsdoc-theme/*`) are you using?
+      placeholder: e.g. 5.0.6
+    validations:
+      required: true
+
+  - type: dropdown
+    id: generator
+    attributes:
+      label: Documentation generator
+      description: Which tool are you generating docs with?
+      options:
+        - JSDoc
+        - TypeDoc
+        - Both
+        - Other / not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear and concise description of the bug, including what you expected to happen instead.
+      placeholder: When I build the docs, ... but I expected ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Minimal, reliable steps to reproduce the behavior. A link to a minimal repo is ideal.
+      placeholder: |
+        1. Configure `jsdoc.json` with ...
+        2. Run `jsdoc -c jsdoc.json`
+        3. Open the generated page ...
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Relevant configuration
+      description: Your `jsdoc.json` / `typedoc.json` theme options (redact anything sensitive). This will be rendered as code, no backticks needed.
+      render: json
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Node version, package manager, OS, and browser (if it's a rendered-output issue).
+      placeholder: |
+        - Node: 20.x
+        - Package manager: pnpm 9.x
+        - OS: macOS 14 / Windows 11 / Ubuntu 24.04
+        - Browser: Chrome 120
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Any build output, console errors, or screenshots that help illustrate the problem.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and this is not a duplicate.
+          required: true
+        - label: I am using a supported version (5.x) or have confirmed the bug still occurs there.
+          required: true
