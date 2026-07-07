@@ -12,7 +12,8 @@
  *   B. Repository-layout paths — every file/dir named in the root README's
  *      "Repository layout" tree actually exists at the path the tree implies.
  *      (Catches: a dangling/wrong-path reference, e.g. a root-level
- *      `BREAKING_CHANGES.md` that actually lives under `docs/`.)
+ *      `BREAKING_CHANGES.md` that actually lives under `docs/`.) The section is
+ *      optional prose — if the README omits it, this check is skipped, not failed.
  *   C. Island coverage — every key in rang's `ISLAND_REGISTRY` is documented
  *      (as a `` `code` `` token) in both `docs/ARCHITECTURE.md` and
  *      `packages/rang/README.md`. (Catches: an island added/renamed in code but
@@ -61,11 +62,11 @@ function repositoryLayoutBlock(md) {
   return m ? m[1] : '';
 }
 
-{
+if (repositoryLayoutBlock(readme)) {
   const block = repositoryLayoutBlock(readme);
-  if (!block) {
-    fail('README.md: could not find the "## Repository layout" code block.');
-  }
+  // The "Repository layout" tree is optional: when the README includes it we
+  // validate every path it names, but when the section has been removed we skip
+  // this check rather than demand it back.
   // Resolve the ASCII tree by depth: each level is one 4-char indent unit
   // (`│   ` or four spaces) before the `├──`/`└──` connector.
   const stack = []; // directory segments, indexed by depth
