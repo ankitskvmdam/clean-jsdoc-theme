@@ -95,51 +95,6 @@ Runnable fixtures — `pnpm install && pnpm run docs` in each: [`examples/basic/
 
 ---
 
-## Status
-
-- ✅ End-to-end **JSDoc → HTML** pipeline works against real source.
-- ✅ **TypeDoc** support via `@clean-jsdoc-theme/typedoc` — the same output from a TypeScript project, with a document model matching default TypeDoc (standalone enum/function/variable pages, module-hierarchy sidebar, overload signatures, inheritance sections). Localized *builds* are JSDoc-only today; string *extraction* works for both.
-- ✅ Page coverage for **all documentable kinds** — classes, interfaces, mixins, modules, namespaces, typedefs, and an aggregated globals page (events/enums/constants render as member sections).
-- ✅ README → home page, `--tutorials` → guide pages, documented source files → read-only Monaco viewer pages.
-- ✅ `{@link}` / `@see` cross-references resolved to real anchors (slug + member hash); external URLs open in a new tab.
-- ✅ Fuzzy command-palette search over a generated index; a co-located `.md` per page + a copy-page button (copy / view / open in Claude · ChatGPT · Perplexity).
-- ✅ Configurable sidebar — `sectionOrder` / `menu`, plus opt-in clubbing into collapsible, localStorage-persisted groups.
-- ✅ Tests across every package (utils / setu / rang / dwar / bhasha / aadesh / typedoc / bridge). Lint and typecheck clean.
-- ✅ Configurable theme tokens — `colors` / `darkColors` palette overrides (per-key merge over the OKLCH defaults) plus heading / body / mono font selection, wired through to the rendered CSS variables. Component-level overrides land before stable.
-- ✅ Multi-language (i18n) builds — declare `opts.locales`, then the `clean-jsdoc` CLI (`@clean-jsdoc-theme/aadesh`, on `@clean-jsdoc-theme/bhasha`) extracts/validates/builds one static site per locale: translated UI chrome + API descriptions, per-locale `README.<locale>.md` home + `docs.<locale>/` overlays, per-language fonts, and a header language switcher.
-
-See [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) for the full project structure.
-
----
-
-## Repository layout
-
-```
-clean-jsdoc-theme/
-├── packages/
-│   ├── utils/                 # @clean-jsdoc-theme/utils
-│   ├── setu/                  # @clean-jsdoc-theme/setu
-│   ├── rang/                  # @clean-jsdoc-theme/rang
-│   ├── dwar/                  # @clean-jsdoc-theme/dwar
-│   ├── clean-jsdoc-theme/     # JSDoc theme entry (publish.ts bridge)
-│   ├── typedoc/               # @clean-jsdoc-theme/typedoc (TypeDoc plugin)
-│   ├── aadesh/                # @clean-jsdoc-theme/aadesh (theme CLI: i18n group + build)
-│   └── bhasha/                # @clean-jsdoc-theme/bhasha (i18n core)
-├── examples/
-│   ├── basic/                 # Working JSDoc fixture
-│   ├── typedoc-basic/         # Working TypeDoc fixture
-│   └── with-i18n-example/     # 3-locale (en/ja/hi) localization fixture
-├── docs-site/                 # Dogfood site (the published docs)
-├── SKILLS/                    # LLM agent skills — drop into an assistant for theme expertise
-├── docs/ARCHITECTURE.md       # Full project structure
-├── MIGRATION.md               # v4 → v5 migration guide (breaking changes in §6)
-└── migration-map.json         # machine-readable v4 → v5 option map
-```
-
-Pnpm workspace, Turborepo for task orchestration, tsup for builds, vitest for tests.
-
----
-
 ## Development
 
 ```sh
