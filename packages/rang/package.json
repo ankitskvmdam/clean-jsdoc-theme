@@ -1,6 +1,6 @@
 {
   "name": "@clean-jsdoc-theme/rang",
-  "version": "5.0.6",
+  "version": "5.0.7",
   "description": "Preact components, MDX component map, and island registry for clean-jsdoc-theme",
   "type": "module",
   "main": "./dist/index.js",

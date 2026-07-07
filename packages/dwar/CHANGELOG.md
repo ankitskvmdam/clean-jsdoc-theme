@@ -1,5 +1,19 @@
 # @clean-jsdoc-theme/dwar
 
+## 5.0.7
+
+### Patch Changes
+
+- Patch release: dependency security updates, a TypeDoc doc/behavior cleanup, and standalone package READMEs.
+  - **Security / dependencies** — bump `esbuild` (dwar) to `^0.28.1` and refresh the build/test toolchain (`happy-dom`, `vitest`, `vite`, `turbo`), plus transitive overrides (`markdown-it`, `linkify-it`, `shell-quote`, `fast-uri`, `brace-expansion`, `js-yaml`) to clear all open Socket/Dependabot advisories.
+  - **setu / typedoc** — remove the inert `sectionOrder` / `clubSidebarItems` handling under the TypeDoc flavor. Under TypeDoc the module hierarchy owns the API sidebar and doc groups order via `docGroups`; these options were accepted but had no effect, so the dead threading is gone. No behavior change.
+  - **Docs** — correct the TypeDoc sidebar-lever documentation (getting-started, structure-your-sidebar, configuration) and make the `clean-jsdoc-theme` and `@clean-jsdoc-theme/typedoc` package READMEs standalone, each centered on its own toolchain.
+
+- Updated dependencies
+  - @clean-jsdoc-theme/setu@5.0.7
+  - @clean-jsdoc-theme/utils@5.0.7
+  - @clean-jsdoc-theme/rang@5.0.7
+
 ## 5.0.6
 
 ### Patch Changes

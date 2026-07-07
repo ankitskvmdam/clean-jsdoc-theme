@@ -1,5 +1,14 @@
 # @clean-jsdoc-theme/aadesh
 
+## 5.0.7
+
+### Patch Changes
+
+- Updated dependencies
+  - @clean-jsdoc-theme/setu@5.0.7
+  - @clean-jsdoc-theme/utils@5.0.7
+  - @clean-jsdoc-theme/bhasha@5.0.7
+
 ## 5.0.6
 
 ### Patch Changes
