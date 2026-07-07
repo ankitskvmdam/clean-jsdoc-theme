@@ -166,10 +166,10 @@ Clubbing は順序にも配慮します: club された parent はその members
 ## レバー 5 — `sectionOrder`
 
 > [!NOTE]
-> **部分的に JSDoc 専用です。** `sectionOrder` は TypeDoc の **API** tree には
-> 効果がありません — ですが JSDoc に対して行うのと同じ方法で、TypeDoc の
-> **doc/tutorial groups** は依然として並べ替えます。
-> [TypeDoc flavor](#typedoc-flavor) を参照してください。
+> **JSDoc 専用です。** `sectionOrder` は TypeDoc ではまったく効果がありません —
+> TypeDoc の API tree は module hierarchy であり、そこでの doc groups は
+> `sectionOrder` ではなく [`docGroups`](/theme/configuration#docgroups) で
+> 並べ替えられます。[TypeDoc flavor](#typedoc-flavor) を参照してください。
 
 [`sectionOrder`](/theme/configuration#sectionorder) は **top-level** の group を並べ替
 えます — kind labels、`@category` 名、doc-group 名を混在させた 1 つの統一された list
@@ -242,7 +242,7 @@ Rendering の詳細（Hierarchy/Implements sections、`@inheritDoc` など）は
 | `@category` | なし — module hierarchy 内の symbol を移動させない | 依然として parse される |
 | `@group` | なし — sidebar を駆動しない | 依然として parse される（[TypeDoc Getting Started](/theme/typedoc-getting-started#typedoc-specific-rendering) を参照） |
 | `@order` | なし — module 内の kind order は固定 | — |
-| `sectionOrder` | なし | 依然として **doc/tutorial groups** を順序付ける |
+| `sectionOrder` | なし | なし — 代わりに **doc groups** は `docGroups` で順序付ける |
 | `clubSidebarItems` | なし | — |
 | `docGroups` / doc frontmatter `group`/`order` | — | **機能する** — prose doc groups を順序付け、API hierarchy の前に render される |
 | `menu` | — | **機能する** — JSDoc と同じ top-region の挙動 |
@@ -256,10 +256,10 @@ Rendering の詳細（Hierarchy/Implements sections、`@inheritDoc` など）は
 ## まとめて組み立てる
 
 現実的な混在 config。下記の `sectionOrder` と `clubSidebarItems` は **JSDoc**
-タブの API sidebar にのみ影響することに注意してください — TypeDoc タブでは、
-それらは依然として doc groups/tutorials に適用されますが、API tree は
-[TypeDoc flavor](#typedoc-flavor) で説明した module hierarchy として、これらの
-options に関わらず render されます。
+タブの API sidebar にのみ影響することに注意してください — TypeDoc タブでは
+**まったく効果がありません**（doc-group の順序は `docGroups` から来ますし、
+API tree は常に [TypeDoc flavor](#typedoc-flavor) で説明した module hierarchy
+として render されます）。
 
 <tabs group="tool">
 <tab label="JSDoc (jsdoc.json)" value="JSDoc (jsdoc.json)">
@@ -283,13 +283,13 @@ opts: {
 
 ```json5
 cleanJsdocTheme: {
-  // "Core" と "Classes" はここでは、TypeDoc API tree には存在しない
-  // doc-group / kind-label semantics にのみ影響します — 上記の "TypeDoc flavor" を参照。
-  // "Getting Started" と "Guides"（doc groups）だけが実際にここで動きます。
+  // sectionOrder は TypeDoc では効果がありません — API tree は module hierarchy
+  // です（上記の "TypeDoc flavor" を参照）。そのためこの key はここでは無視されます。
   sectionOrder: ["Getting Started", "Core", "Classes", "Guides", "Modules"],
+  // TypeDoc タブで prose doc groups を順序付けるのは docGroups です。
   docGroups: ["Getting Started", "Guides"],
   defaultDocGroup: "Docs",
-  clubSidebarItems: true, // TypeDoc API tree には効果なし
+  clubSidebarItems: true, // TypeDoc には効果なし
   menu: [
     { id: "home", title: "Home", icon: "lucide:home" },
     { title: "GitHub", link: "https://github.com/you/repo", icon: "simpleicons:github" },

@@ -155,9 +155,10 @@ frontmatter `order` 所采用的规则相同。
 ## 杠杆 5 —— `sectionOrder`
 
 > [!NOTE]
-> **部分仅限 JSDoc。** `sectionOrder` 对 TypeDoc 的 **API** 树没有任何
-> 效果 —— 但它仍会以同样的方式为 TypeDoc 的 **doc/tutorial 分组**排序，
-> 与对 JSDoc 一样。见 [TypeDoc flavor](#typedoc-flavor)。
+> **仅限 JSDoc。** `sectionOrder` 对 TypeDoc 完全没有任何效果 —— TypeDoc
+> 的 API 树是 module 层级结构，其中的 doc 分组由
+> [`docGroups`](/theme/configuration#docgroups) 排序，而非 `sectionOrder`。
+> 见 [TypeDoc flavor](#typedoc-flavor)。
 
 [`sectionOrder`](/theme/configuration#sectionorder) 对**顶层**分组排序 —— 一个统一的
 list，混合了 kind labels、`@category` 名称和 doc-group 名称。
@@ -222,7 +223,7 @@ module/folder 层级结构，而非来自 `@category` 或 kind buckets：
 | `@category` | 无 —— 不会在 module 层级结构中移动一个 symbol | 仍会被解析 |
 | `@group` | 无 —— 不会驱动侧边栏 | 仍会被解析（见 [TypeDoc Getting Started](/theme/typedoc-getting-started#typedoc-specific-rendering)） |
 | `@order` | 无 —— 一个 module 内部的 kind 顺序是固定的 | — |
-| `sectionOrder` | 无 | 仍会为 **doc/tutorial 分组**排序 |
+| `sectionOrder` | 无 | 无 —— 请改用 `docGroups` 为 **doc 分组**排序 |
 | `clubSidebarItems` | 无 | — |
 | `docGroups` / doc frontmatter `group`/`order` | — | **有效** —— 对正文 doc 分组排序，渲染在 API 层级结构之前 |
 | `menu` | — | **有效** —— 与 JSDoc 相同的顶部区域行为 |
@@ -236,9 +237,8 @@ module/folder 层级结构，而非来自 `@category` 或 kind buckets：
 
 一份贴近现实的混合 config。请注意，下面的 `sectionOrder` 和
 `clubSidebarItems` 只影响 **JSDoc** 标签页的 API 侧边栏 —— 在 TypeDoc
-标签页上，它们仍会作用于 doc 分组/tutorials，但 API 树会按
-[TypeDoc flavor](#typedoc-flavor) 中描述的 module 层级结构渲染，
-与这些选项无关。
+标签页上它们**完全没有效果**（doc 分组顺序来自 `docGroups`，且 API 树始终按
+[TypeDoc flavor](#typedoc-flavor) 中描述的 module 层级结构渲染）。
 
 <tabs group="tool">
 <tab label="JSDoc (jsdoc.json)" value="JSDoc (jsdoc.json)">
@@ -262,13 +262,13 @@ opts: {
 
 ```json5
 cleanJsdocTheme: {
-  // "Core" 和 "Classes" 在这里只影响那些对 TypeDoc API 树并不存在的
-  // doc-group / kind-label 语义 —— 见上方的 "TypeDoc flavor"。
-  // 只有 "Getting Started" 和 "Guides"（doc groups）会真正在这里移动。
+  // sectionOrder 在 TypeDoc 下没有效果 —— API 树是 module 层级结构
+  //（见上方的 "TypeDoc flavor"），因此此 key 在这里会被忽略。
   sectionOrder: ["Getting Started", "Core", "Classes", "Guides", "Modules"],
+  // 在 TypeDoc 标签页上，为正文 doc 分组排序的是 docGroups。
   docGroups: ["Getting Started", "Guides"],
   defaultDocGroup: "Docs",
-  clubSidebarItems: true, // 对 TypeDoc API 树没有效果
+  clubSidebarItems: true, // 在 TypeDoc 下没有效果
   menu: [
     { id: "home", title: "Home", icon: "lucide:home" },
     { title: "GitHub", link: "https://github.com/you/repo", icon: "simpleicons:github" },

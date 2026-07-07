@@ -1,10 +1,17 @@
 # Configuration reference
 
-Every theme option. Identical for both tools — only the namespace differs:
-**`opts.*`** (JSDoc) vs **`cleanJsdocTheme.*`** (TypeDoc).
+Every theme option. Same names and values on both tools — only the namespace
+differs: **`opts.*`** (JSDoc) vs **`cleanJsdocTheme.*`** (TypeDoc).
 
 > Unknown / misspelled keys only **warn** (with a "did you mean?" hint) and the
 > build continues. Set `strict: true` to escalate warnings to hard errors.
+
+> **TypeDoc caveat.** The names are shared, but a few options behave differently
+> or aren't wired under TypeDoc: `sectionOrder` / `clubSidebarItems` / `@category`
+> / `@order` do **not** shape the TypeDoc API sidebar (it's a fixed module/folder
+> hierarchy — order prose with `docGroups` / `menu` instead), and `colors` /
+> `darkColors` / `customCss` / `customJs` are not threaded yet. See the
+> **`typedoc`** skill for the authoritative wired / not-wired list.
 
 Contents: [Site & identity](#site--identity) · [Content sources](#content-sources) ·
 [Sidebar & navigation](#sidebar--navigation) · [Appearance & assets](#appearance--assets) ·

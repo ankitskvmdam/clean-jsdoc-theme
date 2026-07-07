@@ -170,10 +170,10 @@ Clubbing क्रम-सचेत भी है: एक clubbed parent अप�
 ## लीवर 5 — `sectionOrder`
 
 > [!NOTE]
-> **आंशिक रूप से केवल JSDoc।** `sectionOrder` का TypeDoc की **API** tree पर
-> कोई प्रभाव नहीं पड़ता — पर यह TypeDoc के **doc/tutorial groups** को अब भी उसी
-> तरह क्रमित करता है जैसे JSDoc के लिए करता है। [TypeDoc flavor](#typedoc-flavor)
-> देखें।
+> **केवल JSDoc।** `sectionOrder` का TypeDoc पर बिल्कुल कोई प्रभाव नहीं पड़ता —
+> TypeDoc API tree module पदानुक्रम है, और वहाँ doc groups
+> [`docGroups`](/theme/configuration#docgroups) से क्रमित होते हैं, `sectionOrder`
+> से नहीं। [TypeDoc flavor](#typedoc-flavor) देखें।
 
 [`sectionOrder`](/theme/configuration#sectionorder) **top-level** groups को
 क्रमित करता है — एक एकीकृत list जो kind labels, `@category` names, और doc-group
@@ -246,7 +246,7 @@ TypeDoc output अपनी **API sidebar** के लिए ऊपर वाल
 | `@category` | कोई नहीं — module पदानुक्रम में किसी symbol को नहीं हिलाता | अब भी parse होता है |
 | `@group` | कोई नहीं — sidebar को नहीं चलाता | अब भी parse होता है (देखें [TypeDoc Getting Started](/theme/typedoc-getting-started#typedoc-specific-rendering)) |
 | `@order` | कोई नहीं — module के भीतर kind order तय है | — |
-| `sectionOrder` | कोई नहीं | अब भी **doc/tutorial groups** को क्रमित करता है |
+| `sectionOrder` | कोई नहीं | कोई नहीं — इसके बजाय **doc groups** को `docGroups` से क्रमित करें |
 | `clubSidebarItems` | कोई नहीं | — |
 | `docGroups` / doc frontmatter `group`/`order` | — | **काम करता है** — prose doc groups को क्रमित करता है, API पदानुक्रम से पहले render होता है |
 | `menu` | — | **काम करता है** — JSDoc जैसा ही top-region व्यवहार |
@@ -260,9 +260,9 @@ TypeDoc output अपनी **API sidebar** के लिए ऊपर वाल
 
 एक यथार्थवादी मिश्रित config। ध्यान दें कि नीचे `sectionOrder` और
 `clubSidebarItems` केवल **JSDoc** tab की API sidebar को प्रभावित करते हैं — TypeDoc
-tab पर वे अब भी doc groups/tutorials पर लागू होते हैं, पर API tree
-[TypeDoc flavor](#typedoc-flavor) में बताए गए module पदानुक्रम के रूप में ही
-render होता है, इन options के बावजूद।
+tab पर उनका **कोई प्रभाव नहीं** होता (doc-group क्रम `docGroups` से आता है, और
+API tree हमेशा [TypeDoc flavor](#typedoc-flavor) में बताए गए module पदानुक्रम के
+रूप में ही render होता है)।
 
 <tabs group="tool">
 <tab label="JSDoc (jsdoc.json)" value="JSDoc (jsdoc.json)">
@@ -286,14 +286,13 @@ opts: {
 
 ```json5
 cleanJsdocTheme: {
-  // "Core" और "Classes" यहाँ केवल doc-group / kind-label semantics को प्रभावित
-  // करते हैं जो TypeDoc API tree के लिए मौजूद नहीं हैं — ऊपर "TypeDoc flavor"
-  // देखें। केवल "Getting Started" और "Guides" (doc groups) वास्तव में यहाँ
-  // हिलते हैं।
+  // sectionOrder का TypeDoc पर कोई प्रभाव नहीं — API tree module पदानुक्रम है
+  // (ऊपर "TypeDoc flavor" देखें), इसलिए यह key यहाँ नज़रअंदाज़ हो जाती है।
   sectionOrder: ["Getting Started", "Core", "Classes", "Guides", "Modules"],
+  // docGroups ही TypeDoc tab पर prose doc groups को क्रमित करता है।
   docGroups: ["Getting Started", "Guides"],
   defaultDocGroup: "Docs",
-  clubSidebarItems: true, // TypeDoc API tree पर कोई प्रभाव नहीं
+  clubSidebarItems: true, // TypeDoc पर कोई प्रभाव नहीं
   menu: [
     { id: "home", title: "Home", icon: "lucide:home" },
     { title: "GitHub", link: "https://github.com/you/repo", icon: "simpleicons:github" },

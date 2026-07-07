@@ -120,9 +120,8 @@ npx serve dist
 | [`siteName`](/theme/configuration#sitename) | Header का title — सादा text, या `alt` fallback text के साथ एक `light`/`dark` logo set। |
 | [`fonts`](/theme/configuration#fonts) | `heading` / `body` (Google Fonts, आपके लिए load होते हैं) और `mono` को override करें। |
 | [`colors`](/theme/configuration#colors-and-darkcolors) / [`darkColors`](/theme/configuration#colors-and-darkcolors) | light / dark palettes को फिर से रंगें — सिर्फ़ `bg`, `accent`, … override करें, बाक़ी रहने दें। |
-| [`sectionOrder`](/theme/configuration#sectionorder) | top-level sidebar sections का क्रम तय करें। |
-| [`clubSidebarItems`](/theme/configuration#clubsidebaritems) | संबंधित entries को एक साझा, collapsible parent के नीचे समेटें। |
 | [`menu`](/theme/configuration#menu) | sidebar के ऊपर pin किए गए custom links, हर एक के साथ एक `lucide:` / `simpleicons:` icon। |
+| [`docGroups`](/theme/configuration#docgroups) | sidebar में prose **doc groups** का क्रम तय करें (API section module पदानुक्रम है)। |
 | [`copyPage`](/theme/configuration#copypage) | प्रति-page "copy page" / "open in LLM" button (default में on)। |
 
 > [!NOTE]

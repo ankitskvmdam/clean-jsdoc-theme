@@ -396,6 +396,7 @@ opts: { sectionOrder: ["Getting Started", "Guides", "Classes", "Modules"] }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
+// 受け付けられますが TypeDoc では効果がありません — 下記の note を参照。
 cleanJsdocTheme: { sectionOrder: ["Getting Started", "Guides", "Classes", "Modules"] }
 ```
 
@@ -404,9 +405,10 @@ cleanJsdocTheme: { sectionOrder: ["Getting Started", "Guides", "Classes", "Modul
 </tabs>
 
 > [!NOTE]
-> `sectionOrder` は **doc/tutorial groups と JSDoc の API kind sections** を
-> 順序付けます。TypeDoc API tree を順序付ける**ことはありません** — その
-> sidebar は独自の固定された順序を持つ module/folder hierarchy です。
+> **JSDoc** では `sectionOrder` は doc/tutorial groups と API kind sections を
+> 順序付けます。**TypeDoc** では**まったく効果がありません** — その sidebar は
+> 独自の固定された順序を持つ module/folder hierarchy であり、そこでの doc groups
+> は `sectionOrder` ではなく [`docGroups`](#docgroups) で順序付けられます。
 > [TypeDoc flavor](/guides/structure-your-sidebar#typedoc-flavor) を参照してください。
 
 ### `clubSidebarItems`

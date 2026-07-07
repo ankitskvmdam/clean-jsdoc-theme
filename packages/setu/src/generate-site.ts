@@ -1349,9 +1349,11 @@ function assembleJsdocNav({
  * first, then a module/folder hierarchy ({@link buildTypedocApiNav}) replacing
  * the kind buckets, then tutorials, with Home first and Source Files last. Docs
  * keep their own doc-group nesting (via {@link buildGroupTree}) and render before
- * the module tree; tutorials keep theirs and render after. `sectionOrder` no
- * longer governs the API tree here (default TypeDoc shows every module); it is
- * still honored for doc-group / tutorial section ordering. This whole path is
+ * the module tree; tutorials keep theirs and render after. `sectionOrder` has no
+ * effect under this flavor — the module hierarchy owns the API top level (default
+ * TypeDoc shows every module), and doc groups are ordered by `docGroups` — so it
+ * is intentionally not destructured here even though the shared
+ * {@link AssembleNavOptions} carries it for the JSDoc path. This whole path is
  * gated on `flavor === 'typedoc'`, so the JSDoc nav is byte-identical.
  */
 function assembleTypedocNav({
@@ -1361,7 +1363,6 @@ function assembleTypedocNav({
   docGroups = [],
   home,
   source,
-  sectionOrder,
   menu,
 }: AssembleNavOptions): NavNode[] {
   // The module/folder hierarchy for the API pages — the top-level nodes that
@@ -1412,11 +1413,6 @@ function assembleTypedocNav({
   if (tutEntries && tutEntries.length > 0) {
     tutorialSections.push(...buildGroupTree(TUTORIALS_SECTION, tutEntries));
   }
-  // Any user-named `sectionOrder` labels that are doc/tutorial sections keep the
-  // requested order among aux sections (kind labels there are ignored — the API
-  // tree owns the top level under typedoc).
-  void sectionOrder;
-
   const out: NavNode[] = [];
   if (menu && menu.length > 0) {
     menu.forEach((item, i) => {

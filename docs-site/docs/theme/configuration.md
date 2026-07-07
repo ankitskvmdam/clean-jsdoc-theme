@@ -392,6 +392,7 @@ opts: { sectionOrder: ["Getting Started", "Guides", "Classes", "Modules"] }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
+// Accepted but has NO effect under TypeDoc — see the note below.
 cleanJsdocTheme: { sectionOrder: ["Getting Started", "Guides", "Classes", "Modules"] }
 ```
 
@@ -400,9 +401,10 @@ cleanJsdocTheme: { sectionOrder: ["Getting Started", "Guides", "Classes", "Modul
 </tabs>
 
 > [!NOTE]
-> `sectionOrder` orders **doc/tutorial groups and JSDoc's API kind sections**.
-> It does **not** order the TypeDoc API tree — that sidebar is a module/folder
-> hierarchy with its own fixed ordering. See
+> Under **JSDoc**, `sectionOrder` orders doc/tutorial groups and the API kind
+> sections. Under **TypeDoc** it has **no effect at all** — that sidebar is a
+> module/folder hierarchy with its own fixed ordering, and doc groups there are
+> ordered by [`docGroups`](#docgroups), not `sectionOrder`. See
 > [TypeDoc flavor](/guides/structure-your-sidebar#typedoc-flavor).
 
 ### `clubSidebarItems`

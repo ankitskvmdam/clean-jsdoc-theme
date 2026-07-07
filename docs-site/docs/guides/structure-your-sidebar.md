@@ -161,9 +161,10 @@ members, and the bare-prefix entry (e.g. the `queue` module itself) becomes an
 ## Lever 5 — `sectionOrder`
 
 > [!NOTE]
-> **Partly JSDoc-only.** `sectionOrder` has no effect on the TypeDoc **API**
-> tree — but it still orders TypeDoc's **doc/tutorial groups** the same way it
-> does for JSDoc. See [TypeDoc flavor](#typedoc-flavor).
+> **JSDoc-only.** `sectionOrder` has no effect under TypeDoc at all — the
+> TypeDoc API tree is the module hierarchy, and doc groups there are ordered by
+> [`docGroups`](/theme/configuration#docgroups), not `sectionOrder`. See
+> [TypeDoc flavor](#typedoc-flavor).
 
 [`sectionOrder`](/theme/configuration#sectionorder) orders the **top-level** groups —
 one unified list mixing kind labels, `@category` names, and doc-group names.
@@ -230,7 +231,7 @@ on [TypeDoc Getting Started](/theme/typedoc-getting-started#the-typedoc-sidebar)
 | `@category` | None — does not move a symbol in the module hierarchy | Still parsed |
 | `@group` | None — does not drive the sidebar | Still parsed (see [TypeDoc Getting Started](/theme/typedoc-getting-started#typedoc-specific-rendering)) |
 | `@order` | None — kind order within a module is fixed | — |
-| `sectionOrder` | None | Still orders **doc/tutorial groups** |
+| `sectionOrder` | None | None — order **doc groups** with `docGroups` instead |
 | `clubSidebarItems` | None | — |
 | `docGroups` / doc frontmatter `group`/`order` | — | **Works** — orders prose doc groups, rendered before the API hierarchy |
 | `menu` | — | **Works** — same top-region behavior as JSDoc |
@@ -244,9 +245,10 @@ on [TypeDoc Getting Started](/theme/typedoc-getting-started#the-typedoc-sidebar)
 ## Putting it together
 
 A realistic mixed config. Note that `sectionOrder` and `clubSidebarItems` below
-only affect the **JSDoc** tab's API sidebar — on the TypeDoc tab they still
-apply to doc groups/tutorials, but the API tree renders as the module hierarchy
-described in [TypeDoc flavor](#typedoc-flavor) regardless of these options.
+only affect the **JSDoc** tab's API sidebar — on the TypeDoc tab they have **no
+effect at all** (doc-group order comes from `docGroups`, and the API tree always
+renders as the module hierarchy described in
+[TypeDoc flavor](#typedoc-flavor)).
 
 <tabs group="tool">
 <tab label="JSDoc (jsdoc.json)" value="JSDoc (jsdoc.json)">
@@ -270,13 +272,13 @@ opts: {
 
 ```json5
 cleanJsdocTheme: {
-  // "Core" and "Classes" here only affect doc-group / kind-label semantics
-  // that don't exist for the TypeDoc API tree — see "TypeDoc flavor" above.
-  // Only "Getting Started" and "Guides" (doc groups) actually move here.
+  // sectionOrder has NO effect under TypeDoc — the API tree is the module
+  // hierarchy (see "TypeDoc flavor" above), so this key is ignored here.
   sectionOrder: ["Getting Started", "Core", "Classes", "Guides", "Modules"],
+  // docGroups is what orders the prose doc groups on the TypeDoc tab.
   docGroups: ["Getting Started", "Guides"],
   defaultDocGroup: "Docs",
-  clubSidebarItems: true, // no effect on the TypeDoc API tree
+  clubSidebarItems: true, // no effect under TypeDoc
   menu: [
     { id: "home", title: "Home", icon: "lucide:home" },
     { title: "GitHub", link: "https://github.com/you/repo", icon: "simpleicons:github" },

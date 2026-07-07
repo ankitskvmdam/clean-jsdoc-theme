@@ -120,9 +120,8 @@ npx serve dist
 | [`siteName`](/theme/configuration#sitename) | Header の title — プレーンテキスト、または `alt` fallback text を伴う `light`/`dark` の logo セット。 |
 | [`fonts`](/theme/configuration#fonts) | `heading` / `body` (Google Fonts、あなたのために load されます) と `mono` を override します。 |
 | [`colors`](/theme/configuration#colors-and-darkcolors) / [`darkColors`](/theme/configuration#colors-and-darkcolors) | light / dark palettes を塗り替えます。`bg`、`accent` … だけを override し、残りはそのままにします。 |
-| [`sectionOrder`](/theme/configuration#sectionorder) | top-level の sidebar sections の順序を決めます。 |
-| [`clubSidebarItems`](/theme/configuration#clubsidebaritems) | 関連する entries を共有の collapsible parent の下にまとめます。 |
 | [`menu`](/theme/configuration#menu) | sidebar の上に pin される custom links。それぞれに `lucide:` / `simpleicons:` icon を付けられます。 |
+| [`docGroups`](/theme/configuration#docgroups) | sidebar 内の prose **doc groups** の順序を決めます (API section は module 階層です)。 |
 | [`copyPage`](/theme/configuration#copypage) | page ごとの "copy page" / "open in LLM" button (デフォルトで on)。 |
 
 > [!NOTE]

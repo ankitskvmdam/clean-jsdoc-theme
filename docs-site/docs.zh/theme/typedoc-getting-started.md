@@ -119,9 +119,8 @@ npx serve dist
 | [`siteName`](/theme/configuration#sitename) | 页头标题 —— 纯文本，或一组带 `alt` 后备文本的 `light`/`dark` logo。 |
 | [`fonts`](/theme/configuration#fonts) | 覆盖 `heading` / `body`（Google Fonts，已为你加载）以及 `mono`。 |
 | [`colors`](/theme/configuration#colors-and-darkcolors) / [`darkColors`](/theme/configuration#colors-and-darkcolors) | 重新着色 light / dark 调色板 —— 仅覆盖 `bg`、`accent`……，其余保持不变。 |
-| [`sectionOrder`](/theme/configuration#sectionorder) | 排定顶层 sidebar 区块的顺序。 |
-| [`clubSidebarItems`](/theme/configuration#clubsidebaritems) | 将相关条目收拢到一个共享的、可折叠的父项之下。 |
 | [`menu`](/theme/configuration#menu) | 固定在 sidebar 上方的自定义链接，每个都带一个 `lucide:` / `simpleicons:` 图标。 |
+| [`docGroups`](/theme/configuration#docgroups) | 排定 sidebar 中 prose **doc groups** 的顺序（API 区块是 module 层级结构）。 |
 | [`copyPage`](/theme/configuration#copypage) | 每页的 "copy page" / "open in LLM" 按钮（默认开启）。 |
 
 > [!NOTE]
