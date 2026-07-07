@@ -7,8 +7,8 @@
   </picture>
 </a>
 
-The **TypeDoc** plugin for `clean-jsdoc-theme` — the same fast, modern,
-LLM-friendly documentation site, generated from your TypeScript sources.
+A fast, modern, LLM-friendly documentation site for your **TypeScript**
+project, powered by TypeDoc.
 
 [![npm version](https://img.shields.io/npm/v/@clean-jsdoc-theme/typedoc)](https://www.npmjs.com/package/@clean-jsdoc-theme/typedoc)
 [![npm downloads](https://img.shields.io/npm/dm/@clean-jsdoc-theme/typedoc)](https://www.npmjs.com/package/@clean-jsdoc-theme/typedoc)
@@ -29,15 +29,14 @@ LLM-friendly documentation site, generated from your TypeScript sources.
   <img src="https://raw.githubusercontent.com/ankitskvmdam/clean-jsdoc-theme/master/packages/clean-jsdoc-theme/media/screenshot-dark.png" width="49%" alt="clean-jsdoc-theme — dark theme" />
 </p>
 
-A TypeDoc plugin that feeds TypeDoc's reflections through the **same** pipeline as
-the JSDoc theme, so a TypeScript project gets identical output: server-rendered
-HTML, lazily-hydrated interactive islands, fuzzy + full-text search, light and
-dark themes, and a companion `.md` of every page for LLMs.
+A TypeDoc plugin that turns your project's reflections into a fast, modern static
+site: server-rendered HTML, lazily-hydrated interactive islands, fuzzy + full-text
+search, light and dark themes, and a companion `.md` of every page for LLMs.
 
 ## Highlights
 
-- **Same site as the JSDoc theme** — one rendering core, so JSDoc and TypeDoc
-  projects produce identical output.
+- **Built for TypeScript** — your TypeDoc reflections become a structured API
+  model, then a polished static site. No CSS or build config to get started.
 - **Fast & framework-free** — server-rendered pages with lazily-hydrated Preact
   islands; each page loads only the JS it actually uses.
 - **Search built in** — a fuzzy command palette (`Ctrl K`) over titles,
@@ -45,10 +44,9 @@ dark themes, and a companion `.md` of every page for LLMs.
   [Pagefind](https://pagefind.app/) full-text index.
 - **Guides + API in one site** — hand-written Markdown guides and the
   auto-generated reference share one sidebar and one search.
-- **Localization on the way** — the shared `clean-jsdoc` i18n tooling powers
-  multi-language sites with a language switcher and per-language fonts. The full
-  per-locale build ships for JSDoc today; TypeDoc build support is in progress
-  (string extraction already works).
+- **Localization in progress** — the `clean-jsdoc` i18n tooling already extracts
+  translatable strings from a TypeDoc project; the full per-locale build (with a
+  language switcher, per-language fonts, and `hreflang`) is landing next.
 - **LLM-friendly** — every page ships a clean companion `.md`, plus a
   copy-page button to hand any page to Claude / ChatGPT / Perplexity. A
   downloadable [skill](https://ankdev.me/clean-jsdoc-theme/theme/llm-skill) turns
@@ -94,7 +92,8 @@ npx serve dist
 
 ## Documentation
 
-- **Setup & full reference** — [**ankdev.me/clean-jsdoc-theme/theme/typedoc-getting-started**](https://ankdev.me/clean-jsdoc-theme/theme/typedoc-getting-started): installation, the `cleanJsdocTheme` options, and theming. Every theme option works the same as JSDoc's `opts`, nested under `cleanJsdocTheme`.
+- **Setup & full reference** — [**ankdev.me/clean-jsdoc-theme/theme/typedoc-getting-started**](https://ankdev.me/clean-jsdoc-theme/theme/typedoc-getting-started): installation, the `cleanJsdocTheme` options, and theming — everything configured under `cleanJsdocTheme` in your `typedoc.json`.
+- **Using JSDoc instead?** Install [`clean-jsdoc-theme`](https://www.npmjs.com/package/clean-jsdoc-theme) — the JSDoc template with the same look and feature set.
 - **FAQ & recipes** — [**ankdev.me/clean-jsdoc-theme/guides/faq**](https://ankdev.me/clean-jsdoc-theme/guides/faq): how to embed CodePen / YouTube / sites, write rich doc comments (callouts, steps), and common config tweaks.
 - **Live demo** — [**ankdev.me/clean-jsdoc-theme/api-docs**](https://ankdev.me/clean-jsdoc-theme/api-docs): a real generated API reference, so you can see the output before installing.
 
@@ -107,8 +106,8 @@ Feedback shapes this plugin directly, and contributors are welcome:
 - 🛠️ **Want to dig in? PRs are genuinely welcome.** The adapter lives in [`packages/typedoc/`](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/packages/typedoc) (its `NOTES.md` records the verified TypeDoc API facts it relies on). Friendly areas to start: type rendering, reflection edge cases, and the localized build. See [CONTRIBUTING.md](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/CONTRIBUTING.md).
 
 No contribution is too small — a typo fix, a repro, or a docs tweak all help.
-Verified against TypeDoc **0.28.x**. Thanks for helping make the TypeScript story
-as solid as the JSDoc one. ❤️
+Verified against TypeDoc **0.28.x**. Thanks for helping make the TypeScript
+documentation story great. ❤️
 
 ## Contributors
 

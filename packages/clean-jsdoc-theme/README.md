@@ -7,7 +7,7 @@
   </picture>
 </a>
 
-A fast, modern, LLM-friendly documentation theme for **JSDoc** and **TypeDoc**.
+A fast, modern, LLM-friendly documentation theme for **JSDoc**.
 
 [![npm version](https://img.shields.io/npm/v/clean-jsdoc-theme)](https://www.npmjs.com/package/clean-jsdoc-theme)
 [![npm downloads](https://img.shields.io/npm/dm/clean-jsdoc-theme)](https://www.npmjs.com/package/clean-jsdoc-theme)
@@ -35,7 +35,8 @@ of every page for LLMs. No CSS or build config required to get started.
 
 ## Highlights
 
-- **JSDoc _and_ TypeDoc** — the same modern output from either toolchain.
+- **Built for JSDoc** — point it at your JSDoc sources and get a modern static
+  site. No CSS or build config to get started.
 - **Fast & framework-free** — server-rendered pages with lazily-hydrated Preact
   islands; each page loads only the JS it actually uses.
 - **Search built in** — a fuzzy command palette (`Ctrl K`) over titles,
@@ -82,9 +83,10 @@ npx serve dist
 
 ## Documentation
 
-- **Guides & full reference** — [**ankdev.me/clean-jsdoc-theme**](https://ankdev.me/clean-jsdoc-theme): installation, TypeDoc usage, configuration, and theming.
+- **Guides & full reference** — [**ankdev.me/clean-jsdoc-theme**](https://ankdev.me/clean-jsdoc-theme): installation, configuration, and theming.
 - **FAQ & recipes** — [**ankdev.me/clean-jsdoc-theme/guides/faq**](https://ankdev.me/clean-jsdoc-theme/guides/faq): how to embed CodePen / YouTube / sites, write rich doc comments (callouts, steps), and common config tweaks.
 - **Live demo** — [**ankdev.me/clean-jsdoc-theme/api-docs**](https://ankdev.me/clean-jsdoc-theme/api-docs): a real generated API reference, so you can see the output before installing.
+- **Using TypeScript?** Install [`@clean-jsdoc-theme/typedoc`](https://www.npmjs.com/package/@clean-jsdoc-theme/typedoc) — the TypeDoc plugin with the same look and feature set.
 
 
 ## Contributors
