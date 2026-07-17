@@ -1,5 +1,7 @@
 # @clean-jsdoc-theme/utils
 
+## 5.0.8
+
 ## 5.0.7
 
 ## 5.0.6

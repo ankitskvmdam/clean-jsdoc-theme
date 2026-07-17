@@ -1,6 +1,6 @@
 {
   "name": "@clean-jsdoc-theme/bhasha",
-  "version": "5.0.7",
+  "version": "5.0.8",
   "description": "Pure, browser-safe i18n core for clean-jsdoc-theme (catalog, t, provider, key scheme, validation)",
   "type": "module",
   "main": "./dist/index.js",

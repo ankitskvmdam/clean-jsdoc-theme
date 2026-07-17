@@ -1,6 +1,6 @@
 {
   "name": "@clean-jsdoc-theme/aadesh",
-  "version": "5.0.7",
+  "version": "5.0.8",
   "description": "CLI for clean-jsdoc-theme i18n and build workflows",
   "type": "module",
   "bin": {

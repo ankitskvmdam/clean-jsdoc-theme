@@ -1,5 +1,18 @@
 # @clean-jsdoc-theme/aadesh
 
+## 5.0.8
+
+### Patch Changes
+
+- 4c687c6: Fix `Cannot read properties of undefined (reading 'context')` that made every page fail to render under Yarn Berry (PnP), producing an empty `dist`.
+
+  `preact` was a direct dependency of the internal packages that create and consume Preact contexts, so under Yarn PnP's strict resolution the server-rendered component tree and `preact-render-to-string` could bind to different Preact instances — leaving Preact's internal `currentComponent` unset and throwing on the first `useContext` of every page. `preact` is now a `peerDependency` of the internal packages (`rang`, `dwar`, `bhasha`, `setu`) and a direct dependency of the installable entry points (`clean-jsdoc-theme`, `@clean-jsdoc-theme/typedoc`, `@clean-jsdoc-theme/aadesh`), so a single Preact instance is shared regardless of package manager.
+
+- Updated dependencies [4c687c6]
+  - @clean-jsdoc-theme/bhasha@5.0.8
+  - @clean-jsdoc-theme/setu@5.0.8
+  - @clean-jsdoc-theme/utils@5.0.8
+
 ## 5.0.7
 
 ### Patch Changes
