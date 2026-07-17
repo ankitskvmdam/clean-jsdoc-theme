@@ -50,7 +50,7 @@ export function Footer({ pkg, siteName, year, custom }: FooterProps) {
             href={repoUrl}
             target="_blank"
             rel="noreferrer noopener"
-            class="text-muted-foreground hover:text-accent"
+            class="text-muted-foreground hover:underline"
           >
             {t('chrome.footer.repository')}
           </a>
