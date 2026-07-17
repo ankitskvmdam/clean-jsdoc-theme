@@ -4,7 +4,7 @@
  * `renderHtmlDocument` builds the full `<html>...</html>` shell around the
  * SSR'd body. The order in `<head>` is load-bearing:
  *
- *   1. charset + viewport
+ *   1. charset + viewport + generator
  *   2. title + description meta
  *   3. pre-hydration theme script (inline) — MUST come before the stylesheet
  *      so `data-theme` is set on `<html>` before any styled paint happens
@@ -20,6 +20,15 @@ import { getPreHydrationThemeScript } from './theme-script';
 import { getIslandsLoaderScript } from './islands-loader';
 import { getHeadingAnchorsScript } from './heading-anchors';
 import { getScrollbarScript } from './scrollbar-script';
+
+/**
+ * Theme version, injected at dwar's build time (tsup `define`). Every theme
+ * package is a fixed version group, so this equals the installed
+ * clean-jsdoc-theme / bridge version — stamped as the `generator` meta so a
+ * generated site carries the version that produced it (bug-report triage).
+ */
+declare const __PKG_VERSION__: string | undefined;
+const THEME_VERSION = typeof __PKG_VERSION__ === 'string' ? __PKG_VERSION__ : '0.0.0-dev';
 
 export interface HtmlDocumentOptions {
   page: Page;
@@ -297,6 +306,9 @@ export function renderHtmlDocument(opts: HtmlDocumentOptions): string {
     (authorIdentities.has('name=viewport')
       ? ''
       : `<meta name="viewport" content="width=device-width, initial-scale=1" />`) +
+    (authorIdentities.has('name=generator')
+      ? ''
+      : `<meta name="generator" content="clean-jsdoc-theme ${escapeHtml(THEME_VERSION)}" />`) +
     `<title>${title}</title>` +
     (description && !authorIdentities.has('name=description')
       ? `<meta name="description" content="${description}" />`

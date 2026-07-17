@@ -154,6 +154,20 @@ describe('renderHtmlDocument — custom <meta> tags', () => {
     expect(html).toContain('<meta charset="utf-8" />');
     expect(html).toContain('<meta name="viewport" content="width=device-width, initial-scale=1" />');
   });
+
+  it('stamps a generator meta with the theme version by default', () => {
+    const html = doc({});
+    expect(html).toMatch(/<meta name="generator" content="clean-jsdoc-theme [^"]+" \/>/);
+    // generator lives in <head>.
+    expect(html.indexOf('name="generator"')).toBeLessThan(html.indexOf('</head>'));
+  });
+
+  it('lets an author generator meta replace the theme default (no duplicate)', () => {
+    const html = doc({ meta: [{ name: 'generator', content: 'my-tool 1.0.0' }] });
+    expect(html).toContain('<meta name="generator" content="my-tool 1.0.0" />');
+    expect(html).not.toMatch(/content="clean-jsdoc-theme /);
+    expect(html.match(/name="generator"/g)).toHaveLength(1);
+  });
 });
 
 describe('htmlPathFor', () => {
