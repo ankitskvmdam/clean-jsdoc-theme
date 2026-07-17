@@ -50,7 +50,8 @@
     "@clean-jsdoc-theme/rang": "workspace:^",
     "@clean-jsdoc-theme/setu": "workspace:^",
     "@clean-jsdoc-theme/utils": "workspace:^",
-    "ora": "^9.3.0"
+    "ora": "^9.3.0",
+    "preact": "^10.22.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

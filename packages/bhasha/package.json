@@ -35,12 +35,15 @@
     "clean-node-modules": "node ../../scripts/clean.mjs node_modules"
   },
   "dependencies": {
-    "@clean-jsdoc-theme/utils": "workspace:^",
+    "@clean-jsdoc-theme/utils": "workspace:^"
+  },
+  "peerDependencies": {
     "preact": "^10.22.0"
   },
   "devDependencies": {
     "@testing-library/preact": "^3.2.4",
     "happy-dom": "^20.10.6",
+    "preact": "^10.22.0",
     "tsup": "^8.0.0",
     "typescript": "^5.5.0",
     "vitest": "^4.1.10"

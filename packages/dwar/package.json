@@ -40,6 +40,7 @@
     "@tailwindcss/cli": "^4",
     "@types/node": "^22.0.0",
     "happy-dom": "^20.10.6",
+    "preact": "^10.22.0",
     "tailwindcss": "^4",
     "tsup": "^8.0.0",
     "tsx": "^4.22.3",
@@ -55,11 +56,13 @@
     "@shikijs/rehype": "^4.2.0",
     "esbuild": "^0.28.0",
     "pagefind": "^1.1.0",
-    "preact": "^10.22.0",
     "preact-render-to-string": "^6.5.13",
     "remark-frontmatter": "^5",
     "remark-gfm": "^4",
     "shiki": "^4.2.0"
+  },
+  "peerDependencies": {
+    "preact": "^10.22.0"
   },
   "publishConfig": {
     "access": "public"

@@ -39,6 +39,7 @@
     "@testing-library/preact": "^3.2.4",
     "@types/mdx": "^2.0.13",
     "happy-dom": "^20.10.6",
+    "preact": "^10.22.0",
     "preact-render-to-string": "^6.5.13",
     "tsup": "^8.0.0",
     "typescript": "^5.5.0",
@@ -51,8 +52,10 @@
     "clsx": "^2.1.1",
     "lucide-preact": "^1.17.0",
     "lz-string": "^1.5.0",
-    "preact": "^10.22.0",
     "tailwind-merge": "^3.6.0"
+  },
+  "peerDependencies": {
+    "preact": "^10.22.0"
   },
   "publishConfig": {
     "access": "public"
