@@ -483,8 +483,10 @@ dwar/src/
 │                         #   cross a blank line — so a stray backtick can't desync a
 │                         #   whole page). findStrayBackticks flags those unbalanced ticks.
 ├── html.ts               # HTML document skeleton, slug→path, excerpt, payload escaping
-│                         #   + author <meta> tags (ThemeConfig.meta: defaults first,
-│                         #   de-dupe by identifying attr, escaped, invalid keys dropped)
+│                         #   + <meta> tags: theme defaults first (charset/viewport/
+│                         #   `generator` = clean-jsdoc-theme <__PKG_VERSION__>/auto
+│                         #   description) then ThemeConfig.meta, de-duped by
+│                         #   identifying attr, escaped, invalid keys dropped)
 ├── css.ts                # buildThemeVariableCss (:root + [data-theme=dark] tokens)
 │                         #   + the prebuilt UTILITY_CSS  →  one stylesheet
 ├── generated/
@@ -569,10 +571,13 @@ rang's `Layout` footer slot — it adds no chrome.
 
 **Custom meta.** `ThemeConfig.meta` is an array of attribute maps that dwar's
 `html.ts` emits as `<meta>` tags in `<head>`. The theme's own defaults
-(charset, viewport, the auto `description`) emit **first**, then the author
-entries — but a default is **skipped** when an author entry shares its
+(charset, viewport, a `generator` version stamp — `clean-jsdoc-theme
+<version>` from dwar's build-time `__PKG_VERSION__`, so a built site records
+which version produced it — and the auto `description`) emit **first**, then the
+author entries — but a default is **skipped** when an author entry shares its
 identifying attribute (`name` / `property` / `http-equiv` / `charset`), so an
-author `description` replaces the auto one rather than duplicating it. Values are
+author `description` (or `generator`) replaces the default rather than
+duplicating it. Values are
 HTML-escaped and attribute names validated (a crafted key is dropped), so it's
 pure inline data — `render()` does **no** I/O for it (no file form, unlike the
 footer). The bridge only normalises/validates the array (dropping junk entries

@@ -292,6 +292,9 @@ opts: {
 A few things worth knowing:
 
 - **`charset` and `viewport` are already emitted** — you don't need to add them.
+- **A `generator` tag is added** — `<meta name="generator" content="clean-jsdoc-theme <version>">`
+  records which theme version built the site. Pass your own `{ name: "generator", … }`
+  to replace it.
 - **Your tag wins over the theme's default.** A `{ name: "description", … }`
   replaces the auto description; you won't get two.
 - **These are site-wide** — the same tags render on every page (per-page social
@@ -322,6 +325,22 @@ Configure or disable it with [`copyPage`](/theme/configuration#copypage).
 Unknown or misspelled options **warn** by default (with a "did you mean?" hint)
 and the build continues. Set [`strict`](/theme/configuration#strict) to turn
 those warnings into errors.
+
+### My `dist` is empty and every page fails with "Cannot read properties of undefined (reading 'context')"
+
+Upgrade to **5.0.8 or newer**. Earlier versions declared `preact` as a plain
+dependency in the theme's internal packages, so under **Yarn Berry / Plug'n'Play**
+the server renderer and the components could bind to two different Preact
+instances — which made every page fail to render and left `dist` empty. 5.0.8
+declares `preact` as a peer dependency so a single instance is always shared.
+
+If you can't upgrade yet, switch that project off PnP by adding to `.yarnrc.yml`:
+
+```yaml
+nodeLinker: node-modules
+```
+
+then re-run `yarn install`.
 
 ## Localization
 

@@ -723,10 +723,12 @@ cleanJsdocTheme: { footer: { file: "./footer.html" } }
 Site-wide custom `<meta>` tags. Pass an array of attribute objects — each
 object's key/value pairs become the attributes of one `<meta>` tag in `<head>`
 (`name`/`content`, `property`/`content`, `http-equiv`, `charset`, …). The theme
-emits `charset`/`viewport`/an auto `description` itself and **de-dupes**: an
-author entry sharing an identifying attribute (`name` / `property` /
-`http-equiv` / `charset`) replaces the theme's default rather than duplicating
-it (so your `description` wins). Values are escaped automatically; invalid
+emits `charset`, `viewport`, a `generator` tag (`clean-jsdoc-theme <version>`,
+so a built site records which version produced it), and an auto `description`
+itself and **de-dupes**: an author entry sharing an identifying attribute
+(`name` / `property` / `http-equiv` / `charset`) replaces the theme's default
+rather than duplicating it (so your `description` — or a custom `generator` —
+wins). Values are escaped automatically; invalid
 attribute names are dropped. These are **site-wide** (no per-page meta yet).
 
 **Expected:** an array of `{ [attr]: value }` objects.
