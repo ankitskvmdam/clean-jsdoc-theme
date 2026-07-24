@@ -442,6 +442,58 @@ cleanJsdocTheme: { clubSidebarItems: true }
 > `clubSidebarItems` は TypeDoc API tree には効果がありません。
 > [TypeDoc flavor](/guides/structure-your-sidebar#typedoc-flavor) を参照してください。
 
+### `collapsibleSidebarSections`
+
+top-level の sidebar sections を折りたたみ可能にします — 各 section header が、
+その entries を展開/折りたたみする toggle になります。sections は default で
+**開いた**状態です; visitor の折りたたみ/展開状態は、visitor ごとに
+`localStorage` に永続化されます。
+
+**期待される値:** `true`（または省略）→ すべての top-level section が
+折りたたみ可能（**default**）; `false` → どれも折りたたみ可能にしない; `string[]`
+→ 列挙した section labels のみ、**完全一致かつ大文字小文字を区別**して照合
+（`'Class'` は `'Classes'` に一致**しません**）。labels は render される section
+headers です: 複数形の kind labels（`Classes`、`Namespaces`、`Interfaces`、
+`Modules`、`Typedefs`/`Type Aliases`、`Enumerations`、`Functions`、
+`Variables`、`Globals`）、`@category` の top-level segments、doc-group labels、
+`Tutorials`、`Source Files`。array 内のどの entry も render された section に
+一致しない場合、利用可能な sections を列挙した build warning が出力されます。
+
+> [!NOTE]
+> **function form はありません** — value は build time に一度だけ解決されます。
+> `sectionOrder` / `clubSidebarItems` とは異なり、`collapsibleSidebarSections`
+> は **JSDoc と TypeDoc の両方**で同じように動作します。
+
+<tabs group="tool">
+
+<tab label="JSDoc (jsdoc.json)">
+
+```json5
+opts: {
+  // all top-level sections collapsible (default if omitted)
+  collapsibleSidebarSections: true,
+
+  // …or only these (exact, case-sensitive labels):
+  collapsibleSidebarSections: ["Namespaces", "Classes"],
+}
+```
+
+</tab>
+
+<tab label="TypeDoc (typedoc.json)">
+
+```json5
+cleanJsdocTheme: {
+  collapsibleSidebarSections: true,
+  // …or only these (exact, case-sensitive labels):
+  collapsibleSidebarSections: ["Namespaces", "Classes"],
+}
+```
+
+</tab>
+
+</tabs>
+
 ### `menu`
 
 sidebar navigation の上にピン留めされる custom links です。

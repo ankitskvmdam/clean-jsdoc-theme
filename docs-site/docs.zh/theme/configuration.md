@@ -435,6 +435,55 @@ cleanJsdocTheme: { clubSidebarItems: true }
 
 </tabs>
 
+### `collapsibleSidebarSections`
+
+让顶层侧边栏分节可折叠——每个分节标题都会变成一个可展开/折叠其条目的开关。
+分节默认**展开**；访客的折叠/展开状态会按访客各自持久化保存在 `localStorage` 中。
+
+**预期值：** `true`（或省略）→ 每个顶层分节都可折叠（**默认**）；`false` →
+都不可折叠；一个 `string[]` → 仅列出的分节标签，进行**精确且区分大小写**的
+匹配（`'Class'` 与 `'Classes'` **不**匹配）。这些标签就是渲染出的分节标题：
+复数形式的类型标签（`Classes`、`Namespaces`、`Interfaces`、`Modules`、
+`Typedefs`/`Type Aliases`、`Enumerations`、`Functions`、`Variables`、
+`Globals`）、`@category` 的顶层片段、doc-group 标签、`Tutorials`，以及
+`Source Files`。数组中若有条目未匹配到任何渲染出的分节，会打印一条构建警告，
+列出实际可用的分节。
+
+> [!NOTE]
+> **没有函数形式**——该值在构建时被解析一次。与 `sectionOrder` /
+> `clubSidebarItems` 不同，`collapsibleSidebarSections` 在 **JSDoc 和
+> TypeDoc 下的行为完全一致**。
+
+<tabs group="tool">
+
+<tab label="JSDoc (jsdoc.json)">
+
+```json5
+opts: {
+  // all top-level sections collapsible (default if omitted)
+  collapsibleSidebarSections: true,
+
+  // …or only these (exact, case-sensitive labels):
+  collapsibleSidebarSections: ["Namespaces", "Classes"],
+}
+```
+
+</tab>
+
+<tab label="TypeDoc (typedoc.json)">
+
+```json5
+cleanJsdocTheme: {
+  collapsibleSidebarSections: true,
+  // …or only these (exact, case-sensitive labels):
+  collapsibleSidebarSections: ["Namespaces", "Classes"],
+}
+```
+
+</tab>
+
+</tabs>
+
 ### `menu`
 
 固定在侧边栏导航上方的自定义链接。

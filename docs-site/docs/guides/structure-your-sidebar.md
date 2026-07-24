@@ -158,6 +158,14 @@ Clubbing is also order-aware: a clubbed parent sorts by the min `order` of its
 members, and the bare-prefix entry (e.g. the `queue` module itself) becomes an
 `index` child sorted first unless an explicit `@order` pulls a sibling ahead.
 
+Also worth knowing about here: [`collapsibleSidebarSections`](/theme/configuration#collapsiblesidebarsections)
+doesn't change *what* gets grouped — it turns the rendered top-level section
+headers themselves (kind labels, `@category` groups, doc groups, `Tutorials`,
+`Source Files`) into collapse toggles, open by default. It accepts
+`true`/omitted (all sections), `false` (none), or an exact, case-sensitive
+label `string[]`. Unlike every other lever on this page, it works identically
+under **both** JSDoc and TypeDoc — see [TypeDoc flavor](#typedoc-flavor) below.
+
 ## Lever 5 — `sectionOrder`
 
 > [!NOTE]
@@ -235,7 +243,15 @@ on [TypeDoc Getting Started](/theme/typedoc-getting-started#the-typedoc-sidebar)
 | `clubSidebarItems` | None | — |
 | `docGroups` / doc frontmatter `group`/`order` | — | **Works** — orders prose doc groups, rendered before the API hierarchy |
 | `menu` | — | **Works** — same top-region behavior as JSDoc |
+| `collapsibleSidebarSections` | **Works** — same collapse-toggle behavior as JSDoc | **Works** |
 | Tutorials | — | **Still render** |
+
+> [!NOTE]
+> Unlike `@category`, `@order`, `sectionOrder`, and `clubSidebarItems` — which
+> are all inert here — [`collapsibleSidebarSections`](/theme/configuration#collapsiblesidebarsections)
+> **does** apply under TypeDoc: it toggles the same rendered top-level section
+> headers (module/kind/doc-group labels) into collapsible headers, resolved
+> against whatever sections this build actually renders.
 
 > [!NOTE]
 > Restoring a `@category`/`@group`-driven TypeDoc API sidebar (matching

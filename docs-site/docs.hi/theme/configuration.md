@@ -440,6 +440,58 @@ cleanJsdocTheme: { clubSidebarItems: true }
 
 </tabs>
 
+### `collapsibleSidebarSections`
+
+top-level sidebar sections को collapsible बनाएँ — हर section header एक toggle बन
+जाता है जो अपने entries को expand/collapse करता है। Sections default रूप से
+**खुले** रहते हैं; एक visitor की collapsed/expanded पसंद प्रति-visitor
+`localStorage` में persist होती है।
+
+**अपेक्षित:** `true` (या छोड़ दिया गया) → हर top-level section collapsible होता है
+(**default**); `false` → कोई नहीं; एक `string[]` → केवल सूचीबद्ध section labels,
+**exact और case-sensitive** मिलान (`'Class'`, `'Classes'` से मेल **नहीं** खाता)।
+Labels वे rendered section headers हैं: plural kind labels (`Classes`,
+`Namespaces`, `Interfaces`, `Modules`, `Typedefs`/`Type Aliases`,
+`Enumerations`, `Functions`, `Variables`, `Globals`), `@category` top-level
+segments, doc-group labels, `Tutorials`, और `Source Files`। array का कोई entry
+जो किसी rendered section से मेल न खाए, उपलब्ध sections को सूचीबद्ध करते हुए एक
+build warning print करता है।
+
+> [!NOTE]
+> **कोई function form नहीं** — value build time पर एक बार resolve होती है।
+> `sectionOrder` / `clubSidebarItems` के विपरीत, `collapsibleSidebarSections`
+> **दोनों** JSDoc और TypeDoc के तहत समान रूप से काम करता है।
+
+<tabs group="tool">
+
+<tab label="JSDoc (jsdoc.json)">
+
+```json5
+opts: {
+  // all top-level sections collapsible (default if omitted)
+  collapsibleSidebarSections: true,
+
+  // …or only these (exact, case-sensitive labels):
+  collapsibleSidebarSections: ["Namespaces", "Classes"],
+}
+```
+
+</tab>
+
+<tab label="TypeDoc (typedoc.json)">
+
+```json5
+cleanJsdocTheme: {
+  collapsibleSidebarSections: true,
+  // …or only these (exact, case-sensitive labels):
+  collapsibleSidebarSections: ["Namespaces", "Classes"],
+}
+```
+
+</tab>
+
+</tabs>
+
 ### `menu`
 
 sidebar navigation के ऊपर pin किए गए custom links।

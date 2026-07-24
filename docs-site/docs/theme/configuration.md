@@ -438,6 +438,57 @@ cleanJsdocTheme: { clubSidebarItems: true }
 
 </tabs>
 
+### `collapsibleSidebarSections`
+
+Make top-level sidebar sections collapsible — each section header becomes a
+toggle that expands/collapses its entries. Sections default **open**; a
+visitor's collapsed/expanded choice persists per-visitor in `localStorage`.
+
+**Expected:** `true` (or omitted) → every top-level section is collapsible
+(**default**); `false` → none are; a `string[]` → only the listed section
+labels, matched **exactly and case-sensitively** (`'Class'` does **not** match
+`'Classes'`). The labels are the rendered section headers: the plural kind
+labels (`Classes`, `Namespaces`, `Interfaces`, `Modules`, `Typedefs`/`Type
+Aliases`, `Enumerations`, `Functions`, `Variables`, `Globals`), `@category`
+top-level segments, doc-group labels, `Tutorials`, and `Source Files`. An array
+entry that matches no rendered section prints a build warning listing the
+sections that *are* available.
+
+> [!NOTE]
+> **No function form** — the value is resolved once, at build time. Unlike
+> `sectionOrder` / `clubSidebarItems`, `collapsibleSidebarSections` works
+> identically under **both** JSDoc and TypeDoc.
+
+<tabs group="tool">
+
+<tab label="JSDoc (jsdoc.json)">
+
+```json5
+opts: {
+  // all top-level sections collapsible (default if omitted)
+  collapsibleSidebarSections: true,
+
+  // …or only these (exact, case-sensitive labels):
+  collapsibleSidebarSections: ["Namespaces", "Classes"],
+}
+```
+
+</tab>
+
+<tab label="TypeDoc (typedoc.json)">
+
+```json5
+cleanJsdocTheme: {
+  collapsibleSidebarSections: true,
+  // …or only these (exact, case-sensitive labels):
+  collapsibleSidebarSections: ["Namespaces", "Classes"],
+}
+```
+
+</tab>
+
+</tabs>
+
 ### `menu`
 
 Custom links pinned above the sidebar navigation.
