@@ -32,6 +32,7 @@
       "alt": "clean-jsdoc-theme"
     },
     "clubSidebarItems": true,
+    "collapsibleSidebarSections": ["Guides", "Components"],
     "menu": [
       {
         "title": "Home",

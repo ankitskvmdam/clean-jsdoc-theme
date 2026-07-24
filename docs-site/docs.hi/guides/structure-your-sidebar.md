@@ -167,6 +167,15 @@ Clubbing क्रम-सचेत भी है: एक clubbed parent अप�
 जाती है जो सबसे पहले sorted होती है, जब तक कि कोई स्पष्ट `@order` किसी sibling को
 आगे न खींच ले।
 
+यहाँ जानना उपयोगी होगा: [`collapsibleSidebarSections`](/theme/configuration#collapsiblesidebarsections)
+यह नहीं बदलता कि *क्या* group किया जाता है — यह rendered top-level section
+headers को स्वयं (kind labels, `@category` groups, doc groups, `Tutorials`,
+`Source Files`) collapse toggles में बदल देता है, जो default रूप से खुले रहते
+हैं। यह `true`/छोड़ा गया (सभी sections), `false` (कोई नहीं), या एक exact,
+case-sensitive label `string[]` स्वीकार करता है। इस page के हर दूसरे लीवर के
+विपरीत, यह **दोनों** JSDoc और TypeDoc के तहत समान रूप से काम करता है — नीचे
+[TypeDoc flavor](#typedoc-flavor) देखें।
+
 ## लीवर 5 — `sectionOrder`
 
 > [!NOTE]
@@ -250,7 +259,16 @@ TypeDoc output अपनी **API sidebar** के लिए ऊपर वाल
 | `clubSidebarItems` | कोई नहीं | — |
 | `docGroups` / doc frontmatter `group`/`order` | — | **काम करता है** — prose doc groups को क्रमित करता है, API पदानुक्रम से पहले render होता है |
 | `menu` | — | **काम करता है** — JSDoc जैसा ही top-region व्यवहार |
+| `collapsibleSidebarSections` | **काम करता है** — JSDoc जैसा ही collapse-toggle व्यवहार | **काम करता है** |
 | Tutorials | — | **अब भी render होते हैं** |
+
+> [!NOTE]
+> `@category`, `@order`, `sectionOrder`, और `clubSidebarItems` के विपरीत — जो
+> यहाँ सभी निष्क्रिय हैं —
+> [`collapsibleSidebarSections`](/theme/configuration#collapsiblesidebarsections)
+> TypeDoc के तहत **लागू होता है**: यह उन्हीं rendered top-level section headers
+> (module/kind/doc-group labels) को collapsible headers में बदल देता है, जो इस
+> build में वास्तव में render होने वाले sections के विरुद्ध resolve होते हैं।
 
 > [!NOTE]
 > एक `@category`/`@group`-driven TypeDoc API sidebar बहाल करना (TypeDoc की अपनी

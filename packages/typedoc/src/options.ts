@@ -56,6 +56,8 @@ export interface CleanJsdocThemeBlock {
   menu?: unknown;
   /** Club prefix-grouped sidebar entries into subtrees. */
   clubSidebarItems?: unknown;
+  /** Which top-level sidebar sections collapse (`boolean` or array of labels). */
+  collapsibleSidebarSections?: unknown;
   /** Copy-page button config (boolean or `{ enabled?, actions? }`). */
   copyPage?: unknown;
   /** Prev/next page pager config (boolean or `{ enabled? }`). */
@@ -99,8 +101,8 @@ export function declareThemeOption(app: Application): void {
     name: OPTION_NAME,
     help:
       'clean-jsdoc-theme options (siteName, fonts, sectionOrder, docs, docGroups, ' +
-      'defaultDocGroup, menu, clubSidebarItems, copyPage, pageNav, playground, ' +
-      'aiPrompt, footer, favicon, meta, basePath, siteUrl, strict).',
+      'defaultDocGroup, menu, clubSidebarItems, collapsibleSidebarSections, copyPage, ' +
+      'pageNav, playground, aiPrompt, footer, favicon, meta, basePath, siteUrl, strict).',
     type: ParameterType.Object,
     defaultValue: {},
   };

@@ -152,6 +152,13 @@ frontmatter `order` 所采用的规则相同。
 （例如 `queue` module 本身）会成为一个排在首位的 `index` 子项，除非某个明确的
 `@order` 把一个同级条目拉到了前面。
 
+这里也值得了解一下 [`collapsibleSidebarSections`](/theme/configuration#collapsiblesidebarsections)。
+它不改变*什么*被分组——而是把渲染出的顶层分节标题本身（kind labels、
+`@category` 分组、doc 分组、`Tutorials`、`Source Files`）变成默认展开的折叠
+开关。它接受 `true`/省略（所有分节）、`false`（都不折叠），或一个精确、区分
+大小写的标签 `string[]`。与本页其他所有杠杆不同，它在 **JSDoc 和 TypeDoc
+下的行为完全一致**——见下方 [TypeDoc flavor](#typedoc-flavor)。
+
 ## 杠杆 5 —— `sectionOrder`
 
 > [!NOTE]
@@ -227,7 +234,16 @@ module/folder 层级结构，而非来自 `@category` 或 kind buckets：
 | `clubSidebarItems` | 无 | — |
 | `docGroups` / doc frontmatter `group`/`order` | — | **有效** —— 对正文 doc 分组排序，渲染在 API 层级结构之前 |
 | `menu` | — | **有效** —— 与 JSDoc 相同的顶部区域行为 |
+| `collapsibleSidebarSections` | **有效** —— 与 JSDoc 相同的折叠开关行为 | **有效** |
 | Tutorials | — | **仍会渲染** |
+
+> [!NOTE]
+> 与 `@category`、`@order`、`sectionOrder`、`clubSidebarItems` 不同——它们在
+> 这里都是无效的——
+> [`collapsibleSidebarSections`](/theme/configuration#collapsiblesidebarsections)
+> 在 TypeDoc 下**确实生效**：它会把同样渲染出的顶层分节标题
+> （module/kind/doc-group 标签）变成可折叠的标题，其解析依据是本次构建中
+> 实际渲染出的分节。
 
 > [!NOTE]
 > 恢复一个由 `@category`/`@group` 驱动的 TypeDoc API 侧边栏（匹配

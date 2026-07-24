@@ -75,6 +75,12 @@ The levers:
 Mixing guides interleaved with API kinds (Classes between two prose groups) needs
 `sectionOrder`; `docGroups` alone always appends doc groups after API sections.
 
+Independently of ordering, **`collapsibleSidebarSections`** (`boolean | string[]`)
+toggles whether top-level section headers can be collapsed (chevron,
+`localStorage`-persisted; default `true` = all, `false` = none, an array = only
+those exact, case-sensitive labels — unmatched labels warn). It changes only
+interactivity, not order or grouping, and applies under both JSDoc and TypeDoc.
+
 ## Cross-references & source links
 
 - **`{@link}` / `{@linkcode}` / `{@linkplain}`** inline tags and **`@see`** block

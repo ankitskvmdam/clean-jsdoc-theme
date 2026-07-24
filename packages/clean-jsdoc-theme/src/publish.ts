@@ -141,6 +141,9 @@ const loadUtils = (): Promise<typeof import('@clean-jsdoc-theme/utils')> =>
     'normalizeBasePath',
     'withBase',
     'toExtractManifest',
+    'normalizeCollapsibleSidebarSections',
+    'unmatchedCollapsibleSections',
+    'topLevelSectionLabels',
   ]);
 
 /** The `ora` spinner factory (its default export). */
@@ -266,6 +269,13 @@ interface JSDocOpts {
    * parent); a prefix with a single entry is left flat. Off by default.
    */
   clubSidebarItems?: unknown;
+  /**
+   * Which top-level sidebar sections collapse (`jsdoc.json`
+   * `"opts": { "collapsibleSidebarSections": true | ["Classes","Namespaces"] }`).
+   * `true`/absent → all; `false` → none; array → only those exact labels
+   * (case-sensitive). Unmatched labels warn. See utils `resolveCollapsibleSections`.
+   */
+  collapsibleSidebarSections?: unknown;
   /**
    * Custom prompt for the copy-page button's "Open in ChatGPT/Claude/Perplexity"
    * actions (`jsdoc.json` `"opts": { "aiPrompt": "…" }`). `{siteName}`, `{url}`,
@@ -2063,6 +2073,9 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
       normalizeBasePath,
       withBase,
       toExtractManifest,
+      normalizeCollapsibleSidebarSections,
+      unmatchedCollapsibleSections,
+      topLevelSectionLabels,
     },
     // Loaded sequentially (not Promise.all) so the spinner can step its label
     // through each module — the evaluation of these large ESM bundles is the
@@ -2215,6 +2228,9 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   const sectionOrder = normalizeSectionOrder(opts.sectionOrder);
   const menu = normalizeMenu(opts.menu);
   const clubSidebarItems = opts.clubSidebarItems === true;
+  const { value: collapsibleSidebarSections, warnings: collapsibleWarnings } =
+    normalizeCollapsibleSidebarSections(opts.collapsibleSidebarSections);
+  collapsibleWarnings.forEach((w) => console.warn(`clean-jsdoc-theme: ${w}`));
   // The enablement slice (provider selection + enableForAllExamples) gates setu's
   // `@playground` handling; the runtime slice is threaded into the theme instead.
   const playground = normalizePlayground(opts.playground);
@@ -2231,6 +2247,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
     ...(sectionOrder ? { sectionOrder } : {}),
     ...(menu ? { menu } : {}),
     ...(clubSidebarItems ? { clubSidebarItems } : {}),
+    ...(collapsibleSidebarSections !== undefined ? { collapsibleSidebarSections } : {}),
     ...(playground ? { playground: playground.site } : {}),
   };
   // Build mode stamps the locale's API translations in; a normal build doesn't.
@@ -2239,6 +2256,18 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
       ? stampSite(data, buildSpec.apiMessages, siteOptions)
       : generateSite(data, siteOptions)
   );
+
+  if (Array.isArray(collapsibleSidebarSections)) {
+    const present = topLevelSectionLabels(manifest.nav);
+    const unmatched = unmatchedCollapsibleSections(collapsibleSidebarSections, present);
+    if (unmatched.length > 0) {
+      console.warn(
+        `clean-jsdoc-theme: collapsibleSidebarSections — no sidebar section matches ` +
+          `${unmatched.map((l) => `'${l}'`).join(', ')}. ` +
+          `Available sections: ${present.join(', ')}.`
+      );
+    }
+  }
 
   // Localization extract mode (aadesh, Phase 3): when CLEAN_JSDOC_THEME_EXTRACT
   // names a path, write the translatable slot template there and STOP — skipping

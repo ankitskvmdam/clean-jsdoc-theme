@@ -117,6 +117,14 @@ export interface SiteManifest {
    * the page bodies differ. See {@link SlotEntry}.
    */
   slots?: SlotEntry[];
+  /**
+   * Top-level sidebar section labels that render as collapse toggles (the
+   * resolved `collapsibleSidebarSections` opt). Populated by setu (default: all
+   * present sections). dwar threads it into the sidebar/mobile-nav island props;
+   * rang renders a header as a toggle when its label is in this list. An empty
+   * list means every header is static (today's behavior).
+   */
+  collapsibleGroups?: string[];
 }
 
 /** Current schema version of the {@link ExtractManifest}. */

@@ -14,6 +14,7 @@ export interface MobileNavProps {
   currentSlug: string;
   siteName?: SiteName;
   basePath?: string;
+  collapsibleGroups?: string[];
 }
 
 /**
@@ -32,7 +33,13 @@ export interface MobileNavProps {
  * settings dialog, which is rendered as a sibling of the drawer so it survives
  * the drawer unmounting.
  */
-export function MobileNav({ nav, currentSlug, siteName, basePath = '/' }: MobileNavProps) {
+export function MobileNav({
+  nav,
+  currentSlug,
+  siteName,
+  basePath = '/',
+  collapsibleGroups,
+}: MobileNavProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -92,7 +99,12 @@ export function MobileNav({ nav, currentSlug, siteName, basePath = '/' }: Mobile
               }}
             />
           </div>
-          <Sidebar nav={nav} currentSlug={currentSlug} basePath={basePath} />
+          <Sidebar
+            nav={nav}
+            currentSlug={currentSlug}
+            basePath={basePath}
+            collapsibleGroups={collapsibleGroups}
+          />
         </div>
       </Dialog>
       {/* Sibling of the drawer so closing the drawer doesn't unmount it. */}

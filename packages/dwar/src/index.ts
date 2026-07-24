@@ -396,6 +396,7 @@ async function renderPage(
           pkg: manifest.pkg,
           siteName,
           basePath,
+          collapsibleGroups: manifest.collapsibleGroups,
           footer,
           searchIndexUrl,
           languageSwitcher,

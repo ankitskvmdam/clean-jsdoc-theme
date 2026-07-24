@@ -20,6 +20,11 @@ matches your setup.
 > hint) — the build continues. Set [`strict`](#strict) to turn those warnings
 > into errors.
 
+> [!TIP]
+> Don't see an option documented here? Make sure you're on the **latest version**
+> of the theme — new options ship regularly, and an option that seems missing in
+> your build usually means the installed version predates it.
+
 ## JSDoc vs TypeDoc
 
 Every option on this page is the same for both tools — only **where you put it**
@@ -432,6 +437,57 @@ opts: { clubSidebarItems: true }
 
 ```json5
 cleanJsdocTheme: { clubSidebarItems: true }
+```
+
+</tab>
+
+</tabs>
+
+### `collapsibleSidebarSections`
+
+Make top-level sidebar sections collapsible — each section header becomes a
+toggle that expands/collapses its entries. Sections default **open**; a
+visitor's collapsed/expanded choice persists per-visitor in `localStorage`.
+
+**Expected:** `true` (or omitted) → every top-level section is collapsible
+(**default**); `false` → none are; a `string[]` → only the listed section
+labels, matched **exactly and case-sensitively** (`'Class'` does **not** match
+`'Classes'`). The labels are the rendered section headers: the plural kind
+labels (`Classes`, `Namespaces`, `Interfaces`, `Modules`, `Typedefs`/`Type
+Aliases`, `Enumerations`, `Functions`, `Variables`, `Globals`), `@category`
+top-level segments, doc-group labels, `Tutorials`, and `Source Files`. An array
+entry that matches no rendered section prints a build warning listing the
+sections that *are* available.
+
+> [!NOTE]
+> **No function form** — the value is resolved once, at build time. Unlike
+> `sectionOrder` / `clubSidebarItems`, `collapsibleSidebarSections` works
+> identically under **both** JSDoc and TypeDoc.
+
+<tabs group="tool">
+
+<tab label="JSDoc (jsdoc.json)">
+
+```json5
+opts: {
+  // all top-level sections collapsible (default if omitted)
+  collapsibleSidebarSections: true,
+
+  // …or only these (exact, case-sensitive labels):
+  collapsibleSidebarSections: ["Namespaces", "Classes"],
+}
+```
+
+</tab>
+
+<tab label="TypeDoc (typedoc.json)">
+
+```json5
+cleanJsdocTheme: {
+  collapsibleSidebarSections: true,
+  // …or only these (exact, case-sensitive labels):
+  collapsibleSidebarSections: ["Namespaces", "Classes"],
+}
 ```
 
 </tab>
