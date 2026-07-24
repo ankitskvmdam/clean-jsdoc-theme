@@ -30,8 +30,14 @@ export type IslandName =
 
 /** Type-safe prop bag per island. Server-render and hydration share this map. */
 export interface IslandPropsMap {
-  sidebar: { nav: NavNode[]; currentSlug: string; basePath?: string };
-  'mobile-nav': { nav: NavNode[]; currentSlug: string; siteName?: SiteName; basePath?: string };
+  sidebar: { nav: NavNode[]; currentSlug: string; basePath?: string; collapsibleGroups?: string[] };
+  'mobile-nav': {
+    nav: NavNode[];
+    currentSlug: string;
+    siteName?: SiteName;
+    basePath?: string;
+    collapsibleGroups?: string[];
+  };
   toc: { headings: Heading[] };
   'toc-mobile': { headings: Heading[] };
   cmdk: { basePath: string; searchIndexUrl?: string };
