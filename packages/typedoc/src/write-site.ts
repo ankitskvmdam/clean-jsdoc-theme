@@ -43,7 +43,10 @@ import {
   formatDiagnostics,
   formatRenderError,
   normalizeBasePath,
+  normalizeCollapsibleSidebarSections,
   toExtractManifest,
+  topLevelSectionLabels,
+  unmatchedCollapsibleSections,
   validateThemeOpts,
   withBase,
 } from '@clean-jsdoc-theme/utils';
@@ -703,11 +706,17 @@ export async function writeSite(
       ? block.defaultDocGroup.trim()
       : undefined;
 
-  // Sidebar config from the block: `menu` is the only sidebar lever the TypeDoc
-  // output honors — the module hierarchy owns the API tree and doc groups order
-  // via `docGroups`. `sectionOrder` / `clubSidebarItems` are accepted (so a shared
-  // JSDoc+TypeDoc config doesn't warn) but inert here, so they are not threaded.
+  // Sidebar config from the block: the module hierarchy owns the API tree and
+  // doc groups order via `docGroups`, so `sectionOrder` / `clubSidebarItems` are
+  // accepted (so a shared JSDoc+TypeDoc config doesn't warn) but inert here and
+  // not threaded. `menu` and `collapsibleSidebarSections` (below) DO apply.
   const menu = normalizeMenu(block.menu);
+  // `collapsibleSidebarSections` DOES apply under TypeDoc: it toggles the shared
+  // Sidebar's top-level section headers (module/kind/doc-group labels), unlike
+  // `sectionOrder`/`clubSidebarItems`, which only affect the JSDoc kind buckets.
+  const { value: collapsibleSidebarSections, warnings: collapsibleWarnings } =
+    normalizeCollapsibleSidebarSections(block.collapsibleSidebarSections);
+  collapsibleWarnings.forEach((w) => logger.warn(`[clean-jsdoc-theme] ${w}`));
   // Enablement slice → setu's `@playground` resolver (runtime slice → the theme).
   const playground = normalizePlayground(block.playground);
 
@@ -720,8 +729,23 @@ export async function writeSite(
     ...(docGroups ? { docGroups } : {}),
     ...(defaultDocGroup ? { defaultDocGroup } : {}),
     ...(menu ? { menu } : {}),
+    ...(collapsibleSidebarSections !== undefined ? { collapsibleSidebarSections } : {}),
     ...(playground ? { playground: playground.site } : {}),
   });
+
+  // Unmatched labels only apply when the config is an array (boolean shorthands
+  // can't mismatch). Warn via the TypeDoc logger, naming the label(s) that
+  // matched no sidebar section plus the sections that ARE available.
+  if (Array.isArray(collapsibleSidebarSections)) {
+    const present = topLevelSectionLabels(manifest.nav);
+    const unmatched = unmatchedCollapsibleSections(collapsibleSidebarSections, present);
+    if (unmatched.length > 0) {
+      logger.warn(
+        `[clean-jsdoc-theme] collapsibleSidebarSections — no sidebar section matches ` +
+          `${unmatched.map((l) => `'${l}'`).join(', ')}. Available sections: ${present.join(', ')}.`
+      );
+    }
+  }
 
   // Localization extract mode (aadesh, Phase 3): when CLEAN_JSDOC_THEME_EXTRACT
   // names a path, write the translatable slot template there and STOP — the same
