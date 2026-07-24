@@ -57,6 +57,8 @@ export interface SsrLayoutProps {
   };
   siteName?: SiteName;
   basePath?: string;
+  /** Top-level section labels rendered as collapse toggles (manifest.collapsibleGroups). */
+  collapsibleGroups?: string[];
   /** Author-supplied footer HTML (`ThemeConfig.footer`), passed into rang's footer slot. */
   footer?: string;
   /** URL of the JSON search index, handed to the cmdk island for fuzzy search. */
@@ -132,6 +134,7 @@ export function SsrLayout({
   pkg,
   siteName,
   basePath = '/',
+  collapsibleGroups,
   footer,
   searchIndexUrl,
   languageSwitcher,
@@ -194,7 +197,7 @@ export function SsrLayout({
             name="mobile-nav"
             islands={islands}
             Component={MobileNav}
-            props={{ nav, currentSlug, siteName, basePath }}
+            props={{ nav, currentSlug, siteName, basePath, collapsibleGroups }}
           />
         </div>
       )}
@@ -207,7 +210,7 @@ export function SsrLayout({
         name="sidebar"
         islands={islands}
         Component={Sidebar}
-        props={{ nav, currentSlug, basePath }}
+        props={{ nav, currentSlug, basePath, collapsibleGroups }}
       />
     ) : undefined;
 
