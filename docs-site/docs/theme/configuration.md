@@ -20,6 +20,11 @@ matches your setup.
 > hint) — the build continues. Set [`strict`](#strict) to turn those warnings
 > into errors.
 
+> [!TIP]
+> Don't see an option documented here? Make sure you're on the **latest version**
+> of the theme — new options ship regularly, and an option that seems missing in
+> your build usually means the installed version predates it.
+
 ## JSDoc vs TypeDoc
 
 Every option on this page is the same for both tools — only **where you put it**

@@ -21,6 +21,11 @@ page theme के अपने options का दस्तावेज़ है
 > "did you mean?" संकेत के साथ) — build जारी रहता है। उन चेतावनियों को errors में
 > बदलने के लिए [`strict`](#strict) सेट करें।
 
+> [!TIP]
+> यहाँ documented कोई option नहीं दिख रहा? सुनिश्चित करें कि आप theme के **latest
+> version** पर हैं — नए options नियमित रूप से आते रहते हैं, और आपके build में कोई
+> option न मिलना आमतौर पर इसका मतलब है कि installed version उससे पुराना है।
+
 ## JSDoc vs TypeDoc
 
 इस page का हर option दोनों tools के लिए एक जैसा है — सिर्फ़ **आप उसे कहाँ रखते

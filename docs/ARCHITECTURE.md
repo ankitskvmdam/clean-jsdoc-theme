@@ -86,13 +86,15 @@ utils/src/
 ├── salty.ts              # salty (taffy) collection helpers/types
 ├── site/
 │   ├── page.ts           # Page (+ 'source' kind & raw-source body), Frontmatter, Heading
-│   ├── manifest.ts       # SiteManifest, NavNode, SearchEntry
+│   ├── manifest.ts       # SiteManifest (+ collapsibleGroups), NavNode, SearchEntry
 │   ├── render.ts         # OutputFile, RenderOptions, RenderResult, RenderError,
 │   │                     #   RenderWarning + formatRenderError (shared by both bridges)
 │   ├── theme.ts          # ThemeTokens, ThemeColors, ThemeConfig, ComponentOverrides
 │   ├── site-name.ts      # SiteName (text | logo set) + siteNameText/resolveSiteLogo
 │   ├── islands.ts        # IslandName union + IslandPropsMap
 │   ├── slug-rules.ts     # slugifyHeading, slugifyPath, slugifySourcePath  (setu AND dwar)
+│   ├── collapsible.ts    # collapsibleSidebarSections resolver (build-time →
+│   │                     #   manifest.collapsibleGroups; boolean | string[])
 │   └── index.ts          # barrel — the setu↔dwar boundary
 ├── config/               # PURE opts validation + build report (network/zlib injected)
 │   ├── diagnostics.ts    # Diagnostic model + DiagnosticBag + formatDiagnostics
@@ -270,6 +272,12 @@ children sort by `order` then the `index`-first tiebreak then name — with no
 `@order`/`order=` it falls back to first-seen parents and `index`-first children
 (byte-identical). Clubbing applies ONLY to category-less buckets (a group
 built from `@category` paths is already nested and is not additionally clubbed).
+Finally, **`collapsibleSidebarSections`** (`boolean | string[]`) is resolved by
+utils' `resolveCollapsibleSections` against the assembled nav and stored on
+`manifest.collapsibleGroups` — the top-level section labels rang renders as
+collapsible headers (`true`/absent → all present sections, `false` → none, an
+array → only those exact, case-sensitive labels; unmatched array labels are
+warned by each bridge). The default (absent) makes every section collapsible.
 
 ```
 setu/src/
@@ -352,7 +360,8 @@ rang/src/
     │                     #   HTML verbatim when set, else the default footer)  ┘
     ├── Sidebar.tsx       # island: menu region (icon links: lucide/┐ (+ SidebarItem
     │                     #   simpleicons CDN) + divider + grouped nav │  action row);
-    │                     #   clubbed parents are collapsible (chevron, localStorage-
+    │                     #   clubbed parents AND top-level section headers listed in
+    │                     #   collapsibleGroups are collapsible (chevron, localStorage-
     │                     #   persisted) and scroll the active item into view on load
     ├── MobileNav.tsx     # island: < md nav drawer      │  (reuses Dialog sheet +
     │                     #   SidebarItem + useThemeMode + SettingsDialog + Sidebar)
@@ -609,6 +618,7 @@ clean-jsdoc-theme/src/
 │                         #   templates.default.sourceLinkToComment toggles whether a
 │                         #   Source: link lands on the declaration (default) or comment.
 │                         #   Normalizes opts.sectionOrder + opts.menu + opts.clubSidebarItems
+│                         #   + opts.collapsibleSidebarSections (warns on unmatched labels)
 │                         #   → setu, and opts.aiPrompt + opts.copyPage + opts.pageNav +
 │                         #   opts.colors/darkColors (per-key merge over the default
 │                         #   palettes) → theme.
@@ -678,7 +688,8 @@ typedoc/src/
 │                           #   salty.taffy → setu generateSite → dwar render →
 │                           #   write files → Pagefind. Threads validated siteName/
 │                           #   fonts + normalized sectionOrder/menu/clubSidebarItems/
-│                           #   copyPage/pageNav/aiPrompt through, and walks the
+│                           #   collapsibleSidebarSections/copyPage/pageNav/aiPrompt through
+│                           #   (warns on unmatched labels), and walks the
 │                           #   `docs` dir (docs.ts) → docs + docGroups/
 │                           #   defaultDocGroup + inlineSvgs. Routes README +
 │                           #   symbol-comment images through the same _assets/

@@ -46,6 +46,7 @@ See [content-and-sidebar.md](content-and-sidebar.md) for the full ordering model
 | --- | --- | --- |
 | `sectionOrder` | string[] | Order of **all** top-level sections (kind labels AND doc/category groups). Listed first, rest appended. For kind labels it's also a filter — an **omitted kind label is dropped**; category/doc groups are never dropped by omission. |
 | `clubSidebarItems` | boolean | Collapse related entries under a shared collapsible parent, grouped by the path segment before the first `/`. Default `false`. Applies **only** to kind-label fallback buckets, never to `@category`-built groups. |
+| `collapsibleSidebarSections` | boolean \| string[] | Make top-level sidebar section headers collapsible (chevron; state persists per-visitor in `localStorage`). `true`/absent → **all** sections (default), `false` → none, `string[]` → only those **exact, case-sensitive** labels. A label matching no section warns (lists the available labels). Works under **both** JSDoc and TypeDoc. |
 | `menu` | entry[] | Custom links pinned above the sidebar. Each: `{ title, link (or href), id?, icon? }`. `icon` is `lucide:<name>` or `simpleicons:<name>` (CDN-loaded). When set, `menu` owns the auto Home/Source links (suppressed unless you list `{ id: "home" }` / `{ id: "source" }`). |
 
 ## Appearance & assets

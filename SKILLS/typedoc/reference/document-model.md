@@ -41,6 +41,11 @@ They are still accepted and validated (the writer even canonicalizes
 JSDoc-style `sectionOrder` labels like `Enums`/`Typedefs` → `Enumerations`/`Type
 Aliases`), but under the module-hierarchy model they don't move API entries.
 
+> **`collapsibleSidebarSections` is the exception — it DOES apply under TypeDoc.**
+> It only toggles whether the top-level section headers collapse (chevron +
+> `localStorage`); it doesn't reshape or reorder the hierarchy, so it's fully
+> compatible with the module-hierarchy sidebar.
+
 **What still works for structuring a TypeDoc site:**
 
 - **Prose doc groups** — `docGroups` (order) + a doc page's frontmatter
