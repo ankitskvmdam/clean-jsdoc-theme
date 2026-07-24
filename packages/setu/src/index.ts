@@ -11,7 +11,12 @@ import {
   type PlaygroundSiteConfig,
 } from './generate-site';
 import { getContainerView, mergeContainerViews, type ContainerView } from './class-view';
-import { slugifyPath } from '@clean-jsdoc-theme/utils';
+import {
+  resolveCollapsibleSections,
+  slugifyPath,
+  topLevelSectionLabels,
+  type CollapsibleSidebarSections,
+} from '@clean-jsdoc-theme/utils';
 import { makeLinkResolver, registerContainerView, type LinkRegistry } from './link-registry';
 import {
   buildDocPages,
@@ -149,6 +154,13 @@ export interface GenerateSiteOptions {
    * tutorials included. Off by default. See {@link clubNavTree}.
    */
   clubSidebarItems?: boolean;
+  /**
+   * Which top-level sidebar sections render as collapse toggles. `undefined`
+   * (default) or `true` → all present sections; `false` → none; `string[]` →
+   * only those exact labels. Resolved against the produced nav into
+   * {@link SiteManifest.collapsibleGroups}. See utils `resolveCollapsibleSections`.
+   */
+  collapsibleSidebarSections?: CollapsibleSidebarSections;
   /**
    * Site-wide code-playground enablement: `enableForAllExamples` opts every
    * `@example` in, and `providers` is the default provider set + order a bare
@@ -453,6 +465,10 @@ export function generateSite(collection: unknown, opts?: GenerateSiteOptions): S
     // first-seen order. Present on every build (possibly empty); dwar ignores it.
     slots: slotCollector.list(),
   };
+  manifest.collapsibleGroups = resolveCollapsibleSections(
+    opts?.collapsibleSidebarSections,
+    topLevelSectionLabels(nav)
+  );
   if (opts?.pkg) manifest.pkg = opts.pkg;
   return manifest;
 }
