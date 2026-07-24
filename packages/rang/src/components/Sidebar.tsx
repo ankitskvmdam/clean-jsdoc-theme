@@ -16,6 +16,13 @@ export interface SidebarProps {
    * Preact context (which wouldn't survive to the client).
    */
   basePath?: string;
+  /**
+   * Top-level section labels that render as collapse toggles (resolved by setu
+   * into `manifest.collapsibleGroups`). Defaults to `[]` → every header static
+   * (today's behavior). A listed label's header becomes a chevron toggle that
+   * shows/hides its items; state persists in `localStorage` (default open).
+   */
+  collapsibleGroups?: string[];
 }
 
 // Structural classes shared by every entry. Color/emphasis state is appended
@@ -209,6 +216,9 @@ function clubKey(node: NavNode): string {
   return `${node.group ?? ''}::${node.label}`;
 }
 
+/** Open-state id prefix for a collapsible top-level section header. */
+const SECTION_OPEN_PREFIX = '__section__::';
+
 interface NavEntryProps {
   node: NavNode;
   currentSlug: string;
@@ -347,7 +357,7 @@ function scrollParent(el: HTMLElement): HTMLElement | null {
 // just above it stays visible when we scroll it toward the top.
 const ACTIVE_SCROLL_PADDING = 16;
 
-export function Sidebar({ nav, currentSlug, basePath = '/' }: SidebarProps) {
+export function Sidebar({ nav, currentSlug, basePath = '/', collapsibleGroups = [] }: SidebarProps) {
   const { t } = useTranslation();
   // Menu entries form a top region (icon links); the rest are grouped sections.
   const menuItems = nav.filter((n) => n.menu);
@@ -398,25 +408,51 @@ export function Sidebar({ nav, currentSlug, basePath = '/' }: SidebarProps) {
         </ul>
       )}
       {menuItems.length > 0 && groups.length > 0 && <hr class="my-3 border-(--clean-border)" />}
-      {groups.map((g, gi) => (
-        <div key={g.group ? `g-${g.group}` : `_ungrouped-${gi}`} class="mt-4 first:mt-0">
-          {g.group && (
-            <div class="mb-1 py-1.5 px-3 text-sm font-bold text-(--clean-fg)">{g.group}</div>
-          )}
-          <ul class="m-0 list-none p-0">
-            {g.items.map((node, ni) => (
-              <NavEntry
-                key={node.slug ?? node.href ?? `${node.label}-${ni}`}
-                node={node}
-                currentSlug={currentSlug}
-                basePath={basePath}
-                openMap={openMap}
-                onToggle={handleToggle}
-              />
-            ))}
-          </ul>
-        </div>
-      ))}
+      {groups.map((g, gi) => {
+        const collapsible = !!g.group && collapsibleGroups.includes(g.group);
+        const sectionKey = SECTION_OPEN_PREFIX + (g.group ?? '');
+        // Sections default OPEN; an explicit user collapse (persisted) wins.
+        const open = collapsible ? (openMap[sectionKey] ?? true) : true;
+        return (
+          <div key={g.group ? `g-${g.group}` : `_ungrouped-${gi}`} class="mt-4 first:mt-0">
+            {g.group &&
+              (collapsible ? (
+                <button
+                  type="button"
+                  aria-expanded={open}
+                  onClick={() => handleToggle(sectionKey, !open)}
+                  class={cn(
+                    'mb-1 flex w-full items-center rounded-xl py-1.5 px-3 text-left text-sm font-bold',
+                    'text-(--clean-fg) cursor-pointer hover:bg-[var(--clean-bg-muted)]'
+                  )}
+                >
+                  <span class="min-w-0 wrap-break-words">{g.group}</span>
+                  <ChevronRight
+                    size={16}
+                    aria-hidden="true"
+                    class={cn('ml-auto shrink-0 transition-transform', open && 'rotate-90')}
+                  />
+                </button>
+              ) : (
+                <div class="mb-1 py-1.5 px-3 text-sm font-bold text-(--clean-fg)">{g.group}</div>
+              ))}
+            {open && (
+              <ul class="m-0 list-none p-0">
+                {g.items.map((node, ni) => (
+                  <NavEntry
+                    key={node.slug ?? node.href ?? `${node.label}-${ni}`}
+                    node={node}
+                    currentSlug={currentSlug}
+                    basePath={basePath}
+                    openMap={openMap}
+                    onToggle={handleToggle}
+                  />
+                ))}
+              </ul>
+            )}
+          </div>
+        );
+      })}
     </nav>
   );
 }

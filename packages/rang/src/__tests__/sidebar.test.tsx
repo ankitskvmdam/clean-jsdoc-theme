@@ -368,3 +368,39 @@ describe('Sidebar — menu region (icons + external links)', () => {
     expect(html.indexOf('<hr')).toBeLessThan(html.indexOf('BaseEntity'));
   });
 });
+
+describe('Sidebar collapsible sections', () => {
+  afterEach(() => {
+    cleanup();
+    localStorage.clear();
+  });
+
+  it('renders a static header (no toggle) when the group is not collapsible', () => {
+    const html = render(<Sidebar nav={fixture} currentSlug="" />);
+    // No section toggle button carries aria-expanded on the header.
+    expect(html).not.toMatch(/aria-expanded="true"[^>]*>(?:<[^>]*>)*Classes/);
+    expect(html).toContain('Classes'); // header still present
+  });
+
+  it('renders the header as an expanded toggle when collapsible', () => {
+    const html = render(
+      <Sidebar nav={fixture} currentSlug="" collapsibleGroups={['Classes']} />
+    );
+    // A <button aria-expanded="true"> wrapping the "Classes" label.
+    expect(html).toMatch(/<button[^>]*aria-expanded="true"/);
+    expect(html).toContain('Classes');
+    // Non-listed "Modules" stays a static header (only one toggle button).
+    const toggles = html.match(/<button[^>]*aria-expanded=/g) ?? [];
+    expect(toggles.length).toBe(1);
+  });
+
+  it('collapsing a section hides its items (client)', async () => {
+    const { getByRole, queryByText } = mount(
+      <Sidebar nav={fixture} currentSlug="" collapsibleGroups={['Classes']} />
+    );
+    expect(queryByText('BaseEntity')).toBeTruthy(); // open by default
+    const btn = getByRole('button', { expanded: true });
+    fireEvent.click(btn);
+    await waitFor(() => expect(queryByText('BaseEntity')).toBeNull());
+  });
+});
