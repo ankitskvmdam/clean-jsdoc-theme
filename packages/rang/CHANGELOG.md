@@ -1,5 +1,20 @@
 # @clean-jsdoc-theme/rang
 
+## 5.1.0
+
+### Minor Changes
+
+- d3082d7: Add **`collapsibleSidebarSections`** — top-level sidebar section headers (Namespaces, Classes, Interfaces, `@category` groups, doc groups, Tutorials, …) can now be collapsed. It accepts `true` / absent (all sections collapsible — the default), `false` (none), or an array of exact, case-sensitive section labels (only those). Sections default open, and a visitor's collapsed state persists in `localStorage`. A label in the array that matches no rendered section prints a build warning listing the available section labels. Works for both the JSDoc template and the TypeDoc plugin. (Closes #343.)
+
+  **Heads-up — visible default change:** with no configuration, every top-level sidebar section header now renders as a collapse toggle (still expanded by default, so nothing is hidden on load). Pass `"collapsibleSidebarSections": false` to restore the previous always-static headers.
+
+### Patch Changes
+
+- 8fc6dd1: Footer: the repository link now **underlines on hover** instead of changing color. It keeps its `text-muted-foreground` color and adds `hover:underline` (was `hover:text-accent`).
+- Updated dependencies [d3082d7]
+  - @clean-jsdoc-theme/utils@5.1.0
+  - @clean-jsdoc-theme/bhasha@5.1.0
+
 ## 5.0.8
 
 ### Patch Changes

@@ -1,5 +1,12 @@
 # @clean-jsdoc-theme/bhasha
 
+## 5.1.0
+
+### Patch Changes
+
+- Updated dependencies [d3082d7]
+  - @clean-jsdoc-theme/utils@5.1.0
+
 ## 5.0.8
 
 ### Patch Changes
