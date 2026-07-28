@@ -62,6 +62,8 @@ export interface CleanJsdocThemeBlock {
   copyPage?: unknown;
   /** Prev/next page pager config (boolean or `{ enabled? }`). */
   pageNav?: unknown;
+  /** Scrollbar mode: `"styled"` (default) | `"visible"` | `"native"`. See #281. */
+  scrollbar?: unknown;
   /** Code-playground config (boolean or `{ enableForAllExamples?, providers?, codepen?, jsfiddle?, codesandbox? }`). */
   playground?: unknown;
   /** Custom AI prompt for the copy-page button. */
@@ -102,7 +104,7 @@ export function declareThemeOption(app: Application): void {
     help:
       'clean-jsdoc-theme options (siteName, fonts, sectionOrder, docs, docGroups, ' +
       'defaultDocGroup, menu, clubSidebarItems, collapsibleSidebarSections, copyPage, ' +
-      'pageNav, playground, aiPrompt, footer, favicon, meta, basePath, siteUrl, strict).',
+      'pageNav, scrollbar, playground, aiPrompt, footer, favicon, meta, basePath, siteUrl, strict).',
     type: ParameterType.Object,
     defaultValue: {},
   };
