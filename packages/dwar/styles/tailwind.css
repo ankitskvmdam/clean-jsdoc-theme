@@ -152,46 +152,94 @@
   }
 
   /*
-   * Custom overlay scrollbar. Track is always transparent (kills the gray
-   * Windows/Chrome track). The thumb is invisible at rest and only paints while
-   * the element is actively scrolling (the `.clean-scrolling` class, toggled by
-   * the inline scrollbar script — idle-hide can't be done in pure CSS on
-   * Windows) or while the scroll area is hovered. Applies to every scrollable
-   * element on the page; the document scrollbar is keyed off <html>.
+   * Scrollbar styling is gated on the root `data-scrollbar` attribute (dwar sets
+   * it from `ThemeConfig.scrollbar`; default `styled`). Three modes:
+   *   - styled  (default): overlay bar, invisible at rest, painting only while
+   *              actively scrolling (`.clean-scrolling`, toggled by the inline
+   *              scrollbar script) or on hover.
+   *   - visible: the same thin themed bar, but always shown (no idle-hide).
+   *   - native:  no rules → the browser's own scrollbar (issue #281).
+   * Each rule matches BOTH the root element (the page scrollbar) and its
+   * descendants (nested scroll areas). Once `::-webkit-scrollbar` is defined for
+   * an element it can't be reverted to native, so `native` works only by
+   * emitting no rules for it — hence the per-mode scoping.
    */
-  * {
-    scrollbar-width: thin; /* Firefox: thin bars */
-    scrollbar-color: transparent transparent; /* Firefox: hidden at rest */
+
+  /* styled (default) — Firefox */
+  html[data-scrollbar='styled'],
+  html[data-scrollbar='styled'] * {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent; /* hidden at rest */
   }
-  *:hover,
-  .clean-scrolling {
-    scrollbar-color: var(--clean-border) transparent; /* Firefox: show thumb */
+  html[data-scrollbar='styled']:hover,
+  html[data-scrollbar='styled'] *:hover,
+  html[data-scrollbar='styled'].clean-scrolling,
+  html[data-scrollbar='styled'] .clean-scrolling {
+    scrollbar-color: var(--clean-border) transparent; /* show thumb */
   }
 
-  ::-webkit-scrollbar {
+  /* styled — WebKit */
+  html[data-scrollbar='styled']::-webkit-scrollbar,
+  html[data-scrollbar='styled'] ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
-  ::-webkit-scrollbar-track {
+  html[data-scrollbar='styled']::-webkit-scrollbar-track,
+  html[data-scrollbar='styled'] ::-webkit-scrollbar-track {
     background: transparent;
   }
-  ::-webkit-scrollbar-corner {
+  html[data-scrollbar='styled']::-webkit-scrollbar-corner,
+  html[data-scrollbar='styled'] ::-webkit-scrollbar-corner {
     background: transparent;
   }
-  ::-webkit-scrollbar-thumb {
+  html[data-scrollbar='styled']::-webkit-scrollbar-thumb,
+  html[data-scrollbar='styled'] ::-webkit-scrollbar-thumb {
     background-color: transparent;
     border-radius: 9999px;
-    /* transition may be ignored by some Chrome versions on scrollbar parts;
-       harmless if so. */
     transition: background-color 0.2s ease;
   }
-  *:hover::-webkit-scrollbar-thumb,
-  .clean-scrolling::-webkit-scrollbar-thumb {
+  html[data-scrollbar='styled']:hover::-webkit-scrollbar-thumb,
+  html[data-scrollbar='styled'] *:hover::-webkit-scrollbar-thumb,
+  html[data-scrollbar='styled'].clean-scrolling::-webkit-scrollbar-thumb,
+  html[data-scrollbar='styled'] .clean-scrolling::-webkit-scrollbar-thumb {
     background-color: var(--clean-border);
   }
-  ::-webkit-scrollbar-thumb:hover {
+  html[data-scrollbar='styled']::-webkit-scrollbar-thumb:hover,
+  html[data-scrollbar='styled'] ::-webkit-scrollbar-thumb:hover {
     background-color: var(--clean-fg-muted);
   }
+
+  /* visible — always-shown themed bar (no idle-hide). Firefox */
+  html[data-scrollbar='visible'],
+  html[data-scrollbar='visible'] * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--clean-border) transparent;
+  }
+  /* visible — WebKit */
+  html[data-scrollbar='visible']::-webkit-scrollbar,
+  html[data-scrollbar='visible'] ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  html[data-scrollbar='visible']::-webkit-scrollbar-track,
+  html[data-scrollbar='visible'] ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  html[data-scrollbar='visible']::-webkit-scrollbar-corner,
+  html[data-scrollbar='visible'] ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  html[data-scrollbar='visible']::-webkit-scrollbar-thumb,
+  html[data-scrollbar='visible'] ::-webkit-scrollbar-thumb {
+    background-color: var(--clean-border);
+    border-radius: 9999px;
+  }
+  html[data-scrollbar='visible']::-webkit-scrollbar-thumb:hover,
+  html[data-scrollbar='visible'] ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--clean-fg-muted);
+  }
+
+  /* native: intentionally no rules — the browser's own scrollbar. */
 
   /*
    * Shiki dual-theme switch. @shikijs/rehype (defaultColor: 'light') applies the
