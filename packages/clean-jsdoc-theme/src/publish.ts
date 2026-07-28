@@ -144,6 +144,7 @@ const loadUtils = (): Promise<typeof import('@clean-jsdoc-theme/utils')> =>
     'normalizeCollapsibleSidebarSections',
     'unmatchedCollapsibleSections',
     'topLevelSectionLabels',
+    'normalizeScrollbar',
   ]);
 
 /** The `ora` spinner factory (its default export). */
@@ -299,6 +300,12 @@ interface JSDocOpts {
    * Defaults to enabled.
    */
   pageNav?: unknown;
+  /**
+   * Scrollbar presentation (`jsdoc.json` `"opts": { "scrollbar": "native" }`).
+   * `"styled"` (default) = overlay bar that hides at rest; `"visible"` = themed
+   * bar always shown; `"native"` = the browser's own scrollbar. See #281.
+   */
+  scrollbar?: unknown;
   /**
    * Code-playground config (`jsdoc.json` `"opts": { "playground": … }`). Either
    * a boolean (`true` turns it on with defaults; absent/`false` = off) or an
@@ -2076,6 +2083,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
       normalizeCollapsibleSidebarSections,
       unmatchedCollapsibleSections,
       topLevelSectionLabels,
+      normalizeScrollbar,
     },
     // Loaded sequentially (not Promise.all) so the spinner can step its label
     // through each module — the evaluation of these large ESM bundles is the
@@ -2231,6 +2239,10 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   const { value: collapsibleSidebarSections, warnings: collapsibleWarnings } =
     normalizeCollapsibleSidebarSections(opts.collapsibleSidebarSections);
   collapsibleWarnings.forEach((w) => console.warn(`clean-jsdoc-theme: ${w}`));
+  // Scrollbar presentation mode (see #281); an unrecognized value warns and
+  // falls back to `undefined`, so dwar defaults to `styled`.
+  const { value: scrollbar, warnings: scrollbarWarnings } = normalizeScrollbar(opts.scrollbar);
+  scrollbarWarnings.forEach((w) => console.warn(`clean-jsdoc-theme: ${w}`));
   // The enablement slice (provider selection + enableForAllExamples) gates setu's
   // `@playground` handling; the runtime slice is threaded into the theme instead.
   const playground = normalizePlayground(opts.playground);
@@ -2346,6 +2358,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
         ...(footer ? { footer } : {}),
         ...(favicon ? { favicon: favicon.href } : {}),
         ...(meta ? { meta } : {}),
+        ...(scrollbar ? { scrollbar } : {}),
       },
       destination: absoluteDestination,
       islandCacheDir,
