@@ -663,6 +663,51 @@ cleanJsdocTheme: {
 पूरी तरह छोड़ देते हैं, तो dark mode `colors` के एक समझदार bg/fg अदला-बदली पर
 fallback कर जाता है।
 
+### `scrollbar`
+
+scrollbar (page और कोई भी scrollable panel, जैसे sidebar या कोई code block) कैसे
+दिखे, यह नियंत्रित करता है।
+
+**अपेक्षित:** इनमें से एक — `"styled"` (default), `"visible"`, या `"native"`।
+
+- `"styled"` — theme की पतली, रंगीन overlay bar, आराम की स्थिति में अदृश्य और
+  सिर्फ़ active scroll के दौरान या hover पर दिखती है।
+- `"visible"` — वही पतली, themed bar, पर हमेशा दिखाई देती है (idle-hide नहीं)।
+- `"native"` — कोई scrollbar styling नहीं — browser की अपनी, हमेशा-दृश्यमान
+  scrollbar।
+
+default overlay आराम की स्थिति में छिप जाती है, जिससे किसी लंबे page में अपनी
+स्थिति समझना मुश्किल हो सकता है
+([#281](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/281))। अगर आप
+चाहते हैं कि scrollbar टिकी रहे, तो `scrollbar` को `"visible"` या `"native"` पर
+सेट करें। यह option **JSDoc और TypeDoc दोनों** पर लागू होता है।
+
+<tabs group="tool">
+
+<tab label="JSDoc (jsdoc.json)">
+
+```json5
+opts: {
+  // "styled" (default) | "visible" | "native"
+  scrollbar: "native",
+}
+```
+
+</tab>
+
+<tab label="TypeDoc (typedoc.json)">
+
+```json5
+cleanJsdocTheme: {
+  // "styled" (default) | "visible" | "native"
+  scrollbar: "native",
+}
+```
+
+</tab>
+
+</tabs>
+
 ### `customCss` and `customJs`
 
 हर page में inject किए गए inline CSS/JS। custom CSS theme stylesheet के **बाद**
