@@ -553,7 +553,7 @@ describe('render() — localization (language switcher + chrome locale)', () => 
   it('localized build: <html lang>, __i18n payload, and a language-switcher island', async () => {
     const result = await render(makeManifest(), { theme: minimalTheme, locale: twoLocales });
     const home = asString(result.files.find((f) => f.path === 'index.html')!);
-    expect(home).toContain('<html lang="fr">');
+    expect(home).toContain('<html lang="fr" data-scrollbar="styled">');
     expect(home).toContain('__i18n');
     expect(home).toContain('data-island="language-switcher"');
     // The switcher offers the OTHER locale (en) linking to the default home '/'.
@@ -584,7 +584,7 @@ describe('render() — localization (language switcher + chrome locale)', () => 
   it('no locale → byte-identical chrome path (lang=en, no __i18n, no switcher)', async () => {
     const result = await render(makeManifest(), { theme: minimalTheme });
     const home = asString(result.files.find((f) => f.path === 'index.html')!);
-    expect(home).toContain('<html lang="en">');
+    expect(home).toContain('<html lang="en" data-scrollbar="styled">');
     expect(home).not.toContain('__i18n');
     expect(home).not.toContain('language-switcher');
   });

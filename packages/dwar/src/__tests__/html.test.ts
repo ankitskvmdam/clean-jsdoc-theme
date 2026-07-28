@@ -234,7 +234,7 @@ Body paragraph here with **bold** and \`code\`.
 describe('renderHtmlDocument — locale (i18n)', () => {
   it('defaults to <html lang="en"> with no __i18n payload (byte-identical path)', () => {
     const html = doc({});
-    expect(html).toContain('<html lang="en">');
+    expect(html).toContain('<html lang="en" data-scrollbar="styled">');
     expect(html).not.toContain('__i18n');
   });
 
@@ -247,7 +247,7 @@ describe('renderHtmlDocument — locale (i18n)', () => {
         messages: { 'chrome.search.placeholder': 'Rechercher…' },
       },
     });
-    expect(html).toContain('<html lang="fr">');
+    expect(html).toContain('<html lang="fr" data-scrollbar="styled">');
     expect(html).toContain('__i18n');
     expect(html).toContain('Rechercher');
     expect(html).toContain('"locale":"fr"');
