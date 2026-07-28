@@ -71,6 +71,15 @@ export type MetaTag = Record<string, string>;
  */
 export type CopyPageAction = 'copy' | 'view' | 'claude' | 'chatgpt' | 'perplexity';
 
+/**
+ * Scrollbar presentation mode (see `ThemeConfig.scrollbar`):
+ *  - `styled`  — overlay bar, invisible at rest, painting only while scrolling
+ *    (`.clean-scrolling`) or on hover. The default.
+ *  - `visible` — the same thin themed bar, but always shown (no idle-hide).
+ *  - `native`  — no scrollbar styling; the browser's own scrollbar (issue #281).
+ */
+export type ScrollbarMode = 'styled' | 'visible' | 'native';
+
 /** Copy-page button configuration. */
 export interface CopyPageConfig {
   /** Whether to render the button at all. Defaults to `true`. */
@@ -165,6 +174,14 @@ export interface ThemeConfig {
    * `{ enabled: false }` to opt out.
    */
   pageNav?: PageNavConfig;
+  /**
+   * Scrollbar presentation. `styled` (default) is the overlay bar that hides at
+   * rest; `visible` keeps the themed bar always shown; `native` disables all
+   * scrollbar styling and uses the browser's own scrollbar. dwar sets a
+   * `data-scrollbar` attribute on `<html>` from this and (in `styled` only)
+   * injects the idle-hide script. Omit for `styled`.
+   */
+  scrollbar?: ScrollbarMode;
   /**
    * Code-playground config: which providers a code block can be opened in
    * (CodePen / JSFiddle / CodeSandbox) plus their site-wide runtime options.
