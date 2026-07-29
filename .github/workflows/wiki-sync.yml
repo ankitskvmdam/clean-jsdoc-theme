@@ -1,0 +1,53 @@
+# Mirrors docs-site/docs/**/*.md (English) into the repo's GitHub wiki so the
+# wiki is always a deterministic, up-to-date copy — never hand-edited.
+#
+# ONE-TIME PREREQUISITE: GitHub only provisions the `<repo>.wiki.git`
+# repository after at least one wiki page has been created through the web
+# UI (Wiki tab -> "Create the first page"). Until that's done this workflow
+# will fail at the `git clone` step. Create any placeholder page once, then
+# every run after that will overwrite it with the generated content.
+#
+# TOKEN NOTE: this uses the default GITHUB_TOKEN to clone/push the wiki. Wiki
+# repos are pushed via a separate git remote from the main repo, and some
+# organizations/repos restrict what the default token can do there. If the
+# push step fails with a permissions error, replace GITHUB_TOKEN below with a
+# PAT stored as a repo secret (e.g. a fine-grained token with wiki write
+# access, or a classic token with `repo` scope).
+name: Wiki sync
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'docs-site/docs/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Clone wiki
+        run: git clone "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git" wiki
+
+      - name: Generate wiki pages
+        run: node scripts/sync-wiki.mjs wiki
+
+      - name: Commit and push if changed
+        working-directory: wiki
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "docs(wiki): sync from docs-site"
+          git push
