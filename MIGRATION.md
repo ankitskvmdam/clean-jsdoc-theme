@@ -85,7 +85,7 @@ removed | new`.
 | `exclude_inherited`             | —                        | removed | No exclude-inherited-symbols option.                                                                                                                                                                                                                                                                        |
 | `displayModuleHeader`           | —                        | removed | No module-header toggle.                                                                                                                                                                                                                                                                                    |
 | `sort`                          | —                        | removed | No members/methods sort toggle.                                                                                                                                                                                                                                                                             |
-| `shouldRemoveScrollbarStyle`    | —                        | removed | No scrollbar-style toggle.                                                                                                                                                                                                                                                                                  |
+| `shouldRemoveScrollbarStyle`    | `scrollbar`              | changed | v4 was a boolean that only *disabled* theme scrollbar styling. v5 `scrollbar` is a three-way enum: `"styled"` (default, themed scrollbar) \| `"visible"` (themed bar always shown) \| `"native"` (browser default, no theming). `shouldRemoveScrollbarStyle: true` → `scrollbar: "native"`.                 |
 
 ### v5-only NEW options
 
@@ -234,7 +234,7 @@ For each: the v5 replacement, or "no replacement."
 | `exclude_inherited`                               | No replacement opt.                                                    |
 | `displayModuleHeader`                             | No replacement opt.                                                    |
 | `sort`                                            | No replacement opt.                                                    |
-| `shouldRemoveScrollbarStyle`                      | No replacement opt.                                                    |
+| `shouldRemoveScrollbarStyle`                      | `scrollbar: "native"` (also see `"visible"`).                          |
 
 ## 8. New in v5
 
@@ -319,7 +319,7 @@ canonical copy is `migration-map.json` at the repo root; it is mirrored here.
     "exclude_inherited": { "v5": null, "status": "removed" },
     "displayModuleHeader": { "v5": null, "status": "removed" },
     "sort": { "v5": null, "status": "removed" },
-    "shouldRemoveScrollbarStyle": { "v5": null, "status": "removed" }
+    "shouldRemoveScrollbarStyle": { "v5": "scrollbar", "status": "changed" }
   },
   "v5New": [
     "siteName",

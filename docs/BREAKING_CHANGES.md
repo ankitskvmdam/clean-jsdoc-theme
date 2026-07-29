@@ -34,8 +34,12 @@ v5 is a ground-up rewrite. Breaking changes, by category:
   → [MIGRATION §4](./MIGRATION.md#4-option-mapping-table).
 - **Other removed options:** `default_theme`/`fallback-*`, `favicon`,
   `homepageTitle`, `meta`, `search` (always on now), `codepen`, `footer`,
-  `exclude_inherited`, `displayModuleHeader`, `sort`, `shouldRemoveScrollbarStyle`.
+  `exclude_inherited`, `displayModuleHeader`, `sort`.
   → [MIGRATION §7](./MIGRATION.md#7-removed-features).
+- **`shouldRemoveScrollbarStyle` changed, not removed:** it now maps to the new
+  `scrollbar` option (`"styled" | "visible" | "native"`, default `"styled"`).
+  `shouldRemoveScrollbarStyle: true` → `scrollbar: "native"`.
+  → [MIGRATION §4](./MIGRATION.md#4-option-mapping-table).
 
 ### Output layout
 

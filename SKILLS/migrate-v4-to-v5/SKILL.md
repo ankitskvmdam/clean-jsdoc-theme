@@ -99,10 +99,12 @@ over `sectionOrder`** and owns the whole top region of the sidebar.
 Delete options with no v5 equivalent and tell the user what replaced them
 ([§3](#3-removed-features)): `default_theme`, `homepageTitle`,
 `includeFilesListInHomepage`, `search`, `static_dir`,
-`exclude_inherited`, `displayModuleHeader`, `sort`, `shouldRemoveScrollbarStyle`.
-(`footer`, `meta`, `codepen`, and `favicon` are **not** removed in v5 — map them, see
-[§2](#2-option-mapping).) Most are now automatic (search is always on; light/dark
-is a runtime toggle) or moved to JSDoc's own config (`static_dir`).
+`exclude_inherited`, `displayModuleHeader`, `sort`.
+(`footer`, `meta`, `codepen`, `favicon`, and `shouldRemoveScrollbarStyle` are
+**not** removed in v5 — map them, see [§2](#2-option-mapping);
+`shouldRemoveScrollbarStyle` → `scrollbar: "native"`.) Most are now automatic
+(search is always on; light/dark is a runtime toggle) or moved to JSDoc's own
+config (`static_dir`).
 
 </step>
 
@@ -148,7 +150,7 @@ successor to v4's `codepen`), `favicon`, and the source viewer
 | `exclude_inherited` | — | removed | No equivalent. |
 | `displayModuleHeader` | — | removed | No equivalent. |
 | `sort` | — | removed | No equivalent. |
-| `shouldRemoveScrollbarStyle` | — | removed | No equivalent. |
+| `shouldRemoveScrollbarStyle` | `scrollbar` | changed | v4 boolean only disabled scrollbar styling. v5 `scrollbar` is a 3-way enum: `"styled"` (default) \| `"visible"` \| `"native"`. `shouldRemoveScrollbarStyle: true` → `scrollbar: "native"`. |
 
 A machine-readable version of this exact map (for codemods) lives at
 `migration-map.json` in the repo root and is mirrored in `MIGRATION.md` §11
@@ -160,7 +162,9 @@ A machine-readable version of this exact map (for codemods) lives at
 - `search` toggle → always on (fuzzy + optional Pagefind).
 - `static_dir` → JSDoc's own static-file copying. (`favicon` is back as an opt.)
 - `homepageTitle`, `includeFilesListInHomepage`, `exclude_inherited`,
-  `displayModuleHeader`, `sort`, `shouldRemoveScrollbarStyle` → no replacement opt.
+  `displayModuleHeader`, `sort` → no replacement opt.
+- `shouldRemoveScrollbarStyle` → **not** removed; maps to `scrollbar`
+  (`shouldRemoveScrollbarStyle: true` → `scrollbar: "native"`).
 
 ## 4. Before / after `jsdoc.json`
 

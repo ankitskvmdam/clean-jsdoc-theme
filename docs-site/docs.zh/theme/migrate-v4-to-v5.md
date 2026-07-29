@@ -107,7 +107,8 @@ npx serve <destination>   # Pagefind full-text search needs HTTP
 | `codepen` | `playground` | 已变更 | v4 从 `@example` 预填一个 CodePen；v5 将其泛化为 [`playground`](/components/playground) —— 通过 `opts.playground` + `@playground` tag，在 CodePen、JSFiddle 或 CodeSandbox 中打开一个示例。（要通过 URL 嵌入一个现成的 pen，请使用 [`@iframe`](/components/embeds)。） |
 | `static_dir` | — | 已移除 | 使用 JSDoc 自身的静态文件配置。 |
 | `footer` | `footer` | 已变更 | 再次受支持 —— 一个内联 HTML 字符串或 `{ file: "./footer.html" }`。用 `customCss` / `customCssFile` 为其设置样式。参见 [`footer`](/theme/configuration#footer)。 |
-| `exclude_inherited`, `displayModuleHeader`, `sort`, `shouldRemoveScrollbarStyle` | — | 已移除 | 没有等价项。 |
+| `exclude_inherited`, `displayModuleHeader`, `sort` | — | 已移除 | 没有等价项。 |
+| `shouldRemoveScrollbarStyle` | `scrollbar` | 已变更 | v4 的布尔值只能禁用滚动条样式。v5 的 `scrollbar` 是一个三态枚举：`"styled"`（默认）\| `"visible"` \| `"native"`。`shouldRemoveScrollbarStyle: true` → `scrollbar: "native"`。 |
 
 > [!NOTE]
 > **menu** 已重塑：v4 条目 `{ title, link, target, class, id }` 变为
