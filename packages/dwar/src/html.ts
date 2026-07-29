@@ -14,7 +14,7 @@
  * script and a tiny inline loader that lazy-imports island chunks.
  */
 
-import type { Page, IslandName, MetaTag } from '@clean-jsdoc-theme/utils';
+import type { Page, IslandName, MetaTag, ScrollbarMode } from '@clean-jsdoc-theme/utils';
 import type { IslandRecord } from './layout';
 import { getPreHydrationThemeScript } from './theme-script';
 import { getIslandsLoaderScript } from './islands-loader';
@@ -73,6 +73,9 @@ export interface HtmlDocumentOptions {
   meta?: MetaTag[];
   /** Active locale code for `<html lang>` (defaults to `en`). */
   lang?: string;
+  /** Scrollbar mode (`ThemeConfig.scrollbar`). Defaults to `styled`. Sets the
+   *  root `data-scrollbar` attribute and gates the idle-hide script. */
+  scrollbar?: ScrollbarMode;
   /**
    * Active-locale chrome i18n, embedded in the per-page payload as `__i18n` so
    * each island root can seed its own `LanguageProvider` at hydration. Omitted
@@ -274,6 +277,7 @@ export function renderHtmlDocument(opts: HtmlDocumentOptions): string {
   const { page, bodyHtml, islands, cssHref, siteName, islandChunks, fonts } = opts;
   const { customCssLinks, customCss, customJsLinks, customJs } = opts;
   const lang = opts.lang || 'en';
+  const scrollbarMode = opts.scrollbar ?? 'styled';
   const titleSuffix = siteName ? ` | ${escapeHtml(siteName)}` : '';
   const title = `${escapeHtml(page.frontmatter.title)}${titleSuffix}`;
   const description = escapeHtml(page.frontmatter.description ?? '');
@@ -300,7 +304,7 @@ export function renderHtmlDocument(opts: HtmlDocumentOptions): string {
 
   return (
     `<!doctype html>` +
-    `<html lang="${escapeHtml(lang)}">` +
+    `<html lang="${escapeHtml(lang)}" data-scrollbar="${scrollbarMode}">` +
     `<head>` +
     (authorIdentities.has('charset') ? '' : `<meta charset="utf-8" />`) +
     (authorIdentities.has('name=viewport')
@@ -334,7 +338,7 @@ export function renderHtmlDocument(opts: HtmlDocumentOptions): string {
       : '') +
     `<script type="module">${loaderScript}</script>` +
     `<script>${getHeadingAnchorsScript()}</script>` +
-    `<script>${getScrollbarScript()}</script>` +
+    (scrollbarMode === 'styled' ? `<script>${getScrollbarScript()}</script>` : '') +
     // Custom JS runs last, after the theme's own scripts: the file links first
     // (in order), then the inline string. Classic scripts (not modules) for v4 parity.
     (customJsLinks ?? []).map((src) => `<script src="${escapeHtml(src)}"></script>`).join('') +

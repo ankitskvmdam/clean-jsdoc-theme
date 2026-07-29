@@ -28,7 +28,7 @@
     "exclude_inherited": { "v5": null, "status": "removed" },
     "displayModuleHeader": { "v5": null, "status": "removed" },
     "sort": { "v5": null, "status": "removed" },
-    "shouldRemoveScrollbarStyle": { "v5": null, "status": "removed" }
+    "shouldRemoveScrollbarStyle": { "v5": "scrollbar", "status": "changed", "_note": "v4 boolean only disabled scrollbar styling; v5 scrollbar is a 3-way enum (\"styled\" default | \"visible\" | \"native\"). shouldRemoveScrollbarStyle: true -> scrollbar: \"native\"." }
   },
   "v5New": {
     "siteName": { "status": "new", "type": "string | { default?, dark?, light?, alt? }" },

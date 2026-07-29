@@ -666,6 +666,51 @@ cleanJsdocTheme: {
 不明な keys と非 string の値は無視されます。`darkColors` を完全に省略すると、dark
 mode は `colors` の妥当な bg/fg 入れ替えに fallback します。
 
+### `scrollbar`
+
+scrollbar（page と、sidebar やある code block のような scrollable panel）の表示方法
+を制御します。
+
+**期待される値:** `"styled"`（default）、`"visible"`、`"native"` のいずれか。
+
+- `"styled"` — theme の細く色付けされた overlay bar。静止時は非表示で、実際に
+  scroll している間や hover 時にのみ描画されます。
+- `"visible"` — 同じ細い themed bar ですが、常に表示されます（idle-hide なし）。
+- `"native"` — scrollbar の style 付けを一切行わず、browser 本来の常に表示される
+  scrollbar を使います。
+
+default の overlay は静止時に隠れるため、長い page で自分の位置が分かりにくく
+なることがあります
+（[#281](https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/281)）。
+scrollbar を常に表示させたい場合は `scrollbar` を `"visible"` または `"native"`
+に設定してください。この option は **JSDoc と TypeDoc の両方**に適用されます。
+
+<tabs group="tool">
+
+<tab label="JSDoc (jsdoc.json)">
+
+```json5
+opts: {
+  // "styled" (default) | "visible" | "native"
+  scrollbar: "native",
+}
+```
+
+</tab>
+
+<tab label="TypeDoc (typedoc.json)">
+
+```json5
+cleanJsdocTheme: {
+  // "styled" (default) | "visible" | "native"
+  scrollbar: "native",
+}
+```
+
+</tab>
+
+</tabs>
+
 ### `customCss` and `customJs`
 
 すべての page に inject される inline の CSS/JS です。custom CSS は theme の

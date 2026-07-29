@@ -44,6 +44,7 @@ import {
   formatRenderError,
   normalizeBasePath,
   normalizeCollapsibleSidebarSections,
+  normalizeScrollbar,
   toExtractManifest,
   topLevelSectionLabels,
   unmatchedCollapsibleSections,
@@ -717,6 +718,10 @@ export async function writeSite(
   const { value: collapsibleSidebarSections, warnings: collapsibleWarnings } =
     normalizeCollapsibleSidebarSections(block.collapsibleSidebarSections);
   collapsibleWarnings.forEach((w) => logger.warn(`[clean-jsdoc-theme] ${w}`));
+  // Scrollbar presentation mode (see #281); an unrecognized value warns and
+  // falls back to `undefined`, so dwar defaults to `styled`.
+  const { value: scrollbar, warnings: scrollbarWarnings } = normalizeScrollbar(block.scrollbar);
+  scrollbarWarnings.forEach((w) => logger.warn(`[clean-jsdoc-theme] ${w}`));
   // Enablement slice → setu's `@playground` resolver (runtime slice → the theme).
   const playground = normalizePlayground(block.playground);
 
@@ -805,6 +810,7 @@ export async function writeSite(
       ...(footer ? { footer } : {}),
       ...(favicon ? { favicon: favicon.href } : {}),
       ...(meta ? { meta } : {}),
+      ...(scrollbar ? { scrollbar } : {}),
     },
     destination,
     islandCacheDir,

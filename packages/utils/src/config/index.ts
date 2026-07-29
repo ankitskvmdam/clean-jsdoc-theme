@@ -16,3 +16,4 @@ export * from './locales';
 export * from './google-fonts';
 export * from './validate-opts';
 export * from './report';
+export * from './scrollbar';

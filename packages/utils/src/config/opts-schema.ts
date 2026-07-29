@@ -182,6 +182,9 @@ export const ClubSidebarItemsSchema = z.boolean();
 /** `collapsibleSidebarSections` — which top-level sidebar sections collapse. */
 export const CollapsibleSidebarSectionsSchema = z.union([z.boolean(), z.array(z.string())]);
 
+/** `scrollbar` — scrollbar presentation mode. */
+export const ScrollbarSchema = z.enum(['styled', 'visible', 'native']);
+
 /** `aiPrompt` — a custom copy-page LLM prompt. */
 export const AiPromptSchema = z.string();
 
@@ -209,6 +212,7 @@ export const THEME_OPT_KEYS = [
   'defaultDocGroup',
   'clubSidebarItems',
   'collapsibleSidebarSections',
+  'scrollbar',
   'aiPrompt',
   'basePath',
   'siteUrl',

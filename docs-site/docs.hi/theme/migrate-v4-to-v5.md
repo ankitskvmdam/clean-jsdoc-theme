@@ -110,7 +110,8 @@ you mean?" संकेत के साथ) और build करता रहत
 | `codepen` | `playground` | बदला गया | v4 एक CodePen को `@example` से prefill करता था; v5 इसे [`playground`](/components/playground) में सामान्यीकृत करता है — किसी example को `opts.playground` + `@playground` tag के ज़रिये CodePen, JSFiddle, या CodeSandbox में खोलें। (किसी मौजूदा pen को URL से embed करने के लिए, [`@iframe`](/components/embeds) इस्तेमाल करें।) |
 | `static_dir` | — | हटाया गया | JSDoc की अपनी static-file config इस्तेमाल करें। |
 | `footer` | `footer` | बदला गया | फिर से समर्थित — एक inline HTML string या `{ file: "./footer.html" }`। इसे `customCss` / `customCssFile` से style करें। देखें [`footer`](/theme/configuration#footer)। |
-| `exclude_inherited`, `displayModuleHeader`, `sort`, `shouldRemoveScrollbarStyle` | — | हटाया गया | कोई समतुल्य नहीं। |
+| `exclude_inherited`, `displayModuleHeader`, `sort` | — | हटाया गया | कोई समतुल्य नहीं। |
+| `shouldRemoveScrollbarStyle` | `scrollbar` | बदला गया | v4 का boolean केवल scrollbar styling बंद करता था। v5 का `scrollbar` एक 3-तरफा enum है: `"styled"` (default) \| `"visible"` \| `"native"`। `shouldRemoveScrollbarStyle: true` → `scrollbar: "native"`। |
 
 > [!NOTE]
 > **menu** फिर से ढाला गया: एक v4 entry `{ title, link, target, class, id }` एक

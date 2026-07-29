@@ -39,6 +39,7 @@ import type {
   NavNode,
   CopyPageAction,
   MetaTag,
+  ScrollbarMode,
 } from '@clean-jsdoc-theme/utils';
 
 import {
@@ -290,6 +291,7 @@ async function renderPage(
     js?: string;
     meta?: MetaTag[];
     favicon?: string;
+    scrollbar?: ScrollbarMode;
   },
   neighbors: PageNeighbors | undefined,
   inlineSvgs: Record<string, string>,
@@ -443,6 +445,7 @@ async function renderPage(
     customJs: custom.js,
     meta: custom.meta,
     favicon: custom.favicon,
+    scrollbar: custom.scrollbar,
     playground: playgroundOptions,
     lang: locale?.code,
     i18n: i18nPayload,
@@ -578,6 +581,7 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
     js: theme.customJs?.trim() || undefined,
     meta: theme.meta,
     favicon: theme.favicon,
+    scrollbar: theme.scrollbar,
   };
   // The fuzzy-search index the cmdk island fetches. Build-id stamped so it
   // cache-busts alongside the stylesheet/chunks.

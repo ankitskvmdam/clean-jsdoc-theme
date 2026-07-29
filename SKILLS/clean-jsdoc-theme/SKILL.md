@@ -170,7 +170,7 @@ inline (both JSDoc and TypeDoc).
   siteName, basePath, siteUrl, favicon,
   readme, docs, docGroups, defaultDocGroup, tutorials,
   sectionOrder, clubSidebarItems, collapsibleSidebarSections, menu,
-  fonts, colors, darkColors,
+  fonts, colors, darkColors, scrollbar,
   customCss, customJs, customCssFile, customJsFile, hashCustomAssets,
   footer, meta, playground,
   copyPage, aiPrompt,
