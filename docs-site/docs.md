@@ -25,6 +25,15 @@
   **Using the Theme → Guides → Components → Packages**. Within a group, pages sort
   by `order` then title.
 - `docs/index.md` is the **home page** (overrides the README).
+- **LLM index files (`llms.txt` + `llms-full.txt`).** These are **not** produced
+  by the build — regenerate them with **`pnpm gen:llms`** (root script
+  `scripts/gen-llms-txt.mjs`). It reads the English `docs/` (+ the site URL from
+  `jsdoc.json`) and writes both files into **`docs-site/dist/clean-jsdoc-theme/`**
+  by default, so they ship with the deployed site. **Run it LAST — after
+  `pnpm --filter @clean-jsdoc-theme/docs-site run docs`** — so the docs build
+  can't overwrite them. Re-run it whenever the docs change, then deploy
+  `dist/clean-jsdoc-theme/`. (Pass a target dir to write elsewhere, e.g.
+  `pnpm gen:llms ../ankdev/public/clean-jsdoc-theme`.)
 - **Out of scope for this map:** the generated API references at `/api-docs/`
   (built from `jsdoc.api.json` + `docs-site/src`) and `/typedoc-api-docs/` (built
   from `typedoc.json` + `docs-site/typedoc-src`). Those come from source comments,
