@@ -1,6 +1,6 @@
 {
   "name": "@clean-jsdoc-theme/typedoc",
-  "version": "5.1.0",
+  "version": "5.1.1",
   "description": "TypeDoc support for clean-jsdoc-theme (renders via setu → dwar)",
   "type": "module",
   "main": "./dist/index.js",

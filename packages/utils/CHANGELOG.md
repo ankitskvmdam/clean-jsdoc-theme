@@ -1,5 +1,11 @@
 # @clean-jsdoc-theme/utils
 
+## 5.1.1
+
+### Patch Changes
+
+- 2abaafa: Add a **`scrollbar`** option (`"styled"` | `"visible"` | `"native"`) to control scrollbar presentation. The default `"styled"` keeps the current overlay bar (invisible at rest); `"visible"` keeps the themed bar always shown; `"native"` disables all scrollbar styling and uses the browser's own scrollbar. Fixes #281.
+
 ## 5.1.0
 
 ### Minor Changes
