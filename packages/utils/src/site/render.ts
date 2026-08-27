@@ -3,6 +3,7 @@
  * a separate post-write step (`runPagefindAgainstDir`). See Q5.
  */
 
+import type { LlmsTxtConfig } from './llms';
 import type { SearchEntry } from './manifest';
 import type { ThemeConfig } from './theme';
 
@@ -142,6 +143,14 @@ export interface RenderOptions {
    * path equals basePath). Omit it and no sitemap is emitted (today's behavior).
    */
   siteUrl?: string;
+  /**
+   * Resolved `llmsTxt` config. When set AND {@link RenderOptions.siteUrl} is
+   * usable, dwar emits `llms.txt` (+ `llms-full.txt` unless `full: false`) at the
+   * output root — an llmstxt.org index linking each page's companion `.md`.
+   * The bridge validates this and owns the "enabled but no siteUrl" warning, so
+   * `render()` stays pure: a missing `siteUrl` here simply emits nothing.
+   */
+  llmsTxt?: LlmsTxtConfig;
 }
 
 /** Active-locale chrome translations for a localized render. See {@link RenderOptions.locale}. */

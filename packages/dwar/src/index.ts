@@ -61,6 +61,7 @@ import {
 import { bundleIslands, ALL_ISLANDS } from './islands-bundle';
 import { buildCss } from './css';
 import { buildSitemapXml } from './sitemap';
+import { buildLlmsTxt } from './llms-txt';
 
 /**
  * Injected from package.json at build time (see tsup.config.ts `define`). The
@@ -741,6 +742,23 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
       search.map((entry) => entry.slug)
     );
     if (sitemap) files.push({ path: 'sitemap.xml', contents: sitemap });
+  }
+
+  // llms.txt / llms-full.txt — an llmstxt.org index linking each page's companion
+  // .md. Needs absolute URLs, so it's gated on `siteUrl` exactly like the sitemap;
+  // the bridge owns the "enabled but no siteUrl" warning (render() stays pure).
+  if (opts.siteUrl && opts.llmsTxt) {
+    const built = buildLlmsTxt({
+      manifest,
+      siteUrl: opts.siteUrl,
+      basePath,
+      config: opts.llmsTxt,
+      siteName,
+    });
+    if (built) {
+      files.push({ path: 'llms.txt', contents: built.llms });
+      if (built.full) files.push({ path: 'llms-full.txt', contents: built.full });
+    }
   }
 
   // Island chunks (bundled up front, before the page loop).
