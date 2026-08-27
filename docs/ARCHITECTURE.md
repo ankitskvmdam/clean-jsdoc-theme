@@ -53,10 +53,13 @@ clean-jsdoc-theme/
 │   ├── typedoc-basic/         # working TypeDoc fixture: `pnpm run docs` → dist/
 │   └── with-i18n-example/     # 3-locale (en/ja/hi) localization fixture
 ├── docs-site/                 # dogfood docs site: prose-first `opts.docs` build
+│   └── docs.md                # ⚠ content map — READ FIRST before editing any doc page
 ├── SKILLS/                    # downloadable LLM agent skills (per-skill folder + SKILL.md)
-├── ARCHITECTURE.md            # this file
+├── docs/
+│   ├── ARCHITECTURE.md        # this file
+│   ├── RELEASING.md           # ⚠ release process — READ FIRST before releasing
+│   └── BREAKING_CHANGES.md
 ├── MIGRATION.md               # v4 → v5 migration guide
-├── BREAKING_CHANGES.md
 ├── README.md
 ├── package.json               # workspace root
 ├── pnpm-workspace.yaml
@@ -936,3 +939,39 @@ any package edit) alongside `nodemon` (watches every package's `dist` and
 re-runs `jsdoc`) and `serve`.
 
 Or render dwar in isolation against a fixture: `pnpm --filter @clean-jsdoc-theme/dwar run smoke` → `packages/dwar/preview/`.
+
+---
+
+## Two documents to read BEFORE you act
+
+Both of these are process gates, not background reading. Skipping either produces
+work that looks finished and isn't.
+
+### Updating docs → read `docs-site/docs.md` first
+
+`docs-site/docs.md` is the **content map** for the prose documentation (it is not
+published — it sits outside `docs/` and outside `source.include`, so no build picks
+it up). It records which file owns which topic, so a change lands in the one right
+page instead of a plausible-looking wrong one.
+
+The rule it exists to enforce: **the site is localized into 4 languages, and every
+page has 4 copies** — `docs-site/docs/<path>` (English, the source) plus the
+`docs.hi/`, `docs.ja/`, and `docs.zh/` overlays at the **same relative path**. An
+edit to only the English copy silently leaves the other three stale (a missing
+*section* does not fall back — only a missing *file* does). Translate the prose;
+keep code blocks, identifiers, option names, and link/image targets identical
+across locales. Keep the map in sync when pages are added, removed, or re-scoped.
+
+### Releasing → read `docs/RELEASING.md` first
+
+`docs/RELEASING.md` is the canonical process: Changesets for versioning, then a
+**tag-triggered** GitHub Actions publish. All eight `packages/*` ship in **lockstep**
+(a single `fixed` changeset group — one version, one `vX.Y.Z` tag for the whole
+suite); `examples/*` and `docs-site` are `private` and never publish.
+
+The shape of it: add a changeset with your change (`pnpm changeset`, or
+`pnpm changeset add --empty` for docs/CI-only work) → `pnpm release:check` to confirm
+nothing you touched is missing a bump → `pnpm version-packages` → commit the bumps,
+changelogs, and lockfile → tag and push the tag. Pushing a `v*` tag is what
+publishes; a tag containing `-` goes to the npm `next` dist-tag, anything else to
+`latest`. Never publish by hand from a workstation.
