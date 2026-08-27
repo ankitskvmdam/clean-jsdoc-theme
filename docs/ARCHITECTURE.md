@@ -924,6 +924,21 @@ from tsconfig; tsdown would otherwise infer from `engines.node`, which these
 packages don't declare). Config files are loaded natively rather than bundled, so
 they read `package.json` via `createRequire` instead of a JSON import.
 
+**`unrun` is a required root devDependency, not an accident.** tsdown picks its
+config loader at runtime:
+
+```js
+const autoLoader = isBun || (nativeTS && isSupported) ? 'native' : 'unrun';
+```
+
+On Node 24+, `process.features.typescript` is set, so `tsdown.config.ts` loads
+through Node's own type stripping and nothing extra is needed. On **Node 20/22 —
+which `engines: ">=20"` invites and CI actually pins — that check fails and tsdown
+requires `unrun`**, which is only an *optional* peer. Without it pinned, the build
+dies with `Failed to import module "unrun"` on every supported Node below 24 while
+passing on a Node 24 machine. Removing this dependency, or switching the configs
+to `.mjs` (which needs no loader at all), are the only two safe states.
+
 Turborepo (`turbo.json`) wires the task graph: `build` depends on workspace deps'
 builds; `test` / `typecheck` depend on builds so generated artifacts exist. The
 `build:docs` task (run by the `build:docs` script in `docs-site` and each
