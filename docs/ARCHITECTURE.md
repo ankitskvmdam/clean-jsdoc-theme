@@ -932,12 +932,24 @@ const autoLoader = isBun || (nativeTS && isSupported) ? 'native' : 'unrun';
 ```
 
 On Node 24+, `process.features.typescript` is set, so `tsdown.config.ts` loads
-through Node's own type stripping and nothing extra is needed. On **Node 20/22 —
-which `engines: ">=20"` invites and CI actually pins — that check fails and tsdown
-requires `unrun`**, which is only an *optional* peer. Without it pinned, the build
-dies with `Failed to import module "unrun"` on every supported Node below 24 while
-passing on a Node 24 machine. Removing this dependency, or switching the configs
-to `.mjs` (which needs no loader at all), are the only two safe states.
+through Node's own type stripping and nothing extra is needed. On **Node 22 — which
+CI pins — that check fails and tsdown requires `unrun`**, which it declares only as
+an *optional* peer. Without it pinned the build dies with
+`Failed to import module "unrun"` on Node 22 while passing on a Node 24 machine.
+Removing this dependency, or switching the configs to `.mjs` (which needs no loader
+at all), are the only two safe states.
+
+### Two different Node floors — don't conflate them
+
+- **Building this repo needs Node `>=22.18.0`** (root `engines.node`, and what all
+  three workflows pin). That's tsdown's own requirement — it declares
+  `^22.18.0 || >=24.11.0` and calls `Promise.withResolvers`, which does not exist
+  before Node 22, so on Node 20 the build fails outright with
+  `Promise.withResolvers is not a function`. Node 20 also went EOL in April 2026.
+- **Consuming the published packages still only needs Node `>=20`**, as
+  `BREAKING_CHANGES.md` states. Nothing about that changed: the emitted code targets
+  ES2022, and none of the published packages declare an `engines` field. tsdown is a
+  build-time devDependency that never reaches a consumer's install.
 
 Turborepo (`turbo.json`) wires the task graph: `build` depends on workspace deps'
 builds; `test` / `typecheck` depend on builds so generated artifacts exist. The
