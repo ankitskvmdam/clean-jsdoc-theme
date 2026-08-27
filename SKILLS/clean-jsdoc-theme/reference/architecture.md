@@ -43,7 +43,7 @@ bridge also honors `basePath` for sub-directory deploys.
 
 ```sh
 pnpm install
-pnpm build        # tsup per package (dwar compiles its Tailwind CSS first)
+pnpm build        # tsdown per package (dwar compiles its Tailwind CSS first)
 pnpm build:docs   # generate every site (docs-site + examples)
 pnpm test         # vitest across utils / setu / rang / dwar
 pnpm typecheck

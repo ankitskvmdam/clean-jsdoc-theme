@@ -22,7 +22,7 @@ import { getHeadingAnchorsScript } from './heading-anchors';
 import { getScrollbarScript } from './scrollbar-script';
 
 /**
- * Theme version, injected at dwar's build time (tsup `define`). Every theme
+ * Theme version, injected at dwar's build time (tsdown `define`). Every theme
  * package is a fixed version group, so this equals the installed
  * clean-jsdoc-theme / bridge version — stamped as the `generator` meta so a
  * generated site carries the version that produced it (bug-report triage).

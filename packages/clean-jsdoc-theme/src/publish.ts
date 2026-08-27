@@ -36,7 +36,7 @@ import { writeOutputFiles } from './write-output-files';
 const JSDOC_TUTORIAL_TYPE_MARKDOWN = 2;
 
 // Absolute path of the running module. `__filename` is native in the CJS build
-// and injected into the ESM build by tsup's `shims` option (from
+// and injected into the ESM build by tsdown's `shims` option (from
 // import.meta.url), so this resolves in both without an eval/`new Function` shim.
 function anchorPath(): string {
   if (typeof __filename === 'string') return __filename;
@@ -111,7 +111,7 @@ function resolveEsmEntry(name: string): string {
 
 // setu and dwar are ESM-only; JSDoc 4 loads this theme via `require()`, so the
 // CJS bundle here can't `require()` them. Dynamic-import a `file://` URL
-// instead. The specifier is funneled through a variable so tsup/esbuild don't
+// instead. The specifier is funneled through a variable so the bundler don't
 // rewrite the dynamic import into a static `require()` during CJS bundling.
 async function loadDep<T>(name: string, requiredExports: readonly string[]): Promise<T> {
   const entry = resolveEsmEntry(name);

@@ -36,8 +36,8 @@
     "url": "https://github.com/sponsors/ankitskvmdam"
   },
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
+    "build": "tsdown",
+    "dev": "tsdown --watch",
     "test": "vitest run --passWithNoTests",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
@@ -61,7 +61,7 @@
   },
   "devDependencies": {
     "@types/mdast": "^4.0.4",
-    "tsup": "^8.0.0",
+    "tsdown": "^0.22.14",
     "typedoc": "^0.28.0",
     "typescript": "^5.5.0",
     "vitest": "^4.1.10"

@@ -67,7 +67,7 @@ clean-jsdoc-theme/
 └── tsconfig.base.json
 ```
 
-Tooling: **pnpm** workspace · **Turborepo** task orchestration · **tsup** builds ·
+Tooling: **pnpm** workspace · **Turborepo** task orchestration · **tsdown** builds ·
 **vitest** tests · **TypeScript** project-wide.
 
 ---
@@ -537,7 +537,7 @@ scripts/
 ```
 
 **CSS strategy.** Tailwind v4 is compiled **once at dwar's own build time**
-(`build-css.mjs`, run before `tsup`) and inlined into `generated/utility-css.ts`.
+(`build-css.mjs`, run before `tsdown`) and inlined into `generated/utility-css.ts`.
 Tailwind never runs at the consumer's `jsdoc` build, so `render()` stays pure and
 users need no Tailwind config. The static utility layer is determined by rang's +
 dwar's source; only the `:root` / `[data-theme="dark"]` token block is dynamic
@@ -894,13 +894,35 @@ The TypeDoc bridge supports *extract* but not yet the localized *build* path
 
 ```sh
 pnpm install
-pnpm build       # tsup per package (dwar also compiles its Tailwind CSS first)
+pnpm build       # tsdown per package (dwar also compiles its Tailwind CSS first)
 pnpm build:docs  # generate every site (docs-site + examples) — builds the package graph first
 pnpm build:all   # everything: package builds + every site, in one dependency-aware pass
 pnpm test        # vitest across utils / setu / rang / dwar
 pnpm typecheck
 pnpm lint
 ```
+
+**Bundling: tsdown** (Rolldown), one `tsdown.config.ts` per package. Two settings
+in those configs are load-bearing and must not be "cleaned up":
+
+- **`fixedExtension: false`** — tsdown defaults it to `true` (because `platform`
+  defaults to `node`), which forces explicit `.mjs`/`.cjs` on every format. tsup
+  instead gave the format matching package.json `type` the plain `.js` name, and
+  our `exports` / `main` / `types` / `bin` fields name those exact files. With
+  `false`, tsdown reproduces both shapes we ship: `type: module` → esm `.js` +
+  cjs `.cjs`; no `type` (the JSDoc entry) → esm `.mjs` + cjs `.js`.
+- **`deps: { dts: { neverBundle: true } }`** — declarations must *reference* their
+  dependencies, not inline them. tsdown externalizes only prod dependencies, so
+  the dts pass was copying `@types/mdast` into `utils/dist/index.d.ts`; that made
+  utils' `Root` a different *nominal* type from setu's `import('mdast').Root` and
+  broke `pnpm typecheck` monorepo-wide. tsup kept every external type as an
+  import; this restores that.
+
+Also note `dts: { sourcemap: false }` (tsup emitted no `.d.ts.map`, and they would
+otherwise ship in the tarball) and an explicit `target: 'es2022'` (tsup read it
+from tsconfig; tsdown would otherwise infer from `engines.node`, which these
+packages don't declare). Config files are loaded natively rather than bundled, so
+they read `package.json` via `createRequire` instead of a JSON import.
 
 Turborepo (`turbo.json`) wires the task graph: `build` depends on workspace deps'
 builds; `test` / `typecheck` depend on builds so generated artifacts exist. The

@@ -29,7 +29,7 @@ export async function runPagefindAgainstDir(destination: string): Promise<void> 
 
   let mod: PagefindModule;
   try {
-    // Vite/tsup can statically rewrite `import('pagefind')`; an indirect
+    // Vite/rolldown can statically rewrite `import('pagefind')`; an indirect
     // dynamic import via a variable name keeps the dependency truly optional.
     const specifier = 'pagefind';
     mod = (await import(specifier)) as PagefindModule;

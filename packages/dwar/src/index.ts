@@ -64,7 +64,7 @@ import { buildSitemapXml } from './sitemap';
 import { buildLlmsTxt } from './llms-txt';
 
 /**
- * Injected from package.json at build time (see tsup.config.ts `define`). The
+ * Injected from package.json at build time (see tsdown.config.ts `define`). The
  * `typeof` guard keeps it safe under vitest, which doesn't apply the define.
  */
 declare const __PKG_VERSION__: string | undefined;
