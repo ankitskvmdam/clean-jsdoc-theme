@@ -1,5 +1,25 @@
 # @clean-jsdoc-theme/rang
 
+## 5.2.0
+
+### Patch Changes
+
+- 6c89543: Fix the mobile "On this page" table of contents collapsing on long pages. Once a
+  page had more headings than fit the list's 50vh cap, every row was squeezed down
+  to 12px — clipping and overlapping the heading text instead of scrolling. Rows
+  now keep their natural 32px height and the list scrolls as intended.
+- 4f9bf22: Build the packages with [tsdown](https://tsdown.dev) (Rolldown) instead of tsup.
+
+  No API, entry-point, or output-filename changes: every package emits the same
+  files with the same exports and the same type surface, and a site built with the
+  new toolchain is byte-identical — 671/671 emitted HTML/Markdown files, the
+  stylesheet, and all 61 hydration bundles match the previous output exactly.
+
+- Updated dependencies [68a3bda]
+- Updated dependencies [4f9bf22]
+  - @clean-jsdoc-theme/utils@5.2.0
+  - @clean-jsdoc-theme/bhasha@5.2.0
+
 ## 5.1.1
 
 ### Patch Changes
