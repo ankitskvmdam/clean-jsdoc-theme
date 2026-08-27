@@ -200,6 +200,53 @@ cleanJsdocTheme: { siteUrl: "https://example.com", basePath: "/my-library" }
 
 </tabs>
 
+### `llmsTxt`
+
+output root に [llms.txt](https://llmstxt.org) index を emit します — LLM や AI
+crawler がドキュメントを見つけるために読むファイルです。各エントリは page の
+**companion Markdown** (`<page>/index.md`) にリンクし、HTML にはリンクしません。
+そのため model は layout を parse せず、きれいな prose を取得できます。もう 1 つの
+ファイル **`llms-full.txt`** は、一括取り込み用に全 page を連結します。
+
+**期待される値:** `true`（`{ full: true, api: true }` の shorthand）または object:
+
+| Key | Default | 内容 |
+| --- | --- | --- |
+| `full` | `true` | `llms-full.txt` も emit します。大規模な API site では `false` に — 全 page を連結するため megabytes に達することがあります。 |
+| `api` | `true` | 生成された API pages の扱い。`true` は description 付きで列挙し、body を `llms-full.txt` に含めます。`'index'` は description なしの index として列挙し、body を省きます。`false` は両方のファイルから除外します。 |
+
+<tabs group="tool">
+
+<tab label="JSDoc (jsdoc.json)">
+
+```json5
+opts: { siteUrl: "https://example.com", llmsTxt: true }
+// → output root に llms.txt + llms-full.txt
+```
+
+</tab>
+
+<tab label="TypeDoc (typedoc.json)">
+
+```json5
+cleanJsdocTheme: { siteUrl: "https://example.com", llmsTxt: { api: "index" } }
+// → API pages は description なし。llms-full.txt は prose pages のみ
+```
+
+</tab>
+
+</tabs>
+
+> [!WARNING]
+> **[`siteUrl`](#siteurl) が必要です。** `llms.txt` は単体で fetch されるため、
+> 中のリンクはすべて絶対 URL でなければなりません。使用できる site URL がないと
+> build は warning を出して何も生成しません — [`strict`](#strict) では失敗します。
+> TypeDoc users は代わりに TypeDoc 自身の `hostedBaseUrl` を設定できます。両方が
+> 設定されている場合は `cleanJsdocTheme.siteUrl` が優先され、build が warn します。
+
+section は sidebar の group に対応し、source-file viewer pages は列挙されません。
+localized build では locale ごとに、その locale の URL を持つ `llms.txt` が出力されます。
+
 ### `favicon`
 
 favicon image への path です。bridge はそれを content-hashed な `_assets/` asset に

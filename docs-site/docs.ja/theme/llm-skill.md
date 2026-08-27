@@ -145,6 +145,31 @@ chat で file を `@`-mention して context に取り込ませます。
 update を提案します。theme を upgrade した後は、新しい options と features を
 取り込むために再度 download してください。
 
+## 自分のドキュメントに `llms.txt` を用意する
+
+上記の skill は *この theme* についてのものです。もう一方の面は、**あなたの**
+生成サイトを LLM が読めるようにすること — それは theme が代わりに行います。
+
+すべての content page には既に companion `<page>/index.md` が付属しています
+（copy-page ボタンが Claude / ChatGPT / Perplexity に渡すのがこれです）。
+[`llmsTxt`](/theme/configuration#llmstxt) を設定すると、build がそれらを束ねる
+index を追加します:
+
+```json5
+// jsdoc.json
+opts: { siteUrl: "https://example.com", llmsTxt: true }
+```
+
+- **`/llms.txt`** — [llmstxt.org](https://llmstxt.org) の index: project 名、
+  1 行の summary、そして sidebar group ごとの section。各エントリは page の
+  HTML ではなく Markdown にリンクします。
+- **`/llms-full.txt`** — 全 page を連結したもの。docs site 全体を 1 つの context
+  window に貼り付けるときに使えます。
+
+`siteUrl` は必須です（ファイルは単体で fetch されるため、リンクは絶対 URL で
+なければなりません）。大きな API reference では `llmsTxt: { api: "index" }` に
+すると index は完全なまま、生成された symbol の body を full file から外せます。
+
 ## 関連項目
 
 - [Configuration](/theme/configuration) — skill が document するのと同じ options

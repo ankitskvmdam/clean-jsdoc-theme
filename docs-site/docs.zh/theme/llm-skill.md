@@ -138,6 +138,30 @@ revision 与已发布的副本作比较、把你已安装的主题版本与 npm 
 若其中任一落后，便会主动提出更新。升级主题之后，请重新下载它，以获取新的选项
 和功能。
 
+## 为你自己的文档提供 `llms.txt`
+
+上面的 skill 讲的是*这个 theme*。另一面是让 **你的** 生成站点对 LLM 可读——
+而这一步 theme 已经替你做了。
+
+每个内容页面都已附带一份 companion `<page>/index.md`（copy-page 按钮交给
+Claude / ChatGPT / Perplexity 的正是它）。设置
+[`llmsTxt`](/theme/configuration#llmstxt)，构建就会补上把它们串起来的索引：
+
+```json5
+// jsdoc.json
+opts: { siteUrl: "https://example.com", llmsTxt: true }
+```
+
+- **`/llms.txt`** —— 一个 [llmstxt.org](https://llmstxt.org) 索引：项目名称、
+  一行摘要，然后每个 sidebar 分组一个 section，每条记录链接页面的 Markdown
+  而不是 HTML。
+- **`/llms-full.txt`** —— 所有页面拼接在一起，便于把整个文档站粘进一个上下文
+  窗口。
+
+`siteUrl` 是必需的（该文件会被单独抓取，因此其中链接必须是绝对 URL）。对于大型
+API 参考，`llmsTxt: { api: "index" }` 可以保持索引完整，同时把生成的符号正文排除
+在完整文件之外。
+
 ## 另见
 
 - [Configuration](/theme/configuration) —— skill 所记录的同一批选项，以可浏览

@@ -192,6 +192,51 @@ cleanJsdocTheme: { siteUrl: "https://example.com", basePath: "/my-library" }
 
 </tabs>
 
+### `llmsTxt`
+
+在 output root 生成一个 [llms.txt](https://llmstxt.org) 索引——LLM 与 AI 爬虫用它
+来发现你的文档。每条记录链接到页面的 **companion Markdown**
+(`<page>/index.md`)，而不是 HTML，因此模型取到的是干净的正文，而不必解析你的
+布局。另一个文件 **`llms-full.txt`** 会把所有页面拼接起来，便于一次性摄取。
+
+**预期值：** `true`（`{ full: true, api: true }` 的简写）或一个对象：
+
+| Key | Default | 作用 |
+| --- | --- | --- |
+| `full` | `true` | 同时生成 `llms-full.txt`。API 站点很大时设为 `false`——它会拼接每个页面，体积可能达到数 MB。 |
+| `api` | `true` | 如何处理生成的 API 页面。`true` 带描述列出，并把正文写入 `llms-full.txt`；`'index'` 仅作为索引列出（不带描述）并省略正文；`false` 则从两个文件中都排除。 |
+
+<tabs group="tool">
+
+<tab label="JSDoc (jsdoc.json)">
+
+```json5
+opts: { siteUrl: "https://example.com", llmsTxt: true }
+// → output root 下生成 llms.txt + llms-full.txt
+```
+
+</tab>
+
+<tab label="TypeDoc (typedoc.json)">
+
+```json5
+cleanJsdocTheme: { siteUrl: "https://example.com", llmsTxt: { api: "index" } }
+// → API 页面不带描述；llms-full.txt 只保留正文页面
+```
+
+</tab>
+
+</tabs>
+
+> [!WARNING]
+> **必须设置 [`siteUrl`](#siteurl)。** `llms.txt` 会被单独抓取，因此其中每个链接
+> 都必须是绝对 URL。没有可用的 site URL 时，构建会打印一条警告且不生成任何文件——
+> 配合 [`strict`](#strict) 则直接失败。TypeDoc 用户也可以改为设置 TypeDoc 自带的
+> `hostedBaseUrl`；两者都设置时以 `cleanJsdocTheme.siteUrl` 为准，并给出警告。
+
+各 section 与你的 sidebar 分组一致，source-file 查看页永远不会被列出。在本地化
+构建中，每个 locale 都会得到带该 locale URL 的 `llms.txt`。
+
 ### `favicon`
 
 一个指向 favicon 图片的路径。桥接器会把它复制为一个带内容哈希的

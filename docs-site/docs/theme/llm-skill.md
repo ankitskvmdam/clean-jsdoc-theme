@@ -142,6 +142,31 @@ and your installed theme version against npm's latest, and offers to update if
 either is behind. Re-download it after upgrading the theme to pick up new options
 and features.
 
+## Ship an `llms.txt` for your own docs
+
+The skill above is about *this theme*. The flip side is making **your** generated
+site legible to an LLM — and the theme does that for you.
+
+Every content page already ships a companion `<page>/index.md` (that's what the
+copy-page button hands to Claude / ChatGPT / Perplexity). Set
+[`llmsTxt`](/theme/configuration#llmstxt) and the build adds the index that ties
+them together:
+
+```json5
+// jsdoc.json
+opts: { siteUrl: "https://example.com", llmsTxt: true }
+```
+
+- **`/llms.txt`** — an [llmstxt.org](https://llmstxt.org) index: your project name,
+  a one-line summary, then one section per sidebar group, each entry linking a
+  page's Markdown rather than its HTML.
+- **`/llms-full.txt`** — every page concatenated, for pasting a whole docs site
+  into one context window.
+
+`siteUrl` is required (the file is fetched standalone, so its links must be
+absolute). On a big API reference, `llmsTxt: { api: "index" }` keeps the index
+complete while leaving generated symbol bodies out of the full file.
+
 ## See also
 
 - [Configuration](/theme/configuration) — the same options the skill documents,

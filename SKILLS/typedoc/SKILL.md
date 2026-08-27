@@ -139,7 +139,7 @@ this is the skill's whole value.
 - Sidebar: `menu`, `sectionOrder`, `clubSidebarItems` (accepted/validated — but the module hierarchy owns the API sidebar; see the deep dive for what these actually affect), `collapsibleSidebarSections` (this one **does** apply — collapsible top-level section headers; both flavors)
 - LLM/pager: `copyPage`, `pageNav`, `aiPrompt`, `playground`
 - Chrome/meta: `footer` (string or `{ file }`), `meta`
-- Deploy: `basePath` (sub-directory hosting — every asset href is prefixed), `siteUrl` (emits `sitemap.xml`)
+- Deploy: `basePath` (sub-directory hosting — every asset href is prefixed), `siteUrl` (emits `sitemap.xml`; TypeDoc's own `hostedBaseUrl` is used as a fallback, and `cleanJsdocTheme.siteUrl` wins if both are set), `llmsTxt` (emits `llms.txt` + `llms-full.txt`; needs a site URL)
 - Build: `strict`
 
 **NOT wired through the TypeDoc writer today** (they validate but have no effect —

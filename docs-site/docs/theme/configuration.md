@@ -196,6 +196,54 @@ cleanJsdocTheme: { siteUrl: "https://example.com", basePath: "/my-library" }
 
 </tabs>
 
+### `llmsTxt`
+
+Emit an [llms.txt](https://llmstxt.org) index at the output root — the file LLMs and
+AI crawlers read to discover your documentation. Every entry links a page's
+**companion Markdown** (`<page>/index.md`), never its HTML, so a model fetches clean
+prose instead of parsing your layout. A second file, **`llms-full.txt`**, concatenates
+every page for one-shot ingestion.
+
+**Expected:** `true` (shorthand for `{ full: true, api: true }`) or an object:
+
+| Key | Default | What it does |
+| --- | --- | --- |
+| `full` | `true` | Also emit `llms-full.txt`. Set `false` on a large API site — it concatenates every page, so it can reach megabytes. |
+| `api` | `true` | How generated API pages are treated. `true` lists them with descriptions and includes their bodies in `llms-full.txt`; `'index'` lists them as a bare index (no descriptions) and omits their bodies; `false` leaves them out of both files. |
+
+<tabs group="tool">
+
+<tab label="JSDoc (jsdoc.json)">
+
+```json5
+opts: { siteUrl: "https://example.com", llmsTxt: true }
+// → llms.txt + llms-full.txt at the output root
+```
+
+</tab>
+
+<tab label="TypeDoc (typedoc.json)">
+
+```json5
+cleanJsdocTheme: { siteUrl: "https://example.com", llmsTxt: { api: "index" } }
+// → API pages listed without descriptions; llms-full.txt keeps prose pages only
+```
+
+</tab>
+
+</tabs>
+
+> [!WARNING]
+> **[`siteUrl`](#siteurl) is required.** `llms.txt` is fetched on its own, so every
+> link inside it must be absolute. Without a usable site URL the build prints a
+> warning and generates nothing — with [`strict`](#strict) it fails instead. TypeDoc
+> users may set TypeDoc's own `hostedBaseUrl` instead; when both are set,
+> `cleanJsdocTheme.siteUrl` wins and the build warns.
+
+The sections mirror your sidebar groups, and source-file viewer pages are never
+listed. In a localized build each locale gets its own `llms.txt` carrying that
+locale's URLs.
+
 ### `favicon`
 
 A path to a favicon image. The bridge copies it to a content-hashed

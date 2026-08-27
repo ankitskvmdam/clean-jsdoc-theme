@@ -197,6 +197,54 @@ cleanJsdocTheme: { siteUrl: "https://example.com", basePath: "/my-library" }
 
 </tabs>
 
+### `llmsTxt`
+
+output root पर एक [llms.txt](https://llmstxt.org) index emit करता है — वही file जिसे
+LLMs और AI crawlers आपकी documentation खोजने के लिए पढ़ते हैं। हर entry page की
+**companion Markdown** (`<page>/index.md`) से link करती है, कभी उसके HTML से नहीं,
+ताकि model आपका layout parse करने की जगह साफ़ prose ले सके। दूसरी file,
+**`llms-full.txt`**, एक ही बार में ingest करने के लिए सारे pages को जोड़ देती है।
+
+**अपेक्षित:** `true` (`{ full: true, api: true }` का shorthand) या एक object:
+
+| Key | Default | यह क्या करता है |
+| --- | --- | --- |
+| `full` | `true` | `llms-full.txt` भी emit करता है। बड़े API site पर `false` रखें — यह हर page को जोड़ता है, इसलिए megabytes तक पहुँच सकता है। |
+| `api` | `true` | generated API pages के साथ कैसा बर्ताव हो। `true` उन्हें descriptions के साथ list करता है और उनके bodies `llms-full.txt` में रखता है; `'index'` उन्हें सिर्फ़ index की तरह list करता है (descriptions नहीं) और bodies छोड़ देता है; `false` उन्हें दोनों files से बाहर रखता है। |
+
+<tabs group="tool">
+
+<tab label="JSDoc (jsdoc.json)">
+
+```json5
+opts: { siteUrl: "https://example.com", llmsTxt: true }
+// → output root पर llms.txt + llms-full.txt
+```
+
+</tab>
+
+<tab label="TypeDoc (typedoc.json)">
+
+```json5
+cleanJsdocTheme: { siteUrl: "https://example.com", llmsTxt: { api: "index" } }
+// → API pages descriptions के बिना; llms-full.txt में केवल prose pages
+```
+
+</tab>
+
+</tabs>
+
+> [!WARNING]
+> **[`siteUrl`](#siteurl) आवश्यक है।** `llms.txt` अपने आप fetch होती है, इसलिए उसके
+> अंदर हर link absolute होना चाहिए। काम लायक site URL न होने पर build एक warning
+> print करता है और कुछ generate नहीं करता — [`strict`](#strict) के साथ वह fail हो
+> जाता है। TypeDoc users इसके बजाय TypeDoc का अपना `hostedBaseUrl` सेट कर सकते हैं;
+> दोनों सेट होने पर `cleanJsdocTheme.siteUrl` जीतता है और build warn करता है।
+
+Sections आपके sidebar groups के अनुरूप होते हैं, और source-file viewer pages कभी
+list नहीं होते। localized build में हर locale को उसकी अपनी URLs वाली `llms.txt`
+मिलती है।
+
 ### `favicon`
 
 एक favicon image का path। bridge इसे एक content-hashed `_assets/` asset में copy

@@ -167,7 +167,7 @@ inline (both JSDoc and TypeDoc).
 ```jsonc
 // JSDoc: opts.* | TypeDoc: cleanJsdocTheme.*  (identical values)
 {
-  siteName, basePath, siteUrl, favicon,
+  siteName, basePath, siteUrl, llmsTxt, favicon,
   readme, docs, docGroups, defaultDocGroup, tutorials,
   sectionOrder, clubSidebarItems, collapsibleSidebarSections, menu,
   fonts, colors, darkColors, scrollbar,

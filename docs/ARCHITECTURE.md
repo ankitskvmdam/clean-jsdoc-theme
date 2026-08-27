@@ -518,6 +518,13 @@ dwar/src/
 │                         #   <loc> per non-hidden page (origin from siteUrl,
 │                         #   sub-path from basePath). render() emits sitemap.xml
 │                         #   when opts.siteUrl is set
+├── llms-txt.ts           # buildLlmsTxt({manifest,siteUrl,basePath,config}) — pure;
+│                         #   llms.txt (llmstxt.org index → each page's companion .md)
+│                         #   + llms-full.txt. navSections buckets the FLAT top-level
+│                         #   nav by NavNode.group (the sidebar's section labels;
+│                         #   menu/external entries skipped); plainText flattens
+│                         #   {@link}/entities out of descriptions. render() emits both
+│                         #   when opts.siteUrl AND opts.llmsTxt are set
 ├── pagefind.ts           # runPagefindAgainstDir(destination)  — the only fs touch
 styles/
 └── tailwind.css          # Tailwind v4 input: @theme tokens, tw-animate-css, base
@@ -563,6 +570,23 @@ set as `RenderResult.search`, so hidden source-viewer pages are excluded), using
 `siteUrl`'s origin + `theme.basePath` + slug; an unparseable URL emits nothing
 rather than a broken sitemap. The full-text Pagefind bundle is a separate
 post-write step.
+
+When `RenderOptions.llmsTxt` is **also** set, dwar emits **`llms.txt`** — an
+[llmstxt.org](https://llmstxt.org) index: one h1 (`pkg.name` → site-name text →
+`Documentation`), a `pkg.description` blockquote, a prose line, then one `##`
+section per **sidebar group** whose entries link each page's companion `.md`
+(never the HTML) — plus **`llms-full.txt`** (every body concatenated, frontmatter
+and leading h1 stripped, `Source:` line per page) unless `full: false`. Sections
+come from `NavNode.group`, not from top-level nav nodes: `manifest.nav` is flat at
+the top level and the group label is what rang renders as a section header, so
+bucketing by it is what makes the index mirror the sidebar. Source-section pages
+are excluded — both the hidden `kind: 'source'` viewers *and* the non-hidden
+"Source Files" index (slug `source`, `kind: 'guide'`, which has a `.md` and would
+otherwise slip through). `api: 'index'` trims API descriptions from the index and
+API bodies from the full file; `api: false` drops API pages from both. Each locale
+of a localized build gets its own file via that locale's `basePath`. The bridges
+own the "enabled but no usable `siteUrl`" warning, so `render()` stays pure — it
+simply emits nothing.
 
 **Custom CSS/JS.** `ThemeConfig` carries optional `customCss`/`customJs` (inline
 strings) and `customCssLinks`/`customJsLinks` (asset hrefs). Inline strings are
