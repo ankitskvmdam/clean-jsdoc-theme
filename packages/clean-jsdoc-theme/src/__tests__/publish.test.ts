@@ -664,3 +664,29 @@ describe('resolveDocletImages', () => {
     vi.restoreAllMocks();
   });
 });
+
+describe('llmsTxt opts (JSDoc bridge surface)', () => {
+  it('resolves llmsTxt when siteUrl is present', async () => {
+    const { validateThemeOpts } = await import('@clean-jsdoc-theme/utils');
+    const { value, diagnostics } = await validateThemeOpts({
+      opts: { siteUrl: 'https://x.com/docs', basePath: '/docs', llmsTxt: true },
+      knownNonThemeKeys: new Set(['destination']),
+    });
+    expect(value.siteUrl).toBe('https://x.com/docs');
+    expect(value.llmsTxt).toEqual({ full: true, api: true });
+    expect(diagnostics.list).toHaveLength(0);
+  });
+
+  it('warns visibly (yellow) when llmsTxt is on without siteUrl', async () => {
+    const { validateThemeOpts, warningsOnly, formatDiagnostics } = await import(
+      '@clean-jsdoc-theme/utils'
+    );
+    const { value, diagnostics } = await validateThemeOpts({ opts: { llmsTxt: true } });
+    expect(value.llmsTxt).toBeUndefined();
+    const warnings = warningsOnly(diagnostics);
+    expect(warnings.list).toHaveLength(1);
+    const colored = formatDiagnostics(warnings, { color: true });
+    expect(colored).toContain('[33m');
+    expect(colored).toContain('llms.txt will NOT be generated');
+  });
+});

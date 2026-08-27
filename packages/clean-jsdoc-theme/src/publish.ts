@@ -136,6 +136,7 @@ const loadUtils = (): Promise<typeof import('@clean-jsdoc-theme/utils')> =>
     'validateThemeOpts',
     'createGoogleFontResolver',
     'formatDiagnostics',
+    'warningsOnly',
     'formatBuildReport',
     'formatRenderError',
     'normalizeBasePath',
@@ -332,6 +333,17 @@ interface JSDocOpts {
    * equals `basePath` both work. Omit it for no sitemap.
    */
   siteUrl?: unknown;
+  /**
+   * Emit an llmstxt.org index (`jsdoc.json` `"opts": { "llmsTxt": true }`) —
+   * `llms.txt` at the output root, plus `llms-full.txt` (every page concatenated)
+   * unless `full: false`. Accepts `true` (⇒ `{ full: true, api: true }`) or
+   * `{ full?: boolean, api?: boolean | 'index' }`, where `api: 'index'` lists API
+   * pages without descriptions and omits their bodies from `llms-full.txt`, and
+   * `api: false` omits API pages entirely. **Requires `siteUrl`** — the file is
+   * fetched standalone, so its links must be absolute; without it the build warns
+   * and emits nothing.
+   */
+  llmsTxt?: unknown;
   /**
    * Favicon (`jsdoc.json` `"opts": { "favicon": "./icon.svg" }`). A path to an
    * image file (`.svg`/`.png`/`.ico`/…), relative to the working dir. The bridge
@@ -2075,6 +2087,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
       validateThemeOpts,
       createGoogleFontResolver,
       formatDiagnostics,
+      warningsOnly,
       formatBuildReport,
       formatRenderError,
       normalizeBasePath,
@@ -2365,8 +2378,13 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
       inlineSvgs: allInlineSvgs,
       // Emit sitemap.xml when a public site URL is configured (the protocol needs
       // absolute URLs). In a localized build each locale's basePath yields that
-      // locale's URLs, so each locale dir gets its own sitemap.
-      ...(nonEmptyString(opts.siteUrl) ? { siteUrl: (opts.siteUrl as string).trim() } : {}),
+      // locale's URLs, so each locale dir gets its own sitemap. `value.siteUrl` is
+      // the validated form — a malformed URL warned above and lands here as
+      // `undefined`, so we never hand dwar something it would silently drop.
+      ...(value.siteUrl ? { siteUrl: value.siteUrl } : {}),
+      // llms.txt / llms-full.txt (llmstxt.org). `undefined` means either unset or
+      // "enabled but no usable siteUrl" — the latter already warned in validation.
+      ...(value.llmsTxt ? { llmsTxt: value.llmsTxt } : {}),
       // Build mode: render chrome in the locale (SSR provider + island seeding)
       // and, with >1 locale, mount the language switcher.
       ...(buildSpec
@@ -2454,6 +2472,15 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
       color,
     })
   );
+
+  // Opts warnings were printed BEFORE any render work, so by now they've scrolled
+  // away behind the build log. Re-print just the warnings here — this is near the
+  // last thing on screen, so a skipped llms.txt or a font fallback can't go
+  // unnoticed by someone who expected that file in the output.
+  const optsWarnings = warningsOnly(diagnostics);
+  if (optsWarnings.list.length > 0) {
+    console.warn(formatDiagnostics(optsWarnings, { color }));
+  }
 
   // Skipped pages (render failures) are folded in right after the report so the
   // count is visible alongside the successful totals — never fatal.
