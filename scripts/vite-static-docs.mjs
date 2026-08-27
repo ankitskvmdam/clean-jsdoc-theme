@@ -67,6 +67,10 @@ export function staticDocs({
       const siteRoot = process.cwd();
       const repoRoot = path.resolve(siteRoot, siteRoot.includes('examples') ? '../..' : '..');
 
+      // NOTE: middlewares registered here (rather than in a returned callback)
+      // run BEFORE Vite's internal static/html handling — required, since we're
+      // intercepting requests Vite would otherwise 404.
+
       if (redirect) {
         server.middlewares.use((req, res, next) => {
           if (req.url === '/' || req.url === '') {
@@ -78,6 +82,28 @@ export function staticDocs({
           next();
         });
       }
+
+      // Clean-URL redirect: `/module/foo` → `/module/foo/`.
+      //
+      // Every page is emitted as `<slug>/index.html`. Vite's static middleware
+      // resolves `/slug/` but NOT `/slug`, so an extensionless URL without the
+      // trailing slash 404s — which broke any hand-typed or copied link, since
+      // `serve` used to resolve those. A redirect (not an internal rewrite) is
+      // used deliberately: real static hosts (GitHub Pages, Netlify, S3) canonical-
+      // ize to the trailing-slash form, so dev now behaves like production and
+      // there's exactly one canonical URL per page.
+      const docRoot = path.resolve(server.config.root);
+      server.middlewares.use((req, res, next) => {
+        if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+        const [urlPath, query = ''] = (req.url ?? '').split('?');
+        if (!urlPath || urlPath.endsWith('/') || path.posix.extname(urlPath)) return next();
+        // Keep traversal out: resolve and confirm we stayed under the doc root.
+        const candidate = path.join(docRoot, decodeURIComponent(urlPath), 'index.html');
+        if (!candidate.startsWith(docRoot + path.sep) || !existsSync(candidate)) return next();
+        res.statusCode = 301;
+        res.setHeader('location', `${urlPath}/${query ? `?${query}` : ''}`);
+        res.end();
+      });
 
       const targets = [
         ...watch.map((p) => path.resolve(siteRoot, p)),

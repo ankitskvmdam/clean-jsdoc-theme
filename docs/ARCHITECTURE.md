@@ -983,6 +983,11 @@ SPA fallback) and dependency discovery off. Three details are deliberate:
   plugin after generation succeeds.
 - A **failed generation leaves the last good output in place** and logs the exit
   code, rather than blanking the site.
+- **Clean URLs are redirected.** Every page is emitted as `<slug>/index.html`, and
+  Vite resolves `/slug/` but not `/slug`. A pre-middleware 301s the extensionless
+  form to the trailing-slash one, so hand-typed and copied links work — and dev
+  matches real static hosts (GitHub Pages, Netlify, S3), which canonicalize the
+  same way. This is what `serve` used to do for us.
 - One Vite warning is filtered by a `customLogger`: dwar's island loader does
   `import(src)` from a per-page map of content-hashed chunk names, which
   import-analysis can't see through. It's intentional and resolves natively in the
