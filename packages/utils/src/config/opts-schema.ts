@@ -216,6 +216,7 @@ export const THEME_OPT_KEYS = [
   'aiPrompt',
   'basePath',
   'siteUrl',
+  'llmsTxt',
   'favicon',
   'footer',
   'meta',

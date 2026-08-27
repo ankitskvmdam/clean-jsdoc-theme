@@ -9,12 +9,15 @@
  * gracefully and the build proceeds.
  */
 
+import type { LlmsTxtConfig } from '../site/llms';
 import type { SiteName } from '../site/site-name';
 import { DiagnosticBag } from './diagnostics';
 import { validateFonts, type FontResolver, type ValidatedFonts } from './fonts';
 import { validateLocales, type ValidatedLocales } from './locales';
 import { THEME_OPT_KEYS } from './opts-schema';
+import { validateLlmsTxt } from './llms-txt';
 import { validateSiteName } from './site-name';
+import { validateSiteUrl } from './site-url';
 import { suggestKey } from './suggest';
 
 /** How `validateThemeOpts` treats keys not in {@link THEME_OPT_KEYS}. */
@@ -56,6 +59,10 @@ export interface NormalizedThemeOpts {
   fonts: ValidatedFonts;
   /** Validated locale config, or `undefined` when localization is off. */
   locales: ValidatedLocales | undefined;
+  /** Validated public site URL, or `undefined` when unset/unusable. */
+  siteUrl: string | undefined;
+  /** Resolved `llmsTxt` config, or `undefined` when the feature is off. */
+  llmsTxt: LlmsTxtConfig | undefined;
 }
 
 /** Result of {@link validateThemeOpts}. */
@@ -123,8 +130,11 @@ export async function validateThemeOpts(
   const siteName = validateSiteName(opts.siteName, diagnostics);
   const fonts = await validateFonts(opts.fonts, diagnostics, fontResolver);
   const locales = validateLocales(opts.locales, opts.defaultLocale, diagnostics);
+  // siteUrl feeds both sitemap.xml and llms.txt; llmsTxt needs it to be usable.
+  const siteUrl = validateSiteUrl(opts.siteUrl, opts.basePath, diagnostics);
+  const llmsTxt = validateLlmsTxt(opts.llmsTxt, siteUrl, diagnostics);
 
   checkUnknownKeys(opts, diagnostics, policy, knownNonThemeKeys);
 
-  return { value: { siteName, fonts, locales }, diagnostics };
+  return { value: { siteName, fonts, locales, siteUrl, llmsTxt }, diagnostics };
 }

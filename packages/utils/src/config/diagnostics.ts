@@ -105,3 +105,17 @@ export function formatDiagnostics(bag: DiagnosticBag, opts?: { color?: boolean }
 
   return lines.join('\n');
 }
+
+/**
+ * A new bag holding only the `warning`-level diagnostics of `bag`, in the same
+ * order. Lets a bridge re-print just the warnings at the END of a build, where
+ * they are actually visible — validation runs before any render work, so its
+ * output otherwise scrolls away behind the build log.
+ */
+export function warningsOnly(bag: DiagnosticBag): DiagnosticBag {
+  const out = new DiagnosticBag();
+  for (const d of bag.list) {
+    if (d.level === 'warning') out.add(d);
+  }
+  return out;
+}
