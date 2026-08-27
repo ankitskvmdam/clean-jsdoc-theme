@@ -7,6 +7,8 @@
   "outputs": [{ "name": "clean-jsdoc-theme", "path": "dist/clean-jsdoc-theme/typedoc-api-docs" }],
   "cleanJsdocTheme": {
     "basePath": "/clean-jsdoc-theme/typedoc-api-docs",
+    "siteUrl": "https://ankdev.me",
+    "llmsTxt": { "full": false },
     "favicon": "./assets/logo-small.svg",
     "siteName": {
       "light": "./assets/clean-jsdoc-theme.svg",

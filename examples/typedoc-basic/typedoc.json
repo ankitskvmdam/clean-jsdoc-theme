@@ -8,6 +8,7 @@
   "cleanJsdocTheme": {
     "siteName": "typedoc-basic",
     "siteUrl": "https://typedoc-basic.example.com",
+    "llmsTxt": true,
     "docs": "docs",
     "docGroups": ["Guides"],
     "clubSidebarItems": false,

@@ -9,6 +9,8 @@
   "opts": {
     "encoding": "utf8",
     "basePath": "/clean-jsdoc-theme/api-docs",
+    "siteUrl": "https://ankdev.me",
+    "llmsTxt": { "full": false },
     "destination": "dist/clean-jsdoc-theme/api-docs",
     "recurse": true,
     "template": "./node_modules/clean-jsdoc-theme/dist",

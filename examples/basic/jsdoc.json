@@ -18,6 +18,7 @@
     "destination": "dist",
     "recurse": true,
     "siteUrl": "https://clean-jsdoc-theme.example.com",
+    "llmsTxt": true,
     "template": "./node_modules/clean-jsdoc-theme/dist",
     "readme": "./README.md",
     "tutorials": "./tutorials",

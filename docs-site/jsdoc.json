@@ -10,6 +10,7 @@
     "encoding": "utf8",
     "basePath": "/clean-jsdoc-theme",
     "siteUrl": "https://ankdev.me/clean-jsdoc-theme/",
+    "llmsTxt": true,
     "destination": "dist/clean-jsdoc-theme",
     "recurse": true,
     "template": "./node_modules/clean-jsdoc-theme/dist",

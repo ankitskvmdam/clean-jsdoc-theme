@@ -25,15 +25,22 @@
   **Using the Theme → Guides → Components → Packages**. Within a group, pages sort
   by `order` then title.
 - `docs/index.md` is the **home page** (overrides the README).
-- **LLM index files (`llms.txt` + `llms-full.txt`).** These are **not** produced
-  by the build — regenerate them with **`pnpm gen:llms`** (root script
-  `scripts/gen-llms-txt.mjs`). It reads the English `docs/` (+ the site URL from
-  `jsdoc.json`) and writes both files into **`docs-site/dist/clean-jsdoc-theme/`**
-  by default, so they ship with the deployed site. **Run it LAST — after
-  `pnpm --filter @clean-jsdoc-theme/docs-site run docs`** — so the docs build
-  can't overwrite them. Re-run it whenever the docs change, then deploy
-  `dist/clean-jsdoc-theme/`. (Pass a target dir to write elsewhere, e.g.
-  `pnpm gen:llms ../ankdev/public/clean-jsdoc-theme`.)
+- **LLM index files (`llms.txt` + `llms-full.txt`) are produced BY THE BUILD.** This
+  site sets the **`llmsTxt`** opt (see `theme/configuration.md#llmstxt`), so every
+  build emits them — nothing to run by hand, and each locale gets its own pair under
+  its own prefix (`/`, `/hi`, `/ja`, `/zh`). The two API sub-sites set
+  `llmsTxt: { "full": false }`: a complete index, but no multi-MB concatenation of
+  every symbol page.
+  - **Do NOT run `pnpm gen:llms` for this site any more.** That root script
+    (`scripts/gen-llms-txt.mjs`) predates the feature and writes to the same
+    `dist/clean-jsdoc-theme/llms.txt`, so running it after a build **overwrites** the
+    generated file with a prose-only, English-only version. It survives only for
+    writing an index into an unrelated target dir (e.g.
+    `pnpm gen:llms ../ankdev/public/clean-jsdoc-theme`); it is a candidate for
+    deletion.
+  - Entries link each page's companion `.md`, and the `##` sections mirror the
+    sidebar groups — so keeping `docGroups` / frontmatter `group` tidy keeps
+    `llms.txt` tidy too.
 - **Out of scope for this map:** the generated API references at `/api-docs/`
   (built from `jsdoc.api.json` + `docs-site/src`) and `/typedoc-api-docs/` (built
   from `typedoc.json` + `docs-site/typedoc-src`). Those come from source comments,
@@ -52,7 +59,7 @@
 | Overview (1) | `theme/overview.md` | What the theme is and why it's split into packages; the `setu → dwar` pipeline at a high level. |
 | JSDoc Getting Started (2) | `theme/jsdoc-getting-started.md` | Install + configure the JSDoc template; minimal `jsdoc.json`. |
 | TypeDoc Getting Started (3) | `theme/typedoc-getting-started.md` | Install + configure the TypeDoc plugin (registered output). **Canonical home for TypeDoc-specific behavior:** the TypeDoc **sidebar model** (a module/folder hierarchy — unlike JSDoc's kind buckets) and **TypeDoc-specific rendering** — inheritance sections (Hierarchy / Implements / Implemented By) + Inherited-from / Overrides / Implementation-of member captions, `@group`, native TypeDoc `projectDocuments`, `@inheritDoc`, the async badge, object-literal→property-table expansion. Anchors: `#the-typedoc-sidebar`, `#typedoc-specific-rendering`. |
-| **Configuration (4)** | `theme/configuration.md` | **The full option reference** — every `opts` / `cleanJsdocTheme` key: `siteName`, `fonts`, `colors`/`darkColors`, `basePath`, `siteUrl`, `favicon`, `readme`, `docs`, `docGroups`, `defaultDocGroup`, `tutorials`, `sectionOrder`, `clubSidebarItems`, `collapsibleSidebarSections`, `menu`, `pageNav`, `copyPage`, `playground`, `scrollbar`, `customCss`/`customJs`(`File`), `hashCustomAssets`, `footer`, `meta`, `locales`/`defaultLocale`, plus "How assets are handled" (image pipeline + `staticFiles`). **Most config-option doc changes land here.** |
+| **Configuration (4)** | `theme/configuration.md` | **The full option reference** — every `opts` / `cleanJsdocTheme` key: `siteName`, `fonts`, `colors`/`darkColors`, `basePath`, `siteUrl`, `llmsTxt`, `favicon`, `readme`, `docs`, `docGroups`, `defaultDocGroup`, `tutorials`, `sectionOrder`, `clubSidebarItems`, `collapsibleSidebarSections`, `menu`, `pageNav`, `copyPage`, `playground`, `scrollbar`, `customCss`/`customJs`(`File`), `hashCustomAssets`, `footer`, `meta`, `locales`/`defaultLocale`, plus "How assets are handled" (image pipeline + `staticFiles`). **Most config-option doc changes land here.** |
 | Use with an LLM (5) | `theme/llm-skill.md` | LLM-friendliness: companion `.md` per page, the copy-page button, the downloadable agent skill. |
 | Migrating v4 → v5 (6) | `theme/migrate-v4-to-v5.md` | v4 → v5 migration: breaking changes and option changes. |
 

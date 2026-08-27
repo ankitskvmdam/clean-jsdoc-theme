@@ -13,6 +13,8 @@
     "template": "./node_modules/clean-jsdoc-theme/dist",
     "readme": "./README.md",
     "siteName": "Widget Kit",
+    "siteUrl": "https://i18n.example.com",
+    "llmsTxt": true,
     "docs": "docs",
     "fonts": {
       "heading": "Source Serif 4",
