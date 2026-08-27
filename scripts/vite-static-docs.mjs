@@ -40,13 +40,7 @@ const RESET = '[39m';
  * @param {string} [options.redirect] Send `/` here (mirrors the old serve.json redirect).
  * @param {number} [options.debounce] Quiet period before regenerating, ms.
  */
-export function staticDocs({
-  generate,
-  watch = [],
-  packages = [],
-  redirect,
-  debounce = 300,
-} = {}) {
+export function staticDocs({ generate, watch = [], packages = [], redirect, debounce = 300 } = {}) {
   if (!generate) throw new Error('staticDocs({ generate }) is required');
 
   return {
@@ -168,14 +162,6 @@ export function staticDocs({
 }
 
 /**
- * Shared server options for a generated site: serve `outDir` verbatim and keep
- * Vite's watcher out of it (see the note at the top of this file).
- *
- * @param {object} options
- * @param {string} options.outDir Directory holding the generated site.
- * @param {number} options.port
- */
-/**
  * A logger that drops one known-benign warning.
  *
  * dwar's island loader does `import(src)` where `src` comes from a per-page map of
@@ -194,6 +180,14 @@ function quietLogger() {
   return logger;
 }
 
+/**
+ * Shared server options for a generated site: serve `outDir` verbatim and keep
+ * Vite's watcher out of it (see the note at the top of this file).
+ *
+ * @param {object} options
+ * @param {string} options.outDir Directory holding the generated site.
+ * @param {number} options.port
+ */
 export function staticDocsServer({ outDir, port }) {
   const generated = path.resolve(outDir);
   return {

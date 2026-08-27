@@ -229,7 +229,10 @@ export function buildLlmsTxt(input: LlmsTxtInput): LlmsTxtOutput | null {
   }
   out.push(`- [Site home](${siteRoot}): the rendered documentation site`);
 
-  const llms = `${out.join('\n').replace(/\n{3,}/g, '\n\n').trimEnd()}\n`;
+  const llms = `${out
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trimEnd()}\n`;
   if (!config.full) return { llms };
 
   // ---- llms-full.txt ----
@@ -254,5 +257,11 @@ export function buildLlmsTxt(input: LlmsTxtInput): LlmsTxtOutput | null {
     );
   }
 
-  return { llms, full: `${fullOut.join('\n').replace(/\n{4,}/g, '\n\n\n').trimEnd()}\n` };
+  return {
+    llms,
+    full: `${fullOut
+      .join('\n')
+      .replace(/\n{4,}/g, '\n\n\n')
+      .trimEnd()}\n`,
+  };
 }

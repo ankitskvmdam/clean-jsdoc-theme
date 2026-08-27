@@ -25,7 +25,16 @@ export default defineConfig({
         'clean-jsdoc-theme-artifacts',
       ],
       // A change in any of these cascades here via `turbo watch build`.
-      packages: ['clean-jsdoc-theme', 'typedoc', 'dwar', 'rang', 'setu', 'utils', 'aadesh', 'bhasha'],
+      packages: [
+        'clean-jsdoc-theme',
+        'typedoc',
+        'dwar',
+        'rang',
+        'setu',
+        'utils',
+        'aadesh',
+        'bhasha',
+      ],
     }),
   ],
 });
