@@ -938,7 +938,7 @@ End-to-end check:
 ```sh
 cd examples/basic
 pnpm run docs            # build:theme (turbo) → jsdoc -c jsdoc.json → dist/
-pnpm dlx serve dist
+pnpm run dev             # or: watch packages + regenerate + live-reload on :3000
 ```
 
 The prose-first counterpart is **`docs-site/`** — a dogfood site driven by
@@ -956,9 +956,43 @@ incl. dwar's CSS regen) in topo order, cached so unchanged packages are skipped.
 Without this step a change in any package other than `clean-jsdoc-theme` would
 leave a stale `dist` and never reach the site.
 
-For a watch loop, `pnpm run dev` runs `turbo watch build` (cascades rebuilds on
-any package edit) alongside `nodemon` (watches every package's `dist` and
-re-runs `jsdoc`) and `serve`.
+### The dev loop (`pnpm run dev`) — Vite
+
+Every site (`docs-site` + each `examples/*`) has a `vite.config.mjs` built on the
+shared plugin in **`scripts/vite-static-docs.mjs`**. `pnpm run dev` runs exactly
+two processes:
+
+1. **`turbo watch build`** — rebuilds packages on source edits. Kept because it
+   already knows the dependency graph, so a change in `utils` cascades correctly
+   through `setu`/`rang` → `dwar` → the bridge.
+2. **`vite`** — serves the generated site AND regenerates it. The plugin watches
+   the site's own sources plus every `packages/<pkg>/dist`, debounces, re-runs the
+   site's `build:docs`, then pushes a **full-reload** over Vite's websocket.
+
+So editing any package propagates all the way to a reloaded browser tab with no
+manual step. Ports: basic `3000`, docs-site `3001`, typedoc-basic `3002`,
+typedoc-parity `3003`, with-i18n `3004`.
+
+These sites are **not** Vite apps — the HTML is pre-generated, so Vite is used as
+a dev server with `appType: 'mpa'` (directory requests resolve `index.html`, no
+SPA fallback) and dependency discovery off. Three details are deliberate:
+
+- Vite's watcher **ignores its own `root`** (the output directory). Without that,
+  writing thousands of generated files both spams reloads and feeds the generator
+  its own output, so the loop never settles. Reloads are driven explicitly by the
+  plugin after generation succeeds.
+- A **failed generation leaves the last good output in place** and logs the exit
+  code, rather than blanking the site.
+- One Vite warning is filtered by a `customLogger`: dwar's island loader does
+  `import(src)` from a per-page map of content-hashed chunk names, which
+  import-analysis can't see through. It's intentional and resolves natively in the
+  browser; suppressing it in dev tooling avoids shipping a `@vite-ignore` comment
+  into every user's site.
+
+This replaced a `nodemon` + `serve` pair that had no reload channel at all (every
+change needed a manual refresh), watched `dist` by file extension so CSS/SVG
+regenerations were missed, and — in the two TypeDoc examples, which had no
+`nodemon.json` — watched each site's own output directory.
 
 Or render dwar in isolation against a fixture: `pnpm --filter @clean-jsdoc-theme/dwar run smoke` → `packages/dwar/preview/`.
 

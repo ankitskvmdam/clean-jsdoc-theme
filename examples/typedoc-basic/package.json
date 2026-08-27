@@ -7,8 +7,8 @@
     "build:theme": "pnpm exec turbo run build --filter=@clean-jsdoc-theme/typedoc",
     "build:docs": "typedoc",
     "docs": "pnpm run build:theme && typedoc",
-    "dev": "pnpm run build:theme && concurrently -k -n pkgs,docs,serve \"pnpm exec turbo watch build --filter=@clean-jsdoc-theme/typedoc\" \"nodemon\" \"serve dist -l 3002\"",
-    "serve": "serve dist -l 3002",
+    "dev": "pnpm run build:theme && concurrently -k -n pkgs,site \"pnpm exec turbo watch build --filter=@clean-jsdoc-theme/typedoc\" \"vite\"",
+    "serve": "vite",
     "clean": "node ../../scripts/clean.mjs dist",
     "clean-node-modules": "node ../../scripts/clean.mjs node_modules"
   },
@@ -23,9 +23,8 @@
   "devDependencies": {
     "@clean-jsdoc-theme/typedoc": "workspace:^",
     "concurrently": "^9.0.0",
-    "nodemon": "^3.0.0",
-    "serve": "^14.0.0",
     "typedoc": "^0.28.0",
-    "typescript": "^5.5.0"
+    "typescript": "^5.5.0",
+    "vite": "^8.1.3"
   }
 }
