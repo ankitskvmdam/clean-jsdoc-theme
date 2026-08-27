@@ -167,7 +167,19 @@ export function TocPopover({ headings }: TocPopoverProps) {
                   aria-current={isActive ? 'location' : undefined}
                   onClick={() => setOpen(false)}
                   class={cn(
-                    'truncate py-1.5 transition-colors hover:text-[var(--clean-accent)]',
+                    // `shrink-0` is load-bearing: this is a COLUMN flex container with a
+                    // capped height (`max-h-[50vh]`), so the main axis is vertical and
+                    // every item is shrinkable by default. An item's automatic minimum
+                    // size would normally floor it at its content height, but that floor
+                    // drops to 0 when `overflow` is anything but visible — and `truncate`
+                    // sets it to hidden. Without this, a heading list taller than the cap
+                    // squeezes every row down to just its padding (12px), clipping and
+                    // overlapping the text instead of scrolling. Height stays intrinsic
+                    // (line box + `py-1.5` = 32px at the default font size) so it still
+                    // tracks the reader's font-size/line-spacing setting.
+                    // NB: keep Tailwind class-shaped words out of this comment — the v4
+                    // scanner reads source as plain text and would emit dead utilities.
+                    'shrink-0 truncate py-1.5 transition-colors hover:text-[var(--clean-accent)]',
                     isActive ? 'text-[var(--clean-accent)]' : 'text-[var(--clean-fg-muted)]'
                   )}
                   style={{ paddingInlineStart: `${getItemOffset(h.depth - minDepth + 2)}px` }}
