@@ -86,6 +86,14 @@ export interface CleanJsdocThemeBlock {
    * origin is used; the deploy sub-path comes from `basePath`.
    */
   siteUrl?: unknown;
+  /**
+   * Emit an llmstxt.org index — `llms.txt` at the output root, plus
+   * `llms-full.txt` unless `full: false`. Accepts `true`
+   * (⇒ `{ full: true, api: true }`) or `{ full?: boolean, api?: boolean | 'index' }`.
+   * Requires an absolute site URL: `siteUrl` here, or TypeDoc's own
+   * `hostedBaseUrl` (see {@link resolveSiteUrl}).
+   */
+  llmsTxt?: unknown;
   /** Escalate validation errors (bad font / unknown key) to a hard failure. */
   strict?: unknown;
   [key: string]: unknown;
@@ -104,11 +112,53 @@ export function declareThemeOption(app: Application): void {
     help:
       'clean-jsdoc-theme options (siteName, fonts, sectionOrder, docs, docGroups, ' +
       'defaultDocGroup, menu, clubSidebarItems, collapsibleSidebarSections, copyPage, ' +
-      'pageNav, scrollbar, playground, aiPrompt, footer, favicon, meta, basePath, siteUrl, strict).',
+      'pageNav, scrollbar, playground, aiPrompt, footer, favicon, meta, basePath, siteUrl, ' +
+      'llmsTxt, strict).',
     type: ParameterType.Object,
     defaultValue: {},
   };
   app.options.addDeclaration(declaration);
+}
+
+/**
+ * Resolve the effective public site URL for a TypeDoc build.
+ *
+ * TypeDoc has its own project-wide `hostedBaseUrl` (a core option since 0.26 —
+ * it drives canonical links and the default theme's `sitemap.xml`), so a user who
+ * already set it shouldn't have to repeat themselves in our block. Precedence is
+ * **specific over global**: `cleanJsdocTheme.siteUrl` wins over `hostedBaseUrl`,
+ * so setting both still lets the theme-level key override the global one.
+ *
+ * When both are set to DIFFERENT values we return a warning naming the winner;
+ * identical values are the common belt-and-braces case and stay silent.
+ *
+ * Note: TypeDoc treats `hostedBaseUrl` as a full base *including* path, while our
+ * contract uses the origin only (the sub-path comes from `basePath`). Utils'
+ * `validateSiteUrl` warns about that dropped path, so the mismatch is surfaced
+ * rather than silently producing wrong links.
+ */
+export function resolveSiteUrl(
+  blockSiteUrl: unknown,
+  hostedBaseUrl: unknown
+): { siteUrl?: string; warning?: string } {
+  const clean = (value: unknown): string | undefined => {
+    if (typeof value !== 'string') return undefined;
+    const trimmed = value.trim();
+    return trimmed === '' ? undefined : trimmed;
+  };
+
+  const specific = clean(blockSiteUrl);
+  const global = clean(hostedBaseUrl);
+
+  if (!specific) return global ? { siteUrl: global } : {};
+  if (!global || global === specific) return { siteUrl: specific };
+
+  return {
+    siteUrl: specific,
+    warning:
+      `both \`cleanJsdocTheme.siteUrl\` ("${specific}") and TypeDoc's \`hostedBaseUrl\` ` +
+      `("${global}") are set — using \`cleanJsdocTheme.siteUrl\`.`,
+  };
 }
 
 /**

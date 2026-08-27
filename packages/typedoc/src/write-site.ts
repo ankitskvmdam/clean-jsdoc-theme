@@ -49,6 +49,7 @@ import {
   topLevelSectionLabels,
   unmatchedCollapsibleSections,
   validateThemeOpts,
+  warningsOnly,
   withBase,
 } from '@clean-jsdoc-theme/utils';
 import type { FontSet, PlaygroundProvider, TDoclet, ValidatedFonts } from '@clean-jsdoc-theme/utils';
@@ -62,7 +63,7 @@ import {
   rewriteImageRefs,
 } from './docs';
 import { writeOutputFiles } from './write-output-files';
-import { KNOWN_NON_THEME_KEYS, readThemeOption } from './options';
+import { KNOWN_NON_THEME_KEYS, readThemeOption, resolveSiteUrl } from './options';
 import type { CleanJsdocThemeBlock } from './options';
 
 /**
@@ -626,8 +627,19 @@ export async function writeSite(
   // resolver in utils; it's fail-open, so an offline build never breaks on it.
   const block = readThemeOption(app);
   const fontResolver = createGoogleFontResolver();
+
+  // TypeDoc carries its own project-wide `hostedBaseUrl`; fall back to it so a
+  // TypeDoc user who already set it gets sitemap.xml/llms.txt without repeating
+  // themselves. The theme-specific key wins — see `resolveSiteUrl`. Resolved
+  // BEFORE validation so utils validates the URL we'll actually use (and warns
+  // about a dropped path segment, which `hostedBaseUrl` commonly carries).
+  const resolvedSiteUrl = resolveSiteUrl(block.siteUrl, app.options.getValue('hostedBaseUrl'));
+  if (resolvedSiteUrl.warning) {
+    logger.warn(`[clean-jsdoc-theme] ${resolvedSiteUrl.warning}`);
+  }
+
   const { value, diagnostics } = await validateThemeOpts({
-    opts: block,
+    opts: { ...block, siteUrl: resolvedSiteUrl.siteUrl },
     fontResolver,
     unknownKeyPolicy: 'warn-all',
     knownNonThemeKeys: KNOWN_NON_THEME_KEYS,
@@ -819,9 +831,12 @@ export async function writeSite(
     // unaffected.
     ...(Object.keys(inlineSvgs).length > 0 ? { inlineSvgs } : {}),
     // Emit sitemap.xml when a public site URL is configured (needs absolute URLs).
-    ...(typeof block.siteUrl === 'string' && block.siteUrl.trim().length > 0
-      ? { siteUrl: block.siteUrl.trim() }
-      : {}),
+    // `value.siteUrl` is the validated form of `cleanJsdocTheme.siteUrl` ?? TypeDoc's
+    // `hostedBaseUrl`; a malformed URL warned above and arrives here as `undefined`.
+    ...(value.siteUrl ? { siteUrl: value.siteUrl } : {}),
+    // llms.txt / llms-full.txt (llmstxt.org). `undefined` means either unset or
+    // "enabled but no usable site URL" — the latter already warned in validation.
+    ...(value.llmsTxt ? { llmsTxt: value.llmsTxt } : {}),
   });
 
   const outputFiles = [
@@ -852,6 +867,14 @@ export async function writeSite(
       gzipSizer,
     })
   );
+
+  // Opts warnings were printed BEFORE any render work, so by now they've scrolled
+  // away behind the build log. Re-print just the warnings here — near the last
+  // thing on screen — so a skipped llms.txt or a font fallback can't go unnoticed.
+  const optsWarnings = warningsOnly(diagnostics);
+  if (optsWarnings.list.length > 0) {
+    logger.warn(formatDiagnostics(optsWarnings));
+  }
 
   // Render failures are reported, never thrown — the rest of the site is intact.
   if (result.errors && result.errors.length > 0) {
