@@ -27,11 +27,11 @@ Claude, ChatGPT, or Perplexity (all opt-out if you'd rather not).
 
 ## What you get
 
-### Two kinds of search, zero setup
+### Search, zero setup
 
 A `Ctrl K` fuzzy command palette that ranks across titles, descriptions, and full
-page text — and deep-links straight to any class member by name. Turn on an
-optional Pagefind full-text index with a single flag.
+page text — and deep-links straight to any class member by name. Always on,
+nothing to configure.
 
 ### Prose and API in one site
 
@@ -105,7 +105,7 @@ holds the shared types and Zod schemas that define the boundary contract.
 | [`@clean-jsdoc-theme/utils`](https://www.npmjs.com/package/@clean-jsdoc-theme/utils) | Shared types, Zod schemas, and the `SiteManifest` contract every other package builds against. | [Overview](/packages/utils-overview) · [Examples](/packages/utils-examples) | [GitHub](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/packages/utils) |
 | [`@clean-jsdoc-theme/setu`](https://www.npmjs.com/package/@clean-jsdoc-theme/setu) | Processes JSDoc doclets into pages, nav, and cross-resolved links — emits the `SiteManifest`. Does no I/O. | [Overview](/packages/setu-overview) · [Examples](/packages/setu-examples) | [GitHub](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/packages/setu) |
 | [`@clean-jsdoc-theme/rang`](https://www.npmjs.com/package/@clean-jsdoc-theme/rang) | Preact component library, MDX component map, and island registry — the UI dwar bundles for SSR and hydration. | [Overview](/packages/rang-overview) · [Examples](/packages/rang-examples) | [GitHub](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/packages/rang) |
-| [`@clean-jsdoc-theme/dwar`](https://www.npmjs.com/package/@clean-jsdoc-theme/dwar) | Renders a `SiteManifest` to in-memory HTML/CSS/JS (Preact + MDX + utility CSS + esbuild islands), plus a Pagefind hook. Pure. | [Overview](/packages/dwar-overview) · [Examples](/packages/dwar-examples) | [GitHub](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/packages/dwar) |
+| [`@clean-jsdoc-theme/dwar`](https://www.npmjs.com/package/@clean-jsdoc-theme/dwar) | Renders a `SiteManifest` to in-memory HTML/CSS/JS (Preact + MDX + utility CSS + esbuild islands). Pure. | [Overview](/packages/dwar-overview) · [Examples](/packages/dwar-examples) | [GitHub](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/packages/dwar) |
 
 ### Entry points
 

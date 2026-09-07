@@ -3,17 +3,16 @@
 Pure SiteManifest → HTML/CSS/JS renderer. Compiles MDX through Preact components
 from `@clean-jsdoc-theme/rang`, server-renders each page, bundles the islands in
 one split esbuild build (a shared chunk + a content-hashed entry chunk per
-island), emits CSS, and provides a separate post-write Pagefind step.
+island), and emits CSS.
 
 ## Public API
 
-- `render(manifest, opts): Promise<RenderResult>` — pure async function returning an in-memory `RenderResult` (`OutputFile[]`, `SearchEntry[]`, `errors`, `stats`). Callers persist the files themselves. A page that fails to compile is skipped and reported in `RenderResult.errors`, never thrown.
-- `runPagefindAgainstDir(destination): Promise<void>` — post-write step that builds the Pagefind search index against the on-disk HTML output.
+- `render(manifest, opts): Promise<RenderResult>` — the package's only export: a pure async function returning an in-memory `RenderResult` (`OutputFile[]`, `SearchEntry[]`, `errors`, `stats`). Callers persist the files themselves. A page that fails to compile is skipped and reported in `RenderResult.errors`, never thrown.
 
 ## Usage
 
 ```ts
-import { render, runPagefindAgainstDir } from '@clean-jsdoc-theme/dwar';
+import { render } from '@clean-jsdoc-theme/dwar';
 import { generateSite } from '@clean-jsdoc-theme/setu';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
@@ -46,8 +45,6 @@ for (const file of result.files) {
   await mkdir(dirname(target), { recursive: true });
   await writeFile(target, file.contents);
 }
-
-await runPagefindAgainstDir(outDir);
 ```
 
 ## What `render()` emits
@@ -74,7 +71,7 @@ to enhance it.
 ## Pipeline placement
 
 ```
-SiteManifest ──► dwar.render ──► OutputFile[] ──► caller writes ──► runPagefindAgainstDir
+SiteManifest ──► dwar.render ──► OutputFile[] ──► caller writes ──► static site
                      │
                      ├── MDX via @mdx-js/mdx + rang.defaultMdxComponents
                      ├── SSR via preact-render-to-string + rang.Layout
@@ -85,7 +82,7 @@ SiteManifest ──► dwar.render ──► OutputFile[] ──► caller write
 
 ## Notes
 
-- `render()` is **pure**: no `fs`, no `process.cwd`, no logging. Persistence is the caller's responsibility; `runPagefindAgainstDir` is the only function in this package that touches disk.
+- `render()` is **pure**: no `fs`, no `process.cwd`, no logging. Persistence is the caller's responsibility. The one disk touch is the opt-in island-bundle cache (`RenderOptions.islandCacheDir`); omit it and `render()` touches no disk at all.
 - **CSS is compiled once at dwar's own build time.** `scripts/build-css.mjs` runs the Tailwind v4 CLI over rang's + dwar's source and inlines the result into `src/generated/utility-css.ts`. Tailwind never runs at the consumer's `jsdoc` build, so `render()` stays pure and users need no Tailwind config; only the `:root` / `[data-theme="dark"]` token block is emitted per `ThemeConfig` at render time.
 - A defensive `{@link Foo}` → `` `@link Foo` `` preprocessor in `src/mdx.ts` is kept as a safety net. setu now resolves links upstream, so only genuinely-unresolvable tags reach this code, where the inline-code fallback keeps the page compiling.
 

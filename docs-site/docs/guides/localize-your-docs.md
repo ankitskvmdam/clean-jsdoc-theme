@@ -132,8 +132,8 @@ automatically from the set of locales each page actually exists in.
 
 ## 6. Preview & deploy
 
-Serve the output over **HTTP** (not `file://`) — the full-text Pagefind index is
-fetched at runtime and needs a real server:
+Serve the output over **HTTP** (not `file://`) — the island chunks and the search
+index are fetched at runtime and need a real server:
 
 ```sh
 pnpm dlx serve dist

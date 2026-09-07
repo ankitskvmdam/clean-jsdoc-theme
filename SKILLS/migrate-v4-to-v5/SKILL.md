@@ -137,7 +137,7 @@ successor to v4's `codepen`), `favicon`, and the source viewer
 | `menu` | `menu` | changed | Reshaped (see step 4); `target`/`class` dropped, `icon` added. |
 | `sections` | `sectionOrder` | renamed | Filter + order sidebar sections. |
 | `meta` | `meta` | changed | Supported again — array of attribute maps → `<meta>` tags in `<head>` (same shape as v4). |
-| `search` | — | removed | Always-on fuzzy search + optional Pagefind. |
+| `search` | — | removed | Always-on fuzzy search. |
 | `codepen` | `playground` | changed | v4 prefilled a CodePen from `@example`; v5 generalizes it to `opts.playground` + the `@playground` tag (CodePen/JSFiddle/CodeSandbox). For an existing pen by URL, use `@iframe`. |
 | `static_dir` | — | removed | Use JSDoc's own static-file config. |
 | `create_style` | `customCss` | renamed | Inline CSS, injected after the theme stylesheet. |
@@ -159,7 +159,7 @@ A machine-readable version of this exact map (for codemods) lives at
 ## 3. Removed features → replacement
 
 - `default_theme` / `fallback-*` → built-in light/dark + runtime toggle (no opt).
-- `search` toggle → always on (fuzzy + optional Pagefind).
+- `search` toggle → always on (built-in fuzzy index).
 - `static_dir` → JSDoc's own static-file copying. (`favicon` is back as an opt.)
 - `homepageTitle`, `includeFilesListInHomepage`, `exclude_inherited`,
   `displayModuleHeader`, `sort` → no replacement opt.
@@ -229,7 +229,7 @@ dropped; `footer` stays (now also accepts `{ file }`); `include_css`→`customCs
 
 ```sh
 npx jsdoc -c jsdoc.json
-npx serve <destination>     # Pagefind full-text search needs HTTP
+npx serve <destination>     # islands + search index are fetched, so HTTP
 ```
 
 Check:

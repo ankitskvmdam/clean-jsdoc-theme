@@ -61,7 +61,7 @@ is the engine) does the following, in order:
   deterministic.
 - **Emits the fuzzy-search index** — a JSON file (one entry per page plus
   member/method deep-links) that the `cmdk` command-palette island fetches at
-  runtime. This is separate from Pagefind's full-text bundle.
+  runtime. This is the only search index the theme ships.
 
 ### Source pages skip MDX
 
@@ -84,14 +84,9 @@ memory and returns them; the caller persists them. There is no `fs` write, no
 `process.cwd()`, no logging in the render path. The module docstring states it
 outright: *"`render()` is pure: it returns an in-memory `RenderResult`."*
 
-Two carefully-scoped exceptions prove the rule, and neither breaks purity for the
-default path:
+One carefully-scoped exception proves the rule, and it doesn't break purity for
+the default path:
 
-- **`runPagefindAgainstDir`** is the **only** filesystem touch in the package,
-  and it is a *separate, post-write* function — never called from `render`. It
-  operates on a directory of already-written HTML and emits the Pagefind bundle
-  under `<dir>/pagefind/`
-  ([`pagefind.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/src/pagefind.ts)).
 - **`opts.islandCacheDir`** is opt-in. When (and only when) a bridge supplies it,
   the esbuild island bundle is read/written from an on-disk cache; omit it — the
   default — and bundling stays in memory. Reading `os.cpus()` to size the worker
@@ -141,27 +136,28 @@ failed), and a `stats` block (`pageCount`, `assetCount`, `cssBytes`, `jsBytes`,
 `durationMs`)
 ([`render.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/utils/src/site/render.ts)).
 
-> There is intentionally **no `embedSearchIndex` flag**. Full-text search is the
-> separate `runPagefindAgainstDir` post-write step — the renderer never inlines a
-> Pagefind bundle.
+> There is intentionally **no `embedSearchIndex` flag**. The fuzzy index is
+> always emitted as one of `result.files`, and the `cmdk` island fetches it
+> lazily — the renderer never inlines it into the HTML.
 
 ## Dependencies
 
-dwar depends on the three sibling packages it sits downstream of, plus the render
+dwar depends on the two sibling packages it sits downstream of, plus the render
 toolchain
 ([`package.json`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/package.json)):
 
 - **`@clean-jsdoc-theme/utils`** — the boundary types (`SiteManifest`,
   `RenderOptions`, `RenderResult`, `OutputFile`, …); see
   [utils Overview](/packages/utils-overview).
-- **`@clean-jsdoc-theme/setu`** — the manifest generator (used by the smoke
-  script); see [setu Overview](/packages/setu-overview).
 - **`@clean-jsdoc-theme/rang`** — the Preact components and island registry dwar
   bundles and composes; see [rang Overview](/packages/rang-overview).
 - **`preact` / `preact-render-to-string`** for SSR, **`@mdx-js/mdx`** +
   **`@shikijs/rehype`** / **`shiki`** for the MDX compile + highlighting,
-  **`esbuild`** for the island bundle, and **`pagefind`** (optional) for the
-  post-write index.
+  and **`esbuild`** for the island bundle.
+
+dwar deliberately does **not** depend on `@clean-jsdoc-theme/setu` — the
+setu→dwar boundary is one-way, and dwar consumes only the `SiteManifest` type
+from `utils`.
 
 ## Read the source
 
@@ -192,9 +188,6 @@ The maintainer wants you sent to the code — start here:
   [`islands-loader.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/src/islands-loader.ts)
 - **The CSS pipeline:**
   [`css.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/src/css.ts)
-- **The (only) filesystem touch:**
-  [`pagefind.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/src/pagefind.ts)
-  (`runPagefindAgainstDir`)
 - **The runnable example:**
   [`scripts/smoke.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/scripts/smoke.ts)
 

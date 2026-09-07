@@ -3,8 +3,7 @@
 `clean-jsdoc-theme` v5 is a pnpm + Turborepo monorepo. JSDoc invokes a thin
 bridge that wires four single-responsibility packages into a one-way pipeline,
 producing a static documentation site (SSR HTML + a co-located `.md` per page for
-LLMs + lazy-hydrated Preact islands + a fuzzy search index, plus an optional
-Pagefind full-text index).
+LLMs + lazy-hydrated Preact islands + a fuzzy search index).
 
 ---
 
@@ -17,8 +16,9 @@ Pagefind full-text index).
 - The setu→dwar contract lives once, in `utils/src/site/*`. Both sides import it.
 - **setu never imports dwar or rang** — the boundary is one-way.
 - **dwar never re-reads doclets** — it consumes only a `SiteManifest`.
-- **`dwar.render()` is pure** — no `fs`, no `process.cwd`, no logging. The only
-  disk touch is `runPagefindAgainstDir` (a separate post-write step).
+- **`dwar.render()` is pure** — no `fs`, no `process.cwd`, no logging. The one
+  exception is the opt-in island-bundle cache (`RenderOptions.islandCacheDir`);
+  omit it and `render()` touches no disk at all. The bridge owns all other I/O.
 - **`dwar.render()` is resilient** — a single page that fails to compile (e.g.
   MDX that won't parse) is skipped and reported in `RenderResult.errors` (with a
   line/column + code-frame when the error is positioned), never thrown. One bad
@@ -465,8 +465,7 @@ CodePen / JSFiddle / CodeSandbox via a client-side form POST / parameterized lin
 ### `@clean-jsdoc-theme/dwar` — `SiteManifest` → HTML/CSS/JS
 
 A pure renderer. Server-renders pages, bundles the islands in one split build (a
-shared chunk + a content-hashed entry chunk per island), emits CSS, and exposes
-a separate Pagefind step.
+shared chunk + a content-hashed entry chunk per island), and emits CSS.
 
 ```
 dwar/src/
@@ -528,7 +527,6 @@ dwar/src/
 │                         #   menu/external entries skipped); plainText flattens
 │                         #   {@link}/entities out of descriptions. render() emits both
 │                         #   when opts.siteUrl AND opts.llmsTxt are set
-├── pagefind.ts           # runPagefindAgainstDir(destination)  — the only fs touch
 styles/
 └── tailwind.css          # Tailwind v4 input: @theme tokens, tw-animate-css, base
 scripts/
@@ -571,8 +569,7 @@ never on source pages. When `RenderOptions.siteUrl` is set, dwar also emits a
 **`sitemap.xml`** at the output root — one `<loc>` per non-hidden page (the same
 set as `RenderResult.search`, so hidden source-viewer pages are excluded), using
 `siteUrl`'s origin + `theme.basePath` + slug; an unparseable URL emits nothing
-rather than a broken sitemap. The full-text Pagefind bundle is a separate
-post-write step.
+rather than a broken sitemap.
 
 When `RenderOptions.llmsTxt` is **also** set, dwar emits **`llms.txt`** — an
 [llmstxt.org](https://llmstxt.org) index: one h1 (`pkg.name` → site-name text →
@@ -633,8 +630,8 @@ clean-jsdoc-theme/src/
 ├── publish.ts            # publish(taffyData, opts, tutorials) — the entry.
 │                         #   resolves pkg + theme (opts.siteName / fonts → tokens),
 │                         #   normalizes the README (→ home) + tutorial tree (→ guides)
-│                         #   into setu opts, calls setu → dwar, writes files, runs
-│                         #   Pagefind. siteName is text OR a logo set — local logo
+│                         #   into setu opts, calls setu → dwar, writes files.
+│                         #   siteName is text OR a logo set — local logo
 │                         #   images are copied to content-hashed _assets/logo-<key>.<hash>.<ext>.
 │                         #   Validates opts early
 │                         #   via utils validateThemeOpts (diagnostics + live Google-Font
@@ -702,7 +699,7 @@ them via dynamic `import()` of a resolved `file://` URL.
 
 The TypeDoc twin of the JSDoc bridge: it feeds TypeDoc's reflection tree through
 the SAME `setu → dwar` pipeline, so a TypeDoc project gets identical output (SSR
-HTML + co-located `.md` + lazy islands + fuzzy search + optional Pagefind). A
+HTML + co-located `.md` + lazy islands + fuzzy search). A
 TypeDoc **plugin** (`load(app)`) that registers a custom **output** — selected
 via the `outputs` option, not a CSS theme extending `DefaultTheme`. ESM all the
 way, so setu/dwar/utils are imported directly (no CJS dynamic-import dance).
@@ -718,7 +715,7 @@ typedoc/src/
 │                           #   it's a dedicated namespace; bad font/typo only WARNS
 │                           #   unless `strict`), adapts reflections → TDoclet[] →
 │                           #   salty.taffy → setu generateSite → dwar render →
-│                           #   write files → Pagefind. Threads validated siteName/
+│                           #   write files. Threads validated siteName/
 │                           #   fonts + normalized sectionOrder/menu/clubSidebarItems/
 │                           #   collapsibleSidebarSections/copyPage/pageNav/aiPrompt through
 │                           #   (warns on unmatched labels), and walks the

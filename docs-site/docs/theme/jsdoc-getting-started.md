@@ -92,8 +92,8 @@ npx jsdoc -c jsdoc.json
 
 <step label="Serve">
 
-The site is written to `dist/`. Open `dist/index.html`, or serve the folder
-(Pagefind's full-text index needs HTTP to load):
+The site is written to `dist/`. Open `dist/index.html`, or serve the folder (the
+island chunks and the search index are fetched, which `file://` blocks):
 
 ```sh
 npx serve dist

@@ -11,7 +11,7 @@ dwar 是**内部**包。在普通的文档构建中你不会调用 `render` —�
 渲染器时，你才会直接使用它。
 
 最佳的起点是该包自带的可运行示例：**smoke
-脚本**。它针对一个固定数据（fixture）执行了完整的 `setu → dwar → disk` 路径，而且
+脚本**。它针对一个手写的 manifest 执行了完整的 `dwar → disk` 路径，而且
 因为它是真实运行的代码，所以它是本文档中最诚实的示例。
 
 如果你只是想配置主题，请改为参阅 [配置](/theme/configuration)。
@@ -23,10 +23,15 @@ pnpm --filter @clean-jsdoc-theme/dwar run smoke
 ```
 
 [`scripts/smoke.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/scripts/smoke.ts)
-会拉取 setu 的 JSDoc taffy 固定数据，将其传入 `generateSite()` 得到一个
-`SiteManifest`，把该 manifest 交给 dwar 的 `render()`，将返回的文件**写入**
-`packages/dwar/preview/`，并且 —— 如果安装了 `pagefind` —— 针对该目录构建
-搜索索引。它的存在是为了便于做视觉上的健全性检查。
+会手写构造一个小的 `SiteManifest`——一个 index 页面、一个带标题与代码块的指南、
+一个 API 页面，以及一个 `kind: 'source'` 查看器——把它交给 dwar 的 `render()`，
+再将返回的文件**写入** `packages/dwar/preview/`。它的存在是为了便于做视觉上的
+健全性检查。
+
+manifest 是刻意手写的：dwar 不应依赖 setu（setu→dwar 的边界是单向的）。完整的
+`setu → dwar → disk` 路径由
+[`examples/basic`](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/examples/basic)
+端到端地执行。
 
 整个端到端流程是：**manifest 进入 → 文件输出 → 你写入它们 → preview/**。
 
@@ -37,9 +42,9 @@ pnpm --filter @clean-jsdoc-theme/dwar run smoke
 （[`smoke.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/scripts/smoke.ts)）：
 
 ```ts
-import { render, runPagefindAgainstDir } from '@clean-jsdoc-theme/dwar';
+import { render } from '@clean-jsdoc-theme/dwar';
 import type { ThemeConfig } from '@clean-jsdoc-theme/dwar';
-import { generateSite } from '@clean-jsdoc-theme/setu';
+import type { SiteManifest } from '@clean-jsdoc-theme/utils';
 
 const theme: ThemeConfig = {
   tokens: {
@@ -51,7 +56,12 @@ const theme: ThemeConfig = {
   basePath: '/',
 };
 
-const manifest = generateSite(collection, { pkg: { name: 'clean-jsdoc-theme', version: '…' } });
+const manifest: SiteManifest = {
+  buildId: 'smoke',
+  pkg: { name: 'clean-jsdoc-theme', version: '…' },
+  nav: [{ label: 'Home', slug: 'index' }],
+  pages: [{ slug: 'index', frontmatter: { title: 'Home', kind: 'index' }, body: 'Hello.\n' }],
+};
 
 const result = await render(manifest, { theme });
 //                              ^ only `theme` is required
@@ -95,8 +105,7 @@ interface RenderResult {
 ```
 
 实践中的纯函数契约：**`render()` 在内存中返回文件；由你来写入
-它们。** smoke 脚本所做的正是这件事 —— 一个简单的写入循环，然后是可选的
-Pagefind 步骤
+它们。** smoke 脚本所做的正是这件事 —— 一个简单的写入循环
 （[`smoke.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/scripts/smoke.ts)）：
 
 ```ts
@@ -110,19 +119,12 @@ for (const file of result.files) {
   await mkdir(dirname(out), { recursive: true });
   await writeFile(out, typeof file.contents === 'string' ? file.contents : Buffer.from(file.contents));
 }
-
-// Pagefind is a SEPARATE post-write step, against the written directory.
-try {
-  await runPagefindAgainstDir(previewDir);
-} catch (err) {
-  console.warn(`[smoke] pagefind skipped: ${(err as Error).message}`);
-}
 ```
 
 真正的桥接器遵循完全相同的形态。JSDoc 桥接器
 （[`publish.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/clean-jsdoc-theme/src/publish.ts)）
 调用 `render`，把 dwar 的文件与*它自己*复制的资源（logo、
-自定义 CSS/JS、文档图片）拼接起来，将它们全部写入，然后运行 Pagefind：
+自定义 CSS/JS、文档图片）拼接起来，再将它们全部写入：
 
 ```ts
 const result = await render(manifest, {
@@ -139,20 +141,12 @@ await writeOutputFiles(absoluteDestination, outputFiles);
 if (result.errors && result.errors.length > 0) {
   for (const e of result.errors) console.warn(`  - ${e.slug}: ${e.message}`);
 }
-
-// Pagefind is optional — a missing/failing index must not break the build.
-try {
-  await runPagefindAgainstDir(absoluteDestination);
-} catch (err) {
-  console.warn(`pagefind step skipped (optional) — ${(err as Error).message}`);
-}
 ```
 
 TypeDoc 桥接器
 （[`write-site.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/typedoc/src/write-site.ts)）
 在 ESM 中做同样的事情：`render(manifest, { theme, destination, islandCacheDir })`，
-然后是 `writeOutputFiles`，再然后是 `runPagefindAgainstDir`。两者都将 `errors`
-数组视为警告，并将 Pagefind 步骤视为尽力而为。
+然后是 `writeOutputFiles`。两者都将 `errors` 数组视为警告。
 
 > 注意写入循环中的分工：**dwar 的 `result.files`** 是
 > HTML、配套的 `.md`、样式表、island 分块以及
@@ -163,11 +157,12 @@ TypeDoc 桥接器
 ## 契约重申
 
 - `render(manifest, opts)` 是**纯函数** —— 它在内存中分配文件并返回
-  它们。它从不写入磁盘。
+  它们。它从不写入磁盘。唯一的例外是 opt-in 的 island bundle 缓存
+  （`islandCacheDir`）；省略它，`render()` 便完全不接触磁盘。
 - **由你**将 `result.files` 写入目标位置。
-- **`runPagefindAgainstDir(dir)`** 是一个*单独的*函数，你在写入*之后*
-  针对目标目录调用它。它是整个包中唯一的文件系统接触点，
-  而且是可选的。
+- 搜索不需要任何写入之后的步骤：模糊索引已经是 `result.files` 中的一个文件
+  （`_assets/search-index.<buildId>.json`），由 `cmdk` island 在 runtime 时
+  fetch。
 
 ## 阅读源码
 
@@ -176,10 +171,10 @@ TypeDoc 桥接器
 
 - **可运行示例：**
   [`packages/dwar/scripts/smoke.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/scripts/smoke.ts)
-  —— `generateSite` → `render` → 写入循环 → 可选的 Pagefind。
+  —— 手写的 manifest → `render` → 写入循环。
 - **JSDoc 桥接器：**
   [`packages/clean-jsdoc-theme/src/publish.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/clean-jsdoc-theme/src/publish.ts)
-  —— `render` 调用、合并写入、错误 + Pagefind 处理。
+  —— `render` 调用、合并写入与错误处理。
 - **TypeDoc 桥接器：**
   [`packages/typedoc/src/write-site.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/typedoc/src/write-site.ts)
   —— 同样的路径，全程 ESM。

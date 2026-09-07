@@ -92,7 +92,7 @@ npx jsdoc -c jsdoc.json
 <step label="Serve">
 
 站点会被写入 `dist/`。打开 `dist/index.html`，或者将该文件夹作为服务提供
-（Pagefind 的全文索引需要 HTTP 才能加载）：
+（island 分块与搜索索引是 fetch 来的，`file://` 会阻止它们）：
 
 ```sh
 npx serve dist

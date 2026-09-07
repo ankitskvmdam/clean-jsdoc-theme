@@ -75,7 +75,7 @@ options that carry over (everything else is removed):
 
 ```sh
 npx jsdoc -c jsdoc.json
-npx serve <destination>   # Pagefind full-text search needs HTTP
+npx serve <destination>   # islands + search index are fetched, so HTTP
 ```
 
 v5 **warns** (with a "did you mean?" hint) on any leftover `theme_opts` key or v4
@@ -105,7 +105,7 @@ errors while you migrate, then relax it.
 | `homepageTitle` | — | removed | Home `<title>` derives from README / `docs/index.md` + `siteName`. |
 | `includeFilesListInHomepage` | — | removed | The Source Files section lists files. |
 | `meta` | `meta` | changed | Supported again — an array of attribute maps → `<meta>` tags in `<head>`. See [`meta`](/theme/configuration#meta). |
-| `search` | — | removed | Always-on fuzzy search + optional Pagefind. |
+| `search` | — | removed | Always-on fuzzy search. |
 | `codepen` | `playground` | changed | v4 prefilled a CodePen from `@example`; v5 generalizes it to [`playground`](/components/playground) — open an example in CodePen, JSFiddle, or CodeSandbox via `opts.playground` + the `@playground` tag. (To embed an existing pen by URL, use [`@iframe`](/components/embeds).) |
 | `static_dir` | — | removed | Use JSDoc's own static-file config. |
 | `footer` | `footer` | changed | Supported again — an inline HTML string or `{ file: "./footer.html" }`. Style it with `customCss` / `customCssFile`. See [`footer`](/theme/configuration#footer). |

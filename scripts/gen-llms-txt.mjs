@@ -31,7 +31,7 @@ const JSDOC_CONFIG = path.join(REPO_ROOT, 'docs-site', 'jsdoc.json');
 
 // One-line summary shown at the top of both files.
 const SUMMARY =
-  'A clean, customizable documentation theme for JSDoc and TypeDoc. It renders SSR HTML plus a companion Markdown file per page (for LLMs), a fuzzy search index, and optional Pagefind full-text search.';
+  'A clean, customizable documentation theme for JSDoc and TypeDoc. It renders SSR HTML plus a companion Markdown file per page (for LLMs) and a fuzzy search index.';
 
 // Sidebar-style group order; any other groups are appended alphabetically.
 const GROUP_ORDER = ['Using the Theme', 'Guides', 'Components', 'Packages'];

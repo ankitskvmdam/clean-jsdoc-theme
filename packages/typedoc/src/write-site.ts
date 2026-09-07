@@ -6,7 +6,7 @@
  * / dwar / utils are imported directly):
  *
  *   reflections → `reflectionsToDoclets` → `salty.taffy` → `generateSite`
- *               → `render` → `writeOutputFiles` → (optional) Pagefind
+ *               → `render` → `writeOutputFiles`
  *
  * Phase 3 wires the core end-to-end with sensible theme defaults. The
  * `cleanJsdocTheme` option block (siteName / fonts / sidebar) is phase 4 — here
@@ -24,7 +24,7 @@ import type {
   PlaygroundSiteConfig,
   SourceFileInput,
 } from '@clean-jsdoc-theme/setu';
-import { render, runPagefindAgainstDir } from '@clean-jsdoc-theme/dwar';
+import { render } from '@clean-jsdoc-theme/dwar';
 import type {
   CopyPageAction,
   CopyPageConfig,
@@ -890,10 +890,4 @@ export async function writeSite(
     for (const w of result.warnings) logger.warn(formatRenderError(w));
   }
 
-  // Pagefind is optional; a missing/failing Pagefind must not break the build.
-  try {
-    await runPagefindAgainstDir(destination);
-  } catch (err) {
-    logger.warn(`[clean-jsdoc-theme] pagefind step skipped — ${(err as Error).message}`);
-  }
 }

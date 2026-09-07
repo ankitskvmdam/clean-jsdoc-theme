@@ -30,11 +30,11 @@ ChatGPT、または Perplexity で開いたりできる one-click actions も備
 
 ## 得られるもの
 
-### セットアップ不要の 2 種類の search
+### セットアップ不要の search
 
 titles、descriptions、および page 全文にわたってランク付けする `Ctrl K` fuzzy
-command palette。どの class member にも名前で直接 deep-link します。オプションの
-Pagefind full-text index は flag 一つで有効にできます。
+command palette。どの class member にも名前で直接 deep-link します。常時 on で、
+configure するものはありません。
 
 ### 一つの site に prose と API
 
@@ -113,7 +113,7 @@ manifest を **rang** の Preact components を使って HTML/CSS/JS に render 
 | [`@clean-jsdoc-theme/utils`](https://www.npmjs.com/package/@clean-jsdoc-theme/utils) | 共有 types、Zod schemas、そして他のすべての package がそれに対して構築する `SiteManifest` contract。 | [Overview](/packages/utils-overview) · [Examples](/packages/utils-examples) | [GitHub](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/packages/utils) |
 | [`@clean-jsdoc-theme/setu`](https://www.npmjs.com/package/@clean-jsdoc-theme/setu) | JSDoc doclets を pages、nav、cross-resolved links に process し、`SiteManifest` を出力します。I/O は行いません。 | [Overview](/packages/setu-overview) · [Examples](/packages/setu-examples) | [GitHub](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/packages/setu) |
 | [`@clean-jsdoc-theme/rang`](https://www.npmjs.com/package/@clean-jsdoc-theme/rang) | Preact component library、MDX component map、island registry。dwar が SSR と hydration のために bundle する UI です。 | [Overview](/packages/rang-overview) · [Examples](/packages/rang-examples) | [GitHub](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/packages/rang) |
-| [`@clean-jsdoc-theme/dwar`](https://www.npmjs.com/package/@clean-jsdoc-theme/dwar) | `SiteManifest` を in-memory の HTML/CSS/JS に render します (Preact + MDX + utility CSS + esbuild islands)。加えて Pagefind hook も。Pure です。 | [Overview](/packages/dwar-overview) · [Examples](/packages/dwar-examples) | [GitHub](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/packages/dwar) |
+| [`@clean-jsdoc-theme/dwar`](https://www.npmjs.com/package/@clean-jsdoc-theme/dwar) | `SiteManifest` を in-memory の HTML/CSS/JS に render します (Preact + MDX + utility CSS + esbuild islands)。Pure です。 | [Overview](/packages/dwar-overview) · [Examples](/packages/dwar-examples) | [GitHub](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/packages/dwar) |
 
 ### Entry points
 

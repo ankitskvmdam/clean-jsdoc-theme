@@ -56,7 +56,7 @@ v5 is a ground-up rewrite. Breaking changes, by category:
 
 ### Search
 
-- **Search is always on** (built-in fuzzy index + optional Pagefind full-text);
+- **Search is always on** (built-in fuzzy index);
   the `search` enable/disable opt is removed.
   → [MIGRATION §6](./MIGRATION.md#6-behavioral--breaking-changes).
 

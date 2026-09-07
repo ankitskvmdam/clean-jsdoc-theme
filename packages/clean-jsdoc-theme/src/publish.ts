@@ -130,7 +130,7 @@ async function loadDep<T>(name: string, requiredExports: readonly string[]): Pro
 const loadSetu = (): Promise<typeof import('@clean-jsdoc-theme/setu')> =>
   loadDep('@clean-jsdoc-theme/setu', ['generateSite', 'stampSite']);
 const loadDwar = (): Promise<typeof import('@clean-jsdoc-theme/dwar')> =>
-  loadDep('@clean-jsdoc-theme/dwar', ['render', 'runPagefindAgainstDir']);
+  loadDep('@clean-jsdoc-theme/dwar', ['render']);
 const loadUtils = (): Promise<typeof import('@clean-jsdoc-theme/utils')> =>
   loadDep('@clean-jsdoc-theme/utils', [
     'validateThemeOpts',
@@ -395,7 +395,7 @@ interface JSDocOpts {
   /**
    * Build-stage progress output (`jsdoc.json` `"opts": { "progress": false }`).
    * The setu→dwar pipeline does noticeably more than a bare jsdoc run (per-page
-   * MDX compile, per-island esbuild bundling, the Pagefind index), so by default
+   * MDX compile, per-island esbuild bundling, the island cache), so by default
    * the bridge narrates each stage with its elapsed time. Set `false` to silence
    * the stage lines (the build report still prints).
    */
@@ -1930,8 +1930,8 @@ interface StageHandle {
 
 /**
  * Build-stage narrator backed by `ora`. The setu→dwar pipeline does much more
- * than a bare jsdoc run (per-page MDX compile, per-island esbuild bundling, the
- * Pagefind index), so a 7–8s build can otherwise look hung. `stage(label, fn)`
+ * than a bare jsdoc run (per-page MDX compile, per-island esbuild bundling), so
+ * a 7–8s build can otherwise look hung. `stage(label, fn)`
  * starts an ora spinner, runs `fn`, then resolves it to `✔ <label> (<elapsed>)`
  * on success or `✖ <label>` on failure. ora handles the spinner animation, TTY
  * detection (no animation when piped/CI), and the success/fail symbols.
@@ -1941,7 +1941,7 @@ interface StageHandle {
  * per-page MDX compile/SSR) that blocks the event loop — so the interval can't
  * fire and the spinner freezes on one frame, looking hung. Two things keep it
  * visibly alive: an elapsed-seconds **heartbeat** appended to the label (so it
- * advances whenever the loop breathes — module-graph I/O gaps, esbuild/Pagefind
+ * advances whenever the loop breathes — module-graph I/O gaps, esbuild
  * subprocess waits), and the `setText` handle, which long stages use to report
  * their current sub-step (e.g. the renderer load steps setu → dwar → utils).
  *
@@ -2082,7 +2082,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
 
   const [
     { generateSite, stampSite },
-    { render, runPagefindAgainstDir },
+    { render },
     {
       validateThemeOpts,
       createGoogleFontResolver,
@@ -2296,7 +2296,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
 
   // Localization extract mode (aadesh, Phase 3): when CLEAN_JSDOC_THEME_EXTRACT
   // names a path, write the translatable slot template there and STOP — skipping
-  // the expensive render/island-bundle/Pagefind. aadesh spawns jsdoc with this
+  // the expensive render/island-bundle. aadesh spawns jsdoc with this
   // env var set to harvest the template, then drives the per-locale builds.
   const extractPath = process.env.CLEAN_JSDOC_THEME_EXTRACT?.trim();
   if (extractPath) {
@@ -2417,7 +2417,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   const staticOutputFiles: OutputFile[] = [];
   if (staticFiles) {
     const generatedPaths = new Set(generatedFiles.map((f) => f.path));
-    const RESERVED_PREFIXES = ['_assets/', '_islands/', 'pagefind/'];
+    const RESERVED_PREFIXES = ['_assets/', '_islands/'];
     let skippedConsumed = 0;
     for (const f of staticFiles.files) {
       if (images.consumed.has(f.absSource)) {
@@ -2504,14 +2504,4 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
     }
   }
 
-  // Pagefind is optional; if the user doesn't have it installed we don't
-  // want to fail the whole build. Surface the failure as a warning (the stage
-  // marks ✗, then this note clarifies it's non-fatal).
-  try {
-    await progress.stage('Indexing search (pagefind)', () =>
-      runPagefindAgainstDir(absoluteDestination)
-    );
-  } catch (err) {
-    console.warn(`clean-jsdoc-theme: pagefind step skipped (optional) — ${(err as Error).message}`);
-  }
 }

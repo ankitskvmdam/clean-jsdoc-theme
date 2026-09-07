@@ -61,7 +61,7 @@ Shiki、esbuild 和 HTML shell 的地方 —— 同时无需知道 doclet 是如
   确定性的。
 - **生成 fuzzy-search index** —— 一个 JSON file（每个页面一个 entry，外加
   member/method deep-link），由 `cmdk` command-palette island 在
-  runtime 时 fetch。它与 Pagefind 的全文 bundle 是分开的。
+  runtime 时 fetch。这是主题唯一附带的搜索索引。
 
 ### Source 页面跳过 MDX
 
@@ -84,14 +84,9 @@ dwar **不会**写入 disk。`render` 在内存中分配一个 `OutputFile` 数�
 `fs` write、没有 `process.cwd()`、没有 logging。module docstring 直截了当地
 说明了这一点：*"`render()` is pure: it returns an in-memory `RenderResult`."*
 
-两个经过仔细限定的例外印证了这条规则，且两者都不会破坏 default path
+一个经过仔细限定的例外印证了这条规则，且它不会破坏 default path
 的纯粹性：
 
-- **`runPagefindAgainstDir`** 是该 package 中**唯一**的 filesystem touch，
-  并且它是一个*独立的、写入之后的* function —— 从不被 `render` 调用。它
-  作用于一个已写入的 HTML 目录，并将 Pagefind bundle 生成到
-  `<dir>/pagefind/` 之下
-  （[`pagefind.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/src/pagefind.ts)）。
 - **`opts.islandCacheDir`** 是 opt-in 的。当（且仅当）某个 bridge 提供它时，
   esbuild island bundle 会从一个 on-disk cache 中读取/写入；省略它 ——
   即 default —— 则 bundling 始终保持在内存中。读取 `os.cpus()` 以确定 worker
@@ -142,27 +137,27 @@ build。每个页面都在一个 `try/catch` 内部渲染：失败时该页面�
 `cssBytes`、`jsBytes`、`durationMs`）
 （[`render.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/utils/src/site/render.ts)）。
 
-> 这里有意地**没有 `embedSearchIndex` flag**。全文搜索是独立的
-> `runPagefindAgainstDir` 写入之后步骤 —— renderer 从不内联任何 Pagefind
-> bundle。
+> 这里有意地**没有 `embedSearchIndex` flag**。模糊索引总是作为
+> `result.files` 之一被生成，并由 `cmdk` island 惰性 fetch —— renderer
+> 从不把它内联进 HTML。
 
 ## Dependencies
 
-dwar 依赖它位于其下游的三个 sibling package，外加 render
+dwar 依赖它位于其下游的两个 sibling package，外加 render
 toolchain
 （[`package.json`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/package.json)）：
 
 - **`@clean-jsdoc-theme/utils`** —— 边界类型（`SiteManifest`、
   `RenderOptions`、`RenderResult`、`OutputFile`……）；参见
   [utils Overview](/packages/utils-overview)。
-- **`@clean-jsdoc-theme/setu`** —— manifest 生成器（由 smoke
-  script 使用）；参见 [setu Overview](/packages/setu-overview)。
 - **`@clean-jsdoc-theme/rang`** —— dwar 打包并组合的那些 Preact component 与
   island registry；参见 [rang Overview](/packages/rang-overview)。
 - **`preact` / `preact-render-to-string`** 用于 SSR，**`@mdx-js/mdx`** +
   **`@shikijs/rehype`** / **`shiki`** 用于 MDX 编译 + 高亮，
-  **`esbuild`** 用于 island bundle，以及 **`pagefind`**（可选）用于
-  写入之后的 index。
+  以及 **`esbuild`** 用于 island bundle。
+
+dwar 刻意**不**依赖 `@clean-jsdoc-theme/setu` —— setu→dwar 的边界是单向的，
+dwar 只从 `utils` 取用 `SiteManifest` 类型。
 
 ## 阅读 source
 
@@ -193,9 +188,6 @@ toolchain
   [`islands-loader.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/src/islands-loader.ts)
 - **CSS 管道：**
   [`css.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/src/css.ts)
-- **（唯一的）filesystem touch：**
-  [`pagefind.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/src/pagefind.ts)
-  （`runPagefindAgainstDir`）
 - **可运行的 example：**
   [`scripts/smoke.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/scripts/smoke.ts)
 

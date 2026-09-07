@@ -78,7 +78,7 @@ npm i -D clean-jsdoc-theme@latest   # または v5 prerelease 中は @next
 
 ```sh
 npx jsdoc -c jsdoc.json
-npx serve <destination>   # Pagefind の full-text search には HTTP が必要
+npx serve <destination>   # islands と search index は fetch されるため HTTP が必要
 ```
 
 v5 は、残っている `theme_opts` key や v4 の option 名に対して **警告** を出し
@@ -108,7 +108,7 @@ v5 は、残っている `theme_opts` key や v4 の option 名に対して **�
 | `homepageTitle` | — | 削除 | Home `<title>` は README / `docs/index.md` + `siteName` から derive。 |
 | `includeFilesListInHomepage` | — | 削除 | Source Files section が files を列挙。 |
 | `meta` | `meta` | 変更 | 再び supported — attribute maps の array → `<head>` の `<meta>` tags。[`meta`](/theme/configuration#meta) を参照。 |
-| `search` | — | 削除 | 常時 on の fuzzy search + 省略可能な Pagefind。 |
+| `search` | — | 削除 | 常時 on の fuzzy search。 |
 | `codepen` | `playground` | 変更 | v4 は `@example` から CodePen を事前入力しました; v5 はそれを [`playground`](/components/playground) に一般化します — `opts.playground` + `@playground` tag を介して、example を CodePen、JSFiddle、CodeSandbox で開けます。（既存の pen を URL で embed するには [`@iframe`](/components/embeds) を使用。） |
 | `static_dir` | — | 削除 | JSDoc 自身の static-file config を使用。 |
 | `footer` | `footer` | 変更 | 再び supported — inline HTML string または `{ file: "./footer.html" }`。`customCss` / `customCssFile` で style します。[`footer`](/theme/configuration#footer) を参照。 |

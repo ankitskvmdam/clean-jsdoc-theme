@@ -93,7 +93,7 @@ npx jsdoc -c jsdoc.json
 <step label="Serve">
 
 site `dist/` में लिखी जाती है। `dist/index.html` खोलें, या folder को serve करें
-(Pagefind का full-text index load होने के लिए HTTP चाहिए):
+(island chunks और search index fetch किए जाते हैं, जिन्हें `file://` रोक देता है):
 
 ```sh
 npx serve dist

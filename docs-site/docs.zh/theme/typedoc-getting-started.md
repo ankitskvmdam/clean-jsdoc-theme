@@ -91,8 +91,8 @@ npx typedoc
 
 <step label="Serve">
 
-打开 `dist/index.html`，或者为该文件夹提供服务（Pagefind 的全文索引需要
-HTTP 才能加载）：
+打开 `dist/index.html`，或者为该文件夹提供服务（island 分块与搜索索引是 fetch
+来的，`file://` 会阻止它们）：
 
 ```sh
 npx serve dist

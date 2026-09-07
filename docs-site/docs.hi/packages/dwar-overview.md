@@ -66,7 +66,7 @@ doclet database दोबारा नहीं पढ़ता।
   ताकि output deterministic रहे।
 - **fuzzy-search index उत्सर्जित करता है** — एक JSON file (प्रति page एक entry
   साथ ही member/method deep-links) जिसे `cmdk` command-palette island runtime पर
-  fetch करता है। यह Pagefind के full-text bundle से अलग है।
+  fetch करता है। theme यही एकमात्र search index भेजता है।
 
 ### Source pages MDX छोड़ देते हैं
 
@@ -90,14 +90,9 @@ dwar disk पर **नहीं** लिखता। `render` memory में `
 सीधे-सीधे बताता है: *"`render()` is pure: it returns an in-memory
 `RenderResult`."*
 
-दो सावधानी से सीमित अपवाद नियम को सिद्ध करते हैं, और दोनों में से कोई default path
-के लिए purity नहीं तोड़ता:
+एक सावधानी से सीमित अपवाद नियम को सिद्ध करता है, और वह default path के लिए purity
+नहीं तोड़ता:
 
-- **`runPagefindAgainstDir`** package में **एकमात्र** filesystem touch है, और यह
-  एक *अलग, post-write* function है — `render` से कभी call नहीं होता। यह पहले से
-  लिखे HTML की एक directory पर काम करता है और Pagefind bundle को
-  `<dir>/pagefind/` के नीचे उत्सर्जित करता है
-  ([`pagefind.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/src/pagefind.ts))।
 - **`opts.islandCacheDir`** opt-in है। जब (और केवल जब) कोई bridge इसे प्रदान करता
   है, तब esbuild island bundle एक on-disk cache से पढ़ा/लिखा जाता है; इसे छोड़ दें
   — default — और bundling memory में रहती है। worker pool का आकार तय करने के लिए
@@ -149,27 +144,27 @@ capture किया जाता है, और बाक़ी site फिर 
 `cssBytes`, `jsBytes`, `durationMs`)
 ([`render.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/utils/src/site/render.ts))।
 
-> जानबूझकर **कोई `embedSearchIndex` flag नहीं** है। Full-text search अलग
-> `runPagefindAgainstDir` post-write step है — renderer कभी किसी Pagefind bundle
-> को inline नहीं करता।
+> जानबूझकर **कोई `embedSearchIndex` flag नहीं** है। fuzzy index हमेशा
+> `result.files` में से एक के रूप में उत्सर्जित होता है, और `cmdk` island उसे
+> lazily fetch करता है — renderer उसे कभी HTML में inline नहीं करता।
 
 ## Dependencies
 
-dwar उन तीन sibling packages पर निर्भर है जिनके downstream यह बैठता है, साथ ही
+dwar उन दो sibling packages पर निर्भर है जिनके downstream यह बैठता है, साथ ही
 render toolchain पर
 ([`package.json`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/package.json)):
 
 - **`@clean-jsdoc-theme/utils`** — boundary types (`SiteManifest`,
   `RenderOptions`, `RenderResult`, `OutputFile`, …); देखें
   [utils Overview](/packages/utils-overview)।
-- **`@clean-jsdoc-theme/setu`** — manifest generator (smoke script द्वारा
-  उपयोग); देखें [setu Overview](/packages/setu-overview)।
 - **`@clean-jsdoc-theme/rang`** — वे Preact components और island registry जिन्हें
   dwar bundle और रचता है; देखें [rang Overview](/packages/rang-overview)।
 - **`preact` / `preact-render-to-string`** SSR के लिए, **`@mdx-js/mdx`** +
   **`@shikijs/rehype`** / **`shiki`** MDX compile + highlighting के लिए,
-  **`esbuild`** island bundle के लिए, और **`pagefind`** (वैकल्पिक) post-write
-  index के लिए।
+  और **`esbuild`** island bundle के लिए।
+
+dwar जानबूझकर `@clean-jsdoc-theme/setu` पर निर्भर **नहीं** है — setu→dwar
+boundary एक-तरफ़ा है, और dwar केवल `utils` से `SiteManifest` type लेता है।
 
 ## source पढ़ें
 
@@ -200,9 +195,6 @@ maintainer चाहता है कि आपको code की ओर भे�
   [`islands-loader.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/src/islands-loader.ts)
 - **CSS pipeline:**
   [`css.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/src/css.ts)
-- **(एकमात्र) filesystem touch:**
-  [`pagefind.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/src/pagefind.ts)
-  (`runPagefindAgainstDir`)
 - **runnable example:**
   [`scripts/smoke.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/scripts/smoke.ts)
 

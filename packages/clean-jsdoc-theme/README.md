@@ -40,8 +40,8 @@ of every page for LLMs. No CSS or build config required to get started.
 - **Fast & framework-free** — server-rendered pages with lazily-hydrated Preact
   islands; each page loads only the JS it actually uses.
 - **Search built in** — a fuzzy command palette (`Ctrl K`) over titles,
-  descriptions, content, and per-member deep links, plus an optional
-  [Pagefind](https://pagefind.app/) full-text index.
+  descriptions, content, and per-member deep links. Always on, nothing to
+  configure.
 - **Guides + API in one site** — hand-written Markdown guides and the
   auto-generated reference share one sidebar and one search.
 - **Localization built in** — declare your locales and the `clean-jsdoc` CLI
@@ -74,7 +74,7 @@ Add a `jsdoc.json`:
 }
 ```
 
-Build, then serve over HTTP (Pagefind needs HTTP to load its index):
+Build, then serve over HTTP (the island chunks and the search index are fetched, which `file://` blocks):
 
 ```sh
 jsdoc -c jsdoc.json

@@ -9,8 +9,8 @@ companion (`migration-map.json` at the repo root, plus the fenced JSON block in
 
 - **v5 is a ground-up rewrite.** It server-renders every page, emits a
   co-located `.md` for each page (LLM-friendly), lazy-hydrates Preact islands,
-  ships a built-in fuzzy search + optional Pagefind full-text index, a source
-  viewer, and an `opts.docs` prose-docs pipeline.
+  ships a built-in fuzzy search index, a source viewer, and an `opts.docs`
+  prose-docs pipeline.
 - **Options moved namespaces.** v4 nested theme options under
   `opts.theme_opts.*` in `jsdoc.json`. **v5 reads them directly from `opts.*`**
   (there is no `theme_opts` block in v5).
@@ -72,7 +72,7 @@ removed | new`.
 | `menu`                          | `menu`                   | changed | Still an array, but reshaped. v4 entry: `{ title, link, target, class, id }`. v5 entry: `{ id, title, link (or href), icon }` (`MenuItem`); `target`/`class` dropped, `icon` added, `id` now also selects built-in sections. v5 `menu` takes precedence over `sectionOrder` and controls the whole sidebar. |
 | `sections`                      | `sectionOrder`           | renamed | Same idea (filter + order sidebar sections). v5 key is `sectionOrder`; "Home" and "Source Files" are always shown regardless.                                                                                                                                                                               |
 | `meta`                          | `meta`                   | changed | Supported again. Same shape as v4 — an array of attribute maps (`{ name, content }`, `{ property, content }`, …), each rendered as a `<meta>` tag in `<head>`. dwar escapes the values and de-dupes against its own defaults (an author `description` replaces the auto one).                                |
-| `search`                        | —                        | removed | Search is always on in v5 (built-in fuzzy index + optional Pagefind); there is no enable/disable opt.                                                                                                                                                                                                       |
+| `search`                        | —                        | removed | Search is always on in v5 (built-in fuzzy index); there is no enable/disable opt.                                                                                                                                                                                                       |
 | `codepen`                       | `playground`             | changed | v4 prefilled a CodePen from `@example` (CodePen only). v5 generalizes this to `opts.playground` + the `@playground` block tag — open an example in **CodePen, JSFiddle, or CodeSandbox** (client-side, no API key), plus `filename`/line-highlight. (To embed an *existing* pen by URL, use the `@iframe` tag / `iframe` prose fence.)                                          |
 | `static_dir`                    | —                        | removed | No theme-level static-dir copying. Use JSDoc's own static-file config.                                                                                                                                                                                                                                      |
 | `create_style`                  | `customCss`              | renamed | Inline custom CSS string. Injected as a `<style>` after the theme stylesheet (so it overrides).                                                                                                                                                                                                             |
@@ -209,9 +209,9 @@ Each entry: **what changed → why → migration action.**
 - **Theme system replaced.** Why: no `default_theme`/`fallback-*` picker; v5
   ships light + dark token palettes and a runtime toggle. Action: drop
   `default_theme`; use `fonts` (and theme tokens) for customization.
-- **Search is always on.** Why: built-in dependency-free fuzzy index + optional
-  Pagefind full-text index, loaded lazily. Action: remove `search` and
-  `base_url`-for-search workarounds; nothing to enable.
+- **Search is always on.** Why: a built-in dependency-free fuzzy index, loaded
+  lazily. Action: remove `search` and `base_url`-for-search workarounds; nothing
+  to enable.
 - **Minimum versions raised.** Why: v5 targets modern JSDoc + Node. Action:
   ensure JSDoc `>=4` and Node `>=20`.
 - **Strict vs resilient validation.** Why: v5 validates opts and prints
@@ -227,7 +227,7 @@ For each: the v5 replacement, or "no replacement."
 | ------------------------------------------------- | ---------------------------------------------------------------------- |
 | `default_theme` / `fallback-*`                    | Built-in light/dark token sets + runtime toggle (no opt).              |
 | `homepageTitle`                                   | Home `<title>` derived from README/`docs/index.md` + `siteName`.       |
-| `search` toggle                                   | Always-on fuzzy search + optional Pagefind (no opt).                   |
+| `search` toggle                                   | Always-on fuzzy search (no opt).                                       |
 | `static_dir`                                      | JSDoc's own static-file copying.                                       |
 | `create_style` / `include_css` / `add_style_path` | Renamed → `customCss` (inline) / `customCssFile` (file path or array). |
 | `add_scripts` / `include_js` / `add_script_path`  | Renamed → `customJs` (inline) / `customJsFile` (file path or array).   |
@@ -248,9 +248,9 @@ Short overview; see `ARCHITECTURE.md` for the authoritative detail.
 - **Per-page `.md` + copy-page button** (`copyPage`, `aiPrompt`) — each page
   emits a co-located Markdown file; the copy-page button can open it in
   ChatGPT/Claude/Perplexity. See ARCHITECTURE "`@clean-jsdoc-theme/rang`".
-- **Fuzzy search + optional Pagefind** — dependency-free fuzzy matcher over
-  weighted fields, plus an optional full-text index written post-build
-  (`runPagefindAgainstDir`). See ARCHITECTURE "The pipeline" and
+- **Fuzzy search** — dependency-free fuzzy matcher over weighted fields, backed
+  by an index dwar emits at `_assets/search-index.<buildId>.json` and the `cmdk`
+  island fetches lazily. See ARCHITECTURE "The pipeline" and
   "`@clean-jsdoc-theme/dwar`".
 - **Source viewer** (`templates.default.outputSourceFiles`,
   `sourceLinkToComment`) — per-file read-only viewer pages + `Source: file:line`

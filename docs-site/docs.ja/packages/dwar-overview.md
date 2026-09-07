@@ -67,7 +67,7 @@ sidebar がどう形作られたかについては無知のままでいられま
   deterministic です。
 - **fuzzy-search index を emit する** — JSON file (page ごとに1 entry、加えて
   member/method の deep-links) で、`cmdk` command-palette island が runtime に
-  fetch します。これは Pagefind の full-text bundle とは別物です。
+  fetch します。theme が出荷する search index はこれだけです。
 
 ### Source pages は MDX を飛ばす
 
@@ -91,14 +91,9 @@ array を allocate して返します。caller がそれらを persist します
 それを率直に述べています: *"`render()` is pure: it returns an in-memory
 `RenderResult`."*
 
-注意深く範囲を限定された2つの例外が規則を証明しますが、どちらも default path の
+注意深く範囲を限定された1つの例外が規則を証明しますが、それは default path の
 purity を壊しません。
 
-- **`runPagefindAgainstDir`** は package 内で **唯一** の filesystem touch であり、
-  *別個の post-write* function です — `render` から call されることは決して
-  ありません。これは既に書き込まれた HTML の directory を対象に動作し、Pagefind
-  bundle を `<dir>/pagefind/` の下に emit します
-  ([`pagefind.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/src/pagefind.ts))。
 - **`opts.islandCacheDir`** は opt-in です。bridge がそれを供給したとき (かつその
   ときだけ)、esbuild island bundle は on-disk cache から読み書きされます。それを
   省けば — default では — bundling は memory 内に留まります。worker pool の
@@ -149,27 +144,27 @@ caller のため)、optional な `errors` array (page が失敗したときだ�
 `durationMs`) を運びます
 ([`render.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/utils/src/site/render.ts))。
 
-> 意図的に **`embedSearchIndex` flag はありません**。Full-text search は別個の
-> `runPagefindAgainstDir` という post-write step です — renderer が Pagefind
-> bundle を inline することは決してありません。
+> 意図的に **`embedSearchIndex` flag はありません**。fuzzy index は常に
+> `result.files` の一つとして emit され、`cmdk` island がそれを lazily fetch
+> します — renderer がそれを HTML に inline することは決してありません。
 
 ## Dependencies
 
-dwar は、その downstream に位置する3つの sibling packages に加え、render
+dwar は、その downstream に位置する2つの sibling packages に加え、render
 toolchain に依存します
 ([`package.json`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/package.json))。
 
 - **`@clean-jsdoc-theme/utils`** — boundary types (`SiteManifest`、
   `RenderOptions`、`RenderResult`、`OutputFile`、…)。
   [utils Overview](/packages/utils-overview) を参照。
-- **`@clean-jsdoc-theme/setu`** — manifest generator (smoke script が使用)。
-  [setu Overview](/packages/setu-overview) を参照。
 - **`@clean-jsdoc-theme/rang`** — dwar が bundle して composition する Preact
   components と island registry。[rang Overview](/packages/rang-overview) を参照。
 - **`preact` / `preact-render-to-string`** は SSR のため、**`@mdx-js/mdx`** +
   **`@shikijs/rehype`** / **`shiki`** は MDX compile + highlighting のため、
-  **`esbuild`** は island bundle のため、**`pagefind`** (optional) は post-write
-  index のためです。
+  **`esbuild`** は island bundle のためです。
+
+dwar は意図的に `@clean-jsdoc-theme/setu` に依存**しません** — setu→dwar の
+boundary は一方向であり、dwar は `utils` から `SiteManifest` type だけを取ります。
 
 ## source を読む
 
@@ -200,9 +195,6 @@ maintainer はあなたを code へ送りたいと考えています。ここか
   [`islands-loader.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/src/islands-loader.ts)
 - **CSS pipeline:**
   [`css.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/src/css.ts)
-- **(唯一の) filesystem touch:**
-  [`pagefind.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/src/pagefind.ts)
-  (`runPagefindAgainstDir`)
 - **runnable example:**
   [`scripts/smoke.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/scripts/smoke.ts)
 

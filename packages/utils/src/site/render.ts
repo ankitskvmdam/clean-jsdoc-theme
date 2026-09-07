@@ -1,6 +1,5 @@
 /**
- * dwar.render result + options. Note: no `embedSearchIndex` — Pagefind runs in
- * a separate post-write step (`runPagefindAgainstDir`). See Q5.
+ * dwar.render result + options.
  */
 
 import type { LlmsTxtConfig } from './llms';
@@ -70,7 +69,7 @@ export function formatRenderError(error: RenderError | RenderWarning, indent = '
 /** Aggregated result returned by `dwar.render`. Pure — no I/O is performed here. */
 export interface RenderResult {
   files: OutputFile[];
-  /** Entries that callers should hand to Pagefind after writing files. */
+  /** One entry per non-hidden page — the search index dwar also writes to disk. */
   search?: SearchEntry[];
   /**
    * Pages that failed to render and were skipped. A single bad page (e.g. MDX
@@ -95,9 +94,7 @@ export interface RenderResult {
 }
 
 /**
- * Options to `dwar.render`. There is intentionally no `embedSearchIndex` flag:
- * search index generation is a separate step (`runPagefindAgainstDir`) that
- * runs against the already-written output directory. See Q5.
+ * Options to `dwar.render`.
  */
 export interface RenderOptions {
   theme: ThemeConfig;

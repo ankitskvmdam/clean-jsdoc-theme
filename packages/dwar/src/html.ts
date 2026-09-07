@@ -349,7 +349,7 @@ export function renderHtmlDocument(opts: HtmlDocumentOptions): string {
 }
 
 /**
- * Strip an MDX/HTML body to a plain-text excerpt for Pagefind/search snippets.
+ * Strip an MDX/HTML body to a plain-text excerpt for search snippets.
  * Heuristic, not exhaustive: fences, headings, links, images, formatting marks,
  * and any HTML tags get peeled away.
  */

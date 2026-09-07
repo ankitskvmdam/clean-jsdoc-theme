@@ -91,8 +91,8 @@ npx typedoc
 
 <step label="Serve">
 
-`dist/index.html` を開くか、folder を serve します (Pagefind の full-text index は
-load に HTTP を必要とします):
+`dist/index.html` を開くか、folder を serve します (island chunks と search index は
+fetch されるため、`file://` では動きません):
 
 ```sh
 npx serve dist

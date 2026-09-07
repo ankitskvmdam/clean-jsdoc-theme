@@ -54,8 +54,8 @@ The TypeDoc integration is **not** a CSS theme extending TypeDoc's
 `DefaultTheme`. It is a **plugin that registers a custom output**. It feeds
 TypeDoc's reflection tree through the *same* `setu → dwar` pipeline as the JSDoc
 bridge, so a TypeScript project gets an **identical site** — SSR HTML,
-lazy-hydrated Preact islands, fuzzy + Pagefind search, and a companion `.md` per
-page for LLMs.
+lazy-hydrated Preact islands, fuzzy search, and a companion `.md` per page for
+LLMs.
 
 ```
 TypeDoc reflections ──▶ reflection-to-doclets ──▶ setu.generateSite('typedoc')
@@ -98,7 +98,7 @@ npm install --save-dev typedoc @clean-jsdoc-theme/typedoc
 }
 ```
 
-Build, then serve over HTTP (Pagefind's full-text index needs HTTP to load):
+Build, then serve over HTTP (the island chunks and the search index are fetched, which `file://` blocks):
 
 ```sh
 npx typedoc

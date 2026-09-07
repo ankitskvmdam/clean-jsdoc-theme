@@ -11,7 +11,7 @@ dwar は **internal** です。通常の docs build で `render` を call する
 *custom bridge* を build しているとき、あるいは renderer を単独で見たいときだけです。
 
 最良の出発点は、package 自身の runnable な example: **smoke script** です。これは
-`setu → dwar → disk` の path 全体を fixture に対して exercise し、実際に走る本物の
+`dwar → disk` の path 全体を手書きの manifest に対して exercise し、実際に走る本物の
 code なので、この doc の中で最も正直な example です。
 
 単に theme を configure したいだけなら、代わりに [Configuration](/theme/configuration)
@@ -24,11 +24,15 @@ pnpm --filter @clean-jsdoc-theme/dwar run smoke
 ```
 
 [`scripts/smoke.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/scripts/smoke.ts)
-は setu の JSDoc taffy fixture を取り出し、それを `generateSite()` に通して
-`SiteManifest` を取得し、manifest を dwar の `render()` に渡し、返ってきた files を
-`packages/dwar/preview/` に **書き込み**、そして — `pagefind` が installed されていれば
-— その directory に対して search index を build します。これは視覚的な
-sanity-checking のために存在します。
+は小さな `SiteManifest` を手書きで組み立て（index page、headings と code fences を
+含む guide、API page、そして `kind: 'source'` viewer）、それを dwar の `render()` に
+渡し、返ってきた files を `packages/dwar/preview/` に **書き込み** ます。これは
+視覚的な sanity-checking のために存在します。
+
+manifest を手書きにしているのは意図的です: dwar は setu に依存してはいけません
+（setu→dwar の boundary は一方向です）。`setu → dwar → disk` の path 全体は
+[`examples/basic`](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/examples/basic)
+が end-to-end で exercise します。
 
 end to end の flow は: **manifest in → files out → あなたがそれらを書く → preview/** です。
 
@@ -40,9 +44,9 @@ field は `theme` です; それ以外はすべて optional です。smoke scrip
 （[`smoke.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/scripts/smoke.ts)）:
 
 ```ts
-import { render, runPagefindAgainstDir } from '@clean-jsdoc-theme/dwar';
+import { render } from '@clean-jsdoc-theme/dwar';
 import type { ThemeConfig } from '@clean-jsdoc-theme/dwar';
-import { generateSite } from '@clean-jsdoc-theme/setu';
+import type { SiteManifest } from '@clean-jsdoc-theme/utils';
 
 const theme: ThemeConfig = {
   tokens: {
@@ -54,7 +58,12 @@ const theme: ThemeConfig = {
   basePath: '/',
 };
 
-const manifest = generateSite(collection, { pkg: { name: 'clean-jsdoc-theme', version: '…' } });
+const manifest: SiteManifest = {
+  buildId: 'smoke',
+  pkg: { name: 'clean-jsdoc-theme', version: '…' },
+  nav: [{ label: 'Home', slug: 'index' }],
+  pages: [{ slug: 'index', frontmatter: { title: 'Home', kind: 'index' }, body: 'Hello.\n' }],
+};
 
 const result = await render(manifest, { theme });
 //                              ^ only `theme` is required
@@ -98,8 +107,7 @@ interface RenderResult {
 ```
 
 実際の purity contract: **`render()` は files を memory に返します; あなたがそれらを
-書きます。** smoke script はまさにこれを行います — 素朴な write loop、それから optional
-な Pagefind step
+書きます。** smoke script はまさにこれを行います — 素朴な write loop
 （[`smoke.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/scripts/smoke.ts)）:
 
 ```ts
@@ -113,19 +121,12 @@ for (const file of result.files) {
   await mkdir(dirname(out), { recursive: true });
   await writeFile(out, typeof file.contents === 'string' ? file.contents : Buffer.from(file.contents));
 }
-
-// Pagefind is a SEPARATE post-write step, against the written directory.
-try {
-  await runPagefindAgainstDir(previewDir);
-} catch (err) {
-  console.warn(`[smoke] pagefind skipped: ${(err as Error).message}`);
-}
 ```
 
 本物の bridges は同一の shape に従います。JSDoc bridge
 （[`publish.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/clean-jsdoc-theme/src/publish.ts)）
 は `render` を call し、dwar の files を *それ自身が* copy した assets（logos、custom
-CSS/JS、doc images）と concatenate し、それらすべてを書き、それから Pagefind を実行します:
+CSS/JS、doc images）と concatenate し、それらすべてを書きます:
 
 ```ts
 const result = await render(manifest, {
@@ -142,20 +143,12 @@ await writeOutputFiles(absoluteDestination, outputFiles);
 if (result.errors && result.errors.length > 0) {
   for (const e of result.errors) console.warn(`  - ${e.slug}: ${e.message}`);
 }
-
-// Pagefind is optional — a missing/failing index must not break the build.
-try {
-  await runPagefindAgainstDir(absoluteDestination);
-} catch (err) {
-  console.warn(`pagefind step skipped (optional) — ${(err as Error).message}`);
-}
 ```
 
 TypeDoc bridge
 （[`write-site.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/typedoc/src/write-site.ts)）
 は ESM で同じことを行います: `render(manifest, { theme, destination, islandCacheDir })`、
-それから `writeOutputFiles`、それから `runPagefindAgainstDir`。どちらも `errors` array
-を warning として、Pagefind step を best-effort として扱います。
+それから `writeOutputFiles`。どちらも `errors` array を warning として扱います。
 
 > write loop における分業に注目してください: **dwar の `result.files`** は HTML、
 > 付随する `.md`、stylesheet、island chunks、そして fuzzy-search JSON です。**logos、
@@ -166,11 +159,12 @@ TypeDoc bridge
 ## contract、再述
 
 - `render(manifest, opts)` は **pure** です — files を memory に allocate して返します。
-  disk に書くことは決してありません。
+  disk に書くことは決してありません。唯一の例外は opt-in な island-bundle cache
+  (`islandCacheDir`) で、これを省けば `render()` は disk に一切触れません。
 - **あなた** が `result.files` を destination に書きます。
-- **`runPagefindAgainstDir(dir)`** は、書き込みの *後* に destination directory に対して
-  call する *別個の* function です。これは package 全体で唯一の filesystem touch であり、
-  optional です。
+- search に post-write step は不要です: fuzzy index は既に `result.files` の一つ
+  (`_assets/search-index.<buildId>.json`) として含まれ、`cmdk` island が runtime に
+  fetch します。
 
 ## Read the source
 
@@ -179,10 +173,10 @@ TypeDoc bridge
 
 - **The runnable example:**
   [`packages/dwar/scripts/smoke.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/scripts/smoke.ts)
-  — `generateSite` → `render` → write loop → optional Pagefind。
+  — 手書きの manifest → `render` → write loop。
 - **JSDoc bridge:**
   [`packages/clean-jsdoc-theme/src/publish.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/clean-jsdoc-theme/src/publish.ts)
-  — `render` call、combined write、error + Pagefind handling。
+  — `render` call、combined write、error handling。
 - **TypeDoc bridge:**
   [`packages/typedoc/src/write-site.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/typedoc/src/write-site.ts)
   — 同じ path、完全に ESM。

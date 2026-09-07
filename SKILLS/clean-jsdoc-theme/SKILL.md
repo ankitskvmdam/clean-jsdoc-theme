@@ -62,7 +62,7 @@ TypeDoc reflns ─┘        (no I/O)                                 (pure, use
 Preact islands, only the islands a page uses); `‹slug›/index.md` per content page
 (a **companion Markdown** authored for LLMs — the theme's defining feature);
 `_assets/styles.‹buildId›.css`; `_assets/search-index.‹buildId›.json` (the `Ctrl K`
-fuzzy index); `_islands/‹name›.js`; and optionally a **Pagefind** full-text index.
+fuzzy index); and `_islands/‹name›.js`.
 
 Guarantees worth knowing: **setu does no disk I/O** (the bridge reads files),
 **dwar.render() is pure**, and **one page that fails to compile is skipped and
@@ -98,8 +98,9 @@ npm install --save-dev jsdoc clean-jsdoc-theme
 }
 ```
 
-Build: `npx jsdoc -c jsdoc.json` → `dist/`. Serve with `npx serve dist` (Pagefind
-needs HTTP, so opening `index.html` from disk won't load full-text search).
+Build: `npx jsdoc -c jsdoc.json` → `dist/`. Serve with `npx serve dist` (the
+island chunks and the search index are fetched, so opening `index.html` from disk
+leaves search and the islands dead).
 
 > **Required:** the `plugins/markdown` plugin. JSDoc renders comment Markdown →
 > HTML *before* the theme sees it, and the theme consumes that HTML. Without it,

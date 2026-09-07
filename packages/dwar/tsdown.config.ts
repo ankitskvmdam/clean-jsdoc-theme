@@ -25,7 +25,6 @@ export default defineConfig({
       'preact-render-to-string',
       '@mdx-js/mdx',
       'esbuild',
-      'pagefind',
       '@clean-jsdoc-theme/rang',
       '@clean-jsdoc-theme/utils',
     ],

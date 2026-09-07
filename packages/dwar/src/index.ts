@@ -2,10 +2,10 @@
  * @clean-jsdoc-theme/dwar
  *
  * Renders a SiteManifest into HTML/CSS/JS files (Preact + MDX + utility CSS +
- * esbuild islands), and provides a separate post-write hook for Pagefind.
+ * esbuild islands).
  *
  * `render()` is pure: it returns an in-memory RenderResult. Callers write the
- * files themselves and then optionally call `runPagefindAgainstDir`.
+ * files themselves.
  */
 
 import { cpus } from 'node:os';
@@ -503,8 +503,7 @@ function memberSearchEntries(page: Page): SearchEntry[] {
 
 /**
  * Render a SiteManifest to in-memory output files. Pure: dwar does not write
- * to disk. Callers persist `result.files` themselves, then optionally call
- * `runPagefindAgainstDir` against the destination.
+ * to disk. Callers persist `result.files` themselves.
  */
 export async function render(manifest: SiteManifest, opts: RenderOptions): Promise<RenderResult> {
   const start = Date.now();
@@ -728,7 +727,7 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
   files.push({ path: css.path, contents: css.contents });
 
   // Fuzzy-search index fetched by the cmdk island at runtime: page entries plus
-  // member deep-links. (Pagefind's full-text bundle is a separate concern.)
+  // member deep-links. This is the ONLY search index the theme ships.
   files.push({ path: searchIndexPath, contents: JSON.stringify([...search, ...memberEntries]) });
 
   // sitemap.xml — one `<loc>` per non-hidden page (`search` is exactly that set:
@@ -788,8 +787,6 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
     },
   };
 }
-
-export { runPagefindAgainstDir } from './pagefind';
 
 // Re-export boundary types so consumers (e.g. publish.ts) can pull them from
 // dwar alone without also importing from utils.

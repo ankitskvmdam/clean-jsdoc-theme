@@ -24,10 +24,10 @@ API 页面还带有一键操作，可以复制那份 Markdown，或直接在 Cla
 
 ## 你能获得什么
 
-### 两种搜索，零配置
+### 搜索，零配置
 
 一个 `Ctrl K` 模糊命令面板，会在标题、描述和整页文本中进行排序——并能按名称直接 deep-link
-到任意 class member。只需一个开关即可启用可选的 Pagefind 全文索引。
+到任意 class member。始终开启，无需配置。
 
 ### 正文与 API 同处一站
 
@@ -91,7 +91,7 @@ Zod schemas。
 | [`@clean-jsdoc-theme/utils`](https://www.npmjs.com/package/@clean-jsdoc-theme/utils) | 共享 types、Zod schemas，以及每个其他 package 都据以构建的 `SiteManifest` 契约。 | [Overview](/packages/utils-overview) · [Examples](/packages/utils-examples) | [GitHub](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/packages/utils) |
 | [`@clean-jsdoc-theme/setu`](https://www.npmjs.com/package/@clean-jsdoc-theme/setu) | 把 JSDoc doclets 处理成 pages、nav 和交叉解析的 links——产出 `SiteManifest`。不做任何 I/O。 | [Overview](/packages/setu-overview) · [Examples](/packages/setu-examples) | [GitHub](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/packages/setu) |
 | [`@clean-jsdoc-theme/rang`](https://www.npmjs.com/package/@clean-jsdoc-theme/rang) | Preact 组件库、MDX component map 和 island registry——dwar 为 SSR 和 hydration 打包的 UI。 | [Overview](/packages/rang-overview) · [Examples](/packages/rang-examples) | [GitHub](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/packages/rang) |
-| [`@clean-jsdoc-theme/dwar`](https://www.npmjs.com/package/@clean-jsdoc-theme/dwar) | 把一个 `SiteManifest` 渲染为内存中的 HTML/CSS/JS（Preact + MDX + utility CSS + esbuild islands），外加一个 Pagefind hook。纯函数。 | [Overview](/packages/dwar-overview) · [Examples](/packages/dwar-examples) | [GitHub](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/packages/dwar) |
+| [`@clean-jsdoc-theme/dwar`](https://www.npmjs.com/package/@clean-jsdoc-theme/dwar) | 把一个 `SiteManifest` 渲染为内存中的 HTML/CSS/JS（Preact + MDX + utility CSS + esbuild islands）。纯函数。 | [Overview](/packages/dwar-overview) · [Examples](/packages/dwar-examples) | [GitHub](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/packages/dwar) |
 
 ### Entry points
 

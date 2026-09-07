@@ -4,8 +4,8 @@ This is a small TypeScript project documented with the
 [`@clean-jsdoc-theme/typedoc`](https://www.npmjs.com/package/@clean-jsdoc-theme/typedoc)
 plugin. It feeds TypeDoc's reflection tree through the **same** `setu → dwar`
 pipeline as the JSDoc build, so a TypeDoc project gets identical output: SSR
-HTML, a co-located `.md` per page for LLMs, lazy-hydrated islands, fuzzy search,
-and an optional Pagefind index.
+HTML, a co-located `.md` per page for LLMs, lazy-hydrated islands, and fuzzy
+search.
 
 Browse the sidebar to see how the theme renders TypeScript-specific shapes:
 

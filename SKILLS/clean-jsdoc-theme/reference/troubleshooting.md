@@ -12,8 +12,9 @@
 - **A guide group appears after Classes/Modules even though I listed it first:**
   `docGroups` always appends doc groups after API sections — use `sectionOrder` to
   interleave.
-- **Full-text search empty when opening `index.html` from disk:** Pagefind needs
-  HTTP. Serve the folder (`npx serve dist`).
+- **Search empty / islands dead when opening `index.html` from disk:** the
+  island chunks and the search index are fetched, which `file://` blocks. Serve
+  the folder (`npx serve dist`).
 - **An embed didn't appear:** the URL must be `https://` or protocol-relative
   `//`. `http://` and relative paths are dropped (with a warning).
 - **An image doesn't show / "could not read image" warning:** a relative `src`

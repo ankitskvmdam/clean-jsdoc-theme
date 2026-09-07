@@ -27,7 +27,6 @@ sizes, with gzip) and writing `dist/`:
 dist/
 ├── _assets/styles.<buildId>.css
 ├── _islands/<name>.js          # one ESM chunk per island present on a page
-├── pagefind/…                  # Pagefind search index + UI assets
 ├── index.html                  # the README, rendered as the home page
 ├── module/…                    # module / namespace / interface / typedef pages
 ├── <class>/…                   # class & mixin pages (e.g. user/, loggermixin/)
@@ -41,7 +40,7 @@ Interfaces → Mixins → Typedefs → Globals), with Tutorials and Source Files
 
 ## Inspect visually
 
-Pagefind requires HTTP for its WASM + JSON fetches:
+The island chunks and the search index are fetched, so this needs HTTP (not `file://`):
 
 ```sh
 pnpm dlx serve dist
@@ -63,7 +62,7 @@ pnpm run dev
 - **Source viewer** — each documented source file gets a `kind: 'source'` page with a CDN-loaded Monaco viewer, and members link back to `source/<file>#L<n>`.
 - **Pre-hydration theme script** — every page sets `data-theme` on `<html>` before the stylesheet link to avoid FOUC.
 - **Per-page island markers** — the lazy loader at the bottom of each page imports only the chunks whose markers are present (content pages get sidebar/mobile-nav/toc/cmdk/theme-toggle/settings; code blocks add copy-btn/code-tabs; source pages get code-viewer).
-- **Real Pagefind index** — search across all rendered pages, with metadata in `pagefind/pagefind-entry.json`.
+- **Real search index** — the ⌘K palette searches every rendered page (plus member deep-links) from `_assets/search-index.<buildId>.json`.
 
 ## Notes
 

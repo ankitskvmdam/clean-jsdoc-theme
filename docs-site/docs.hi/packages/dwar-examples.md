@@ -12,7 +12,7 @@ JSDoc और TypeDoc bridges आपके लिए इसे call करते 
 हों।
 
 सबसे अच्छा शुरुआती बिंदु package का अपना runnable example है: **smoke script**। यह
-पूरे `setu → dwar → disk` path को एक fixture के विरुद्ध exercise करता है, और
+पूरे `dwar → disk` path को हाथ से लिखे एक manifest के विरुद्ध exercise करता है, और
 चूँकि यह असली code है जो चलता है, यह इस doc का सबसे ईमानदार example है।
 
 अगर आप सिर्फ़ theme को configure करना चाहते हैं, तो इसके बजाय
@@ -25,11 +25,15 @@ pnpm --filter @clean-jsdoc-theme/dwar run smoke
 ```
 
 [`scripts/smoke.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/scripts/smoke.ts)
-setu की JSDoc taffy fixture खींचता है, उसे `generateSite()` के ज़रिए चलाकर एक
-`SiteManifest` पाता है, manifest को dwar के `render()` को सौंपता है, लौटाई गई
-files को `packages/dwar/preview/` में **लिखता** है, और — अगर `pagefind` installed
-है — उस directory के विरुद्ध search index बनाता है। यह visual sanity-checking के
-लिए मौजूद है।
+हाथ से एक छोटा `SiteManifest` बनाता है — एक index page, headings और code fences
+वाला एक guide, एक API page, और एक `kind: 'source'` viewer — उसे dwar के `render()`
+को सौंपता है, और लौटाई गई files को `packages/dwar/preview/` में **लिखता** है। यह
+visual sanity-checking के लिए मौजूद है।
+
+manifest जानबूझकर हाथ से लिखा गया है: dwar को setu पर निर्भर नहीं होना चाहिए
+(setu→dwar boundary एक-तरफ़ा है)। पूरा `setu → dwar → disk` path
+[`examples/basic`](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/examples/basic)
+द्वारा end-to-end exercise होता है।
 
 flow, end to end, है: **manifest in → files out → आप उन्हें लिखते हैं → preview/**।
 
@@ -41,9 +45,9 @@ flow, end to end, है: **manifest in → files out → आप उन्हे
 ([`smoke.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/scripts/smoke.ts)):
 
 ```ts
-import { render, runPagefindAgainstDir } from '@clean-jsdoc-theme/dwar';
+import { render } from '@clean-jsdoc-theme/dwar';
 import type { ThemeConfig } from '@clean-jsdoc-theme/dwar';
-import { generateSite } from '@clean-jsdoc-theme/setu';
+import type { SiteManifest } from '@clean-jsdoc-theme/utils';
 
 const theme: ThemeConfig = {
   tokens: {
@@ -55,7 +59,12 @@ const theme: ThemeConfig = {
   basePath: '/',
 };
 
-const manifest = generateSite(collection, { pkg: { name: 'clean-jsdoc-theme', version: '…' } });
+const manifest: SiteManifest = {
+  buildId: 'smoke',
+  pkg: { name: 'clean-jsdoc-theme', version: '…' },
+  nav: [{ label: 'Home', slug: 'index' }],
+  pages: [{ slug: 'index', frontmatter: { title: 'Home', kind: 'index' }, body: 'Hello.\n' }],
+};
 
 const result = await render(manifest, { theme });
 //                              ^ only `theme` is required
@@ -99,8 +108,7 @@ interface RenderResult {
 ```
 
 व्यवहार में purity contract: **`render()` files को memory में लौटाता है; आप उन्हें
-लिखते हैं।** smoke script ठीक यही करता है — एक plain write loop, फिर optional
-Pagefind step
+लिखते हैं।** smoke script ठीक यही करता है — एक plain write loop
 ([`smoke.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/scripts/smoke.ts)):
 
 ```ts
@@ -114,20 +122,13 @@ for (const file of result.files) {
   await mkdir(dirname(out), { recursive: true });
   await writeFile(out, typeof file.contents === 'string' ? file.contents : Buffer.from(file.contents));
 }
-
-// Pagefind is a SEPARATE post-write step, against the written directory.
-try {
-  await runPagefindAgainstDir(previewDir);
-} catch (err) {
-  console.warn(`[smoke] pagefind skipped: ${(err as Error).message}`);
-}
 ```
 
 असली bridges एक-समान shape अपनाते हैं। JSDoc bridge
 ([`publish.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/clean-jsdoc-theme/src/publish.ts))
-`render` को call करता है, dwar की files को उन assets के साथ concatenate करता है
-जिन्हें *उसने* copy किया (logos, custom CSS/JS, doc images), उन सबको लिखता है, फिर
-Pagefind चलाता है:
+`render` को call करता है, फिर dwar की files को उन assets के साथ concatenate करता
+है जिन्हें *उसने* copy किया (logos, custom CSS/JS, doc images), और उन सबको लिखता
+है:
 
 ```ts
 const result = await render(manifest, {
@@ -144,20 +145,12 @@ await writeOutputFiles(absoluteDestination, outputFiles);
 if (result.errors && result.errors.length > 0) {
   for (const e of result.errors) console.warn(`  - ${e.slug}: ${e.message}`);
 }
-
-// Pagefind is optional — a missing/failing index must not break the build.
-try {
-  await runPagefindAgainstDir(absoluteDestination);
-} catch (err) {
-  console.warn(`pagefind step skipped (optional) — ${(err as Error).message}`);
-}
 ```
 
 TypeDoc bridge
 ([`write-site.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/typedoc/src/write-site.ts))
 ESM में वही चीज़ करता है: `render(manifest, { theme, destination, islandCacheDir })`,
-फिर `writeOutputFiles`, फिर `runPagefindAgainstDir`। दोनों `errors` array को एक
-warning और Pagefind step को best-effort मानते हैं।
+फिर `writeOutputFiles`। दोनों `errors` array को एक warning मानते हैं।
 
 > write loop में श्रम-विभाजन पर ध्यान दें: **dwar की `result.files`** HTML, साथी
 > `.md`, stylesheet, island chunks, और fuzzy-search JSON हैं। **logos, custom
@@ -168,11 +161,13 @@ warning और Pagefind step को best-effort मानते हैं।
 ## Contract, पुनः कथित
 
 - `render(manifest, opts)` **शुद्ध** है — यह files को memory में allocate करता है
-  और उन्हें लौटाता है। यह कभी disk पर नहीं लिखता।
+  और उन्हें लौटाता है। यह कभी disk पर नहीं लिखता। एकमात्र अपवाद opt-in
+  island-bundle cache (`islandCacheDir`) है; उसे छोड़ दें और `render()` disk को
+  बिलकुल नहीं छूता।
 - **आप** `result.files` को destination में लिखते हैं।
-- **`runPagefindAgainstDir(dir)`** एक *अलग* function है जिसे आप लिखने के *बाद*,
-  destination directory के विरुद्ध call करते हैं। यह पूरे package में एकमात्र
-  filesystem touch है, और यह optional है।
+- search को किसी post-write step की ज़रूरत नहीं: fuzzy index पहले से ही
+  `result.files` में एक file है (`_assets/search-index.<buildId>.json`), और `cmdk`
+  island उसे runtime पर fetch करता है।
 
 ## Read the source
 
@@ -181,10 +176,10 @@ warning और Pagefind step को best-effort मानते हैं।
 
 - **The runnable example:**
   [`packages/dwar/scripts/smoke.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/scripts/smoke.ts)
-  — `generateSite` → `render` → write loop → optional Pagefind।
+  — हाथ से लिखा manifest → `render` → write loop।
 - **JSDoc bridge:**
   [`packages/clean-jsdoc-theme/src/publish.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/clean-jsdoc-theme/src/publish.ts)
-  — `render` call, combined write, error + Pagefind handling।
+  — `render` call, combined write, और error handling।
 - **TypeDoc bridge:**
   [`packages/typedoc/src/write-site.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/typedoc/src/write-site.ts)
   — वही path, पूरी तरह ESM।

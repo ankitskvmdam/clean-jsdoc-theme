@@ -92,7 +92,7 @@ npx jsdoc -c jsdoc.json
 <step label="Serve">
 
 site は `dist/` に書き出されます。`dist/index.html` を開くか、folder を serve します
-(Pagefind の full-text index は load に HTTP を必要とします):
+(island chunks と search index は fetch されるため、`file://` では動きません):
 
 ```sh
 npx serve dist

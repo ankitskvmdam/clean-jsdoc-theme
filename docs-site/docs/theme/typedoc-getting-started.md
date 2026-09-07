@@ -91,8 +91,8 @@ npx typedoc
 
 <step label="Serve">
 
-Open `dist/index.html`, or serve the folder (Pagefind's full-text index needs
-HTTP to load):
+Open `dist/index.html`, or serve the folder (the island chunks and the search
+index are fetched, which `file://` blocks):
 
 ```sh
 npx serve dist

@@ -73,7 +73,7 @@ npm i -D clean-jsdoc-theme@latest   # or @next during the v5 prerelease
 
 ```sh
 npx jsdoc -c jsdoc.json
-npx serve <destination>   # Pagefind full-text search needs HTTP
+npx serve <destination>   # islands 与搜索索引是 fetch 来的，所以需要 HTTP
 ```
 
 对于任何遗留的 `theme_opts` 键或 v4 选项名，v5 会**发出警告**（并附带
@@ -103,7 +103,7 @@ npx serve <destination>   # Pagefind full-text search needs HTTP
 | `homepageTitle` | — | 已移除 | 首页 `<title>` 由 README / `docs/index.md` + `siteName` 派生。 |
 | `includeFilesListInHomepage` | — | 已移除 | Source Files 区块会列出文件。 |
 | `meta` | `meta` | 已变更 | 再次受支持 —— 一个由 attribute map 组成的数组 → `<head>` 中的 `<meta>` tags。参见 [`meta`](/theme/configuration#meta)。 |
-| `search` | — | 已移除 | 始终开启的模糊搜索 + 可选的 Pagefind。 |
+| `search` | — | 已移除 | 始终开启的模糊搜索。 |
 | `codepen` | `playground` | 已变更 | v4 从 `@example` 预填一个 CodePen；v5 将其泛化为 [`playground`](/components/playground) —— 通过 `opts.playground` + `@playground` tag，在 CodePen、JSFiddle 或 CodeSandbox 中打开一个示例。（要通过 URL 嵌入一个现成的 pen，请使用 [`@iframe`](/components/embeds)。） |
 | `static_dir` | — | 已移除 | 使用 JSDoc 自身的静态文件配置。 |
 | `footer` | `footer` | 已变更 | 再次受支持 —— 一个内联 HTML 字符串或 `{ file: "./footer.html" }`。用 `customCss` / `customCssFile` 为其设置样式。参见 [`footer`](/theme/configuration#footer)。 |

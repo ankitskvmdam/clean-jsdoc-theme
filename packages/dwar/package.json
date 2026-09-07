@@ -50,12 +50,10 @@
   },
   "dependencies": {
     "@clean-jsdoc-theme/rang": "workspace:^",
-    "@clean-jsdoc-theme/setu": "workspace:^",
     "@clean-jsdoc-theme/utils": "workspace:^",
     "@mdx-js/mdx": "^3.0.0",
     "@shikijs/rehype": "^4.2.0",
     "esbuild": "^0.28.0",
-    "pagefind": "^1.1.0",
     "preact-render-to-string": "^6.5.13",
     "remark-frontmatter": "^5",
     "remark-gfm": "^4",

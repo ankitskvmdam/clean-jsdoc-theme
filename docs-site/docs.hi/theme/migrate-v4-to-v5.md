@@ -76,7 +76,7 @@ npm i -D clean-jsdoc-theme@latest   # या v5 prerelease के दौरा�
 
 ```sh
 npx jsdoc -c jsdoc.json
-npx serve <destination>   # Pagefind full-text search को HTTP चाहिए
+npx serve <destination>   # islands + search index fetch होते हैं, इसलिए HTTP
 ```
 
 v5 किसी भी बचे-हुए `theme_opts` key या v4 option नाम पर **warn** करता है (एक "did
@@ -106,7 +106,7 @@ you mean?" संकेत के साथ) और build करता रहत
 | `homepageTitle` | — | हटाया गया | Home `<title>` README / `docs/index.md` + `siteName` से derive होता है। |
 | `includeFilesListInHomepage` | — | हटाया गया | Source Files section files सूचीबद्ध करता है। |
 | `meta` | `meta` | बदला गया | फिर से समर्थित — attribute maps की एक array → `<head>` में `<meta>` tags। देखें [`meta`](/theme/configuration#meta)। |
-| `search` | — | हटाया गया | हमेशा-on fuzzy search + वैकल्पिक Pagefind। |
+| `search` | — | हटाया गया | हमेशा-on fuzzy search। |
 | `codepen` | `playground` | बदला गया | v4 एक CodePen को `@example` से prefill करता था; v5 इसे [`playground`](/components/playground) में सामान्यीकृत करता है — किसी example को `opts.playground` + `@playground` tag के ज़रिये CodePen, JSFiddle, या CodeSandbox में खोलें। (किसी मौजूदा pen को URL से embed करने के लिए, [`@iframe`](/components/embeds) इस्तेमाल करें।) |
 | `static_dir` | — | हटाया गया | JSDoc की अपनी static-file config इस्तेमाल करें। |
 | `footer` | `footer` | बदला गया | फिर से समर्थित — एक inline HTML string या `{ file: "./footer.html" }`। इसे `customCss` / `customCssFile` से style करें। देखें [`footer`](/theme/configuration#footer)। |

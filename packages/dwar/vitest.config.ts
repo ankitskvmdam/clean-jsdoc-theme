@@ -17,8 +17,8 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     include: ['src/__tests__/**/*.test.{ts,tsx}'],
-    // Pagefind binary can take a moment, and each render() test bundles every
-    // island chunk through esbuild — slow under whole-suite serial load.
+    // Each render() test bundles every island chunk through esbuild — slow
+    // under whole-suite serial load.
     testTimeout: 120_000,
   },
 });

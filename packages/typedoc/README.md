@@ -40,8 +40,8 @@ search, light and dark themes, and a companion `.md` of every page for LLMs.
 - **Fast & framework-free** — server-rendered pages with lazily-hydrated Preact
   islands; each page loads only the JS it actually uses.
 - **Search built in** — a fuzzy command palette (`Ctrl K`) over titles,
-  descriptions, content, and per-member deep links, plus an optional
-  [Pagefind](https://pagefind.app/) full-text index.
+  descriptions, content, and per-member deep links. Always on, nothing to
+  configure.
 - **Guides + API in one site** — hand-written Markdown guides and the
   auto-generated reference share one sidebar and one search.
 - **Localization in progress** — the `clean-jsdoc` i18n tooling already extracts
@@ -83,7 +83,7 @@ its output in `typedoc.json`; theme options live under `cleanJsdocTheme`:
 > `typedoc.json` — `readme` is TypeDoc's, the theme options nest under
 > `cleanJsdocTheme`.
 
-Build, then serve over HTTP (Pagefind needs HTTP to load its index):
+Build, then serve over HTTP (the island chunks and the search index are fetched, which `file://` blocks):
 
 ```sh
 npx typedoc

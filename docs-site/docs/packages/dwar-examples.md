@@ -11,8 +11,9 @@ and TypeDoc bridges call it for you. You reach for it directly only when you're
 building a *custom bridge*, or when you want to see the renderer in isolation.
 
 The best starting point is the package's own runnable example: the **smoke
-script**. It exercises the whole `setu → dwar → disk` path against a fixture, and
-because it's real code that runs, it's the most honest example in this doc.
+script**. It exercises the whole `dwar → disk` path against a hand-authored
+manifest, and because it's real code that runs, it's the most honest example in
+this doc.
 
 If you just want to configure the theme, see [Configuration](/theme/configuration)
 instead.
@@ -24,10 +25,14 @@ pnpm --filter @clean-jsdoc-theme/dwar run smoke
 ```
 
 [`scripts/smoke.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/scripts/smoke.ts)
-pulls setu's JSDoc taffy fixture, runs it through `generateSite()` to get a
-`SiteManifest`, hands the manifest to dwar's `render()`, **writes** the returned
-files into `packages/dwar/preview/`, and — if `pagefind` is installed — builds
-the search index against that directory. It exists for visual sanity-checking.
+builds a small `SiteManifest` by hand — an index page, a guide with headings and
+code fences, an API page, and a `kind: 'source'` viewer — hands it to dwar's
+`render()`, and **writes** the returned files into `packages/dwar/preview/`. It
+exists for visual sanity-checking.
+
+The manifest is hand-authored on purpose: dwar must not depend on setu (the
+setu→dwar boundary is one-way). The full `setu → dwar → disk` path is exercised
+end-to-end by [`examples/basic`](https://github.com/ankitskvmdam/clean-jsdoc-theme/tree/master/examples/basic).
 
 The flow, end to end, is: **manifest in → files out → you write them → preview/**.
 
@@ -39,9 +44,9 @@ the minimal form
 ([`smoke.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/scripts/smoke.ts)):
 
 ```ts
-import { render, runPagefindAgainstDir } from '@clean-jsdoc-theme/dwar';
+import { render } from '@clean-jsdoc-theme/dwar';
 import type { ThemeConfig } from '@clean-jsdoc-theme/dwar';
-import { generateSite } from '@clean-jsdoc-theme/setu';
+import type { SiteManifest } from '@clean-jsdoc-theme/utils';
 
 const theme: ThemeConfig = {
   tokens: {
@@ -53,7 +58,12 @@ const theme: ThemeConfig = {
   basePath: '/',
 };
 
-const manifest = generateSite(collection, { pkg: { name: 'clean-jsdoc-theme', version: '…' } });
+const manifest: SiteManifest = {
+  buildId: 'smoke',
+  pkg: { name: 'clean-jsdoc-theme', version: '…' },
+  nav: [{ label: 'Home', slug: 'index' }],
+  pages: [{ slug: 'index', frontmatter: { title: 'Home', kind: 'index' }, body: 'Hello.\n' }],
+};
 
 const result = await render(manifest, { theme });
 //                              ^ only `theme` is required
@@ -97,8 +107,7 @@ interface RenderResult {
 ```
 
 The purity contract in practice: **`render()` returns files in memory; you write
-them.** The smoke script does exactly that — a plain write loop, then the optional
-Pagefind step
+them.** The smoke script does exactly that — a plain write loop
 ([`smoke.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/scripts/smoke.ts)):
 
 ```ts
@@ -112,19 +121,12 @@ for (const file of result.files) {
   await mkdir(dirname(out), { recursive: true });
   await writeFile(out, typeof file.contents === 'string' ? file.contents : Buffer.from(file.contents));
 }
-
-// Pagefind is a SEPARATE post-write step, against the written directory.
-try {
-  await runPagefindAgainstDir(previewDir);
-} catch (err) {
-  console.warn(`[smoke] pagefind skipped: ${(err as Error).message}`);
-}
 ```
 
 The real bridges follow the identical shape. The JSDoc bridge
 ([`publish.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/clean-jsdoc-theme/src/publish.ts))
-calls `render`, concatenates dwar's files with the assets *it* copied (logos,
-custom CSS/JS, doc images), writes them all, then runs Pagefind:
+calls `render`, then concatenates dwar's files with the assets *it* copied
+(logos, custom CSS/JS, doc images) and writes them all:
 
 ```ts
 const result = await render(manifest, {
@@ -141,20 +143,12 @@ await writeOutputFiles(absoluteDestination, outputFiles);
 if (result.errors && result.errors.length > 0) {
   for (const e of result.errors) console.warn(`  - ${e.slug}: ${e.message}`);
 }
-
-// Pagefind is optional — a missing/failing index must not break the build.
-try {
-  await runPagefindAgainstDir(absoluteDestination);
-} catch (err) {
-  console.warn(`pagefind step skipped (optional) — ${(err as Error).message}`);
-}
 ```
 
 The TypeDoc bridge
 ([`write-site.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/typedoc/src/write-site.ts))
 does the same thing in ESM: `render(manifest, { theme, destination, islandCacheDir })`,
-then `writeOutputFiles`, then `runPagefindAgainstDir`. Both treat the `errors`
-array as a warning and the Pagefind step as best-effort.
+then `writeOutputFiles`. Both treat the `errors` array as a warning.
 
 > Note the division of labor in the write loop: **dwar's `result.files`** are the
 > HTML, the companion `.md`, the stylesheet, the island chunks, and the
@@ -165,11 +159,12 @@ array as a warning and the Pagefind step as best-effort.
 ## The contract, restated
 
 - `render(manifest, opts)` is **pure** — it allocates files in memory and returns
-  them. It never writes to disk.
+  them. It never writes to disk. The one exception is the opt-in island-bundle
+  cache (`islandCacheDir`); omit it and `render()` touches no disk at all.
 - **You** write `result.files` to the destination.
-- **`runPagefindAgainstDir(dir)`** is a *separate* function you call *after*
-  writing, against the destination directory. It's the only filesystem touch in
-  the whole package, and it's optional.
+- Search needs no post-write step: the fuzzy index is already one of
+  `result.files` (`_assets/search-index.<buildId>.json`), and the `cmdk` island
+  fetches it at runtime.
 
 ## Read the source
 
@@ -178,10 +173,10 @@ snippet above:
 
 - **The runnable example:**
   [`packages/dwar/scripts/smoke.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/scripts/smoke.ts)
-  — `generateSite` → `render` → write loop → optional Pagefind.
+  — hand-authored manifest → `render` → write loop.
 - **JSDoc bridge:**
   [`packages/clean-jsdoc-theme/src/publish.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/clean-jsdoc-theme/src/publish.ts)
-  — the `render` call, the combined write, the error + Pagefind handling.
+  — the `render` call, the combined write, and the error handling.
 - **TypeDoc bridge:**
   [`packages/typedoc/src/write-site.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/typedoc/src/write-site.ts)
   — the same path, ESM all the way.

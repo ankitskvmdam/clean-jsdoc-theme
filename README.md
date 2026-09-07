@@ -7,7 +7,7 @@
 [![live demo](https://img.shields.io/badge/live%20demo-api--docs-7c3aed)](https://ankdev.me/clean-jsdoc-theme/api-docs)
 [![sponsor](https://img.shields.io/badge/sponsor-%E2%9D%A4-db61a2?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/ankitskvmdam)
 
-A fast, modern, LLM-friendly documentation theme for **JSDoc _and_ TypeDoc**. Point it at your source comments — and, optionally, a folder of Markdown guides — and v5 produces a static site: SSR-rendered chrome, lazy-hydrated Preact islands (sidebar, TOC, fuzzy command palette, theme toggle, settings, mobile nav, language switcher, copy-page button, code-block copy, tabbed code blocks, a Monaco source viewer), a co-located `.md` per page for LLMs, a built-in fuzzy search index (plus an optional Pagefind full-text index), and optional multi-language (i18n) builds — all framework-free, with no CSS or build config required to get started.
+A fast, modern, LLM-friendly documentation theme for **JSDoc _and_ TypeDoc**. Point it at your source comments — and, optionally, a folder of Markdown guides — and v5 produces a static site: SSR-rendered chrome, lazy-hydrated Preact islands (sidebar, TOC, fuzzy command palette, theme toggle, settings, mobile nav, language switcher, copy-page button, code-block copy, tabbed code blocks, a Monaco source viewer), a co-located `.md` per page for LLMs, a built-in fuzzy search index, and optional multi-language (i18n) builds — all framework-free, with no CSS or build config required to get started.
 
 > If clean-jsdoc-theme saves you time, please consider [sponsoring its development](https://github.com/sponsors/ankitskvmdam) — it directly funds the v5 rewrite and ongoing maintenance.
 
@@ -24,7 +24,7 @@ Four boundary packages (utils → setu/rang → dwar), each independently testab
 | [`@clean-jsdoc-theme/utils`](./packages/utils)      | Shared type contracts (`SiteManifest`, `Page`, `RenderOptions`, `IslandName`, …) and slug rules used by both setu and dwar.                                                                                                                                                          |
 | [`@clean-jsdoc-theme/setu`](./packages/setu)        | JSDoc → `SiteManifest`. Walks the salty doclet collection into one MDX page per documented symbol (classes, interfaces, mixins, modules, namespaces, typedefs, globals) plus README/tutorials/source pages, and resolves `{@link}`/`@see` cross-references. No HTML, no JSX, no I/O. |
 | [`@clean-jsdoc-theme/rang`](./packages/rang)        | Preact component library: chrome (`Layout`, `Header`, `Footer`, `Brand`), the hydratable islands (`IslandName` set), shadcn-style primitives (`Button`, `ButtonGroup`, `Dialog`, `DropdownMenu`), MDX element map, `ISLAND_REGISTRY`.                                                |
-| [`@clean-jsdoc-theme/dwar`](./packages/dwar)        | Pure `SiteManifest` → HTML/CSS/JS renderer. Server-renders pages, bundles each island as its own ESM chunk via esbuild, emits CSS, exposes a separate Pagefind post-write step.                                                                                                      |
+| [`@clean-jsdoc-theme/dwar`](./packages/dwar)        | Pure `SiteManifest` → HTML/CSS/JS renderer. Server-renders pages, bundles each island as its own ESM chunk via esbuild, and emits CSS.                                                                                                      |
 | [`clean-jsdoc-theme`](./packages/clean-jsdoc-theme) | The JSDoc theme entry. A thin `publish.ts` bridge that wires the packages together and is what `jsdoc -t clean-jsdoc-theme` actually invokes.                                                                                                                                        |
 | [`@clean-jsdoc-theme/typedoc`](./packages/typedoc)  | The TypeDoc bridge — a plugin that feeds TypeDoc's reflections through the same setu → dwar pipeline, so a TypeScript project gets identical output. Selected via the `outputs` option in `typedoc.json`.                                                                            |
 | [`@clean-jsdoc-theme/aadesh`](./packages/aadesh)    | The `clean-jsdoc` CLI for the theme. Localization authoring lives under the `i18n` group (`clean-jsdoc i18n extract`/`prompt`/`validate`); `build` is top-level (one static site per locale). Reads locales from your existing `jsdoc.json` opts; the top-level namespace is reserved for future groups. |
@@ -34,7 +34,7 @@ Four boundary packages (utils → setu/rang → dwar), each independently testab
 
 ## Quickstart
 
-Both toolchains render through the same pipeline, so the output is identical — pick the entry point that matches your source. Serve over HTTP (Pagefind's full-text index needs HTTP to load).
+Both toolchains render through the same pipeline, so the output is identical — pick the entry point that matches your source. Serve over HTTP (the island chunks and the search index are fetched, which `file://` blocks).
 
 ### JSDoc
 
@@ -84,7 +84,7 @@ typedoc
 pnpm dlx serve dist
 ```
 
-Runnable fixtures — `pnpm install && pnpm run docs` in each: [`examples/basic/`](./examples/basic) (JSDoc, covering every documentable kind, source-file viewers, tutorials, a README home page, per-island ESM chunks, and a Pagefind index), [`examples/typedoc-basic/`](./examples/typedoc-basic) (TypeDoc), and [`examples/with-i18n-example/`](./examples/with-i18n-example) (a 3-locale build).
+Runnable fixtures — `pnpm install && pnpm run docs` in each: [`examples/basic/`](./examples/basic) (JSDoc, covering every documentable kind, source-file viewers, tutorials, a README home page, and per-island ESM chunks), [`examples/typedoc-basic/`](./examples/typedoc-basic) (TypeDoc), and [`examples/with-i18n-example/`](./examples/with-i18n-example) (a 3-locale build).
 
 ## Documentation
 

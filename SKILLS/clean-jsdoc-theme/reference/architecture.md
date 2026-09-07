@@ -9,14 +9,15 @@ published to npm and reusable. Read this when working **on** the theme rather th
 | `@clean-jsdoc-theme/utils` | Shared types, Zod schemas, the `SiteManifest` contract, slug rules, and **pure** opts-validation + build-report logic (network/zlib injected so it stays browser-safe). The setu↔dwar boundary lives here once. |
 | `@clean-jsdoc-theme/setu` | JSDoc doclets → `SiteManifest`. Emits MDX/Markdown only, **no HTML, no I/O**. Owns page generation, nav assembly, link resolution. |
 | `@clean-jsdoc-theme/rang` | Preact component library — SSR chrome, hydratable islands, the MDX element map, the island registry. **Owns every byte of page-shell HTML.** Tailwind utility classes over CSS variables. |
-| `@clean-jsdoc-theme/dwar` | `SiteManifest` → HTML/CSS/JS. A **pure** renderer: SSR pages, esbuild island bundle, CSS, separate Pagefind step. Consumes only the manifest; never re-reads doclets. |
+| `@clean-jsdoc-theme/dwar` | `SiteManifest` → HTML/CSS/JS. A **pure** renderer: SSR pages, esbuild island bundle, CSS. Consumes only the manifest; never re-reads doclets. |
 | `clean-jsdoc-theme` | The JSDoc theme entry — a thin CJS bridge (`publish()`) that does the file I/O and wires setu → dwar. |
 | `@clean-jsdoc-theme/typedoc` | The TypeDoc plugin — adapts reflections → doclets → the same setu → dwar core. ESM. |
 | `@clean-jsdoc-theme/aadesh` | The `clean-jsdoc` **localization CLI** — extract → translate → validate → build one site per locale (+ an interactive menu). Disk I/O + process orchestration. |
 | `@clean-jsdoc-theme/bhasha` | The pure, browser-safe **i18n core** — UI catalog, `t` translator, `LanguageProvider`, and the API-slot key/hash scheme setu/aadesh/rang share. |
 
 Boundary guarantees (don't violate when editing): **setu never imports dwar or
-rang** (one-way), **dwar.render() is pure** (the only disk touch is Pagefind),
+rang** (one-way), **dwar.render() is pure** (the only disk touch is the opt-in
+island-bundle cache),
 **dwar never re-reads doclets**, **slug rules and the boundary contract live once
 in utils**, and **chrome markup lives once in rang** (dwar's `SsrLayout` only wraps
 islands in `data-island` markers and fills rang's `Layout` slots).
