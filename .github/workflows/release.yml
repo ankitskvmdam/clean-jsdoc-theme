@@ -24,13 +24,6 @@ jobs:
           cache: pnpm
           registry-url: 'https://registry.npmjs.org' # sets up .npmrc auth for publish
 
-      # Trusted publishing (OIDC) needs npm >= 11.5.1; Node 22 ships npm 10.x.
-      # `changeset publish` runs `pnpm publish`, which shells out to the `npm`
-      # on PATH, so upgrading the global npm is what makes the token-less
-      # publish below work.
-      - run: npm install -g npm@latest
-      - run: npm --version
-
       - run: pnpm install --frozen-lockfile
 
       # Build first: turbo wires `test`/`typecheck` to depend on `build`, so
@@ -56,18 +49,21 @@ jobs:
       # not yet on npm, so this step is idempotent (safe to re-run) and skips
       # `private` packages (examples/*, docs-site) automatically.
       #
-      # Auth is npm **trusted publishing** (OIDC): no token, no secret. The job's
-      # `id-token: write` lets npm mint a short-lived credential for this exact
-      # repo + workflow file, which each package's Trusted Publisher config on
-      # npmjs.com (owner `ankitskvmdam`, repo `clean-jsdoc-theme`, workflow
-      # `release.yml`, allowed action `npm publish`) accepts. Provenance is
-      # emitted automatically on this path. The former `NPM_TOKEN` path was
-      # retired because npm is phasing out 2FA-bypass granular tokens (they
-      # lose direct publishing around January 2027, and the one this repo had
-      # already stopped working): see
-      # https://github.blog/changelog/2026-07-08-npm-install-time-security-and-gat-bypass2fa-deprecation/
+      # OIDC upgrade path: once the npm packages are configured with a trusted
+      # publisher pointing at this repo + workflow, the `NPM_TOKEN` secret and the
+      # `NPM_TOKEN` env line below can be dropped — `id-token: write` +
+      # NPM_CONFIG_PROVENANCE handle auth and provenance token-lessly.
       - name: Publish
         run: |
+          # Relying on setup-node's userconfig + ${NODE_AUTH_TOKEN} expansion is
+          # flaky with `pnpm changeset publish` (it produced ENEEDAUTH on every
+          # package). Write the auth line explicitly into the workspace-root
+          # .npmrc, which pnpm reads for every package it publishes.
+          if [ -z "${NPM_TOKEN}" ]; then
+            echo "::error::NPM_TOKEN secret is empty or missing. Add it under repo Settings -> Secrets and variables -> Actions (name: NPM_TOKEN)."
+            exit 1
+          fi
+          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> .npmrc
           # In changesets pre mode (.changeset/pre.json present), `changeset
           # publish` controls the dist-tag itself (the pre tag, e.g. `alpha`) and
           # rejects a custom --tag. Outside pre mode, pick latest/next from the
@@ -78,4 +74,5 @@ jobs:
             pnpm changeset publish --tag ${{ steps.disttag.outputs.tag }}
           fi
         env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true # emit npm provenance attestations
