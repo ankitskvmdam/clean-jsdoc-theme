@@ -1,5 +1,13 @@
 # @clean-jsdoc-theme/setu
 
+## 5.2.1
+
+### Patch Changes
+
+- Updated dependencies [6489b20]
+  - @clean-jsdoc-theme/utils@5.2.1
+  - @clean-jsdoc-theme/bhasha@5.2.1
+
 ## 5.2.0
 
 ### Patch Changes
