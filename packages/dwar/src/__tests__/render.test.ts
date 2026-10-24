@@ -721,6 +721,135 @@ describe('render() — issue #333: index name clash', () => {
   });
 });
 
+// issue #347: a doc-comment description whose first word is lowercase `import`
+// (or `export`) lands at column 0 of a flow line in the MDX body. MDX's ESM
+// construct claims any such line as an ES module statement, acorn rejects the
+// prose ("Could not parse import/exports with acorn"), and the whole page — with
+// every member on it — is skipped. The reporter's workaround was capitalizing
+// the word; the theme must render the sentence as prose whatever word it starts
+// with, exactly as v4 and JSDoc's default template do.
+describe('render() — issue #347: prose line starting with import/export', () => {
+  const IMPORT_SENTENCE = 'import these functions to your own project.';
+  const EXPORT_SENTENCE = 'export the result when you are done.';
+
+  /** The shape setu emits for a `@module` page whose description is `sentence`. */
+  function modulePageBody(name: string, sentence: string): string {
+    return [
+      '---',
+      `title: ${name}`,
+      'kind: module',
+      `longname: module:${name}`,
+      `description: ${sentence}`,
+      '---',
+      '',
+      `# ${name}`,
+      '',
+      `<SourceLink href="/source/main-js/#L5" label="main.js:5" />`,
+      '',
+      sentence,
+      '',
+    ].join('\n');
+  }
+
+  function manifestWith(slug: string, body: string): SiteManifest {
+    const m = makeManifest();
+    m.pages.push({
+      slug,
+      frontmatter: { title: slug, kind: 'module', description: 'A page.' },
+      body,
+      headings: [],
+    });
+    m.nav.push({ label: slug, slug });
+    return m;
+  }
+
+  async function renderOne(slug: string, body: string) {
+    const result = await render(manifestWith(slug, body), { theme: minimalTheme });
+    const err = result.errors?.find((e) => e.slug === slug);
+    const file = result.files.find((f) => f.path === `${slug}/index.html`);
+    return { result, err, html: file ? asString(file) : undefined };
+  }
+
+  it('renders a module description that starts with lowercase "import" (the issue repro)', async () => {
+    const { err, html } = await renderOne('module/foo', modulePageBody('foo', IMPORT_SENTENCE));
+    expect(err, err?.message).toBeUndefined();
+    expect(html).toBeDefined();
+    // Rendered as prose — the sentence is visible, verbatim.
+    expect(html).toContain(IMPORT_SENTENCE);
+  });
+
+  it('renders a module description that starts with lowercase "export"', async () => {
+    const { err, html } = await renderOne('module/baz', modulePageBody('baz', EXPORT_SENTENCE));
+    expect(err, err?.message).toBeUndefined();
+    expect(html).toContain(EXPORT_SENTENCE);
+  });
+
+  it('renders "export default …" prose (the construct keys on the keyword alone)', async () => {
+    const sentence = 'export default behaviour is to copy the file.';
+    const { err, html } = await renderOne('module/qux', modulePageBody('qux', sentence));
+    expect(err, err?.message).toBeUndefined();
+    expect(html).toContain(sentence);
+  });
+
+  it('renders when the import line is the very first flow line after the frontmatter', async () => {
+    const body = `---\ntitle: summary\nkind: guide\n---\n\n${IMPORT_SENTENCE}\n`;
+    const { err, html } = await renderOne('summary', body);
+    expect(err, err?.message).toBeUndefined();
+    expect(html).toContain(IMPORT_SENTENCE);
+  });
+
+  it('renders when a later paragraph starts with "import"', async () => {
+    const body = `# Page\n\nUse this module.\n\n${IMPORT_SENTENCE}\n`;
+    const { err, html } = await renderOne('later', body);
+    expect(err, err?.message).toBeUndefined();
+    expect(html).toContain(IMPORT_SENTENCE);
+  });
+
+  it('still renders the other pages when one has the import line (no cross-page damage)', async () => {
+    const { result } = await renderOne('module/foo', modulePageBody('foo', IMPORT_SENTENCE));
+    expect(result.files.map((f) => f.path)).toContain('index.html');
+    expect(result.files.map((f) => f.path)).toContain('guide/intro/index.html');
+  });
+
+  // Controls: these pass today and must keep passing once the keyword is guarded.
+  it('still renders a capitalized "Import …" line as prose (the reporter\'s workaround)', async () => {
+    const sentence = 'Import these functions to your own project.';
+    const { err, html } = await renderOne('module/bar', modulePageBody('bar', sentence));
+    expect(err).toBeUndefined();
+    expect(html).toContain(sentence);
+  });
+
+  it('still renders words that merely begin with import/export, and mid-line uses', async () => {
+    const body = [
+      '# Page',
+      '',
+      'important: read this first.',
+      '',
+      'imports are resolved lazily.',
+      '',
+      'You can import these functions and export the result.',
+      '',
+    ].join('\n');
+    const { err, html } = await renderOne('words', body);
+    expect(err).toBeUndefined();
+    expect(html).toContain('important: read this first.');
+    expect(html).toContain('imports are resolved lazily.');
+    expect(html).toContain('You can import these functions and export the result.');
+  });
+
+  it('still highlights a real import statement inside a fenced code block', async () => {
+    const body = '# Page\n\n```js\nimport x from "y";\nexport default x;\n```\n';
+    const { err, html } = await renderOne('fence', body);
+    expect(err).toBeUndefined();
+    expect(html).toMatch(/<pre class="[^"]*\bshiki\b/);
+    // Shiki tokenizes the keyword into its own span — it must still be there, as code.
+    expect(html).toMatch(/<span[^>]*>import<\/span>/);
+    // And no escaped artefact leaked into the code block.
+    expect(html).not.toContain('&#x69;mport');
+    expect(html).not.toContain('\\import');
+  });
+});
+
 describe('render() — issue #333: render-error diagnostics', () => {
   function manifestWithBadPage(): SiteManifest {
     const m = makeManifest();
@@ -791,9 +920,13 @@ describe('render() — issue #333: render-error diagnostics', () => {
     m.pages.push({
       slug: 'globals',
       frontmatter: { title: 'Globals', kind: 'guide', description: 'Aggregated globals.' },
-      body: ['# Globals', '', 'Pass `{ port: 8080 } to override the port', '', 'and keep the rest.'].join(
-        '\n'
-      ),
+      body: [
+        '# Globals',
+        '',
+        'Pass `{ port: 8080 } to override the port',
+        '',
+        'and keep the rest.',
+      ].join('\n'),
       headings: [],
     });
     const result = await render(m, { theme: minimalTheme });

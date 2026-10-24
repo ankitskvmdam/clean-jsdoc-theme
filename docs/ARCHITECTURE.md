@@ -488,7 +488,10 @@ dwar/src/
 │                         #   remark-gfm for tables/strikethrough/task-lists,
 │                         #   + rehype slug pass giving headings ids that mirror
 │                         #   setu's TOC exactly — slugifyHeading + per-page registry).
-│                         #   Pre-pass: {@link} → code spans + escapeStrayBraces (literal
+│                         #   Pre-pass: {@link} → code spans + escapeEsmLookalikes (a
+│                         #   prose line starting `import `/`export ` would be read
+│                         #   as ESM — its first letter becomes a char ref, #347)
+│                         #   + escapeStrayBraces (literal
 │                         #   {…} in JSDoc prose escaped so MDX won't read it as JS;
 │                         #   inline-code matching follows CommonMark — a code span can't
 │                         #   cross a blank line — so a stray backtick can't desync a

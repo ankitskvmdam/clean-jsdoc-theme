@@ -174,6 +174,50 @@ export function escapeStrayBraces(source: string): string {
   return prefix + escaped;
 }
 
+/**
+ * Neutralize prose lines that MDX would read as ES module statements (issue
+ * #347). MDX's ESM construct claims any flow-level line that starts at column 0
+ * with `import` or `export` followed by whitespace — so a doc comment whose
+ * description begins "import these functions to your own project." is handed
+ * to acorn as JavaScript, which rejects it ("Could not parse import/exports
+ * with acorn") and the whole page is skipped. setu never emits real ESM (its
+ * only JSX is the capitalized component tags), so every such line in a page
+ * body is prose.
+ *
+ * The keyword's first letter becomes a numeric character reference
+ * (`&#x69;mport` / `&#x65;xport`). A backslash is not an option — CommonMark only
+ * escapes ASCII punctuation, so `\import` would render a literal backslash —
+ * whereas MDX's tokenizer sees `&`, never starts the ESM construct, and the
+ * reference decodes back to the plain letter in the rendered text. Lines inside
+ * fenced code blocks, inline code spans, MDX JSX tags and the YAML frontmatter
+ * are left untouched (a real `import x from 'y'` in an `@example` must stay
+ * code). Only column-0 lines are touched — an indented line is never ESM — and
+ * words that merely start with the keyword (`important`, `imports`) don't match
+ * because the keyword must be followed by whitespace. A column-0 lazy
+ * continuation line ("Use it.\nimport it anywhere.") is also rewritten: it isn't
+ * ESM, but a flow line right after a JSX element is, and telling the two apart
+ * needs a block parser; the reference decodes to the same letter either way,
+ * so the over-escape is invisible.
+ * The `.md` companion is written from the original body, so it never sees the
+ * reference.
+ */
+export function escapeEsmLookalikes(source: string): string {
+  // Keep leading YAML frontmatter verbatim.
+  const fm = /^---\n[\s\S]*?\n---\n/.exec(source);
+  const prefix = fm ? fm[0] : '';
+  const body = fm ? source.slice(fm[0].length) : source;
+
+  // Same tokenizer shape as escapeStrayBraces: a fenced code block, OR an MDX
+  // JSX tag, OR an inline code span (never crossing a blank line), OR — the only
+  // branch that rewrites — a column-0 `import`/`export` keyword + whitespace.
+  const re =
+    /(```[\s\S]*?```|~~~[\s\S]*?~~~)|(<\/?[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][\w-]*(?:="[^"]*")?)*\s*\/?>)|(?<![`\\])(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`)|^(import|export)(?=\s)/gm;
+  const escaped = body.replace(re, (m, _fence, _jsx, _ticks, keyword: string | undefined) =>
+    keyword ? `&#x${keyword.charCodeAt(0).toString(16)};${keyword.slice(1)}` : m
+  );
+  return prefix + escaped;
+}
+
 /** A backtick run that opened no inline-code span — i.e. an unbalanced backtick. */
 export interface StrayBacktick {
   /** 1-based source line of the stray backtick run. */
@@ -284,7 +328,12 @@ export async function compileMdxToComponent(
   shiki: ShikiThemes,
   langs: readonly string[]
 ): Promise<CompiledMdx> {
-  const cleaned = escapeStrayBraces(preprocessJsdocInlineTags(source));
+  // Pre-passes, in order: `{@tag}` → code spans (so the braces that follow are
+  // protected), ESM look-alike prose lines → character references (issue #347),
+  // then stray-brace escaping. The ESM pass runs before the brace pass only so
+  // each sees the same code-span boundaries; neither produces input for the
+  // other.
+  const cleaned = escapeStrayBraces(escapeEsmLookalikes(preprocessJsdocInlineTags(source)));
   // The MDX `evaluate` runtime types target the React jsx-runtime signature;
   // Preact's runtime is shape-compatible at runtime but the structural types
   // diverge enough that we use `unknown` plus a cast at the call site.
@@ -384,7 +433,10 @@ export async function createSignatureHighlighter(
     }));
     let html: string;
     try {
-      html = highlighter.codeToHtml(code, decorations.length > 0 ? { ...options, decorations } : options);
+      html = highlighter.codeToHtml(
+        code,
+        decorations.length > 0 ? { ...options, decorations } : options
+      );
     } catch {
       html = highlighter.codeToHtml(code, options);
     }

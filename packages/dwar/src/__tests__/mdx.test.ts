@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   collectUsedLangs,
+  escapeEsmLookalikes,
   escapeStrayBraces,
   findStrayBackticks,
   preprocessJsdocInlineTags,
@@ -205,5 +206,133 @@ describe('findStrayBackticks', () => {
     const stray = findStrayBackticks(src);
     expect(stray).toHaveLength(1);
     expect(stray[0].line).toBe(2);
+  });
+});
+
+// issue #347: MDX reads a flow line that starts with `import `/`export ` as an
+// ES module statement, so a doc-comment description beginning with that word
+// aborted its page. The pre-pass turns the keyword's first letter into a
+// character reference (invisible once rendered) everywhere it is prose.
+describe('escapeEsmLookalikes (issue #347)', () => {
+  const IMPORT = 'import these functions to your own project.';
+  const EXPORT = 'export the result when you are done.';
+
+  it('escapes a paragraph that starts with lowercase "import"', () => {
+    expect(escapeEsmLookalikes(`${IMPORT}\n`)).toBe(
+      `&#x69;mport these functions to your own project.\n`
+    );
+  });
+
+  it('escapes a paragraph that starts with lowercase "export"', () => {
+    expect(escapeEsmLookalikes(`${EXPORT}\n`)).toBe(`&#x65;xport the result when you are done.\n`);
+  });
+
+  it('escapes "export default …" prose (the construct keys on the keyword alone)', () => {
+    expect(escapeEsmLookalikes('export default behaviour is to copy.\n')).toBe(
+      '&#x65;xport default behaviour is to copy.\n'
+    );
+  });
+
+  it('escapes a later paragraph, not just the first block of the page', () => {
+    expect(escapeEsmLookalikes(`# Page\n\nUse this module.\n\n${IMPORT}\n`)).toBe(
+      `# Page\n\nUse this module.\n\n&#x69;mport these functions to your own project.\n`
+    );
+  });
+
+  it('escapes the first line right after the YAML frontmatter, leaving the frontmatter alone', () => {
+    const fm = '---\ntitle: foo\nimport: not-a-keyword\n---\n';
+    expect(escapeEsmLookalikes(`${fm}\n${IMPORT}\n`)).toBe(
+      `${fm}\n&#x69;mport these functions to your own project.\n`
+    );
+  });
+
+  it('escapes the keyword in the shape setu emits for a module page', () => {
+    const body = [
+      '# foo',
+      '',
+      '<SourceLink href="/source/main-js/#L5" label="main.js:5" />',
+      '',
+      IMPORT,
+      '',
+    ].join('\n');
+    const out = escapeEsmLookalikes(body);
+    expect(out).toContain('<SourceLink href="/source/main-js/#L5" label="main.js:5" />');
+    expect(out).toContain('&#x69;mport these functions');
+    expect(out).not.toMatch(/^import\s/m);
+  });
+
+  it('leaves a capitalized "Import …" line alone (the reporter\'s workaround)', () => {
+    const src = 'Import these functions to your own project.\n';
+    expect(escapeEsmLookalikes(src)).toBe(src);
+  });
+
+  it('leaves words that merely begin with import/export alone', () => {
+    const src = [
+      'important: read this first.',
+      '',
+      'imports are resolved lazily.',
+      '',
+      'imported symbols are cached.',
+      '',
+      'exports are frozen after init.',
+      '',
+      'import, then use it.',
+      '',
+    ].join('\n');
+    expect(escapeEsmLookalikes(src)).toBe(src);
+  });
+
+  it('leaves a mid-line, indented, listed, or quoted import/export alone', () => {
+    const src = [
+      'You can import these functions and export the result.',
+      '',
+      '  import indented is never ESM.',
+      '',
+      '- import inside a list item.',
+      '',
+      '> export inside a quote.',
+      '',
+    ].join('\n');
+    expect(escapeEsmLookalikes(src)).toBe(src);
+  });
+
+  it('also escapes a column-0 continuation line (harmless — it renders the same letter)', () => {
+    // A lazy continuation line is not ESM, but telling it apart from a flow
+    // line that follows a JSX element (which IS ESM) would need a block parser.
+    // The reference decodes to the plain letter either way, so over-escaping
+    // is invisible — the pass stays a line-level rewrite.
+    expect(escapeEsmLookalikes('Use this module.\nimport it anywhere.\n')).toBe(
+      'Use this module.\n&#x69;mport it anywhere.\n'
+    );
+  });
+
+  it('leaves a real import statement inside a fenced code block alone', () => {
+    const src =
+      '# Page\n\n```js\nimport x from "y";\nexport default x;\n```\n\n~~~ts\nexport const a = 1;\n~~~\n';
+    expect(escapeEsmLookalikes(src)).toBe(src);
+  });
+
+  it('leaves a keyword inside an inline code span that crosses a line break alone', () => {
+    const src = 'Call `foo(\nimport)` here.\n';
+    expect(escapeEsmLookalikes(src)).toBe(src);
+  });
+
+  it('leaves the keyword alone inside a multi-line MDX JSX tag', () => {
+    const src = '<Signature code="\nimport x" />\n';
+    expect(escapeEsmLookalikes(src)).toBe(src);
+  });
+
+  it('still escapes prose after a fence closes', () => {
+    const src = '```js\nimport x from "y";\n```\n\nimport it like above.\n';
+    expect(escapeEsmLookalikes(src)).toBe(
+      '```js\nimport x from "y";\n```\n\n&#x69;mport it like above.\n'
+    );
+  });
+
+  it('composes with the brace pass without disturbing it', () => {
+    const src = `${IMPORT} Pass {opts}.\n`;
+    expect(escapeStrayBraces(escapeEsmLookalikes(src))).toBe(
+      '&#x69;mport these functions to your own project. Pass \\{opts\\}.\n'
+    );
   });
 });

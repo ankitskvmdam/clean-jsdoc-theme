@@ -59,6 +59,7 @@ pnpm run dev
 - **Slug separation + dedup** — `BaseEntity` lives under `module/coreschema/…` (its longname embeds the module); the module-exports-a-class overlaps (`Queue`, `RetryJob`) collapse to a single page via setu's slug-dedup guard (logged as a skip).
 - **Link resolution** — `{@link}` / `@see` cross-references (e.g. `@see base/chains#open`) become real anchors to the target page + member hash; external URLs open in a new tab.
 - **Prose surfaces** — the project README becomes the home page; the `--tutorials` tree becomes guide pages.
+- **MDX-hostile prose** — `src/utils/bundling.js` starts every description, summary, example caption and `@deprecated` reason with a lowercase `import`/`export` (issue #347); the page must render them as plain sentences rather than being skipped as an unparsable ES module statement.
 - **Source viewer** — each documented source file gets a `kind: 'source'` page with a CDN-loaded Monaco viewer, and members link back to `source/<file>#L<n>`.
 - **Pre-hydration theme script** — every page sets `data-theme` on `<html>` before the stylesheet link to avoid FOUC.
 - **Per-page island markers** — the lazy loader at the bottom of each page imports only the chunks whose markers are present (content pages get sidebar/mobile-nav/toc/cmdk/theme-toggle/settings; code blocks add copy-btn/code-tabs; source pages get code-viewer).
