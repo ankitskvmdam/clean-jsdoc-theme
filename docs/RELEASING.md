@@ -159,22 +159,46 @@ are one-time account/repo configuration steps, not part of any script.
   publish access to it before the first v5 tag; the unscoped entry point is the
   riskiest package to publish for the first time.
 
-### Auth: `NPM_TOKEN` secret OR OIDC trusted publishing
+### Auth: OIDC trusted publishing (no token)
 
-Either of the following authenticates the `Publish` step:
+The `Publish` step authenticates with npm **trusted publishing**: the job's
+`id-token: write` permission lets npm mint a short-lived credential bound to this
+repository and the `release.yml` workflow file. There is no `NPM_TOKEN` secret
+any more. npm is phasing out 2FA-bypass granular access tokens (they lost 2FA
+bypass for sensitive actions in August 2026 and lose direct publishing around
+January 2027 — see the
+[npm changelog](https://github.blog/changelog/2026-07-08-npm-install-time-security-and-gat-bypass2fa-deprecation/)),
+and the token this repo used had already stopped being accepted (every publish
+PUT answered `E404`, npm's rejection for an invalid token).
 
-- **`NPM_TOKEN` repo secret (current default).** Create an npm **automation**
-  access token with publish rights to all eight packages and add it as the
-  `NPM_TOKEN` repository secret (Settings → Secrets and variables → Actions). The
-  release workflow reads it via `env.NPM_TOKEN`.
-- **OIDC trusted publishing (token-less, preferred upgrade).** Configure each npm
-  package's **trusted publisher** to point at this repository and the `release`
-  workflow. The workflow already grants `id-token: write` and sets
-  `NPM_CONFIG_PROVENANCE: true`, so once trusted publishing is enabled the
-  `NPM_TOKEN` secret and the `env.NPM_TOKEN` line in `release.yml` can be removed.
+**One-time setup, per package (all eight).** On npmjs.com open the package →
+Settings → *Trusted Publisher* → *GitHub Actions* and enter:
 
-Either way, `NPM_CONFIG_PROVENANCE: true` plus `id-token: write` make npm emit
-**provenance attestations** for the published packages.
+| Field | Value |
+| --- | --- |
+| Organization or user | `ankitskvmdam` |
+| Repository | `clean-jsdoc-theme` |
+| Workflow filename | `release.yml` |
+| Environment name | leave empty |
+| Allowed actions | enable **`npm publish`** (staged publish alone is not enough) |
+
+Gotchas, from npm's docs:
+
+- npm does **not** validate the fields when you save; mistakes only surface as a
+  failed publish. A connection can't be edited — delete and recreate it.
+- A new connection must complete a **successful publish within 2 days** or it
+  expires, so configure the publishers right before tagging (or re-running).
+- `repository.url` in each `package.json` must match the GitHub repo exactly
+  (all eight already use `git+https://github.com/ankitskvmdam/clean-jsdoc-theme.git`).
+- Trusted publishing needs **npm ≥ 11.5.1**; Node 22 bundles npm 10, so the
+  workflow runs `npm install -g npm@latest` first. `changeset publish` runs
+  `pnpm publish`, which shells out to that global `npm`.
+- Self-hosted runners and reusable (`workflow_call`) workflows aren't supported.
+- Once the publishers work, set each package to *Require two-factor
+  authentication and disallow tokens* and revoke the old automation token.
+
+Provenance attestations are emitted automatically on this path (public repo →
+public package); `NPM_CONFIG_PROVENANCE: true` stays set as a belt-and-braces.
 
 ### Branch protection
 
