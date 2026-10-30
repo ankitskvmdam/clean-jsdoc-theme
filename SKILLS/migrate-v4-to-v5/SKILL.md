@@ -233,12 +233,19 @@ npx serve <destination>     # islands + search index are fetched, so HTTP
 
 Check:
 
-- The build completes. v5 **warns** on unknown/typo'd options (with a "did you
-  mean?" hint) and continues — read the output and fix any flagged keys. Set
-  `opts.strict: true` to make those warnings hard errors while migrating, then
-  relax it.
-- A leftover `theme_opts` block, or any v4 option name, will show up as an
-  unknown-key warning — that's your signal something wasn't lifted/renamed.
+- The build completes. v5 **warns** about leftover v4 options and continues; each
+  hint names the v5 replacement (``renamed in v5 — use `basePath`.``) or says the
+  option was removed. Read the output and fix every flagged key:
+  - a `theme_opts` block → `opts/v4-theme-opts`, plus one `opts/v4-option` warning
+    per key inside it;
+  - a top-level v4 option name that isn't a v5 option (`base_url`, `title`,
+    `homepageTitle`, …) → `opts/v4-option`. v4 names that are still v5 options
+    (`menu`, `favicon`, `meta`, `footer`) aren't flagged — check their new shapes
+    yourself.
+- Set `opts.strict: true` to make those v4-option warnings errors that stop the
+  build while migrating, then relax it.
+- Near-miss typos of v5 option names (`siteNme`) warn with a "did you mean?" hint;
+  other unknown keys stay silent, since JSDoc's `opts` is shared with other tools.
 - Output layout changed: pages are SSR HTML + a co-located `index.md`, assets live
   under `_assets/` (e.g. `_assets/styles.<buildId>.css`). Any hardcoded v4 asset
   paths or scripts that scraped v4 output will need re-linking.
@@ -250,15 +257,16 @@ Check:
 - **Options silently ignored:** they're still under `theme_opts` (v5 doesn't read
   it) — lift them to `opts.*`.
 - **A renamed option "doesn't work":** you kept the v4 name (`title`, `base_url`,
-  `sections`, `create_style`, …) — apply the §2 rename. Watch the build's
-  unknown-key warnings.
+  `sections`, `create_style`, …) — apply the §2 rename. The build's
+  `opts/v4-option` warning names the new key.
 - **Custom CSS/JS vanished:** the four v4 spellings were consolidated — rename to
   `customCss` / `customCssFile` / `customJs` / `customJsFile`. (`static_dir` has no
   equivalent — use JSDoc's static-file config.)
 - **`default_theme` removed:** there's no theme picker; customize via `fonts` and
   theme tokens (`colors` / `darkColors`), not an opt.
-- **Build fails on a typo where v4 ignored it:** that's `strict` mode — by default
-  v5 warns and continues; only `strict: true` fails.
+- **Build fails on a leftover v4 option where v4 accepted it:** that's `strict`
+  mode — by default v5 warns and continues; with `strict: true` the v4-option
+  diagnostics (and option errors) fail the build.
 
 ## 7. Staying current
 

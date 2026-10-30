@@ -81,10 +81,13 @@ npx jsdoc -c jsdoc.json
 npx serve <destination>   # islands + search index fetch होते हैं, इसलिए HTTP
 ```
 
-v5 किसी भी बचे-हुए `theme_opts` key या v4 option नाम पर **warn** करता है (एक "did
-you mean?" संकेत के साथ) और build करता रहता है — output पढ़ें और जो यह चिह्नित करे
-उसे ठीक करें। migrate करते समय उन warnings को कड़ी errors में बदलने के लिए
-[`strict: true`](/theme/configuration#strict) सेट करें, फिर इसे ढीला कर दें।
+v5 बचे-हुए v4 options पर **warn** करता है और build करता रहता है: एक `theme_opts`
+block (और उसके अंदर की हर key पर एक warning) और कोई भी top-level v4 option नाम जो
+v5 option नहीं है (`base_url`, `homepageTitle`, …)। हर warning का संकेत v5 का
+विकल्प बताता है या कहता है कि option हटा दिया गया है — output पढ़ें और जो यह
+चिह्नित करे उसे ठीक करें। migrate करते समय उन warnings को build रोकने वाली errors
+में बदलने के लिए [`strict: true`](/theme/configuration#strict) सेट करें, फिर इसे
+ढीला कर दें।
 
 </step>
 

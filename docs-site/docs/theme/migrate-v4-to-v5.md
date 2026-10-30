@@ -79,10 +79,12 @@ npx jsdoc -c jsdoc.json
 npx serve <destination>   # islands + search index are fetched, so HTTP
 ```
 
-v5 **warns** (with a "did you mean?" hint) on any leftover `theme_opts` key or v4
-option name and keeps building — read the output and fix what it flags. Set
-[`strict: true`](/theme/configuration#strict) to turn those warnings into hard
-errors while you migrate, then relax it.
+v5 **warns** about leftover v4 options and keeps building: a `theme_opts` block
+(plus one warning per key inside it) and any top-level v4 option name that isn't
+a v5 option (`base_url`, `homepageTitle`, …). Each warning's hint names the v5
+replacement or says the option was removed — read the output and fix what it
+flags. Set [`strict: true`](/theme/configuration#strict) to turn those warnings
+into errors that stop the build while you migrate, then relax it.
 
 </step>
 

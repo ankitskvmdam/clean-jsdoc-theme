@@ -19,3 +19,4 @@ export * from './report';
 export * from './scrollbar';
 export * from './site-url';
 export * from './llms-txt';
+export * from './v4-options';
