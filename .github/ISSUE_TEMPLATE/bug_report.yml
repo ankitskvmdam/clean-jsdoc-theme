@@ -67,7 +67,7 @@ body:
       label: Environment
       description: Node version, package manager, OS, and browser (if it's a rendered-output issue).
       placeholder: |
-        - Node: 20.x
+        - Node: 22.x
         - Package manager: pnpm 9.x
         - OS: macOS 14 / Windows 11 / Ubuntu 24.04
         - Browser: Chrome 120

@@ -42,7 +42,7 @@ v4 は theme options を **`opts.theme_opts.*`** の下に nest していまし�
 
 <step label="Check compatibility">
 
-v5 には **JSDoc ≥ 4** と **Node ≥ 20** が必要です。`plugins/markdown` plugin は
+v5 には **JSDoc ≥ 4** と **Node ≥ 22** が必要です。`plugins/markdown` plugin は
 `plugins` list に残してください — v5 でも**必須**です（JSDoc はこれを使って、theme
 に渡す前に comment の Markdown を render します）。ない場合、build は error で停止
 します。当面は v4 にとどまりたいですか? `"clean-jsdoc-theme": "^4"`

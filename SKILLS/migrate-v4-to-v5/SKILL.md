@@ -33,7 +33,7 @@ carry over, drop the rest, then optionally adopt v5's new features.
 
 ## 0. Before you start — compatibility
 
-- **JSDoc** `>=4` (v4 allowed 3.x). **Node** `>=20`.
+- **JSDoc** `>=4` (v4 allowed 3.x). **Node** `>=22`.
 - The `plugins/markdown` plugin is **still required** — keep it in `plugins`.
   JSDoc uses it to render comment Markdown before the theme sees it, and v5 stops
   the build with `clean-jsdoc-theme requires JSDoc's "plugins/markdown" plugin…`

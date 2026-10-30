@@ -33,7 +33,7 @@ companion (`migration-map.json` at the repo root, plus the fenced JSON block in
 | Requirement      | v4 (`4.3.2`)                                          | v5 (`5.0.0`)                                  |
 | ---------------- | ----------------------------------------------------- | --------------------------------------------- |
 | JSDoc (peer dep) | `>=3.x <=4.x`                                         | `>=4.x`                                       |
-| Node             | not pinned                                            | `>=20` (repo `engines.node`)                  |
+| Node             | not pinned                                            | `>=22` (packages' `engines.node`)             |
 | Package manager  | npm/yarn                                              | any (theme is published to npm)               |
 | Markdown plugin  | `plugins/markdown` recommended (`idInHeadings: true`) | required — the build stops without it         |
 | Custom CSS/JS    | supported (injection options)                         | not supported (see [§6](#6-removed-features)) |
@@ -41,7 +41,7 @@ companion (`migration-map.json` at the repo root, plus the fenced JSON block in
 Source: v4 peer dep from `git show v4.3.2:package.json`
 (`"jsdoc": ">=3.x <=4.x"`); v5 peer dep from
 `packages/clean-jsdoc-theme/package.json` (`"jsdoc": ">=4.x"`); Node from the
-root `package.json` `engines`.
+`engines.node` every published package declares.
 
 ## 3. Where options live
 
@@ -214,7 +214,7 @@ Each entry: **what changed → why → migration action.**
   lazily. Action: remove `search` and `base_url`-for-search workarounds; nothing
   to enable.
 - **Minimum versions raised.** Why: v5 targets modern JSDoc + Node. Action:
-  ensure JSDoc `>=4` and Node `>=20`.
+  ensure JSDoc `>=4` and Node `>=22`.
 - **Strict vs resilient validation.** Why: v5 validates opts and prints
   diagnostics; by default it warns and continues so a bad font/typo never breaks
   a build. Action: set `opts.strict: true` if you want validation errors to fail
