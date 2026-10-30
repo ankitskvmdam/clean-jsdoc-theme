@@ -645,7 +645,7 @@ describe('generateSite — docs', () => {
     const messages = warn.mock.calls.map((c) => String(c[0]));
     const skip = messages.find((m) => m.includes('skipping doc page'));
     expect(skip).toBe(
-      '[setu] skipping doc page "Bangs": its slug is empty, which would shadow the (home page)'
+      '[setu] skipping doc page "Bangs": its slug is empty, which is the slug of the (home page)'
     );
     expect(messages.some((m) => m.includes('slug ""'))).toBe(false);
     warn.mockRestore();

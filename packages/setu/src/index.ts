@@ -390,10 +390,10 @@ export function generateSite(collection: unknown, opts?: GenerateSiteOptions): S
         droppedSlugs.add(page.slug);
         // Non-fatal: skip deterministically and warn (the bridge surfaces logs).
         // An empty slug would print as `slug ""`; name the page by its title and
-        // say it shadows the home page instead.
+        // say whose slug it is instead.
         console.warn(
           page.slug === ''
-            ? `[setu] skipping doc page "${page.frontmatter.title}": its slug is empty, which would shadow the ${HOME_PAGE_LABEL}`
+            ? `[setu] skipping doc page "${page.frontmatter.title}": its slug is empty, which is the slug of the ${HOME_PAGE_LABEL}`
             : `[setu] skipping doc page: slug "${page.slug}" collides with an existing page`
         );
         continue;
