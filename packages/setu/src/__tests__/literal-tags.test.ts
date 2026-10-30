@@ -15,6 +15,7 @@ import { htmlToMdastBlocks, htmlToMdastInline, markdownToMdastBlocks } from '../
 import { examplesBlocks } from '../mdast/doclet';
 import { toMdx } from '../mdx';
 import { generateSite } from '../index';
+import { stripHtml } from '../generate-site';
 
 /** Serialize converted blocks the way a page body is written. */
 const mdx = (nodes: RootContent[]): string =>
@@ -489,5 +490,62 @@ describe('literal tags next to HTML comments', () => {
 
   it('drops a commented-out tag and keeps one after the comment (Markdown)', () => {
     expect(mdx(markdownToMdastBlocks('a <!-- x <User> --> Map<K> b'))).toBe('a Map\\<K> b');
+  });
+});
+
+describe('a comment opener inside an attribute value', () => {
+  it('is part of the tag, not the start of a comment', () => {
+    const out = mdx(
+      htmlToMdastBlocks('<p><a title="<!--" href="u">L</a> Promise<User> <!-- c --> end</p>')
+    );
+    expect(out).toContain('Promise\\<User>');
+    expect(out).toMatch(/end$/);
+  });
+});
+
+describe('inline-only fragments become paragraphs', () => {
+  it('wraps root-level inline content so its `<` is escaped', () => {
+    expect(mdx(markdownToMdastBlocks('<!-- x --> plain a <b>bold</b> Array<Foo>'))).toBe(
+      'plain a **bold** Array\\<Foo>'
+    );
+  });
+
+  it('leaves inline callers flat', () => {
+    expect(htmlToMdastInline('a <b>b</b> Promise<User>').map((n) => n.type)).toEqual([
+      'text',
+      'strong',
+      'text',
+    ]);
+  });
+});
+
+describe('page frontmatter description — comments and size', () => {
+  const describeOf = (description: string): string | undefined =>
+    generateSite(
+      salty.taffy([
+        { kind: 'module', name: 'm', longname: 'module:m', scope: 'global', description },
+      ]) as unknown as TJSDocSaltyCollection<TDoclet>
+    ).pages.find((p) => p.slug === 'module/m')?.frontmatter.description;
+
+  it('keeps the text after an unterminated `<!--`, as the body does', () => {
+    expect(describeOf('<p>unterminated <!-- Promise<User> rest</p>')).toBe(
+      'unterminated <!-- Promise<User> rest'
+    );
+  });
+
+  it('still drops a complete comment', () => {
+    expect(describeOf('<p>a <!-- hidden <T> --> b</p>')).toBe('a b');
+  });
+
+  // Timed on stripHtml itself: the body path for such input is bounded by the
+  // MDX serializer, not by anything here.
+  it.each([
+    ['stray < characters', 'a < b '.repeat(170_000)],
+    ['unterminated comment openers', 'a <!-- '.repeat(150_000)],
+    ['unclosed quoted attributes', '<a b="x '.repeat(125_000)],
+  ])('stripHtml stays fast on 1MB of %s', (_name, html) => {
+    const t = performance.now();
+    stripHtml(html);
+    expect(performance.now() - t).toBeLessThan(1000);
   });
 });

@@ -348,15 +348,18 @@ function scanTags(html: string): Tag[] {
     }
     const nameEnd = i + m[0].length;
     TAG_REST.lastIndex = nameEnd;
+    const rest = TAG_REST.exec(html)?.[0] ?? '';
     tags.push({
       start: i,
       nameEnd,
       closing: m[1] === '/',
       name: m[2],
-      hasAttributes: /[^\s/]/.test(TAG_REST.exec(html)?.[0] ?? ''),
+      hasAttributes: /[^\s/]/.test(rest),
       glued: i > 0 && IDENT_CHAR.test(html[i - 1]),
     });
-    i = html.indexOf('<', nameEnd);
+    // Resume past the attributes: a `<` or `<!--` inside a quoted value
+    // (`title="<!--"`) is part of the tag, not the start of another.
+    i = html.indexOf('<', nameEnd + rest.length);
   }
   return tags;
 }

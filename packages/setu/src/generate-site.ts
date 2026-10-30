@@ -22,6 +22,7 @@ import {
   type PlaygroundOpts,
 } from './playground';
 import { resolveLinkTags } from './mdast/link-tags';
+import { neutralizeUnterminatedComments } from './mdast/from-html';
 import { escapeLiteralTags } from './mdast/literal-tags';
 import { resolveSlotText } from './slots';
 import { toMdx } from './mdx';
@@ -239,6 +240,13 @@ function decodeCharRefs(text: string): string {
 }
 
 /**
+ * A tag for {@link stripHtml}: quoted attribute values may hold `<`/`>`, and an
+ * unquoted `<` ends the attempt — linear, where `/<[^>]+>/` rescanned to the end
+ * from every `<` without a `>` (dwar's search strip uses the same pattern).
+ */
+const TAG = /<(?:"[^"]*"|'[^']*'|[^"'<>])+>/g;
+
+/**
  * Strip HTML tags from a string and collapse whitespace; cheap, not a parser.
  * Comments go first and whole: their text never renders, and one can hold tags
  * or a `>` that would leave part of it behind (the excerpt feeds `<meta
@@ -249,12 +257,14 @@ function decodeCharRefs(text: string): string {
  * references are decoded — the result is plain text (YAML frontmatter, the
  * search index, an HTML-escaped `<meta>`), so a left-over `&lt;` would surface
  * verbatim. Decoding comes after the tag strip, so a decoded `<` is never taken
- * for a tag.
+ * for a tag. An unterminated `<!--` is neutralized first, as the body does, so
+ * its text stays visible here too — and every comment left is terminated, which
+ * keeps the comment strip linear.
  */
-function stripHtml(html: string): string {
-  const text = escapeLiteralTags(html)
+export function stripHtml(html: string): string {
+  const text = escapeLiteralTags(neutralizeUnterminatedComments(html))
     .replace(/<!--(?:-?>|[\s\S]*?-->)/g, ' ')
-    .replace(/<[^>]+>/g, ' ');
+    .replace(TAG, ' ');
   return decodeCharRefs(text).replace(/\s+/g, ' ').trim();
 }
 
