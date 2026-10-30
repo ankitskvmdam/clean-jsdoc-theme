@@ -133,6 +133,28 @@ describe('parameter / property defaults', () => {
   });
 });
 
+describe('prose defaults (defaultvaluehtml, TypeDoc only)', () => {
+  it('render as phrasing, taking precedence over defaultvalue', () => {
+    const body = generateSite(
+      makeCollection([
+        { kind: 'class', name: 'K', longname: 'K', scope: 'global', classdesc: '<p>K.</p>' },
+        {
+          kind: 'member',
+          name: 'p',
+          longname: 'K#p',
+          memberof: 'K',
+          scope: 'instance',
+          description: '<p>prop</p>',
+          defaultvalue: '1',
+          defaultvaluehtml: '<p>see <a href="https://example.com">docs</a>, or <code>x</code></p>',
+        },
+      ])
+    ).pages.find((p) => p.slug === 'k')!.body;
+    expect(body).toContain('**Default:** see [docs](https://example.com), or `x`');
+    expect(body).not.toContain('**Default:** `1`');
+  });
+});
+
 describe('formatDefaultValue', () => {
   it('shows strings verbatim and literals as written', () => {
     expect(formatDefaultValue('""')).toBe('""');

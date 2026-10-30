@@ -19,7 +19,7 @@ import salty from '@jsdoc/salty';
 import { generateSite } from '@clean-jsdoc-theme/setu';
 import type { SiteManifest } from '@clean-jsdoc-theme/utils';
 import { reflectionsToDoclets } from '../reflection-to-doclets';
-import { defaultTagToText } from '../comment';
+import { defaultTagFields } from '../comment';
 import { typedocVisibilityOptions } from '../write-site';
 
 const SOURCE = `
@@ -41,7 +41,34 @@ export class Opts {
   multi = { a: 1, b: 2 };
   /** N. @defaultValue 42 */
   n = 42;
+  /**
+   * Prose with a link.
+   * @defaultValue see [docs](https://example.com) for details
+   */
+  prose = 1;
+  /**
+   * Prose with code.
+   * @defaultValue \`true\` when \`x\` is set
+   */
+  mixed = true;
 }
+
+/** Only a factory makes one. */
+export class Single {
+  private constructor() {}
+  /** Factory. */
+  static create(): Single {
+    return new Single();
+  }
+}
+
+/** Subclass-only construction. */
+export class Guarded {
+  protected constructor() {}
+}
+
+/** Implicit public constructor. */
+export class Open {}
 
 /** Greets. */
 export function greet(o: { a: number } = { a: 1 }, s = 'x', arr: number[] = [1, 2]): void {}
@@ -122,6 +149,13 @@ describe('@defaultValue on the member Default line', () => {
     expect(body).not.toContain('```ts');
     expect(body).not.toContain("``'en-US'``");
   });
+
+  it('renders a prose default as phrasing: a real link, real code spans', () => {
+    const body = bodyOf(byDefault.manifest, 'Opts');
+    expect(body).toContain('**Default:** see [docs](https://example.com) for details');
+    expect(body).toContain('**Default:** `true` when `x` is set');
+    expect(body).not.toContain('`see [docs]');
+  });
 });
 
 describe('parameter defaults', () => {
@@ -132,6 +166,30 @@ describe('parameter defaults', () => {
     expect(body).toMatch(/- `o` \([^)]*\) — |- `o` \([^)]*\)\n/);
     expect(body).not.toMatch(/- `o` [^\n]*default:/);
     expect(body).not.toMatch(/- `arr` [^\n]*default:/);
+  });
+});
+
+describe('constructor visibility', () => {
+  it('a private constructor TypeDoc excluded leaves no Constructor section', () => {
+    const body = bodyOf(byDefault.manifest, 'Single');
+    expect(body).not.toContain('## Constructors');
+    expect(body).not.toContain('new Single(');
+    expect(body).toContain('create');
+  });
+
+  it('with excludePrivate: false the private constructor shows, badged', () => {
+    const body = bodyOf(withPrivate.manifest, 'Single');
+    expect(body).toContain('## Constructors');
+    expect(body).toMatch(/name="constructor"[^>]*\/>\s*<MemberMeta badges="private" \/>/);
+  });
+
+  it('a protected constructor shows, badged; an implicit one shows unbadged', () => {
+    expect(bodyOf(byDefault.manifest, 'Guarded')).toMatch(
+      /name="constructor"[^>]*\/>\s*<MemberMeta badges="protected" \/>/
+    );
+    const open = bodyOf(byDefault.manifest, 'Open');
+    expect(open).toContain('## Constructors');
+    expect(open).not.toContain('<MemberMeta badges');
   });
 });
 
@@ -151,19 +209,41 @@ describe('excludePrivate → setu includePrivate', () => {
   });
 });
 
-describe('defaultTagToText', () => {
+describe('defaultTagFields', () => {
   const code = (text: string): CommentDisplayPart => ({ kind: 'code', text });
   const txt = (text: string): CommentDisplayPart => ({ kind: 'text', text });
+  const fence = (body: string): CommentDisplayPart => code(['```ts', body, '```'].join('\n'));
 
-  it('unwraps code spans (any fence length) and fenced blocks', () => {
-    expect(defaultTagToText([code("`'en-US'`")])).toBe("'en-US'");
-    expect(defaultTagToText([code('`` a`b ``')])).toBe('a`b');
-    expect(defaultTagToText([code('```ts\n{}\n```')])).toBe('{}');
-    expect(defaultTagToText([code('```\n{\n  a: 1\n}\n```')])).toBe('{ a: 1 }');
+  it('a single code part is a value, unwrapped (any fence length) and folded', () => {
+    expect(defaultTagFields([code("`'en-US'`")])).toEqual({ defaultvalue: "'en-US'" });
+    expect(defaultTagFields([code('`` a`b ``')])).toEqual({ defaultvalue: 'a`b' });
+    expect(defaultTagFields([fence('{}')])).toEqual({ defaultvalue: '{}' });
+    expect(defaultTagFields([fence(['{', '  a: 1', '}'].join('\n'))])).toEqual({
+      defaultvalue: '{ a: 1 }',
+    });
+    // Values with spaces that are NOT prose stay values.
+    expect(defaultTagFields([fence('new Map()')])).toEqual({ defaultvalue: 'new Map()' });
+    expect(defaultTagFields([fence("'a b c'")])).toEqual({ defaultvalue: "'a b c'" });
   });
 
-  it('keeps plain text as written', () => {
-    expect(defaultTagToText([txt('  42 ')])).toBe('42');
-    expect(defaultTagToText([txt('see '), code('`x`')])).toBe('see x');
+  it('a single plain-text token is a value', () => {
+    expect(defaultTagFields([txt('  42 ')])).toEqual({ defaultvalue: '42' });
+  });
+
+  it("prose (in TypeDoc's fence, or mixed parts) becomes HTML, keeping links and code", () => {
+    expect(defaultTagFields([fence('see [docs](https://example.com) for details')])).toEqual({
+      defaultvaluehtml: '<p>see <a href="https://example.com">docs</a> for details</p>',
+    });
+    expect(defaultTagFields([fence('see the docs')])).toEqual({
+      defaultvaluehtml: '<p>see the docs</p>',
+    });
+    expect(defaultTagFields([code('`true`'), txt(' when '), code('`x`'), txt(' is set')])).toEqual({
+      defaultvaluehtml: '<p><code>true</code> when <code>x</code> is set</p>',
+    });
+  });
+
+  it('nothing to show → no fields', () => {
+    expect(defaultTagFields([])).toEqual({});
+    expect(defaultTagFields([txt('  ')])).toEqual({});
   });
 });

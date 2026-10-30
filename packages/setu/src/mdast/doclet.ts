@@ -978,8 +978,13 @@ export function docletBlocks(
     if (typeNodes) blocks.push(p(strong(text('Type'))), p(...typeNodes));
   }
 
+  // A prose default (TypeDoc `@defaultValue see the docs`) renders as phrasing
+  // so its links and code spans survive; a value goes in a code span.
+  const defaultProse = skip.has('default') ? [] : htmlToMdastInline(doclet.defaultvaluehtml);
   const defaultLabel = skip.has('default') ? null : formatDefaultValue(doclet.defaultvalue);
-  if (defaultLabel !== null) {
+  if (defaultProse.length > 0) {
+    blocks.push(p(strong(text('Default:')), text(' '), ...defaultProse));
+  } else if (defaultLabel !== null) {
     blocks.push(p(strong(text('Default:')), text(' '), inlineCode(defaultLabel)));
   }
 
