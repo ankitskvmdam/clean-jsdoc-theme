@@ -1,6 +1,7 @@
 ---
 'clean-jsdoc-theme': patch
 '@clean-jsdoc-theme/setu': patch
+'@clean-jsdoc-theme/utils': patch
 '@clean-jsdoc-theme/typedoc': patch
 ---
 
@@ -18,9 +19,14 @@ template, which hides only the private container and keeps an orphan page for a
 public class nested inside it.
 
 A class whose only private part is its ES6 `constructor` (`/** @private */
-constructor()`) keeps its page and public members; only its Constructor section
-is hidden. JSDoc merges the constructor comment into the class, which used to
-show the whole class as `private`.
+constructor()`) keeps its page and public members, whether it is exported, plain,
+a subclass, a class expression or a CommonJS export. Only its Constructor section
+is hidden, along with everything else on the constructor comment (`@since`,
+`@see`, …). JSDoc merges the constructor comment into the class, which used to
+show the whole class as `private`. On TypeDoc pages, a `private constructor()`
+that TypeDoc excludes no longer leaves a `new Name()` Constructor section behind.
+With `excludePrivate: false`, or for a `protected constructor()`, the section
+shows a `private` or `protected` badge.
 
 JSDoc's `--private` (or `--access` naming `private` or `all`) now shows private
 symbols, members included, as JSDoc's default template does. The other `--access`
