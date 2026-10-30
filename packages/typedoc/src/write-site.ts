@@ -748,6 +748,11 @@ export async function writeSite(
     ...(menu ? { menu } : {}),
     ...(collapsibleSidebarSections !== undefined ? { collapsibleSidebarSections } : {}),
     ...(playground ? { playground: playground.site } : {}),
+    // TypeDoc has already dropped what it excludes, so a private reflection
+    // reaching us means the user opted in (`excludePrivate: false`). Tell setu
+    // to keep it too — otherwise its default (hide private) would strip private
+    // members TypeDoc chose to document. Off by default, matching TypeDoc's.
+    ...(app.options.getValue('excludePrivate') === false ? { includePrivate: true } : {}),
   });
 
   // Unmatched labels only apply when the config is an array (boolean shorthands

@@ -11,7 +11,7 @@ import {
 } from '@clean-jsdoc-theme/utils';
 import type { TDoclet, TJSDocSaltyCollection } from '@clean-jsdoc-theme/utils';
 import { bucketClassMembers, getContainerView, type ContainerView } from './class-view';
-import { filterDoclets } from './doclet';
+import { filterDoclets, type FilterDocletsOptions } from './doclet';
 import { containerViewToMdast } from './mdast/class-view';
 import type { DocletBlocksOptions } from './mdast/doclet';
 import {
@@ -385,9 +385,10 @@ const GLOBALS_SLUG = 'global';
  */
 export function buildGlobalsView(
   collection: TJSDocSaltyCollection<TDoclet>,
-  flavor: 'jsdoc' | 'typedoc' = 'jsdoc'
+  flavor: 'jsdoc' | 'typedoc' = 'jsdoc',
+  options: FilterDocletsOptions = {}
 ): { view: ContainerView; slug: string } | null {
-  const globals = filterDoclets(collection({ scope: 'global' }).get());
+  const globals = filterDoclets(collection({ scope: 'global' }).get(), options);
   // Under the typedoc flavor, enums/functions/variables each get their own
   // standalone page, so they must NOT also land on the aggregated Globals page.
   const excluded =

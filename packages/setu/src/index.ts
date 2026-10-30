@@ -30,6 +30,7 @@ import {
 } from './guide-view';
 import { buildSourceModel, type SourceFileInput } from './source-view';
 import { SlotCollector, makeSlotTranslator, type SlotResolver } from './slots';
+import { pruneHiddenDoclets } from './doclet';
 import type { NavNode, Page, PageKind, SiteManifest, TDoclet } from '@clean-jsdoc-theme/utils';
 
 /**
@@ -179,6 +180,14 @@ export interface GenerateSiteOptions {
    * template; a caller's own `collect` (if any) also fires. See {@link stampSite}.
    */
   slots?: SlotResolver;
+  /**
+   * Keep `access: 'private'` doclets — and give private containers their pages.
+   * Default `false`, matching JSDoc's default template. The JSDoc bridge sets it
+   * from `--private` / `--access private|all`; the TypeDoc bridge from
+   * `excludePrivate: false` (TypeDoc already dropped what it excludes). `@ignore`
+   * doclets are hidden regardless. See {@link pruneHiddenDoclets}.
+   */
+  includePrivate?: boolean;
 }
 
 /**
@@ -189,8 +198,17 @@ export interface GenerateSiteOptions {
  * own page; the README (home page) and tutorials are rendered when supplied via
  * {@link GenerateSiteOptions}.
  */
-export function generateSite(collection: unknown, opts?: GenerateSiteOptions): SiteManifest {
-  validateCollectionOrThrow(collection);
+export function generateSite(rawCollection: unknown, opts?: GenerateSiteOptions): SiteManifest {
+  validateCollectionOrThrow(rawCollection);
+
+  // Visibility choke point: drop `@ignore`d and (by default) private doclets —
+  // and everything under a hidden container — ONCE, here. Every pass below
+  // (page enumeration, globals, link registry → type links, nav, and the search /
+  // llms.txt / `.md` outputs dwar derives from the pages) reads this pruned
+  // collection, so no surface can resurrect a hidden symbol.
+  const includePrivate = opts?.includePrivate ?? false;
+  const collection = pruneHiddenDoclets(rawCollection, { includePrivate });
+  const viewOptions = { includePrivate };
 
   // Document-model flavor. `'jsdoc'` (default) keeps the container/member model;
   // `'typedoc'` gives enums/functions/variables their own pages with TypeDoc
@@ -224,7 +242,7 @@ export function generateSite(collection: unknown, opts?: GenerateSiteOptions): S
   const specsBySlug = new Map<string, ContainerSpec>();
   for (const kind of CONTAINER_KINDS) {
     for (const longname of enumerateLongnamesByKind(collection, kind)) {
-      const view = getContainerView(collection, longname, kind);
+      const view = getContainerView(collection, longname, kind, viewOptions);
       if (!view) continue;
       const slug = slugifyPath(splitLongnameForSlug(longname));
       const existing = specsBySlug.get(slug);
@@ -256,7 +274,7 @@ export function generateSite(collection: unknown, opts?: GenerateSiteOptions): S
     }
     for (const kind of ['enum', 'function', 'variable'] as PageKind[]) {
       for (const longname of enumerateLongnamesByKind(collection, kind)) {
-        const view = getContainerView(collection, longname, kind);
+        const view = getContainerView(collection, longname, kind, viewOptions);
         if (!view) continue;
         const owner = view.doclet.memberof;
         if (owner && memberOwners.has(owner)) continue; // a member, not a page
@@ -273,7 +291,7 @@ export function generateSite(collection: unknown, opts?: GenerateSiteOptions): S
   // its own container/typedef page, each rendered as a member section. Appended
   // to the spec list. Globals is synthetic, so it must NOT merge into a real
   // container — if its slug ('global') somehow collides with one, skip it.
-  const globals = buildGlobalsView(collection, flavor);
+  const globals = buildGlobalsView(collection, flavor, viewOptions);
   if (globals && !specsBySlug.has(globals.slug)) {
     const spec: ContainerSpec = {
       kind: 'global',
