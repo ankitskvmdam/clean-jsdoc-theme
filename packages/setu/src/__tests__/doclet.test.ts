@@ -289,3 +289,42 @@ describe('nameless members (JSDoc ES #private)', () => {
     expect(headingIds).toContain('visible');
   });
 });
+
+describe('blank member names (TypeDoc keeps a literal single-space key)', () => {
+  it('render with a fallback anchor under the typedoc flavor; empty names drop', () => {
+    const collection = makeCollection([
+      { kind: 'interface', name: 'Odd', longname: 'Odd', scope: 'global', description: 'Odd.' },
+      {
+        kind: 'member',
+        name: ' ',
+        longname: 'Odd. ',
+        memberof: 'Odd',
+        scope: 'instance',
+        description: 'A single space.',
+      },
+      {
+        kind: 'member',
+        name: '',
+        longname: 'Odd.',
+        memberof: 'Odd',
+        scope: 'instance',
+        description: 'The empty string.',
+      },
+      {
+        kind: 'member',
+        name: 'normal',
+        longname: 'Odd.normal',
+        memberof: 'Odd',
+        scope: 'instance',
+        description: 'Normal.',
+      },
+    ]);
+    const site = generateSite(collection, { flavor: 'typedoc' });
+    const page = site.pages.find((p) => p.frontmatter.longname === 'Odd');
+    expect(page).toBeDefined();
+    expect(page!.body).toContain('id="member--20"');
+    expect(page!.body).toContain('id="normal"');
+    expect(page!.body).not.toContain('id=""');
+    expect(page!.body).not.toContain('The empty string.');
+  });
+});

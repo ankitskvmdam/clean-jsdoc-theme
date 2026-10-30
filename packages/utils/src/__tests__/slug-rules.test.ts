@@ -84,6 +84,34 @@ describe('slugifyHeading — fallback for text with no slug', () => {
     expect(slugifyHeading('Intro', reg)).toBe('intro-1');
   });
 
+  it('treats emoji variation selectors/keycaps as invisible, not as a slug', () => {
+    const warn = '\u26a0\ufe0f'; // warning sign + VS16
+    const heart = '\u2764\ufe0f'; // heavy heart + VS16
+    expect(slugifyHeading(warn)).toBe('section--26a0_fe0f');
+    const reg = new Map<string, number>();
+    expect(slugifyHeading(heart, reg)).toBe('section--2764_fe0f');
+    expect(slugifyHeading(heart, reg)).toBe('section--2764_fe0f-1');
+  });
+
+  it('drops a leading/stray emoji mark next to real words', () => {
+    expect(slugifyHeading('\u26a0\ufe0f Warning')).toBe('warning');
+    expect(slugifyHeading('Warning \u26a0\ufe0f now')).toBe('warning-now');
+    expect(slugifyHeading('1\ufe0f\u20e3 Step')).toBe('1-step'); // keycap 1
+    expect(slugifyHeading('\u0301 orphan')).toBe('orphan');
+  });
+
+  it('every non-fallback id contains a letter or digit', () => {
+    for (const t of ['\u26a0\ufe0f', '\u2764\ufe0f \u2764\ufe0f', '\u20e3', '-\u0301-']) {
+      expect(slugifyHeading(t)).toMatch(/^section--/);
+    }
+  });
+
+  it('keeps marks attached to letters (Devanagari, kana) byte-identical', () => {
+    const hindi = '\u092a\u094d\u0930\u094b\u091c\u093c';
+    expect(slugifyHeading(hindi)).toBe(hindi);
+    expect(slugifyHeading('\u304b\u3099')).toBe('\u304c'); // ka + voiced mark -> ga
+  });
+
   it('honors a custom fallback prefix', () => {
     expect(slugifyHeading('$', undefined, 'x')).toBe('x--24');
   });
@@ -135,9 +163,17 @@ describe('memberAnchor', () => {
     expect(memberAnchor('$')).not.toBe(memberAnchor('member-24'));
   });
 
-  it('throws on an empty or blank name rather than inventing a shared id', () => {
-    expect(() => memberAnchor('')).toThrow(TypeError);
-    expect(() => memberAnchor('  ')).toThrow(TypeError);
+  it('gives a whitespace-only name (TypeDoc keeps a single space) its untrimmed hex', () => {
+    expect(memberAnchor(' ')).toBe('member--20');
+    expect(memberAnchor('  ')).toBe('member--20_20');
+  });
+
+  it('never throws; the empty string maps to a fixed id', () => {
+    expect(memberAnchor('')).toBe('member--');
+  });
+
+  it('falls back for an emoji name instead of an invisible id', () => {
+    expect(memberAnchor('\u2764\ufe0f')).toBe('member--2764_fe0f');
   });
 });
 

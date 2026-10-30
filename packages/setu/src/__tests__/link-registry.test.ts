@@ -126,10 +126,10 @@ describe('registerContainerView', () => {
     expect(registry.size).toBe(1); // only the page-level symbol
   });
 
-  it('rejects a hand-built view with a nameless member (readers never produce one)', () => {
-    // Views built from a collection can't hold one: getMembersOf/getGlobalDoclets
-    // drop nameless doclets and `ClassMember.name` is typed `string`. A view
-    // forged around that contract fails loudly instead of emitting `#`.
+  it('never throws on a hand-built view with a nameless member', () => {
+    // Views built from a collection can't hold one (getMembersOf/getGlobalDoclets
+    // drop nameless doclets), but a view forged around that contract still must
+    // not abort a build: it gets memberAnchor's fixed `member--` id.
     const view = {
       ...emptyBuckets,
       kind: 'module',
@@ -138,7 +138,9 @@ describe('registerContainerView', () => {
       doclet: { longname: 'mod' },
       other: [{ longname: 'mod.noName', name: '' }],
     } as unknown as ContainerView;
-    expect(() => registerContainerView(new Map(), view, 'mod')).toThrow(TypeError);
+    const registry: LinkRegistry = new Map();
+    registerContainerView(registry, view, 'mod');
+    expect(registry.get('mod.noName')).toEqual({ slug: 'mod', anchor: 'member--' });
   });
 });
 

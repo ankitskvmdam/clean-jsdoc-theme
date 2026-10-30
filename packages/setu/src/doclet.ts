@@ -28,7 +28,7 @@ export function filterDoclets<T extends TDoclet>(
 export type NamedDoclet = TDoclet & { name: string };
 
 /**
- * True for a doclet with a non-empty name. Applied by the two readers that turn
+ * True for a doclet whose name is not the empty string. Applied by the two readers that turn
  * doclets into headed symbols — {@link getMembersOf} (every container's own and
  * inherited members) and {@link getGlobalDoclets} (the Globals page) — so no
  * nameless doclet reaches a member list, heading, TOC entry, search entry or
@@ -36,15 +36,20 @@ export type NamedDoclet = TDoclet & { name: string };
  * non-empty longname. The `NamedDoclet` return type carries the guarantee to
  * every consumer (`ClassMember.name` is a `string`).
  *
- * Why nameless doclets exist: JSDoc 4 can't name an ES private method, instance
- * or static, so a documented `#secret() {}` arrives as `name: ''`,
- * `longname: ''` (still `memberof` its class, with no `scope` or `access`).
- * Private fields (`#f = 1`) are unaffected: they keep their name and
- * `access: 'private'`. TypeDoc always names its reflections. This is not a
- * visibility rule, so it applies whatever the options (even `includePrivate`):
- * a nameless doclet has nothing to title a heading with, nothing to anchor it
- * on and no longname to link to. Dropped silently: there's no name to report,
- * and the author can't fix it short of renaming.
+ * Where empty names come from, in both flavors:
+ * - JSDoc 4 can't name an ES private method, instance or static, so a
+ *   documented `#secret() {}` arrives as `name: ''`, `longname: ''` (still
+ *   `memberof` its class, with no `scope` or `access`). Private fields
+ *   (`#f = 1`) are unaffected: they keep their name and `access: 'private'`.
+ * - TypeDoc names reflections after their source key, so a TS property
+ *   declared as `'': number` arrives with `name: ''`.
+ *
+ * Either way there is nothing to title a heading with or link to, so the doclet
+ * is dropped for both flavors. This is not a visibility rule, so it applies
+ * whatever the options (even `includePrivate`). Dropped silently: there's no
+ * name to report, and the author can't fix it short of renaming. A blank but
+ * non-empty name (TypeDoc keeps `' '`) is a real member and is kept; its
+ * heading gets a fallback anchor (see utils' `memberAnchor`).
  */
 export function isNamedDoclet<T extends TDoclet>(d: T): d is T & { name: string } {
   return typeof d.name === 'string' && d.name !== '';
