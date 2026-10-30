@@ -38,7 +38,7 @@
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
-    "lint": "eslint src",
+    "lint": "eslint src --max-warnings 0",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "clean": "node ../../scripts/clean.mjs dist .turbo",

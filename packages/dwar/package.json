@@ -38,7 +38,7 @@
     "build:css": "node scripts/build-css.mjs",
     "build": "node scripts/build-css.mjs && tsdown",
     "dev": "tsdown --watch",
-    "lint": "eslint src",
+    "lint": "eslint src --max-warnings 0",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "smoke": "tsx scripts/smoke.ts",

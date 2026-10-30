@@ -3,3 +3,4 @@ dist
 .turbo
 pnpm-lock.yaml
 *.tsbuildinfo
+packages/*/src/generated/
