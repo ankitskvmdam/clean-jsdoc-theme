@@ -249,8 +249,10 @@ opts: { favicon: "./assets/logo.svg" }
 
 ### build が unknown option について警告するのはなぜ？
 
-未知または綴りの誤った option は default で **警告** します（"did you mean?" のヒント
-付き）が、build は続行します。それらの警告を error に変えるには
+綴りの誤った option は default で **警告** します（"did you mean?" のヒント付き）が、
+build は続行します。JSDoc では theme option 名に近い名前だけが警告されます（`opts`
+は JSDoc やその plugins と共有されるため）。TypeDoc では `cleanJsdocTheme` 内の不明な
+key すべてが警告されます。option の警告を build を失敗させる error に変えるには
 [`strict`](/theme/configuration#strict) を設定してください。
 
 ## Localization

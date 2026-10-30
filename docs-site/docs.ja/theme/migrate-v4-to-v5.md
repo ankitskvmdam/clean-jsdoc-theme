@@ -44,17 +44,17 @@ v4 は theme options を **`opts.theme_opts.*`** の下に nest していまし�
 
 v5 には **JSDoc ≥ 4** と **Node ≥ 22** が必要です。`plugins/markdown` plugin は
 `plugins` list に残してください — v5 でも**必須**です（JSDoc はこれを使って、theme
-に渡す前に comment の Markdown を render します）。ない場合、build は error で停止
-します。当面は v4 にとどまりたいですか? `"clean-jsdoc-theme": "^4"`
-で pin してください — v5 prereleases は npm の `next` tag の下に publish されるため、
-`^4` はそれらを引き込みません。
+に渡す前に comment の Markdown を render します）。ない場合、build は error で失敗
+します: 何も書き出されず、process は 0 以外の exit code で終了します。当面は v4 に
+とどまりたいですか? `"clean-jsdoc-theme": "^4"` で pin してください — v5 は npm の
+`latest` なので、pin していない install や `@latest` では v5 が入ります。
 
 </step>
 
 <step label="Upgrade the package">
 
 ```sh
-npm i -D clean-jsdoc-theme@latest   # または v5 prerelease 中は @next
+npm i -D clean-jsdoc-theme@latest
 ```
 
 </step>
@@ -86,9 +86,10 @@ v5 は残っている v4 の options に対して **警告** を出し、build �
 `theme_opts` block（さらにその中の key ごとに 1 件の警告）と、v5 の option ではない
 top-level の v4 option 名（`base_url`、`homepageTitle` など）です。各警告のヒントは
 v5 での代わりの option を示すか、その option が削除されたことを伝えます — 出力を
-読み、指摘されたものを修正してください。移行中はそれらの警告を build を止める
-errors に変えるために [`strict: true`](/theme/configuration#strict) を設定し、
-終わったら緩めてください。
+読み、指摘されたものを修正してください。[`strict: true`](/theme/configuration#strict)
+では `theme_opts` の警告が errors になり、build は何も書き出さずに 0 以外の exit code
+で終了します。top-level の v4 名はその場合も警告のままです — `opts.title` や
+`opts.search` は別の JSDoc plugin のものかもしれないためです。
 
 </step>
 
@@ -104,11 +105,11 @@ errors に変えるために [`strict: true`](/theme/configuration#strict) を�
 | `base_url` | `basePath` | renamed | links に prefix される site root。 |
 | `title` | `siteName` | 変更 | String **または** logo set `{ default, dark, light, alt }`。 |
 | `menu` | `menu` | 変更 | 再構成: `{ id?, title?, link/href?, icon?, target?, class? }` — `icon` と `id` built-ins を追加。 |
-| `sections` | `sectionOrder` | renamed | sidebar sections を filter + order。 |
+| `sections` | `sectionOrder` | 変更 | sidebar sections を filter + order。`Global` section は `Globals` になりました（残っている `"Global"` もそのまま使えます）。 |
 | `create_style` | `customCss` | renamed | Inline CSS（theme stylesheet の後に load）。 |
-| `include_css` / `add_style_path` | `customCssFile` | renamed/変更 | CSS file → content-hashed asset link。 |
+| `include_css` / `add_style_path` | `customCssFile` | renamed/変更 | Local CSS file → content-hashed asset link。Remote URLs（v4 の `add_style_path` の CDN entries）は非対応です: file を download するか、`customCss` から `@import url(…)` してください。 |
 | `add_scripts` | `customJs` | renamed | Inline JS（最後に実行）。 |
-| `include_js` / `add_script_path` | `customJsFile` | renamed/変更 | JS file → content-hashed asset。 |
+| `include_js` / `add_script_path` | `customJsFile` | renamed/変更 | Local JS file → content-hashed asset。Remote URLs（v4 の `add_script_path` の CDN entries）は非対応です: file を download するか、`customJs` から load してください。 |
 | `homepageTitle` | — | 削除 | Home `<title>` は README / `docs/index.md` + `siteName` から derive。 |
 | `includeFilesListInHomepage` | — | 削除 | Source Files section が files を列挙。 |
 | `meta` | `meta` | 変更 | 再び supported — attribute maps の array → `<head>` の `<meta>` tags。[`meta`](/theme/configuration#meta) を参照。 |
@@ -116,7 +117,7 @@ errors に変えるために [`strict: true`](/theme/configuration#strict) を�
 | `codepen` | `playground` | 変更 | v4 は `@example` から CodePen を事前入力しました; v5 はそれを [`playground`](/components/playground) に一般化します — `opts.playground` + `@playground` tag を介して、example を CodePen、JSFiddle、CodeSandbox で開けます。（既存の pen を URL で embed するには [`@iframe`](/components/embeds) を使用。） |
 | `static_dir` | — | 削除 | JSDoc 自身の static-file config を使用。 |
 | `footer` | `footer` | 変更 | 再び supported — inline HTML string または `{ file: "./footer.html" }`。`customCss` / `customCssFile` で style します。[`footer`](/theme/configuration#footer) を参照。 |
-| `exclude_inherited`, `displayModuleHeader`, `sort` | — | 削除 | 相当なし。 |
+| `exclude_inherited`, `displayModuleHeader`, `sort`, `resizeable`, `prefixModuleToSidebarItems_experimental` | — | 削除 | 相当なし。 |
 | `shouldRemoveScrollbarStyle` | `scrollbar` | 変更 | v4 の boolean は scrollbar のスタイルを無効化するだけだった。v5 の `scrollbar` は3値の enum: `"styled"`（デフォルト）\| `"visible"` \| `"native"`。`shouldRemoveScrollbarStyle: true` → `scrollbar: "native"`。 |
 
 > [!NOTE]
@@ -166,7 +167,7 @@ errors に変えるために [`strict: true`](/theme/configuration#strict) を�
       { id: "home", title: "Home" },
       { title: "GitHub", link: "https://github.com/me/lib", icon: "simpleicons:github" },
     ],
-    sectionOrder: ["Classes", "Modules", "Global"],
+    sectionOrder: ["Classes", "Modules", "Globals"],
     footer: "© My Library",
     customCssFile: "./static/custom.css",
     // 削除: default_theme (auto), search (常時 on)
