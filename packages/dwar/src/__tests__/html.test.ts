@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import type { Page } from '@clean-jsdoc-theme/utils';
-import { extractExcerpt, htmlPathFor, mdPathFor, renderHtmlDocument } from '../html';
+import {
+  extractExcerpt,
+  extractSearchText,
+  htmlPathFor,
+  mdPathFor,
+  renderHtmlDocument,
+} from '../html';
 
 const basePage: Page = {
   slug: 'x',
@@ -228,6 +234,22 @@ Body paragraph here with **bold** and \`code\`.
     const out = extractExcerpt('See [the docs](https://example.com).');
     expect(out).toContain('the docs');
     expect(out).not.toContain('example.com');
+  });
+});
+
+describe('search text — HTML comments', () => {
+  it('drops comments first, so a backtick inside one cannot pair with real code', () => {
+    const src = '<!-- it`s -->\n\nSome `code` here.';
+    expect(extractExcerpt(src)).toBe('Some here.');
+    expect(extractSearchText(src)).toBe('Some code here.');
+  });
+
+  it('drops a comment holding `>` whole', () => {
+    expect(extractSearchText('Visible <!-- a > b --> text.')).toBe('Visible text.');
+  });
+
+  it('keeps a comment shown inside a fenced code block out of the text like any code', () => {
+    expect(extractSearchText('Text.\n\n```html\n<!-- x -->\n```\n')).toBe('Text.');
   });
 });
 
