@@ -609,6 +609,19 @@ async function resolvePkg(project: ProjectReflection): Promise<SiteManifest['pkg
 type AdaptApp = Pick<Application, 'logger' | 'options'>;
 
 /**
+ * setu visibility options mirroring TypeDoc's own. TypeDoc has already dropped
+ * what it excludes, so a private reflection reaching setu means the user opted
+ * in (`excludePrivate: false`): tell setu to keep it too — otherwise its default
+ * (hide private) would strip the private members TypeDoc chose to document.
+ * Empty by default (TypeDoc's `excludePrivate` defaults to `true`).
+ */
+export function typedocVisibilityOptions(app: {
+  options: Pick<Application['options'], 'getValue'>;
+}): { includePrivate?: true } {
+  return app.options.getValue('excludePrivate') === false ? { includePrivate: true } : {};
+}
+
+/**
  * Output writer registered via `app.outputs.addOutput('clean-jsdoc-theme', …)`.
  * `outDir` is the resolved-by-TypeDoc destination for this output spec.
  */
@@ -748,11 +761,7 @@ export async function writeSite(
     ...(menu ? { menu } : {}),
     ...(collapsibleSidebarSections !== undefined ? { collapsibleSidebarSections } : {}),
     ...(playground ? { playground: playground.site } : {}),
-    // TypeDoc has already dropped what it excludes, so a private reflection
-    // reaching us means the user opted in (`excludePrivate: false`). Tell setu
-    // to keep it too — otherwise its default (hide private) would strip private
-    // members TypeDoc chose to document. Off by default, matching TypeDoc's.
-    ...(app.options.getValue('excludePrivate') === false ? { includePrivate: true } : {}),
+    ...typedocVisibilityOptions(app),
   });
 
   // Unmatched labels only apply when the config is an array (boolean shorthands

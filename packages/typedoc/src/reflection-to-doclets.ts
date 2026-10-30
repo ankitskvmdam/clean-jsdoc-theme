@@ -664,7 +664,12 @@ function adaptParameter(
 
   if (param.flags?.isOptional) out.optional = true;
   if (param.flags?.isRest) out.variable = true;
-  if (param.defaultValue !== undefined) out.defaultvalue = param.defaultValue;
+  // Same `...` placeholder as for properties (see `adaptProperty`): TypeDoc
+  // prints it for an object / array / complex initializer, so it never says
+  // anything — it rendered as a bare `` default: `...` ``.
+  if (param.defaultValue !== undefined && param.defaultValue !== '...') {
+    out.defaultvalue = param.defaultValue;
+  }
 
   // Description: prefer the parameter's own comment, fall back to a `@param` block.
   const ownDescription = summaryToHtml(param.comment, resolveLink);
