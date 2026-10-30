@@ -325,7 +325,9 @@ setu/src/
     ├── link-tags.ts      # resolveLinkTags: rewrite {@link}/{@linkcode}/
     │                     #   {@linkplain} text nodes → anchors (skips code spans)
     └── from-html.ts      # HTML / Markdown → structured mdast (the MDX-safe
-                          #   normalization shared by README + tutorials)
+                          #   normalization shared by README + tutorials; an
+                          #   unterminated `<!--` is escaped so it can't hide
+                          #   the rest of the fragment)
 docs/                     # architecture.md, how-jsdoc-works.md, …
 ```
 
@@ -488,7 +490,10 @@ dwar/src/
 │                         #   remark-gfm for tables/strikethrough/task-lists,
 │                         #   + rehype slug pass giving headings ids that mirror
 │                         #   setu's TOC exactly — slugifyHeading + per-page registry).
-│                         #   Pre-pass: {@link} → code spans + escapeEsmLookalikes (a
+│                         #   Pre-pass: stripHtmlComments (MDX has no `<!-- -->`
+│                         #   syntax — prose comments are dropped, code keeps them,
+│                         #   an unterminated opener becomes literal text)
+│                         #   + {@link} → code spans + escapeEsmLookalikes (a
 │                         #   prose line starting `import `/`export ` would be read
 │                         #   as ESM — its first letter becomes a char ref, #347)
 │                         #   + escapeStrayBraces (literal

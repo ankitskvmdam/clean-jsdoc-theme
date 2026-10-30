@@ -296,6 +296,22 @@ function expandContainers(
 }
 
 /**
+ * Turn every `<!--` that has no `-->` after it into the text `&lt;!--`. Per the
+ * HTML spec an unclosed comment runs to the end of the input, so a single stray
+ * opener — a half-deleted badge comment in a README, a typo in a doc comment —
+ * would silently hide everything after it on the page. Escaped, it parses as
+ * the literal text the author typed and the rest of the content survives. A
+ * literal `<!--` in this string is always markup: code reaches here already
+ * entity-escaped (`<pre><code>&lt;!--`), and in an attribute value `&lt;`
+ * decodes back to the same `<`. `<!-->` / `<!--->` are complete (empty)
+ * comments, so they are left alone. Terminated comments pass through and are
+ * dropped later by dwar's MDX pre-pass.
+ */
+function neutralizeUnterminatedComments(html: string): string {
+  return html.replace(/<!--(?!-?>)(?![\s\S]*?-->)/g, '&lt;!--');
+}
+
+/**
  * Convert an HTML fragment (as emitted by JSDoc into `description`, `classdesc`,
  * param descriptions, etc.) into block-level mdast nodes. Empty/blank input
  * returns `[]`.
@@ -315,7 +331,7 @@ function expandContainers(
  * for a segment with no containers.
  */
 function htmlBlocksPlain(html: string): RootContent[] {
-  const hast = fromHtml(html, { fragment: true });
+  const hast = fromHtml(neutralizeUnterminatedComments(html), { fragment: true });
   const mdast = toMdast(hast) as Root;
   // Promote GitHub-style alert blockquotes (`> [!INFO]`) to typed callouts,
   // recursively so an alert nested in a list item is promoted too. Done here,
