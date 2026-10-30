@@ -326,10 +326,12 @@ setu/src/
     ├── doclet.ts
     ├── link-tags.ts      # resolveLinkTags: rewrite {@link}/{@linkcode}/
     │                     #   {@linkplain} text nodes → anchors (skips code spans)
-    ├── literal-tags.ts   # escapeLiteralTags: a raw tag that reads as a type argument
-    │                     #   (`<User>`, `<T>`, `Promise<object>`: no attributes, no
-    │                     #   closer, not plain lowercase HTML) is escaped before the
-    │                     #   HTML parse, so it stays as text
+    ├── literal-tags.ts   # escapeLiteralTags, before the HTML parse: markup is a
+    │                     #   lowercase element (unless glued to a word with no attrs/
+    │                     #   closer: `Promise<object>`), an ALL-CAPS one, or a one-
+    │                     #   letter one with attrs or a same-block closer (`<B>x</B>`);
+    │                     #   every other tag (`<User>`, `<T>`, `<Button …>`) is
+    │                     #   escaped so it stays as text
     └── from-html.ts      # HTML / Markdown → structured mdast (the MDX-safe
                           #   normalization shared by README + tutorials; HTML
                           #   comments are dropped from the hast, an unterminated
