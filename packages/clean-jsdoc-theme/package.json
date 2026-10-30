@@ -1,7 +1,7 @@
 {
   "name": "clean-jsdoc-theme",
   "version": "5.2.1",
-  "description": "A modern, markdown-first JSDoc theme with i18n support",
+  "description": "A modern JSDoc theme with dark mode, built-in search, i18n, and LLM-ready Markdown for every page. TypeDoc support via @clean-jsdoc-theme/typedoc.",
   "main": "./dist/publish.js",
   "types": "./dist/publish.d.ts",
   "exports": {
@@ -69,6 +69,16 @@
     "jsdoc",
     "jsdoc-template",
     "jsdoc-theme",
-    "documentation"
+    "documentation",
+    "documentation-generator",
+    "api-documentation",
+    "api-docs",
+    "static-site",
+    "dark-mode",
+    "search",
+    "i18n",
+    "llm",
+    "markdown",
+    "typedoc"
   ]
 }
