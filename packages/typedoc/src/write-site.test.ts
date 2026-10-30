@@ -1,10 +1,11 @@
+import { existsSync } from 'node:fs';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { Application, ReflectionKind, type ProjectReflection } from 'typedoc';
 import type { DocInput } from '@clean-jsdoc-theme/setu';
-import { collectProjectDocuments } from './write-site';
+import { collectProjectDocuments, writeSite } from './write-site';
 
 /**
  * A minimal project exercising `projectDocuments`: TypeDoc surfaces the
@@ -18,6 +19,7 @@ export function noop(): void {}
 `;
 
 let project: ProjectReflection;
+let app: Application;
 let tmp: string;
 
 /** TypeDoc requires posix separators in `entryPoints`/`tsconfig` globs. */
@@ -48,7 +50,7 @@ beforeAll(async () => {
     'utf8'
   );
 
-  const app = await Application.bootstrap(
+  app = await Application.bootstrap(
     {
       entryPoints: [posix(entry)],
       tsconfig: posix(join(tmp, 'tsconfig.json')),
@@ -92,5 +94,43 @@ describe('collectProjectDocuments', () => {
 
     expect(merged).toHaveLength(1);
     expect(merged[0].content).toBe('FROM OPTS');
+  });
+});
+
+describe('writeSite — strict mode', () => {
+  /** The app with a given `cleanJsdocTheme` block (the plugin option isn't declared here). */
+  const withBlock = (block: Record<string, unknown>) => ({
+    logger: app.logger,
+    options: {
+      getValue: (name: string) =>
+        name === 'cleanJsdocTheme' ? block : app.options.getValue(name as never),
+    } as unknown as Application['options'],
+  });
+
+  it('fails on a validation warning (an unknown key) before writing anything', async () => {
+    const out = join(tmp, 'out-strict-typo');
+    const error = vi.spyOn(app.logger, 'error').mockImplementation(() => {});
+    try {
+      await expect(
+        writeSite(out, project, withBlock({ strict: true, siteNme: 'x' }))
+      ).rejects.toThrow(/validation failed in strict mode/);
+      expect(existsSync(out)).toBe(false);
+    } finally {
+      error.mockRestore();
+    }
+  });
+
+  it('fails on an option problem found after validation (unreadable favicon)', async () => {
+    const out = join(tmp, 'out-strict-favicon');
+    const error = vi.spyOn(app.logger, 'error').mockImplementation(() => {});
+    try {
+      await expect(
+        writeSite(out, project, withBlock({ strict: true, favicon: './no/such/favicon.ico' }))
+      ).rejects.toThrow(/1 option problem\(s\) in strict mode/);
+      expect(error).toHaveBeenCalledWith(expect.stringContaining('could not read favicon'));
+      expect(existsSync(out)).toBe(false);
+    } finally {
+      error.mockRestore();
+    }
   });
 });

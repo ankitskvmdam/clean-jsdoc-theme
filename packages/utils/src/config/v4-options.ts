@@ -7,13 +7,19 @@
  * other tools, so blanket unknown-key warnings would be noise), and v4 names
  * like `base_url` or `theme_opts` are nowhere near a v5 key.
  *
- * These names are different: they are known to be ours, so flagging them is
- * never noise, and each gets a hint saying exactly what replaces it.
+ * Two levels of certainty:
+ * - `opts.theme_opts` (the block and every key in it) is unambiguously ours.
+ *   It warns, and strict mode escalates it like any other option warning.
+ * - A top-level v4 name (`opts.title`, `opts.search`, `opts.sort`, …) is most
+ *   likely a half-finished migration, but it could belong to another JSDoc
+ *   plugin sharing `opts`. It warns with the same hint, under its own code
+ *   ({@link V4_TOP_LEVEL_CODE}) that strict mode never escalates — a strict
+ *   build must not fail on someone else's option.
  *
  * Pure + node-free.
  */
 
-import type { DiagnosticBag, DiagnosticLevel } from './diagnostics';
+import type { DiagnosticBag } from './diagnostics';
 
 /** Migration status of a v4 option — the `status` enum of `migration-map.json`. */
 export type V4OptionStatus = 'kept' | 'renamed' | 'changed' | 'removed';
@@ -26,10 +32,10 @@ export interface V4OptionMapping {
 }
 
 /**
- * Every v4 `theme_opts` option and what became of it. Mirrors `v4ToV5` in the
- * repo-root `migration-map.json` (the source of truth, also embedded in
- * MIGRATION.md) — copied here because utils can't read the repo root at
- * runtime. A utils test fails when the two drift apart.
+ * Every option v4 read from `theme_opts` and what became of it. Mirrors
+ * `v4ToV5` in the repo-root `migration-map.json` (the source of truth, also
+ * embedded in MIGRATION.md) — copied here because utils can't read the repo
+ * root at runtime. A utils test fails when the two drift apart.
  */
 export const V4_OPTION_MAP: Readonly<Record<string, V4OptionMapping>> = {
   default_theme: { v5: null, status: 'removed' },
@@ -39,7 +45,7 @@ export const V4_OPTION_MAP: Readonly<Record<string, V4OptionMapping>> = {
   title: { v5: 'siteName', status: 'changed' },
   includeFilesListInHomepage: { v5: null, status: 'removed' },
   menu: { v5: 'menu', status: 'changed' },
-  sections: { v5: 'sectionOrder', status: 'renamed' },
+  sections: { v5: 'sectionOrder', status: 'changed' },
   meta: { v5: 'meta', status: 'changed' },
   search: { v5: null, status: 'removed' },
   codepen: { v5: 'playground', status: 'changed' },
@@ -55,10 +61,19 @@ export const V4_OPTION_MAP: Readonly<Record<string, V4OptionMapping>> = {
   displayModuleHeader: { v5: null, status: 'removed' },
   sort: { v5: null, status: 'removed' },
   shouldRemoveScrollbarStyle: { v5: 'scrollbar', status: 'changed' },
+  resizeable: { v5: null, status: 'removed' },
+  prefixModuleToSidebarItems_experimental: { v5: null, status: 'removed' },
 };
 
 /** The v4 → v5 migration guide, linked from every migration hint. */
 export const MIGRATION_GUIDE_URL = 'https://ankdev.me/clean-jsdoc-theme/theme/migrate-v4-to-v5';
+
+/**
+ * Diagnostic code for a top-level v4 option name. Kept apart from
+ * `opts/v4-option` (keys inside `theme_opts`) so strict mode can leave it a
+ * warning — see the module comment.
+ */
+export const V4_TOP_LEVEL_CODE = 'opts/v4-name';
 
 /**
  * Short "what changed" notes for the options whose replacement isn't a plain
@@ -70,13 +85,19 @@ const V4_NOTES: Readonly<Record<string, string>> = {
   includeFilesListInHomepage: 'the Source Files section lists files',
   search: 'search is always on',
   static_dir: "use JSDoc's `templates.default.staticFiles`",
+  resizeable: 'the sidebar has no resize options',
   title: 'a string or a logo set `{ default, dark, light, alt }`',
+  sections: 'the `Global` section is now `Globals`',
   menu: 'entries are `{ id?, title?, link?, icon?, target?, class? }`',
   meta: 'an array of attribute maps, as in v4',
   footer: 'an HTML string or `{ file }`',
   codepen: 'plus the `@playground` tag; CodePen, JSFiddle or CodeSandbox',
-  add_style_path: 'a local CSS file, emitted as a hashed asset',
-  add_script_path: 'a local JS file, emitted as a hashed asset',
+  // v4 took `{ href, integrity, crossorigin }` CDN entries here; v5's file
+  // options only copy local files, so a remote URL needs a different route.
+  add_style_path:
+    'local files only — download a remote stylesheet, or `@import url(…)` it from `customCss`',
+  add_script_path:
+    'local files only — download a remote script, or load it from `customJs` with a small loader',
   shouldRemoveScrollbarStyle: '`shouldRemoveScrollbarStyle: true` → `scrollbar: "native"`',
 };
 
@@ -109,39 +130,36 @@ export function v4OptionKeys(themeKeys: ReadonlySet<string>): Set<string> {
 }
 
 /**
- * Flag leftover v4 options: an `opts.theme_opts` block (v5 ignores it — one
- * diagnostic for the block, then one per key inside it with that key's hint)
- * and top-level v4 option names that aren't v5 keys. `level` is `'warning'` by
- * default; a strict build passes `'error'` so these fail it.
+ * Flag leftover v4 options as warnings: an `opts.theme_opts` block (v5 ignores
+ * it — one diagnostic for the block, then one per key inside it with that key's
+ * hint) and top-level v4 option names that aren't v5 keys
+ * ({@link V4_TOP_LEVEL_CODE}).
  */
 export function checkV4Options(
   opts: Record<string, unknown>,
   bag: DiagnosticBag,
-  themeKeys: ReadonlySet<string>,
-  level: Extract<DiagnosticLevel, 'warning' | 'error'> = 'warning'
+  themeKeys: ReadonlySet<string>
 ): void {
-  const report = (code: string, message: string, hint: string, path: string): void =>
-    bag.add({ level, code, message, hint, path });
-
   if (Object.hasOwn(opts, 'theme_opts')) {
-    report(
+    bag.warning(
       'opts/v4-theme-opts',
       'v5 ignores the v4 `theme_opts` block — its options now live directly under `opts`.',
-      `move each option up to \`opts\` (renaming or dropping it as noted) and delete \`theme_opts\`. See ${MIGRATION_GUIDE_URL}`,
-      'theme_opts'
+      {
+        hint: `move each option up to \`opts\` (renaming or dropping it as noted) and delete \`theme_opts\`. See ${MIGRATION_GUIDE_URL}`,
+        path: 'theme_opts',
+      }
     );
     const nested = opts.theme_opts;
     if (nested && typeof nested === 'object' && !Array.isArray(nested)) {
       for (const key of Object.keys(nested)) {
-        report(
-          'opts/v4-option',
-          `v4 option "theme_opts.${key}" is ignored.`,
-          v4OptionHint(key) ??
+        bag.warning('opts/v4-option', `v4 option "theme_opts.${key}" is ignored.`, {
+          hint:
+            v4OptionHint(key) ??
             (themeKeys.has(key)
               ? `move it up to \`opts.${key}\`.`
               : `not a v5 option — see ${MIGRATION_GUIDE_URL}`),
-          `theme_opts.${key}`
-        );
+          path: `theme_opts.${key}`,
+        });
       }
     }
   }
@@ -149,6 +167,11 @@ export function checkV4Options(
   for (const key of Object.keys(opts)) {
     if (key === 'theme_opts' || themeKeys.has(key)) continue;
     const hint = v4OptionHint(key);
-    if (hint) report('opts/v4-option', `"${key}" is a v4 option and is ignored.`, hint, key);
+    if (hint) {
+      bag.warning(V4_TOP_LEVEL_CODE, `"${key}" is a v4 option and is ignored.`, {
+        hint,
+        path: key,
+      });
+    }
   }
 }
