@@ -97,4 +97,65 @@ describe('htmlCommentRanges', () => {
     const src = 'x <!-- oops';
     expect(htmlCommentRanges(src)).toEqual([{ start: 2, end: 6, closed: false }]);
   });
+
+  it('does not open a fence on a lone fence line inside a comment block', () => {
+    const src = '<!--\n```js\n-->\n\nText <!-- c --> after.\n';
+    expect(fencedCodeRanges(src)).toEqual([]);
+    expect(closed(src)).toEqual(['<!--\n```js\n-->', '<!-- c -->']);
+  });
+
+  it('scans the rest of the line after a comment block closes', () => {
+    expect(closed('<!-- a\nb --> mid <!-- c -->\n')).toEqual(['<!-- a\nb -->', '<!-- c -->']);
+  });
+
+  it('does not let an escaped \\] start a protected link tail', () => {
+    expect(closed('\\[a\\](http://x/<!--y-->z) more')).toEqual(['<!--y-->']);
+  });
+
+  it.each([
+    ['an ATX heading', 'text <!-- a\n# Heading\n-->\n'],
+    ['a thematic break', 'text <!-- a\n***\n-->\n'],
+    ['a list item', 'text <!-- a\n- item\n-->\n'],
+    ['a blockquote', 'text <!-- a\n> quote\n-->\n'],
+    ['a blank quote line', '> text <!-- a\n>\n> -->\n'],
+  ])('stops an inline comment at %s (it ends the paragraph)', (_name, src) => {
+    expect(htmlCommentRanges(src).map((c) => c.closed)).toEqual([false]);
+  });
+
+  it('lets an inline comment in a quote continue on the next > line', () => {
+    expect(closed('> text <!-- a\n> b -->\n')).toEqual(['<!-- a\n> b -->']);
+  });
+});
+
+// Every page body goes through these scanners several times per build, so a
+// pathological one must not stall it. Bounds are generous (the inputs take a few
+// tens of ms); the quadratic versions took seconds to minutes.
+describe('markdown-scan performance', () => {
+  const MB = 1_000_000;
+  const time = (src: string): number => {
+    const t = performance.now();
+    htmlCommentRanges(src);
+    return performance.now() - t;
+  };
+
+  it.each([
+    ['unclosed inline openers on one line', 'a <!-- '.repeat(MB / 7)],
+    ['unclosed inline openers on many lines', 'a <!-- b\n'.repeat(MB / 9)],
+    ['unclosed line-start openers', '<!-- x\n'.repeat(MB / 7)],
+    ['closers without openers', 'a --> '.repeat(MB / 6)],
+    ['closed inline comments across lines', 'a <!-- b\nc --> d\n'.repeat(MB / 17)],
+    [
+      'fences with spans and comments',
+      '```js\nx\n```\n\nSee `a` <!-- c --> [l](u).\n\n'.repeat(MB / 45),
+    ],
+    ['one opener then a long paragraph', 'a <!-- ' + 'word '.repeat(MB / 5)],
+    [
+      'paragraph-crossing openers with one closer at the end',
+      'a <!-- b\n\n'.repeat(MB / 10) + '-->',
+    ],
+    ['stray backticks of mixed lengths', '` a `` b ``` c '.repeat(MB / 15)],
+    ['unterminated tag attributes', '<a b="x '.repeat(MB / 8)],
+  ])('%s (1MB) scans in under a second', (_name, src) => {
+    expect(time(src)).toBeLessThan(1000);
+  });
 });

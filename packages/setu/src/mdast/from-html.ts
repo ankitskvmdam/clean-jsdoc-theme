@@ -14,7 +14,7 @@ import { fromMarkdown } from 'mdast-util-from-markdown';
 import { gfmFromMarkdown } from 'mdast-util-gfm';
 import { toHast } from 'mdast-util-to-hast';
 import { gfm } from 'micromark-extension-gfm';
-import { htmlCommentRanges, type TextRange } from '@clean-jsdoc-theme/utils';
+import { htmlCommentRanges, rangeContaining, type TextRange } from '@clean-jsdoc-theme/utils';
 import { callout, code, playground, step, steps, tab, tabs } from './builders';
 import {
   KNOWN_PROVIDERS,
@@ -134,22 +134,38 @@ type ProseFormat = 'markdown' | 'html';
  */
 function closedCommentRanges(raw: string, format: ProseFormat): TextRange[] {
   if (format === 'markdown') return htmlCommentRanges(raw).filter((c) => c.closed);
-  return [...raw.matchAll(/<!--(?:-?>|[\s\S]*?-->)/g)].map((m) => ({
-    start: m.index,
-    end: m.index + m[0].length,
-  }));
+  // Each comment ends at the first `-->` after its opener; once none is left,
+  // no later opener can close either — so the walk is linear.
+  const out: TextRange[] = [];
+  for (let from = 0; ; ) {
+    const start = raw.indexOf('<!--', from);
+    if (start === -1) break;
+    const empty = /^-?>/.exec(raw.slice(start + 4, start + 6));
+    const closer = empty ? start + 4 : raw.indexOf('-->', start + 4);
+    if (closer === -1) break;
+    const end = empty ? start + 4 + empty[0].length : closer + 3;
+    out.push({ start, end });
+    from = end;
+  }
+  return out;
 }
 
-/** The first container opening tag in `raw` that is not inside a comment. */
-function findContainerOpen(raw: string, format: ProseFormat): RegExpExecArray | null {
-  const comments = closedCommentRanges(raw, format);
+/**
+ * The first container opening tag in `rest` that is not inside a comment.
+ * `comments` were found once on the whole string, of which `rest` is the
+ * suffix starting at `base`.
+ */
+function findContainerOpen(
+  rest: string,
+  base: number,
+  comments: readonly TextRange[]
+): RegExpExecArray | null {
   const re = new RegExp(CONTAINER_OPEN.source, 'gi');
   let m: RegExpExecArray | null;
-  while ((m = re.exec(raw)) !== null) {
-    const at = m.index;
-    const comment = comments.find((c) => at >= c.start && at < c.end);
+  while ((m = re.exec(rest)) !== null) {
+    const comment = rangeContaining(comments, base + m.index);
     if (!comment) return m;
-    re.lastIndex = comment.end;
+    re.lastIndex = comment.end - base;
   }
   return null;
 }
@@ -224,9 +240,10 @@ function parseItems(inner: string, itemName: string): ContainerItem[] {
  */
 function splitContainers(raw: string, format: ProseFormat): Segment[] {
   const segments: Segment[] = [];
+  const comments = closedCommentRanges(raw, format);
   let rest = raw;
   for (;;) {
-    const open = findContainerOpen(rest, format);
+    const open = findContainerOpen(rest, raw.length - rest.length, comments);
     if (!open) {
       if (rest.length > 0) segments.push({ kind: 'plain', raw: rest });
       break;
@@ -339,11 +356,33 @@ function expandContainers(
  * literal `<!--` in this string is always markup: code reaches here already
  * entity-escaped (`<pre><code>&lt;!--`), and in an attribute value `&lt;`
  * decodes back to the same `<`. `<!-->` / `<!--->` are complete (empty)
- * comments, so they are left alone. Terminated comments pass through and are
- * dropped later by dwar's MDX pre-pass.
+ * comments, so they are left alone. Terminated comments become hast comment
+ * nodes, which {@link dropComments} removes.
  */
 function neutralizeUnterminatedComments(html: string): string {
-  return html.replace(/<!--(?!-?>)(?![\s\S]*?-->)/g, '&lt;!--');
+  // Unterminated means no `-->` starts after the opener — i.e. it sits past the
+  // LAST `-->`. One `lastIndexOf`, not a look-ahead scan per opener.
+  const lastCloser = html.lastIndexOf('-->');
+  return html.replace(/<!--(?!-?>)/g, (opener, at: number) =>
+    at + opener.length > lastCloser ? '&lt;!--' : opener
+  );
+}
+
+/**
+ * Remove every comment node from a hast tree, in place. Comments render to
+ * nothing, and MDX has no syntax for them: left in, `toMdast` would emit each
+ * one verbatim as a raw `html` node, which dwar's MDX pre-pass then has to
+ * find again in serialized text — where an inline comment that spanned a blank
+ * line (legal in HTML, e.g. `<p>a <!-- x\n\ny --> b</p>`) no longer reads as a
+ * comment at all. Every prose path (README, tutorials, guides, JSDoc and
+ * TypeDoc descriptions, captions with HTML) lowers through here, so dropping
+ * them at the source leaves the page body — and its `.md` companion — clean;
+ * dwar's pass stays as the safety net for bodies that didn't come from setu.
+ */
+function dropComments(node: { children?: unknown[] }): void {
+  if (!node.children) return;
+  node.children = node.children.filter((child) => (child as { type?: string }).type !== 'comment');
+  for (const child of node.children) dropComments(child as { children?: unknown[] });
 }
 
 /**
@@ -367,6 +406,7 @@ function neutralizeUnterminatedComments(html: string): string {
  */
 function htmlBlocksPlain(html: string): RootContent[] {
   const hast = fromHtml(neutralizeUnterminatedComments(html), { fragment: true });
+  dropComments(hast);
   const mdast = toMdast(hast) as Root;
   // Promote GitHub-style alert blockquotes (`> [!INFO]`) to typed callouts,
   // recursively so an alert nested in a list item is promoted too. Done here,
@@ -473,7 +513,7 @@ function splitPlaygroundFences(md: string): FenceSegment[] {
     offset += lines[k].length + 1;
   }
   const inComment = (line: number): boolean =>
-    comments.some((c) => lineStarts[line] >= c.start && lineStarts[line] < c.end);
+    rangeContaining(comments, lineStarts[line]) !== undefined;
 
   let i = 0;
   while (i < lines.length) {

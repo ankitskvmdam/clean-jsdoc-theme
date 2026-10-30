@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { Root } from 'mdast';
-import { htmlCommentRanges, type TDoclet } from '@clean-jsdoc-theme/utils';
+import type { TDoclet } from '@clean-jsdoc-theme/utils';
 import { examplesBlocks } from '../mdast/doclet';
 import { htmlToMdastBlocks, markdownToMdastBlocks } from '../mdast/from-html';
 import { toMdx } from '../mdx';
@@ -10,16 +10,23 @@ const mdx = (blocks: Root['children']): string => toMdx({ type: 'root', children
 /** True when `s` holds an `<!--` that isn't backslash-escaped. */
 const hasRawOpener = (s: string): boolean => /(^|[^\\])<!--/.test(s);
 
-// HTML comments in prose pass through setu as raw `html` nodes and are dropped
-// by dwar's MDX pre-pass (`stripHtmlComments`). setu's one job here is the
-// unterminated opener: the HTML parser would otherwise run that comment to the
-// end of the fragment, hiding the rest of a README or doc comment.
+// Every prose path lowers through the HTML normalization, which drops comment
+// nodes (MDX has no comment syntax; dwar's `stripHtmlComments` is only the safety
+// net). The unterminated opener is the other job: the HTML parser would run that
+// comment to the end of the fragment, hiding the rest of a README or doc comment.
 describe('HTML comments through the HTML normalization', () => {
-  it('passes a terminated comment through verbatim (dwar drops it at compile)', () => {
-    expect(mdx(markdownToMdastBlocks('<!-- badges -->\n\nText.'))).toBe(
-      '<!-- badges -->\n\nText.\n'
-    );
-    expect(mdx(htmlToMdastBlocks('<p>a <!-- note -->b</p>'))).toBe('a <!-- note -->b\n');
+  it('drops a terminated comment', () => {
+    expect(mdx(markdownToMdastBlocks('<!-- badges -->\n\nText.'))).toBe('Text.\n');
+    expect(mdx(htmlToMdastBlocks('<p>a <!-- note -->b</p>'))).toBe('a b\n');
+  });
+
+  it('drops an inline comment that spans a blank line (legal in HTML)', () => {
+    expect(mdx(htmlToMdastBlocks('<p>Text <!-- a\n\nb --> c</p>'))).toBe('Text c\n');
+  });
+
+  it('drops a comment block holding a lone fence line, keeping what follows', () => {
+    const out = mdx(markdownToMdastBlocks('<!--\n```js\n-->\n\nText <!-- c --> after.\n'));
+    expect(out).toBe('Text after.\n');
   });
 
   it('keeps a README alive after a block-level unterminated <!--', () => {
@@ -37,13 +44,13 @@ describe('HTML comments through the HTML normalization', () => {
 
   it('only escapes the opener that has no closer after it', () => {
     const out = mdx(htmlToMdastBlocks('<p>a <!-- real --> b <!-- stray</p><p>c</p>'));
-    expect(out).toContain('<!-- real -->');
+    expect(out).not.toContain('real');
     expect(out).toContain('\\<!-- stray');
     expect(out).toContain('c');
   });
 
   it('treats <!--> and <!---> as complete empty comments', () => {
-    expect(mdx(htmlToMdastBlocks('<p>a<!-->b<!--->c</p>'))).toBe('a<!---->b<!---->c\n');
+    expect(mdx(htmlToMdastBlocks('<p>a<!-->b<!--->c</p>'))).toBe('abc\n');
   });
 
   it('leaves an opener inside code alone (it reaches here entity-escaped)', () => {
@@ -51,21 +58,26 @@ describe('HTML comments through the HTML normalization', () => {
     expect(out).toContain('```html\n<!-- open\n```');
     expect(out).toContain('`<!--`');
   });
+
+  it('escapes many unterminated openers in linear time', () => {
+    const html = `<p>${'a <!-- '.repeat(100_000)}</p>`;
+    const t = performance.now();
+    htmlToMdastBlocks(html);
+    expect(performance.now() - t).toBeLessThan(5000);
+  });
 });
 
 // The container / playground splitters run on raw text before the HTML
-// round-trip. A commented-out `<steps>` etc. must stay inside its comment (which
-// dwar drops), not be lifted out as a live component with the `<!--`/`-->`
+// round-trip. A commented-out `<steps>` etc. must stay inside its comment (and
+// vanish with it), not be lifted out as a live component with the `<!--`/`-->`
 // orphaned around it.
 describe('commented-out containers and playgrounds stay commented out', () => {
-  /** The MDX holds no live component and exactly one comment, wrapping `inner`. */
+  /** The MDX holds no live component, no comment and none of the hidden text. */
   function expectCommentedOut(out: string, inner: string): void {
     expect(out).not.toMatch(/<(Steps|Step|Tabs|Tab|Playground)\b/);
-    expect(out).not.toContain('\\<!--');
-    const comments = htmlCommentRanges(out);
-    expect(comments).toHaveLength(1);
-    expect(comments[0].closed).toBe(true);
-    expect(out.slice(comments[0].start, comments[0].end)).toContain(inner);
+    expect(out).not.toContain('<!--');
+    expect(out).not.toContain('-->');
+    expect(out).not.toContain(inner);
   }
 
   const STEPS = '<steps>\n<step label="A">one</step>\n</steps>';
@@ -74,20 +86,19 @@ describe('commented-out containers and playgrounds stay commented out', () => {
   const PG_FENCE = '```js playground codepen\nrun();\n```';
 
   it.each([
-    ['steps', STEPS, 'step label'],
-    ['tabs', TABS, 'tab label'],
+    ['steps', STEPS, 'one'],
+    ['tabs', TABS, 'one'],
     ['playground tag', PG_TAG, 'run();'],
     ['playground fence', PG_FENCE, 'run();'],
   ])('markdown: %s inside a comment', (_name, block, inner) => {
     const out = mdx(markdownToMdastBlocks(`before\n\n<!--\n${block}\n-->\n\nafter`));
     expectCommentedOut(out, inner);
-    expect(out).toContain('before');
-    expect(out).toContain('after');
+    expect(out).toBe('before\n\nafter\n');
   });
 
   it.each([
-    ['steps', STEPS, 'step label'],
-    ['tabs', TABS, 'tab label'],
+    ['steps', STEPS, 'one'],
+    ['tabs', TABS, 'one'],
     [
       'playground tag',
       '<playground codepen><pre><code class="language-js">run();</code></pre></playground>',
@@ -96,8 +107,7 @@ describe('commented-out containers and playgrounds stay commented out', () => {
   ])('HTML: %s inside a comment', (_name, block, inner) => {
     const out = mdx(htmlToMdastBlocks(`<p>x</p><!-- ${block} --><p>y</p>`));
     expectCommentedOut(out, inner);
-    expect(out).toMatch(/^x\n/);
-    expect(out).toMatch(/\ny\n$/);
+    expect(out).toBe('x\n\ny\n');
   });
 
   it('still expands a live container next to a commented-out one', () => {
@@ -129,9 +139,8 @@ describe('example captions holding raw HTML', () => {
     }
   });
 
-  it('keeps a comment as a comment (dwar drops it) and the text around it', () => {
-    const out = caption('Basic <!-- c --> use');
-    expect(out).toContain('Basic <!-- c -->use');
+  it('drops a comment and keeps the text around it', () => {
+    expect(caption('Basic <!-- c --> use')).toBe('Basic use\n\n```js\nrun();\n```\n');
   });
 
   it('keeps plain Markdown captions on the direct parse', () => {
