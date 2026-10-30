@@ -412,6 +412,26 @@ describe('runBuild', () => {
     expect(res.diagnostics.list.some((d) => d.code === 'build/pipeline-failed')).toBe(true);
   });
 
+  it('keeps the whole captured stderr in the failure hint, not just its last line', async () => {
+    const stderr =
+      'error unknown option "siteNme". [opts/unknown-key]\nERROR: opts validation failed';
+    const failing: PipelineRunner = async ({ env }) =>
+      env['CLEAN_JSDOC_THEME_BUILD'] ? { code: 1, stderr } : { code: 0, stderr: '' };
+    const res = await runBuild({ configPath, dir: localesDir, runner: failing });
+    const failed = res.diagnostics.list.find((d) => d.code === 'build/pipeline-failed');
+    expect(failed?.hint).toBe(stderr);
+  });
+
+  it('points at the streamed output instead of repeating it', async () => {
+    const failing: PipelineRunner = async ({ env }) =>
+      env['CLEAN_JSDOC_THEME_BUILD']
+        ? { code: 1, stderr: 'ERROR: boom', streamed: true }
+        : { code: 0, stderr: '' };
+    const res = await runBuild({ configPath, dir: localesDir, runner: failing });
+    const failed = res.diagnostics.list.find((d) => d.code === 'build/pipeline-failed');
+    expect(failed?.hint).toBe('see the jsdoc output above.');
+  });
+
   it('--locale builds only that locale', async () => {
     const res = await runBuild({ configPath, dir: localesDir, locale: 'fr', runner: buildRunner });
     expect(res.results.map((r) => r.locale)).toEqual(['fr']);
