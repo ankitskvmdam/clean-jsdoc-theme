@@ -49,10 +49,9 @@ describe('escapeLiteralTags — which tags are markup', () => {
     ['<I>it</I>', '<I>'],
     ['<A HREF="https://e.com">L</A>', '<A'],
     ['<P ALIGN=center>x', '<P'],
-    ['a <Br> b', '<Br>'],
+    ['<DIV>x', '<DIV>'],
+    ['<TABLE><TR><TD>x', '<TABLE>'],
     ['a <BR> b', '<BR>'],
-    ['<Img src="x.png">', '<Img'],
-    ['<Div>x</Div>', '<Div>'],
     ['<my-widget>Hello</my-widget>', '<my-widget>'],
     ['<x-el data-a="1">', '<x-el'],
     ['stray <steps> tag', '<steps>'],
@@ -75,6 +74,20 @@ describe('escapeLiteralTags — which tags are markup', () => {
     ['a <Callout type="tip">x</Callout>', '<Callout'],
     ['Use <Steps> literal and <Tab> stray', '<Steps>'],
     ['Use <Steps> literal and <Tab> stray', '<Tab>'],
+    ['a <Br> b', '<Br>'],
+    ['<Img src="x.png">', '<Img'],
+    ['<Div>x</Div>', '<Div>'],
+    ['<Button variant="primary">Click</Button>', '<Button'],
+    ['<Button onClick={fn}>x</Button>', '<Button'],
+    ['<Select>', '<Select>'],
+    ['<Input>', '<Input>'],
+    ['<Link href="/x">', '<Link'],
+    ['<Form>x</Form>', '<Form>'],
+    ['<Table>x</Table>', '<Table>'],
+    ['<Label>x</Label>', '<Label>'],
+    ['<Dialog open>x</Dialog>', '<Dialog'],
+    ['<Menu>x</Menu>', '<Menu>'],
+    ['<Option value="a">A</Option>', '<Option'],
   ])('escapes %j', (html, tag) => {
     expect(kept(html, tag)).toBe(false);
   });
@@ -296,15 +309,13 @@ describe('reviewer cases — lowercase element names as type arguments', () => {
   });
 });
 
-describe('reviewer cases — any-case HTML with attributes or a closer still renders', () => {
+describe('reviewer cases — HTML spelled lowercase, ALL-CAPS or single-capital still renders', () => {
   it.each([
     ['<p>a <B>bold</B> b</p>', 'a **bold** b'],
     ['<p>a <I>it</I> b</p>', 'a _it_ b'],
     ['<p><A HREF="https://e.com">L</A></p>', '[L](https://e.com)'],
-    // A mixed-case void glued to a word (`a<Br>b`) reads as `Parser<Input>`.
-    ['<p>a <Br> b</p>', 'a\\\nb'],
-    ['<p>a <Img src="x.png" alt="X"> b</p>', 'a ![X](x.png) b'],
-    ['<Div>Hello</Div>', 'Hello'],
+    ['<p>a <BR> b <IMG SRC="x.png" ALT="X"></p>', 'a\\\nb ![X](x.png)'],
+    ['<DIV>Hello</DIV>', 'Hello'],
     ['<p><my-widget>Hello</my-widget></p>', 'Hello'],
   ])('%j → %j', (html, expected) => {
     expect(mdx(htmlToMdastBlocks(html))).toBe(expected);
@@ -349,5 +360,49 @@ describe('@example captions', () => {
 
   it('leaves a caption without raw HTML on the direct Markdown parse', () => {
     expect(caption('*Basic* use')).toBe('_Basic_ use\n\n```js\nrun();\n```');
+  });
+});
+
+describe('PascalCase component names render as written', () => {
+  it.each([
+    [
+      '<p>Use <Button variant="primary">Click</Button> here.</p>',
+      'Use <Button variant="primary">Click</Button> here.',
+    ],
+    ['<p>A <Dialog open>body</Dialog>.</p>', 'A <Dialog open>body</Dialog>.'],
+    ['<p>a <Img src="x.png"> b <Div>c</Div></p>', 'a <Img src="x.png"> b <Div>c</Div>'],
+  ])('%j', (html, expected) => {
+    expect(text(htmlToMdastBlocks(html))).toBe(expected);
+  });
+});
+
+describe('a closer only counts inside the same block', () => {
+  it.each([
+    ['<p>List<a> glued.</p><p>See <a href="u">link</a>.</p>', 'List\\<a> glued.\n\nSee [link](u).'],
+    ['<p>Array<code> glued.</p><p>Use <code>x</code>.</p>', 'Array\\<code> glued.\n\nUse `x`.'],
+    ['<p>Array<p> glued.</p><p>more</p>', 'Array\\<p> glued.\n\nmore'],
+    [
+      '<p>Takes Map<B> here.</p><p>later </B> stray</p>',
+      'Takes Map\\<B> here.\n\nlater \\</B> stray',
+    ],
+  ])('%j', (html, expected) => {
+    expect(mdx(htmlToMdastBlocks(html))).toBe(expected);
+  });
+
+  it('treats a blank line as a block boundary', () => {
+    expect(escapeLiteralTags('Map<B> here\n\nlater </B>')).toBe('Map&lt;B> here\n\nlater &lt;/B>');
+  });
+
+  it('pairs a glued block element with its closer across inner blocks', () => {
+    const html = '<ul><li>item<blockquote><p>q</p></blockquote></li></ul>';
+    expect(escapeLiteralTags(html)).toBe(html);
+  });
+
+  it('pairs nested same-name tags by depth', () => {
+    expect(escapeLiteralTags('<B>a <B>b</B>')).toBe('&lt;B>a <B>b</B>');
+  });
+
+  it('accepts the residual ambiguity: a one-letter generic with a stray closer in its block', () => {
+    expect(escapeLiteralTags('Map<B> and </B>')).toBe('Map<B> and </B>');
   });
 });
