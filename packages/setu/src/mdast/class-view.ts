@@ -877,6 +877,11 @@ export function containerViewToMdast(
           sig: tsConstructorSignature(ctorName, view.doclet.typeParams, ctorSigParams),
         })
       );
+      // A kept non-public constructor (TypeDoc `excludePrivate: false`, or a
+      // `protected constructor`) carries its access as a badge, like a member.
+      if (view.doclet.constructoraccess && view.doclet.constructoraccess !== 'public') {
+        blocks.push(memberMeta({ badges: [view.doclet.constructoraccess] }));
+      }
       blocks.push(...ctorDescription);
       if (ctorParams) blocks.push(p(strong(text('Parameters'))), ctorParams);
       blocks.push(

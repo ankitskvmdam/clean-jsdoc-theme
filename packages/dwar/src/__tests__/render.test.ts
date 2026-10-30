@@ -944,3 +944,46 @@ describe('render() — issue #333: render-error diagnostics', () => {
     expect(result.warnings).toBeUndefined();
   });
 });
+
+// setu renders `@param`/`@property` defaults verbatim in an inline-code span
+// (`default: \`""\``). Defaults are arbitrary source text, so the span must
+// carry braces, `<`, quotes and backticks through MDX untouched: no expression
+// or JSX parse, no unbalanced-backtick warning, and the text reaches the HTML.
+describe('render() — verbatim parameter defaults', () => {
+  it('renders brace / JSX / backtick defaults in code spans without errors or warnings', async () => {
+    const m = makeManifest();
+    m.pages.push({
+      slug: 'global',
+      frontmatter: { title: 'Globals', kind: 'global', description: 'Globals.' },
+      body: [
+        '# Globals',
+        '',
+        '- `a` (string, optional, default: `""`) — a',
+        "- `b` (string, optional, default: `''`) — b",
+        '- `o` (object, optional, default: `{a: 1}`) — o',
+        '- `br` (string, optional, default: `"{x}"`) — br',
+        '- `lt` (string, optional, default: `"<b>"`) — lt',
+        '- `fn` (function, optional, default: `() => {}`) — fn',
+        '- `tick` (string, optional, default: ``"`x`"``) — tick',
+        '',
+        '**Default:** `{}`',
+      ].join('\n'),
+      headings: [],
+    });
+    const result = await render(m, { theme: minimalTheme });
+    expect(result.errors?.some((e) => e.slug === 'global')).toBeFalsy();
+    expect(result.warnings?.some((w) => w.slug === 'global')).toBeFalsy();
+    const html = asString(result.files.find((f) => f.path === 'global/index.html')!);
+    const codes = [...html.matchAll(/default: <code[^>]*>([^<]*)<\/code>/g)].map((x) => x[1]);
+    expect(codes).toEqual([
+      '&quot;&quot;',
+      "''",
+      '{a: 1}',
+      '&quot;{x}&quot;',
+      // `<` is escaped; `>` needs no escaping in text.
+      '&quot;&lt;b>&quot;',
+      '() => {}',
+      '&quot;`x`&quot;',
+    ]);
+  });
+});
