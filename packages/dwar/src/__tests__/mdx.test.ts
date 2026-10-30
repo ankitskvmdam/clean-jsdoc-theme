@@ -156,6 +156,17 @@ describe('escapeStrayBraces', () => {
     // `\`` is a literal backtick, so it does not open a span — the {y} still escapes.
     expect(escapeStrayBraces('a \\` then {y}')).toBe('a \\` then \\{y\\}');
   });
+
+  it('escapes braces in a backslash-escaped tag (literal text, not JSX)', () => {
+    // setu's text for a non-markup tag in prose, e.g. `<Foo bar="{x}">c</Foo>`.
+    expect(escapeStrayBraces('a \\<Foo bar="{x}">c\\</Foo> d')).toBe(
+      'a \\<Foo bar="\\{x\\}">c\\</Foo> d'
+    );
+    // A real JSX tag right after it is still protected.
+    expect(escapeStrayBraces('\\<T> <Signature code="{ y }" />')).toBe(
+      '\\<T> <Signature code="{ y }" />'
+    );
+  });
 });
 
 describe('findStrayBackticks', () => {

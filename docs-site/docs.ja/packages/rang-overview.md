@@ -190,4 +190,3 @@ maintainer はあなたを code へ送りたいと考えています。ここか
 - [rang Examples](/packages/rang-examples) — これらの exports を使った具体的な snippets。
 - [dwar Overview](/packages/dwar-overview) — rang を render して bundle する package。
 - [utils Overview](/packages/utils-overview) — rang が import する browser-safe な contract。
-</content>

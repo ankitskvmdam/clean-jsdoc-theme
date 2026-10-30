@@ -1083,3 +1083,24 @@ describe('render() — issue #333: render-error diagnostics', () => {
     expect(result.warnings).toBeUndefined();
   });
 });
+
+describe('render() — literal angle-bracket words with braces', () => {
+  // setu writes a non-markup tag in prose as escaped text (`\<Foo bar="{x}">`);
+  // its braces are prose, so they must be escaped like any other, or MDX reads
+  // `{x}` as an expression ("x is not defined") and skips the page.
+  it('renders `\\<Foo bar="{x}">c\\</Foo>` as text', async () => {
+    const m = makeManifest();
+    m.pages.push({
+      slug: 'module/lit',
+      frontmatter: { title: 'lit', kind: 'module', description: 'A page.' },
+      body: '# lit\n\na \\<Foo bar="{x}">c\\</Foo> d\n',
+      headings: [],
+    });
+    m.nav.push({ label: 'lit', slug: 'module/lit' });
+    const result = await render(m, { theme: minimalTheme });
+    const err = result.errors?.find((e) => e.slug === 'module/lit');
+    expect(err, err?.message).toBeUndefined();
+    const file = result.files.find((f) => f.path === 'module/lit/index.html');
+    expect(file && asString(file)).toContain('a &lt;Foo bar=&quot;{x}&quot;>c&lt;/Foo> d');
+  });
+});

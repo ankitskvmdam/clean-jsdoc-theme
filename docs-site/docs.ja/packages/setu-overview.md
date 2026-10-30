@@ -175,4 +175,3 @@ maintainer はあなたを code へ送りたいと考えています。ここか
 - [dwar Overview](/packages/dwar-overview) — `SiteManifest` を render する package。
 - [utils Overview](/packages/utils-overview) — setu が import する共有 boundary
   contract。
-</content>

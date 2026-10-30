@@ -39,7 +39,9 @@ describe('renderHtmlDocument — favicon', () => {
   });
 
   it('derives the type from the extension (.png / .ico)', () => {
-    expect(doc({ favicon: '/i.png' })).toContain('<link rel="icon" type="image/png" href="/i.png" />');
+    expect(doc({ favicon: '/i.png' })).toContain(
+      '<link rel="icon" type="image/png" href="/i.png" />'
+    );
     expect(doc({ favicon: '/i.ico' })).toContain(
       '<link rel="icon" type="image/x-icon" href="/i.ico" />'
     );
@@ -158,7 +160,9 @@ describe('renderHtmlDocument — custom <meta> tags', () => {
   it('emits the theme charset/viewport unchanged when no meta is given', () => {
     const html = doc({});
     expect(html).toContain('<meta charset="utf-8" />');
-    expect(html).toContain('<meta name="viewport" content="width=device-width, initial-scale=1" />');
+    expect(html).toContain(
+      '<meta name="viewport" content="width=device-width, initial-scale=1" />'
+    );
   });
 
   it('stamps a generator meta with the theme version by default', () => {
@@ -275,6 +279,49 @@ describe('search text — tag strip', () => {
     extractSearchText(src);
     extractExcerpt(src);
     expect(performance.now() - t).toBeLessThan(1000);
+  });
+});
+
+describe('search text — escaped punctuation reads as rendered', () => {
+  // setu writes a literal `Promise<User>` as `Promise\<User>` (and `snake_case`
+  // as `snake\_case`); the page shows the bare characters, so must the index.
+  const body = [
+    '<MemberHeading id="f" depth="3" name="f" sig="f()" />',
+    '',
+    'Resolves to a Promise\\<User> or Array\\<Array\\<string>>, maybe Map\\<K, V>.',
+    '',
+    'Converts to snake\\_case \\[x] with \\*stars\\*; *emphasis* stays stripped.',
+    '',
+    '> a quoted line',
+  ].join('\n');
+
+  it('extractSearchText keeps literal angle brackets and other escapes, drops JSX/marks', () => {
+    const out = extractSearchText(body);
+    expect(out).toBe(
+      'Resolves to a Promise<User> or Array<Array<string>>, maybe Map<K, V>. ' +
+        'Converts to snake_case [x] with *stars*; emphasis stays stripped. a quoted line'
+    );
+  });
+
+  it('extractExcerpt does the same', () => {
+    expect(extractExcerpt(body)).toContain(
+      'Resolves to a Promise<User> or Array<Array<string>>, maybe Map<K, V>.'
+    );
+  });
+
+  it('keeps code spans verbatim, backslashes included', () => {
+    expect(extractSearchText('Paths `a\\*b`, `\\\\server`, `C:\\\\` and `snake_case<T>`.')).toBe(
+      'Paths a\\*b, \\\\server, C:\\\\ and snake_case<T>.'
+    );
+  });
+
+  it('leaves private-use characters already in the text alone', () => {
+    const pua = String.fromCharCode(0xe03c, 0xe000, 0xe0ff, 0xe1ff);
+    expect(extractSearchText(`icon ${pua} and \\<T>`)).toBe(`icon ${pua} and <T>`);
+  });
+
+  it('still strips an unescaped tag and a lone `>`', () => {
+    expect(extractSearchText('a <kbd>Ctrl</kbd> b > c')).toBe('a Ctrl b c');
   });
 });
 
