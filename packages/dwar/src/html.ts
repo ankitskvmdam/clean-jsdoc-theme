@@ -349,6 +349,45 @@ export function renderHtmlDocument(opts: HtmlDocumentOptions): string {
   );
 }
 
+/** A CommonMark backslash escape (`\<`, `\*`, `\[`, …). */
+const MD_ESCAPE = /\\([!-/:-@[-`{-~])/g;
+const PARK_BASE = 0xe000;
+const PARKED = /[\uE000-\uE07F]/g;
+
+const parkChar = (ch: string): string => String.fromCharCode(PARK_BASE + ch.charCodeAt(0));
+const PARKED_LT = parkChar('<');
+
+/**
+ * Move escaped punctuation out of the way of the extractors' tag/mark stripping.
+ *
+ * setu's serializer backslash-escapes prose punctuation MDX would otherwise read
+ * as syntax — a literal `Promise<User>` is written `Promise\<User>` — and the
+ * page renders the bare character. Each escaped character is parked in the
+ * Private Use Area (so `\<User>` isn't taken for a tag, nor `\*` for emphasis)
+ * and {@link unpark}ed at the end, so the search text reads like the page. Only
+ * the opener is escaped, so the `>` closing an escaped `<` on the same line is
+ * parked too, or the blockquote-mark pass would eat it.
+ */
+function parkEscapes(text: string): string {
+  const parked = text.replace(MD_ESCAPE, (_all, ch: string) => parkChar(ch));
+  let open = 0;
+  let out = '';
+  for (const ch of parked) {
+    if (ch === PARKED_LT) open++;
+    else if (ch === '\n') open = 0;
+    else if (ch === '>' && open > 0) {
+      open--;
+      out += parkChar('>');
+      continue;
+    }
+    out += ch;
+  }
+  return out;
+}
+
+/** {@link PARKED} replacer: a parked character, moved back. */
+const unpark = (ch: string): string => String.fromCharCode(ch.charCodeAt(0) - PARK_BASE);
+
 /**
  * Remove the HTML comments the page never renders (dwar's MDX pre-pass drops
  * them) before the search text is derived. Done first, with the same
@@ -382,15 +421,17 @@ const TAG = /<(?:"[^"]*"|'[^']*'|[^"'<>])+>/g;
  * and any HTML tags get peeled away.
  */
 export function extractExcerpt(mdxBody: string, max = 200): string {
-  let text = dropHtmlComments(mdxBody)
+  const prose = dropHtmlComments(mdxBody)
     .replace(/^---[\s\S]*?---\s*/u, '') // frontmatter
     .replace(/```[\s\S]*?```/g, ' ') // fenced code
-    .replace(/`[^`]*`/g, ' ') // inline code
+    .replace(/`[^`]*`/g, ' '); // inline code
+  let text = parkEscapes(prose)
     .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ') // images
     .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1') // links → label
     .replace(TAG, ' ') // raw HTML / JSX
     .replace(/^#{1,6}\s+/gm, '') // ATX headings
     .replace(/[*_~>#]+/g, ' ') // emphasis & blockquotes
+    .replace(PARKED, unpark) // escaped punctuation → as rendered
     .replace(/\s+/g, ' ')
     .trim();
   if (text.length > max) {
@@ -410,15 +451,17 @@ export function extractExcerpt(mdxBody: string, max = 200): string {
  * a pathologically long page.
  */
 export function extractSearchText(mdxBody: string, max = 20000): string {
-  const text = dropHtmlComments(mdxBody)
+  const prose = dropHtmlComments(mdxBody)
     .replace(/^---[\s\S]*?---\s*/u, '') // frontmatter
     .replace(/```[\s\S]*?```/g, ' ') // fenced code (noisy/large)
-    .replace(/`([^`]*)`/g, '$1') // inline code → keep the identifier
+    .replace(/`([^`]*)`/g, '$1'); // inline code → keep the identifier
+  const text = parkEscapes(prose)
     .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ') // images
     .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1') // links → label
     .replace(TAG, ' ') // raw HTML / JSX
     .replace(/^#{1,6}\s+/gm, '') // ATX heading markers (keep the text)
     .replace(/[*_~>#|]+/g, ' ') // emphasis / blockquote / table marks
+    .replace(PARKED, unpark) // escaped punctuation → as rendered
     .replace(/\s+/g, ' ')
     .trim();
   return text.length > max ? text.slice(0, max) : text;
