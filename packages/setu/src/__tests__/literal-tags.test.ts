@@ -406,3 +406,46 @@ describe('a closer only counts inside the same block', () => {
     expect(escapeLiteralTags('Map<B> and </B>')).toBe('Map<B> and </B>');
   });
 });
+
+describe('genuinely nesting block elements pair by depth', () => {
+  it.each([
+    ['<ul>\n<li>a<ul>\n<li>b</li>\n</ul>\n</li>\n<li>c</li>\n</ul>'],
+    ['<ol><li>step<ol><li>sub</li></ol></li></ol>'],
+    ['<div>Text<div>inner</div></div>'],
+    ['<blockquote>q<blockquote>r</blockquote></blockquote>'],
+  ])('keeps %j as markup', (html) => {
+    expect(escapeLiteralTags(html)).toBe(html);
+  });
+
+  it('renders a marked-style nested list (glued `a<ul>`) as a nested list', () => {
+    const html = '<ul>\n<li>a<ul>\n<li>b</li>\n</ul>\n</li>\n<li>c</li>\n</ul>';
+    expect(mdx(htmlToMdastBlocks(html))).toBe('- a\n  - b\n- c');
+  });
+
+  it('renders nested ordered lists, divs and quotes', () => {
+    expect(mdx(htmlToMdastBlocks('<ol><li>step<ol><li>sub</li></ol></li></ol>'))).toBe(
+      '1. step\n   1. sub'
+    );
+    expect(text(htmlToMdastBlocks('<div>Text<div>inner</div></div>'))).toBe('Text\ninner');
+    expect(mdx(htmlToMdastBlocks('<blockquote>q<blockquote>r</blockquote></blockquote>'))).toBe(
+      '> q\n>\n> > r'
+    );
+  });
+});
+
+describe('ALL-CAPS element names glued to a word are type arguments', () => {
+  it('keeps `Array<DATA>`, `Promise<OBJECT>`, `Set<LABEL>` as text', () => {
+    expect(
+      text(htmlToMdastBlocks('<p>Array<DATA> and Promise<OBJECT> and Set<LABEL> here.</p>'))
+    ).toBe('Array<DATA> and Promise<OBJECT> and Set<LABEL> here.');
+  });
+
+  it.each([
+    ['a <BR> b', '<BR>'],
+    ['x<BR>y', '<BR>'],
+    ['a <DIV>b</DIV>', '<DIV>'],
+    ['x<B>bold</B>', '<B>'],
+  ])('keeps %j as markup', (html, tag) => {
+    expect(kept(html, tag)).toBe(true);
+  });
+});

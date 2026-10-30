@@ -328,7 +328,7 @@ setu/src/
     │                     #   {@linkplain} text nodes → anchors (skips code spans)
     ├── literal-tags.ts   # escapeLiteralTags, before the HTML parse: markup is a
     │                     #   lowercase element (unless glued to a word with no attrs/
-    │                     #   closer: `Promise<object>`), an ALL-CAPS one, or a one-
+    │                     #   closer: `Promise<object>`), an ALL-CAPS one (same), or a one-
     │                     #   letter one with attrs or a same-block closer (`<B>x</B>`);
     │                     #   every other tag (`<User>`, `<T>`, `<Button …>`) is
     │                     #   escaped so it stays as text
