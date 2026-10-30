@@ -196,8 +196,8 @@ const JSDOC_OWN_OPTS: ReadonlySet<string> = new Set([
 interface JSDocOpts {
   destination?: string;
   package?: string;
-  /** JSDoc's `--private`: document `@private` symbols. */
-  private?: boolean;
+  /** JSDoc's `--private`: document `@private` symbols (any truthy value, as in JSDoc). */
+  private?: unknown;
   /** JSDoc's `--access` (repeatable on the CLI, so usually an array). */
   access?: string | string[];
   /**
@@ -927,17 +927,23 @@ export function sourceLinkToCommentEnabled(opts: JSDocOpts): boolean {
 }
 
 /**
- * Whether private doclets should be documented, using JSDoc's own rules (the
- * ones its default template's `templateHelper.prune` applies): `--private`
- * (`opts.private: true`), or `--access` naming `private` or `all`. JSDoc gives
- * `access` as an array from the CLI (the flag is repeatable) and as whatever the
- * user wrote in `jsdoc.json`, so a bare string is accepted too. Default: hidden.
+ * Whether private doclets should be documented — the private-access slice of
+ * JSDoc's `templateHelper.prune`, with its exact tests: `env.opts.private` is
+ * truthy (`--private`), or `env.opts.access` `.includes('private')` or
+ * `.includes('all')`. Like prune, `includes` runs on whatever `access` is: an
+ * array from the CLI (the flag is repeatable) or a string from `jsdoc.json`, so
+ * `"private,protected"` and `"all"` count via substring match, exactly as in
+ * JSDoc. Default: hidden.
+ *
+ * Only this slice is implemented. prune's other `--access` levels (`public`,
+ * `protected`, `package`, `undefined` — e.g. `--access public` hiding
+ * protected symbols) are NOT applied: those symbols stay documented.
  */
 export function includePrivateEnabled(opts: JSDocOpts): boolean {
-  if (opts?.private === true) return true;
-  const access = opts?.access;
-  const levels = Array.isArray(access) ? access : typeof access === 'string' ? [access] : [];
-  return levels.includes('private') || levels.includes('all');
+  if (opts?.private) return true;
+  const access: unknown = opts?.access;
+  if (typeof access !== 'string' && !Array.isArray(access)) return false;
+  return access.includes('private') || access.includes('all');
 }
 
 /**
