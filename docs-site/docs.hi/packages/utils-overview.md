@@ -98,13 +98,16 @@ exports में शामिल हैं:
 वह logic जिसे entry-point bridges एक build से पहले और बाद में चलाते हैं:
 
 - **`validateThemeOpts()`** — orchestrator। एक raw opts object लेता है, `siteName`
-  और `fonts` validators तथा एक unknown-key policy को एक ही `DiagnosticBag` में
-  चलाता है, और normalized मान लौटाता है। कभी throw नहीं करता — strict-mode लागू
-  करना caller का काम है, `diagnostics.hasErrors()` के ज़रिए।
+  और `fonts` validators तथा एक unknown-key policy (और `checkV4Options` के साथ
+  बचे-हुए v4 options की जाँच) को एक ही `DiagnosticBag` में चलाता है, और
+  normalized मान लौटाता है। `strict: true` के साथ हर warning error बनकर लौटती है,
+  top-level v4 option नामों को छोड़कर। कभी throw नहीं करता — build विफल करना
+  caller का काम है, `diagnostics.hasErrors()` के ज़रिए।
   ([`validate-opts.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/utils/src/config/validate-opts.ts))
 - **`DiagnosticBag`, `Diagnostic`, `formatDiagnostics()`** — reporting की रीढ़:
   एक संरचित, level-tagged (`error` / `warning` / `info`) finding model जो शुद्ध
-  और node-free है।
+  और node-free है। `escalateWarnings(keep?)` उसकी warnings को errors में बदलता है
+  (`strict` यही इस्तेमाल करता है)।
   ([`diagnostics.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/utils/src/config/diagnostics.ts))
 - **`createGoogleFontResolver()`, `FontResolver`, `FontExistence`,
   `FetchLike`** — वह *injection* pattern जो utils को browser-safe रखता है।

@@ -1155,6 +1155,23 @@ function retagGroup(node: NavNode, group: string): NavNode {
 }
 
 /**
+ * v4's sidebar called the globals section `Global`; v5 labels it `Globals`. A
+ * `sectionOrder` carried over from v4's `sections` (`["Classes", "Global"]`)
+ * would otherwise silently drop the globals, because a kind label it doesn't
+ * list is filtered out. Read a legacy `Global` as `Globals` — unless a real
+ * `Global` group exists (an `@category Global` or a doc group of that name), in
+ * which case the label means that group. Duplicates are dropped so listing both
+ * spellings doesn't emit the section twice.
+ */
+function withLegacySectionLabels(
+  sectionOrder: readonly string[],
+  bySection: ReadonlyMap<string, unknown>
+): readonly string[] {
+  if (!sectionOrder.includes('Global') || bySection.has('Global')) return sectionOrder;
+  return [...new Set(sectionOrder.map((label) => (label === 'Global' ? 'Globals' : label)))];
+}
+
+/**
  * Assemble the final sidebar nav from its parts, honoring `sectionOrder`.
  *
  * Every entry carries a full `group` **path** — an `@category` tag (API pages)
@@ -1283,7 +1300,10 @@ function assembleJsdocNav({
   }
 
   const defaultOrder = flavor === 'typedoc' ? TYPEDOC_SECTION_ORDER : DEFAULT_SECTION_ORDER;
-  const baseOrder = sectionOrder && sectionOrder.length > 0 ? sectionOrder : defaultOrder;
+  const baseOrder =
+    sectionOrder && sectionOrder.length > 0
+      ? withLegacySectionLabels(sectionOrder, bySection)
+      : defaultOrder;
   // Fold doc-group section labels into the effective order, AFTER the base
   // (API) sections: `sectionOrder` stays authoritative for any label it already
   // lists; doc groups it omits are appended in `docGroups` order, then any

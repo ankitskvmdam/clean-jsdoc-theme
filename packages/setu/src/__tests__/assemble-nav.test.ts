@@ -120,6 +120,40 @@ describe('assembleNav — sectionOrder (filter + order)', () => {
     expect(nav[nav.length - 1].label).toBe('Source Files');
     expect(nav.some((n) => n.group === 'Modules')).toBe(false);
   });
+
+  it("reads v4's `Global` label as `Globals` (it would otherwise drop the section)", () => {
+    const nav = assembleNav({
+      apiPages: [...CLASSES, page('Globals', 'global', 'global')],
+      sectionOrder: ['Global', 'Classes'],
+    });
+    const groups = nav.map((n) => n.group);
+    expect(groups).toContain('Globals');
+    expect(groups.indexOf('Globals')).toBeLessThan(groups.indexOf('Classes'));
+  });
+
+  it('emits Globals once when both spellings are listed', () => {
+    const nav = assembleNav({
+      apiPages: [page('Globals', 'global', 'global')],
+      sectionOrder: ['Globals', 'Global'],
+    });
+    expect(nav.filter((n) => n.group === 'Globals')).toHaveLength(1);
+  });
+
+  it('keeps `Global` meaning a real group of that name when one exists', () => {
+    const tagged: Page = {
+      slug: 'helper',
+      frontmatter: { title: 'helper', kind: 'function', group: 'Global' },
+      body: '',
+      headings: [],
+    };
+    const nav = assembleNav({
+      apiPages: [tagged, page('Globals', 'global', 'global')],
+      sectionOrder: ['Global'],
+    });
+    const groups = nav.map((n) => n.group);
+    expect(groups).toContain('Global');
+    expect(groups).not.toContain('Globals');
+  });
 });
 
 describe('clubNavTree', () => {

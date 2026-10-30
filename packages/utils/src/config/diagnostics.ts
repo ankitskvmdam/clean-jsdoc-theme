@@ -66,6 +66,18 @@ export class DiagnosticBag {
   hasErrors(): boolean {
     return this.items.some((d) => d.level === 'error');
   }
+
+  /**
+   * Strict mode: turn every `warning` into an `error` (so `hasErrors()` fails
+   * the build), except those `keep` says must stay warnings. `info` is never
+   * escalated — it's advisory (e.g. "couldn't verify offline"), not a problem.
+   */
+  escalateWarnings(keep?: (d: Diagnostic) => boolean): void {
+    for (let i = 0; i < this.items.length; i++) {
+      const d = this.items[i];
+      if (d.level === 'warning' && !keep?.(d)) this.items[i] = { ...d, level: 'error' };
+    }
+  }
 }
 
 /** Console label + color for each level. */

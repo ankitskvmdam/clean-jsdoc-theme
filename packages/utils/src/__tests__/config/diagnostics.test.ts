@@ -34,6 +34,17 @@ describe('DiagnosticBag', () => {
     bag.error('e', 'real problem');
     expect(bag.hasErrors()).toBe(true);
   });
+
+  it('escalateWarnings() turns warnings into errors, except kept ones and info', () => {
+    const bag = new DiagnosticBag();
+    bag.warning('a/typo', 'typo', { hint: 'did you mean x?', path: 'p' });
+    bag.warning('a/keep', 'not ours');
+    bag.info('a/fyi', 'fyi');
+    bag.escalateWarnings((d) => d.code === 'a/keep');
+    expect(bag.list.map((d) => d.level)).toEqual(['error', 'warning', 'info']);
+    expect(bag.list[0]).toMatchObject({ hint: 'did you mean x?', path: 'p' });
+    expect(bag.hasErrors()).toBe(true);
+  });
 });
 
 describe('formatDiagnostics', () => {

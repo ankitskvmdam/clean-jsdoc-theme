@@ -88,13 +88,15 @@ re-export 了所有内容，而 `package.json` 只暴露了单一的 entry point
 entry-point bridge 在一次构建前后运行的逻辑：
 
 - **`validateThemeOpts()`** —— 编排器。接收一个原始的 opts 对象，把 `siteName`
-  和 `fonts` 校验器以及一项 unknown-key 策略合并到单个 `DiagnosticBag` 中运行，
-  并返回规范化后的值。它从不抛出异常 —— strict-mode 的强制执行是调用方的职责，
-  通过 `diagnostics.hasErrors()` 完成。
+  和 `fonts` 校验器以及一项 unknown-key 策略（启用 `checkV4Options` 时还包括遗留
+  v4 选项检查）合并到单个 `DiagnosticBag` 中运行，并返回规范化后的值。设置
+  `strict: true` 时，每条警告都会以错误返回（顶层 v4 选项名除外）。它从不抛出异常
+  —— 让构建失败是调用方的职责，通过 `diagnostics.hasErrors()` 完成。
   ([`validate-opts.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/utils/src/config/validate-opts.ts))
 - **`DiagnosticBag`、`Diagnostic`、`formatDiagnostics()`** —— 报告体系的脊梁：
   一个结构化的、带级别标签（`error` / `warning` / `info`）的发现项模型，既纯净
   又无 node 依赖。
+  `escalateWarnings(keep?)` 会把其中的警告变为错误（`strict` 使用的就是它）。
   ([`diagnostics.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/utils/src/config/diagnostics.ts))
 - **`createGoogleFontResolver()`、`FontResolver`、`FontExistence`、
   `FetchLike`** —— 让 utils 保持浏览器安全的那种*注入*模式。唯一的网络检查

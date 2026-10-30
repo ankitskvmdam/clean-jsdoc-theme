@@ -920,8 +920,8 @@ in those configs are load-bearing and must not be "cleaned up":
 
 Also note `dts: { sourcemap: false }` (tsup emitted no `.d.ts.map`, and they would
 otherwise ship in the tarball) and an explicit `target: 'es2022'` (tsup read it
-from tsconfig; tsdown would otherwise infer from `engines.node`, which these
-packages don't declare). Config files are loaded natively rather than bundled, so
+from tsconfig; tsdown would otherwise infer it from `engines.node`, which is a
+looser `>=22`). Config files are loaded natively rather than bundled, so
 they read `package.json` via `createRequire` instead of a JSON import.
 
 **`unrun` is a required root devDependency, not an accident.** tsdown picks its
@@ -946,10 +946,11 @@ at all), are the only two safe states.
   `^22.18.0 || >=24.11.0` and calls `Promise.withResolvers`, which does not exist
   before Node 22, so on Node 20 the build fails outright with
   `Promise.withResolvers is not a function`. Node 20 also went EOL in April 2026.
-- **Consuming the published packages still only needs Node `>=20`**, as
-  `BREAKING_CHANGES.md` states. Nothing about that changed: the emitted code targets
-  ES2022, and none of the published packages declare an `engines` field. tsdown is a
-  build-time devDependency that never reaches a consumer's install.
+- **Consuming the published packages needs Node `>=22`** — the `engines.node`
+  every published package declares (and what `BREAKING_CHANGES.md` states). That's
+  a support floor, not a tsdown requirement: the emitted code targets ES2022, Node
+  20 is EOL, and 22 is the line CI tests. tsdown is a build-time devDependency that
+  never reaches a consumer's install.
 
 Turborepo (`turbo.json`) wires the task graph: `build` depends on workspace deps'
 builds; `test` / `typecheck` depend on builds so generated artifacts exist. The

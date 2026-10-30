@@ -40,17 +40,19 @@ drop the rest, then optionally adopt v5's new features.
 
 <step label="Check compatibility">
 
-v5 needs **JSDoc ≥ 4** and **Node ≥ 20**. The `plugins/markdown` plugin is no
-longer required by the theme (v5 renders Markdown itself), though keeping it is
-harmless. Prefer to stay on v4 for now? Pin `"clean-jsdoc-theme": "^4"` — v5
-prereleases publish under the npm `next` tag, so `^4` won't pull them.
+v5 needs **JSDoc ≥ 4** and **Node ≥ 22**. Keep the `plugins/markdown` plugin in
+your `plugins` list — v5 still **requires** it (JSDoc uses it to render comment
+Markdown before the theme sees it). Without it the build fails with an error:
+nothing is written and the process exits non-zero. Prefer to stay on v4 for now?
+Pin `"clean-jsdoc-theme": "^4"` — v5 is the npm `latest`, so an unpinned install
+or `@latest` pulls v5.
 
 </step>
 
 <step label="Upgrade the package">
 
 ```sh
-npm i -D clean-jsdoc-theme@latest   # or @next during the v5 prerelease
+npm i -D clean-jsdoc-theme@latest
 ```
 
 </step>
@@ -78,10 +80,14 @@ npx jsdoc -c jsdoc.json
 npx serve <destination>   # islands + search index are fetched, so HTTP
 ```
 
-v5 **warns** (with a "did you mean?" hint) on any leftover `theme_opts` key or v4
-option name and keeps building — read the output and fix what it flags. Set
-[`strict: true`](/theme/configuration#strict) to turn those warnings into hard
-errors while you migrate, then relax it.
+v5 **warns** about leftover v4 options and keeps building: a `theme_opts` block
+(plus one warning per key inside it) and any top-level v4 option name that isn't
+a v5 option (`base_url`, `homepageTitle`, …). Each warning's hint names the v5
+replacement or says the option was removed — read the output and fix what it
+flags. With [`strict: true`](/theme/configuration#strict), the `theme_opts`
+warnings become errors: the build writes nothing and exits non-zero. Top-level
+v4 names stay warnings even then, since another JSDoc plugin may own an
+`opts.title` or `opts.search`.
 
 </step>
 
@@ -97,11 +103,11 @@ errors while you migrate, then relax it.
 | `base_url` | `basePath` | renamed | Site root prefixed onto links. |
 | `title` | `siteName` | changed | String **or** a logo set `{ default, dark, light, alt }`. |
 | `menu` | `menu` | changed | Reshaped: `{ id?, title?, link/href?, icon?, target?, class? }` — adds `icon` + `id` built-ins. |
-| `sections` | `sectionOrder` | renamed | Filter + order sidebar sections. |
+| `sections` | `sectionOrder` | changed | Filter + order sidebar sections. The `Global` section is now `Globals` (a leftover `"Global"` still works). |
 | `create_style` | `customCss` | renamed | Inline CSS (loads after the theme stylesheet). |
-| `include_css` / `add_style_path` | `customCssFile` | renamed/changed | CSS file → content-hashed asset link. |
+| `include_css` / `add_style_path` | `customCssFile` | renamed/changed | Local CSS file → content-hashed asset link. Remote URLs (v4 `add_style_path` CDN entries) aren't supported: download the file, or `@import url(…)` it from `customCss`. |
 | `add_scripts` | `customJs` | renamed | Inline JS (runs last). |
-| `include_js` / `add_script_path` | `customJsFile` | renamed/changed | JS file → content-hashed asset. |
+| `include_js` / `add_script_path` | `customJsFile` | renamed/changed | Local JS file → content-hashed asset. Remote URLs (v4 `add_script_path` CDN entries) aren't supported: download the file, or load it from `customJs`. |
 | `homepageTitle` | — | removed | Home `<title>` derives from README / `docs/index.md` + `siteName`. |
 | `includeFilesListInHomepage` | — | removed | The Source Files section lists files. |
 | `meta` | `meta` | changed | Supported again — an array of attribute maps → `<meta>` tags in `<head>`. See [`meta`](/theme/configuration#meta). |
@@ -109,7 +115,7 @@ errors while you migrate, then relax it.
 | `codepen` | `playground` | changed | v4 prefilled a CodePen from `@example`; v5 generalizes it to [`playground`](/components/playground) — open an example in CodePen, JSFiddle, or CodeSandbox via `opts.playground` + the `@playground` tag. (To embed an existing pen by URL, use [`@iframe`](/components/embeds).) |
 | `static_dir` | — | removed | Use JSDoc's own static-file config. |
 | `footer` | `footer` | changed | Supported again — an inline HTML string or `{ file: "./footer.html" }`. Style it with `customCss` / `customCssFile`. See [`footer`](/theme/configuration#footer). |
-| `exclude_inherited`, `displayModuleHeader`, `sort` | — | removed | No equivalent. |
+| `exclude_inherited`, `displayModuleHeader`, `sort`, `resizeable`, `prefixModuleToSidebarItems_experimental` | — | removed | No equivalent. |
 | `shouldRemoveScrollbarStyle` | `scrollbar` | changed | v4 boolean only disabled scrollbar styling. v5 `scrollbar` is a 3-way enum: `"styled"` (default) \| `"visible"` \| `"native"`. `shouldRemoveScrollbarStyle: true` → `scrollbar: "native"`. |
 
 > [!NOTE]
@@ -159,7 +165,7 @@ errors while you migrate, then relax it.
       { id: "home", title: "Home" },
       { title: "GitHub", link: "https://github.com/me/lib", icon: "simpleicons:github" },
     ],
-    sectionOrder: ["Classes", "Modules", "Global"],
+    sectionOrder: ["Classes", "Modules", "Globals"],
     footer: "© My Library",
     customCssFile: "./static/custom.css",
     // dropped: default_theme (auto), search (always on)

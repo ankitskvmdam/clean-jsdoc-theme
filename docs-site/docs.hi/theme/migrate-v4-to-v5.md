@@ -41,17 +41,19 @@ v4 theme options को **`opts.theme_opts.*`** के नीचे nest कर�
 
 <step label="Check compatibility">
 
-v5 को **JSDoc ≥ 4** और **Node ≥ 20** चाहिए। `plugins/markdown` plugin अब theme के
-लिए ज़रूरी नहीं है (v5 Markdown को ख़ुद render करता है), हालाँकि उसे रखना हानिरहित
-है। फ़िलहाल v4 पर रहना पसंद करेंगे? `"clean-jsdoc-theme": "^4"` pin करें — v5
-prereleases npm `next` tag के नीचे publish होते हैं, इसलिए `^4` उन्हें नहीं खींचेगा।
+v5 को **JSDoc ≥ 4** और **Node ≥ 22** चाहिए। `plugins/markdown` plugin को अपनी
+`plugins` list में रखें — v5 को यह अब भी **ज़रूरी** है (JSDoc इसी से comment के
+Markdown को theme तक पहुँचने से पहले render करता है)। इसके बिना build एक error के
+साथ विफल हो जाता है: कुछ भी नहीं लिखा जाता और process non-zero के साथ exit करता है।
+फ़िलहाल v4 पर रहना पसंद करेंगे? `"clean-jsdoc-theme": "^4"` pin करें — v5 npm का
+`latest` है, इसलिए बिना pin वाला install या `@latest` v5 ले आता है।
 
 </step>
 
 <step label="Upgrade the package">
 
 ```sh
-npm i -D clean-jsdoc-theme@latest   # या v5 prerelease के दौरान @next
+npm i -D clean-jsdoc-theme@latest
 ```
 
 </step>
@@ -79,10 +81,14 @@ npx jsdoc -c jsdoc.json
 npx serve <destination>   # islands + search index fetch होते हैं, इसलिए HTTP
 ```
 
-v5 किसी भी बचे-हुए `theme_opts` key या v4 option नाम पर **warn** करता है (एक "did
-you mean?" संकेत के साथ) और build करता रहता है — output पढ़ें और जो यह चिह्नित करे
-उसे ठीक करें। migrate करते समय उन warnings को कड़ी errors में बदलने के लिए
-[`strict: true`](/theme/configuration#strict) सेट करें, फिर इसे ढीला कर दें।
+v5 बचे-हुए v4 options पर **warn** करता है और build करता रहता है: एक `theme_opts`
+block (और उसके अंदर की हर key पर एक warning) और कोई भी top-level v4 option नाम जो
+v5 option नहीं है (`base_url`, `homepageTitle`, …)। हर warning का संकेत v5 का
+विकल्प बताता है या कहता है कि option हटा दिया गया है — output पढ़ें और जो यह
+चिह्नित करे उसे ठीक करें। [`strict: true`](/theme/configuration#strict) के साथ
+`theme_opts` वाली warnings errors बन जाती हैं: build कुछ नहीं लिखता और non-zero के
+साथ exit करता है। top-level v4 नाम तब भी warnings ही रहते हैं, क्योंकि कोई दूसरा
+JSDoc plugin `opts.title` या `opts.search` का मालिक हो सकता है।
 
 </step>
 
@@ -98,11 +104,11 @@ you mean?" संकेत के साथ) और build करता रहत
 | `base_url` | `basePath` | renamed | links पर prefix किया जाने वाला site root। |
 | `title` | `siteName` | बदला गया | String **या** एक logo set `{ default, dark, light, alt }`। |
 | `menu` | `menu` | बदला गया | फिर से ढाला गया: `{ id?, title?, link/href?, icon?, target?, class? }` — `icon` + `id` built-ins जुड़े। |
-| `sections` | `sectionOrder` | renamed | sidebar sections को filter + order करें। |
+| `sections` | `sectionOrder` | बदला गया | sidebar sections को filter + order करें। `Global` section अब `Globals` है (बचा हुआ `"Global"` अब भी काम करता है)। |
 | `create_style` | `customCss` | renamed | Inline CSS (theme stylesheet के बाद load होता है)। |
-| `include_css` / `add_style_path` | `customCssFile` | renamed/बदला गया | CSS file → content-hashed asset link। |
+| `include_css` / `add_style_path` | `customCssFile` | renamed/बदला गया | Local CSS file → content-hashed asset link। Remote URLs (v4 के `add_style_path` CDN entries) समर्थित नहीं हैं: file download करें, या `customCss` से `@import url(…)` करें। |
 | `add_scripts` | `customJs` | renamed | Inline JS (अंत में चलता है)। |
-| `include_js` / `add_script_path` | `customJsFile` | renamed/बदला गया | JS file → content-hashed asset। |
+| `include_js` / `add_script_path` | `customJsFile` | renamed/बदला गया | Local JS file → content-hashed asset। Remote URLs (v4 के `add_script_path` CDN entries) समर्थित नहीं हैं: file download करें, या उसे `customJs` से load करें। |
 | `homepageTitle` | — | हटाया गया | Home `<title>` README / `docs/index.md` + `siteName` से derive होता है। |
 | `includeFilesListInHomepage` | — | हटाया गया | Source Files section files सूचीबद्ध करता है। |
 | `meta` | `meta` | बदला गया | फिर से समर्थित — attribute maps की एक array → `<head>` में `<meta>` tags। देखें [`meta`](/theme/configuration#meta)। |
@@ -110,7 +116,7 @@ you mean?" संकेत के साथ) और build करता रहत
 | `codepen` | `playground` | बदला गया | v4 एक CodePen को `@example` से prefill करता था; v5 इसे [`playground`](/components/playground) में सामान्यीकृत करता है — किसी example को `opts.playground` + `@playground` tag के ज़रिये CodePen, JSFiddle, या CodeSandbox में खोलें। (किसी मौजूदा pen को URL से embed करने के लिए, [`@iframe`](/components/embeds) इस्तेमाल करें।) |
 | `static_dir` | — | हटाया गया | JSDoc की अपनी static-file config इस्तेमाल करें। |
 | `footer` | `footer` | बदला गया | फिर से समर्थित — एक inline HTML string या `{ file: "./footer.html" }`। इसे `customCss` / `customCssFile` से style करें। देखें [`footer`](/theme/configuration#footer)। |
-| `exclude_inherited`, `displayModuleHeader`, `sort` | — | हटाया गया | कोई समतुल्य नहीं। |
+| `exclude_inherited`, `displayModuleHeader`, `sort`, `resizeable`, `prefixModuleToSidebarItems_experimental` | — | हटाया गया | कोई समतुल्य नहीं। |
 | `shouldRemoveScrollbarStyle` | `scrollbar` | बदला गया | v4 का boolean केवल scrollbar styling बंद करता था। v5 का `scrollbar` एक 3-तरफा enum है: `"styled"` (default) \| `"visible"` \| `"native"`। `shouldRemoveScrollbarStyle: true` → `scrollbar: "native"`। |
 
 > [!NOTE]
@@ -160,7 +166,7 @@ you mean?" संकेत के साथ) और build करता रहत
       { id: "home", title: "Home" },
       { title: "GitHub", link: "https://github.com/me/lib", icon: "simpleicons:github" },
     ],
-    sectionOrder: ["Classes", "Modules", "Global"],
+    sectionOrder: ["Classes", "Modules", "Globals"],
     customCssFile: "./static/custom.css",
     // हटाए गए: default_theme (auto), search (हमेशा on), footer (derived)
     docs: "./docs", // वैकल्पिक v5 फ़ायदा

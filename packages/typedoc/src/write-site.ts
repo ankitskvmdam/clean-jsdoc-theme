@@ -39,6 +39,7 @@ import { ReflectionKind } from 'typedoc';
 import type { Application, DocumentReflection, ProjectReflection } from 'typedoc';
 import {
   createGoogleFontResolver,
+  DiagnosticBag,
   formatBuildReport,
   formatDiagnostics,
   formatRenderError,
@@ -49,7 +50,6 @@ import {
   topLevelSectionLabels,
   unmatchedCollapsibleSections,
   validateThemeOpts,
-  warningsOnly,
   withBase,
 } from '@clean-jsdoc-theme/utils';
 import type { FontSet, PlaygroundProvider, TDoclet, ValidatedFonts } from '@clean-jsdoc-theme/utils';
@@ -63,7 +63,14 @@ import {
   rewriteImageRefs,
 } from './docs';
 import { writeOutputFiles } from './write-output-files';
-import { KNOWN_NON_THEME_KEYS, readThemeOption, resolveSiteUrl } from './options';
+import {
+  JSDOC_ONLY_KEYS,
+  jsdocOnlyKeyMessage,
+  KNOWN_NON_THEME_KEYS,
+  readThemeOption,
+  resolveSiteUrl,
+  UNSUPPORTED_IN_TYPEDOC_CODE,
+} from './options';
 import type { CleanJsdocThemeBlock } from './options';
 
 /**
@@ -304,10 +311,7 @@ function normalizePlayground(
  * missing/unreadable file is warned about and dropped; an empty value → the
  * default footer. Mirrors the JSDoc bridge's `resolveFooter`.
  */
-async function resolveFooter(
-  raw: unknown,
-  logger: AdaptApp['logger']
-): Promise<string | undefined> {
+async function resolveFooter(raw: unknown, logger: OptionWarnSink): Promise<string | undefined> {
   if (typeof raw === 'string') {
     const trimmed = raw.trim();
     return trimmed.length > 0 ? trimmed : undefined;
@@ -337,7 +341,7 @@ async function resolveFooter(
  */
 async function resolveFavicon(
   raw: unknown,
-  logger: AdaptApp['logger'],
+  logger: OptionWarnSink,
   hrefForServed: (servedPath: string) => string
 ): Promise<{ href: string; files: OutputFile[] } | undefined> {
   if (typeof raw !== 'string' || raw.trim().length === 0) return undefined;
@@ -362,7 +366,7 @@ const META_IDENTITY_ATTRS = ['name', 'property', 'http-equiv', 'charset', 'itemp
  * pairs (trimmed; finite numbers coerced), drops an entry with no identifying
  * attribute (warned). dwar does the final escaping + key validation.
  */
-function normalizeMeta(raw: unknown, logger: AdaptApp['logger']): MetaTag[] | undefined {
+function normalizeMeta(raw: unknown, logger: OptionWarnSink): MetaTag[] | undefined {
   if (!Array.isArray(raw)) return undefined;
   const out: MetaTag[] = [];
   for (const entry of raw) {
@@ -404,7 +408,7 @@ function isServableUrl(value: string): boolean {
  */
 async function prepareSiteName(
   raw: SiteName | undefined,
-  logger: AdaptApp['logger'],
+  logger: OptionWarnSink,
   hrefForServed: (servedPath: string) => string
 ): Promise<{ siteName: SiteName | undefined; files: { path: string; contents: Buffer }[] }> {
   if (typeof raw === 'string') {
@@ -609,6 +613,15 @@ async function resolvePkg(project: ProjectReflection): Promise<SiteManifest['pkg
 type AdaptApp = Pick<Application, 'logger' | 'options'>;
 
 /**
+ * Where an option problem found outside `validateThemeOpts` is reported (an
+ * unreadable footer/favicon/logo, a dropped meta entry). `writeSite` passes a
+ * sink that warns normally and, under `strict`, records an error instead.
+ */
+interface OptionWarnSink {
+  warn(message: string): void;
+}
+
+/**
  * Output writer registered via `app.outputs.addOutput('clean-jsdoc-theme', …)`.
  * `outDir` is the resolved-by-TypeDoc destination for this output spec.
  */
@@ -616,6 +629,24 @@ export async function writeSite(
   outDir: string,
   project: ProjectReflection,
   app: AdaptApp
+): Promise<void> {
+  // Option errors/warnings are printed once, at the end of the build (see
+  // `reportOptionProblems` in buildSite). If the build throws first, print
+  // them on the way out so a failure never hides them.
+  const report = { optionProblems: (): void => {} };
+  try {
+    await buildSite(outDir, project, app, report);
+  } catch (err) {
+    report.optionProblems();
+    throw err;
+  }
+}
+
+async function buildSite(
+  outDir: string,
+  project: ProjectReflection,
+  app: AdaptApp,
+  report: { optionProblems: () => void }
 ): Promise<void> {
   const destination = resolvePath(outDir);
   const logger = app.logger;
@@ -628,11 +659,36 @@ export async function writeSite(
   const block = readThemeOption(app);
   const fontResolver = createGoogleFontResolver();
 
+  // Strict mode turns every option warning into an error and fails the build
+  // (TypeDoc logs the thrown error and exits non-zero); otherwise (the
+  // resilient default) we log and continue. Validation warnings are escalated
+  // by `validateThemeOpts`; the problems found later go through `optionLog`,
+  // which records them and `failOnStrictOptionErrors` stops before rendering.
+  const strict = block.strict === true;
+  const strictOptionErrors: string[] = [];
+  const optionLog: OptionWarnSink = {
+    warn: (message) => {
+      if (!strict) return logger.warn(message);
+      strictOptionErrors.push(message);
+      logger.error(message);
+    },
+  };
+  const failOnStrictOptionErrors = (): void => {
+    if (strictOptionErrors.length === 0) return;
+    throw new Error(
+      `[clean-jsdoc-theme] ${strictOptionErrors.length} option problem(s) in strict mode ` +
+        '(see above). Fix them or unset `strict`.'
+    );
+  };
+
   // TypeDoc carries its own project-wide `hostedBaseUrl`; fall back to it so a
   // TypeDoc user who already set it gets sitemap.xml/llms.txt without repeating
   // themselves. The theme-specific key wins — see `resolveSiteUrl`. Resolved
   // BEFORE validation so utils validates the URL we'll actually use (and warns
-  // about a dropped path segment, which `hostedBaseUrl` commonly carries).
+  // about a dropped path segment, which `hostedBaseUrl` commonly carries — that
+  // one is a likely misconfiguration, so strict escalates it). Setting both keys
+  // to different values is the documented override, not a mistake: it's a plain
+  // `logger.warn`, never escalated by strict.
   const resolvedSiteUrl = resolveSiteUrl(block.siteUrl, app.options.getValue('hostedBaseUrl'));
   if (resolvedSiteUrl.warning) {
     logger.warn(`[clean-jsdoc-theme] ${resolvedSiteUrl.warning}`);
@@ -642,12 +698,22 @@ export async function writeSite(
     opts: { ...block, siteUrl: resolvedSiteUrl.siteUrl },
     fontResolver,
     unknownKeyPolicy: 'warn-all',
-    knownNonThemeKeys: KNOWN_NON_THEME_KEYS,
+    // JSDoc-only keys are reported below with their own code, not as unknown.
+    knownNonThemeKeys: new Set([...KNOWN_NON_THEME_KEYS, ...JSDOC_ONLY_KEYS.keys()]),
+    strict,
   });
+  // Options the JSDoc bridge reads but this writer doesn't (yet). They're
+  // documented for both tools, so they're not typos: warn that they're ignored,
+  // added after validation so strict never escalates them — a shared
+  // JSDoc+TypeDoc config shouldn't fail its TypeDoc build over them.
+  for (const [key, info] of JSDOC_ONLY_KEYS) {
+    if (!Object.hasOwn(block, key)) continue;
+    diagnostics.warning(UNSUPPORTED_IN_TYPEDOC_CODE, jsdocOnlyKeyMessage(key, info), {
+      hint: info.hint,
+      path: key,
+    });
+  }
 
-  // Strict mode escalates errors (bad font / unknown key) to a hard failure;
-  // otherwise (the resilient default) we log and continue.
-  const strict = block.strict === true;
   if (diagnostics.list.length > 0) {
     const formatted = formatDiagnostics(diagnostics);
     if (strict && diagnostics.hasErrors()) {
@@ -657,8 +723,27 @@ export async function writeSite(
           '(see the diagnostics above). Fix the errors or unset `strict`.'
       );
     }
-    logger.info(formatted);
+    // Advisory infos now, at info level. Errors and warnings are printed once,
+    // at the end of the build — see `report.optionProblems` below.
+    const notes = new DiagnosticBag();
+    for (const d of diagnostics.list) if (d.level === 'info') notes.add(d);
+    if (notes.list.length > 0) logger.info(formatDiagnostics(notes));
   }
+
+  // Non-strict option errors and warnings, printed exactly once: at the end of
+  // the build, near the last thing on screen, so a skipped llms.txt or a font
+  // fallback can't scroll away behind the build log (or, via `writeSite`, on
+  // the way out if the build throws). Warn level, so a `logLevel: "Warn"` build
+  // still shows them. Not `logger.error` for errors: outside strict they
+  // mustn't fail the build, and TypeDoc exits non-zero on any logged error.
+  let reported = false;
+  report.optionProblems = () => {
+    if (reported) return;
+    reported = true;
+    const problems = new DiagnosticBag();
+    for (const d of diagnostics.list) if (d.level !== 'info') problems.add(d);
+    if (problems.list.length > 0) logger.warn(formatDiagnostics(problems));
+  };
 
   // Site root prefix so the output can be served from a sub-directory. Bad/empty
   // input fails safe to '/' (the default), so an unset option is byte-identical.
@@ -729,11 +814,11 @@ export async function writeSite(
   // `sectionOrder`/`clubSidebarItems`, which only affect the JSDoc kind buckets.
   const { value: collapsibleSidebarSections, warnings: collapsibleWarnings } =
     normalizeCollapsibleSidebarSections(block.collapsibleSidebarSections);
-  collapsibleWarnings.forEach((w) => logger.warn(`[clean-jsdoc-theme] ${w}`));
+  collapsibleWarnings.forEach((w) => optionLog.warn(`[clean-jsdoc-theme] ${w}`));
   // Scrollbar presentation mode (see #281); an unrecognized value warns and
   // falls back to `undefined`, so dwar defaults to `styled`.
   const { value: scrollbar, warnings: scrollbarWarnings } = normalizeScrollbar(block.scrollbar);
-  scrollbarWarnings.forEach((w) => logger.warn(`[clean-jsdoc-theme] ${w}`));
+  scrollbarWarnings.forEach((w) => optionLog.warn(`[clean-jsdoc-theme] ${w}`));
   // Enablement slice → setu's `@playground` resolver (runtime slice → the theme).
   const playground = normalizePlayground(block.playground);
 
@@ -757,7 +842,7 @@ export async function writeSite(
     const present = topLevelSectionLabels(manifest.nav);
     const unmatched = unmatchedCollapsibleSections(collapsibleSidebarSections, present);
     if (unmatched.length > 0) {
-      logger.warn(
+      optionLog.warn(
         `[clean-jsdoc-theme] collapsibleSidebarSections — no sidebar section matches ` +
           `${unmatched.map((l) => `'${l}'`).join(', ')}. Available sections: ${present.join(', ')}.`
       );
@@ -768,6 +853,7 @@ export async function writeSite(
   // names a path, write the translatable slot template there and STOP — the same
   // contract as the JSDoc bridge, so aadesh harvests the template identically
   // whichever pipeline produced it.
+  failOnStrictOptionErrors();
   const extractPath = process.env.CLEAN_JSDOC_THEME_EXTRACT?.trim();
   if (extractPath) {
     const target = resolvePath(extractPath);
@@ -776,12 +862,17 @@ export async function writeSite(
     logger.info(
       `clean-jsdoc-theme: extract mode — wrote ${manifest.slots?.length ?? 0} slot(s) to ${target}`
     );
+    report.optionProblems();
     return;
   }
 
   // Resolve siteName (text or logo set) + copy any local logo images so the
   // served paths are baked into the markup. The shape was validated above.
-  const { siteName, files: logoFiles } = await prepareSiteName(value.siteName, logger, hrefForServed);
+  const { siteName, files: logoFiles } = await prepareSiteName(
+    value.siteName,
+    optionLog,
+    hrefForServed
+  );
 
   // Resilient font fallback: a family flagged `fonts/not-google` is dropped so
   // `resolveTheme` falls back to the default for that slot (the error was
@@ -811,11 +902,14 @@ export async function writeSite(
   const islandCacheDir = resolvePath(process.cwd(), 'node_modules', '.cache', 'clean-jsdoc-theme');
   // Custom footer (v4 parity): inline HTML or `{ file }` read here → resolved
   // string on the theme, so render() stays pure. Unset/empty → default footer.
-  const footer = await resolveFooter(block.footer, logger);
+  const footer = await resolveFooter(block.footer, optionLog);
   // Favicon (v4 parity): copied to an `_assets` asset here (the I/O layer); dwar
   // emits the `<link rel="icon">`, so render() stays pure. Unset → none.
-  const favicon = await resolveFavicon(block.favicon, logger, hrefForServed);
-  const meta = normalizeMeta(block.meta, logger);
+  const favicon = await resolveFavicon(block.favicon, optionLog, hrefForServed);
+  const meta = normalizeMeta(block.meta, optionLog);
+  // Every option has been resolved by now; under strict, stop before rendering
+  // or writing anything if any of them had a problem.
+  failOnStrictOptionErrors();
   const result = await render(manifest, {
     theme: {
       ...resolveTheme(block, siteName, fonts, basePath),
@@ -868,13 +962,7 @@ export async function writeSite(
     })
   );
 
-  // Opts warnings were printed BEFORE any render work, so by now they've scrolled
-  // away behind the build log. Re-print just the warnings here — near the last
-  // thing on screen — so a skipped llms.txt or a font fallback can't go unnoticed.
-  const optsWarnings = warningsOnly(diagnostics);
-  if (optsWarnings.list.length > 0) {
-    logger.warn(formatDiagnostics(optsWarnings));
-  }
+  report.optionProblems();
 
   // Render failures are reported, never thrown — the rest of the site is intact.
   if (result.errors && result.errors.length > 0) {

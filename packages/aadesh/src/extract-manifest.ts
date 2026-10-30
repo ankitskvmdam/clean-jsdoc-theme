@@ -28,6 +28,11 @@ export const BUILD_ENV_VAR = 'CLEAN_JSDOC_THEME_BUILD';
 export interface RunResult {
   code: number;
   stderr: string;
+  /**
+   * `true` when the runner already showed `stderr` to the user as it arrived
+   * (the default runner does), so callers shouldn't print it again.
+   */
+  streamed?: boolean;
 }
 
 /** Runs the pipeline binary. Injectable — the default uses `child_process.spawn`. */
@@ -61,23 +66,40 @@ function resolveBin(cwd: string, name: string): string {
   return existsSync(local) ? local : name;
 }
 
-/** Default runner: spawn the resolved binary via the shell, inheriting stdout. */
-const defaultRunner: PipelineRunner = ({ command, args, cwd, env }) =>
-  new Promise((resolvePromise, reject) => {
-    // Build a single quoted command string and spawn with `shell: true` (so a
-    // Windows `.cmd` bin runs). Passing the whole line as `command` with no
-    // `args` array sidesteps Node's DEP0190 (args + shell) and lets us control
-    // the quoting of the config path ourselves.
-    const bin = resolveBin(cwd, command);
-    const line = [bin, ...args].map((part) => `"${part}"`).join(' ');
-    const child = spawn(line, { cwd, env, shell: true, stdio: ['ignore', 'inherit', 'pipe'] });
-    let stderr = '';
-    child.stderr?.on('data', (d) => {
-      stderr += String(d);
+/**
+ * Spawn runner: the resolved binary via the shell, inheriting stdout. stderr is
+ * both captured (for the failure summary) and passed through to `stderrSink`
+ * as it arrives. Passing it through matters: the pipeline's diagnostics — a
+ * strict-mode option error, a missing `plugins/markdown`, the theme's option
+ * warnings — go to stderr, and capturing it alone hid all of them except the
+ * last line on failure (and everything on success). Exported for testing.
+ */
+export function createSpawnRunner(
+  stderrSink: (chunk: string) => void = (chunk) => {
+    process.stderr.write(chunk);
+  }
+): PipelineRunner {
+  return ({ command, args, cwd, env }) =>
+    new Promise((resolvePromise, reject) => {
+      // Build a single quoted command string and spawn with `shell: true` (so a
+      // Windows `.cmd` bin runs). Passing the whole line as `command` with no
+      // `args` array sidesteps Node's DEP0190 (args + shell) and lets us control
+      // the quoting of the config path ourselves.
+      const bin = resolveBin(cwd, command);
+      const line = [bin, ...args].map((part) => `"${part}"`).join(' ');
+      const child = spawn(line, { cwd, env, shell: true, stdio: ['ignore', 'inherit', 'pipe'] });
+      let stderr = '';
+      child.stderr?.on('data', (d) => {
+        const chunk = String(d);
+        stderr += chunk;
+        stderrSink(chunk);
+      });
+      child.on('error', reject);
+      child.on('close', (code) => resolvePromise({ code: code ?? 1, stderr, streamed: true }));
     });
-    child.on('error', reject);
-    child.on('close', (code) => resolvePromise({ code: code ?? 1, stderr }));
-  });
+}
+
+const defaultRunner: PipelineRunner = createSpawnRunner();
 
 /**
  * Run the pipeline once with extra env vars (e.g. the extract/build signal),
@@ -137,7 +159,8 @@ export async function extractManifest(opts: ExtractManifestOptions): Promise<Ext
     if (result.code !== 0) {
       throw new Error(
         `aadesh: ${opts.pipeline} exited with code ${result.code} during extract.` +
-          (result.stderr ? `\n${result.stderr.trim()}` : '')
+          // The default runner already streamed stderr; don't print it twice.
+          (result.stderr && !result.streamed ? `\n${result.stderr.trim()}` : '')
       );
     }
 
