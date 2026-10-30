@@ -2116,9 +2116,13 @@ function loadJSDocLogger(): JSDocLogger {
 
 /**
  * Report a failed build once and make the process exit non-zero. Inside JSDoc,
- * log through JSDoc's own logger: `logger.error` prints the message once and
- * flags the run, so JSDoc exits 1 when `publish` settles (under `--pedantic` it
- * exits 1 straight away). `process.exitCode` is set too, as a backstop.
+ * log through JSDoc's own logger: `logger.error` prints the message once and,
+ * through JSDoc's `logger:error` listener, marks the run as failed. Normally
+ * that sets a flag JSDoc turns into exit code 1 once `publish` settles; under
+ * `--pedantic` the listener calls `cli.exit(1)`, which registers a process
+ * `exit` handler that exits with 1 — it doesn't stop the process on the spot,
+ * so the remaining work still finishes. `process.exitCode` is set too, as a
+ * backstop.
  * Outside a JSDoc process (`jsdoc/util/logger` isn't resolvable — a direct
  * programmatic call, unit tests) rethrow, so the caller still gets the
  * rejection. `withStack` (JSDoc's `--debug`/`--verbose`) adds the stack trace
