@@ -9,8 +9,10 @@ builds may start failing.** Before, `strict` only failed on option errors, so a
 misspelled key, an unusable `siteUrl`, or an unreadable `footer` / `favicon` /
 logo / custom file was reported and the build carried on. Now every option
 warning is an error under `strict`, and the build stops before writing anything.
-The one exception is a top-level v4 option name under JSDoc (see the v4-options
-change). Content warnings, such as an unbalanced backtick, are not affected.
+The exceptions are a top-level v4 option name under JSDoc (see the v4-options
+change) and, under TypeDoc, JSDoc-only options and the `siteUrl` override of
+`hostedBaseUrl` (see the TypeDoc change). Content warnings, such as an unbalanced
+backtick, are not affected.
 
 A failed JSDoc build now exits non-zero. JSDoc 4 printed a thrown theme error as
 `Unhandled rejection …` and still exited 0, so CI (and `clean-jsdoc build`, which
