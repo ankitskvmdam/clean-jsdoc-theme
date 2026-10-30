@@ -953,6 +953,28 @@ describe('render() — HTML comments in prose', () => {
     expect(html).toContain('Still visible.');
   });
 
+  it('keeps a comment shown inside a ```` fence wrapping ``` lines as code', async () => {
+    const body = 'Intro\n\n````md\n```html\n<!-- kept -->\n```\n````\n';
+    const { err, html } = await renderOne('nested-fence', body);
+    expect(err, err?.message).toBeUndefined();
+    expect(html).toContain('kept');
+  });
+
+  it('renders a comment after a fence holding an odd number of ``` lines', async () => {
+    const body = '````md\n```js\n````\n\nText <!-- c --> after.\n\n```js\nx\n```\n';
+    const { err, html } = await renderOne('odd-fence', body);
+    expect(err, err?.message).toBeUndefined();
+    expect(html).toContain('Text  after.');
+  });
+
+  it('keeps a link destination and image title that contain a comment', async () => {
+    const body = '[a](http://x/<!--y-->z) ![b](x.png "t <!-- c --> d")\n';
+    const { err, html } = await renderOne('link-comment', body);
+    expect(err, err?.message).toBeUndefined();
+    expect(html).toContain('href="http://x/%3C!--y--%3Ez"');
+    expect(html).toContain('title="t &lt;!-- c --> d"');
+  });
+
   it('keeps the comments verbatim in the .md companion (it is the page source)', async () => {
     const { result } = await renderOne('', README_BODY);
     const md = result.files.find((f) => f.path === 'index.md');

@@ -453,4 +453,35 @@ describe('stripHtmlComments', () => {
   it('hides a backtick inside a comment from findStrayBackticks', () => {
     expect(findStrayBackticks('text <!-- use `foo here -->\n\nmore\n')).toEqual([]);
   });
+
+  it('still reports a stray backtick outside a comment', () => {
+    expect(findStrayBackticks('<!-- note -->\n\nPass `x to it.\n')).toHaveLength(1);
+  });
+
+  it('keeps a comment shown inside a ```` fence that wraps ``` lines (setu emits these)', () => {
+    const src = 'Intro\n\n````md\n```html\n<!-- kept -->\n```\n````\n';
+    expect(stripHtmlComments(src)).toBe(src);
+  });
+
+  it('keeps code/prose parity after a fence holding an odd number of ``` lines', () => {
+    const src = '````md\n```js\n````\n\nText <!-- c --> after.\n\n```js\n<!-- x -->\n```\n';
+    expect(stripHtmlComments(src)).toBe(
+      '````md\n```js\n````\n\nText  after.\n\n```js\n<!-- x -->\n```\n'
+    );
+  });
+
+  it('keeps a comment that is part of a link destination or title', () => {
+    const src = '[a](http://x/<!--y-->z) and ![a](x.png "t <!-- c --> d")\n';
+    expect(stripHtmlComments(src)).toBe(src);
+  });
+
+  it('does not let an unterminated inline opener swallow a following fence', () => {
+    const src = 'a <!-- b\n\n```html\n<!-- x -->\n```\n\nafter\n';
+    expect(stripHtmlComments(src)).toBe('a \\<!-- b\n\n```html\n<!-- x -->\n```\n\nafter\n');
+  });
+
+  it('drops a line-starting comment that wraps a whole section, code block included', () => {
+    const src = 'Keep.\n\n<!--\n## Old\n\n```js\nold();\n```\n-->\n\nAlso keep.\n';
+    expect(stripHtmlComments(src)).toBe('Keep.\n\n\n\nAlso keep.\n');
+  });
 });
