@@ -17,9 +17,12 @@ TypeDoc](#jsdoc-vs-typedoc) を参照）。残りの build のセットアップ
 に合うものを選んでください。
 
 > [!WARNING]
-> 不明な、あるいは綴り間違いの options は、default では **警告** を出すだけです
-> （「もしかして?」のヒント付き） — build は続行します。それらの警告を errors に
-> 変えるには [`strict`](#strict) を設定してください。
+> 綴り間違いの option は、default では **警告** を出すだけです（「もしかして?」の
+> ヒント付き） — build は続行します。JSDoc では theme option 名に近い名前が対象です
+> （`opts` は JSDoc やその plugins と共有されるため、それ以外の不明な keys には何も
+> 出しません）。TypeDoc では `cleanJsdocTheme` 内の不明な key すべてが対象です。
+> option の警告を build を失敗させる errors に変えるには [`strict`](#strict) を
+> 設定してください。
 
 > [!TIP]
 > ここに記載されている option が見つかりませんか？theme が **最新バージョン** で
@@ -1032,8 +1035,16 @@ cleanJsdocTheme: { defaultLocale: "en" }
 
 ### `strict`
 
-option の diagnostics（不正な font 名、不明な key）を、警告から厳格な build errors
-に格上げします。
+option の問題で build を失敗させます。default では問題は報告され、build はその
+option なしで続行します: 綴り間違いや不明な key、Google Fonts にない font、使えない
+`siteUrl`、読み込めない `footer` / `favicon` / logo / custom CSS や JS file、残って
+いる v4 の `theme_opts` block。`strict: true` では、そのどれもが何かを書き出す前に
+build を止め、process は 0 以外の exit code で終了します。
+
+影響しないもの: content の警告（comment 内の対になっていない backtick など）と
+render に失敗した pages — これらは build を失敗させずに報告されます。また JSDoc では、
+`opts.title` や `opts.search` のような top-level の v4 option 名は、別の JSDoc plugin
+のものかもしれないため警告のままです。
 
 **期待される値:** boolean。default は `false`。
 

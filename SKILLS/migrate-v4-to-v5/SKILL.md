@@ -35,9 +35,10 @@ carry over, drop the rest, then optionally adopt v5's new features.
 
 - **JSDoc** `>=4` (v4 allowed 3.x). **Node** `>=22`.
 - The `plugins/markdown` plugin is **still required** — keep it in `plugins`.
-  JSDoc uses it to render comment Markdown before the theme sees it, and v5 stops
-  the build with `clean-jsdoc-theme requires JSDoc's "plugins/markdown" plugin…`
-  when it's missing. Add it if the v4 config didn't have it.
+  JSDoc uses it to render comment Markdown before the theme sees it. Without it
+  the build fails with
+  `clean-jsdoc-theme requires JSDoc's "plugins/markdown" plugin…`: nothing is
+  written and JSDoc exits non-zero. Add it if the v4 config didn't have it.
 - Check the user really wants to move: to **stay on v4**, pin
   `"clean-jsdoc-theme": "^4"`. v5 is now the npm `latest` (GA), so `@latest` pulls
   it and an unpinned range will move to v5 on the next install.
@@ -86,8 +87,9 @@ block**. Renames that carry over:
 <step label="Reshape the menu">
 
 v4 entry `{ title, link, target, class, id }` → v5 entry
-`{ id?, title?, link (or href)?, icon? }`. Drop `target` and `class`; add `icon`
-(`lucide:<name>` or `simpleicons:<name>`) if you like. In v5, `id` also selects
+`{ id?, title?, link (or href)?, icon?, target?, class? }`. `target` and `class`
+carry over unchanged; add `icon` (`lucide:<name>` or `simpleicons:<name>`) if you
+like. In v5, `id` also selects
 built-ins (`{ id: "home" }`, `{ id: "source" }`), and a `menu` **takes precedence
 over `sectionOrder`** and owns the whole top region of the sidebar.
 
@@ -133,22 +135,24 @@ successor to v4's `codepen`), `favicon`, and the source viewer
 | `homepageTitle` | — | removed | Home `<title>` derives from README/`docs/index.md` + `siteName`. |
 | `title` | `siteName` | changed | String **or** logo set `{ default, dark, light, alt }`. |
 | `includeFilesListInHomepage` | — | removed | The Source Files section lists files instead. |
-| `menu` | `menu` | changed | Reshaped (see step 4); `target`/`class` dropped, `icon` added. |
-| `sections` | `sectionOrder` | renamed | Filter + order sidebar sections. |
+| `menu` | `menu` | changed | Reshaped (see step 4); `icon` added, `target`/`class` kept. |
+| `sections` | `sectionOrder` | changed | Filter + order sidebar sections. The `Global` section is now `Globals` (a leftover `"Global"` still works). |
 | `meta` | `meta` | changed | Supported again — array of attribute maps → `<meta>` tags in `<head>` (same shape as v4). |
 | `search` | — | removed | Always-on fuzzy search. |
 | `codepen` | `playground` | changed | v4 prefilled a CodePen from `@example`; v5 generalizes it to `opts.playground` + the `@playground` tag (CodePen/JSFiddle/CodeSandbox). For an existing pen by URL, use `@iframe`. |
 | `static_dir` | — | removed | Use JSDoc's own static-file config. |
 | `create_style` | `customCss` | renamed | Inline CSS, injected after the theme stylesheet. |
 | `include_css` | `customCssFile` | renamed | CSS file(s); copied to a content-hashed `_assets/` link. |
-| `add_style_path` | `customCssFile` | changed | Was an external `<link>`; now read + emitted as a cached asset. |
+| `add_style_path` | `customCssFile` | changed | v4 took CDN `{ href, integrity, crossorigin }` objects; `customCssFile` only copies local files (a remote URL or object warns and is skipped). Download the file, or `@import url(…)` it from `customCss`. |
 | `add_scripts` | `customJs` | renamed | Inline JS, runs last (before `</body>`). |
 | `include_js` | `customJsFile` | renamed | JS file(s); copied to a content-hashed `_assets/` reference. |
-| `add_script_path` | `customJsFile` | changed | Was an external `<script>`; now read + emitted as a cached asset. |
+| `add_script_path` | `customJsFile` | changed | v4 took CDN attribute objects; `customJsFile` only copies local files (a remote URL or object warns and is skipped). Download the file, or load it from `customJs`. |
 | `footer` | `footer` | changed | Supported again — inline HTML string or `{ file: "./footer.html" }`; style via `customCss`/`customCssFile`. |
 | `exclude_inherited` | — | removed | No equivalent. |
 | `displayModuleHeader` | — | removed | No equivalent. |
 | `sort` | — | removed | No equivalent. |
+| `resizeable` | — | removed | No equivalent (the sidebar isn't resizable). |
+| `prefixModuleToSidebarItems_experimental` | — | removed | No equivalent. |
 | `shouldRemoveScrollbarStyle` | `scrollbar` | changed | v4 boolean only disabled scrollbar styling. v5 `scrollbar` is a 3-way enum: `"styled"` (default) \| `"visible"` \| `"native"`. `shouldRemoveScrollbarStyle: true` → `scrollbar: "native"`. |
 
 A machine-readable version of this exact map (for codemods) lives at
@@ -210,7 +214,7 @@ A machine-readable version of this exact map (for codemods) lives at
       { id: "home", title: "Home" },
       { title: "GitHub", link: "https://github.com/me/lib", icon: "simpleicons:github" },
     ],
-    sectionOrder: ["Classes", "Modules", "Global"],
+    sectionOrder: ["Classes", "Modules", "Globals"],
     footer: "© My Library",
     // dropped: default_theme (auto), search (always on)
     customCssFile: "./static/custom.css",
@@ -239,11 +243,13 @@ Check:
   - a `theme_opts` block → `opts/v4-theme-opts`, plus one `opts/v4-option` warning
     per key inside it;
   - a top-level v4 option name that isn't a v5 option (`base_url`, `title`,
-    `homepageTitle`, …) → `opts/v4-option`. v4 names that are still v5 options
+    `homepageTitle`, …) → `opts/v4-name`. v4 names that are still v5 options
     (`menu`, `favicon`, `meta`, `footer`) aren't flagged — check their new shapes
     yourself.
-- Set `opts.strict: true` to make those v4-option warnings errors that stop the
-  build while migrating, then relax it.
+- `opts.strict: true` turns every option warning into an error — the
+  `theme_opts` ones included — so the build writes nothing and exits non-zero.
+  `opts/v4-name` stays a warning even then (another JSDoc plugin may own an
+  `opts.title` or `opts.search`). Useful while migrating; relax it after.
 - Near-miss typos of v5 option names (`siteNme`) warn with a "did you mean?" hint;
   other unknown keys stay silent, since JSDoc's `opts` is shared with other tools.
 - Output layout changed: pages are SSR HTML + a co-located `index.md`, assets live
@@ -254,19 +260,23 @@ Check:
 
 ## 6. Common migration gotchas
 
-- **Options silently ignored:** they're still under `theme_opts` (v5 doesn't read
-  it) — lift them to `opts.*`.
+- **Options ignored:** they're still under `theme_opts` (v5 doesn't read it; the
+  build warns `opts/v4-theme-opts`) — lift them to `opts.*`.
 - **A renamed option "doesn't work":** you kept the v4 name (`title`, `base_url`,
   `sections`, `create_style`, …) — apply the §2 rename. The build's
-  `opts/v4-option` warning names the new key.
+  `opts/v4-name` warning names the new key.
+- **The globals vanished from the sidebar:** v4's `Global` section is `Globals` in
+  v5. A leftover `"Global"` in `sectionOrder` is read as `Globals`, but write the
+  new label.
 - **Custom CSS/JS vanished:** the four v4 spellings were consolidated — rename to
   `customCss` / `customCssFile` / `customJs` / `customJsFile`. (`static_dir` has no
   equivalent — use JSDoc's static-file config.)
 - **`default_theme` removed:** there's no theme picker; customize via `fonts` and
   theme tokens (`colors` / `darkColors`), not an opt.
-- **Build fails on a leftover v4 option where v4 accepted it:** that's `strict`
-  mode — by default v5 warns and continues; with `strict: true` the v4-option
-  diagnostics (and option errors) fail the build.
+- **Build fails on an option where v4 accepted it:** that's `strict` mode — by
+  default v5 warns and continues; with `strict: true` any option warning or error
+  (a `theme_opts` block, a typo, an unreadable custom file) fails the build with a
+  non-zero exit. Top-level v4 names (`opts/v4-name`) never fail it.
 
 ## 7. Staying current
 

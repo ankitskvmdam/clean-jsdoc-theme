@@ -3,8 +3,11 @@
 Every theme option. Same names and values on both tools — only the namespace
 differs: **`opts.*`** (JSDoc) vs **`cleanJsdocTheme.*`** (TypeDoc).
 
-> Unknown / misspelled keys only **warn** (with a "did you mean?" hint) and the
-> build continues. Set `strict: true` to escalate warnings to hard errors.
+> Misspelled keys only **warn** (with a "did you mean?" hint) and the build
+> continues — under JSDoc only near-misses of a theme option name (`opts` is shared
+> with other plugins), under TypeDoc any unknown key in `cleanJsdocTheme`. Set
+> `strict: true` to make every option warning an error that fails the build (no
+> output, non-zero exit); JSDoc top-level v4 names like `opts.title` stay warnings.
 
 > **TypeDoc caveat.** The names are shared, but a few options behave differently
 > or aren't wired under TypeDoc: `sectionOrder` / `clubSidebarItems` / `@category`
@@ -91,7 +94,7 @@ per-locale **prose** uses sibling files (`README.<code>.md`, `docs.<code>/`).
 
 | Option | Type | Notes |
 | --- | --- | --- |
-| `strict` | boolean | Escalate option diagnostics (bad font, unknown key) from warnings to hard errors. Default `false`. |
+| `strict` | boolean | Fail the build on any option warning or error (bad font, unknown key, unusable `siteUrl`, unreadable option file, a v4 `theme_opts` block): nothing is written, non-zero exit. Content warnings and JSDoc top-level v4 names (`opts.title`) aren't affected. Default `false`. |
 | `progress` | boolean | Toggle per-stage build spinners. Default `true`. |
 
 ## JSDoc-only (under `templates.default`, NOT `opts`)

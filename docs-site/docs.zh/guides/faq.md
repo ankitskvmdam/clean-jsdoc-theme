@@ -243,9 +243,10 @@ v4 的 `favicon` 选项在 v5 早期一度被移除，现已回归。
 
 ### 为什么我的构建会就某个未知选项发出警告？
 
-未知或拼写错误的选项默认会发出**警告**（带有一条 “did
-you mean?” 提示），并且构建会继续。设置 [`strict`](/theme/configuration#strict) 可将
-这些警告转为错误。
+拼写错误的选项默认会发出**警告**（带有一条 “did you mean?” 提示），并且构建会
+继续。在 JSDoc 中，只有与主题选项名相近的名字才会警告，因为 `opts` 与 JSDoc 及其插件
+共用；在 TypeDoc 中，`cleanJsdocTheme` 里的任何未知键都会警告。设置
+[`strict`](/theme/configuration#strict) 可将选项警告转为会使构建失败的错误。
 
 ## Localization
 

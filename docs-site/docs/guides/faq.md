@@ -322,9 +322,11 @@ Configure or disable it with [`copyPage`](/theme/configuration#copypage).
 
 ### Why does my build warn about an unknown option?
 
-Unknown or misspelled options **warn** by default (with a "did you mean?" hint)
-and the build continues. Set [`strict`](/theme/configuration#strict) to turn
-those warnings into errors.
+A misspelled option **warns** by default (with a "did you mean?" hint) and the
+build continues. Under JSDoc only a near-miss of a theme option name warns, since
+`opts` is shared with JSDoc and its plugins; under TypeDoc any unknown key in
+`cleanJsdocTheme` does. Set [`strict`](/theme/configuration#strict) to turn
+option warnings into errors that fail the build.
 
 ### My `dist` is empty and every page fails with "Cannot read properties of undefined (reading 'context')"
 

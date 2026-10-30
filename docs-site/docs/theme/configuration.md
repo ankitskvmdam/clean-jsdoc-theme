@@ -16,9 +16,11 @@ Each option below shows the snippet for both tools in tabs — pick the one that
 matches your setup.
 
 > [!WARNING]
-> Unknown or misspelled options only **warn** by default (with a "did you mean?"
-> hint) — the build continues. Set [`strict`](#strict) to turn those warnings
-> into errors.
+> A misspelled option only **warns** by default (with a "did you mean?" hint) —
+> the build continues. Under JSDoc that's a near-miss of a theme option name
+> (`opts` is shared with JSDoc and its plugins, so other unknown keys stay
+> silent); under TypeDoc it's any unknown key in `cleanJsdocTheme`. Set
+> [`strict`](#strict) to turn option warnings into errors that fail the build.
 
 > [!TIP]
 > Don't see an option documented here? Make sure you're on the **latest version**
@@ -1117,8 +1119,17 @@ cleanJsdocTheme: { defaultLocale: "en" }
 
 ### `strict`
 
-Escalate option diagnostics (a bad font name, an unknown key) from warnings to
-hard build errors.
+Make option problems fail the build. By default they're reported and the build
+carries on without that option: a misspelled or unknown key, a font that isn't
+on Google Fonts, an unusable `siteUrl`, an unreadable `footer` / `favicon` /
+logo / custom CSS or JS file, a leftover v4 `theme_opts` block. With
+`strict: true`, any of them stops the build before it writes anything, and the
+process exits non-zero.
+
+Not affected: content warnings (such as an unbalanced backtick in a comment) and
+pages that fail to render, which are reported without failing the build; and,
+under JSDoc, a top-level v4 option name such as `opts.title` or `opts.search`,
+which stays a warning because another JSDoc plugin may own it.
 
 **Expected:** a boolean. Defaults to `false`.
 

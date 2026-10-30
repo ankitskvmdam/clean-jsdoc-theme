@@ -17,9 +17,12 @@ page theme के अपने options का दस्तावेज़ है
 खाए वही चुनें।
 
 > [!WARNING]
-> अनजान या ग़लत-वर्तनी वाले options default रूप से सिर्फ़ **चेतावनी** देते हैं (एक
-> "did you mean?" संकेत के साथ) — build जारी रहता है। उन चेतावनियों को errors में
-> बदलने के लिए [`strict`](#strict) सेट करें।
+> ग़लत-वर्तनी वाला option default रूप से सिर्फ़ **चेतावनी** देता है (एक "did you
+> mean?" संकेत के साथ) — build जारी रहता है। JSDoc में यह किसी theme option नाम से
+> मिलता-जुलता नाम होता है (`opts` JSDoc और उसके plugins के साथ साझा है, इसलिए बाकी
+> अनजान keys पर कुछ नहीं कहा जाता); TypeDoc में `cleanJsdocTheme` की कोई भी अनजान
+> key। option चेतावनियों को build विफल करने वाली errors में बदलने के लिए
+> [`strict`](#strict) सेट करें।
 
 > [!TIP]
 > यहाँ documented कोई option नहीं दिख रहा? सुनिश्चित करें कि आप theme के **latest
@@ -1029,8 +1032,17 @@ cleanJsdocTheme: { defaultLocale: "en" }
 
 ### `strict`
 
-option diagnostics (एक ख़राब font नाम, एक अनजान key) को चेतावनियों से कठोर build
-errors में बढ़ा दें।
+option की समस्याओं पर build विफल करें। default रूप से उन्हें report किया जाता है
+और build उस option के बिना चलता रहता है: ग़लत-वर्तनी वाली या अनजान key, ऐसा font
+जो Google Fonts पर नहीं है, अनुपयोगी `siteUrl`, न पढ़ी जा सकने वाली `footer` /
+`favicon` / logo / custom CSS या JS file, बचा हुआ v4 `theme_opts` block।
+`strict: true` के साथ इनमें से कोई भी build को कुछ भी लिखने से पहले रोक देता है,
+और process non-zero के साथ exit करता है।
+
+इन पर असर नहीं: content चेतावनियाँ (जैसे किसी comment में बिना जोड़ी का backtick)
+और render न हो पाने वाले pages, जिन्हें build विफल किए बिना report किया जाता है;
+और JSDoc में `opts.title` या `opts.search` जैसा top-level v4 option नाम, जो
+चेतावनी ही रहता है क्योंकि वह किसी दूसरे JSDoc plugin का हो सकता है।
 
 **अपेक्षित:** एक boolean। Default `false`।
 
