@@ -850,6 +850,123 @@ describe('render() — issue #347: prose line starting with import/export', () =
   });
 });
 
+// MDX has no HTML-comment syntax, so a single `<!-- … -->` in prose aborted the
+// page ("Unexpected character `!` … to create a comment in MDX, use `{/* text
+// */}`"). On the README that meant no root index.html at all. v4 emitted plain
+// HTML, where a comment is harmless; the theme must render these pages again.
+describe('render() — HTML comments in prose', () => {
+  /** The shape setu emits for a README home page with a badge-block comment. */
+  const README_BODY = [
+    '---',
+    'title: Home',
+    'kind: index',
+    '---',
+    '',
+    '<!-- badges -->',
+    '',
+    '[![npm](https://img.shields.io/npm/v/x.svg)](https://npm.im/x)',
+    '',
+    '# my-lib',
+    '',
+    'A small library. <!-- TODO: reword -->It does things.',
+    '',
+    '<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->',
+    '',
+    '| Contributor |',
+    '| - |',
+    '| Ada |',
+    '',
+    '<!-- ALL-CONTRIBUTORS-LIST:END -->',
+    '',
+    '```html',
+    '<!-- kept as code -->',
+    '```',
+    '',
+  ].join('\n');
+
+  function withPage(slug: string, body: string): SiteManifest {
+    const m = makeManifest();
+    const existing = m.pages.find((p) => p.slug === slug);
+    if (existing) {
+      existing.body = body;
+    } else {
+      m.pages.push({
+        slug,
+        frontmatter: { title: slug, kind: 'module', description: 'A page.' },
+        body,
+        headings: [],
+      });
+      m.nav.push({ label: slug, slug });
+    }
+    return m;
+  }
+
+  async function renderOne(slug: string, body: string) {
+    const result = await render(withPage(slug, body), { theme: minimalTheme });
+    const err = result.errors?.find((e) => e.slug === slug);
+    const file = result.files.find((f) => f.path === (slug ? `${slug}/index.html` : 'index.html'));
+    return { result, err, html: file ? asString(file) : undefined };
+  }
+
+  it('renders a README home page with badge, inline and marker comments (root index.html exists)', async () => {
+    const { err, html } = await renderOne('', README_BODY);
+    expect(err, err?.message).toBeUndefined();
+    expect(html).toBeDefined();
+    expect(html).toContain('A small library. It does things.');
+    expect(html).toContain('Ada');
+    // Prose comments are gone from the rendered page…
+    expect(html).not.toContain('TODO: reword');
+    expect(html).not.toContain('ALL-CONTRIBUTORS');
+    expect(html).not.toContain('badges');
+    // …while the one inside the fenced code block is still shown, as code.
+    expect(html).toContain('kept as code');
+  });
+
+  it('renders a module page whose description holds an inline comment (the doc-comment repro)', async () => {
+    const body = [
+      '# c01',
+      '',
+      '<SourceLink href="/source/c01-js/#L5" label="c01.js:5" />',
+      '',
+      'HTML comment in a description <!-- internal note -->should not break.',
+      '',
+    ].join('\n');
+    const { err, html } = await renderOne('module/c01', body);
+    expect(err, err?.message).toBeUndefined();
+    expect(html).toContain('HTML comment in a description should not break.');
+    expect(html).not.toContain('internal note');
+  });
+
+  it('renders a tutorial with a comment on its own line', async () => {
+    const body = '# Tutorial\n\n<!-- a comment -->\n\nimport the package first, then:\n';
+    const { err, html } = await renderOne('tutorials/t1', body);
+    expect(err, err?.message).toBeUndefined();
+    expect(html).toContain('import the package first, then:');
+    expect(html).not.toContain('a comment');
+  });
+
+  it('renders an unterminated <!-- as literal text and keeps the rest of the page', async () => {
+    const body = '# Page\n\nBroken <!-- opener here.\n\n## Later\n\nStill visible.\n';
+    const { err, html } = await renderOne('broken', body);
+    expect(err, err?.message).toBeUndefined();
+    expect(html).toContain('Broken &lt;!-- opener here.');
+    expect(html).toContain('Still visible.');
+  });
+
+  it('keeps the comments verbatim in the .md companion (it is the page source)', async () => {
+    const { result } = await renderOne('', README_BODY);
+    const md = result.files.find((f) => f.path === 'index.md');
+    expect(md && asString(md)).toBe(README_BODY);
+  });
+
+  it('keeps comment text out of the search index', async () => {
+    const { result } = await renderOne('module/c01', 'Visible <!-- secret > note --> text.\n');
+    const entry = result.search!.find((s) => s.slug === 'module/c01')!;
+    expect(entry.content).toBe('Visible text.');
+    expect(entry.excerpt).toBe('Visible text.');
+  });
+});
+
 describe('render() — issue #333: render-error diagnostics', () => {
   function manifestWithBadPage(): SiteManifest {
     const m = makeManifest();
