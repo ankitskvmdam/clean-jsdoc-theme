@@ -138,19 +138,21 @@ function tagContentToText(
 
 /**
  * Doclet fields for a `@defaultValue` / `@default` tag: `defaultvalue` (a bare
- * value, which setu shows in an inline-code span) when the tag IS a value, else
- * `defaultvaluehtml` (prose, which setu renders as phrasing so links and inline
- * code survive).
+ * value, which setu shows in an inline-code span) or `defaultvaluehtml` (prose,
+ * which setu renders as phrasing so links and inline code survive).
  *
- * TypeDoc hands the content over already wrapped for display: an author's
- * `` `'en-US'` `` arrives as a code-span part, and content with no code of its
- * own — a bare `{}`, `42`, or prose — as one ```` ```ts ```` fence. So:
- * - one code part → a value, unwrapped (`'en-US'`, `{}`, `42`), unless it is
- *   TypeDoc's fence around prose (see {@link looksLikeProse}) — that renders
- *   as the author's Markdown;
- * - plain text with no whitespace (`42`, `null`) → a value;
- * - anything else (`` `true` when `x` is set ``, `{@link Foo} instance`) →
- *   prose, keeping its own code spans and links.
+ * Follows TypeDoc's own model (`defaultBlockContent` in its comment parser):
+ * with `jsDocCompatibility.defaultTag` on (the default), TypeDoc wraps the tag
+ * in a ```` ```ts ```` fence only when the content has no code or inline-tag
+ * part of its own, and its default theme renders that as code. So:
+ * - exactly one code part (TypeDoc's fence, an author's fence, or one code
+ *   span) → a value, unwrapped and folded onto one line. That includes prose
+ *   TypeDoc fenced (`the current working directory`, `see [docs](url)`), which
+ *   TypeDoc's theme shows as code too;
+ * - mixed content (text with code spans, or any `{@link}`) → the author wrote
+ *   Markdown → prose;
+ * - plain text only (possible only with `jsDocCompatibility.defaultTag` off)
+ *   → prose if it contains whitespace, else a value (`42`).
  */
 export function defaultTagFields(
   parts: readonly CommentDisplayPart[],
@@ -159,17 +161,16 @@ export function defaultTagFields(
   const meaningful = parts.filter((p) => !(p.kind === 'text' && p.text.trim() === ''));
   if (meaningful.length === 0) return {};
   if (meaningful.length === 1 && meaningful[0].kind === 'code') {
-    const value = unwrapCode(meaningful[0].text).trim();
-    if (!looksLikeProse(value)) return value ? { defaultvalue: oneLine(value) } : {};
-    const html = markdownToHtml(value);
-    return html ? { defaultvaluehtml: html } : {};
+    const value = oneLine(unwrapCode(meaningful[0].text));
+    return value ? { defaultvalue: value } : {};
   }
-  if (
-    meaningful.length === 1 &&
-    meaningful[0].kind === 'text' &&
-    !/\s/.test(meaningful[0].text.trim())
-  ) {
-    return { defaultvalue: meaningful[0].text.trim() };
+  const textOnly = meaningful.every((p) => p.kind === 'text');
+  if (textOnly) {
+    const text = meaningful
+      .map((p) => p.text)
+      .join('')
+      .trim();
+    if (!/\s/.test(text)) return { defaultvalue: text };
   }
   const html = markdownToHtml(partsToMarkdown(parts, linkResolver));
   return html ? { defaultvaluehtml: html } : {};
@@ -178,16 +179,6 @@ export function defaultTagFields(
 /** Fold a multi-line value onto one line (setu's code span is inline). */
 function oneLine(value: string): string {
   return value.replace(/\s*\n\s*/g, ' ').trim();
-}
-
-/**
- * Whether the text inside TypeDoc's auto-added fence is prose rather than a
- * value: it holds a Markdown link, or opens with three plain words
- * (`see the docs`). A value — `{ a: 1, b: 2 }`, `new Map()`, `'a b c'`, `42`
- * — never does.
- */
-function looksLikeProse(text: string): boolean {
-  return /\[[^\]]*\]\([^)]*\)/.test(text) || /^[A-Za-z]+(?: [A-Za-z]+){2}/.test(text);
 }
 
 /** Strip a Markdown code fence or code-span delimiters from a code part. */

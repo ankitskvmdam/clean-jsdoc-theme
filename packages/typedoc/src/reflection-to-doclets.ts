@@ -611,8 +611,11 @@ function adaptValue(
 
   // TypeDoc emits `...` as a placeholder for an initializer it doesn't print
   // (an object / complex value) — never a meaningful default, so don't carry it
-  // (it would render as a bare "Default: ..." line).
-  if (reflection.defaultValue !== undefined && reflection.defaultValue !== '...') {
+  // (it would render as a bare "Default: ..." line). An explicit
+  // `@defaultValue` tag (applied from the comment above) wins over the
+  // initializer: it is what the author chose to document.
+  const tagged = doclet.defaultvalue !== undefined || doclet.defaultvaluehtml !== undefined;
+  if (!tagged && reflection.defaultValue !== undefined && reflection.defaultValue !== '...') {
     doclet.defaultvalue = reflection.defaultValue;
   }
 

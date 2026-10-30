@@ -51,6 +51,27 @@ export class Opts {
    * @defaultValue \`true\` when \`x\` is set
    */
   mixed = true;
+  /**
+   * Backticked words.
+   * @defaultValue \`one two three\`
+   */
+  backticked = 'one two three';
+  /**
+   * Two-line prose (TypeDoc fences it).
+   * @defaultValue the directory
+   * from which node started
+   */
+  cwd = '.';
+  /**
+   * Value with a note (examples/typedoc-basic Cache.ts).
+   * @defaultValue undefined (no expiry)
+   */
+  ttl?: number;
+  /**
+   * Linked.
+   * @defaultValue {@link Opts} instance
+   */
+  linked = 1;
 }
 
 /** Only a factory makes one. */
@@ -150,11 +171,29 @@ describe('@defaultValue on the member Default line', () => {
     expect(body).not.toContain("``'en-US'``");
   });
 
-  it('renders a prose default as phrasing: a real link, real code spans', () => {
+  it('content TypeDoc fences (no code of its own) is a code value, as in its theme', () => {
     const body = bodyOf(byDefault.manifest, 'Opts');
-    expect(body).toContain('**Default:** see [docs](https://example.com) for details');
+    expect(body).toContain('**Default:** `see [docs](https://example.com) for details`');
+    expect(body).toContain('**Default:** `the directory from which node started`');
+    expect(body).toContain('**Default:** `undefined (no expiry)`');
+  });
+
+  it('an explicit @defaultValue wins over the property initializer', () => {
+    const body = bodyOf(byDefault.manifest, 'Opts');
+    // `prose = 1`, `linked = 1`, `backticked = 'one two three'`, `cwd = '.'`.
+    expect(body).not.toContain('**Default:** `1`');
+    expect(body).not.toContain("**Default:** `'one two three'`");
+    expect(body).not.toContain("**Default:** `'.'`");
+  });
+
+  it('an author code span is a code value, however many words', () => {
+    expect(bodyOf(byDefault.manifest, 'Opts')).toContain('**Default:** `one two three`');
+  });
+
+  it('mixed content (code spans + text, or a link tag) renders as phrasing', () => {
+    const body = bodyOf(byDefault.manifest, 'Opts');
     expect(body).toContain('**Default:** `true` when `x` is set');
-    expect(body).not.toContain('`see [docs]');
+    expect(body).toMatch(/\*\*Default:\*\* \[Opts\]\([^)]+\) instance/);
   });
 });
 
@@ -214,31 +253,44 @@ describe('defaultTagFields', () => {
   const txt = (text: string): CommentDisplayPart => ({ kind: 'text', text });
   const fence = (body: string): CommentDisplayPart => code(['```ts', body, '```'].join('\n'));
 
-  it('a single code part is a value, unwrapped (any fence length) and folded', () => {
+  it('exactly one code part is a value: unwrapped, folded, no word checks', () => {
     expect(defaultTagFields([code("`'en-US'`")])).toEqual({ defaultvalue: "'en-US'" });
     expect(defaultTagFields([code('`` a`b ``')])).toEqual({ defaultvalue: 'a`b' });
+    expect(defaultTagFields([code('`one two three`')])).toEqual({ defaultvalue: 'one two three' });
     expect(defaultTagFields([fence('{}')])).toEqual({ defaultvalue: '{}' });
     expect(defaultTagFields([fence(['{', '  a: 1', '}'].join('\n'))])).toEqual({
       defaultvalue: '{ a: 1 }',
     });
-    // Values with spaces that are NOT prose stay values.
-    expect(defaultTagFields([fence('new Map()')])).toEqual({ defaultvalue: 'new Map()' });
-    expect(defaultTagFields([fence("'a b c'")])).toEqual({ defaultvalue: "'a b c'" });
-  });
-
-  it('a single plain-text token is a value', () => {
-    expect(defaultTagFields([txt('  42 ')])).toEqual({ defaultvalue: '42' });
-  });
-
-  it("prose (in TypeDoc's fence, or mixed parts) becomes HTML, keeping links and code", () => {
+    expect(defaultTagFields([fence('undefined (no expiry)')])).toEqual({
+      defaultvalue: 'undefined (no expiry)',
+    });
+    expect(
+      defaultTagFields([fence(['the directory', 'from which node started'].join('\n'))])
+    ).toEqual({
+      defaultvalue: 'the directory from which node started',
+    });
+    // Prose TypeDoc fenced stays code, exactly as TypeDoc's own theme shows it.
     expect(defaultTagFields([fence('see [docs](https://example.com) for details')])).toEqual({
-      defaultvaluehtml: '<p>see <a href="https://example.com">docs</a> for details</p>',
+      defaultvalue: 'see [docs](https://example.com) for details',
     });
-    expect(defaultTagFields([fence('see the docs')])).toEqual({
-      defaultvaluehtml: '<p>see the docs</p>',
-    });
+  });
+
+  it('mixed content is prose, keeping code spans and links', () => {
     expect(defaultTagFields([code('`true`'), txt(' when '), code('`x`'), txt(' is set')])).toEqual({
       defaultvaluehtml: '<p><code>true</code> when <code>x</code> is set</p>',
+    });
+    expect(defaultTagFields([code('`[]`'), txt(' (empty)')])).toEqual({
+      defaultvaluehtml: '<p><code>[]</code> (empty)</p>',
+    });
+  });
+
+  it('plain text only (jsDocCompatibility.defaultTag off): a token is a value, else prose', () => {
+    expect(defaultTagFields([txt('  42 ')])).toEqual({ defaultvalue: '42' });
+    expect(defaultTagFields([txt('false unless set')])).toEqual({
+      defaultvaluehtml: '<p>false unless set</p>',
+    });
+    expect(defaultTagFields([txt('the directory\nfrom which node started')])).toEqual({
+      defaultvaluehtml: '<p>the directory\nfrom which node started</p>',
     });
   });
 
