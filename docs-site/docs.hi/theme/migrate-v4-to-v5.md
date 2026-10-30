@@ -41,9 +41,11 @@ v4 theme options को **`opts.theme_opts.*`** के नीचे nest कर�
 
 <step label="Check compatibility">
 
-v5 को **JSDoc ≥ 4** और **Node ≥ 20** चाहिए। `plugins/markdown` plugin अब theme के
-लिए ज़रूरी नहीं है (v5 Markdown को ख़ुद render करता है), हालाँकि उसे रखना हानिरहित
-है। फ़िलहाल v4 पर रहना पसंद करेंगे? `"clean-jsdoc-theme": "^4"` pin करें — v5
+v5 को **JSDoc ≥ 4** और **Node ≥ 20** चाहिए। `plugins/markdown` plugin को अपनी
+`plugins` list में रखें — v5 को यह अब भी **ज़रूरी** है (JSDoc इसी से comment के
+Markdown को theme तक पहुँचने से पहले render करता है), और इसके न होने पर build एक
+error के साथ रुक जाता है। फ़िलहाल v4 पर रहना पसंद करेंगे?
+`"clean-jsdoc-theme": "^4"` pin करें — v5
 prereleases npm `next` tag के नीचे publish होते हैं, इसलिए `^4` उन्हें नहीं खींचेगा।
 
 </step>

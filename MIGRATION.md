@@ -35,7 +35,7 @@ companion (`migration-map.json` at the repo root, plus the fenced JSON block in
 | JSDoc (peer dep) | `>=3.x <=4.x`                                         | `>=4.x`                                       |
 | Node             | not pinned                                            | `>=20` (repo `engines.node`)                  |
 | Package manager  | npm/yarn                                              | any (theme is published to npm)               |
-| Markdown plugin  | `plugins/markdown` recommended (`idInHeadings: true`) | not required (built-in markdown rendering)    |
+| Markdown plugin  | `plugins/markdown` recommended (`idInHeadings: true`) | required — the build stops without it         |
 | Custom CSS/JS    | supported (injection options)                         | not supported (see [§6](#6-removed-features)) |
 
 Source: v4 peer dep from `git show v4.3.2:package.json`
@@ -181,7 +181,8 @@ Notes on the diff:
 - `search: true` dropped (always on). `footer` is supported again — an inline
   HTML string or `{ file }` (here it stays the same string). `include_css`
   → `customCssFile` (and `create_style` → `customCss` for inline CSS).
-- `plugins: ["plugins/markdown"]` no longer required for the theme.
+- `plugins: ["plugins/markdown"]` stays — v5 requires it (the build stops with an
+  error without it).
 
 ## 6. Behavioral / breaking changes
 

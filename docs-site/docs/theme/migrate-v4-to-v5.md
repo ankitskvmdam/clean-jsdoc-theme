@@ -40,9 +40,10 @@ drop the rest, then optionally adopt v5's new features.
 
 <step label="Check compatibility">
 
-v5 needs **JSDoc ≥ 4** and **Node ≥ 20**. The `plugins/markdown` plugin is no
-longer required by the theme (v5 renders Markdown itself), though keeping it is
-harmless. Prefer to stay on v4 for now? Pin `"clean-jsdoc-theme": "^4"` — v5
+v5 needs **JSDoc ≥ 4** and **Node ≥ 20**. Keep the `plugins/markdown` plugin in
+your `plugins` list — v5 still **requires** it (JSDoc uses it to render comment
+Markdown before the theme sees it) and stops the build with an error if it's
+missing. Prefer to stay on v4 for now? Pin `"clean-jsdoc-theme": "^4"` — v5
 prereleases publish under the npm `next` tag, so `^4` won't pull them.
 
 </step>
