@@ -1036,12 +1036,13 @@ cleanJsdocTheme: { defaultLocale: "en" }
 ### `strict`
 
 option की समस्याओं पर build विफल करें। default रूप से उन्हें report किया जाता है
-और build उस option के बिना चलता रहता है। `strict: true` के साथ इनमें से कोई भी
-build को कुछ भी लिखने से पहले रोक देता है, और process non-zero के साथ exit करता
-है:
+और build उस option के बिना चलता रहता है। `strict: true` के साथ कोई भी option
+warning या error build को कुछ भी लिखने से पहले रोक देता है, और process non-zero
+के साथ exit करता है — उदाहरण के लिए:
 
-- ग़लत-वर्तनी वाली या अनजान key — TypeDoc में `cleanJsdocTheme` की कोई भी अनजान
-  key;
+- ग़लत-वर्तनी वाली key। TypeDoc में `cleanJsdocTheme` की कोई भी अनजान key गिनी
+  जाती है; JSDoc में सिर्फ़ किसी theme option नाम से मिलते-जुलते नाम पकड़े जाते
+  हैं, क्योंकि बाकी अनजान keys JSDoc के साझा `opts` namespace की होती हैं;
 - ऐसा font जो Google Fonts पर नहीं है;
 - अनुपयोगी `siteUrl`, जिसमें sub-path वाला पर बिना `basePath` का `siteUrl` भी
   शामिल है (वह path हर URL से छूट जाता)। TypeDoc में यह site URL के रूप में
