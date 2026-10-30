@@ -64,7 +64,8 @@ function isOwnHidden(d: TDoclet, includePrivate: boolean): boolean {
  * `constructor` comment into the class doclet, so `/** @private *\/ constructor`
  * makes the whole class read `access: 'private'` (see {@link ctorOnlyPrivate}).
  * Its page and public members are kept; the copy that replaces the doclet drops
- * the borrowed `access` and hides the Constructor section instead.
+ * everything merged in from the constructor comment and hides the Constructor
+ * section instead.
  *
  * A longname is hidden only when EVERY documented doclet for it is hidden, so a
  * private overload never takes a public one down with it. Undocumented doclets
@@ -78,7 +79,7 @@ export function pruneHiddenDoclets(
 ): TJSDocSaltyCollection<TDoclet> {
   const includePrivate = options.includePrivate ?? false;
   const all = collection().get();
-  const ctorOnly = includePrivate ? new Set<TDoclet>() : ctorOnlyPrivate(all);
+  const ctorOnly = includePrivate ? new Map<TDoclet, CtorOnlyPrivate>() : ctorOnlyPrivate(all);
   const hiddenSelf = (d: TDoclet) => isOwnHidden(d, includePrivate) && !ctorOnly.has(d);
   // Nothing to hide or rewrite → hand back the input untouched.
   if (ctorOnly.size === 0 && !all.some(hiddenSelf)) return collection;
@@ -116,54 +117,101 @@ export function pruneHiddenDoclets(
       if (d.undocumented && d.longname && hidden.has(d.longname)) return false;
       return !underHidden(d);
     })
-    .map((d) => (ctorOnly.has(d) ? withoutPrivateConstructor(d) : d));
+    .map((d) => {
+      const records = ctorOnly.get(d);
+      return records ? withoutPrivateConstructor(d, records) : d;
+    });
   return salty.taffy<TDoclet>(kept);
+}
+
+/** `meta.code.type` of the record JSDoc makes for a class comment. */
+const CLASS_CODE_TYPES = new Set(['ClassDeclaration', 'ClassExpression']);
+
+/** The records a constructor-only-private class is rebuilt from. */
+interface CtorOnlyPrivate {
+  /** The record holding the constructor comment's own tags. */
+  ctor: TDoclet;
+  /** The record holding the class comment's own tags, if JSDoc emitted one. */
+  cls?: TDoclet;
 }
 
 /**
  * Documented class doclets whose `access: 'private'` came from a `@private`
- * ES6 constructor, not from the class comment. JSDoc's `-X` output for
- * `/** Foo. *\/ class Foo { /** @private *\/ constructor() {} }` is:
- * - `Foo` (documented): `access: 'private'`, `classdesc` from the class comment;
- * - `Foo#Foo` (undocumented `kind: 'class'`, the constructor record): `access: 'private'`;
- * - `Foo` (undocumented `kind: 'class'`, the class-comment record): NO `access`.
+ * ES6 constructor, not from the class comment. For
+ * `/** Foo. *\/ class Foo { /** @private *\/ constructor() {} }`, JSDoc 4
+ * emits (besides the merged, documented `Foo` that reads `access: 'private'`):
+ * - the constructor-comment record: undocumented `kind: 'class'`,
+ *   `meta.code.type: 'MethodDefinition'`, `access: 'private'`, longname `Foo`
+ *   — or `Foo#Foo` when the class is `export`ed;
+ * - the class-comment record(s): undocumented `kind: 'class'`,
+ *   `meta.code.type` `ClassDeclaration`/`ClassExpression`, which carry
+ *   `access: 'private'` only when the class comment itself says `@private`.
  *
- * When the class comment itself says `@private`, that last record carries
- * `access: 'private'` too — so that record is what tells the two apart.
+ * So a private `MethodDefinition` record plus no private class-comment record
+ * means only the constructor is private. Holds for exported, plain, subclass,
+ * class-expression and CommonJS (`module.exports = Foo`) classes alike. An ES5
+ * `@class`/`@constructor` function has no `MethodDefinition` record, so a
+ * `@private` one stays hidden.
  */
-function ctorOnlyPrivate(all: readonly TDoclet[]): Set<TDoclet> {
-  const privateUndocumentedClasses = new Set<string>();
+function ctorOnlyPrivate(all: readonly TDoclet[]): Map<TDoclet, CtorOnlyPrivate> {
+  const privateCtors = new Map<string, TDoclet>();
+  const classRecords = new Map<string, TDoclet[]>();
   for (const d of all) {
-    if (d.undocumented && d.kind === 'class' && d.access === 'private' && d.longname) {
-      privateUndocumentedClasses.add(d.longname);
+    if (!d.undocumented || d.kind !== 'class' || !d.longname) continue;
+    const codeType = d.meta?.code?.type;
+    if (codeType === 'MethodDefinition' && d.access === 'private') {
+      privateCtors.set(d.longname, d);
+    } else if (codeType && CLASS_CODE_TYPES.has(codeType)) {
+      const list = classRecords.get(d.longname) ?? [];
+      list.push(d);
+      classRecords.set(d.longname, list);
     }
   }
-  const out = new Set<TDoclet>();
+  const out = new Map<TDoclet, CtorOnlyPrivate>();
+  if (privateCtors.size === 0) return out;
   for (const d of all) {
-    if (d.undocumented || d.kind !== 'class' || d.access !== 'private') continue;
-    if (!d.longname || !d.name) continue;
-    if (!privateUndocumentedClasses.has(`${d.longname}#${d.name}`)) continue;
-    if (privateUndocumentedClasses.has(d.longname)) continue; // the class itself is private
-    out.add(d);
+    if (d.undocumented || d.kind !== 'class' || d.access !== 'private' || !d.longname) continue;
+    const ctor =
+      privateCtors.get(d.longname) ??
+      (d.name ? privateCtors.get(`${d.longname}#${d.name}`) : undefined);
+    if (!ctor) continue;
+    const records = classRecords.get(d.longname) ?? [];
+    if (records.some((r) => r.access === 'private')) continue; // the class itself is private
+    out.set(d, { ctor, cls: records.find((r) => r.classdesc !== undefined) ?? records[0] });
   }
   return out;
 }
 
+/** Fields that identify the merged doclet rather than come from either comment. */
+const IDENTITY_KEYS = new Set([
+  'longname',
+  'name',
+  'kind',
+  'meta',
+  'undocumented',
+  '___id',
+  '___s',
+]);
+
 /**
- * A shallow copy of a class doclet whose constructor is private: drop the
- * borrowed `access` (the class is public), hide the Constructor section via
- * `hideconstructor`, and drop the constructor's own `params` and `description`
- * (JSDoc puts the constructor comment in `description`; the class comment is in
- * `classdesc`, and the body's `classdesc ?? description` fallback would
- * otherwise show the private text on a class with no comment of its own). The
- * input doclet is not mutated.
+ * A copy of a class doclet whose constructor is private, with everything JSDoc
+ * merged in from the constructor comment taken back out: every field the
+ * constructor record carries reverts to the class-comment record's value, or
+ * is dropped when the class comment has none. That covers `access`, `params`,
+ * `description` (the constructor text), and any other tag on the constructor
+ * (`@since`, `@see`, `@throws`, `@example`, `@deprecated`, …), so none of the
+ * private constructor's comment surfaces on the public class page.
+ * `hideconstructor` hides the Constructor section. The input is not mutated.
  */
-function withoutPrivateConstructor(d: TDoclet): TDoclet {
-  const copy: TDoclet = { ...d, hideconstructor: true };
-  delete copy.access;
-  delete copy.params;
-  delete copy.description;
-  return copy;
+function withoutPrivateConstructor(d: TDoclet, { ctor, cls }: CtorOnlyPrivate): TDoclet {
+  const copy: Record<string, unknown> = { ...d, hideconstructor: true };
+  const classFields = (cls ?? {}) as Record<string, unknown>;
+  for (const key of Object.keys(ctor)) {
+    if (IDENTITY_KEYS.has(key)) continue;
+    if (key in classFields) copy[key] = classFields[key];
+    else delete copy[key];
+  }
+  return copy as TDoclet;
 }
 
 /**

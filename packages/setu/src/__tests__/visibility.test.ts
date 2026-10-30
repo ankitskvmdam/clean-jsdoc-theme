@@ -229,44 +229,67 @@ describe('generateSite — a @private ES6 constructor (real JSDoc output)', () =
   const page = (m: ReturnType<typeof generateSite>, slug: string) =>
     m.pages.find((p) => p.slug === slug);
 
-  it('keeps the class and its public members, hides only the constructor', () => {
-    const m = site();
-    const foo = page(m, 'foo')!.body;
-    expect(navSlugs(m.nav)).toContain('foo');
-    expect(foo).toContain('Foo class desc.');
-    expect(foo).toContain('name="bar"');
-    // The constructor's privacy is not the class's: no class-level badge…
-    expect(foo).not.toContain('**Modifiers:** `private`');
-    // …and the constructor section (signature, private description, params) is gone.
-    expect(foo).not.toContain('## Constructor');
-    expect(foo).not.toContain('Ctor desc.');
-    expect(foo).not.toContain('the x');
+  // Every class shape whose ONLY private part is its constructor: exported
+  // (`Exp#Exp` ctor record), plain and subclass (ctor record longname = class),
+  // class expression, CommonJS class in a module.
+  it.each([
+    ['exp', 'Exported class desc.', 'pub', 'Exp ctor.'],
+    ['ctorpriv', 'Plain class desc.', 'm', 'Plain ctor.'],
+    ['subpriv', 'Sub desc.', 's', 'Sub ctor.'],
+    ['exprcls', 'Expr desc.', 'e', 'Expr ctor.'],
+    ['module/cjsmod/cjscls', 'Cjs class desc.', 'c', 'Cjs ctor.'],
+  ])(
+    '%s: keeps the class + public members, hides only the constructor',
+    (slug, desc, member, ctor) => {
+      const m = site();
+      const body = page(m, slug)!.body;
+      expect(navSlugs(m.nav)).toContain(slug);
+      expect(body).toContain(desc);
+      expect(body).toContain(`name="${member}"`);
+      expect(body).not.toContain('**Modifiers:** `private`');
+      expect(body).not.toContain('## Constructor');
+      expect(body).not.toContain(ctor);
+    }
+  );
+
+  it('none of the private constructor comment leaks onto the class page', () => {
+    const body = page(site(), 'exp')!.body;
+    // `@since` / `@see` / `@param` on the constructor comment.
+    expect(body).not.toContain('9.9.9');
+    expect(body).not.toContain('SecretSee');
+    expect(body).not.toContain('the x');
     // Control: a genuinely private method on the same class stays hidden.
-    expect(foo).not.toContain('name="baz"');
+    expect(body).not.toContain('name="hid"');
   });
 
-  it('control: a class whose own comment is @private is still hidden', () => {
+  it('the CommonJS module page lists the kept class', () => {
+    expect(page(site(), 'module/cjsmod')!.body).toContain('CjsCls');
+  });
+
+  it('controls: a @private class comment, or an ES5 @class/@constructor, stays hidden', () => {
     const m = site();
-    for (const slug of ['sec', 'both']) {
+    for (const slug of ['sec', 'both', 'es5priv', 'es5ctor']) {
       expect(page(m, slug)).toBeUndefined();
       expect(navSlugs(m.nav)).not.toContain(slug);
     }
   });
 
   it('includePrivate shows the constructor again (unchanged from before)', () => {
-    const foo = page(site({ includePrivate: true }), 'foo')!.body;
-    expect(foo).toContain('## Constructor');
-    expect(foo).toContain('Ctor desc.');
-    expect(foo).toContain('name="baz"');
+    const body = page(site({ includePrivate: true }), 'exp')!.body;
+    expect(body).toContain('## Constructor');
+    expect(body).toContain('Exp ctor.');
+    expect(body).toContain('9.9.9');
+    expect(body).toContain('name="hid"');
   });
 
   it('does not mutate the input doclets', () => {
     const c = makeCollection(PRIVATE_CTOR_DOCLETS);
     generateSite(c);
-    const foo = c({ longname: 'Foo', kind: 'class' })
+    const exp = c({ longname: 'Exp', kind: 'class' })
       .get()
       .find((d) => !d.undocumented)!;
-    expect(foo.access).toBe('private');
-    expect(foo.hideconstructor).toBeUndefined();
+    expect(exp.access).toBe('private');
+    expect(exp.since).toBe('9.9.9');
+    expect(exp.hideconstructor).toBeUndefined();
   });
 });

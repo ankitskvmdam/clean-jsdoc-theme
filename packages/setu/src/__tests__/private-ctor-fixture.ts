@@ -1,34 +1,84 @@
 /**
- * Real JSDoc 4 `-X` output (meta trimmed, `comment` dropped) for the source
- * below (`*∕` stands for a comment close):
+ * Real JSDoc 4.0.5 `-X` output (meta trimmed, `comment` dropped) for the two
+ * source files below — `a.js`, then `cjs.js` from `/** @module cjsmod *∕` on
+ * (`*∕` stands for a comment close):
  *
- * /** Foo class desc. *∕
- * export class Foo {
+ * /** Exported class desc. *∕
+ * export class Exp {
  *   /**
- *    * Ctor desc.
+ *    * Exp ctor.
  *    * @private
+ *    * @since 9.9.9
+ *    * @see SecretSee
  *    * @param {number} x the x
  *    *∕
  *   constructor(x) {}
  *   /** Public method. *∕
- *   bar() {}
+ *   pub() {}
  *   /**
  *    * Private method.
  *    * @private
  *    *∕
- *   baz() {}
+ *   hid() {}
+ * }
+ *
+ * /** Plain class desc. *∕
+ * class CtorPriv {
+ *   /**
+ *    * Plain ctor.
+ *    * @private
+ *    *∕
+ *   constructor() {}
+ *   /** m *∕
+ *   m() {}
+ * }
+ *
+ * /** Sub desc. *∕
+ * class SubPriv extends CtorPriv {
+ *   /**
+ *    * Sub ctor.
+ *    * @private
+ *    *∕
+ *   constructor() { super(); }
+ *   /** s *∕
+ *   s() {}
  * }
  *
  * /**
  *  * Secret class.
  *  * @private
  *  *∕
- * export class Sec {
+ * class Sec {
  *   /** ctor *∕
  *   constructor() {}
  *   /** m *∕
  *   m() {}
  * }
+ *
+ * /**
+ *  * ES5 private class.
+ *  * @class
+ *  * @private
+ *  *∕
+ * function Es5Priv() {}
+ *
+ * /**
+ *  * ES5 private ctor.
+ *  * @constructor
+ *  * @private
+ *  *∕
+ * function Es5Ctor() {}
+ *
+ * /** Expr desc. *∕
+ * const ExprCls = class {
+ *   /**
+ *    * Expr ctor.
+ *    * @private
+ *    *∕
+ *   constructor() {}
+ *   /** e *∕
+ *   e() {}
+ * };
  *
  * /**
  *  * Both private.
@@ -37,19 +87,22 @@
  * export class Both {
  *   /** @private *∕
  *   constructor() {}
- *   /** m *∕
- *   m() {}
+ *   /** b *∕
+ *   b() {}
  * }
+ * /** @module cjsmod *∕
  *
- * export class NoComment {
+ * /** Cjs class desc. *∕
+ * class CjsCls {
  *   /**
- *    * Only the constructor is documented.
+ *    * Cjs ctor.
  *    * @private
  *    *∕
  *   constructor() {}
- *   /** Public n. *∕
- *   n() {}
+ *   /** c *∕
+ *   c() {}
  * }
+ * module.exports = CjsCls;
  */
 export const PRIVATE_CTOR_DOCLETS: unknown[] = [
   {
@@ -59,13 +112,13 @@ export const PRIVATE_CTOR_DOCLETS: unknown[] = [
       columnno: 0,
       path: '/src',
       code: {
-        name: 'exports.Foo',
+        name: 'exports.Exp',
         type: 'ClassDeclaration',
       },
     },
-    classdesc: '<p>Foo class desc.</p>',
-    name: 'Foo',
-    longname: 'Foo',
+    classdesc: '<p>Exported class desc.</p>',
+    name: 'Exp',
+    longname: 'Exp',
     kind: 'class',
     scope: 'global',
     undocumented: true,
@@ -77,75 +130,16 @@ export const PRIVATE_CTOR_DOCLETS: unknown[] = [
       columnno: 7,
       path: '/src',
       code: {
-        name: 'Foo',
+        name: 'Exp',
         type: 'ClassDeclaration',
         paramnames: ['x'],
       },
     },
     undocumented: true,
-    name: 'Foo',
-    longname: 'Foo',
+    name: 'Exp',
+    longname: 'Exp',
     kind: 'class',
     scope: 'global',
-  },
-  {
-    meta: {
-      filename: 'c.js',
-      lineno: 8,
-      columnno: 2,
-      path: '/src',
-      code: {
-        name: 'exports.Foo',
-        type: 'MethodDefinition',
-        paramnames: ['x'],
-      },
-    },
-    description: '<p>Ctor desc.</p>',
-    access: 'private',
-    params: [
-      {
-        type: {
-          names: ['number'],
-        },
-        description: '<p>the x</p>',
-        name: 'x',
-      },
-    ],
-    name: 'Foo',
-    longname: 'Foo#Foo',
-    kind: 'class',
-    memberof: 'Foo',
-    scope: 'instance',
-    undocumented: true,
-  },
-  {
-    meta: {
-      filename: 'c.js',
-      lineno: 2,
-      columnno: 0,
-      path: '/src',
-      code: {
-        name: 'exports.Foo',
-        type: 'ClassDeclaration',
-      },
-    },
-    name: 'Foo',
-    longname: 'Foo',
-    kind: 'class',
-    classdesc: '<p>Foo class desc.</p>',
-    scope: 'global',
-    description: '<p>Ctor desc.</p>',
-    access: 'private',
-    memberof: 'Foo',
-    params: [
-      {
-        type: {
-          names: ['number'],
-        },
-        description: '<p>the x</p>',
-        name: 'x',
-      },
-    ],
   },
   {
     meta: {
@@ -154,55 +148,118 @@ export const PRIVATE_CTOR_DOCLETS: unknown[] = [
       columnno: 2,
       path: '/src',
       code: {
-        name: 'Foo#bar',
+        name: 'exports.Exp',
+        type: 'MethodDefinition',
+        paramnames: ['x'],
+      },
+    },
+    description: '<p>Exp ctor.</p>',
+    access: 'private',
+    since: '9.9.9',
+    see: ['SecretSee'],
+    params: [
+      {
+        type: {
+          names: ['number'],
+        },
+        description: '<p>the x</p>',
+        name: 'x',
+      },
+    ],
+    name: 'Exp',
+    longname: 'Exp#Exp',
+    kind: 'class',
+    memberof: 'Exp',
+    scope: 'instance',
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'c.js',
+      lineno: 2,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'exports.Exp',
+        type: 'ClassDeclaration',
+      },
+    },
+    name: 'Exp',
+    longname: 'Exp',
+    kind: 'class',
+    classdesc: '<p>Exported class desc.</p>',
+    scope: 'global',
+    description: '<p>Exp ctor.</p>',
+    access: 'private',
+    since: '9.9.9',
+    see: ['SecretSee'],
+    memberof: 'Exp',
+    params: [
+      {
+        type: {
+          names: ['number'],
+        },
+        description: '<p>the x</p>',
+        name: 'x',
+      },
+    ],
+  },
+  {
+    meta: {
+      filename: 'c.js',
+      lineno: 12,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'Exp#pub',
         type: 'MethodDefinition',
         paramnames: [],
       },
     },
     description: '<p>Public method.</p>',
-    name: 'bar',
-    longname: 'Foo#bar',
+    name: 'pub',
+    longname: 'Exp#pub',
     kind: 'function',
-    memberof: 'Foo',
+    memberof: 'Exp',
     scope: 'instance',
     params: [],
   },
   {
     meta: {
       filename: 'c.js',
-      lineno: 15,
+      lineno: 17,
       columnno: 2,
       path: '/src',
       code: {
-        name: 'Foo#baz',
+        name: 'Exp#hid',
         type: 'MethodDefinition',
         paramnames: [],
       },
     },
     description: '<p>Private method.</p>',
     access: 'private',
-    name: 'baz',
-    longname: 'Foo#baz',
+    name: 'hid',
+    longname: 'Exp#hid',
     kind: 'function',
-    memberof: 'Foo',
+    memberof: 'Exp',
     scope: 'instance',
     params: [],
   },
   {
     meta: {
       filename: 'c.js',
-      lineno: 22,
+      lineno: 21,
       columnno: 0,
       path: '/src',
       code: {
-        name: 'exports.Sec',
+        name: 'CtorPriv',
         type: 'ClassDeclaration',
+        paramnames: [],
       },
     },
-    classdesc: '<p>Secret class.</p>',
-    access: 'private',
-    name: 'Sec',
-    longname: 'Sec',
+    classdesc: '<p>Plain class desc.</p>',
+    name: 'CtorPriv',
+    longname: 'CtorPriv',
     kind: 'class',
     scope: 'global',
     undocumented: true,
@@ -210,8 +267,149 @@ export const PRIVATE_CTOR_DOCLETS: unknown[] = [
   {
     meta: {
       filename: 'c.js',
-      lineno: 22,
-      columnno: 7,
+      lineno: 26,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'CtorPriv',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>Plain ctor.</p>',
+    access: 'private',
+    name: 'CtorPriv',
+    longname: 'CtorPriv',
+    kind: 'class',
+    scope: 'global',
+    params: [],
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'c.js',
+      lineno: 21,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'CtorPriv',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    name: 'CtorPriv',
+    longname: 'CtorPriv',
+    kind: 'class',
+    classdesc: '<p>Plain class desc.</p>',
+    scope: 'global',
+    description: '<p>Plain ctor.</p>',
+    access: 'private',
+  },
+  {
+    meta: {
+      filename: 'c.js',
+      lineno: 28,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'CtorPriv#m',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>m</p>',
+    name: 'm',
+    longname: 'CtorPriv#m',
+    kind: 'function',
+    memberof: 'CtorPriv',
+    scope: 'instance',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'c.js',
+      lineno: 32,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'SubPriv',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    classdesc: '<p>Sub desc.</p>',
+    name: 'SubPriv',
+    longname: 'SubPriv',
+    kind: 'class',
+    scope: 'global',
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'c.js',
+      lineno: 37,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'SubPriv',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>Sub ctor.</p>',
+    access: 'private',
+    name: 'SubPriv',
+    longname: 'SubPriv',
+    kind: 'class',
+    scope: 'global',
+    params: [],
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'c.js',
+      lineno: 32,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'SubPriv',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    name: 'SubPriv',
+    longname: 'SubPriv',
+    kind: 'class',
+    classdesc: '<p>Sub desc.</p>',
+    scope: 'global',
+    description: '<p>Sub ctor.</p>',
+    access: 'private',
+  },
+  {
+    meta: {
+      filename: 'c.js',
+      lineno: 39,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'SubPriv#s',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>s</p>',
+    name: 's',
+    longname: 'SubPriv#s',
+    kind: 'function',
+    memberof: 'SubPriv',
+    scope: 'instance',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'c.js',
+      lineno: 46,
+      columnno: 0,
       path: '/src',
       code: {
         name: 'Sec',
@@ -219,42 +417,44 @@ export const PRIVATE_CTOR_DOCLETS: unknown[] = [
         paramnames: [],
       },
     },
-    undocumented: true,
+    classdesc: '<p>Secret class.</p>',
+    access: 'private',
     name: 'Sec',
     longname: 'Sec',
     kind: 'class',
     scope: 'global',
+    undocumented: true,
   },
   {
     meta: {
       filename: 'c.js',
-      lineno: 24,
+      lineno: 48,
       columnno: 2,
       path: '/src',
       code: {
-        name: 'exports.Sec',
+        name: 'Sec',
         type: 'MethodDefinition',
         paramnames: [],
       },
     },
     description: '<p>ctor</p>',
     name: 'Sec',
-    longname: 'Sec#Sec',
+    longname: 'Sec',
     kind: 'class',
-    memberof: 'Sec',
-    scope: 'instance',
+    scope: 'global',
     params: [],
     undocumented: true,
   },
   {
     meta: {
       filename: 'c.js',
-      lineno: 22,
+      lineno: 46,
       columnno: 0,
       path: '/src',
       code: {
-        name: 'exports.Sec',
+        name: 'Sec',
         type: 'ClassDeclaration',
+        paramnames: [],
       },
     },
     name: 'Sec',
@@ -264,12 +464,11 @@ export const PRIVATE_CTOR_DOCLETS: unknown[] = [
     access: 'private',
     scope: 'global',
     description: '<p>ctor</p>',
-    memberof: 'Sec',
   },
   {
     meta: {
       filename: 'c.js',
-      lineno: 26,
+      lineno: 50,
       columnno: 2,
       path: '/src',
       code: {
@@ -289,7 +488,126 @@ export const PRIVATE_CTOR_DOCLETS: unknown[] = [
   {
     meta: {
       filename: 'c.js',
-      lineno: 33,
+      lineno: 58,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Es5Priv',
+        type: 'FunctionDeclaration',
+        paramnames: [],
+      },
+    },
+    description: '<p>ES5 private class.</p>',
+    kind: 'class',
+    access: 'private',
+    name: 'Es5Priv',
+    longname: 'Es5Priv',
+    scope: 'global',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'c.js',
+      lineno: 65,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Es5Ctor',
+        type: 'FunctionDeclaration',
+        paramnames: [],
+      },
+    },
+    description: '<p>ES5 private ctor.</p>',
+    kind: 'class',
+    access: 'private',
+    name: 'Es5Ctor',
+    longname: 'Es5Ctor',
+    scope: 'global',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'c.js',
+      lineno: 68,
+      columnno: 6,
+      path: '/src',
+      code: {
+        name: 'ExprCls',
+        type: 'ClassExpression',
+      },
+    },
+    classdesc: '<p>Expr desc.</p>',
+    name: 'ExprCls',
+    longname: 'ExprCls',
+    kind: 'class',
+    scope: 'global',
+    params: [],
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'c.js',
+      lineno: 73,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'ExprCls',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>Expr ctor.</p>',
+    access: 'private',
+    name: 'ExprCls',
+    longname: 'ExprCls',
+    kind: 'class',
+    scope: 'global',
+    params: [],
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'c.js',
+      lineno: 68,
+      columnno: 6,
+      path: '/src',
+      code: {
+        name: 'ExprCls',
+        type: 'ClassExpression',
+      },
+    },
+    name: 'ExprCls',
+    longname: 'ExprCls',
+    kind: 'class',
+    classdesc: '<p>Expr desc.</p>',
+    scope: 'global',
+    description: '<p>Expr ctor.</p>',
+    access: 'private',
+  },
+  {
+    meta: {
+      filename: 'c.js',
+      lineno: 75,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'ExprCls#e',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>e</p>',
+    name: 'e',
+    longname: 'ExprCls#e',
+    kind: 'function',
+    memberof: 'ExprCls',
+    scope: 'instance',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'c.js',
+      lineno: 82,
       columnno: 0,
       path: '/src',
       code: {
@@ -308,7 +626,7 @@ export const PRIVATE_CTOR_DOCLETS: unknown[] = [
   {
     meta: {
       filename: 'c.js',
-      lineno: 33,
+      lineno: 82,
       columnno: 7,
       path: '/src',
       code: {
@@ -326,7 +644,7 @@ export const PRIVATE_CTOR_DOCLETS: unknown[] = [
   {
     meta: {
       filename: 'c.js',
-      lineno: 35,
+      lineno: 84,
       columnno: 2,
       path: '/src',
       code: {
@@ -347,7 +665,7 @@ export const PRIVATE_CTOR_DOCLETS: unknown[] = [
   {
     meta: {
       filename: 'c.js',
-      lineno: 33,
+      lineno: 82,
       columnno: 0,
       path: '/src',
       code: {
@@ -366,18 +684,18 @@ export const PRIVATE_CTOR_DOCLETS: unknown[] = [
   {
     meta: {
       filename: 'c.js',
-      lineno: 37,
+      lineno: 86,
       columnno: 2,
       path: '/src',
       code: {
-        name: 'Both#m',
+        name: 'Both#b',
         type: 'MethodDefinition',
         paramnames: [],
       },
     },
-    description: '<p>m</p>',
-    name: 'm',
-    longname: 'Both#m',
+    description: '<p>b</p>',
+    name: 'b',
+    longname: 'Both#b',
     kind: 'function',
     memberof: 'Both',
     scope: 'instance',
@@ -386,77 +704,113 @@ export const PRIVATE_CTOR_DOCLETS: unknown[] = [
   {
     meta: {
       filename: 'c.js',
-      lineno: 40,
+      lineno: 1,
+      columnno: 0,
+      path: '/src',
+      code: {},
+    },
+    kind: 'module',
+    name: 'cjsmod',
+    longname: 'module:cjsmod',
+  },
+  {
+    meta: {
+      filename: 'c.js',
+      lineno: 4,
       columnno: 0,
       path: '/src',
       code: {
-        name: 'exports.NoComment',
-        type: 'ClassDeclaration',
-      },
-    },
-    undocumented: true,
-    name: 'NoComment',
-    longname: 'NoComment',
-    kind: 'class',
-    scope: 'global',
-  },
-  {
-    meta: {
-      filename: 'c.js',
-      lineno: 40,
-      columnno: 7,
-      path: '/src',
-      code: {
-        name: 'NoComment',
+        name: 'CjsCls',
         type: 'ClassDeclaration',
         paramnames: [],
       },
     },
-    undocumented: true,
-    name: 'NoComment',
-    longname: 'NoComment',
+    classdesc: '<p>Cjs class desc.</p>',
+    name: 'CjsCls',
+    longname: 'module:cjsmod~CjsCls',
     kind: 'class',
-    scope: 'global',
+    scope: 'inner',
+    memberof: 'module:cjsmod',
+    undocumented: true,
   },
   {
     meta: {
       filename: 'c.js',
-      lineno: 45,
+      lineno: 9,
       columnno: 2,
       path: '/src',
       code: {
-        name: 'exports.NoComment',
+        name: 'CjsCls',
         type: 'MethodDefinition',
         paramnames: [],
       },
     },
-    description: '<p>Only the constructor is documented.</p>',
+    description: '<p>Cjs ctor.</p>',
     access: 'private',
-    name: 'NoComment',
-    longname: 'NoComment#NoComment',
+    name: 'CjsCls',
+    longname: 'module:cjsmod~CjsCls',
     kind: 'class',
-    memberof: 'NoComment',
+    memberof: 'module:cjsmod',
+    scope: 'inner',
+    params: [],
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'c.js',
+      lineno: 4,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'CjsCls',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    name: 'CjsCls',
+    longname: 'module:cjsmod~CjsCls',
+    kind: 'class',
+    classdesc: '<p>Cjs class desc.</p>',
+    scope: 'inner',
+    memberof: 'module:cjsmod',
+    description: '<p>Cjs ctor.</p>',
+    access: 'private',
+  },
+  {
+    meta: {
+      filename: 'c.js',
+      lineno: 11,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'CjsCls#c',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>c</p>',
+    name: 'c',
+    longname: 'module:cjsmod~CjsCls#c',
+    kind: 'function',
+    memberof: 'module:cjsmod~CjsCls',
     scope: 'instance',
     params: [],
   },
   {
     meta: {
       filename: 'c.js',
-      lineno: 47,
-      columnno: 2,
+      lineno: 13,
+      columnno: 0,
       path: '/src',
       code: {
-        name: 'NoComment#n',
-        type: 'MethodDefinition',
+        name: 'module.exports',
+        type: 'Identifier',
         paramnames: [],
       },
     },
-    description: '<p>Public n.</p>',
-    name: 'n',
-    longname: 'NoComment#n',
-    kind: 'function',
-    memberof: 'NoComment',
-    scope: 'instance',
-    params: [],
+    undocumented: true,
+    name: 'module:cjsmod',
+    longname: 'module:cjsmod',
+    kind: 'member',
   },
 ];
