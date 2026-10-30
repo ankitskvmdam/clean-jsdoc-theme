@@ -96,6 +96,8 @@ utils/src/
 │   ├── site-name.ts      # SiteName (text | logo set) + siteNameText/resolveSiteLogo
 │   ├── islands.ts        # IslandName union + IslandPropsMap
 │   ├── slug-rules.ts     # slugifyHeading, slugifyPath, slugifySourcePath  (setu AND dwar)
+│   ├── markdown-scan.ts  # fencedCodeRanges + htmlCommentRanges: code-aware comment
+│   │                     #   extents (setu's splitters AND dwar's comment pre-pass)
 │   ├── collapsible.ts    # collapsibleSidebarSections resolver (build-time →
 │   │                     #   manifest.collapsibleGroups; boolean | string[])
 │   └── index.ts          # barrel — the setu↔dwar boundary
@@ -325,7 +327,11 @@ setu/src/
     ├── link-tags.ts      # resolveLinkTags: rewrite {@link}/{@linkcode}/
     │                     #   {@linkplain} text nodes → anchors (skips code spans)
     └── from-html.ts      # HTML / Markdown → structured mdast (the MDX-safe
-                          #   normalization shared by README + tutorials)
+                          #   normalization shared by README + tutorials; HTML
+                          #   comments are dropped from the hast, an unterminated
+                          #   `<!--` is escaped so it can't hide the rest of the
+                          #   fragment, and the container / playground-fence
+                          #   splitters skip commented-out text)
 docs/                     # architecture.md, how-jsdoc-works.md, …
 ```
 
@@ -488,7 +494,13 @@ dwar/src/
 │                         #   remark-gfm for tables/strikethrough/task-lists,
 │                         #   + rehype slug pass giving headings ids that mirror
 │                         #   setu's TOC exactly — slugifyHeading + per-page registry).
-│                         #   Pre-pass: {@link} → code spans + escapeEsmLookalikes (a
+│                         #   Pre-pass: stripHtmlComments (MDX has no `<!-- -->`
+│                         #   syntax; safety net — setu already drops them —
+│                         #   prose comments are dropped, code keeps them,
+│                         #   an unterminated opener becomes literal text; extent
+│                         #   from utils' code-aware htmlCommentRanges, shared
+│                         #   with setu)
+│                         #   + {@link} → code spans + escapeEsmLookalikes (a
 │                         #   prose line starting `import `/`export ` would be read
 │                         #   as ESM — its first letter becomes a char ref, #347)
 │                         #   + escapeStrayBraces (literal

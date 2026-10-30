@@ -483,6 +483,21 @@ describe('generateSite', () => {
     warn.mockRestore();
   });
 
+  it('keeps HTML comment text out of the frontmatter description', () => {
+    const collection = makeCollection([
+      {
+        kind: 'namespace',
+        name: 'Widget',
+        longname: 'Widget',
+        scope: 'global',
+        comment: '/** ns */',
+        description: '<p>Before <!-- <tabs><tab>HIDDEN</tab></tabs> a > b --> after.</p>',
+      },
+    ]);
+    const page = generateSite(collection).pages.find((p) => p.slug === 'widget');
+    expect(page?.frontmatter.description).toBe('Before after.');
+  });
+
   it('headings on at least one page are non-empty with slug-cased ids', () => {
     const manifest = generateSite(getJSDocTaffyData());
     const pageWithHeadings = manifest.pages.find((p) => (p.headings?.length ?? 0) > 0);

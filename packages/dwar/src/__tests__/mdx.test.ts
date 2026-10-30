@@ -6,6 +6,7 @@ import {
   findStrayBackticks,
   preprocessJsdocInlineTags,
   signatureParamRanges,
+  stripHtmlComments,
 } from '../mdx';
 
 describe('signatureParamRanges', () => {
@@ -334,5 +335,177 @@ describe('escapeEsmLookalikes (issue #347)', () => {
     expect(escapeStrayBraces(escapeEsmLookalikes(src))).toBe(
       '&#x69;mport these functions to your own project. Pass \\{opts\\}.\n'
     );
+  });
+});
+
+// MDX has no HTML-comment syntax: `<!--` reads as a JSX tag whose name starts
+// with `!`, so one comment anywhere in prose (a README badge block, an
+// all-contributors marker, a note in a doc comment) aborted the whole page.
+// The pre-pass drops comments from prose and leaves code alone.
+describe('stripHtmlComments', () => {
+  it('drops a comment on its own line, leaving the line blank', () => {
+    expect(stripHtmlComments('# Tutorial\n\n<!-- a comment -->\n\nimport it.\n')).toBe(
+      '# Tutorial\n\n\n\nimport it.\n'
+    );
+  });
+
+  it('drops a comment in the middle of a sentence (the doc-comment repro)', () => {
+    expect(
+      stripHtmlComments('HTML comment in a description <!-- internal note -->should not break.\n')
+    ).toBe('HTML comment in a description should not break.\n');
+  });
+
+  it('drops a comment directly adjacent to text on both sides', () => {
+    expect(stripHtmlComments('before<!--x-->after\n')).toBe('beforeafter\n');
+  });
+
+  it('drops several comments on one line', () => {
+    expect(stripHtmlComments('a <!-- x --> b <!-- y --> c <!--z-->\n')).toBe('a  b  c \n');
+  });
+
+  it('drops a multi-line comment, including one that spans a blank line', () => {
+    expect(stripHtmlComments('a\n\n<!--\nline one\n\nline two\n-->\n\nb\n')).toBe('a\n\n\n\nb\n');
+  });
+
+  it('drops all-contributors style START/END marker pairs but keeps what they wrap', () => {
+    const src = [
+      '<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->',
+      '<!-- prettier-ignore-start -->',
+      '',
+      '| Contributor |',
+      '| - |',
+      '| x |',
+      '',
+      '<!-- prettier-ignore-end -->',
+      '<!-- ALL-CONTRIBUTORS-LIST:END -->',
+      '',
+    ].join('\n');
+    const out = stripHtmlComments(src);
+    expect(out).not.toContain('<!--');
+    expect(out).toContain('| Contributor |\n| - |\n| x |');
+  });
+
+  it('drops a comment inside an HTML block (README `<p align="center">` header)', () => {
+    const src = '<p align="center">\n  <!-- logo -->\n  <img src="logo.png" />\n</p>\n';
+    expect(stripHtmlComments(src)).toBe('<p align="center">\n  \n  <img src="logo.png" />\n</p>\n');
+  });
+
+  it('drops a comment that is the first body line after the frontmatter, keeping the frontmatter', () => {
+    const fm = '---\ntitle: Home\nnote: "<!-- not a comment, YAML -->"\n---\n';
+    expect(stripHtmlComments(`${fm}<!-- badges -->\n[![npm](x.svg)](y)\n`)).toBe(
+      `${fm}\n[![npm](x.svg)](y)\n`
+    );
+  });
+
+  it('drops the CommonMark empty forms <!----> , <!--> and <!--->', () => {
+    expect(stripHtmlComments('a<!---->b <!-->c <!--->d\n')).toBe('ab c d\n');
+  });
+
+  it('ends a comment at the first -->', () => {
+    expect(stripHtmlComments('<!-- a --> shown <!-- b -->\n')).toBe(' shown \n');
+  });
+
+  it('leaves comments inside fenced code blocks verbatim', () => {
+    const src = '```html\n<!-- keep me -->\n<p>x</p>\n```\n\n~~~md\n<!-- and me -->\n~~~\n';
+    expect(stripHtmlComments(src)).toBe(src);
+  });
+
+  it('leaves comments inside inline code spans verbatim, even across a line break', () => {
+    const src = 'Write `<!-- x -->` or ``<!--\ny -->`` to hide text.\n';
+    expect(stripHtmlComments(src)).toBe(src);
+  });
+
+  it('leaves a comment inside an MDX JSX attribute alone', () => {
+    const src = '<Signature code="html(): \'<!-- x -->\'" />\n';
+    expect(stripHtmlComments(src)).toBe(src);
+  });
+
+  it('leaves a backslash-escaped opener alone (it is literal text already)', () => {
+    const src = 'Type \\<!-- to open a comment.\n';
+    expect(stripHtmlComments(src)).toBe(src);
+  });
+
+  it('escapes an unterminated <!-- instead of swallowing the rest of the page', () => {
+    expect(stripHtmlComments('a <!-- oops\n\n## Later\n\nstill here\n')).toBe(
+      'a \\<!-- oops\n\n## Later\n\nstill here\n'
+    );
+  });
+
+  it('pairs an opener with the first --> (HTML semantics), escaping only a trailing unterminated one', () => {
+    expect(stripHtmlComments('<!-- a --> b <!-- c\n')).toBe(' b \\<!-- c\n');
+  });
+
+  it('leaves a --> with no opener alone (> is not special to MDX)', () => {
+    const src = 'a --> b\n';
+    expect(stripHtmlComments(src)).toBe(src);
+  });
+
+  it('leaves a body without comments byte-identical', () => {
+    const src = '# Page\n\nSome <b>bold</b> text, `code`, and a -> b.\n';
+    expect(stripHtmlComments(src)).toBe(src);
+  });
+
+  it('runs before the ESM pass, so a line exposed by a dropped comment is still neutralized', () => {
+    const out = escapeEsmLookalikes(stripHtmlComments('<!-- note -->import it first.\n'));
+    expect(out).toBe('&#x69;mport it first.\n');
+  });
+
+  it('hides a backtick inside a comment from findStrayBackticks', () => {
+    expect(findStrayBackticks('text <!-- use `foo here -->\n\nmore\n')).toEqual([]);
+  });
+
+  it('still reports a stray backtick outside a comment', () => {
+    expect(findStrayBackticks('<!-- note -->\n\nPass `x to it.\n')).toHaveLength(1);
+  });
+
+  it('keeps a comment shown inside a ```` fence that wraps ``` lines (setu emits these)', () => {
+    const src = 'Intro\n\n````md\n```html\n<!-- kept -->\n```\n````\n';
+    expect(stripHtmlComments(src)).toBe(src);
+  });
+
+  it('keeps code/prose parity after a fence holding an odd number of ``` lines', () => {
+    const src = '````md\n```js\n````\n\nText <!-- c --> after.\n\n```js\n<!-- x -->\n```\n';
+    expect(stripHtmlComments(src)).toBe(
+      '````md\n```js\n````\n\nText  after.\n\n```js\n<!-- x -->\n```\n'
+    );
+  });
+
+  it('keeps a comment that is part of a link destination or title', () => {
+    const src = '[a](http://x/<!--y-->z) and ![a](x.png "t <!-- c --> d")\n';
+    expect(stripHtmlComments(src)).toBe(src);
+  });
+
+  it('drops a comment after escaped brackets (no link, so nothing protects it)', () => {
+    expect(stripHtmlComments('\\[a\\](http://x/<!--y-->z) more\n')).toBe(
+      '\\[a\\](http://x/z) more\n'
+    );
+  });
+
+  it('does not open a fence on a lone fence line inside a comment block', () => {
+    expect(stripHtmlComments('<!--\n```js\n-->\n\nText <!-- c --> after.\n')).toBe(
+      '\n\nText  after.\n'
+    );
+  });
+
+  it('ends a fence opened in a blockquote with the quote', () => {
+    expect(stripHtmlComments('> ```\n> code\n\nText <!-- c --> after.\n\n```js\nx\n```\n')).toBe(
+      '> ```\n> code\n\nText  after.\n\n```js\nx\n```\n'
+    );
+  });
+
+  it('does not let an inline comment run across a heading', () => {
+    expect(stripHtmlComments('text <!-- a\n# Heading\n-->\n')).toBe(
+      'text \\<!-- a\n# Heading\n-->\n'
+    );
+  });
+
+  it('does not let an unterminated inline opener swallow a following fence', () => {
+    const src = 'a <!-- b\n\n```html\n<!-- x -->\n```\n\nafter\n';
+    expect(stripHtmlComments(src)).toBe('a \\<!-- b\n\n```html\n<!-- x -->\n```\n\nafter\n');
+  });
+
+  it('drops a line-starting comment that wraps a whole section, code block included', () => {
+    const src = 'Keep.\n\n<!--\n## Old\n\n```js\nold();\n```\n-->\n\nAlso keep.\n';
+    expect(stripHtmlComments(src)).toBe('Keep.\n\n\n\nAlso keep.\n');
   });
 });

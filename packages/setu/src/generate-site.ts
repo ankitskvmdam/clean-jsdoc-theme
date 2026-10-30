@@ -217,9 +217,15 @@ export function extractHeadings(tree: Root): Heading[] {
   return out;
 }
 
-/** Strip HTML tags from a string and collapse whitespace; cheap, not a parser. */
+/**
+ * Strip HTML tags from a string and collapse whitespace; cheap, not a parser.
+ * Comments go first and whole: their text never renders, and one can hold tags
+ * or a `>` that would leave part of it behind (the excerpt feeds `<meta
+ * name="description">` and search).
+ */
 function stripHtml(html: string): string {
   return html
+    .replace(/<!--(?:-?>|[\s\S]*?-->)/g, ' ')
     .replace(/<[^>]+>/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();

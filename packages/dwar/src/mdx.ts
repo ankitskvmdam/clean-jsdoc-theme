@@ -15,7 +15,7 @@ import remarkFrontmatter from 'remark-frontmatter';
 import remarkGfm from 'remark-gfm';
 import { bundledLanguagesInfo, createHighlighter } from 'shiki';
 import type { SignatureHighlighter } from '@clean-jsdoc-theme/rang';
-import { slugifyHeading } from '@clean-jsdoc-theme/utils';
+import { htmlCommentRanges, rangeContaining, slugifyHeading } from '@clean-jsdoc-theme/utils';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyComponent = ComponentType<any>;
@@ -218,6 +218,52 @@ export function escapeEsmLookalikes(source: string): string {
   return prefix + escaped;
 }
 
+/**
+ * Remove HTML comments (`<!-- … -->`) from prose. MDX has no HTML-comment
+ * syntax — its JSX tokenizer sees `<` + `!`, rejects it ("Unexpected character
+ * `!` … to create a comment in MDX, use `{/* text *\/}`") and the whole page is
+ * skipped. Comments are everywhere in real Markdown — README badge blocks,
+ * all-contributors `START`/`END` markers, notes left in tutorials and doc
+ * comments — and a single one loses the page (a README one loses the site's
+ * home page). setu drops comments while lowering prose (its `dropComments`),
+ * so this pass is the safety net for any body that still holds one.
+ *
+ * The comment is dropped rather than translated to an MDX `{/* *\/}` comment:
+ * it renders to nothing either way, and dropping needs no escaping of a `*\/`
+ * inside it. A comment that occupies a whole line leaves that line blank, which
+ * splits the surrounding paragraph exactly as CommonMark's HTML block would.
+ *
+ * What counts as a comment is decided by the shared, code-aware
+ * `htmlCommentRanges` (utils), the same scanner setu uses: fenced code blocks
+ * (line-anchored, closed only by a long-enough run of the same character),
+ * inline code spans, MDX JSX tags, link/image destinations and titles, a
+ * backslash-escaped `\<!--` and the YAML frontmatter are left untouched — an
+ * `<!-- -->` in an HTML `@example` stays code. A comment that starts a line
+ * runs to the first `-->` even across code blocks (commenting out a section);
+ * one inside a paragraph cannot cross a line that ends the paragraph.
+ *
+ * An opener with no valid `-->` is not a comment: it becomes `\<!--`, so it
+ * renders as the literal text the author typed and the rest of the page stays
+ * visible (a browser would hide everything after it). A stray `-->` needs
+ * nothing — `>` is not special to MDX. The `.md` companion is written from the
+ * original body, so it keeps any comment this pass dropped; the search index
+ * drops them too (see `extractSearchText`).
+ */
+export function stripHtmlComments(source: string): string {
+  // Keep leading YAML frontmatter verbatim.
+  const fm = /^---\n[\s\S]*?\n---\n/.exec(source);
+  const prefix = fm ? fm[0] : '';
+  const body = fm ? source.slice(fm[0].length) : source;
+
+  let out = prefix;
+  let cursor = 0;
+  for (const c of htmlCommentRanges(body)) {
+    out += body.slice(cursor, c.start) + (c.closed ? '' : '\\<!--');
+    cursor = c.end;
+  }
+  return out + body.slice(cursor);
+}
+
 /** A backtick run that opened no inline-code span — i.e. an unbalanced backtick. */
 export interface StrayBacktick {
   /** 1-based source line of the stray backtick run. */
@@ -235,13 +281,18 @@ export interface StrayBacktick {
  * `` `code` `` span is almost always an authoring slip, so the bridge surfaces
  * them as a non-fatal warning. Mirrors `escapeStrayBraces`' tokenizer: fenced
  * code blocks and YAML frontmatter are skipped (their backticks are legitimate),
- * balanced spans are consumed, and whatever backtick run is left over is stray.
+ * balanced spans are consumed, and whatever backtick run is left over is stray —
+ * unless it sits inside an HTML comment, which {@link stripHtmlComments} drops
+ * before compile, so it never renders.
  * Positions are 1-based, against the same `source` the `.md`/snippets use.
  */
 export function findStrayBackticks(source: string): StrayBacktick[] {
   const out: StrayBacktick[] = [];
   // Skip leading YAML frontmatter (backticks there aren't MDX inline code).
   const fm = /^---\n[\s\S]*?\n---\n/.exec(source);
+  const bodyStart = fm ? fm[0].length : 0;
+  const comments = htmlCommentRanges(source.slice(bodyStart)).filter((c) => c.closed);
+  const inComment = (i: number): boolean => rangeContaining(comments, i - bodyStart) !== undefined;
   // Fenced block | balanced inline span (group 3 = its ticks) | leftover run
   // (group 4). A delimiter run is bounded by `(?<![`\\])…(?!`)`: it closes only on
   // a maximal run of exactly N (a longer run inside a span, e.g. ``` in
@@ -249,10 +300,11 @@ export function findStrayBackticks(source: string): StrayBacktick[] {
   // (`\``, a literal backtick) — both match CommonMark, avoiding false strays.
   const re =
     /(```[\s\S]*?```|~~~[\s\S]*?~~~)|(?<![`\\])((`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`))|(?<![`\\])(`+)/g;
-  re.lastIndex = fm ? fm[0].length : 0;
+  re.lastIndex = bodyStart;
   let m: RegExpExecArray | null;
   while ((m = re.exec(source)) !== null) {
     if (m[4] === undefined) continue; // only the leftover (stray) backtick run
+    if (inComment(m.index)) continue; // never rendered
     const idx = m.index;
     const lastNl = source.lastIndexOf('\n', idx - 1);
     const line = source.slice(0, idx).split('\n').length;
@@ -328,12 +380,17 @@ export async function compileMdxToComponent(
   shiki: ShikiThemes,
   langs: readonly string[]
 ): Promise<CompiledMdx> {
-  // Pre-passes, in order: `{@tag}` → code spans (so the braces that follow are
-  // protected), ESM look-alike prose lines → character references (issue #347),
-  // then stray-brace escaping. The ESM pass runs before the brace pass only so
-  // each sees the same code-span boundaries; neither produces input for the
-  // other.
-  const cleaned = escapeStrayBraces(escapeEsmLookalikes(preprocessJsdocInlineTags(source)));
+  // Pre-passes, in order: HTML comments dropped, `{@tag}` → code spans (so the
+  // braces that follow are protected), ESM look-alike prose lines → character
+  // references (issue #347), then stray-brace escaping. Comments go first so no
+  // later pass sees their (unrendered) contents — a backtick inside one can't
+  // pair with a real code span — and so a line left starting with
+  // `import`/`export` by a dropped leading comment is still neutralized. The
+  // ESM pass runs before the brace pass only so each sees the same code-span
+  // boundaries; neither produces input for the other.
+  const cleaned = escapeStrayBraces(
+    escapeEsmLookalikes(preprocessJsdocInlineTags(stripHtmlComments(source)))
+  );
   // The MDX `evaluate` runtime types target the React jsx-runtime signature;
   // Preact's runtime is shape-compatible at runtime but the structural types
   // diverge enough that we use `unknown` plus a cast at the call site.
