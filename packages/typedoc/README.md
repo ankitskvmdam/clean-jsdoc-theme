@@ -25,8 +25,8 @@ project, powered by TypeDoc.
 </div>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/ankitskvmdam/clean-jsdoc-theme/master/packages/clean-jsdoc-theme/media/screenshot.png" width="49%" alt="clean-jsdoc-theme — light theme" />
-  <img src="https://raw.githubusercontent.com/ankitskvmdam/clean-jsdoc-theme/master/packages/clean-jsdoc-theme/media/screenshot-dark.png" width="49%" alt="clean-jsdoc-theme — dark theme" />
+  <img src="https://raw.githubusercontent.com/ankitskvmdam/clean-jsdoc-theme/master/packages/typedoc/media/screenshot.png" width="49%" alt="@clean-jsdoc-theme/typedoc — light theme" />
+  <img src="https://raw.githubusercontent.com/ankitskvmdam/clean-jsdoc-theme/master/packages/typedoc/media/screenshot-dark.png" width="49%" alt="@clean-jsdoc-theme/typedoc — dark theme" />
 </p>
 
 A TypeDoc plugin that turns your project's reflections into a fast, modern static
