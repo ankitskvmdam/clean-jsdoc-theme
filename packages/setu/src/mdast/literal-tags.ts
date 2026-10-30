@@ -15,8 +15,9 @@
  * The rule, per tag, by the name as written:
  * - a lowercase HTML or custom element (`<kbd>`, `<br>`, `<my-widget>`) is
  *   markup — unless it is glued to a preceding word with no attributes, no
- *   closer and isn't void: `Promise<object>`, `Array<title>` are type arguments,
- *   `foo<br>` is still a line break;
+ *   closer, and is neither void nor one whose closer HTML lets you omit:
+ *   `Promise<object>`, `Array<title>` are type arguments, `foo<br>` is still a
+ *   line break and `<li>a<li>b` still two items;
  * - an ALL-CAPS element name of two or more letters is markup (`<BR>`,
  *   `<TABLE>`, `<DIV>`), under the same glued-word exception (`Array<DATA>`,
  *   `Promise<OBJECT>` are type arguments; `x<BR>y` is a line break);
@@ -252,6 +253,28 @@ const BLOCK_BOUNDARIES = new Set<string>([
  */
 const IMPLICITLY_CLOSED = new Set<string>(['dd', 'dt', 'li', 'p', 'td', 'th', 'tr']);
 
+/**
+ * Elements whose closing tag HTML lets authors omit (`<li>a<li>b`,
+ * `<td>a<td>b`), so "glued, no closer" is ordinary markup for them, never a type
+ * argument. `p` is the deliberate exception: `Array<p>` reads as a type name.
+ */
+const OPTIONAL_CLOSER = new Set<string>([
+  'colgroup',
+  'dd',
+  'dt',
+  'li',
+  'optgroup',
+  'option',
+  'rp',
+  'rt',
+  'tbody',
+  'td',
+  'tfoot',
+  'th',
+  'thead',
+  'tr',
+]);
+
 /** A blank line: a block boundary in Markdown-derived input. */
 const BLANK_LINE = /\n[ \t]*\n/;
 
@@ -394,7 +417,12 @@ function isMarkupOpenTag(tag: Tag): boolean {
   if (THEME_CONTAINERS.has(lower)) return name === lower;
   if (!HTML_ELEMENTS.has(lower) && !CUSTOM_ELEMENT.test(lower)) return false;
   // Glued to a word with nothing that only markup has: `Promise<object>`, `Array<DATA>`.
-  const typeArgument = glued && !hasAttributes && !hasCloser && !VOID_ELEMENTS.has(lower);
+  const typeArgument =
+    glued &&
+    !hasAttributes &&
+    !hasCloser &&
+    !VOID_ELEMENTS.has(lower) &&
+    !OPTIONAL_CLOSER.has(lower);
   if (name === lower) return !typeArgument;
   if (name === name.toUpperCase())
     return name.length > 1 ? !typeArgument : hasAttributes || hasCloser;
