@@ -12,6 +12,7 @@ import {
 } from './generate-site';
 import { getContainerView, mergeContainerViews, type ContainerView } from './class-view';
 import {
+  HOME_PAGE_LABEL,
   resolveCollapsibleSections,
   slugifyPath,
   topLevelSectionLabels,
@@ -388,8 +389,12 @@ export function generateSite(collection: unknown, opts?: GenerateSiteOptions): S
       if (page.slug === '' || claimedSlugs.has(page.slug)) {
         droppedSlugs.add(page.slug);
         // Non-fatal: skip deterministically and warn (the bridge surfaces logs).
+        // An empty slug would print as `slug ""`; name the page by its title and
+        // say it shadows the home page instead.
         console.warn(
-          `[setu] skipping doc page: slug "${page.slug}" collides with an existing page`
+          page.slug === ''
+            ? `[setu] skipping doc page "${page.frontmatter.title}": its slug is empty, which would shadow the ${HOME_PAGE_LABEL}`
+            : `[setu] skipping doc page: slug "${page.slug}" collides with an existing page`
         );
         continue;
       }

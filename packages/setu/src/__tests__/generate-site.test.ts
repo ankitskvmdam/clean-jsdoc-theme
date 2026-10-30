@@ -585,9 +585,26 @@ describe('generateSite — docs', () => {
     // No nav entry for the skipped doc.
     expect(manifest.nav.some((n) => n.slug === 'global' && n.group !== 'Globals')).toBe(false);
     // Warned, did not throw; all slugs remain unique.
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining('skipping doc page'));
+    expect(warn).toHaveBeenCalledWith(
+      '[setu] skipping doc page: slug "global" collides with an existing page'
+    );
     const slugs = manifest.pages.map((p) => p.slug);
     expect(new Set(slugs).size).toBe(slugs.length);
+    warn.mockRestore();
+  });
+
+  it('names a doc whose slug is empty by its title, not `slug ""`', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    // `!!!` slugifies to '' (the home slug) but is not the root index.md.
+    generateSite(getJSDocTaffyData(), {
+      docs: [{ path: '!!!', title: 'Bangs', content: '# Bangs', type: 'markdown' }],
+    });
+    const messages = warn.mock.calls.map((c) => String(c[0]));
+    const skip = messages.find((m) => m.includes('skipping doc page'));
+    expect(skip).toBe(
+      '[setu] skipping doc page "Bangs": its slug is empty, which would shadow the (home page)'
+    );
+    expect(messages.some((m) => m.includes('slug ""'))).toBe(false);
     warn.mockRestore();
   });
 
