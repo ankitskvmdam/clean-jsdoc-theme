@@ -217,8 +217,10 @@ Each entry: **what changed → why → migration action.**
   ensure JSDoc `>=4` and Node `>=22`.
 - **Strict vs resilient validation.** Why: v5 validates opts and prints
   diagnostics; by default it warns and continues so a bad font/typo never breaks
-  a build. Action: set `opts.strict: true` if you want validation errors to fail
-  the build.
+  a build. Leftover v4 options (a `theme_opts` block, top-level names like
+  `base_url`) always warn, with a hint naming the v5 replacement. Action: set
+  `opts.strict: true` if you want validation errors — including those v4-option
+  findings — to fail the build.
 
 ## 7. Removed features
 

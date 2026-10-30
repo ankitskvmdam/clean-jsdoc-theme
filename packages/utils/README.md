@@ -88,7 +88,9 @@ import {
 - `validateThemeOpts(input)` → `{ value, diagnostics }` — normalizes + validates
   the theme options (zod schemas, a live Google-Font existence check, unknown-key
   "did you mean?" suggestions). The bridges call this early; a bad font/typo only
-  warns unless `strict` escalates it.
+  warns unless `strict` escalates it. With `checkV4Options` (the JSDoc bridge) it
+  also flags leftover v4 options — a `theme_opts` block, names like `base_url` —
+  with a hint from `V4_OPTION_MAP`, the code copy of `migration-map.json`.
 - `formatBuildReport(input)` — the Next.js-style per-route size table (gzip sizer
   injected, so this module stays browser-safe).
 - `DiagnosticBag` / `formatDiagnostics` — the diagnostics spine reused by setu,

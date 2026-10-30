@@ -19,6 +19,7 @@ import { validateLlmsTxt } from './llms-txt';
 import { validateSiteName } from './site-name';
 import { validateSiteUrl } from './site-url';
 import { suggestKey } from './suggest';
+import { checkV4Options, v4OptionKeys } from './v4-options';
 
 /** How `validateThemeOpts` treats keys not in {@link THEME_OPT_KEYS}. */
 export type UnknownKeyPolicy = 'suggest-typos' | 'warn-all' | 'ignore';
@@ -44,6 +45,18 @@ export interface ValidateThemeOptsInput {
    * own `destination`/`template`/…). Never flagged, regardless of policy.
    */
   knownNonThemeKeys?: ReadonlySet<string>;
+  /**
+   * Flag leftover v4 options (an `opts.theme_opts` block, top-level v4 names
+   * like `base_url`) with a migration hint, regardless of `unknownKeyPolicy`.
+   * For the JSDoc bridge, whose users may come from v4; the TypeDoc plugin never
+   * had v4 options, so it leaves this off. Default `false`.
+   */
+  checkV4Options?: boolean;
+  /**
+   * Strict mode. Reports the v4 findings above as errors instead of warnings,
+   * so a strict build fails on them. Default `false`.
+   */
+  strict?: boolean;
 }
 
 /**
@@ -134,7 +147,17 @@ export async function validateThemeOpts(
   const siteUrl = validateSiteUrl(opts.siteUrl, opts.basePath, diagnostics);
   const llmsTxt = validateLlmsTxt(opts.llmsTxt, siteUrl, diagnostics);
 
-  checkUnknownKeys(opts, diagnostics, policy, knownNonThemeKeys);
+  if (input.checkV4Options) {
+    const themeKeys = new Set<string>(THEME_OPT_KEYS);
+    checkV4Options(opts, diagnostics, themeKeys, input.strict ? 'error' : 'warning');
+    // Already reported with a migration hint — keep the unknown-key pass from
+    // adding a second, vaguer diagnostic for the same key.
+    const handled = v4OptionKeys(themeKeys);
+    for (const key of knownNonThemeKeys) handled.add(key);
+    checkUnknownKeys(opts, diagnostics, policy, handled);
+  } else {
+    checkUnknownKeys(opts, diagnostics, policy, knownNonThemeKeys);
+  }
 
   return { value: { siteName, fonts, locales, siteUrl, llmsTxt }, diagnostics };
 }

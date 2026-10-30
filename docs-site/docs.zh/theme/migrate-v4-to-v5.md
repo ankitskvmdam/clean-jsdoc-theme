@@ -77,10 +77,11 @@ npx jsdoc -c jsdoc.json
 npx serve <destination>   # islands 与搜索索引是 fetch 来的，所以需要 HTTP
 ```
 
-对于任何遗留的 `theme_opts` 键或 v4 选项名，v5 会**发出警告**（并附带
-“did you mean?” 提示）并继续构建——请阅读输出并修正它标记的内容。在迁移期间，
-可设置 [`strict: true`](/theme/configuration#strict) 将这些警告变为硬错误，
-之后再放宽。
+对于遗留的 v4 选项，v5 会**发出警告**并继续构建：`theme_opts` 块（以及其中每个键
+各一条警告），以及任何不是 v5 选项的顶层 v4 选项名（`base_url`、`homepageTitle`
+等）。每条警告的提示会给出 v5 中的替代选项，或说明该选项已被移除——请阅读输出并
+修正它标记的内容。在迁移期间，可设置 [`strict: true`](/theme/configuration#strict)
+将这些警告变为会中止构建的错误，之后再放宽。
 
 </step>
 

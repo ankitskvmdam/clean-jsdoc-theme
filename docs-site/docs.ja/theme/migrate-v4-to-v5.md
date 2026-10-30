@@ -82,10 +82,13 @@ npx jsdoc -c jsdoc.json
 npx serve <destination>   # islands と search index は fetch されるため HTTP が必要
 ```
 
-v5 は、残っている `theme_opts` key や v4 の option 名に対して **警告** を出し
-（「もしかして?」のヒント付き）、build を続行します — 出力を読み、指摘されたものを
-修正してください。移行中はそれらの警告を厳格な errors に変えるために
-[`strict: true`](/theme/configuration#strict) を設定し、終わったら緩めてください。
+v5 は残っている v4 の options に対して **警告** を出し、build を続行します:
+`theme_opts` block（さらにその中の key ごとに 1 件の警告）と、v5 の option ではない
+top-level の v4 option 名（`base_url`、`homepageTitle` など）です。各警告のヒントは
+v5 での代わりの option を示すか、その option が削除されたことを伝えます — 出力を
+読み、指摘されたものを修正してください。移行中はそれらの警告を build を止める
+errors に変えるために [`strict: true`](/theme/configuration#strict) を設定し、
+終わったら緩めてください。
 
 </step>
 

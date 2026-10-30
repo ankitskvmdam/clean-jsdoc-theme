@@ -2122,7 +2122,16 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   // sees problems first. The Google-Font check is the one networked piece, kept
   // behind an injectable resolver in utils; it's fail-open, so an offline build
   // never breaks on it. Unknown keys get typo suggestions (`suggest-typos`),
-  // never blanket warnings — JSDoc's own opts share this flat namespace.
+  // never blanket warnings — JSDoc's own opts share this flat namespace. Leftover
+  // v4 options (`theme_opts`, `base_url`, …) are the exception: they're known to
+  // be ours, so they always warn with a migration hint (errors under strict).
+  //
+  // Strict mode: `opts.strict` (or nested `templates.default.strict`). When on
+  // AND there are errors, log + throw to fail the build. Otherwise (the
+  // resilient default) log and continue — a bad font/typo never breaks a build.
+  const strict =
+    opts.strict === true ||
+    (opts.templates as { default?: { strict?: unknown } } | undefined)?.default?.strict === true;
   const fontResolver = createGoogleFontResolver();
   const { value, diagnostics } = await progress.stage('Validating options', () =>
     validateThemeOpts({
@@ -2130,15 +2139,10 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
       fontResolver,
       unknownKeyPolicy: 'suggest-typos',
       knownNonThemeKeys: JSDOC_OWN_OPTS,
+      checkV4Options: true,
+      strict,
     })
   );
-
-  // Strict mode: `opts.strict` (or nested `templates.default.strict`). When on
-  // AND there are errors, log + throw to fail the build. Otherwise (the
-  // resilient default) log and continue — a bad font/typo never breaks a build.
-  const strict =
-    opts.strict === true ||
-    (opts.templates as { default?: { strict?: unknown } } | undefined)?.default?.strict === true;
 
   if (diagnostics.list.length > 0) {
     const formatted = formatDiagnostics(diagnostics, { color });
