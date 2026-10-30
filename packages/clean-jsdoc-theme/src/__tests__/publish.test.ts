@@ -23,6 +23,7 @@ import {
   reportBuildFailure,
   resolveCustomAssets,
   resolveFooter,
+  shouldRecapOptionWarnings,
 } from '../publish';
 
 describe('overlayDocs (per-locale docs overlay)', () => {
@@ -121,6 +122,13 @@ describe('publish failure handling', () => {
     } finally {
       resetExitCode();
     }
+  });
+});
+
+describe('shouldRecapOptionWarnings', () => {
+  it('recaps in a normal build, not in a localized (per-locale) one', () => {
+    expect(shouldRecapOptionWarnings(null)).toBe(true);
+    expect(shouldRecapOptionWarnings({ locale: 'fr', destination: 'out/fr' })).toBe(false);
   });
 });
 

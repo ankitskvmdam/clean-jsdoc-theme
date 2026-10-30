@@ -39,6 +39,7 @@ import { ReflectionKind } from 'typedoc';
 import type { Application, DocumentReflection, ProjectReflection } from 'typedoc';
 import {
   createGoogleFontResolver,
+  DiagnosticBag,
   formatBuildReport,
   formatDiagnostics,
   formatRenderError,
@@ -65,6 +66,7 @@ import {
 import { writeOutputFiles } from './write-output-files';
 import {
   JSDOC_ONLY_KEYS,
+  jsdocOnlyKeyMessage,
   KNOWN_NON_THEME_KEYS,
   readThemeOption,
   resolveSiteUrl,
@@ -687,13 +689,12 @@ export async function writeSite(
   // documented for both tools, so they're not typos: warn that they're ignored,
   // added after validation so strict never escalates them — a shared
   // JSDoc+TypeDoc config shouldn't fail its TypeDoc build over them.
-  for (const [key, hint] of JSDOC_ONLY_KEYS) {
+  for (const [key, info] of JSDOC_ONLY_KEYS) {
     if (!Object.hasOwn(block, key)) continue;
-    diagnostics.warning(
-      UNSUPPORTED_IN_TYPEDOC_CODE,
-      `"${key}" isn't supported by the TypeDoc flavor yet; it's ignored.`,
-      { hint, path: key }
-    );
+    diagnostics.warning(UNSUPPORTED_IN_TYPEDOC_CODE, jsdocOnlyKeyMessage(key, info), {
+      hint: info.hint,
+      path: key,
+    });
   }
 
   if (diagnostics.list.length > 0) {
@@ -705,7 +706,15 @@ export async function writeSite(
           '(see the diagnostics above). Fix the errors or unset `strict`.'
       );
     }
-    logger.info(formatted);
+    // Errors and warnings at warn level, so a `logLevel: "Warn"` build still
+    // shows them; advisory infos stay at info. Not `logger.error` for errors:
+    // outside strict they mustn't fail the build, and TypeDoc exits non-zero
+    // on any logged error.
+    const problems = new DiagnosticBag();
+    const notes = new DiagnosticBag();
+    for (const d of diagnostics.list) (d.level === 'info' ? notes : problems).add(d);
+    if (problems.list.length > 0) logger.warn(formatDiagnostics(problems));
+    if (notes.list.length > 0) logger.info(formatDiagnostics(notes));
   }
 
   // Site root prefix so the output can be served from a sub-directory. Bad/empty

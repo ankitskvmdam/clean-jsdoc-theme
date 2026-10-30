@@ -2054,6 +2054,17 @@ interface BuildSpec {
 }
 
 /**
+ * Whether to re-print the option warnings at the end of the build. Not in a
+ * localized build (`buildSpec` set — `clean-jsdoc build` runs one JSDoc process
+ * per locale and streams each one's output): there every locale is a short
+ * build, so the warnings printed at validation are still on screen, and the
+ * recap would show each of them twice per locale. Exported for testing.
+ */
+export function shouldRecapOptionWarnings(buildSpec: unknown): boolean {
+  return buildSpec === null || buildSpec === undefined;
+}
+
+/**
  * Read the localization build spec when `CLEAN_JSDOC_THEME_BUILD` points at one
  * (set by `aadesh build` per locale). When present, the theme stamps the API
  * translations and renders to the spec's `destination`/`basePath` instead of the
@@ -2627,7 +2638,7 @@ async function runPublish(data: unknown, opts: JSDocOpts, tutorials?: unknown): 
   // last thing on screen, so a skipped llms.txt or a font fallback can't go
   // unnoticed by someone who expected that file in the output.
   const optsWarnings = warningsOnly(diagnostics);
-  if (optsWarnings.list.length > 0) {
+  if (optsWarnings.list.length > 0 && shouldRecapOptionWarnings(buildSpec)) {
     console.warn(formatDiagnostics(optsWarnings, { color }));
   }
 
