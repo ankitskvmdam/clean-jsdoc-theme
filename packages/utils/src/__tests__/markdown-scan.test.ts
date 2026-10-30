@@ -122,6 +122,38 @@ describe('htmlCommentRanges', () => {
     expect(htmlCommentRanges(src).map((c) => c.closed)).toEqual([false]);
   });
 
+  it('closes a fence opened in a blockquote when the quote ends', () => {
+    const src = '> ```\n> code\n\nText <!-- c --> after.\n\n```js\nx\n```\n';
+    expect(slices(src, fencedCodeRanges(src))).toEqual(['> ```\n> code', '```js\nx\n```']);
+    expect(closed(src)).toEqual(['<!-- c -->']);
+  });
+
+  // Whether a mid-paragraph comment may run onto the next line is CommonMark's
+  // paragraph-interruption rule (checked against micromark): `true` = the
+  // comment closes on the later line, `false` = the line ends the paragraph
+  // first, so the opener is literal text.
+  it.each([
+    ['an ordered item not starting at 1', 'text <!-- a\n2. b -->\n', true],
+    ['an ordered item starting at 1', 'text <!-- a\n1. b -->\n', false],
+    ['a bullet item', 'text <!-- a\n- b -->\n', false],
+    ['an empty bullet (setext underline)', 'text <!-- a\n-\n-->\n', false],
+    ['a 4-space indented list marker', 'text <!-- a\n    - b -->\n', true],
+    ['a 4-space indented fence line', 'text <!-- a\n    ```\n-->\n', true],
+    ['a setext = underline', 'text <!-- a\n===\nb -->\n', false],
+    ['an HTML block start (kind 6)', 'text <!-- a\n<div>\n-->\n', false],
+    ['an inline tag (kind 7 cannot interrupt)', 'text <!-- a\n<span>\n-->\n', true],
+    ['the line after an ATX heading', '# Head <!-- a\nb -->\n', false],
+    ['list-item continuation text', '- item <!-- a\n  more -->\n', true],
+    ['a lazy quote continuation', '> a <!-- x\nlazy -->\n', true],
+    ['a nested list item in its item', '- a <!-- x\n  - b -->\n', false],
+  ])('a line with %s', (_name, src, isComment) => {
+    expect(htmlCommentRanges(src).map((c) => c.closed)).toEqual([isComment]);
+  });
+
+  it('does not open a fence on a 4-space indented line inside a paragraph', () => {
+    expect(fencedCodeRanges('text\n    ```\nmore\n')).toEqual([]);
+  });
+
   it('lets an inline comment in a quote continue on the next > line', () => {
     expect(closed('> text <!-- a\n> b -->\n')).toEqual(['<!-- a\n> b -->']);
   });

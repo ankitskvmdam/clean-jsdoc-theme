@@ -24,49 +24,115 @@ export interface HtmlCommentRange extends TextRange {
   closed: boolean;
 }
 
-// Up to any number of blockquote markers (`>`), as a line prefix.
-const QUOTE = String.raw`(?:[ \t]*>)*`;
-// One list-item marker plus its following space.
+// Blockquote markers opening a line, each `>` with up to three spaces before
+// it and one optional space after. Its `>` count is the line's quote depth.
+const QUOTE_PREFIX = /^(?:[ \t]{0,3}>[ \t]?)*/;
+// One list-item marker plus its following space(s).
 const LIST_MARKER = String.raw`(?:[-*+]|\d{1,9}[.)])[ \t]+`;
 
-// A fence opener: optional quote markers, indentation and one list marker
-// (fences nest in quotes and list items), then a run of 3+ backticks or tildes.
-// Indentation is not capped at three spaces so a fence inside a list item
-// counts; the price is that a 4-space indented code block holding ``` is read
-// as a fence, which only ever protects more text, never less.
-const FENCE_OPEN_LINE = new RegExp(
-  String.raw`^${QUOTE}[ \t]*(?:${LIST_MARKER})?(\`{3,}|~{3,})(.*)$`
-);
-const FENCE_CLOSE_LINE = new RegExp(String.raw`^${QUOTE}[ \t]*(\`{3,}|~{3,})[ \t]*$`);
+// On a line with its quote prefix removed: a fence opener — indentation and an
+// optional list marker (fences nest in list items), then 3+ backticks or
+// tildes. Outside a paragraph indentation is not capped, so a fence deep in a
+// list item counts; the price is that a 4-space indented code block holding
+// ``` reads as a fence, which only ever protects more text, never less.
+const FENCE_OPEN = new RegExp(String.raw`^[ \t]*(?:${LIST_MARKER})?(\`{3,}|~{3,})(.*)$`);
+const FENCE_CLOSE = /^[ \t]*(`{3,}|~{3,})[ \t]*$/;
+// An HTML-comment block (CommonMark HTML block type 2): `<!--` after nothing
+// but indentation and a list marker. Group 1 is that prefix.
+const COMMENT_BLOCK = new RegExp(String.raw`^([ \t]*(?:${LIST_MARKER})?)<!--`);
 
-// A line that starts an HTML-comment block (CommonMark HTML block type 2):
-// `<!--` after nothing but quote/list markers and indentation. Group 1 is that
-// prefix.
-const COMMENT_BLOCK_LINE = new RegExp(String.raw`^(${QUOTE}[ \t]*(?:${LIST_MARKER})?)<!--`);
-
-// Lines that end a paragraph (so an inline comment can't run past them): blank
-// (also inside a quote), an ATX heading, a thematic break, a list item.
-const HARD_INTERRUPT_LINE = new RegExp(
-  [
-    String.raw`^${QUOTE}[ \t]*$`,
-    String.raw`^${QUOTE}[ \t]{0,3}#{1,6}(?:[ \t]|$)`,
-    String.raw`^${QUOTE}[ \t]{0,3}([-*_])(?:[ \t]*\1){2,}[ \t]*$`,
-    String.raw`^${QUOTE}[ \t]*(?:[-*+]|\d{1,9}[.)])(?:[ \t]|$)`,
-  ].join('|')
+// The rest are tested on a line with its quote prefix AND indentation removed.
+const ATX_HEADING = /^#{1,6}(?:[ \t]|$)/;
+const THEMATIC_BREAK = /^([-*_])(?:[ \t]*\1){2,}[ \t]*$/;
+const SETEXT_UNDERLINE = /^(?:=+|-+)[ \t]*$/;
+// A list item: group 1 the marker, group 2 the spaces after it, group 3 text.
+const LIST_ITEM = /^([-*+]|\d{1,9}[.)])([ \t]+|$)(.*)$/;
+// HTML blocks that may interrupt a paragraph (CommonMark start conditions 1-6;
+// condition 7, any other tag, may not).
+const HTML_BLOCK_START = new RegExp(
+  String.raw`^(?:<(?:script|pre|style|textarea)(?:[ \t>]|$)|<\?|<![A-Za-z]|<!\[CDATA\[|</?(?:` +
+    [
+      'address',
+      'article',
+      'aside',
+      'base',
+      'basefont',
+      'blockquote',
+      'body',
+      'caption',
+      'center',
+      'col',
+      'colgroup',
+      'dd',
+      'details',
+      'dialog',
+      'dir',
+      'div',
+      'dl',
+      'dt',
+      'fieldset',
+      'figcaption',
+      'figure',
+      'footer',
+      'form',
+      'frame',
+      'frameset',
+      'h1',
+      'h2',
+      'h3',
+      'h4',
+      'h5',
+      'h6',
+      'head',
+      'header',
+      'hr',
+      'html',
+      'iframe',
+      'legend',
+      'li',
+      'link',
+      'main',
+      'menu',
+      'menuitem',
+      'nav',
+      'noframes',
+      'ol',
+      'optgroup',
+      'option',
+      'p',
+      'param',
+      'search',
+      'section',
+      'summary',
+      'table',
+      'tbody',
+      'td',
+      'tfoot',
+      'th',
+      'thead',
+      'title',
+      'tr',
+      'track',
+      'ul',
+    ].join('|') +
+    String.raw`)(?:[ \t>]|/>|$))`,
+  'i'
 );
-// A blockquote line ends a paragraph that is NOT itself in a quote (inside a
-// quote, the next `>` line is just the paragraph's continuation).
-const QUOTE_LINE = /^[ \t]{0,3}>/;
+
+/** Column width of a run of spaces/tabs (tabs stop every four columns). */
+function columns(ws: string): number {
+  let n = 0;
+  for (const ch of ws) n = ch === '\t' ? n + 4 - (n % 4) : n + 1;
+  return n;
+}
 
 /** Block-level structure of a source: fences, comment blocks, paragraph breaks. */
 interface BlockScan {
   fences: TextRange[];
   /** Comments that start a line (closed or not), in source order. */
   blockComments: HtmlCommentRange[];
-  /** Sorted start offsets of lines that end any paragraph. */
-  hardBreaks: number[];
-  /** Sorted start offsets of `>` lines (end a paragraph that isn't quoted). */
-  quoteLines: number[];
+  /** Sorted start offsets of lines that end the paragraph before them. */
+  breaks: number[];
 }
 
 /**
@@ -84,19 +150,29 @@ function closerFinder(source: string): (from: number) => number {
 }
 
 /**
- * One ordered pass over the lines, per CommonMark block parsing: a fence opens
- * only outside a comment block, and a comment block (a line starting `<!--`)
- * opens only outside a fence and runs through the line holding its `-->` — so
- * a lone fence line inside a comment is not a fence.
+ * One ordered pass over the lines, per CommonMark block parsing:
+ *   - a fence opens only outside a comment block, and closes on a long-enough
+ *     run of its character — or when the blockquote it opened in ends;
+ *   - a comment block (a line starting `<!--`) opens only outside a fence and
+ *     runs through the line holding its `-->`, so a fence line inside one is
+ *     not a fence;
+ *   - a line ends the paragraph before it (a "break", where an inline comment
+ *     must stop) only if CommonMark lets it interrupt a paragraph: blank, an
+ *     ATX heading, a thematic break or setext underline, a fence, a comment or
+ *     other HTML block of kinds 1-6, a bullet item or an ordered item starting
+ *     at 1 (non-empty), or a deeper blockquote — and never when indented four
+ *     or more columns past the paragraph's own content (that is continuation
+ *     text). A shallower quote depth is a lazy continuation, not a break.
  */
 function scanBlocks(source: string): BlockScan {
   const fences: TextRange[] = [];
   const blockComments: HtmlCommentRange[] = [];
-  const hardBreaks: number[] = [];
-  const quoteLines: number[] = [];
+  const breaks: number[] = [];
   const nextCloser = closerFinder(source);
 
-  let fence: { char: string; len: number; start: number } | undefined;
+  let fence: { char: string; len: number; start: number; depth: number } | undefined;
+  // The open paragraph, if any: its content column and quote depth.
+  let para: { indent: number; depth: number } | undefined;
   let pos = 0;
   while (pos <= source.length) {
     const nl = source.indexOf('\n', pos);
@@ -104,45 +180,108 @@ function scanBlocks(source: string): BlockScan {
     const line = source.slice(pos, lineEnd).replace(/\r$/, '');
     let next = nl === -1 ? source.length + 1 : nl + 1;
 
+    const quote = QUOTE_PREFIX.exec(line)![0];
+    let depth = 0;
+    for (const ch of quote) if (ch === '>') depth++;
+    const body = line.slice(quote.length);
+    const ws = /^[ \t]*/.exec(body)![0];
+    const indent = columns(ws);
+    const rest = body.slice(ws.length);
+
+    // A fence opened inside a blockquote ends with the quote.
+    if (fence && depth < fence.depth) {
+      fences.push({ start: fence.start, end: pos - 1 });
+      fence = undefined;
+    }
+
     if (fence) {
-      const close = FENCE_CLOSE_LINE.exec(line);
+      const close = FENCE_CLOSE.exec(body);
       if (close && close[1][0] === fence.char && close[1].length >= fence.len) {
         fences.push({ start: fence.start, end: lineEnd });
         fence = undefined;
       }
-    } else {
-      const open = FENCE_OPEN_LINE.exec(line);
-      const comment = open ? null : COMMENT_BLOCK_LINE.exec(line);
-      if (open && !(open[1][0] === '`' && open[2].includes('`'))) {
-        fence = { char: open[1][0], len: open[1].length, start: pos };
-        hardBreaks.push(pos);
-      } else if (comment) {
-        hardBreaks.push(pos);
-        const start = pos + comment[1].length;
-        const openEnd = start + 4;
-        const empty = /^-?>/.exec(source.slice(openEnd, openEnd + 2));
-        const closer = empty ? -1 : nextCloser(openEnd);
-        if (empty) {
-          blockComments.push({ start, end: openEnd + empty[0].length, closed: true });
-        } else if (closer === -1) {
-          blockComments.push({ start, end: openEnd, closed: false });
-        } else {
-          blockComments.push({ start, end: closer + 3, closed: true });
-          // The block ends with the line holding `-->`; whatever follows the
-          // closer on that line is left to the inline scan.
-          const closeLineEnd = source.indexOf('\n', closer + 3);
-          next = closeLineEnd === -1 ? source.length + 1 : closeLineEnd + 1;
-        }
-      } else if (HARD_INTERRUPT_LINE.test(line)) {
-        hardBreaks.push(pos);
-      } else if (QUOTE_LINE.test(line)) {
-        quoteLines.push(pos);
+      pos = next;
+      continue;
+    }
+
+    if (rest === '') {
+      breaks.push(pos);
+      para = undefined;
+      pos = next;
+      continue;
+    }
+
+    // Inside a paragraph, indentation counts from the paragraph's content
+    // column (a list item's text); four or more columns past it, or past the
+    // margin when the line is outdented, is plain continuation text.
+    const relIndent = para && indent >= para.indent ? indent - para.indent : indent;
+    if (para && relIndent >= 4) {
+      pos = next;
+      continue;
+    }
+
+    const open = FENCE_OPEN.exec(body);
+    const comment = open ? null : COMMENT_BLOCK.exec(body);
+    const item = LIST_ITEM.exec(rest);
+    if (open && !(open[1][0] === '`' && open[2].includes('`'))) {
+      fence = { char: open[1][0], len: open[1].length, start: pos, depth };
+      breaks.push(pos);
+      para = undefined;
+    } else if (comment) {
+      breaks.push(pos);
+      para = undefined;
+      const start = pos + quote.length + comment[1].length;
+      const openEnd = start + 4;
+      const empty = /^-?>/.exec(source.slice(openEnd, openEnd + 2));
+      const closer = empty ? -1 : nextCloser(openEnd);
+      if (empty) {
+        blockComments.push({ start, end: openEnd + empty[0].length, closed: true });
+      } else if (closer === -1) {
+        blockComments.push({ start, end: openEnd, closed: false });
+      } else {
+        blockComments.push({ start, end: closer + 3, closed: true });
+        // The block ends with the line holding `-->`; whatever follows the
+        // closer on that line is left to the inline scan.
+        const closeLineEnd = source.indexOf('\n', closer + 3);
+        next = closeLineEnd === -1 ? source.length + 1 : closeLineEnd + 1;
       }
+    } else if (
+      ATX_HEADING.test(rest) ||
+      THEMATIC_BREAK.test(rest) ||
+      (para && SETEXT_UNDERLINE.test(rest))
+    ) {
+      // One-line blocks: the next line starts a new block too, so an inline
+      // comment in a heading can't run on into it.
+      breaks.push(pos, next);
+      para = undefined;
+    } else if (HTML_BLOCK_START.test(rest)) {
+      breaks.push(pos);
+      para = undefined;
+    } else if (item) {
+      // Any list item ends a paragraph in another container; within the same
+      // one, only a bullet or `1.`/`1)` item with text may interrupt it.
+      const interrupts =
+        !para ||
+        depth !== para.depth ||
+        (item[3].trim() !== '' && (/^[-*+]$/.test(item[1]) || /^1[.)]$/.test(item[1])));
+      if (interrupts) {
+        breaks.push(pos);
+        para =
+          item[3].trim() === ''
+            ? undefined
+            : { indent: indent + item[1].length + columns(item[2]), depth };
+      }
+    } else if (para && depth > para.depth) {
+      // A deeper blockquote starts here.
+      breaks.push(pos);
+      para = { indent, depth };
+    } else if (!para) {
+      para = { indent, depth };
     }
     pos = next;
   }
   if (fence) fences.push({ start: fence.start, end: source.length });
-  return { fences, blockComments, hardBreaks, quoteLines };
+  return { fences, blockComments, breaks };
 }
 
 /** First value in sorted `arr` strictly greater than `x`, or `Infinity`. */
@@ -210,13 +349,13 @@ const TOKEN =
  *     and runs to the first `-->` anywhere, even across blank lines and fences
  *     (the usual way to comment out a whole section, code blocks included);
  *   - one inside a paragraph ends at the first `-->` before the paragraph does,
- *     so it may not cross a blank line, heading, thematic break, list item,
- *     fence or (outside a quote) a `>` line;
+ *     so it may not cross a line that interrupts the paragraph (see
+ *     `scanBlocks`);
  *   - `<!-->` and `<!--->` are complete empty comments.
  * An opener that finds no valid `-->` is reported with `closed: false`.
  */
 export function htmlCommentRanges(source: string): HtmlCommentRange[] {
-  const { fences, blockComments, hardBreaks, quoteLines } = scanBlocks(source);
+  const { fences, blockComments, breaks } = scanBlocks(source);
   // Fences and comment blocks never overlap (one pass decided both), so one
   // sorted list of regions the inline scan must skip, walked with a pointer.
   const regions: HtmlCommentRange[] = [
@@ -225,18 +364,6 @@ export function htmlCommentRanges(source: string): HtmlCommentRange[] {
   ].sort((a, b) => a.start - b.start);
   let r = 0;
   const nextCloser = closerFinder(source);
-  // Start of the line holding a position, for non-decreasing positions: walks
-  // newlines forward once overall (a backwards search per opener would be
-  // quadratic on one huge line full of openers).
-  let lineStart = 0;
-  let nextNl = source.indexOf('\n');
-  const lineStartOf = (pos: number): number => {
-    while (nextNl !== -1 && nextNl < pos) {
-      lineStart = nextNl + 1;
-      nextNl = source.indexOf('\n', lineStart);
-    }
-    return lineStart;
-  };
 
   const out: HtmlCommentRange[] = [];
   let b = 0;
@@ -269,13 +396,7 @@ export function htmlCommentRanges(source: string): HtmlCommentRange[] {
     } else {
       const closer = nextCloser(openEnd);
       if (closer !== -1) {
-        const from = lineStartOf(start);
-        const quoted = QUOTE_LINE.test(source.slice(from, Math.min(from + 4, start)));
-        const paragraphEnd = Math.min(
-          firstAfter(hardBreaks, start),
-          quoted ? Infinity : firstAfter(quoteLines, start),
-          region ? region.start : Infinity
-        );
+        const paragraphEnd = Math.min(firstAfter(breaks, start), region ? region.start : Infinity);
         if (closer + 3 <= paragraphEnd) end = closer + 3;
       }
     }
