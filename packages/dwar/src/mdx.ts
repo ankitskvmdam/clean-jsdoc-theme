@@ -15,7 +15,7 @@ import remarkFrontmatter from 'remark-frontmatter';
 import remarkGfm from 'remark-gfm';
 import { bundledLanguagesInfo, createHighlighter } from 'shiki';
 import type { SignatureHighlighter } from '@clean-jsdoc-theme/rang';
-import { htmlCommentRanges, slugifyHeading } from '@clean-jsdoc-theme/utils';
+import { htmlCommentRanges, rangeContaining, slugifyHeading } from '@clean-jsdoc-theme/utils';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyComponent = ComponentType<any>;
@@ -224,8 +224,9 @@ export function escapeEsmLookalikes(source: string): string {
  * `!` … to create a comment in MDX, use `{/* text *\/}`") and the whole page is
  * skipped. Comments are everywhere in real Markdown — README badge blocks,
  * all-contributors `START`/`END` markers, notes left in tutorials and doc
- * comments — and setu carries them through as raw `html` nodes, so without this
- * pass a single one loses the page (a README one loses the site's home page).
+ * comments — and a single one loses the page (a README one loses the site's
+ * home page). setu drops comments while lowering prose (its `dropComments`),
+ * so this pass is the safety net for any body that still holds one.
  *
  * The comment is dropped rather than translated to an MDX `{/* *\/}` comment:
  * it renders to nothing either way, and dropping needs no escaping of a `*\/`
@@ -239,14 +240,14 @@ export function escapeEsmLookalikes(source: string): string {
  * backslash-escaped `\<!--` and the YAML frontmatter are left untouched — an
  * `<!-- -->` in an HTML `@example` stays code. A comment that starts a line
  * runs to the first `-->` even across code blocks (commenting out a section);
- * one inside a paragraph cannot cross a blank line or a fence.
+ * one inside a paragraph cannot cross a line that ends the paragraph.
  *
  * An opener with no valid `-->` is not a comment: it becomes `\<!--`, so it
  * renders as the literal text the author typed and the rest of the page stays
  * visible (a browser would hide everything after it). A stray `-->` needs
  * nothing — `>` is not special to MDX. The `.md` companion is written from the
- * original body, so it keeps the comments verbatim; the search index drops
- * them too (see `extractSearchText`).
+ * original body, so it keeps any comment this pass dropped; the search index
+ * drops them too (see `extractSearchText`).
  */
 export function stripHtmlComments(source: string): string {
   // Keep leading YAML frontmatter verbatim.
@@ -291,8 +292,7 @@ export function findStrayBackticks(source: string): StrayBacktick[] {
   const fm = /^---\n[\s\S]*?\n---\n/.exec(source);
   const bodyStart = fm ? fm[0].length : 0;
   const comments = htmlCommentRanges(source.slice(bodyStart)).filter((c) => c.closed);
-  const inComment = (i: number): boolean =>
-    comments.some((c) => i >= bodyStart + c.start && i < bodyStart + c.end);
+  const inComment = (i: number): boolean => rangeContaining(comments, i - bodyStart) !== undefined;
   // Fenced block | balanced inline span (group 3 = its ticks) | leftover run
   // (group 4). A delimiter run is bounded by `(?<![`\\])…(?!`)`: it closes only on
   // a maximal run of exactly N (a longer run inside a span, e.g. ``` in
