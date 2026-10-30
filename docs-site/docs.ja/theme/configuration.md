@@ -423,8 +423,8 @@ opts: { tutorials: "./tutorials" }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-// JSDoc only. Under TypeDoc, use `projectDocuments` or `cleanJsdocTheme.docs`.
-// (`cleanJsdocTheme.tutorials` is ignored with a warning.)
+// JSDoc 専用です。TypeDoc では `projectDocuments` か `cleanJsdocTheme.docs` を
+// 使ってください（`cleanJsdocTheme.tutorials` は警告とともに無視されます）。
 ```
 
 </tab>
@@ -1039,10 +1039,13 @@ cleanJsdocTheme: { defaultLocale: "en" }
 ### `strict`
 
 option の問題で build を失敗させます。default では問題は報告され、build はその
-option なしで続行します。`strict: true` では、次のどれもが何かを書き出す前に build
-を止め、process は 0 以外の exit code で終了します:
+option なしで続行します。`strict: true` では、option の warning や error のどれもが
+何かを書き出す前に build を止め、process は 0 以外の exit code で終了します。
+たとえば:
 
-- 綴り間違いや不明な key — TypeDoc では `cleanJsdocTheme` 内の不明な key すべて;
+- 綴り間違いの key。TypeDoc では `cleanJsdocTheme` 内の不明な key すべてが対象です。
+  JSDoc では theme option 名に近い typo だけが対象です — それ以外の不明な key は
+  JSDoc の共有された `opts` namespace のものだからです;
 - Google Fonts にない font;
 - 使えない `siteUrl`。sub-path を含むのに `basePath` がない `siteUrl` も含みます
   （その path はすべての URL から落ちてしまいます）。TypeDoc では site URL として

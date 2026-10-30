@@ -1012,10 +1012,12 @@ cleanJsdocTheme: { defaultLocale: "en" }
 ### `strict`
 
 让选项问题导致构建失败。默认情况下这些问题会被报告，构建会在忽略该选项的情况下继续。
-设置 `strict: true` 后，以下任何一项都会在写出任何文件之前中止构建，进程以非零退出码
-退出：
+设置 `strict: true` 后，任何选项警告或错误都会在写出任何文件之前中止构建，进程以
+非零退出码退出——例如：
 
-- 拼写错误或未知的键——在 TypeDoc 中，指 `cleanJsdocTheme` 里的任何未知键；
+- 拼写错误的键。在 TypeDoc 中，`cleanJsdocTheme` 里的任何未知键都算；在 JSDoc 中，
+  只有与主题选项名相近的拼写错误才会被标记，因为其他未知键属于 JSDoc 共用的 `opts`
+  命名空间；
 - 不在 Google Fonts 上的字体；
 - 不可用的 `siteUrl`，包括带有子路径却没有设置 `basePath` 的 `siteUrl`（该路径会从
   每个 URL 中丢失）。在 TypeDoc 中，这也适用于被用作站点 URL 的 `hostedBaseUrl`，

@@ -1123,11 +1123,13 @@ cleanJsdocTheme: { defaultLocale: "en" }
 ### `strict`
 
 Make option problems fail the build. By default they're reported and the build
-carries on without that option. With `strict: true`, any of these stops the
-build before it writes anything, and the process exits non-zero:
+carries on without that option. With `strict: true`, any option warning or
+error stops the build before it writes anything, and the process exits non-zero
+— for example:
 
-- a misspelled or unknown key — under TypeDoc, any unknown key in
-  `cleanJsdocTheme`;
+- a misspelled key. Under TypeDoc any unknown key in `cleanJsdocTheme` counts;
+  under JSDoc only near-miss typos of a theme option name are flagged, since
+  other unknown keys belong to JSDoc's shared `opts` namespace;
 - a font that isn't on Google Fonts;
 - an unusable `siteUrl`, including one with a sub-path but no `basePath` (the
   path would be dropped from every URL). Under TypeDoc this also covers a
