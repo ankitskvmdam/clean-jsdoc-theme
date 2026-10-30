@@ -99,13 +99,16 @@ exports には次が含まれます。
 build の前後に entry-point bridges が実行する logic です。
 
 - **`validateThemeOpts()`** — orchestrator です。raw な opts object を受け取り、
-  `siteName` と `fonts` の validators、さらに unknown-key policy を単一の
-  `DiagnosticBag` で実行し、normalized な値を返します。決して throw しません。
-  strict-mode の強制は `diagnostics.hasErrors()` を介した caller の仕事です。
+  `siteName` と `fonts` の validators、さらに unknown-key policy（`checkV4Options`
+  があれば残っている v4 options の check も）を単一の `DiagnosticBag` で実行し、
+  normalized な値を返します。`strict: true` ではすべての warning が error として
+  返ります（top-level の v4 option 名を除く）。決して throw しません。build を
+  失敗させるのは `diagnostics.hasErrors()` を介した caller の仕事です。
   ([`validate-opts.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/utils/src/config/validate-opts.ts))
 - **`DiagnosticBag`、`Diagnostic`、`formatDiagnostics()`** — reporting の背骨:
   純粋で node-free な、構造化され level-tagged (`error` / `warning` / `info`)
   された finding model です。
+  `escalateWarnings(keep?)` は warnings を errors に変えます（`strict` が使うもの）。
   ([`diagnostics.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/utils/src/config/diagnostics.ts))
 - **`createGoogleFontResolver()`、`FontResolver`、`FontExistence`、
   `FetchLike`** — utils を browser-safe に保つ *injection* パターンです。

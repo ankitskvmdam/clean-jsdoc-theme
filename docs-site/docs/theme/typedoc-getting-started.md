@@ -118,7 +118,6 @@ side, is on the [Configuration](/theme/configuration) page. A few to start with:
 | ------ | ------------ |
 | [`siteName`](/theme/configuration#sitename) | Header title — plain text, or a `light`/`dark` logo set with `alt` fallback text. |
 | [`fonts`](/theme/configuration#fonts) | Override `heading` / `body` (Google Fonts, loaded for you) and `mono`. |
-| [`colors`](/theme/configuration#colors-and-darkcolors) / [`darkColors`](/theme/configuration#colors-and-darkcolors) | Recolor the light / dark palettes — override just `bg`, `accent`, …, keep the rest. |
 | [`menu`](/theme/configuration#menu) | Custom links pinned above the sidebar, each with a `lucide:` / `simpleicons:` icon. |
 | [`docGroups`](/theme/configuration#docgroups) | Order the prose **doc groups** in the sidebar (the API section is the module hierarchy). |
 | [`copyPage`](/theme/configuration#copypage) | The per-page "copy page" / "open in LLM" button (on by default). |

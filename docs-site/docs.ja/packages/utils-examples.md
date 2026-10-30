@@ -148,24 +148,35 @@ const { value, diagnostics } = await validateThemeOpts({
   opts: { siteName: 'My API', fonts: { heading: 'Roboto', body: 'Roboto' } },
   fontResolver,
   unknownKeyPolicy: 'suggest-typos', // only flag near-miss typos of a known key
+  checkV4Options: true, // flag a leftover v4 `theme_opts` block / v4 option names
+  strict: false, // true → every warning comes back as an error (top-level v4 names excepted)
 });
 
 // value.siteName / value.fonts are normalized; decide your own policy on findings:
 if (diagnostics.list.length > 0) console.log(formatDiagnostics(diagnostics, { color: true }));
 if (diagnostics.hasErrors()) {
-  // strict mode is the *caller's* choice — utils never throws
+  // failing the build is the *caller's* choice — utils never throws
 }
+
+// `strict` is `DiagnosticBag.escalateWarnings(keep?)` under the hood; call it on
+// any bag, with a predicate for the findings that must stay warnings:
+diagnostics.escalateWarnings((d) => d.code === 'opts/v4-name');
 ```
 
 本物の bridges はこれをまさにこのように wire します。
 [`publish.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/clean-jsdoc-theme/src/publish.ts)
 の JSDoc bridge は resolver を build し、`validateThemeOpts` を `unknownKeyPolicy:
-'suggest-typos'` で call し（JSDoc 自身の opts は同じ flat namespace を共有します）、
-それから bag を log し、`opts.strict` が set されていて *かつ* `diagnostics.hasErrors()`
-のときに限り throw します。
+'suggest-typos'`（JSDoc 自身の opts は同じ flat namespace を共有します）、
+`checkV4Options: true`、`opts.strict` から取った `strict` で call し、それから bag を
+log し、`opts.strict` が set されていて *かつ* `diagnostics.hasErrors()` のときに
+build を失敗させます。この失敗は rejected promise として JSDoc に渡されません（JSDoc 4
+はそれを表示しても exit code 0 で終了していました）: `publish()` が JSDoc 自身の
+logger で一度だけ報告し、JSDoc は exit code 1 で終了します。
 [`write-site.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/typedoc/src/write-site.ts)
 の TypeDoc plugin は同じことを `unknownKeyPolicy: 'warn-all'` で行います。その options は
-共有された flat なものではなく、専用の namespaced block に置かれているからです。
+共有された flat なものではなく、専用の namespaced block に置かれているからです。v4 の
+check はありません（TypeDoc に v4 options はありませんでした）。strict の失敗では throw
+し、TypeDoc がそれを error として log して 0 以外の exit code で終了します。
 
 tests や custom runtime のためには、network に hit する代わりに fake な `fetch` を
 inject できます — resolver は最小限の `FetchLike` slice だけを必要とします

@@ -141,23 +141,33 @@ const { value, diagnostics } = await validateThemeOpts({
   opts: { siteName: 'My API', fonts: { heading: 'Roboto', body: 'Roboto' } },
   fontResolver,
   unknownKeyPolicy: 'suggest-typos', // only flag near-miss typos of a known key
+  checkV4Options: true, // flag a leftover v4 `theme_opts` block / v4 option names
+  strict: false, // true → every warning comes back as an error (top-level v4 names excepted)
 });
 
 // value.siteName / value.fonts are normalized; decide your own policy on findings:
 if (diagnostics.list.length > 0) console.log(formatDiagnostics(diagnostics, { color: true }));
 if (diagnostics.hasErrors()) {
-  // strict mode is the *caller's* choice — utils never throws
+  // failing the build is the *caller's* choice — utils never throws
 }
+
+// `strict` is `DiagnosticBag.escalateWarnings(keep?)` under the hood; call it on
+// any bag, with a predicate for the findings that must stay warnings:
+diagnostics.escalateWarnings((d) => d.code === 'opts/v4-name');
 ```
 
 真实的 bridge 正是这样接入它的。位于
 [`publish.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/clean-jsdoc-theme/src/publish.ts)
 的 JSDoc bridge 构建解析器，以 `unknownKeyPolicy:
-'suggest-typos'`（JSDoc 自身的选项共享这个扁平命名空间）调用 `validateThemeOpts`，然后记录这个 bag，
-并且仅当设置了 `opts.strict` *且* `diagnostics.hasErrors()` 时才抛出异常。位于
+'suggest-typos'`（JSDoc 自身的选项共享这个扁平命名空间）、`checkV4Options: true`
+以及取自 `opts.strict` 的 `strict` 调用 `validateThemeOpts`，然后记录这个 bag，
+并且当设置了 `opts.strict` *且* `diagnostics.hasErrors()` 时使构建失败。这个失败不会
+以被拒绝的 promise 形式交给 JSDoc（JSDoc 4 会打印它，但仍以 0 退出）：`publish()`
+通过 JSDoc 自己的 logger 报告一次，使 JSDoc 以 1 退出。位于
 [`write-site.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/typedoc/src/write-site.ts)
 的 TypeDoc 插件做法相同，但使用 `unknownKeyPolicy: 'warn-all'`，因为它的选项位于
-一个专用的命名空间块中，而非共享的扁平命名空间。
+一个专用的命名空间块中，而非共享的扁平命名空间；它也不做 v4 检查（TypeDoc 从来没有
+v4 选项）。strict 失败时它会抛出异常，TypeDoc 将其记录为错误并以非零退出码退出。
 
 对于测试或自定义运行时，你可以注入一个伪造的 `fetch`，而不必真正访问
 网络——解析器只需要最小的 `FetchLike` 切片
