@@ -1,7 +1,7 @@
 {
   "name": "@clean-jsdoc-theme/typedoc",
   "version": "5.2.1",
-  "description": "TypeDoc support for clean-jsdoc-theme (renders via setu → dwar)",
+  "description": "A modern TypeDoc theme with dark mode, built-in search, i18n, and LLM-ready Markdown for every page. Part of clean-jsdoc-theme.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -17,11 +17,19 @@
   ],
   "keywords": [
     "typedoc",
-    "typescript",
-    "documentation",
-    "generator",
     "typedoc-theme",
     "typedoc-plugin",
+    "typedocplugin",
+    "typescript",
+    "documentation",
+    "documentation-generator",
+    "generator",
+    "api-documentation",
+    "api-docs",
+    "dark-mode",
+    "search",
+    "i18n",
+    "llm",
     "clean-jsdoc-theme"
   ],
   "repository": {
