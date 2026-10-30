@@ -368,6 +368,15 @@ function dropHtmlComments(body: string): string {
 }
 
 /**
+ * A raw HTML / JSX tag for the search-text strip. Quoted attribute values may
+ * hold `>` or `<` (setu's `sig="fn(): Promise<T>"`), so they are matched whole;
+ * outside quotes a `<` ends the attempt. That keeps the strip linear: the old
+ * `/<[^>]+>/` rescanned to the end of the page from every `<` with no `>` after
+ * it, so a page full of stray `<` (or an unclosed `<!--`) took minutes.
+ */
+const TAG = /<(?:"[^"]*"|'[^']*'|[^"'<>])+>/g;
+
+/**
  * Strip an MDX/HTML body to a plain-text excerpt for search snippets.
  * Heuristic, not exhaustive: fences, headings, links, images, formatting marks,
  * and any HTML tags get peeled away.
@@ -379,7 +388,7 @@ export function extractExcerpt(mdxBody: string, max = 200): string {
     .replace(/`[^`]*`/g, ' ') // inline code
     .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ') // images
     .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1') // links → label
-    .replace(/<[^>]+>/g, ' ') // raw HTML / JSX
+    .replace(TAG, ' ') // raw HTML / JSX
     .replace(/^#{1,6}\s+/gm, '') // ATX headings
     .replace(/[*_~>#]+/g, ' ') // emphasis & blockquotes
     .replace(/\s+/g, ' ')
@@ -407,7 +416,7 @@ export function extractSearchText(mdxBody: string, max = 20000): string {
     .replace(/`([^`]*)`/g, '$1') // inline code → keep the identifier
     .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ') // images
     .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1') // links → label
-    .replace(/<[^>]+>/g, ' ') // raw HTML / JSX
+    .replace(TAG, ' ') // raw HTML / JSX
     .replace(/^#{1,6}\s+/gm, '') // ATX heading markers (keep the text)
     .replace(/[*_~>#|]+/g, ' ') // emphasis / blockquote / table marks
     .replace(/\s+/g, ' ')

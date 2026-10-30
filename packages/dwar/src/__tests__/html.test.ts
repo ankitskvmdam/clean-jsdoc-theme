@@ -253,6 +253,31 @@ describe('search text — HTML comments', () => {
   });
 });
 
+describe('search text — tag strip', () => {
+  it('strips a JSX tag whose quoted attribute holds < and > whole', () => {
+    const src = '<MemberHeading id="run" sig="run(): Promise<Map<K, V>>" />\n\nRuns it.';
+    expect(extractSearchText(src)).toBe('Runs it.');
+    expect(extractExcerpt(src)).toBe('Runs it.');
+  });
+
+  it('strips plain HTML tags and keeps their text', () => {
+    expect(extractSearchText('<p align="center">Hi <b>there</b></p>')).toBe('Hi there');
+  });
+
+  // The old `/<[^>]+>/` rescanned to the end of the page from every `<` with no
+  // `>` after it — minutes for a 1MB page.
+  it.each([
+    ['unclosed comment openers', 'a <!-- '.repeat(150_000)],
+    ['stray < characters', 'a < b '.repeat(170_000)],
+    ['unclosed quoted attributes', '<a b="x '.repeat(125_000)],
+  ])('stays fast on 1MB of %s', (_name, src) => {
+    const t = performance.now();
+    extractSearchText(src);
+    extractExcerpt(src);
+    expect(performance.now() - t).toBeLessThan(1000);
+  });
+});
+
 describe('renderHtmlDocument — locale (i18n)', () => {
   it('defaults to <html lang="en"> with no __i18n payload (byte-identical path)', () => {
     const html = doc({});

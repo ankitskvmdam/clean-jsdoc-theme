@@ -487,6 +487,12 @@ describe('stripHtmlComments', () => {
     );
   });
 
+  it('ends a fence opened in a blockquote with the quote', () => {
+    expect(stripHtmlComments('> ```\n> code\n\nText <!-- c --> after.\n\n```js\nx\n```\n')).toBe(
+      '> ```\n> code\n\nText  after.\n\n```js\nx\n```\n'
+    );
+  });
+
   it('does not let an inline comment run across a heading', () => {
     expect(stripHtmlComments('text <!-- a\n# Heading\n-->\n')).toBe(
       'text \\<!-- a\n# Heading\n-->\n'
