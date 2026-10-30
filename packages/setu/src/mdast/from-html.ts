@@ -22,6 +22,7 @@ import {
   type TextRange,
 } from '@clean-jsdoc-theme/utils';
 import { callout, code, playground, step, steps, tab, tabs } from './builders';
+import { escapeLiteralTags } from './literal-tags';
 import {
   KNOWN_PROVIDERS,
   parsePlaygroundSpec,
@@ -380,7 +381,14 @@ function dropComments(node: { children?: unknown[] }): void {
  * for a segment with no containers.
  */
 function htmlBlocksPlain(html: string): RootContent[] {
-  const hast = fromHtml(neutralizeUnterminatedComments(html), { fragment: true });
+  // `Promise<User>` / a generic `<T>` reach here as raw tags; left to the HTML
+  // parser they'd be unwrapped (or worse) and vanish from the page. Escape the
+  // ones that aren't real markup first, while their casing is still visible —
+  // after unterminated comment openers are neutralized, so the tag scan (which
+  // treats `<!--` as running to the end, as HTML does) sees the same comments.
+  const hast = fromHtml(escapeLiteralTags(neutralizeUnterminatedComments(html)), {
+    fragment: true,
+  });
   dropComments(hast);
   const mdast = toMdast(hast) as Root;
   // Promote GitHub-style alert blockquotes (`> [!INFO]`) to typed callouts,
