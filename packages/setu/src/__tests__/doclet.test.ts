@@ -1,7 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { default as salty } from '@jsdoc/salty';
 import { TDoclet, TJSDocSaltyCollection } from '@clean-jsdoc-theme/utils';
-import { filterDoclets, getAllMembersOfClass, getMembersOf } from '../doclet';
+import {
+  filterDoclets,
+  getAllMembersOfClass,
+  getGlobalDoclets,
+  getMembersOf,
+  isNamedDoclet,
+} from '../doclet';
 import { getContainerView, getInheritedMembers } from '../class-view';
 import { generateSite } from '../index';
 import { getJSDocTaffyData } from './factory';
@@ -188,25 +194,49 @@ function makeClassWithNamelessMember(extra: unknown[] = []): TJSDocSaltyCollecti
   ]);
 }
 
+describe('isNamedDoclet', () => {
+  it('is true only for a non-empty string name', () => {
+    expect(isNamedDoclet({ name: 'ok' } as TDoclet)).toBe(true);
+    expect(isNamedDoclet({ name: '' } as TDoclet)).toBe(false);
+    expect(isNamedDoclet({} as TDoclet)).toBe(false);
+  });
+});
+
+describe('getMembersOf — nameless doclets', () => {
+  it('drops the nameless member and keeps the named one', () => {
+    const members = getMembersOf(makeClassWithNamelessMember(), 'Odd');
+    expect(members.map((m) => m.longname)).toEqual(['Odd#visible']);
+  });
+
+  it('drops nameless members whatever the visibility options downstream', () => {
+    // The drop happens at read time, before filterDoclets' visibility policy,
+    // so even "include everything" can't bring a nameless doclet back.
+    const members = filterDoclets(getMembersOf(makeClassWithNamelessMember(), 'Odd'), {
+      includePrivate: true,
+      includeUndocumented: true,
+    });
+    expect(members.map((m) => m.name)).toEqual(['visible']);
+  });
+});
+
+describe('getGlobalDoclets — nameless doclets', () => {
+  it('drops a nameless global-scope doclet and keeps named globals', () => {
+    const collection = makeCollection([
+      { kind: 'function', name: '', longname: '', scope: 'global' },
+      { kind: 'function', name: 'util', longname: 'util', scope: 'global' },
+    ]);
+    expect(getGlobalDoclets(collection).map((d) => d.name)).toEqual(['util']);
+  });
+});
+
 describe('filterDoclets', () => {
   const named = { kind: 'function', name: 'ok', longname: 'X#ok' } as TDoclet;
 
-  it('drops nameless doclets', () => {
-    const nameless = { kind: 'function', name: '', longname: '' } as TDoclet;
-    expect(filterDoclets([nameless, named])).toEqual([named]);
-  });
-
-  it('drops nameless doclets even when every include option is on', () => {
-    const nameless = { kind: 'function', name: '', longname: '', undocumented: true } as TDoclet;
-    expect(filterDoclets([nameless], { includePrivate: true, includeUndocumented: true })).toEqual(
-      []
-    );
-  });
-
-  it('keeps named doclets and still applies the private/undocumented policy', () => {
+  it('applies the private/undocumented policy', () => {
     const priv = { ...named, name: 'p', longname: 'X#p', access: 'private' } as TDoclet;
     const undoc = { ...named, name: 'u', longname: 'X#u', undocumented: true } as TDoclet;
     expect(filterDoclets([named, priv, undoc])).toEqual([named]);
+    expect(filterDoclets([named, priv, undoc], { includePrivate: true })).toEqual([named, priv]);
   });
 });
 

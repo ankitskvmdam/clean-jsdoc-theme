@@ -82,7 +82,7 @@ export function registerContainerView(
   for (const bucket of buckets) {
     for (const member of bucket) {
       const key = member.longname;
-      if (key && member.name && !registry.has(key)) {
+      if (key && !registry.has(key)) {
         registry.set(key, { slug, anchor: memberAnchor(member.name) });
       }
     }

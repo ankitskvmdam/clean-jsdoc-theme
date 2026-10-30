@@ -292,9 +292,11 @@ function tsCallableSignature(
 /**
  * Full TS signature for a member: a callable form for functions/methods
  * (`name<T>(p: T): Ret`), `get name(): Type` for accessors, and `name: Type`
- * for fields. Returns `null` when there's nothing meaningful to show.
+ * for fields. Returns `null` when there's nothing meaningful to show. Takes any
+ * doclet (not just a `ClassMember`): standalone function/variable pages pass
+ * their container doclet, whose name may be absent.
  */
-function tsMemberSignature(member: ClassMember): string | null {
+function tsMemberSignature(member: TDoclet): string | null {
   const name = member.name;
   if (!name) return null;
   if (member.kind === 'function') {
@@ -338,7 +340,7 @@ function variableSignature(doclet: ContainerView['doclet']): string | null {
   if (name && doclet.properties && doclet.properties.length > 0) {
     return `${name}: ${objectLiteralFromProperties(doclet.properties as TDocletParam[])}`;
   }
-  return tsMemberSignature(doclet as ClassMember);
+  return tsMemberSignature(doclet);
 }
 
 /**
@@ -542,7 +544,7 @@ export function memberBlocks(
   options: DocletBlocksOptions = {},
   headingLevel: 2 | 3 | 4 = 3
 ): RootContent[] {
-  const name = member.name ?? '(anonymous)';
+  const name = member.name;
   // The heading shows the full TypeScript signature (`addChild(child: Component):
   // void`), shiki-highlighted inline by rang's MemberHeading — the same look in
   // both flavors. The anchor stays `#name` (explicit id; the sig never feeds the

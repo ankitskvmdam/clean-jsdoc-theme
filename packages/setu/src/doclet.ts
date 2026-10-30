@@ -10,16 +10,6 @@ export interface FilterDocletsOptions {
 /**
  * Visibility/policy filter shared across consumers (class view, sidebar, …).
  * Does not mutate; returns a new array.
- *
- * Nameless doclets are always dropped, whatever the options (including
- * `includePrivate`). JSDoc 4 can't name an ES private method, instance or
- * static, so a documented `#secret() {}` arrives as `name: ''`, `longname: ''`
- * (still `memberof` its class, with no `scope` or `access`). Private fields
- * (`#f = 1`) are unaffected: they keep their name and `access: 'private'`. A
- * nameless doclet has nothing to title a heading with, nothing to anchor it on,
- * and no longname to link to, so it would only render as a blank heading and
- * leak an empty entry into the TOC/search/link registry. Dropped silently:
- * there's no name to report, and the author can't fix it short of renaming.
  */
 export function filterDoclets<T extends TDoclet>(
   doclets: readonly T[],
@@ -28,17 +18,43 @@ export function filterDoclets<T extends TDoclet>(
   const includeUndocumented = options.includeUndocumented ?? false;
   const includePrivate = options.includePrivate ?? false;
   return doclets.filter((d) => {
-    if (!d.name) return false;
     if (!includeUndocumented && d.undocumented) return false;
     if (!includePrivate && d.access === 'private') return false;
     return true;
   });
 }
 
+/** A doclet with a non-empty `name`: the only kind that can become a member. */
+export type NamedDoclet = TDoclet & { name: string };
+
 /**
- * All doclets whose `memberof` is `longname` — the members of a container
+ * True for a doclet with a non-empty name. Applied by the two readers that turn
+ * doclets into headed symbols — {@link getMembersOf} (every container's own and
+ * inherited members) and {@link getGlobalDoclets} (the Globals page) — so no
+ * nameless doclet reaches a member list, heading, TOC entry, search entry or
+ * link-registry key. Containers are already safe: they are enumerated by a
+ * non-empty longname. The `NamedDoclet` return type carries the guarantee to
+ * every consumer (`ClassMember.name` is a `string`).
+ *
+ * Why nameless doclets exist: JSDoc 4 can't name an ES private method, instance
+ * or static, so a documented `#secret() {}` arrives as `name: ''`,
+ * `longname: ''` (still `memberof` its class, with no `scope` or `access`).
+ * Private fields (`#f = 1`) are unaffected: they keep their name and
+ * `access: 'private'`. TypeDoc always names its reflections. This is not a
+ * visibility rule, so it applies whatever the options (even `includePrivate`):
+ * a nameless doclet has nothing to title a heading with, nothing to anchor it
+ * on and no longname to link to. Dropped silently: there's no name to report,
+ * and the author can't fix it short of renaming.
+ */
+export function isNamedDoclet<T extends TDoclet>(d: T): d is T & { name: string } {
+  return typeof d.name === 'string' && d.name !== '';
+}
+
+/**
+ * All named doclets whose `memberof` is `longname` — the members of a container
  * (class, interface, mixin, module, namespace, …). Kind-agnostic: callers are
- * expected to check the canonical container doclet exists first.
+ * expected to check the canonical container doclet exists first. Nameless
+ * doclets are dropped (see {@link isNamedDoclet}).
  *
  * Excludes the container's own doclet: JSDoc can emit a container whose
  * `memberof` equals its own `longname` (an ES6 class with an explicit
@@ -50,17 +66,26 @@ export function filterDoclets<T extends TDoclet>(
 export function getMembersOf(
   collection: TJSDocSaltyCollection<TDoclet>,
   longname: string
-): TDoclet[] {
+): NamedDoclet[] {
   return collection({ memberof: longname })
     .get()
+    .filter(isNamedDoclet)
     .filter((d) => d.longname !== longname);
+}
+
+/**
+ * All named global-scope doclets — the candidates for the Globals page. Nameless
+ * doclets are dropped (see {@link isNamedDoclet}).
+ */
+export function getGlobalDoclets(collection: TJSDocSaltyCollection<TDoclet>): NamedDoclet[] {
+  return collection({ scope: 'global' }).get().filter(isNamedDoclet);
 }
 
 /** Alias for {@link getMembersOf} retained for existing class-path callers. */
 export function getAllMembersOfClass(
   collection: TJSDocSaltyCollection<TDoclet>,
   longname: string
-): TDoclet[] {
+): NamedDoclet[] {
   return getMembersOf(collection, longname);
 }
 
