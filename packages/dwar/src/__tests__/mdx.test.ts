@@ -475,6 +475,24 @@ describe('stripHtmlComments', () => {
     expect(stripHtmlComments(src)).toBe(src);
   });
 
+  it('drops a comment after escaped brackets (no link, so nothing protects it)', () => {
+    expect(stripHtmlComments('\\[a\\](http://x/<!--y-->z) more\n')).toBe(
+      '\\[a\\](http://x/z) more\n'
+    );
+  });
+
+  it('does not open a fence on a lone fence line inside a comment block', () => {
+    expect(stripHtmlComments('<!--\n```js\n-->\n\nText <!-- c --> after.\n')).toBe(
+      '\n\nText  after.\n'
+    );
+  });
+
+  it('does not let an inline comment run across a heading', () => {
+    expect(stripHtmlComments('text <!-- a\n# Heading\n-->\n')).toBe(
+      'text \\<!-- a\n# Heading\n-->\n'
+    );
+  });
+
   it('does not let an unterminated inline opener swallow a following fence', () => {
     const src = 'a <!-- b\n\n```html\n<!-- x -->\n```\n\nafter\n';
     expect(stripHtmlComments(src)).toBe('a \\<!-- b\n\n```html\n<!-- x -->\n```\n\nafter\n');

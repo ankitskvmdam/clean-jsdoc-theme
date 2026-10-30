@@ -327,10 +327,11 @@ setu/src/
     ├── link-tags.ts      # resolveLinkTags: rewrite {@link}/{@linkcode}/
     │                     #   {@linkplain} text nodes → anchors (skips code spans)
     └── from-html.ts      # HTML / Markdown → structured mdast (the MDX-safe
-                          #   normalization shared by README + tutorials; an
-                          #   unterminated `<!--` is escaped so it can't hide
-                          #   the rest of the fragment, and the container /
-                          #   playground-fence splitters skip commented-out text)
+                          #   normalization shared by README + tutorials; HTML
+                          #   comments are dropped from the hast, an unterminated
+                          #   `<!--` is escaped so it can't hide the rest of the
+                          #   fragment, and the container / playground-fence
+                          #   splitters skip commented-out text)
 docs/                     # architecture.md, how-jsdoc-works.md, …
 ```
 
@@ -494,7 +495,8 @@ dwar/src/
 │                         #   + rehype slug pass giving headings ids that mirror
 │                         #   setu's TOC exactly — slugifyHeading + per-page registry).
 │                         #   Pre-pass: stripHtmlComments (MDX has no `<!-- -->`
-│                         #   syntax — prose comments are dropped, code keeps them,
+│                         #   syntax; safety net — setu already drops them —
+│                         #   prose comments are dropped, code keeps them,
 │                         #   an unterminated opener becomes literal text; extent
 │                         #   from utils' code-aware htmlCommentRanges, shared
 │                         #   with setu)
