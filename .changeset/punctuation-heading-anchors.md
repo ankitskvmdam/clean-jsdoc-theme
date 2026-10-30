@@ -2,13 +2,16 @@
 'clean-jsdoc-theme': patch
 '@clean-jsdoc-theme/setu': patch
 '@clean-jsdoc-theme/utils': patch
+'@clean-jsdoc-theme/dwar': patch
 ---
 
-Give members named `$`, `_` or `$$` a real anchor.
+Give headings made only of punctuation or emoji a real anchor.
 
-A member whose name is only punctuation slugified to an empty anchor, so its
-heading rendered with `id=""`, it was missing from the table of contents, and a
-`{@link}` to it pointed at the top of the page. Such a member now gets an anchor
-built from its name's code points (`$` → `#member--24`, `_` → `#member--5f`),
-shared by the heading and the link. Every other member keeps its current
-anchor, so existing links are unaffected.
+A heading whose text has no letters or digits, such as a member named `$`, `_`
+or `$$`, or a Markdown heading like `## $` or `## 🚀`, got an empty anchor. It
+rendered with `id=""`, its table-of-contents link pointed at the top of the page,
+and a `{@link}` to such a member did too. These headings now get an anchor built
+from their text's code points: `#section--1f680` for a prose `## 🚀` (a repeat
+becomes `#section--1f680-1`) and `#member--24` for a member `$`. The table of
+contents, the rendered page and `{@link}` all use the same anchor. Every other
+heading keeps its current anchor, so existing links are unaffected.

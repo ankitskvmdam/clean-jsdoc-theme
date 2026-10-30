@@ -62,6 +62,46 @@ describe('slugifyHeading', () => {
   });
 });
 
+describe('slugifyHeading — fallback for text with no slug', () => {
+  it('gives punctuation/emoji-only text a code-point fallback id', () => {
+    expect(slugifyHeading('$')).toBe('section--24');
+    expect(slugifyHeading('🚀')).toBe('section--1f680');
+    expect(slugifyHeading('🚀🚀')).toBe('section--1f680_1f680');
+    expect(slugifyHeading('  $ ')).toBe('section--24');
+  });
+
+  it('keeps blank text blank (callers skip blank headings)', () => {
+    expect(slugifyHeading('')).toBe('');
+    expect(slugifyHeading('   ')).toBe('');
+  });
+
+  it('dedupes fallback ids through the registry like any slug', () => {
+    const reg = new Map<string, number>();
+    expect(slugifyHeading('🚀', reg)).toBe('section--1f680');
+    expect(slugifyHeading('🚀', reg)).toBe('section--1f680-1');
+    expect(slugifyHeading('$', reg)).toBe('section--24');
+    expect(slugifyHeading('Intro', reg)).toBe('intro');
+    expect(slugifyHeading('Intro', reg)).toBe('intro-1');
+  });
+
+  it('honors a custom fallback prefix', () => {
+    expect(slugifyHeading('$', undefined, 'x')).toBe('x--24');
+  });
+
+  it('leaves every text with a non-empty slug exactly as before', () => {
+    expect(slugifyHeading('Hello 🚀')).toBe('hello');
+    expect(slugifyHeading('$f')).toBe('f');
+    expect(slugifyHeading('section 24')).toBe('section-24');
+  });
+
+  it('cannot collide with a real slug: no real slug contains `--` or `_`', () => {
+    for (const t of ['section--24', 'section 24', 'section_24', 'a -- b', 'x__y']) {
+      expect(slugifyHeading(t)).not.toMatch(/--|_/);
+    }
+    expect(slugifyHeading('section--24')).not.toBe(slugifyHeading('$'));
+  });
+});
+
 describe('memberAnchor', () => {
   it('is exactly slugifyHeading for any name with a non-empty slug', () => {
     const names = ['process', 'with space', 'café', 'Symbol.iterator', '$f', '_private', 'a$b'];
@@ -72,11 +112,14 @@ describe('memberAnchor', () => {
     expect(memberAnchor('_private')).toBe('private');
   });
 
-  it('falls back to the code points for a name whose slug is empty', () => {
-    expect(slugifyHeading('$')).toBe('');
+  it('falls back to the code points, with the member prefix, for an empty slug', () => {
     expect(memberAnchor('$')).toBe('member--24');
     expect(memberAnchor('_')).toBe('member--5f');
-    expect(memberAnchor('$$')).toBe('member--24-24');
+    expect(memberAnchor('$$')).toBe('member--24_24');
+  });
+
+  it('never shares an id with a prose heading of the same text', () => {
+    expect(memberAnchor('$')).not.toBe(slugifyHeading('$'));
   });
 
   it('gives distinct punctuation-only names distinct anchors', () => {
@@ -86,14 +129,15 @@ describe('memberAnchor', () => {
 
   it('cannot collide with a real name that looks like a fallback', () => {
     // A quoted member named 'member-24' keeps its plain slug; `$` gets the
-    // double-hyphen fallback, which slugifyHeading can never produce.
+    // double-hyphen fallback, which no real slug can contain.
     expect(memberAnchor('member-24')).toBe('member-24');
     expect(memberAnchor('member--24')).toBe('member-24');
     expect(memberAnchor('$')).not.toBe(memberAnchor('member-24'));
   });
 
-  it('never returns an empty anchor', () => {
-    expect(memberAnchor('')).toBe('member--');
+  it('throws on an empty or blank name rather than inventing a shared id', () => {
+    expect(() => memberAnchor('')).toThrow(TypeError);
+    expect(() => memberAnchor('  ')).toThrow(TypeError);
   });
 });
 

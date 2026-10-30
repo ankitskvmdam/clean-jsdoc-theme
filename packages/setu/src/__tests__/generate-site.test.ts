@@ -166,6 +166,49 @@ describe('extractHeadings', () => {
     expect(headings.map((h) => h.id)).toEqual(['foo', 'foo-1']);
   });
 
+  it('gives punctuation/emoji-only headings a deduped fallback id, never `id=""`', () => {
+    const heading = (value: string) => ({
+      type: 'heading' as const,
+      depth: 2 as const,
+      children: [{ type: 'text' as const, value }],
+    });
+    const tree = {
+      type: 'root' as const,
+      children: ['$', '🚀', '🚀', 'Intro', 'Intro'].map(heading),
+    };
+    expect(extractHeadings(tree).map((h) => h.id)).toEqual([
+      'section--24',
+      'section--1f680',
+      'section--1f680-1',
+      'intro',
+      'intro-1',
+    ]);
+  });
+
+  it('keeps a member `$` and a prose `## $` on distinct ids', () => {
+    const tree = {
+      type: 'root' as const,
+      children: [
+        {
+          type: 'heading' as const,
+          depth: 2 as const,
+          children: [{ type: 'text' as const, value: '$' }],
+        },
+        {
+          type: 'mdxJsxFlowElement' as const,
+          name: 'MemberHeading',
+          attributes: [
+            { type: 'mdxJsxAttribute' as const, name: 'id', value: 'member--24' },
+            { type: 'mdxJsxAttribute' as const, name: 'depth', value: '3' },
+            { type: 'mdxJsxAttribute' as const, name: 'name', value: '$' },
+          ],
+          children: [],
+        },
+      ],
+    } as unknown as Parameters<typeof extractHeadings>[0];
+    expect(extractHeadings(tree).map((h) => h.id)).toEqual(['section--24', 'member--24']);
+  });
+
   it('skips a lone h1 (it is the page title)', () => {
     const tree = {
       type: 'root' as const,

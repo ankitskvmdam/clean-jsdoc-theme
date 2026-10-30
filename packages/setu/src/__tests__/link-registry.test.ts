@@ -106,7 +106,7 @@ describe('registerContainerView', () => {
     registerContainerView(registry, view, 'sym');
     expect(registry.get('Sym#$')).toEqual({ slug: 'sym', anchor: 'member--24' });
     expect(registry.get('Sym#_')).toEqual({ slug: 'sym', anchor: 'member--5f' });
-    expect(registry.get('Sym.$$')).toEqual({ slug: 'sym', anchor: 'member--24-24' });
+    expect(registry.get('Sym.$$')).toEqual({ slug: 'sym', anchor: 'member--24_24' });
     // Controls: names with a non-empty slug keep their existing anchor.
     expect(registry.get('Sym#run')).toEqual({ slug: 'sym', anchor: 'run' });
     expect(registry.get('Sym#$f')).toEqual({ slug: 'sym', anchor: 'f' });

@@ -380,11 +380,11 @@ describe('link resolution — punctuation-only member names', () => {
     expect(body).not.toContain('id=""');
     const ids = (page!.headings ?? []).map((h) => h.id);
     expect(ids).toEqual(
-      expect.arrayContaining(['member--24', 'member--5f', 'member--24-24', 'run', 'member-24'])
+      expect.arrayContaining(['member--24', 'member--5f', 'member--24_24', 'run', 'member-24'])
     );
     expect(new Set(ids).size).toBe(ids.length);
 
-    for (const id of ['member--24', 'member--5f', 'member--24-24', 'run', 'member-24']) {
+    for (const id of ['member--24', 'member--5f', 'member--24_24', 'run', 'member-24']) {
       expect(body).toContain(`id="${id}"`);
       expect(body).toContain(`(/sym#${id})`);
     }
