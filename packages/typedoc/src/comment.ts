@@ -137,22 +137,57 @@ function tagContentToText(
 }
 
 /**
- * The bare value of a `@defaultValue` / `@default` tag. setu shows a default
- * verbatim inside an inline-code span, so it must get the VALUE, not Markdown:
- * TypeDoc hands the tag content over as code parts already wrapped for display
- * — `` @defaultValue `'en-US'` `` arrives as `` `'en-US'` `` and a bare
- * `@defaultValue {}` / `42` as a ```` ```ts ```` fence — which `tagContentToText`
- * kept, so the backticks or the whole fence showed inside the code span. Unwrap
- * each code part, keep text, render an inline tag as its text (a code span
- * can't hold a link), and fold a multi-line value onto one line (the span is
- * inline).
+ * Doclet fields for a `@defaultValue` / `@default` tag: `defaultvalue` (a bare
+ * value, which setu shows in an inline-code span) when the tag IS a value, else
+ * `defaultvaluehtml` (prose, which setu renders as phrasing so links and inline
+ * code survive).
+ *
+ * TypeDoc hands the content over already wrapped for display: an author's
+ * `` `'en-US'` `` arrives as a code-span part, and content with no code of its
+ * own — a bare `{}`, `42`, or prose — as one ```` ```ts ```` fence. So:
+ * - one code part → a value, unwrapped (`'en-US'`, `{}`, `42`), unless it is
+ *   TypeDoc's fence around prose (see {@link looksLikeProse}) — that renders
+ *   as the author's Markdown;
+ * - plain text with no whitespace (`42`, `null`) → a value;
+ * - anything else (`` `true` when `x` is set ``, `{@link Foo} instance`) →
+ *   prose, keeping its own code spans and links.
  */
-export function defaultTagToText(parts: readonly CommentDisplayPart[]): string {
-  let out = '';
-  for (const part of parts) {
-    out += part.kind === 'code' ? unwrapCode(part.text) : part.text;
+export function defaultTagFields(
+  parts: readonly CommentDisplayPart[],
+  linkResolver?: LinkResolver
+): { defaultvalue?: string; defaultvaluehtml?: string } {
+  const meaningful = parts.filter((p) => !(p.kind === 'text' && p.text.trim() === ''));
+  if (meaningful.length === 0) return {};
+  if (meaningful.length === 1 && meaningful[0].kind === 'code') {
+    const value = unwrapCode(meaningful[0].text).trim();
+    if (!looksLikeProse(value)) return value ? { defaultvalue: oneLine(value) } : {};
+    const html = markdownToHtml(value);
+    return html ? { defaultvaluehtml: html } : {};
   }
-  return out.replace(/\s*\n\s*/g, ' ').trim();
+  if (
+    meaningful.length === 1 &&
+    meaningful[0].kind === 'text' &&
+    !/\s/.test(meaningful[0].text.trim())
+  ) {
+    return { defaultvalue: meaningful[0].text.trim() };
+  }
+  const html = markdownToHtml(partsToMarkdown(parts, linkResolver));
+  return html ? { defaultvaluehtml: html } : {};
+}
+
+/** Fold a multi-line value onto one line (setu's code span is inline). */
+function oneLine(value: string): string {
+  return value.replace(/\s*\n\s*/g, ' ').trim();
+}
+
+/**
+ * Whether the text inside TypeDoc's auto-added fence is prose rather than a
+ * value: it holds a Markdown link, or opens with three plain words
+ * (`see the docs`). A value — `{ a: 1, b: 2 }`, `new Map()`, `'a b c'`, `42`
+ * — never does.
+ */
+function looksLikeProse(text: string): boolean {
+  return /\[[^\]]*\]\([^)]*\)/.test(text) || /^[A-Za-z]+(?: [A-Za-z]+){2}/.test(text);
 }
 
 /** Strip a Markdown code fence or code-span delimiters from a code part. */
@@ -179,6 +214,8 @@ export interface CommentFields {
   see?: string[];
   deprecated?: string | boolean;
   defaultvalue?: string;
+  /** A prose `@defaultValue` (HTML); see {@link defaultTagFields}. */
+  defaultvaluehtml?: string;
   since?: string;
   author?: string[];
   tags?: TDocletTag[];
@@ -261,7 +298,7 @@ export function commentFields(
         break;
       case 'defaultvalue':
       case 'default':
-        fields.defaultvalue = defaultTagToText(block.content);
+        Object.assign(fields, defaultTagFields(block.content, linkResolver));
         break;
       case 'since':
         fields.since = tagContentToText(block.content, linkResolver);
@@ -380,6 +417,7 @@ export function applyCommentFields(doclet: TDoclet, fields: CommentFields): void
   if (fields.see) doclet.see = fields.see;
   if (fields.deprecated !== undefined) doclet.deprecated = fields.deprecated;
   if (fields.defaultvalue !== undefined) doclet.defaultvalue = fields.defaultvalue;
+  if (fields.defaultvaluehtml !== undefined) doclet.defaultvaluehtml = fields.defaultvaluehtml;
   if (fields.since !== undefined) doclet.since = fields.since;
   if (fields.author) doclet.author = fields.author;
   if (fields.tags) doclet.tags = fields.tags;

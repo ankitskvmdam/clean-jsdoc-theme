@@ -174,9 +174,15 @@ export const DocletSchema = z.object({
     .optional(),
   classdesc: z.string().optional(),
   comment: z.string().optional(),
+  // TypeDoc-only: a class constructor's own non-public access (`private` /
+  // `protected`), badged on the Constructor section.
+  constructoraccess: DocletAccessSchema.optional(),
   copyright: z.string().optional(),
   defaultvalue: z.unknown().optional(),
   defaultvaluetype: z.enum(['object', 'array']).optional(),
+  // TypeDoc-only: a `@defaultValue` that is prose, not a value (HTML). setu
+  // renders it as phrasing on the Default line, in place of `defaultvalue`.
+  defaultvaluehtml: z.string().optional(),
   deprecated: z.union([z.string(), z.boolean()]).optional(),
   description: z.string().nullable().optional(),
   examples: z.array(z.string()).optional(),
