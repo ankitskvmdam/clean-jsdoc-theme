@@ -449,3 +449,24 @@ describe('ALL-CAPS element names glued to a word are type arguments', () => {
     expect(kept(html, tag)).toBe(true);
   });
 });
+
+describe('omitted optional closers stay markup when glued', () => {
+  it.each([
+    ['<ul><li>a<li>b</ul>', '- a\n- b'],
+    // A table without <th> gets an empty header row (as on master), then 2×2.
+    ['<table><tr><td>a<td>b<tr><td>c<td>d</table>', '|   |   |\n| - | - |\n| a | b |\n| c | d |'],
+  ])('%j → %j', (html, expected) => {
+    expect(escapeLiteralTags(html)).toBe(html);
+    expect(mdx(htmlToMdastBlocks(html))).toBe(expected);
+  });
+
+  it('keeps a definition list with omitted closers as markup', () => {
+    const html = '<dl><dt>x<dd>y<dt>z<dd>w</dl>';
+    expect(escapeLiteralTags(html)).toBe(html);
+    expect(text(htmlToMdastBlocks(html))).not.toContain('<');
+  });
+
+  it('still reads a glued `<p>` as a type argument', () => {
+    expect(escapeLiteralTags('<p>Array<p> here</p>')).toBe('<p>Array&lt;p> here</p>');
+  });
+});
