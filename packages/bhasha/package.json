@@ -2,6 +2,12 @@
   "name": "@clean-jsdoc-theme/bhasha",
   "version": "5.2.1",
   "description": "Pure, browser-safe i18n core for clean-jsdoc-theme (catalog, t, provider, key scheme, validation)",
+  "keywords": [
+    "clean-jsdoc-theme",
+    "jsdoc",
+    "i18n",
+    "localization"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -11,6 +17,9 @@
   },
   "author": "Ankit Kumar (hello@ankdev.me)",
   "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
   "funding": {
     "type": "github",
     "url": "https://github.com/sponsors/ankitskvmdam"

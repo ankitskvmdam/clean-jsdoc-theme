@@ -2,6 +2,12 @@
   "name": "@clean-jsdoc-theme/aadesh",
   "version": "5.2.1",
   "description": "CLI for clean-jsdoc-theme i18n and build workflows",
+  "keywords": [
+    "clean-jsdoc-theme",
+    "jsdoc",
+    "cli",
+    "i18n"
+  ],
   "type": "module",
   "bin": {
     "clean-jsdoc": "./dist/cli.js"
@@ -27,6 +33,9 @@
   },
   "author": "Ankit Kumar (hello@ankdev.me)",
   "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
   "funding": {
     "type": "github",
     "url": "https://github.com/sponsors/ankitskvmdam"

@@ -2,6 +2,12 @@
   "name": "@clean-jsdoc-theme/dwar",
   "version": "5.2.1",
   "description": "Pure SiteManifest → HTML/CSS/JS renderer for clean-jsdoc-theme",
+  "keywords": [
+    "clean-jsdoc-theme",
+    "jsdoc",
+    "renderer",
+    "static-site"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -11,6 +17,9 @@
   },
   "author": "Ankit Kumar (hello@ankdev.me)",
   "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
   "funding": {
     "type": "github",
     "url": "https://github.com/sponsors/ankitskvmdam"

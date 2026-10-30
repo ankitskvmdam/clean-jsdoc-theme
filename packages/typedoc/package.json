@@ -31,6 +31,9 @@
   "author": "Ankit Kumar (hello@ankdev.me)",
   "homepage": "https://ankdev.me/clean-jsdoc-theme/theme/typedoc-getting-started",
   "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
   "funding": {
     "type": "github",
     "url": "https://github.com/sponsors/ankitskvmdam"

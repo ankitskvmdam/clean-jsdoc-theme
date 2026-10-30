@@ -36,7 +36,7 @@
     "version-packages": "changeset version && pnpm install --lockfile-only",
     "release": "turbo run build && changeset publish"
   },
-  "homepage": "https://ankdev.me/clean-jsdoc-theme/v4/index.html",
+  "homepage": "https://ankdev.me/clean-jsdoc-theme",
   "keywords": [
     "jsdoc",
     "template",
