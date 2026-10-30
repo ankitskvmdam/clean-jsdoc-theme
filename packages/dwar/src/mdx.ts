@@ -15,7 +15,7 @@ import remarkFrontmatter from 'remark-frontmatter';
 import remarkGfm from 'remark-gfm';
 import { bundledLanguagesInfo, createHighlighter } from 'shiki';
 import type { SignatureHighlighter } from '@clean-jsdoc-theme/rang';
-import { slugifyHeading } from '@clean-jsdoc-theme/utils';
+import { htmlCommentRanges, slugifyHeading } from '@clean-jsdoc-theme/utils';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyComponent = ComponentType<any>;
@@ -231,16 +231,22 @@ export function escapeEsmLookalikes(source: string): string {
  * it renders to nothing either way, and dropping needs no escaping of a `*\/`
  * inside it. A comment that occupies a whole line leaves that line blank, which
  * splits the surrounding paragraph exactly as CommonMark's HTML block would.
- * Fenced code blocks, inline code spans, MDX JSX tags and the YAML frontmatter
- * are left untouched — an `<!-- -->` in an HTML `@example` must stay code. A
- * backslash-escaped `\<!--` is literal text already and is skipped.
  *
- * An opener with no `-->` after it is not a comment: it becomes `\<!--`, so it
+ * What counts as a comment is decided by the shared, code-aware
+ * `htmlCommentRanges` (utils), the same scanner setu uses: fenced code blocks
+ * (line-anchored, closed only by a long-enough run of the same character),
+ * inline code spans, MDX JSX tags, link/image destinations and titles, a
+ * backslash-escaped `\<!--` and the YAML frontmatter are left untouched — an
+ * `<!-- -->` in an HTML `@example` stays code. A comment that starts a line
+ * runs to the first `-->` even across code blocks (commenting out a section);
+ * one inside a paragraph cannot cross a blank line or a fence.
+ *
+ * An opener with no valid `-->` is not a comment: it becomes `\<!--`, so it
  * renders as the literal text the author typed and the rest of the page stays
  * visible (a browser would hide everything after it). A stray `-->` needs
  * nothing — `>` is not special to MDX. The `.md` companion is written from the
- * original body, so it keeps the comments verbatim; the search index strips
- * them separately (see `extractSearchText`).
+ * original body, so it keeps the comments verbatim; the search index drops
+ * them too (see `extractSearchText`).
  */
 export function stripHtmlComments(source: string): string {
   // Keep leading YAML frontmatter verbatim.
@@ -248,18 +254,13 @@ export function stripHtmlComments(source: string): string {
   const prefix = fm ? fm[0] : '';
   const body = fm ? source.slice(fm[0].length) : source;
 
-  // Same tokenizer shape as escapeStrayBraces: a fenced code block, OR an MDX
-  // JSX tag, OR an inline code span (never crossing a blank line), OR — the only
-  // branch that rewrites — an unescaped `<!--` plus, when there is one, the
-  // body up to the first `-->`. A comment may span blank lines (an HTML block
-  // comment does). `<!-->` and `<!--->` are the CommonMark/HTML empty forms.
-  const re =
-    /(```[\s\S]*?```|~~~[\s\S]*?~~~)|(<\/?[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][\w-]*(?:="[^"]*")?)*\s*\/?>)|(?<![`\\])(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`)|(?<!\\)<!--(-?>|[\s\S]*?-->)?/g;
-  const stripped = body.replace(re, (m, fence, jsx, ticks, close: string | undefined) => {
-    if (fence !== undefined || jsx !== undefined || ticks !== undefined) return m;
-    return close === undefined ? '\\<!--' : '';
-  });
-  return prefix + stripped;
+  let out = prefix;
+  let cursor = 0;
+  for (const c of htmlCommentRanges(body)) {
+    out += body.slice(cursor, c.start) + (c.closed ? '' : '\\<!--');
+    cursor = c.end;
+  }
+  return out + body.slice(cursor);
 }
 
 /** A backtick run that opened no inline-code span — i.e. an unbalanced backtick. */
@@ -278,28 +279,32 @@ export interface StrayBacktick {
  * leaves these literal (so they no longer break the page), but an unclosed
  * `` `code` `` span is almost always an authoring slip, so the bridge surfaces
  * them as a non-fatal warning. Mirrors `escapeStrayBraces`' tokenizer: fenced
- * code blocks, HTML comments and YAML frontmatter are skipped (their backticks
- * are legitimate or never rendered),
- * balanced spans are consumed, and whatever backtick run is left over is stray.
+ * code blocks and YAML frontmatter are skipped (their backticks are legitimate),
+ * balanced spans are consumed, and whatever backtick run is left over is stray —
+ * unless it sits inside an HTML comment, which {@link stripHtmlComments} drops
+ * before compile, so it never renders.
  * Positions are 1-based, against the same `source` the `.md`/snippets use.
  */
 export function findStrayBackticks(source: string): StrayBacktick[] {
   const out: StrayBacktick[] = [];
   // Skip leading YAML frontmatter (backticks there aren't MDX inline code).
   const fm = /^---\n[\s\S]*?\n---\n/.exec(source);
-  // Fenced block or HTML comment (group 1 — comments are dropped before compile,
-  // see stripHtmlComments, so a backtick inside one never renders) | balanced
-  // inline span (group 3 = its ticks) | leftover run (group 4). A delimiter run
-  // is bounded by `(?<![`\\])…(?!`)`: it closes only on a maximal run of
-  // exactly N (a longer run inside a span, e.g. ``` in
+  const bodyStart = fm ? fm[0].length : 0;
+  const comments = htmlCommentRanges(source.slice(bodyStart)).filter((c) => c.closed);
+  const inComment = (i: number): boolean =>
+    comments.some((c) => i >= bodyStart + c.start && i < bodyStart + c.end);
+  // Fenced block | balanced inline span (group 3 = its ticks) | leftover run
+  // (group 4). A delimiter run is bounded by `(?<![`\\])…(?!`)`: it closes only on
+  // a maximal run of exactly N (a longer run inside a span, e.g. ``` in
   // `` ` ```x ` ``, is literal content) and ignores backslash-escaped backticks
   // (`\``, a literal backtick) — both match CommonMark, avoiding false strays.
   const re =
-    /(```[\s\S]*?```|~~~[\s\S]*?~~~|(?<!\\)<!--(?:-?>|[\s\S]*?-->))|(?<![`\\])((`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`))|(?<![`\\])(`+)/g;
-  re.lastIndex = fm ? fm[0].length : 0;
+    /(```[\s\S]*?```|~~~[\s\S]*?~~~)|(?<![`\\])((`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`))|(?<![`\\])(`+)/g;
+  re.lastIndex = bodyStart;
   let m: RegExpExecArray | null;
   while ((m = re.exec(source)) !== null) {
     if (m[4] === undefined) continue; // only the leftover (stray) backtick run
+    if (inComment(m.index)) continue; // never rendered
     const idx = m.index;
     const lastNl = source.lastIndexOf('\n', idx - 1);
     const line = source.slice(0, idx).split('\n').length;

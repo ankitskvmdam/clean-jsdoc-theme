@@ -14,6 +14,7 @@ import { fromMarkdown } from 'mdast-util-from-markdown';
 import { gfmFromMarkdown } from 'mdast-util-gfm';
 import { toHast } from 'mdast-util-to-hast';
 import { gfm } from 'micromark-extension-gfm';
+import { htmlCommentRanges, type TextRange } from '@clean-jsdoc-theme/utils';
 import { callout, code, playground, step, steps, tab, tabs } from './builders';
 import {
   KNOWN_PROVIDERS,
@@ -120,6 +121,39 @@ type Segment =
 /** Matches a top-level `<steps …>` / `<tabs …>` / `<playground …>` opening tag. */
 const CONTAINER_OPEN = /<(steps|tabs|playground)(\s[^>]*)?>/i;
 
+/** Which syntax a raw prose string is in — decides how comments are found. */
+type ProseFormat = 'markdown' | 'html';
+
+/**
+ * The complete `<!-- … -->` comments in a raw prose string. The container and
+ * playground-fence splitters run on RAW text, so without this they would lift a
+ * `<steps>` / `<playground>` / ```` ```js playground ```` out of a commented-out
+ * region, orphaning the `<!--` and rendering what the author hid. In HTML (JSDoc
+ * descriptions) code is already entity-escaped, so every literal comment is
+ * real; Markdown needs the shared code-aware scanner dwar also uses.
+ */
+function closedCommentRanges(raw: string, format: ProseFormat): TextRange[] {
+  if (format === 'markdown') return htmlCommentRanges(raw).filter((c) => c.closed);
+  return [...raw.matchAll(/<!--(?:-?>|[\s\S]*?-->)/g)].map((m) => ({
+    start: m.index,
+    end: m.index + m[0].length,
+  }));
+}
+
+/** The first container opening tag in `raw` that is not inside a comment. */
+function findContainerOpen(raw: string, format: ProseFormat): RegExpExecArray | null {
+  const comments = closedCommentRanges(raw, format);
+  const re = new RegExp(CONTAINER_OPEN.source, 'gi');
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(raw)) !== null) {
+    const at = m.index;
+    const comment = comments.find((c) => at >= c.start && at < c.end);
+    if (!comment) return m;
+    re.lastIndex = comment.end;
+  }
+  return null;
+}
+
 /** Read a quoted attribute (`name="…"` / `name='…'`) off an opening tag. */
 function readAttr(openTag: string, name: string): string | undefined {
   const m = new RegExp(`${name}\\s*=\\s*("([^"]*)"|'([^']*)')`, 'i').exec(openTag);
@@ -188,11 +222,11 @@ function parseItems(inner: string, itemName: string): ContainerItem[] {
  * `toMdast` (and the markdown→html lowering) strip these custom lowercase tags,
  * so by the time conversion runs they would be gone.
  */
-function splitContainers(raw: string): Segment[] {
+function splitContainers(raw: string, format: ProseFormat): Segment[] {
   const segments: Segment[] = [];
   let rest = raw;
   for (;;) {
-    const open = CONTAINER_OPEN.exec(rest);
+    const open = findContainerOpen(rest, format);
     if (!open) {
       if (rest.length > 0) segments.push({ kind: 'plain', raw: rest });
       break;
@@ -246,6 +280,7 @@ function splitContainers(raw: string): Segment[] {
  */
 function expandContainers(
   raw: string,
+  format: ProseFormat,
   plainFn: (s: string) => RootContent[],
   recurseFn: (s: string) => RootContent[]
 ): RootContent[] {
@@ -256,7 +291,7 @@ function expandContainers(
   // the builders' `(BlockContent | DefinitionContent)[]` is sound.
   const asBlocks = (nodes: RootContent[]): (BlockContent | DefinitionContent)[] =>
     nodes as (BlockContent | DefinitionContent)[];
-  for (const seg of splitContainers(raw)) {
+  for (const seg of splitContainers(raw, format)) {
     if (seg.kind === 'plain') {
       out.push(...plainFn(seg.raw));
     } else if (seg.kind === 'playground') {
@@ -359,7 +394,7 @@ export function htmlToMdastBlocks(html: string | null | undefined): RootContent[
   if (!html) return [];
   const trimmed = html.trim();
   if (trimmed.length === 0) return [];
-  return expandContainers(trimmed, htmlBlocksPlain, htmlToMdastBlocks);
+  return expandContainers(trimmed, 'html', htmlBlocksPlain, htmlToMdastBlocks);
 }
 
 /**
@@ -429,9 +464,20 @@ function splitPlaygroundFences(md: string): FenceSegment[] {
     }
   };
 
+  // A fence inside a commented-out region stays in the plain run, untouched,
+  // so the comment survives whole (and renders as nothing).
+  const comments = closedCommentRanges(md, 'markdown');
+  const lineStarts: number[] = [];
+  for (let offset = 0, k = 0; k < lines.length; k++) {
+    lineStarts.push(offset);
+    offset += lines[k].length + 1;
+  }
+  const inComment = (line: number): boolean =>
+    comments.some((c) => lineStarts[line] >= c.start && lineStarts[line] < c.end);
+
   let i = 0;
   while (i < lines.length) {
-    const open = FENCE_OPEN.exec(lines[i]);
+    const open = inComment(i) ? null : FENCE_OPEN.exec(lines[i]);
     if (!open) {
       plain.push(lines[i]);
       i++;
@@ -532,7 +578,7 @@ export function markdownToMdastBlocks(md: string | null | undefined): RootConten
   if (!md) return [];
   const trimmed = md.trim();
   if (trimmed.length === 0) return [];
-  return expandContainers(trimmed, markdownBlocksPlain, markdownToMdastBlocks);
+  return expandContainers(trimmed, 'markdown', markdownBlocksPlain, markdownToMdastBlocks);
 }
 
 /**
@@ -555,12 +601,26 @@ export function htmlToMdastInline(html: string | null | undefined): PhrasingCont
  * of JSDoc text that are NOT pre-rendered to HTML by the markdown plugin — e.g.
  * an `@example` `<caption>`, which may carry Markdown (`*emphasis*`) and inline
  * HTML (`<b>`). Block structure is flattened to inline.
+ *
+ * Raw HTML would otherwise reach MDX untouched, and MDX rejects much of what
+ * Markdown accepts — `<?php … ?>`, `<![CDATA[…]]>`, a void `<br>` — skipping
+ * the whole page. So a fragment holding any raw HTML takes the same HTML
+ * normalization as every other prose surface (see
+ * {@link convertMarkdownSegment}); one without stays on the direct parse.
  */
 export function markdownToMdastInline(md: string | null | undefined): PhrasingContent[] {
   if (!md) return [];
   const trimmed = md.trim();
   if (trimmed.length === 0) return [];
-  return blocksToInline(fromMarkdown(trimmed).children);
+  const blocks = fromMarkdown(trimmed).children;
+  return blocksToInline(hasRawHtml(blocks) ? convertMarkdownSegment(trimmed) : blocks);
+}
+
+/** Whether any node in `nodes` (at any depth) is a raw `html` node. */
+function hasRawHtml(nodes: readonly RootContent[]): boolean {
+  return nodes.some(
+    (n) => n.type === 'html' || ('children' in n && hasRawHtml(n.children as RootContent[]))
+  );
 }
 
 /** mdast phrasing (inline) node types that can sit directly among `blocks`. */
