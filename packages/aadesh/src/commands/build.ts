@@ -213,12 +213,19 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       });
       const ok = run.code === 0;
       if (!ok) {
+        // The full stderr is what explains the failure (a strict-mode option
+        // error, a missing plugin). The default runner already streamed it, so
+        // the diagnostic just points back at it; a runner that only captured it
+        // gets the whole text in the hint rather than its last line.
+        const stderr = run.stderr.trim();
         diagnostics.error(
           'build/pipeline-failed',
           `${target.code}: ${pipeline} exited ${run.code}.`,
           {
             path: target.code,
-            ...(run.stderr ? { hint: run.stderr.trim().split('\n').slice(-1)[0] } : {}),
+            ...(stderr
+              ? { hint: run.streamed ? `see the ${pipeline} output above.` : stderr }
+              : {}),
           }
         );
       }
