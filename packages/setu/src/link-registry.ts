@@ -10,7 +10,7 @@
  * Build order matters: pages link to each other, so the registry must be fully
  * populated before any page body renders (a two-pass build in `generateSite`).
  */
-import { slugifyHeading } from '@clean-jsdoc-theme/utils';
+import { memberAnchor } from '@clean-jsdoc-theme/utils';
 import type { ContainerView } from './class-view';
 
 /** A resolved location: the page slug and an optional in-page heading anchor. */
@@ -46,13 +46,13 @@ export function hrefFor(slug: string, anchor?: string): string {
  *
  * - The page-level symbol (`view.doclet.longname`) maps to the bare slug.
  * - Every member across all buckets maps `member.longname → { slug, anchor }`
- *   where the anchor is `slugifyHeading(member.name)`.
+ *   where the anchor is `memberAnchor(member.name)` (the heading's own id).
  *
  * First registration wins (`registry.has` guard): if the same longname surfaces
  * on more than one page — e.g. an inherited member rendered on both the base and
  * the subclass — the earlier page keeps the link. Stable and good enough for v1.
  *
- * Known limitation: anchors are bare `slugifyHeading(member.name)` with no
+ * Known limitation: anchors are bare `memberAnchor(member.name)` with no
  * per-page dedup counter, so a member whose heading slug collides with another
  * heading on the same page may get a slightly-off anchor. Documented; not fixed
  * here.
@@ -83,7 +83,7 @@ export function registerContainerView(
     for (const member of bucket) {
       const key = member.longname;
       if (key && member.name && !registry.has(key)) {
-        registry.set(key, { slug, anchor: slugifyHeading(member.name) });
+        registry.set(key, { slug, anchor: memberAnchor(member.name) });
       }
     }
   }

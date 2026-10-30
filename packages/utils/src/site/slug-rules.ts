@@ -61,6 +61,29 @@ export function slugifyHeading(text: string, registry?: Map<string, number>): st
 }
 
 /**
+ * Anchor id for an API member heading: {@link slugifyHeading} of the member
+ * name, used by both the rendered `<MemberHeading>` and the link registry so a
+ * `{@link}` lands on the heading.
+ *
+ * Only when that slug is empty (a name made purely of punctuation, e.g. the
+ * legal JS identifiers `$`, `_` or `$$`) does a fallback apply: `member-` plus
+ * the name's code points in hex (`$` → `member-24`, `$$` → `member-24-24`).
+ * That keeps the id non-empty, stable across builds and distinct for distinct
+ * names, and it's computed from the name alone, so the heading and the
+ * registry can never disagree. Any name with a non-empty slug keeps its anchor.
+ *
+ * @example
+ *   memberAnchor('process'); // 'process'
+ *   memberAnchor('$');       // 'member-24'
+ */
+export function memberAnchor(name: string): string {
+  const slug = slugifyHeading(name);
+  if (slug) return slug;
+  const codes = Array.from(String(name ?? ''), (ch) => ch.codePointAt(0)!.toString(16));
+  return ['member', ...codes].join('-');
+}
+
+/**
  * Path slug for URLs: lowercases each part, replaces any run of
  * non-alphanumeric characters with `-`, trims hyphens, drops empty parts, and
  * joins with `/`. Slashes between parts are preserved; slashes inside a part

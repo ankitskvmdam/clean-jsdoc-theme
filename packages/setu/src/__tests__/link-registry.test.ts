@@ -87,6 +87,31 @@ describe('registerContainerView', () => {
     });
   });
 
+  it('falls back to a non-empty anchor only for punctuation-only names', () => {
+    const registry: LinkRegistry = new Map();
+    const view = {
+      ...emptyBuckets,
+      kind: 'class',
+      augments: [],
+      constructorParams: [],
+      doclet: { longname: 'Sym' },
+      instanceMethods: [
+        { longname: 'Sym#$', name: '$' },
+        { longname: 'Sym#_', name: '_' },
+        { longname: 'Sym#run', name: 'run' },
+      ],
+      staticMethods: [{ longname: 'Sym.$$', name: '$$' }],
+      instanceFields: [{ longname: 'Sym#$f', name: '$f' }],
+    } as unknown as ContainerView;
+    registerContainerView(registry, view, 'sym');
+    expect(registry.get('Sym#$')).toEqual({ slug: 'sym', anchor: 'member-24' });
+    expect(registry.get('Sym#_')).toEqual({ slug: 'sym', anchor: 'member-5f' });
+    expect(registry.get('Sym.$$')).toEqual({ slug: 'sym', anchor: 'member-24-24' });
+    // Controls: names with a non-empty slug keep their existing anchor.
+    expect(registry.get('Sym#run')).toEqual({ slug: 'sym', anchor: 'run' });
+    expect(registry.get('Sym#$f')).toEqual({ slug: 'sym', anchor: 'f' });
+  });
+
   it('skips members lacking a longname or name', () => {
     const registry: LinkRegistry = new Map();
     const view = {

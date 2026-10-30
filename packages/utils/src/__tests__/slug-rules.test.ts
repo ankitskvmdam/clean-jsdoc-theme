@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { slugifyHeading, slugifyPath } from '../site/slug-rules';
+import { memberAnchor, slugifyHeading, slugifyPath } from '../site/slug-rules';
 
 describe('slugifyHeading', () => {
   it('returns empty string for empty input', () => {
@@ -59,6 +59,33 @@ describe('slugifyHeading', () => {
   it('without a registry, repeated calls return the same slug', () => {
     expect(slugifyHeading('Hello')).toBe('hello');
     expect(slugifyHeading('Hello')).toBe('hello');
+  });
+});
+
+describe('memberAnchor', () => {
+  it('is exactly slugifyHeading for any name with a non-empty slug', () => {
+    const names = ['process', 'with space', 'café', 'Symbol.iterator', '$f', '_private', 'a$b'];
+    for (const name of names) {
+      expect(memberAnchor(name)).toBe(slugifyHeading(name));
+    }
+    expect(memberAnchor('$f')).toBe('f');
+    expect(memberAnchor('_private')).toBe('private');
+  });
+
+  it('falls back to the code points for a name whose slug is empty', () => {
+    expect(slugifyHeading('$')).toBe('');
+    expect(memberAnchor('$')).toBe('member-24');
+    expect(memberAnchor('_')).toBe('member-5f');
+    expect(memberAnchor('$$')).toBe('member-24-24');
+  });
+
+  it('gives distinct punctuation-only names distinct anchors', () => {
+    const names = ['$', '_', '$$', '_$', '$_', '__'];
+    expect(new Set(names.map(memberAnchor)).size).toBe(names.length);
+  });
+
+  it('never returns an empty anchor', () => {
+    expect(memberAnchor('')).toBe('member');
   });
 });
 

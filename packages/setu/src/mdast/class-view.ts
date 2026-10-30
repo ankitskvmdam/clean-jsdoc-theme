@@ -1,6 +1,6 @@
 import type { PhrasingContent, Root, RootContent } from 'mdast';
 import { ClassMember, ClassView, ContainerView, MemberBuckets } from '../class-view';
-import { slugifyHeading, TDoclet, TDocletOverload, TDocletParam, TDocletTypeParam } from '@clean-jsdoc-theme/utils';
+import { memberAnchor, TDoclet, TDocletOverload, TDocletParam, TDocletTypeParam } from '@clean-jsdoc-theme/utils';
 import { emphasis, h, hr, inlineCode, li, link, memberHeading, memberMeta, p, root, signature, strong, text, ul } from './builders';
 import {
   docletBlocks,
@@ -529,10 +529,10 @@ export function memberBadges(member: ClassMember): string[] {
  * Render one member as: a `<MemberHeading>` (an `h{depth}` whose content is one
  * `<code>` showing the full signature — `process(data) -> Promise.<number>` for
  * methods/functions, the bare name for fields — with an explicit id so the
- * anchor stays `slugifyHeading(name)`); a `<MemberMeta>` row (modifier/kind
- * chips on the left, the `filename:line` source link pinned right); then the
- * doclet's body via {@link docletBlocks}. TOC / search / `{@link}` resolve to
- * `#name` because the signature never feeds the slug (see {@link memberHeading}).
+ * anchor stays `memberAnchor(name)`, the same id the link registry uses); a
+ * `<MemberMeta>` row (modifier/kind chips on the left, the `filename:line`
+ * source link pinned right); then the doclet's body via {@link docletBlocks}.
+ * TOC / search / `{@link}` resolve to `#name` because the signature never feeds the slug (see {@link memberHeading}).
  * The `modifiers` section is skipped — the chips replace that paragraph.
  * Reusable for any kind with named, headed members.
  */
@@ -550,7 +550,7 @@ export function memberBlocks(
   const overloaded = options.flavor === 'typedoc' && hasOverloads(member);
   const sig = overloaded ? name : (tsMemberSignature(member) ?? name);
   const out: RootContent[] = [
-    memberHeading({ id: slugifyHeading(name), depth: headingLevel, name, sig }),
+    memberHeading({ id: memberAnchor(name), depth: headingLevel, name, sig }),
   ];
 
   const badges = memberBadges(member);
