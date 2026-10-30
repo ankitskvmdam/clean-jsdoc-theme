@@ -22,7 +22,7 @@ The workflow runs through the [`clean-jsdoc`](/packages/aadesh-overview) CLI
 ([**bhasha**](/packages/bhasha-overview)).
 
 > [!NOTE]
-> **Prerequisites:** JSDoc ≥ 4 (or TypeDoc, for extract) and Node ≥ 20. Install
+> **Prerequisites:** JSDoc ≥ 4 (or TypeDoc, for extract) and Node ≥ 22. Install
 > the CLI alongside the theme:
 > `pnpm add -D clean-jsdoc-theme @clean-jsdoc-theme/aadesh`
 

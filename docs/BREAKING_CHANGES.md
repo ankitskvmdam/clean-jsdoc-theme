@@ -62,7 +62,7 @@ v5 is a ground-up rewrite. Breaking changes, by category:
 
 ### Minimum versions
 
-- **JSDoc `>=4`** (v4 supported `>=3.x <=4.x`) and **Node `>=20`**.
+- **JSDoc `>=4`** (v4 supported `>=3.x <=4.x`) and **Node `>=22`**.
   → [MIGRATION §2](./MIGRATION.md#2-compatibility-matrix).
 
 See [MIGRATION.md](./MIGRATION.md) for the full guide and for staying on v4.

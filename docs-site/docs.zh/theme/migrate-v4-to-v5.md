@@ -39,7 +39,7 @@ v4 将主题选项嵌套在 **`opts.theme_opts.*`** 之下。v5 则**直接从 `
 
 <step label="Check compatibility">
 
-v5 需要 **JSDoc ≥ 4** 和 **Node ≥ 20**。请在 `plugins` 列表中保留
+v5 需要 **JSDoc ≥ 4** 和 **Node ≥ 22**。请在 `plugins` 列表中保留
 `plugins/markdown` 插件——v5 仍然**必须**使用它（JSDoc 用它在主题处理之前渲染
 comment 中的 Markdown），缺少它时构建会报错并停止。暂时想留在 v4？请固定
 `"clean-jsdoc-theme": "^4"`——v5 预发布版本在 npm `next` 标签下发布，因此 `^4`
