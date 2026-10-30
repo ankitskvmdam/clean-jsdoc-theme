@@ -146,15 +146,21 @@ export function makePlaygroundResolver(
   };
 }
 
-/** Concatenate the text content of a heading node's inline children. */
+/**
+ * The visible text of a heading, read recursively through its phrasing
+ * children (`**Bold** title` → `Bold title`, `[link](x)` → `link`). Only
+ * `text` and `inlineCode` contribute; images, breaks, raw HTML tags and MDX
+ * expressions add nothing. This must match what dwar's `hastText` reads from
+ * the rendered heading, since both feed `slugifyHeading`: reading only direct
+ * children made the TOC id of a formatted heading miss its rendered anchor.
+ */
 function headingText(node: MdastHeading): string {
-  let out = '';
-  for (const child of node.children) {
-    if (child.type === 'text' || child.type === 'inlineCode') {
-      out += child.value;
-    }
-  }
-  return out;
+  const visit = (n: { type: string; value?: unknown; children?: unknown[] }): string => {
+    if (n.type === 'text' || n.type === 'inlineCode') return String(n.value ?? '');
+    if (!Array.isArray(n.children)) return '';
+    return n.children.map((c) => visit(c as Parameters<typeof visit>[0])).join('');
+  };
+  return visit(node);
 }
 
 /** Read a string attribute off an mdast-mdx JSX element node. */

@@ -65,4 +65,36 @@ describe('heading ids: setu TOC === dwar rendered', () => {
     const dwarIds = [...html.matchAll(/<h[2-6][^>]*\sid="([^"]*)"/g)].map((m) => m[1]);
     expect(dwarIds).toEqual(setuIds);
   });
+
+  it('match for formatted headings (bold, emphasis, link, inline code, emoji)', async () => {
+    const content = [
+      '# Formatted',
+      '## **Bold** title',
+      '## An *emphasised* word',
+      '## See [the docs](https://example.com)',
+      '## The `run()` method',
+      '## $ *!*',
+      '## \u26a0\ufe0f **Warning**',
+      '## Launch 🚀 ![logo](logo.png)',
+    ].join('\n\n');
+    const { pages } = buildDocPages([{ path: 'formatted', content, type: 'markdown' }]);
+    const page = pages[0];
+    const setuIds = (page.headings ?? []).map((h) => h.id);
+    expect(setuIds).toEqual([
+      'bold-title',
+      'an-emphasised-word',
+      'see-the-docs',
+      'the-run-method',
+      'section--24_20_21',
+      'warning',
+      'launch',
+    ]);
+
+    const manifest: SiteManifest = { pages: [page], nav: [], buildId: 'formatted' };
+    const result = await render(manifest, { theme });
+    expect(result.errors ?? []).toEqual([]);
+    const html = asString(result.files.find((f) => f.path === 'formatted/index.html')!);
+    const dwarIds = [...html.matchAll(/<h[2-6][^>]*\sid="([^"]*)"/g)].map((m) => m[1]);
+    expect(dwarIds).toEqual(setuIds);
+  });
 });
