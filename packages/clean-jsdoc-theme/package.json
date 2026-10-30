@@ -29,7 +29,7 @@
   "homepage": "https://ankdev.me/clean-jsdoc-theme/theme/jsdoc-getting-started",
   "license": "MIT",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "funding": {
     "type": "github",

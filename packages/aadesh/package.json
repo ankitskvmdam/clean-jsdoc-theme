@@ -34,7 +34,7 @@
   "author": "Ankit Kumar (hello@ankdev.me)",
   "license": "MIT",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "funding": {
     "type": "github",
