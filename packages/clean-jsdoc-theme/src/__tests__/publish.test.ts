@@ -19,6 +19,9 @@ import {
   normalizePlayground,
   normalizeSectionOrder,
   outputSourceFilesEnabled,
+  publish,
+  reportBuildFailure,
+  resolveCustomAssets,
   resolveFooter,
 } from '../publish';
 
@@ -80,6 +83,79 @@ describe('resolveFooter', () => {
       expect(warn).toHaveBeenCalled();
     } finally {
       warn.mockRestore();
+    }
+  });
+});
+
+describe('publish failure handling', () => {
+  const resetExitCode = () => {
+    process.exitCode = undefined;
+  };
+
+  it('outside JSDoc, rejects and marks the process as failed', async () => {
+    try {
+      // No `destination` → the bridge throws before doing any work.
+      await expect(publish({}, {})).rejects.toThrow('opts.destination is required');
+      expect(process.exitCode).toBe(1);
+    } finally {
+      resetExitCode();
+    }
+  });
+
+  it("inside JSDoc, reports once through JSDoc's logger and resolves", () => {
+    const logged: string[] = [];
+    try {
+      reportBuildFailure(new Error('boom'), false, () => ({ error: (m) => logged.push(m) }));
+      expect(logged).toEqual(['boom']);
+      expect(process.exitCode).toBe(1);
+    } finally {
+      resetExitCode();
+    }
+  });
+
+  it('adds the stack trace only when asked (JSDoc --debug/--verbose)', () => {
+    const logged: string[] = [];
+    try {
+      reportBuildFailure(new Error('boom'), true, () => ({ error: (m) => logged.push(m) }));
+      expect(logged[0]).toMatch(/^boom\n.*Error: boom/s);
+    } finally {
+      resetExitCode();
+    }
+  });
+});
+
+describe('resolveCustomAssets', () => {
+  const href = (p: string): string => '/' + p;
+
+  it('warns on (and skips) v4-style CDN objects and remote URLs', async () => {
+    const warnings: string[] = [];
+    const out = await resolveCustomAssets(
+      {
+        customCssFile: [{ href: 'https://cdn.example/x.css', integrity: 'sha-1' }],
+        customJsFile: 'https://code.jquery.com/jquery.js',
+      },
+      href,
+      (m) => warnings.push(m)
+    );
+    expect(out.files).toEqual([]);
+    expect(warnings).toHaveLength(2);
+    expect(warnings[0]).toContain('customCssFile takes local file paths');
+    expect(warnings[0]).toContain('`@import url(…)` it from `customCss`');
+    expect(warnings[1]).toContain("customJsFile only copies local files; skipping 'https://");
+  });
+
+  it('copies a local file without warning', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'cjt-custom-'));
+    try {
+      const fp = join(dir, 'site.css');
+      await writeFile(fp, 'body{}', 'utf8');
+      const warnings: string[] = [];
+      const out = await resolveCustomAssets({ customCssFile: fp }, href, (m) => warnings.push(m));
+      expect(out.files).toHaveLength(1);
+      expect(out.theme.customCssLinks?.[0]).toMatch(/^\/_assets\/site\.[0-9a-f]{8}\.css$/);
+      expect(warnings).toEqual([]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
     }
   });
 });

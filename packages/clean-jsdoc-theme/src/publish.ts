@@ -542,6 +542,14 @@ function resolveTheme(
   };
 }
 
+/**
+ * Where an option problem found outside `validateThemeOpts` is reported. The
+ * default prints a warning; `publish` passes a sink that, under `strict`,
+ * records it as an error instead (see `warnOption` there).
+ */
+type WarnSink = (message: string) => void;
+const consoleWarn: WarnSink = (message) => console.warn(message);
+
 /** Trim a value to a non-empty string, or `undefined`. */
 function nonEmptyString(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim().length > 0 ? value : undefined;
@@ -564,27 +572,51 @@ function contentHash(bytes: Uint8Array): string {
  * else the bare `<base><ext>`. A file that can't be read is skipped with a
  * warning (resilient, like `prepareSiteName`); an identical served name is
  * emitted once.
+ *
+ * Only local file paths are copied. An entry that isn't a string (v4's
+ * `add_style_path`/`add_script_path` took `{ href, integrity, crossorigin }`
+ * CDN objects) or is a remote URL is skipped with a warning naming the
+ * alternative (`remoteAlternative`), instead of vanishing silently.
  */
 async function copyCustomFiles(
   raw: unknown,
   ext: '.css' | '.js',
   hash: boolean,
   label: string,
-  hrefForServed: (servedPath: string) => string
+  remoteAlternative: string,
+  hrefForServed: (servedPath: string) => string,
+  warn: WarnSink = consoleWarn
 ): Promise<{ links: string[]; files: OutputFile[] }> {
-  const paths = (Array.isArray(raw) ? raw : [raw]).filter(
-    (p): p is string => typeof p === 'string' && p.trim().length > 0
-  );
+  const entries = raw === undefined || raw === null ? [] : Array.isArray(raw) ? raw : [raw];
+  const paths: string[] = [];
+  for (const entry of entries) {
+    if (typeof entry !== 'string') {
+      warn(
+        `clean-jsdoc-theme: ${label} takes local file paths; skipping ${JSON.stringify(entry)}. ` +
+          `For a remote file, download it or ${remoteAlternative}.`
+      );
+      continue;
+    }
+    const trimmed = entry.trim();
+    if (trimmed.length === 0) continue;
+    if (/^([a-z][a-z0-9+.-]*:)?\/\//i.test(trimmed)) {
+      warn(
+        `clean-jsdoc-theme: ${label} only copies local files; skipping '${trimmed}'. ` +
+          `Download it, or ${remoteAlternative}.`
+      );
+      continue;
+    }
+    paths.push(trimmed);
+  }
   const links: string[] = [];
   const files: OutputFile[] = [];
   const seen = new Set<string>();
-  for (const p of paths) {
-    const trimmed = p.trim();
+  for (const trimmed of paths) {
     let bytes: Buffer;
     try {
       bytes = await readFile(resolvePath(trimmed));
     } catch {
-      console.warn(`clean-jsdoc-theme: could not read ${label} ('${trimmed}'); skipping it.`);
+      warn(`clean-jsdoc-theme: could not read ${label} ('${trimmed}'); skipping it.`);
       continue;
     }
     const base = basename(trimmed, extname(trimmed)) || 'custom';
@@ -608,9 +640,10 @@ async function copyCustomFiles(
  * `render()` stays pure and just links the resulting hrefs. `hashCustomAssets`
  * (default `true`) toggles the content-hash suffix.
  */
-async function resolveCustomAssets(
+export async function resolveCustomAssets(
   opts: JSDocOpts,
-  hrefForServed: (servedPath: string) => string
+  hrefForServed: (servedPath: string) => string,
+  warn: WarnSink = consoleWarn
 ): Promise<{
   theme: {
     customCss?: string;
@@ -622,8 +655,24 @@ async function resolveCustomAssets(
 }> {
   const hash = opts.hashCustomAssets !== false; // content-hashed by default
   const [cssAssets, jsAssets] = await Promise.all([
-    copyCustomFiles(opts.customCssFile, '.css', hash, 'customCssFile', hrefForServed),
-    copyCustomFiles(opts.customJsFile, '.js', hash, 'customJsFile', hrefForServed),
+    copyCustomFiles(
+      opts.customCssFile,
+      '.css',
+      hash,
+      'customCssFile',
+      '`@import url(…)` it from `customCss`',
+      hrefForServed,
+      warn
+    ),
+    copyCustomFiles(
+      opts.customJsFile,
+      '.js',
+      hash,
+      'customJsFile',
+      'load it from `customJs` (e.g. append a `<script src>`)',
+      hrefForServed,
+      warn
+    ),
   ]);
   const customCss = nonEmptyString(opts.customCss)?.trim();
   const customJs = nonEmptyString(opts.customJs)?.trim();
@@ -646,7 +695,10 @@ async function resolveCustomAssets(
  * like the logo/custom-asset paths), and an empty value yields `undefined` so
  * the default footer renders. Exported for testing.
  */
-export async function resolveFooter(raw: unknown): Promise<string | undefined> {
+export async function resolveFooter(
+  raw: unknown,
+  warn: WarnSink = consoleWarn
+): Promise<string | undefined> {
   if (typeof raw === 'string') {
     const trimmed = raw.trim();
     return trimmed.length > 0 ? trimmed : undefined;
@@ -658,7 +710,7 @@ export async function resolveFooter(raw: unknown): Promise<string | undefined> {
       const html = await readFile(resolvePath(file), 'utf8');
       return html.trim().length > 0 ? html : undefined;
     } catch {
-      console.warn(
+      warn(
         `clean-jsdoc-theme: could not read footer file ('${file}'); omitting the custom footer.`
       );
       return undefined;
@@ -678,7 +730,8 @@ export async function resolveFooter(raw: unknown): Promise<string | undefined> {
 export async function resolveFavicon(
   raw: unknown,
   hash: boolean,
-  hrefForServed: (servedPath: string) => string
+  hrefForServed: (servedPath: string) => string,
+  warn: WarnSink = consoleWarn
 ): Promise<{ href: string; files: OutputFile[] } | undefined> {
   if (typeof raw !== 'string' || raw.trim().length === 0) return undefined;
   const trimmed = raw.trim();
@@ -686,7 +739,7 @@ export async function resolveFavicon(
   try {
     bytes = await readFile(resolvePath(trimmed));
   } catch {
-    console.warn(`clean-jsdoc-theme: could not read favicon ('${trimmed}'); omitting it.`);
+    warn(`clean-jsdoc-theme: could not read favicon ('${trimmed}'); omitting it.`);
     return undefined;
   }
   const ext = extname(trimmed) || '.ico';
@@ -708,7 +761,7 @@ const META_IDENTITY_ATTRS = ['name', 'property', 'http-equiv', 'charset', 'itemp
  * identifying attribute (`name`/`property`/`http-equiv`/`charset`/`itemprop`) is
  * dropped with a warning — dwar does the final escaping + key validation.
  */
-export function normalizeMeta(raw: unknown): MetaTag[] | undefined {
+export function normalizeMeta(raw: unknown, warn: WarnSink = consoleWarn): MetaTag[] | undefined {
   if (!Array.isArray(raw)) return undefined;
   const out: MetaTag[] = [];
   for (const entry of raw) {
@@ -725,7 +778,7 @@ export function normalizeMeta(raw: unknown): MetaTag[] | undefined {
     }
     const hasIdentity = META_IDENTITY_ATTRS.some((a) => typeof tag[a] === 'string');
     if (!hasIdentity || Object.keys(tag).length === 0) {
-      console.warn(
+      warn(
         `clean-jsdoc-theme: skipping a meta entry with no usable name/property/http-equiv/charset attribute (${JSON.stringify(entry)}).`
       );
       continue;
@@ -751,7 +804,8 @@ function isServableUrl(value: string): boolean {
  */
 async function prepareSiteName(
   raw: string | SiteLogo | undefined,
-  hrefForServed: (servedPath: string) => string
+  hrefForServed: (servedPath: string) => string,
+  warn: WarnSink = consoleWarn
 ): Promise<{ siteName: SiteName | undefined; files: OutputFile[] }> {
   if (typeof raw === 'string') {
     const trimmed = raw.trim();
@@ -781,7 +835,7 @@ async function prepareSiteName(
       // OutputFile `path` stays relative; only the served href gets the prefix.
       out[key] = hrefForServed(served);
     } catch {
-      console.warn(
+      warn(
         `clean-jsdoc-theme: could not read logo image for siteName.${key} ('${v}'); using it verbatim.`
       );
       out[key] = v;
@@ -2032,7 +2086,63 @@ function readBuildSpec(): BuildSpec | null {
   };
 }
 
+/**
+ * The template entry JSDoc calls. Wraps {@link runPublish} so a failed build
+ * fails the process: JSDoc 4 runs `publish()` inside a promise chain with no
+ * rejection handler, so a thrown error was printed as `Unhandled rejection
+ * <stack>` and JSDoc still exited 0 — invisible to CI, and to aadesh, which
+ * checks each locale build's exit code. Every failure (strict-mode option
+ * errors, a missing `plugins/markdown`, a bad build spec, a render setup
+ * error) goes through {@link reportBuildFailure} instead.
+ */
 export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknown): Promise<void> {
+  try {
+    await runPublish(data, opts, tutorials);
+  } catch (err) {
+    reportBuildFailure(err, opts.debug === true || opts.verbose === true);
+  }
+}
+
+/** The slice of JSDoc's `jsdoc/util/logger` that {@link reportBuildFailure} uses. */
+interface JSDocLogger {
+  error: (message: string) => void;
+}
+
+/** JSDoc's logger — resolvable only inside a JSDoc process (see `jsdoc/env` above). */
+function loadJSDocLogger(): JSDocLogger {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return require('jsdoc/util/logger') as JSDocLogger;
+}
+
+/**
+ * Report a failed build once and make the process exit non-zero. Inside JSDoc,
+ * log through JSDoc's own logger: `logger.error` prints the message once and
+ * flags the run, so JSDoc exits 1 when `publish` settles (under `--pedantic` it
+ * exits 1 straight away). `process.exitCode` is set too, as a backstop.
+ * Outside a JSDoc process (`jsdoc/util/logger` isn't resolvable — a direct
+ * programmatic call, unit tests) rethrow, so the caller still gets the
+ * rejection. `withStack` (JSDoc's `--debug`/`--verbose`) adds the stack trace
+ * for bug reports. Exported for testing (`loadLogger` is injectable).
+ */
+export function reportBuildFailure(
+  err: unknown,
+  withStack: boolean,
+  loadLogger: () => JSDocLogger = loadJSDocLogger
+): void {
+  process.exitCode = 1;
+  let logger: JSDocLogger | undefined;
+  try {
+    logger = loadLogger();
+  } catch {
+    logger = undefined;
+  }
+  if (!logger || typeof logger.error !== 'function') throw err;
+  const message = err instanceof Error ? err.message : String(err);
+  const stack = withStack && err instanceof Error && err.stack ? `\n${err.stack}` : '';
+  logger.error(`${message}${stack}`);
+}
+
+async function runPublish(data: unknown, opts: JSDocOpts, tutorials?: unknown): Promise<void> {
   // Localization build mode (aadesh): a per-locale spec overrides the output
   // destination + base path and supplies the API translations to stamp in.
   const buildSpec = readBuildSpec();
@@ -2132,6 +2242,24 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   const strict =
     opts.strict === true ||
     (opts.templates as { default?: { strict?: unknown } } | undefined)?.default?.strict === true;
+  // Option problems found past validation — an unreadable footer/favicon/logo/
+  // custom file, a dropped meta or customCssFile entry, a bad scrollbar or
+  // collapsibleSidebarSections value. Resilient by default: warn and carry on.
+  // Strict escalates them like the validation warnings: each prints as an error
+  // and the build stops before anything is written (`failOnStrictOptionErrors`).
+  const strictOptionErrors: string[] = [];
+  const warnOption: WarnSink = (message) => {
+    if (!strict) return console.warn(message);
+    strictOptionErrors.push(message);
+    console.error(message);
+  };
+  const failOnStrictOptionErrors = (): void => {
+    if (strictOptionErrors.length === 0) return;
+    throw new Error(
+      `clean-jsdoc-theme: ${strictOptionErrors.length} option problem(s) in strict mode ` +
+        '(see above). Fix them or unset `strict`.'
+    );
+  };
   const fontResolver = createGoogleFontResolver();
   const { value, diagnostics } = await progress.stage('Validating options', () =>
     validateThemeOpts({
@@ -2255,11 +2383,11 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   const clubSidebarItems = opts.clubSidebarItems === true;
   const { value: collapsibleSidebarSections, warnings: collapsibleWarnings } =
     normalizeCollapsibleSidebarSections(opts.collapsibleSidebarSections);
-  collapsibleWarnings.forEach((w) => console.warn(`clean-jsdoc-theme: ${w}`));
+  collapsibleWarnings.forEach((w) => warnOption(`clean-jsdoc-theme: ${w}`));
   // Scrollbar presentation mode (see #281); an unrecognized value warns and
   // falls back to `undefined`, so dwar defaults to `styled`.
   const { value: scrollbar, warnings: scrollbarWarnings } = normalizeScrollbar(opts.scrollbar);
-  scrollbarWarnings.forEach((w) => console.warn(`clean-jsdoc-theme: ${w}`));
+  scrollbarWarnings.forEach((w) => warnOption(`clean-jsdoc-theme: ${w}`));
   // The enablement slice (provider selection + enableForAllExamples) gates setu's
   // `@playground` handling; the runtime slice is threaded into the theme instead.
   const playground = normalizePlayground(opts.playground);
@@ -2290,7 +2418,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
     const present = topLevelSectionLabels(manifest.nav);
     const unmatched = unmatchedCollapsibleSections(collapsibleSidebarSections, present);
     if (unmatched.length > 0) {
-      console.warn(
+      warnOption(
         `clean-jsdoc-theme: collapsibleSidebarSections — no sidebar section matches ` +
           `${unmatched.map((l) => `'${l}'`).join(', ')}. ` +
           `Available sections: ${present.join(', ')}.`
@@ -2302,6 +2430,7 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   // names a path, write the translatable slot template there and STOP — skipping
   // the expensive render/island-bundle. aadesh spawns jsdoc with this
   // env var set to harvest the template, then drives the per-locale builds.
+  failOnStrictOptionErrors();
   const extractPath = process.env.CLEAN_JSDOC_THEME_EXTRACT?.trim();
   if (extractPath) {
     const target = resolvePath(extractPath);
@@ -2319,7 +2448,11 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   // output before render, so the served paths are baked into the markup. The
   // shape was already validated above; `prepareSiteName` now only does the
   // local-logo file-copy I/O on the validated value.
-  const { siteName, files: logoFiles } = await prepareSiteName(value.siteName, hrefForServed);
+  const { siteName, files: logoFiles } = await prepareSiteName(
+    value.siteName,
+    hrefForServed,
+    warnOption
+  );
 
   // Resilient font fallback: a family flagged `fonts/not-google` is dropped so
   // `resolveTheme` falls back to the default for that slot (the error was
@@ -2350,18 +2483,26 @@ export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknow
   // copied AS-IS to content-hashed `_assets` here (the I/O layer) and merged onto
   // the theme as hrefs, so dwar links them while render() stays pure. Empty/unset
   // → no fields added, so behavior is unchanged when unused.
-  const customAssets = await resolveCustomAssets(opts, hrefForServed);
+  const customAssets = await resolveCustomAssets(opts, hrefForServed, warnOption);
   // Custom footer (v4 parity): inline HTML passes through; the `{ file }` form
   // is read here (the I/O layer) → a resolved string on the theme, so render()
   // stays pure. Unset/empty → default footer.
-  const footer = await resolveFooter(opts.footer);
+  const footer = await resolveFooter(opts.footer, warnOption);
   // Favicon (v4 parity, restored): the file is copied to a content-hashed
   // `_assets` asset here (the I/O layer) and dwar emits the `<link rel="icon">`,
   // so render() stays pure. Hashed like the other custom assets. Unset → none.
-  const favicon = await resolveFavicon(opts.favicon, opts.hashCustomAssets !== false, hrefForServed);
+  const favicon = await resolveFavicon(
+    opts.favicon,
+    opts.hashCustomAssets !== false,
+    hrefForServed,
+    warnOption
+  );
   // Site-wide custom <meta> tags. Validated/normalized here (junk dropped +
   // warned); dwar does the escaping + de-dupe against its head defaults.
-  const meta = normalizeMeta(opts.meta);
+  const meta = normalizeMeta(opts.meta, warnOption);
+  // Every option has been resolved by now; under strict, stop before rendering
+  // or writing anything if any of them had a problem.
+  failOnStrictOptionErrors();
 
   const absoluteDestination = resolvePath(destination);
   // Cache the island esbuild bundle across builds — see RenderOptions.islandCacheDir;

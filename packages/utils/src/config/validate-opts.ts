@@ -19,7 +19,7 @@ import { validateLlmsTxt } from './llms-txt';
 import { validateSiteName } from './site-name';
 import { validateSiteUrl } from './site-url';
 import { suggestKey } from './suggest';
-import { checkV4Options, v4OptionKeys } from './v4-options';
+import { checkV4Options, v4OptionKeys, V4_TOP_LEVEL_CODE } from './v4-options';
 
 /** How `validateThemeOpts` treats keys not in {@link THEME_OPT_KEYS}. */
 export type UnknownKeyPolicy = 'suggest-typos' | 'warn-all' | 'ignore';
@@ -53,8 +53,10 @@ export interface ValidateThemeOptsInput {
    */
   checkV4Options?: boolean;
   /**
-   * Strict mode. Reports the v4 findings above as errors instead of warnings,
-   * so a strict build fails on them. Default `false`.
+   * Strict mode: every `warning` this call collects is reported as an `error`,
+   * so the caller's `hasErrors()` check fails the build — except top-level v4
+   * option names, which may belong to another JSDoc plugin and stay warnings.
+   * Default `false`.
    */
   strict?: boolean;
 }
@@ -128,8 +130,8 @@ function checkUnknownKeys(
  * Validate a raw opts object. Runs `siteName` + `fonts` validators (the latter
  * does the async Google Fonts check when a resolver is supplied) and the
  * unknown-key policy, all into one bag, then returns normalized values. Never
- * throws — strict-mode enforcement is the caller's job via
- * `result.diagnostics.hasErrors()`.
+ * throws — with `strict` the warnings come back as errors, and failing the
+ * build is the caller's job via `result.diagnostics.hasErrors()`.
  */
 export async function validateThemeOpts(
   input: ValidateThemeOptsInput
@@ -149,7 +151,7 @@ export async function validateThemeOpts(
 
   if (input.checkV4Options) {
     const themeKeys = new Set<string>(THEME_OPT_KEYS);
-    checkV4Options(opts, diagnostics, themeKeys, input.strict ? 'error' : 'warning');
+    checkV4Options(opts, diagnostics, themeKeys);
     // Already reported with a migration hint — keep the unknown-key pass from
     // adding a second, vaguer diagnostic for the same key.
     const handled = v4OptionKeys(themeKeys);
@@ -158,6 +160,8 @@ export async function validateThemeOpts(
   } else {
     checkUnknownKeys(opts, diagnostics, policy, knownNonThemeKeys);
   }
+
+  if (input.strict) diagnostics.escalateWarnings((d) => d.code === V4_TOP_LEVEL_CODE);
 
   return { value: { siteName, fonts, locales, siteUrl, llmsTxt }, diagnostics };
 }

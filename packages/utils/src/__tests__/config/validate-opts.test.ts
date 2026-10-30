@@ -219,3 +219,23 @@ describe('validateThemeOpts — unknown-key policy', () => {
     expect(byCode(diagnostics.list, 'opts/unknown-key')).toBeUndefined();
   });
 });
+
+describe('validateThemeOpts — strict', () => {
+  it('escalates every option warning to an error (typo, siteUrl)', async () => {
+    const { diagnostics } = await validateThemeOpts({
+      opts: { siteNme: 'X', siteUrl: 'not a url' },
+      strict: true,
+    });
+    expect(byCode(diagnostics.list, 'opts/unknown-key')?.level).toBe('error');
+    expect(byCode(diagnostics.list, 'site-url/invalid')?.level).toBe('error');
+    expect(diagnostics.list.some((d) => d.level === 'warning')).toBe(false);
+    expect(diagnostics.hasErrors()).toBe(true);
+  });
+
+  it('leaves the same options as warnings without strict', async () => {
+    const { diagnostics } = await validateThemeOpts({
+      opts: { siteNme: 'X', siteUrl: 'not a url' },
+    });
+    expect(diagnostics.hasErrors()).toBe(false);
+  });
+});
