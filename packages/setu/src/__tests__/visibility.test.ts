@@ -11,6 +11,7 @@ import type { NavNode, TDoclet, TJSDocSaltyCollection } from '@clean-jsdoc-theme
 import { generateSite } from '../index';
 import { pruneHiddenDoclets } from '../doclet';
 import { getJSDocTaffyData } from './factory';
+import { PRIVATE_CTOR_DOCLETS } from './private-ctor-fixture';
 
 function makeCollection(items: unknown[]): TJSDocSaltyCollection<TDoclet> {
   return salty.taffy(items) as unknown as TJSDocSaltyCollection<TDoclet>;
@@ -219,5 +220,53 @@ describe('generateSite — hidden symbols never surface', () => {
       (p) => p.slug
     );
     expect(slugs).toEqual(withPrivate);
+  });
+});
+
+describe('generateSite — a @private ES6 constructor (real JSDoc output)', () => {
+  const site = (opts?: { includePrivate?: boolean }) =>
+    generateSite(makeCollection(PRIVATE_CTOR_DOCLETS), opts);
+  const page = (m: ReturnType<typeof generateSite>, slug: string) =>
+    m.pages.find((p) => p.slug === slug);
+
+  it('keeps the class and its public members, hides only the constructor', () => {
+    const m = site();
+    const foo = page(m, 'foo')!.body;
+    expect(navSlugs(m.nav)).toContain('foo');
+    expect(foo).toContain('Foo class desc.');
+    expect(foo).toContain('name="bar"');
+    // The constructor's privacy is not the class's: no class-level badge…
+    expect(foo).not.toContain('**Modifiers:** `private`');
+    // …and the constructor section (signature, private description, params) is gone.
+    expect(foo).not.toContain('## Constructor');
+    expect(foo).not.toContain('Ctor desc.');
+    expect(foo).not.toContain('the x');
+    // Control: a genuinely private method on the same class stays hidden.
+    expect(foo).not.toContain('name="baz"');
+  });
+
+  it('control: a class whose own comment is @private is still hidden', () => {
+    const m = site();
+    for (const slug of ['sec', 'both']) {
+      expect(page(m, slug)).toBeUndefined();
+      expect(navSlugs(m.nav)).not.toContain(slug);
+    }
+  });
+
+  it('includePrivate shows the constructor again (unchanged from before)', () => {
+    const foo = page(site({ includePrivate: true }), 'foo')!.body;
+    expect(foo).toContain('## Constructor');
+    expect(foo).toContain('Ctor desc.');
+    expect(foo).toContain('name="baz"');
+  });
+
+  it('does not mutate the input doclets', () => {
+    const c = makeCollection(PRIVATE_CTOR_DOCLETS);
+    generateSite(c);
+    const foo = c({ longname: 'Foo', kind: 'class' })
+      .get()
+      .find((d) => !d.undocumented)!;
+    expect(foo.access).toBe('private');
+    expect(foo.hideconstructor).toBeUndefined();
   });
 });
