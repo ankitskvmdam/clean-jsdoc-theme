@@ -175,3 +175,31 @@ export function readThemeOption(app: Pick<Application, 'options'>): CleanJsdocTh
 
 /** Keys of the `cleanJsdocTheme` block that are NOT theme opts validated by utils. */
 export const KNOWN_NON_THEME_KEYS: ReadonlySet<string> = new Set(['strict']);
+
+/**
+ * Diagnostic code for a JSDoc-only option found in the `cleanJsdocTheme` block.
+ * Kept apart from `opts/unknown-key` so strict mode leaves it a warning.
+ */
+export const UNSUPPORTED_IN_TYPEDOC_CODE = 'opts/unsupported-in-typedoc';
+
+/**
+ * Theme options the JSDoc bridge reads but the TypeDoc writer doesn't (yet),
+ * each with a hint for the TypeDoc user. Without this list they'd either be
+ * flagged as unknown keys (and fail a strict build) or, for the ones in utils'
+ * `THEME_OPT_KEYS`, be ignored without a word.
+ */
+export const JSDOC_ONLY_KEYS: ReadonlyMap<string, string> = new Map([
+  ['colors', 'restyle the palette with `customCss` in a JSDoc build, or wait for TypeDoc support.'],
+  [
+    'darkColors',
+    'restyle the palette with `customCss` in a JSDoc build, or wait for TypeDoc support.',
+  ],
+  ['customCss', 'not wired into the TypeDoc flavor yet.'],
+  ['customCssFile', 'not wired into the TypeDoc flavor yet.'],
+  ['customJs', 'not wired into the TypeDoc flavor yet.'],
+  ['customJsFile', 'not wired into the TypeDoc flavor yet.'],
+  ['hashCustomAssets', 'only applies to the custom CSS/JS files of a JSDoc build.'],
+  ['progress', 'TypeDoc prints its own progress output.'],
+  ['readme', "set TypeDoc's own top-level `readme` option instead."],
+  ['tutorials', "use TypeDoc's `projectDocuments` or `cleanJsdocTheme.docs` instead."],
+]);

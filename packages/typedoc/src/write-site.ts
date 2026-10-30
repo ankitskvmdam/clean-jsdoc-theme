@@ -63,7 +63,13 @@ import {
   rewriteImageRefs,
 } from './docs';
 import { writeOutputFiles } from './write-output-files';
-import { KNOWN_NON_THEME_KEYS, readThemeOption, resolveSiteUrl } from './options';
+import {
+  JSDOC_ONLY_KEYS,
+  KNOWN_NON_THEME_KEYS,
+  readThemeOption,
+  resolveSiteUrl,
+  UNSUPPORTED_IN_TYPEDOC_CODE,
+} from './options';
 import type { CleanJsdocThemeBlock } from './options';
 
 /**
@@ -634,11 +640,6 @@ export async function writeSite(
   const block = readThemeOption(app);
   const fontResolver = createGoogleFontResolver();
 
-  // TypeDoc carries its own project-wide `hostedBaseUrl`; fall back to it so a
-  // TypeDoc user who already set it gets sitemap.xml/llms.txt without repeating
-  // themselves. The theme-specific key wins — see `resolveSiteUrl`. Resolved
-  // BEFORE validation so utils validates the URL we'll actually use (and warns
-  // about a dropped path segment, which `hostedBaseUrl` commonly carries).
   // Strict mode turns every option warning into an error and fails the build
   // (TypeDoc logs the thrown error and exits non-zero); otherwise (the
   // resilient default) we log and continue. Validation warnings are escalated
@@ -661,18 +662,39 @@ export async function writeSite(
     );
   };
 
+  // TypeDoc carries its own project-wide `hostedBaseUrl`; fall back to it so a
+  // TypeDoc user who already set it gets sitemap.xml/llms.txt without repeating
+  // themselves. The theme-specific key wins — see `resolveSiteUrl`. Resolved
+  // BEFORE validation so utils validates the URL we'll actually use (and warns
+  // about a dropped path segment, which `hostedBaseUrl` commonly carries — that
+  // one is a likely misconfiguration, so strict escalates it). Setting both keys
+  // to different values is the documented override, not a mistake: it's a plain
+  // `logger.warn`, never escalated by strict.
   const resolvedSiteUrl = resolveSiteUrl(block.siteUrl, app.options.getValue('hostedBaseUrl'));
   if (resolvedSiteUrl.warning) {
-    optionLog.warn(`[clean-jsdoc-theme] ${resolvedSiteUrl.warning}`);
+    logger.warn(`[clean-jsdoc-theme] ${resolvedSiteUrl.warning}`);
   }
 
   const { value, diagnostics } = await validateThemeOpts({
     opts: { ...block, siteUrl: resolvedSiteUrl.siteUrl },
     fontResolver,
     unknownKeyPolicy: 'warn-all',
-    knownNonThemeKeys: KNOWN_NON_THEME_KEYS,
+    // JSDoc-only keys are reported below with their own code, not as unknown.
+    knownNonThemeKeys: new Set([...KNOWN_NON_THEME_KEYS, ...JSDOC_ONLY_KEYS.keys()]),
     strict,
   });
+  // Options the JSDoc bridge reads but this writer doesn't (yet). They're
+  // documented for both tools, so they're not typos: warn that they're ignored,
+  // added after validation so strict never escalates them — a shared
+  // JSDoc+TypeDoc config shouldn't fail its TypeDoc build over them.
+  for (const [key, hint] of JSDOC_ONLY_KEYS) {
+    if (!Object.hasOwn(block, key)) continue;
+    diagnostics.warning(
+      UNSUPPORTED_IN_TYPEDOC_CODE,
+      `"${key}" isn't supported by the TypeDoc flavor yet; it's ignored.`,
+      { hint, path: key }
+    );
+  }
 
   if (diagnostics.list.length > 0) {
     const formatted = formatDiagnostics(diagnostics);

@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -99,11 +99,18 @@ describe('collectProjectDocuments', () => {
 
 describe('writeSite — strict mode', () => {
   /** The app with a given `cleanJsdocTheme` block (the plugin option isn't declared here). */
-  const withBlock = (block: Record<string, unknown>) => ({
+  const withBlock = (
+    block: Record<string, unknown>,
+    typedocOptions: Record<string, unknown> = {}
+  ) => ({
     logger: app.logger,
     options: {
       getValue: (name: string) =>
-        name === 'cleanJsdocTheme' ? block : app.options.getValue(name as never),
+        name === 'cleanJsdocTheme'
+          ? block
+          : name in typedocOptions
+            ? typedocOptions[name]
+            : app.options.getValue(name as never),
     } as unknown as Application['options'],
   });
 
@@ -128,6 +135,53 @@ describe('writeSite — strict mode', () => {
         writeSite(out, project, withBlock({ strict: true, favicon: './no/such/favicon.ico' }))
       ).rejects.toThrow(/1 option problem\(s\) in strict mode/);
       expect(error).toHaveBeenCalledWith(expect.stringContaining('could not read favicon'));
+      expect(existsSync(out)).toBe(false);
+    } finally {
+      error.mockRestore();
+    }
+  });
+
+  it('does not fail on JSDoc-only keys or the documented siteUrl override', async () => {
+    const out = join(tmp, 'out-strict-tolerated');
+    const warn = vi.spyOn(app.logger, 'warn').mockImplementation(() => {});
+    const info = vi.spyOn(app.logger, 'info').mockImplementation(() => {});
+    try {
+      await writeSite(
+        out,
+        project,
+        withBlock(
+          {
+            strict: true,
+            colors: { accent: 'red' },
+            customCss: 'body{}',
+            siteUrl: 'https://docs.example.com',
+          },
+          { hostedBaseUrl: 'https://example.com' }
+        )
+      );
+      expect(readdirSync(out).length).toBeGreaterThan(0);
+      const said = [...warn.mock.calls, ...info.mock.calls].map((c) => String(c[0])).join('\n');
+      expect(said).toContain(`"colors" isn't supported by the TypeDoc flavor yet; it's ignored.`);
+      expect(said).toContain('[opts/unsupported-in-typedoc]');
+      expect(said).toContain('using `cleanJsdocTheme.siteUrl`');
+    } finally {
+      warn.mockRestore();
+      info.mockRestore();
+    }
+  }, 60_000);
+
+  it('fails on a hostedBaseUrl sub-path with no basePath (likely misconfigured)', async () => {
+    const out = join(tmp, 'out-strict-subpath');
+    const error = vi.spyOn(app.logger, 'error').mockImplementation(() => {});
+    try {
+      await expect(
+        writeSite(
+          out,
+          project,
+          withBlock({ strict: true }, { hostedBaseUrl: 'https://example.com/docs/' })
+        )
+      ).rejects.toThrow(/validation failed in strict mode/);
+      expect(error).toHaveBeenCalledWith(expect.stringContaining('site-url/path-ignored'));
       expect(existsSync(out)).toBe(false);
     } finally {
       error.mockRestore();
