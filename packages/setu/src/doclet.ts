@@ -60,6 +60,12 @@ function isOwnHidden(d: TDoclet, includePrivate: boolean): boolean {
  *   containers included, so no page is left orphaned under a parent that has no
  *   page and no link points at one.
  *
+ * A class whose only private part is its CONSTRUCTOR stays: JSDoc merges an ES6
+ * `constructor` comment into the class doclet, so `/** @private *\/ constructor`
+ * makes the whole class read `access: 'private'` (see {@link ctorOnlyPrivate}).
+ * Its page and public members are kept; the copy that replaces the doclet drops
+ * the borrowed `access` and hides the Constructor section instead.
+ *
  * A longname is hidden only when EVERY documented doclet for it is hidden, so a
  * private overload never takes a public one down with it. Undocumented doclets
  * are otherwise kept (signature recovery and canonical-doclet fallback read
@@ -72,8 +78,10 @@ export function pruneHiddenDoclets(
 ): TJSDocSaltyCollection<TDoclet> {
   const includePrivate = options.includePrivate ?? false;
   const all = collection().get();
-  // Nothing to hide → hand back the input untouched.
-  if (!all.some((d) => isOwnHidden(d, includePrivate))) return collection;
+  const ctorOnly = includePrivate ? new Set<TDoclet>() : ctorOnlyPrivate(all);
+  const hiddenSelf = (d: TDoclet) => isOwnHidden(d, includePrivate) && !ctorOnly.has(d);
+  // Nothing to hide or rewrite → hand back the input untouched.
+  if (ctorOnly.size === 0 && !all.some(hiddenSelf)) return collection;
 
   const hiddenCandidates = new Set<string>();
   const visibleDocumented = new Set<string>();
@@ -86,7 +94,7 @@ export function pruneHiddenDoclets(
       parentOf.set(d.longname, d.memberof);
     }
     if (d.undocumented) continue;
-    if (isOwnHidden(d, includePrivate)) hiddenCandidates.add(d.longname);
+    if (hiddenSelf(d)) hiddenCandidates.add(d.longname);
     else visibleDocumented.add(d.longname);
   }
   const hidden = new Set([...hiddenCandidates].filter((ln) => !visibleDocumented.has(ln)));
@@ -102,12 +110,60 @@ export function pruneHiddenDoclets(
     return false;
   };
 
-  const kept = all.filter((d) => {
-    if (isOwnHidden(d, includePrivate)) return false;
-    if (d.undocumented && d.longname && hidden.has(d.longname)) return false;
-    return !underHidden(d);
-  });
+  const kept = all
+    .filter((d) => {
+      if (hiddenSelf(d)) return false;
+      if (d.undocumented && d.longname && hidden.has(d.longname)) return false;
+      return !underHidden(d);
+    })
+    .map((d) => (ctorOnly.has(d) ? withoutPrivateConstructor(d) : d));
   return salty.taffy<TDoclet>(kept);
+}
+
+/**
+ * Documented class doclets whose `access: 'private'` came from a `@private`
+ * ES6 constructor, not from the class comment. JSDoc's `-X` output for
+ * `/** Foo. *\/ class Foo { /** @private *\/ constructor() {} }` is:
+ * - `Foo` (documented): `access: 'private'`, `classdesc` from the class comment;
+ * - `Foo#Foo` (undocumented `kind: 'class'`, the constructor record): `access: 'private'`;
+ * - `Foo` (undocumented `kind: 'class'`, the class-comment record): NO `access`.
+ *
+ * When the class comment itself says `@private`, that last record carries
+ * `access: 'private'` too — so that record is what tells the two apart.
+ */
+function ctorOnlyPrivate(all: readonly TDoclet[]): Set<TDoclet> {
+  const privateUndocumentedClasses = new Set<string>();
+  for (const d of all) {
+    if (d.undocumented && d.kind === 'class' && d.access === 'private' && d.longname) {
+      privateUndocumentedClasses.add(d.longname);
+    }
+  }
+  const out = new Set<TDoclet>();
+  for (const d of all) {
+    if (d.undocumented || d.kind !== 'class' || d.access !== 'private') continue;
+    if (!d.longname || !d.name) continue;
+    if (!privateUndocumentedClasses.has(`${d.longname}#${d.name}`)) continue;
+    if (privateUndocumentedClasses.has(d.longname)) continue; // the class itself is private
+    out.add(d);
+  }
+  return out;
+}
+
+/**
+ * A shallow copy of a class doclet whose constructor is private: drop the
+ * borrowed `access` (the class is public), hide the Constructor section via
+ * `hideconstructor`, and drop the constructor's own `params` and `description`
+ * (JSDoc puts the constructor comment in `description`; the class comment is in
+ * `classdesc`, and the body's `classdesc ?? description` fallback would
+ * otherwise show the private text on a class with no comment of its own). The
+ * input doclet is not mutated.
+ */
+function withoutPrivateConstructor(d: TDoclet): TDoclet {
+  const copy: TDoclet = { ...d, hideconstructor: true };
+  delete copy.access;
+  delete copy.params;
+  delete copy.description;
+  return copy;
 }
 
 /**
