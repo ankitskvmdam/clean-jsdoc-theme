@@ -10,6 +10,14 @@ export interface FilterDocletsOptions {
 /**
  * Visibility/policy filter shared across consumers (class view, sidebar, …).
  * Does not mutate; returns a new array.
+ *
+ * Nameless doclets are always dropped, regardless of options. JSDoc 4 can't
+ * name an ES `#private` member, so a documented `#secret() {}` arrives as
+ * `name: ''`, `longname: ''` (still `memberof` its class). It would otherwise
+ * render as a blank member heading with an empty anchor, and leak into the
+ * TOC/search/link registry. Dropped silently: there is no name to warn about
+ * usefully, the author can't fix it short of renaming the member, and a
+ * `#private` member is hidden by the default policy's intent anyway.
  */
 export function filterDoclets<T extends TDoclet>(
   doclets: readonly T[],
@@ -18,6 +26,7 @@ export function filterDoclets<T extends TDoclet>(
   const includeUndocumented = options.includeUndocumented ?? false;
   const includePrivate = options.includePrivate ?? false;
   return doclets.filter((d) => {
+    if (!d.name) return false;
     if (!includeUndocumented && d.undocumented) return false;
     if (!includePrivate && d.access === 'private') return false;
     return true;

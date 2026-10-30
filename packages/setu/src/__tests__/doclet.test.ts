@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { default as salty } from '@jsdoc/salty';
 import { TDoclet, TJSDocSaltyCollection } from '@clean-jsdoc-theme/utils';
-import { getAllMembersOfClass, getMembersOf } from '../doclet';
+import { filterDoclets, getAllMembersOfClass, getMembersOf } from '../doclet';
 import { getContainerView } from '../class-view';
+import { generateSite } from '../index';
 import { getJSDocTaffyData } from './factory';
 
 function makeCollection(items: unknown[]): TJSDocSaltyCollection<TDoclet> {
@@ -147,5 +148,90 @@ describe('getContainerView — self-referential class', () => {
 
     // The Constructor section is unaffected.
     expect(view!.constructorParams.map((p) => p.name)).toEqual(['id', 'name']);
+  });
+});
+
+/**
+ * Mirrors JSDoc 4's output for a documented ES private method (`#secret() {}`):
+ * the parser can't name it, so the doclet arrives with `name: ''` and
+ * `longname: ''`, yet still `memberof` its class, next to a normal member.
+ */
+function makeClassWithNamelessMember(): TJSDocSaltyCollection<TDoclet> {
+  return makeCollection([
+    {
+      kind: 'class',
+      name: 'Odd',
+      longname: 'Odd',
+      scope: 'global',
+      classdesc: 'Holder.',
+      meta: { filename: 'odd.js', path: 'src', lineno: 1 },
+    },
+    {
+      kind: 'function',
+      name: '',
+      longname: '',
+      memberof: 'Odd',
+      description: 'Private-ish.',
+      params: [],
+      meta: { filename: 'odd.js', path: 'src', lineno: 3, code: { name: 'Odd#' } },
+    },
+    {
+      kind: 'function',
+      name: 'visible',
+      longname: 'Odd#visible',
+      memberof: 'Odd',
+      scope: 'instance',
+      description: 'Visible.',
+      meta: { filename: 'odd.js', path: 'src', lineno: 5 },
+    },
+  ]);
+}
+
+describe('filterDoclets', () => {
+  const named = { kind: 'function', name: 'ok', longname: 'X#ok' } as TDoclet;
+
+  it('drops nameless doclets', () => {
+    const nameless = { kind: 'function', name: '', longname: '' } as TDoclet;
+    expect(filterDoclets([nameless, named])).toEqual([named]);
+  });
+
+  it('drops nameless doclets even when every include option is on', () => {
+    const nameless = { kind: 'function', name: '', longname: '', undocumented: true } as TDoclet;
+    expect(filterDoclets([nameless], { includePrivate: true, includeUndocumented: true })).toEqual(
+      []
+    );
+  });
+
+  it('keeps named doclets and still applies the private/undocumented policy', () => {
+    const priv = { ...named, name: 'p', longname: 'X#p', access: 'private' } as TDoclet;
+    const undoc = { ...named, name: 'u', longname: 'X#u', undocumented: true } as TDoclet;
+    expect(filterDoclets([named, priv, undoc])).toEqual([named]);
+  });
+});
+
+describe('nameless members (JSDoc ES #private)', () => {
+  it('are left out of the container view; named members are kept', () => {
+    const view = getContainerView(makeClassWithNamelessMember(), 'Odd', 'class');
+    expect(view).not.toBeNull();
+    const all = [
+      ...view!.instanceMethods,
+      ...view!.instanceFields,
+      ...view!.staticMethods,
+      ...view!.staticFields,
+      ...view!.other,
+    ];
+    expect(all.map((m) => m.name)).toEqual(['visible']);
+  });
+
+  it('emit no blank member heading or anchor on the class page', () => {
+    const site = generateSite(makeClassWithNamelessMember());
+    const page = site.pages.find((p) => p.slug === 'odd');
+    expect(page).toBeDefined();
+    expect(page!.body).not.toContain('name=""');
+    expect(page!.body).not.toContain('id=""');
+    expect(page!.body).toContain('name="visible"');
+    const headingIds = (page!.headings ?? []).map((h) => h.id);
+    expect(headingIds).not.toContain('');
+    expect(headingIds).toContain('visible');
   });
 });
