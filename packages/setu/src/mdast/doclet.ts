@@ -558,6 +558,24 @@ function nestParamItems(
   return items;
 }
 
+/**
+ * A default value as the author wrote it, for an inline-code span — or `null`
+ * when there is nothing to show. JSDoc (and the TypeDoc bridge) hand string
+ * defaults over as SOURCE TEXT, quotes included (`[name=""]` → `'""'`,
+ * `[sep='']` → `"''"`, `[o={}]` → `'{}'`), so a string is shown verbatim —
+ * JSON-stringifying it again is what turned `""` into `"\"\""`. JSDoc converts
+ * bare literals to values (`[n=0]` → `0`, `[f=true]` → `true`, `[x=null]` →
+ * `null`), which `JSON.stringify` prints back as written. Every caller wraps the
+ * result in `inlineCode`, so braces, `<`, and backticks in a default can't be
+ * read as MDX expressions/JSX or break the span (the serializer widens the
+ * fence). An empty string would make an empty code span, so it shows nothing.
+ */
+export function formatDefaultValue(value: unknown): string | null {
+  if (value === undefined) return null;
+  const label = typeof value === 'string' ? value : JSON.stringify(value);
+  return label === undefined || label === '' ? null : label;
+}
+
 function paramListItem(
   param: TDocletParam,
   ctx: ParamSlotCtx | undefined,
@@ -569,22 +587,21 @@ function paramListItem(
 
   // The parenthetical is `(type, optional, default: value)`. The type is the
   // only linkable piece, so it renders as phrasing (a plain-text link when it
-  // resolves) while optional/default stay flat text — concatenating to the same
-  // string as before when nothing links.
+  // resolves); `optional` is flat text and the default an inline-code span (see
+  // `formatDefaultValue`).
   const typeNodes = typeExpressionPhrasing(param.type, ctx?.resolveLink, 'text');
-  const trailingFlags: string[] = [];
-  if (param.optional) trailingFlags.push('optional');
-  if (param.defaultvalue !== undefined)
-    trailingFlags.push(`default: ${JSON.stringify(param.defaultvalue)}`);
-  if (typeNodes || trailingFlags.length > 0) {
+  const flags: PhrasingContent[][] = [];
+  if (param.optional) flags.push([text('optional')]);
+  const dv = formatDefaultValue(param.defaultvalue);
+  if (dv !== null) flags.push([text('default: '), inlineCode(dv)]);
+  if (typeNodes || flags.length > 0) {
     if (line.length > 0) line.push(text(' '));
     line.push(text('('));
-    if (typeNodes) {
-      line.push(...typeNodes);
-      if (trailingFlags.length > 0) line.push(text(`, ${trailingFlags.join(', ')}`));
-    } else {
-      line.push(text(trailingFlags.join(', ')));
-    }
+    if (typeNodes) line.push(...typeNodes);
+    flags.forEach((flag, i) => {
+      if (typeNodes || i > 0) line.push(text(', '));
+      line.push(...flag);
+    });
     line.push(text(')'));
   }
 
@@ -953,10 +970,9 @@ export function docletBlocks(
     if (typeNodes) blocks.push(p(strong(text('Type'))), p(...typeNodes));
   }
 
-  if (!skip.has('default') && doclet.defaultvalue !== undefined) {
-    const dv = doclet.defaultvalue;
-    const label = typeof dv === 'string' ? dv : JSON.stringify(dv);
-    blocks.push(p(strong(text('Default:')), text(' '), inlineCode(label)));
+  const defaultLabel = skip.has('default') ? null : formatDefaultValue(doclet.defaultvalue);
+  if (defaultLabel !== null) {
+    blocks.push(p(strong(text('Default:')), text(' '), inlineCode(defaultLabel)));
   }
 
   if (!skip.has('fires') && doclet.fires && doclet.fires.length > 0) {
