@@ -470,3 +470,24 @@ describe('omitted optional closers stay markup when glued', () => {
     expect(escapeLiteralTags('<p>Array<p> here</p>')).toBe('<p>Array&lt;p> here</p>');
   });
 });
+
+// setu neutralizes an unterminated `<!--` and drops complete comments; the tag
+// scan must agree on what is a comment, or it would stop escaping (or escape
+// inside a comment) where the HTML parser doesn't.
+describe('literal tags next to HTML comments', () => {
+  it('keeps tags after an unterminated opener literal, beside the visible `<!--`', () => {
+    expect(mdx(htmlToMdastBlocks('<p>a <!-- open Promise<User> b</p>'))).toBe(
+      'a \\<!-- open Promise\\<User> b'
+    );
+  });
+
+  it('treats `<!-->` as a complete comment and keeps scanning after it', () => {
+    expect(mdx(htmlToMdastBlocks('<p>a <!--> Promise<User> <!-- c --> d<T></p>'))).toBe(
+      'a Promise\\<User> d\\<T>'
+    );
+  });
+
+  it('drops a commented-out tag and keeps one after the comment (Markdown)', () => {
+    expect(mdx(markdownToMdastBlocks('a <!-- x <User> --> Map<K> b'))).toBe('a Map\\<K> b');
+  });
+});
