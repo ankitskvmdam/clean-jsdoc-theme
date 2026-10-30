@@ -66,21 +66,24 @@ export function slugifyHeading(text: string, registry?: Map<string, number>): st
  * `{@link}` lands on the heading.
  *
  * Only when that slug is empty (a name made purely of punctuation, e.g. the
- * legal JS identifiers `$`, `_` or `$$`) does a fallback apply: `member-` plus
- * the name's code points in hex (`$` → `member-24`, `$$` → `member-24-24`).
+ * legal JS identifiers `$`, `_` or `$$`) does a fallback apply: `member--` plus
+ * the name's code points in hex (`$` → `member--24`, `$$` → `member--24-24`).
  * That keeps the id non-empty, stable across builds and distinct for distinct
  * names, and it's computed from the name alone, so the heading and the
- * registry can never disagree. Any name with a non-empty slug keeps its anchor.
+ * registry can never disagree. The double hyphen is deliberate: slugifyHeading
+ * collapses every hyphen run to one, so no real name (e.g. a quoted member
+ * `'member-24'`) can slugify to a fallback id. Any name with a non-empty slug
+ * keeps its anchor.
  *
  * @example
  *   memberAnchor('process'); // 'process'
- *   memberAnchor('$');       // 'member-24'
+ *   memberAnchor('$');       // 'member--24'
  */
 export function memberAnchor(name: string): string {
   const slug = slugifyHeading(name);
   if (slug) return slug;
   const codes = Array.from(String(name ?? ''), (ch) => ch.codePointAt(0)!.toString(16));
-  return ['member', ...codes].join('-');
+  return `member--${codes.join('-')}`;
 }
 
 /**

@@ -357,13 +357,17 @@ describe('link resolution — punctuation-only member names', () => {
         name: 'Sym',
         longname: 'Sym',
         scope: 'global',
-        classdesc: 'See {@link Sym#$}, {@link Sym#_}, {@link Sym.$$} and {@link Sym#run}.',
+        classdesc:
+          'See {@link Sym#$}, {@link Sym#_}, {@link Sym.$$}, {@link Sym#run} and ' +
+          '{@link Sym#"member-24"}.',
         meta: { filename: 'sym.js', path: 'src', lineno: 1 },
       },
       member('$', 'Sym#$', 'instance'),
       member('_', 'Sym#_', 'instance'),
       member('$$', 'Sym.$$', 'static'),
       member('run', 'Sym#run', 'instance'),
+      // A quoted name that looks like a fallback id; must not collide with `$`.
+      member('member-24', 'Sym#"member-24"', 'instance'),
     ]);
   }
 
@@ -375,10 +379,12 @@ describe('link resolution — punctuation-only member names', () => {
 
     expect(body).not.toContain('id=""');
     const ids = (page!.headings ?? []).map((h) => h.id);
-    expect(ids).toEqual(expect.arrayContaining(['member-24', 'member-5f', 'member-24-24', 'run']));
+    expect(ids).toEqual(
+      expect.arrayContaining(['member--24', 'member--5f', 'member--24-24', 'run', 'member-24'])
+    );
     expect(new Set(ids).size).toBe(ids.length);
 
-    for (const id of ['member-24', 'member-5f', 'member-24-24', 'run']) {
+    for (const id of ['member--24', 'member--5f', 'member--24-24', 'run', 'member-24']) {
       expect(body).toContain(`id="${id}"`);
       expect(body).toContain(`(/sym#${id})`);
     }

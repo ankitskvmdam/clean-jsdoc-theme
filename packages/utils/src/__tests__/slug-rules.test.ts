@@ -74,9 +74,9 @@ describe('memberAnchor', () => {
 
   it('falls back to the code points for a name whose slug is empty', () => {
     expect(slugifyHeading('$')).toBe('');
-    expect(memberAnchor('$')).toBe('member-24');
-    expect(memberAnchor('_')).toBe('member-5f');
-    expect(memberAnchor('$$')).toBe('member-24-24');
+    expect(memberAnchor('$')).toBe('member--24');
+    expect(memberAnchor('_')).toBe('member--5f');
+    expect(memberAnchor('$$')).toBe('member--24-24');
   });
 
   it('gives distinct punctuation-only names distinct anchors', () => {
@@ -84,8 +84,16 @@ describe('memberAnchor', () => {
     expect(new Set(names.map(memberAnchor)).size).toBe(names.length);
   });
 
+  it('cannot collide with a real name that looks like a fallback', () => {
+    // A quoted member named 'member-24' keeps its plain slug; `$` gets the
+    // double-hyphen fallback, which slugifyHeading can never produce.
+    expect(memberAnchor('member-24')).toBe('member-24');
+    expect(memberAnchor('member--24')).toBe('member-24');
+    expect(memberAnchor('$')).not.toBe(memberAnchor('member-24'));
+  });
+
   it('never returns an empty anchor', () => {
-    expect(memberAnchor('')).toBe('member');
+    expect(memberAnchor('')).toBe('member--');
   });
 });
 

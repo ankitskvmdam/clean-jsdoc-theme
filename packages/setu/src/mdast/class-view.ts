@@ -532,7 +532,8 @@ export function memberBadges(member: ClassMember): string[] {
  * anchor stays `memberAnchor(name)`, the same id the link registry uses); a
  * `<MemberMeta>` row (modifier/kind chips on the left, the `filename:line`
  * source link pinned right); then the doclet's body via {@link docletBlocks}.
- * TOC / search / `{@link}` resolve to `#name` because the signature never feeds the slug (see {@link memberHeading}).
+ * TOC / search / `{@link}` resolve to `#memberAnchor(name)` because the
+ * signature never feeds the slug (see {@link memberHeading}).
  * The `modifiers` section is skipped — the chips replace that paragraph.
  * Reusable for any kind with named, headed members.
  */
