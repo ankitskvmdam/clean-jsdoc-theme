@@ -27,6 +27,8 @@ const CASES: [unknown, string][] = [
   [true, '`true`'],
   [false, '`false`'],
   [null, '`null`'],
+  [NaN, '`NaN`'],
+  [Infinity, '`Infinity`'],
   ['{}', '`{}`'],
   ['[]', '`[]`'],
   ['undefined', '`undefined`'],
@@ -137,6 +139,21 @@ describe('formatDefaultValue', () => {
     expect(formatDefaultValue(0)).toBe('0');
     expect(formatDefaultValue(false)).toBe('false');
     expect(formatDefaultValue(null)).toBe('null');
+  });
+
+  it('prints non-string primitives as written, not via JSON (NaN/Infinity stay)', () => {
+    // JSDoc's cast turns `[a=NaN]` into the number NaN; JSON.stringify gave `null`.
+    expect(formatDefaultValue(NaN)).toBe('NaN');
+    expect(formatDefaultValue(Infinity)).toBe('Infinity');
+    expect(formatDefaultValue(-Infinity)).toBe('-Infinity');
+    expect(formatDefaultValue(-0)).toBe('-0');
+    expect(formatDefaultValue(-1)).toBe('-1');
+    expect(formatDefaultValue(1.5e300)).toBe('1.5e+300');
+  });
+
+  it('JSON-encodes a real object (never from JSDoc, but the field is untyped)', () => {
+    expect(formatDefaultValue({ a: 1 })).toBe('{"a":1}');
+    expect(formatDefaultValue([1, 2])).toBe('[1,2]');
   });
 
   it('returns null when there is nothing to show', () => {

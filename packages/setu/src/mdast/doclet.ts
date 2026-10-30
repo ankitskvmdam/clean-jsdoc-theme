@@ -563,16 +563,24 @@ function nestParamItems(
  * when there is nothing to show. JSDoc (and the TypeDoc bridge) hand string
  * defaults over as SOURCE TEXT, quotes included (`[name=""]` → `'""'`,
  * `[sep='']` → `"''"`, `[o={}]` → `'{}'`), so a string is shown verbatim —
- * JSON-stringifying it again is what turned `""` into `"\"\""`. JSDoc converts
- * bare literals to values (`[n=0]` → `0`, `[f=true]` → `true`, `[x=null]` →
- * `null`), which `JSON.stringify` prints back as written. Every caller wraps the
- * result in `inlineCode`, so braces, `<`, and backticks in a default can't be
- * read as MDX expressions/JSX or break the span (the serializer widens the
- * fence). An empty string would make an empty code span, so it shows nothing.
+ * JSON-stringifying it again is what turned `""` into `"\"\""`. JSDoc casts
+ * bare literals to values (`jsdoc/util/cast`: `[n=0]` → `0`, `[f=true]` →
+ * `true`, `[x=null]` → `null`, `[a=NaN]` → `NaN`), so a non-string primitive is
+ * printed with `String` — `JSON.stringify` would turn `NaN`/`Infinity` into
+ * `null` — keeping `-0`'s sign, which `String` drops. Only a real object (never
+ * produced by JSDoc's cast, but `defaultvalue` is untyped) is JSON-encoded.
+ * Every caller wraps the result in `inlineCode`, so braces, `<`, and backticks in
+ * a default can't be read as MDX expressions/JSX or break the span (the
+ * serializer widens the fence). An empty string would make an empty code span,
+ * so it shows nothing.
  */
 export function formatDefaultValue(value: unknown): string | null {
   if (value === undefined) return null;
-  const label = typeof value === 'string' ? value : JSON.stringify(value);
+  let label: string | undefined;
+  if (typeof value === 'string') label = value;
+  else if (Object.is(value, -0)) label = '-0';
+  else if (value !== null && typeof value === 'object') label = JSON.stringify(value);
+  else label = String(value);
   return label === undefined || label === '' ? null : label;
 }
 
