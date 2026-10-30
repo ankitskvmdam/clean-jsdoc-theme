@@ -96,13 +96,16 @@ include:
 The logic the entry-point bridges run before and after a build:
 
 - **`validateThemeOpts()`** — the orchestrator. Takes a raw opts object, runs
-  the `siteName` and `fonts` validators plus an unknown-key policy into a single
-  `DiagnosticBag`, and returns normalized values. Never throws — strict-mode
-  enforcement is the caller's job via `diagnostics.hasErrors()`.
+  the `siteName` and `fonts` validators plus an unknown-key policy (and, with
+  `checkV4Options`, the leftover-v4-options check) into a single
+  `DiagnosticBag`, and returns normalized values. With `strict: true` every
+  warning comes back as an error, except top-level v4 option names. Never
+  throws — failing the build is the caller's job via `diagnostics.hasErrors()`.
   ([`validate-opts.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/utils/src/config/validate-opts.ts))
 - **`DiagnosticBag`, `Diagnostic`, `formatDiagnostics()`** — the reporting
   spine: a structured, level-tagged (`error` / `warning` / `info`) finding model
-  that's pure and node-free.
+  that's pure and node-free. `escalateWarnings(keep?)` turns its warnings into
+  errors (what `strict` uses).
   ([`diagnostics.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/utils/src/config/diagnostics.ts))
 - **`createGoogleFontResolver()`, `FontResolver`, `FontExistence`,
   `FetchLike`** — the *injection* pattern that keeps utils browser-safe. The

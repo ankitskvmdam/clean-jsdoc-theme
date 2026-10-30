@@ -147,25 +147,36 @@ const { value, diagnostics } = await validateThemeOpts({
   opts: { siteName: 'My API', fonts: { heading: 'Roboto', body: 'Roboto' } },
   fontResolver,
   unknownKeyPolicy: 'suggest-typos', // only flag near-miss typos of a known key
+  checkV4Options: true, // flag a leftover v4 `theme_opts` block / v4 option names
+  strict: false, // true → every warning comes back as an error (top-level v4 names excepted)
 });
 
 // value.siteName / value.fonts are normalized; decide your own policy on findings:
 if (diagnostics.list.length > 0) console.log(formatDiagnostics(diagnostics, { color: true }));
 if (diagnostics.hasErrors()) {
-  // strict mode is the *caller's* choice — utils never throws
+  // failing the build is the *caller's* choice — utils never throws
 }
+
+// `strict` is `DiagnosticBag.escalateWarnings(keep?)` under the hood; call it on
+// any bag, with a predicate for the findings that must stay warnings:
+diagnostics.escalateWarnings((d) => d.code === 'opts/v4-name');
 ```
 
 असली bridges इसे ठीक इसी तरह wire करते हैं।
 [`publish.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/clean-jsdoc-theme/src/publish.ts)
 में JSDoc bridge resolver बनाता है, `validateThemeOpts` को `unknownKeyPolicy:
-'suggest-typos'` के साथ call करता है (JSDoc के अपने opts वही flat namespace साझा
-करते हैं), फिर bag को log करता है और केवल तभी throw करता है जब `opts.strict` set
-हो *और* `diagnostics.hasErrors()` हो।
+'suggest-typos'` (JSDoc के अपने opts वही flat namespace साझा करते हैं),
+`checkV4Options: true` और `opts.strict` से लिए गए `strict` के साथ call करता है,
+फिर bag को log करता है और build तभी विफल करता है जब `opts.strict` set हो *और*
+`diagnostics.hasErrors()` हो। यह विफलता JSDoc तक rejected promise बनकर नहीं जाती
+(JSDoc 4 उसे print करके भी 0 के साथ exit करता था): `publish()` उसे JSDoc के अपने
+logger से एक बार report करता है, जिससे JSDoc 1 के साथ exit करता है।
 [`write-site.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/typedoc/src/write-site.ts)
 में TypeDoc plugin वही करता है पर `unknownKeyPolicy: 'warn-all'` के साथ, क्योंकि
 उसके options एक साझा flat block के बजाय एक dedicated namespaced block में रहते
-हैं।
+हैं, और v4 check के बिना (TypeDoc में कभी v4 options नहीं थे)। strict विफलता पर
+वह throw करता है; TypeDoc उसे error के रूप में log करता है और non-zero के साथ exit
+करता है।
 
 Tests या किसी custom runtime के लिए आप network पर hit करने के बजाय एक fake `fetch`
 inject कर सकते हैं — resolver को केवल minimal `FetchLike` slice चाहिए

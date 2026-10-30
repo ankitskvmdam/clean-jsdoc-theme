@@ -142,14 +142,18 @@ this is the skill's whole value.
 - Deploy: `basePath` (sub-directory hosting — every asset href is prefixed), `siteUrl` (emits `sitemap.xml`; TypeDoc's own `hostedBaseUrl` is used as a fallback, and `cleanJsdocTheme.siteUrl` wins if both are set), `llmsTxt` (emits `llms.txt` + `llms-full.txt`; needs a site URL)
 - Build: `strict`
 
-**NOT wired through the TypeDoc writer today** (they validate but have no effect —
-don't promise them):
+**NOT wired through the TypeDoc writer today** (don't promise them). Each one set
+in `cleanJsdocTheme` is ignored with an `opts/unsupported-in-typedoc` warning,
+which `strict` does not escalate — except `locales` / `defaultLocale`, which the
+`clean-jsdoc` CLI reads:
 
 - **`colors` / `darkColors`** — the palette is the built-in OKLCH default. Only
   `fonts` and `siteName` affect appearance; custom colors are a known gap.
 - **`customCss` / `customJs` / `customCssFile` / `customJsFile` / `hashCustomAssets`** — not threaded.
 - **`locales` / `defaultLocale`** — the localized *build* is JSDoc-only (see §4).
 - **`tutorials`** — a JSDoc `--tutorials` concept; use `docs` or `projectDocuments` for prose.
+- **`progress`** — TypeDoc prints its own progress. (`readme` is TypeDoc's own
+  top-level option — see above; inside `cleanJsdocTheme` it's ignored too.)
 
 > **`templates.default.*` does not exist for TypeDoc.** The JSDoc-only options
 > `outputSourceFiles`, `sourceLinkToComment`, and `staticFiles` live under
