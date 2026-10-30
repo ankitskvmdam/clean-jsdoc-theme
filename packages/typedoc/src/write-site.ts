@@ -50,7 +50,6 @@ import {
   topLevelSectionLabels,
   unmatchedCollapsibleSections,
   validateThemeOpts,
-  warningsOnly,
   withBase,
 } from '@clean-jsdoc-theme/utils';
 import type { FontSet, PlaygroundProvider, TDoclet, ValidatedFonts } from '@clean-jsdoc-theme/utils';
@@ -631,6 +630,24 @@ export async function writeSite(
   project: ProjectReflection,
   app: AdaptApp
 ): Promise<void> {
+  // Option errors/warnings are printed once, at the end of the build (see
+  // `reportOptionProblems` in buildSite). If the build throws first, print
+  // them on the way out so a failure never hides them.
+  const report = { optionProblems: (): void => {} };
+  try {
+    await buildSite(outDir, project, app, report);
+  } catch (err) {
+    report.optionProblems();
+    throw err;
+  }
+}
+
+async function buildSite(
+  outDir: string,
+  project: ProjectReflection,
+  app: AdaptApp,
+  report: { optionProblems: () => void }
+): Promise<void> {
   const destination = resolvePath(outDir);
   const logger = app.logger;
 
@@ -706,16 +723,27 @@ export async function writeSite(
           '(see the diagnostics above). Fix the errors or unset `strict`.'
       );
     }
-    // Errors and warnings at warn level, so a `logLevel: "Warn"` build still
-    // shows them; advisory infos stay at info. Not `logger.error` for errors:
-    // outside strict they mustn't fail the build, and TypeDoc exits non-zero
-    // on any logged error.
-    const problems = new DiagnosticBag();
+    // Advisory infos now, at info level. Errors and warnings are printed once,
+    // at the end of the build — see `report.optionProblems` below.
     const notes = new DiagnosticBag();
-    for (const d of diagnostics.list) (d.level === 'info' ? notes : problems).add(d);
-    if (problems.list.length > 0) logger.warn(formatDiagnostics(problems));
+    for (const d of diagnostics.list) if (d.level === 'info') notes.add(d);
     if (notes.list.length > 0) logger.info(formatDiagnostics(notes));
   }
+
+  // Non-strict option errors and warnings, printed exactly once: at the end of
+  // the build, near the last thing on screen, so a skipped llms.txt or a font
+  // fallback can't scroll away behind the build log (or, via `writeSite`, on
+  // the way out if the build throws). Warn level, so a `logLevel: "Warn"` build
+  // still shows them. Not `logger.error` for errors: outside strict they
+  // mustn't fail the build, and TypeDoc exits non-zero on any logged error.
+  let reported = false;
+  report.optionProblems = () => {
+    if (reported) return;
+    reported = true;
+    const problems = new DiagnosticBag();
+    for (const d of diagnostics.list) if (d.level !== 'info') problems.add(d);
+    if (problems.list.length > 0) logger.warn(formatDiagnostics(problems));
+  };
 
   // Site root prefix so the output can be served from a sub-directory. Bad/empty
   // input fails safe to '/' (the default), so an unset option is byte-identical.
@@ -834,6 +862,7 @@ export async function writeSite(
     logger.info(
       `clean-jsdoc-theme: extract mode — wrote ${manifest.slots?.length ?? 0} slot(s) to ${target}`
     );
+    report.optionProblems();
     return;
   }
 
@@ -933,13 +962,7 @@ export async function writeSite(
     })
   );
 
-  // Opts warnings were printed BEFORE any render work, so by now they've scrolled
-  // away behind the build log. Re-print just the warnings here — near the last
-  // thing on screen — so a skipped llms.txt or a font fallback can't go unnoticed.
-  const optsWarnings = warningsOnly(diagnostics);
-  if (optsWarnings.list.length > 0) {
-    logger.warn(formatDiagnostics(optsWarnings));
-  }
+  report.optionProblems();
 
   // Render failures are reported, never thrown — the rest of the site is intact.
   if (result.errors && result.errors.length > 0) {
