@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { default as salty } from '@jsdoc/salty';
 import { TDoclet, TJSDocSaltyCollection } from '@clean-jsdoc-theme/utils';
 import { filterDoclets, getAllMembersOfClass, getMembersOf } from '../doclet';
-import { getContainerView } from '../class-view';
+import { getContainerView, getInheritedMembers } from '../class-view';
 import { generateSite } from '../index';
 import { getJSDocTaffyData } from './factory';
 
@@ -156,7 +156,7 @@ describe('getContainerView — self-referential class', () => {
  * the parser can't name it, so the doclet arrives with `name: ''` and
  * `longname: ''`, yet still `memberof` its class, next to a normal member.
  */
-function makeClassWithNamelessMember(): TJSDocSaltyCollection<TDoclet> {
+function makeClassWithNamelessMember(extra: unknown[] = []): TJSDocSaltyCollection<TDoclet> {
   return makeCollection([
     {
       kind: 'class',
@@ -184,6 +184,7 @@ function makeClassWithNamelessMember(): TJSDocSaltyCollection<TDoclet> {
       description: 'Visible.',
       meta: { filename: 'odd.js', path: 'src', lineno: 5 },
     },
+    ...extra,
   ]);
 }
 
@@ -221,6 +222,29 @@ describe('nameless members (JSDoc ES #private)', () => {
       ...view!.other,
     ];
     expect(all.map((m) => m.name)).toEqual(['visible']);
+  });
+
+  it('are not inherited by a subclass; named inherited members are', () => {
+    const collection = makeClassWithNamelessMember([
+      {
+        kind: 'class',
+        name: 'Child',
+        longname: 'Child',
+        scope: 'global',
+        augments: ['Odd'],
+        classdesc: 'Subclass.',
+        meta: { filename: 'child.js', path: 'src', lineno: 1 },
+      },
+    ]);
+    const inherited = getInheritedMembers(collection, 'Child');
+    expect(inherited.map((m) => m.name)).toEqual(['visible']);
+    expect(inherited[0].inheritedFrom).toBe('Odd');
+
+    const site = generateSite(collection);
+    const child = site.pages.find((p) => p.slug === 'child');
+    expect(child).toBeDefined();
+    expect(child!.body).not.toContain('name=""');
+    expect(child!.body).toContain('name="visible"');
   });
 
   it('emit no blank member heading or anchor on the class page', () => {
