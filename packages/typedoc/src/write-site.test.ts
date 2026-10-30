@@ -170,7 +170,7 @@ describe('writeSite — strict mode', () => {
     }
   }, 60_000);
 
-  it('logs option warnings at warn level, so logLevel "Warn" still shows them', async () => {
+  it('logs each option warning once, at warn level (so logLevel "Warn" shows it)', async () => {
     const out = join(tmp, 'out-warn-level');
     const warn = vi.spyOn(app.logger, 'warn').mockImplementation(() => {});
     const info = vi.spyOn(app.logger, 'info').mockImplementation(() => {});
@@ -178,13 +178,15 @@ describe('writeSite — strict mode', () => {
       await writeSite(out, project, withBlock({ readme: './README.md', colors: {} }));
       const warned = warn.mock.calls.map((c) => String(c[0]));
       const informed = info.mock.calls.map((c) => String(c[0]));
-      // The first print (before the end-of-build recap) is already at warn level.
-      expect(warned.length).toBeGreaterThanOrEqual(2);
-      expect(warned[0]).toContain(`"readme" isn't used by the TypeDoc flavor; it's ignored.`);
-      expect(warned[0]).toContain(
+      // Each option diagnostic is printed exactly once, at warn level.
+      const prints = warned.filter((m) => m.includes('opts/unsupported-in-typedoc'));
+      expect(prints).toHaveLength(1);
+      expect(prints[0]).toContain(`"readme" isn't used by the TypeDoc flavor; it's ignored.`);
+      expect(prints[0]).toContain(
         `"colors" isn't supported by the TypeDoc flavor yet; it's ignored.`
       );
-      expect(warned[0]).toContain('issues/352');
+      expect(prints[0]).toContain('issues/352');
+      expect(prints[0].match(/"readme" isn't used/g)).toHaveLength(1);
       expect(informed.some((m) => m.includes('opts/unsupported-in-typedoc'))).toBe(false);
     } finally {
       warn.mockRestore();
