@@ -360,6 +360,7 @@ export function extractExcerpt(mdxBody: string, max = 200): string {
     .replace(/`[^`]*`/g, ' ') // inline code
     .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ') // images
     .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1') // links → label
+    .replace(/<!--[\s\S]*?-->/g, ' ') // HTML comments (never rendered; may hold `>`)
     .replace(/<[^>]+>/g, ' ') // raw HTML / JSX
     .replace(/^#{1,6}\s+/gm, '') // ATX headings
     .replace(/[*_~>#]+/g, ' ') // emphasis & blockquotes
@@ -388,6 +389,7 @@ export function extractSearchText(mdxBody: string, max = 20000): string {
     .replace(/`([^`]*)`/g, '$1') // inline code → keep the identifier
     .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ') // images
     .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1') // links → label
+    .replace(/<!--[\s\S]*?-->/g, ' ') // HTML comments (never rendered; may hold `>`)
     .replace(/<[^>]+>/g, ' ') // raw HTML / JSX
     .replace(/^#{1,6}\s+/gm, '') // ATX heading markers (keep the text)
     .replace(/[*_~>#|]+/g, ' ') // emphasis / blockquote / table marks
