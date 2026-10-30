@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { Heading as MdastHeading, Root } from 'mdast';
+import { decodeNamedCharacterReference } from 'decode-named-character-reference';
 import {
   slugifyHeading,
   slugifyPath,
@@ -219,15 +220,23 @@ export function extractHeadings(tree: Root): Heading[] {
   return out;
 }
 
-/** The named entities a doclet description's HTML realistically carries. */
-const ENTITIES: Record<string, string> = {
-  quot: '"',
-  apos: "'",
-  amp: '&',
-  lt: '<',
-  gt: '>',
-  nbsp: ' ',
-};
+/** A character reference: decimal, hex, or named. */
+const CHAR_REF = /&(?:#(\d{1,8})|#[xX]([0-9a-fA-F]{1,7})|([A-Za-z][A-Za-z0-9]{0,31}));/g;
+
+/**
+ * Decode character references in one pass, so `&#38;lt;` yields the text
+ * `&lt;`, not `<`. A numeric reference outside Unicode, to a surrogate, or to
+ * NUL is left as written (`String.fromCodePoint` would throw on the first, and
+ * a translated slot can carry anything); an unknown name is left as written.
+ */
+function decodeCharRefs(text: string): string {
+  return text.replace(CHAR_REF, (all, dec?: string, hex?: string, name?: string) => {
+    if (name !== undefined) return decodeNamedCharacterReference(name) || all;
+    const cp = dec !== undefined ? Number(dec) : parseInt(hex!, 16);
+    const valid = cp > 0 && cp <= 0x10ffff && (cp < 0xd800 || cp > 0xdfff);
+    return valid ? String.fromCodePoint(cp) : all;
+  });
+}
 
 /**
  * Strip HTML tags from a string and collapse whitespace; cheap, not a parser.
@@ -236,19 +245,17 @@ const ENTITIES: Record<string, string> = {
  * name="description">` and search).
  *
  * Mirrors what the body renders: a literal `Promise<User>` (see
- * {@link escapeLiteralTags}) is kept rather than stripped as a tag, and entities
- * are decoded — the result is plain text (YAML frontmatter, the search index,
- * an HTML-escaped `<meta>`), so a left-over `&lt;` would surface verbatim.
+ * {@link escapeLiteralTags}) is kept rather than stripped as a tag, and character
+ * references are decoded — the result is plain text (YAML frontmatter, the
+ * search index, an HTML-escaped `<meta>`), so a left-over `&lt;` would surface
+ * verbatim. Decoding comes after the tag strip, so a decoded `<` is never taken
+ * for a tag.
  */
 function stripHtml(html: string): string {
-  return escapeLiteralTags(html)
+  const text = escapeLiteralTags(html)
     .replace(/<!--(?:-?>|[\s\S]*?-->)/g, ' ')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .replace(/&#(\d+);/g, (_all, code: string) => String.fromCodePoint(Number(code)))
-    .replace(/&#x([0-9a-f]+);/gi, (_all, code: string) => String.fromCodePoint(parseInt(code, 16)))
-    .replace(/&([a-zA-Z]+);/g, (all, name: string) => ENTITIES[name.toLowerCase()] ?? all);
+    .replace(/<[^>]+>/g, ' ');
+  return decodeCharRefs(text).replace(/\s+/g, ' ').trim();
 }
 
 /**

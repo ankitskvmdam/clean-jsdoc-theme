@@ -326,9 +326,10 @@ setu/src/
     ├── doclet.ts
     ├── link-tags.ts      # resolveLinkTags: rewrite {@link}/{@linkcode}/
     │                     #   {@linkplain} text nodes → anchors (skips code spans)
-    ├── literal-tags.ts   # escapeLiteralTags: a raw `<User>`/`<T>` that is not real
-    │                     #   markup (capitalized, lone capital, non-element) is
-    │                     #   escaped before the HTML parse, so it stays as text
+    ├── literal-tags.ts   # escapeLiteralTags: a raw tag that reads as a type argument
+    │                     #   (`<User>`, `<T>`, `Promise<object>`: no attributes, no
+    │                     #   closer, not plain lowercase HTML) is escaped before the
+    │                     #   HTML parse, so it stays as text
     └── from-html.ts      # HTML / Markdown → structured mdast (the MDX-safe
                           #   normalization shared by README + tutorials; HTML
                           #   comments are dropped from the hast, an unterminated
@@ -519,7 +520,8 @@ dwar/src/
 │                         #   stamps `data-scrollbar` on <html> from ThemeConfig.scrollbar
 │                         #   (default `styled`) and, only for `styled`, inlines
 │                         #   scrollbar-script.ts's idle-hide <script>. The search
-│                         #   excerpt/content un-escape backslash escapes, so a literal
+│                         #   excerpt/content un-escape backslash escapes outside code
+│                         #   spans (code text stays verbatim), so a literal
 │                         #   `Promise<User>` is indexed as the page renders it
 ├── css.ts                # buildThemeVariableCss (:root + [data-theme=dark] tokens)
 │                         #   + the prebuilt UTILITY_CSS  →  one stylesheet. UTILITY_CSS

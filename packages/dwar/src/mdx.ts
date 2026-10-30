@@ -159,7 +159,9 @@ export function escapeStrayBraces(source: string): string {
   // code="…" />`, whose object-type braces are a literal string, not an MDX
   // expression. setu downgrades any `"` inside an attribute to `'`, so `="[^"]*"`
   // safely captures a value containing `{`, `}`, `<`, or `>`. (A bare `a < b` in
-  // prose isn't matched — a tag needs `<` immediately followed by a name.)
+  // prose isn't matched — a tag needs `<` immediately followed by a name. Nor is
+  // a backslash-escaped `\<Foo bar="{x}">`: that's the literal text setu writes
+  // for a non-markup tag in prose, so its braces are prose braces and get escaped.)
   //
   // The inline-code content `(?:[^\n]|\n(?![ \t\r]*\n))*?` allows single line
   // breaks (CommonMark code spans may span lines) but never a blank line — so an
@@ -169,7 +171,7 @@ export function escapeStrayBraces(source: string): string {
   // in a `…` span) is literal content — and (b) ignores a backslash-escaped
   // backtick (`\``), which is a literal backtick per CommonMark, not a delimiter.
   const re =
-    /(```[\s\S]*?```|~~~[\s\S]*?~~~)|(<\/?[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][\w-]*(?:="[^"]*")?)*\s*\/?>)|(?<![`\\])(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`)|([{}])/g;
+    /(```[\s\S]*?```|~~~[\s\S]*?~~~)|((?<!\\)<\/?[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][\w-]*(?:="[^"]*")?)*\s*\/?>)|(?<![`\\])(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`)|([{}])/g;
   const escaped = body.replace(re, (m, _fence, _jsx, _ticks, brace) => (brace ? `\\${brace}` : m));
   return prefix + escaped;
 }
@@ -211,7 +213,7 @@ export function escapeEsmLookalikes(source: string): string {
   // JSX tag, OR an inline code span (never crossing a blank line), OR — the only
   // branch that rewrites — a column-0 `import`/`export` keyword + whitespace.
   const re =
-    /(```[\s\S]*?```|~~~[\s\S]*?~~~)|(<\/?[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][\w-]*(?:="[^"]*")?)*\s*\/?>)|(?<![`\\])(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`)|^(import|export)(?=\s)/gm;
+    /(```[\s\S]*?```|~~~[\s\S]*?~~~)|((?<!\\)<\/?[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][\w-]*(?:="[^"]*")?)*\s*\/?>)|(?<![`\\])(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`)|^(import|export)(?=\s)/gm;
   const escaped = body.replace(re, (m, _fence, _jsx, _ticks, keyword: string | undefined) =>
     keyword ? `&#x${keyword.charCodeAt(0).toString(16)};${keyword.slice(1)}` : m
   );

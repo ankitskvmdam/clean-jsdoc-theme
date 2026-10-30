@@ -67,6 +67,7 @@
     "@clean-jsdoc-theme/bhasha": "workspace:^",
     "@clean-jsdoc-theme/utils": "workspace:^",
     "@jsdoc/salty": "^0.2.12",
+    "decode-named-character-reference": "^1.3.0",
     "hast-util-from-html": "^2.0.3",
     "hast-util-to-html": "^9.0.5",
     "hast-util-to-mdast": "^10.1.2",

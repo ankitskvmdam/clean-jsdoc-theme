@@ -10,8 +10,9 @@ import { describe, it, expect } from 'vitest';
 import type { Root, RootContent } from 'mdast';
 import { default as salty } from '@jsdoc/salty';
 import type { TDoclet, TJSDocSaltyCollection } from '@clean-jsdoc-theme/utils';
-import { escapeLiteralTags, isMarkupTagName } from '../mdast/literal-tags';
+import { escapeLiteralTags } from '../mdast/literal-tags';
 import { htmlToMdastBlocks, htmlToMdastInline, markdownToMdastBlocks } from '../mdast/from-html';
+import { examplesBlocks } from '../mdast/doclet';
 import { toMdx } from '../mdx';
 import { generateSite } from '../index';
 
@@ -30,30 +31,58 @@ const text = (nodes: RootContent[]): string =>
     )
     .join('\n');
 
-describe('isMarkupTagName', () => {
-  it('treats lowercase HTML elements as markup', () => {
-    for (const name of ['kbd', 'sub', 'sup', 'details', 'summary', 'br', 'img', 'a', 'p', 'code']) {
-      expect(isMarkupTagName(name), name).toBe(true);
-    }
+/** Is `tag` (as it sits in `html`) kept as markup by escapeLiteralTags? */
+const kept = (html: string, tag: string): boolean => {
+  const at = html.indexOf(tag);
+  return escapeLiteralTags(html).slice(at, at + tag.length) === tag;
+};
+
+describe('escapeLiteralTags — which tags are markup', () => {
+  it.each([
+    // [html, tag] — kept as markup
+    ['<p>Press <kbd>Ctrl</kbd></p>', '<kbd>'],
+    ['line<br>next', '<br>'],
+    ['a <img src="x.png"> b', '<img'],
+    ['an unclosed <p>para', '<p>'],
+    ['x<b>bold</b>', '<b>'],
+    ['<B>bold</B>', '<B>'],
+    ['<I>it</I>', '<I>'],
+    ['<A HREF="https://e.com">L</A>', '<A'],
+    ['<P ALIGN=center>x', '<P'],
+    ['a <Br> b', '<Br>'],
+    ['a <BR> b', '<BR>'],
+    ['<Img src="x.png">', '<Img'],
+    ['<Div>x</Div>', '<Div>'],
+    ['<my-widget>Hello</my-widget>', '<my-widget>'],
+    ['<x-el data-a="1">', '<x-el'],
+    ['stray <steps> tag', '<steps>'],
+  ])('keeps %j', (html, tag) => {
+    expect(kept(html, tag)).toBe(true);
   });
 
-  it('treats all-caps HTML elements as markup (old-school spelling)', () => {
-    for (const name of ['BR', 'TABLE', 'TD', 'DIV', 'IMG']) {
-      expect(isMarkupTagName(name), name).toBe(true);
-    }
+  it.each([
+    // [html, tag] — escaped as literal text
+    ['Promise<User>', '<User>'],
+    ['a generic <T>', '<T>'],
+    ['Props<P> more', '<P>'],
+    ['Map<B>', '<B>'],
+    ['Array<Option> of', '<Option>'],
+    ['Array<string>', '<string>'],
+    ['Promise<object> then', '<object>'],
+    ['Array<title> then more', '<title>'],
+    ['Array<textarea> rest', '<textarea>'],
+    ['Parser<Input>', '<Input>'],
+    ['a <Callout type="tip">x</Callout>', '<Callout'],
+    ['Use <Steps> literal and <Tab> stray', '<Steps>'],
+    ['Use <Steps> literal and <Tab> stray', '<Tab>'],
+  ])('escapes %j', (html, tag) => {
+    expect(kept(html, tag)).toBe(false);
   });
 
-  it('keeps the theme containers on their existing path, in any case', () => {
-    for (const name of ['steps', 'step', 'tabs', 'tab', 'playground', 'Steps', 'TABS']) {
-      expect(isMarkupTagName(name), name).toBe(true);
-    }
-  });
-
-  it('treats capitalized names, lone capitals and unknown names as literal text', () => {
-    const literal = ['User', 'Object', 'Option', 'Callout', 'Foo', 'T', 'K', 'P', 'B', 'S'];
-    for (const name of [...literal, 'string', 'void', 'any', 'my-widget', 'ID', 'URL']) {
-      expect(isMarkupTagName(name), name).toBe(false);
-    }
+  it('keeps a closing tag only when it closes a kept opener', () => {
+    expect(escapeLiteralTags('<B>bold</B> and <Foo>x</Foo>')).toBe(
+      '<B>bold</B> and &lt;Foo>x&lt;/Foo>'
+    );
   });
 });
 
@@ -226,5 +255,99 @@ describe('page frontmatter description', () => {
     expect(page?.frontmatter.description).toBe(
       'Resolves to a Promise<User> or Array , maybe Map<K, V> & "more".'
     );
+  });
+});
+
+describe('page frontmatter description — character references', () => {
+  const describe1 = (description: string): string | undefined =>
+    generateSite(
+      salty.taffy([
+        { kind: 'module', name: 'm', longname: 'module:m', scope: 'global', description },
+      ]) as unknown as TJSDocSaltyCollection<TDoclet>
+    ).pages.find((p) => p.slug === 'module/m')?.frontmatter.description;
+
+  it('decodes once: `&#38;lt;T&#38;gt;` is the text `&lt;T&gt;`', () => {
+    expect(describe1('<p>a &#38;lt;T&#38;gt; b</p>')).toBe('a &lt;T&gt; b');
+  });
+
+  it('decodes any named reference', () => {
+    expect(describe1('<p>a &mdash; b &hellip;</p>')).toBe('a — b …');
+  });
+
+  it('leaves out-of-range, surrogate and NUL references as written instead of throwing', () => {
+    expect(describe1('<p>a &#99999999; &#x110000; &#xD800; &#0; b</p>')).toBe(
+      'a &#99999999; &#x110000; &#xD800; &#0; b'
+    );
+  });
+});
+
+describe('reviewer cases — lowercase element names as type arguments', () => {
+  it('keeps `Promise<object>` and the text after it', () => {
+    expect(text(htmlToMdastBlocks('<p>Promise<object> then more.</p>'))).toBe(
+      'Promise<object> then more.'
+    );
+  });
+
+  it('does not let `Array<title>` / `Array<textarea>` eat the rest of the page', () => {
+    for (const name of ['title', 'textarea']) {
+      const blocks = htmlToMdastBlocks(`<p>Array<${name}> then more</p><p>next</p>`);
+      expect(text(blocks), name).toBe(`Array<${name}> then more\nnext`);
+    }
+  });
+});
+
+describe('reviewer cases — any-case HTML with attributes or a closer still renders', () => {
+  it.each([
+    ['<p>a <B>bold</B> b</p>', 'a **bold** b'],
+    ['<p>a <I>it</I> b</p>', 'a _it_ b'],
+    ['<p><A HREF="https://e.com">L</A></p>', '[L](https://e.com)'],
+    // A mixed-case void glued to a word (`a<Br>b`) reads as `Parser<Input>`.
+    ['<p>a <Br> b</p>', 'a\\\nb'],
+    ['<p>a <Img src="x.png" alt="X"> b</p>', 'a ![X](x.png) b'],
+    ['<Div>Hello</Div>', 'Hello'],
+    ['<p><my-widget>Hello</my-widget></p>', 'Hello'],
+  ])('%j → %j', (html, expected) => {
+    expect(mdx(htmlToMdastBlocks(html))).toBe(expected);
+  });
+
+  it('keeps a capitalized stray container name literal', () => {
+    expect(text(htmlToMdastBlocks('<p>Use <Steps> literal and <Tab> stray.</p>'))).toBe(
+      'Use <Steps> literal and <Tab> stray.'
+    );
+  });
+});
+
+describe('comments', () => {
+  it('treats `<!-->` and `<!--->` as complete comments', () => {
+    expect(escapeLiteralTags('<!--> Promise<User> <!---> <T> -->')).toBe(
+      '<!--> Promise&lt;User> <!---> &lt;T> -->'
+    );
+  });
+
+  it('is linear on many unterminated `<!--`', () => {
+    const html = '<!--x'.repeat(40_000);
+    const start = performance.now();
+    expect(escapeLiteralTags(html)).toBe(html);
+    expect(performance.now() - start).toBeLessThan(500);
+  });
+});
+
+describe('@example captions', () => {
+  const caption = (text: string): string =>
+    mdx(
+      examplesBlocks(
+        { longname: 'x', examples: [`<caption>${text}</caption>\nrun();`] } as unknown as TDoclet,
+        'js'
+      )
+    );
+
+  it('keeps a literal type name instead of handing MDX an unclosed tag', () => {
+    const out = caption('Returns Promise<User>');
+    expect(out).toContain('Returns Promise\\<User>');
+    expect(out).toContain('run();');
+  });
+
+  it('leaves a caption without raw HTML on the direct Markdown parse', () => {
+    expect(caption('*Basic* use')).toBe('_Basic_ use\n\n```js\nrun();\n```');
   });
 });

@@ -309,6 +309,17 @@ describe('search text — escaped punctuation reads as rendered', () => {
     );
   });
 
+  it('keeps code spans verbatim, backslashes included', () => {
+    expect(extractSearchText('Paths `a\\*b`, `\\\\server`, `C:\\\\` and `snake_case<T>`.')).toBe(
+      'Paths a\\*b, \\\\server, C:\\\\ and snake_case<T>.'
+    );
+  });
+
+  it('leaves private-use characters already in the text alone', () => {
+    const pua = String.fromCharCode(0xe03c, 0xe000, 0xe0ff, 0xe1ff);
+    expect(extractSearchText(`icon ${pua} and \\<T>`)).toBe(`icon ${pua} and <T>`);
+  });
+
   it('still strips an unescaped tag and a lone `>`', () => {
     expect(extractSearchText('a <kbd>Ctrl</kbd> b > c')).toBe('a Ctrl b c');
   });
