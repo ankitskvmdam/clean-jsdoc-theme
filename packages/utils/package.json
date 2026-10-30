@@ -2,6 +2,12 @@
   "name": "@clean-jsdoc-theme/utils",
   "version": "5.2.1",
   "description": "Shared types and schemas for clean-jsdoc-theme",
+  "keywords": [
+    "clean-jsdoc-theme",
+    "jsdoc",
+    "types",
+    "schemas"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -11,6 +17,9 @@
   },
   "author": "Ankit Kumar (hello@ankdev.me)",
   "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
   "funding": {
     "type": "github",
     "url": "https://github.com/sponsors/ankitskvmdam"
@@ -30,7 +39,7 @@
     "build": "tsdown",
     "dev": "tsdown --watch",
     "test": "vitest run",
-    "lint": "eslint src",
+    "lint": "eslint src --max-warnings 0",
     "typecheck": "tsc --noEmit",
     "clean": "node ../../scripts/clean.mjs dist .turbo",
     "clean-node-modules": "node ../../scripts/clean.mjs node_modules"

@@ -2,6 +2,12 @@
   "name": "@clean-jsdoc-theme/setu",
   "version": "5.2.1",
   "description": "JSDoc doclet processing and MDX generation",
+  "keywords": [
+    "clean-jsdoc-theme",
+    "jsdoc",
+    "mdx",
+    "jsdoc-doclets"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -11,6 +17,9 @@
   },
   "author": "Ankit Kumar (hello@ankdev.me)",
   "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
   "funding": {
     "type": "github",
     "url": "https://github.com/sponsors/ankitskvmdam"
@@ -30,7 +39,7 @@
     "build": "tsdown",
     "dev": "concurrently \"nodemon\" \"tsdown --watch\"",
     "test": "vitest run",
-    "lint": "eslint src",
+    "lint": "eslint src --max-warnings 0",
     "typecheck": "tsc --noEmit",
     "preview": "tsx scripts/preview-class.ts",
     "clean": "node ../../scripts/clean.mjs dist .turbo",

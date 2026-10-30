@@ -35,10 +35,10 @@ jobs:
       # island docs must match the code (scripts/check-docs.mjs). Pure Node, no
       # build needed — but it's cheap, so it rides the already-installed job.
       - run: pnpm check:docs
-      # TODO: re-enable the style gates once docs-site formatting/lint is sorted.
+      - run: pnpm lint
+      # TODO: re-enable format:check once docs-site formatting is sorted.
       # Temporarily disabled — `format:check` was failing on un-formatted
       # docs-site files; deferred rather than blocking the release PR.
-      # - run: pnpm lint
       # - run: pnpm format:check
 
       # NOTE: no per-PR changeset gate. Changesets are added when preparing a

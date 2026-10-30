@@ -31,6 +31,9 @@
   "author": "Ankit Kumar (hello@ankdev.me)",
   "homepage": "https://ankdev.me/clean-jsdoc-theme/theme/typedoc-getting-started",
   "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
   "funding": {
     "type": "github",
     "url": "https://github.com/sponsors/ankitskvmdam"
@@ -39,7 +42,7 @@
     "build": "tsdown",
     "dev": "tsdown --watch",
     "test": "vitest run --passWithNoTests",
-    "lint": "eslint src",
+    "lint": "eslint src --max-warnings 0",
     "typecheck": "tsc --noEmit",
     "clean": "node ../../scripts/clean.mjs dist .turbo",
     "clean-node-modules": "node ../../scripts/clean.mjs node_modules"
