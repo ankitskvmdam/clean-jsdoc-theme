@@ -19,7 +19,7 @@ The rule for a tag, by its name as written:
   closing tag in the same block, and not void: `Promise<object>` and
   `Array<title>` are text, while `foo<br>` still breaks the line.
 - ALL-CAPS element names of two or more letters are markup (`<BR>`,
-  `<TABLE>`, `<DIV>`).
+  `<TABLE>`, `<DIV>`), with the same exception: `Array<DATA>` is text.
 - A single capital letter that names an element is markup only with
   attributes or a closing tag in the same block (`<B>bold</B>`,
   `<A HREF="…">`, `<P ALIGN=center>`). On its own (`<T>`, `<P>`) it is a

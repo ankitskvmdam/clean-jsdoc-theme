@@ -18,7 +18,8 @@
  *   closer and isn't void: `Promise<object>`, `Array<title>` are type arguments,
  *   `foo<br>` is still a line break;
  * - an ALL-CAPS element name of two or more letters is markup (`<BR>`,
- *   `<TABLE>`, `<DIV>`);
+ *   `<TABLE>`, `<DIV>`), under the same glued-word exception (`Array<DATA>`,
+ *   `Promise<OBJECT>` are type arguments; `x<BR>y` is a line break);
  * - a single capital letter that names an element is markup only with
  *   attributes or a closer (`<B>bold</B>`, `<A HREF="…">`, `<P ALIGN=center>`);
  *   alone (`<T>`, `<P>`, `<B>`) it is a generic, so literal;
@@ -36,7 +37,9 @@
  * block: before the next block boundary (an opening or closing `<p>`, `<li>`,
  * `<td>`, heading, … or a blank line). Every converted page has `</p>`, so a
  * closer anywhere later would make `List<a>` a link. Block elements pair among
- * themselves, except one opened inside another of its name (`<p>Array<p>…</p>`).
+ * themselves by depth (nested lists, `div`s, quotes), except that one HTML
+ * closes implicitly — `p`, `li`, `td`, … — opened inside another of its name
+ * has no closer (`<p>Array<p>…</p>`).
  * The one residual ambiguity:
  * a single-letter generic followed in the same block by a matching stray closer
  * (`Map<B> … </B>`) reads as markup.
@@ -241,6 +244,14 @@ const BLOCK_BOUNDARIES = new Set<string>([
   'ul',
 ]);
 
+/**
+ * Block elements HTML closes implicitly when a sibling opens: one opened while
+ * another of its name is still open can't be its child, so in prose it reads as
+ * a type argument (`<p>Array<p> glued.</p>`). Elements that genuinely nest —
+ * lists, `div`, `blockquote`, `table` — pair by depth as written.
+ */
+const IMPLICITLY_CLOSED = new Set<string>(['dd', 'dt', 'li', 'p', 'td', 'th', 'tr']);
+
 /** A blank line: a block boundary in Markdown-derived input. */
 const BLANK_LINE = /\n[ \t]*\n/;
 
@@ -333,10 +344,10 @@ function scanTags(html: string): Tag[] {
  * Inline tags pair only within a block: a block boundary tag or a blank line
  * between tags resets their open set, so a `</a>` in the next paragraph can't
  * close a `List<a>`. Block tags pair among themselves across that (a glued
- * `item<blockquote>…</blockquote>` is real markup); one opened while another of
- * the same name is still open is flagged instead (`<p>Array<p> glued.</p>` —
- * HTML would close the outer paragraph there). Linear: every opener is pushed
- * and dropped at most once.
+ * `item<blockquote>…</blockquote>` and marked's glued nested `a<ul>` lists are
+ * real markup); an implicitly closed one (see {@link IMPLICITLY_CLOSED}) opened
+ * while another of its name is still open is flagged instead. Linear: every
+ * opener is pushed and dropped at most once.
  */
 function pairClosers(html: string, tags: Tag[]): void {
   const inline = new Map<string, number[]>();
@@ -363,7 +374,9 @@ function pairClosers(html: string, tags: Tag[]): void {
       pair(inline, tag, index);
       return;
     }
-    if (!tag.closing) tag.nestedInSame = (block.get(tag.name)?.length ?? 0) > 0;
+    if (!tag.closing && IMPLICITLY_CLOSED.has(tag.name.toLowerCase())) {
+      tag.nestedInSame = (block.get(tag.name)?.length ?? 0) > 0;
+    }
     pair(block, tag, index);
   });
 }
@@ -380,8 +393,11 @@ function isMarkupOpenTag(tag: Tag): boolean {
   const lower = name.toLowerCase();
   if (THEME_CONTAINERS.has(lower)) return name === lower;
   if (!HTML_ELEMENTS.has(lower) && !CUSTOM_ELEMENT.test(lower)) return false;
-  if (name === lower) return hasAttributes || hasCloser || VOID_ELEMENTS.has(lower) || !glued;
-  if (name === name.toUpperCase()) return name.length > 1 || hasAttributes || hasCloser;
+  // Glued to a word with nothing that only markup has: `Promise<object>`, `Array<DATA>`.
+  const typeArgument = glued && !hasAttributes && !hasCloser && !VOID_ELEMENTS.has(lower);
+  if (name === lower) return !typeArgument;
+  if (name === name.toUpperCase())
+    return name.length > 1 ? !typeArgument : hasAttributes || hasCloser;
   return false; // PascalCase / mixed case: a component or type name, shown as written
 }
 
