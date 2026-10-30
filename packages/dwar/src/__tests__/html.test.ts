@@ -286,9 +286,9 @@ describe('search text — tag strip', () => {
   });
 
   it('keeps a generic type in inline code (it is not a tag)', () => {
-    // The `>` marks go with the blockquote/emphasis strip, as before.
+    // A code span keeps its text verbatim, `>` included (its punctuation is parked).
     expect(extractSearchText('so `Array<Map<string, T>>` becomes <b>x</b>')).toBe(
-      'so Array<Map<string, T becomes x'
+      'so Array<Map<string, T>> becomes x'
     );
   });
 
@@ -341,6 +341,17 @@ describe('search text — escaped punctuation reads as rendered', () => {
     expect(extractExcerpt(body)).toContain(
       'Resolves to a Promise<User> or Array<Array<string>>, maybe Map<K, V>.'
     );
+  });
+
+  it('keeps code spans verbatim, backslashes included', () => {
+    expect(extractSearchText('Paths `a\\*b`, `\\\\server`, `C:\\\\` and `snake_case<T>`.')).toBe(
+      'Paths a\\*b, \\\\server, C:\\\\ and snake_case<T>.'
+    );
+  });
+
+  it('leaves private-use characters already in the text alone', () => {
+    const pua = String.fromCharCode(0xe03c, 0xe000, 0xe0ff, 0xe1ff);
+    expect(extractSearchText(`icon ${pua} and \\<T>`)).toBe(`icon ${pua} and <T>`);
   });
 
   it('still strips an unescaped tag and a lone `>`', () => {
