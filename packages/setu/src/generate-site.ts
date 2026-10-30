@@ -23,6 +23,7 @@ import {
   type PlaygroundOpts,
 } from './playground';
 import { resolveLinkTags } from './mdast/link-tags';
+import { escapeLiteralTags } from './mdast/literal-tags';
 import { resolveSlotText } from './slots';
 import { toMdx } from './mdx';
 
@@ -135,7 +136,8 @@ export function makePlaygroundResolver(
   config: PlaygroundSiteConfig | undefined
 ): ((doclet: TDoclet) => PlaygroundOpts | null) | undefined {
   if (!config) return undefined;
-  const defaults = config.providers && config.providers.length > 0 ? config.providers : [...KNOWN_PROVIDERS];
+  const defaults =
+    config.providers && config.providers.length > 0 ? config.providers : [...KNOWN_PROVIDERS];
   const enableAll = config.enableForAllExamples ?? false;
   return (doclet: TDoclet) => {
     const tag = doclet.tags?.find((t) => t.title === 'playground');
@@ -229,19 +231,38 @@ export function extractHeadings(tree: Root): Heading[] {
   return out;
 }
 
+/** The named entities a doclet description's HTML realistically carries. */
+const ENTITIES: Record<string, string> = {
+  quot: '"',
+  apos: "'",
+  amp: '&',
+  lt: '<',
+  gt: '>',
+  nbsp: ' ',
+};
+
 /**
  * Strip HTML tags from a string and collapse whitespace; cheap, not a parser.
  * Comments go first and whole (the shared HTML-format definition): their text
  * never renders, and one can hold tags or a `>` that would leave part of it
  * behind (the excerpt feeds `<meta name="description">` and search).
+ *
+ * Mirrors what the body renders: a literal `Promise<User>` (see
+ * {@link escapeLiteralTags}) is kept rather than stripped as a tag, and entities
+ * are decoded — the result is plain text (YAML frontmatter, the search index,
+ * an HTML-escaped `<meta>`), so a left-over `&lt;` would surface verbatim.
  */
 function stripHtml(html: string): string {
-  return replaceHtmlComments(html, htmlCommentRangesInHtml(html), (c, text) =>
+  const escaped = escapeLiteralTags(html);
+  return replaceHtmlComments(escaped, htmlCommentRangesInHtml(escaped), (c, text) =>
     c.closed ? ' ' : text
   )
     .replace(/<[^>]+>/g, ' ')
     .replace(/\s+/g, ' ')
-    .trim();
+    .trim()
+    .replace(/&#(\d+);/g, (_all, code: string) => String.fromCodePoint(Number(code)))
+    .replace(/&#x([0-9a-f]+);/gi, (_all, code: string) => String.fromCodePoint(parseInt(code, 16)))
+    .replace(/&([a-zA-Z]+);/g, (all, name: string) => ENTITIES[name.toLowerCase()] ?? all);
 }
 
 /**

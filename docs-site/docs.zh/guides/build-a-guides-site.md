@@ -212,5 +212,3 @@ frontmatter 则为其内部的 pages 排序。
 - 在一个站点中同时发布两者：[合并 guides + API](/guides/combine-guides-and-api)。
 - 掌握每一个 sidebar 杠杆：[结构化你的侧边栏](/guides/structure-your-sidebar)。
 - 每个 option 的详细说明：[配置](/theme/configuration)。
-</content>
-</invoke>

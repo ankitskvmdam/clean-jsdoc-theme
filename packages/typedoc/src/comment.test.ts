@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { Comment, CommentTag } from 'typedoc';
-import { commentFields } from './comment';
+import salty from '@jsdoc/salty';
+import { generateSite } from '@clean-jsdoc-theme/setu';
+import { commentFields, summaryToHtml } from './comment';
 
 /** Build a `Comment` with the given block tags (no summary/modifier tags needed here). */
-function makeComment(
-  tags: { tag: string; content: { kind: 'text'; text: string }[] }[]
-): Comment {
+function makeComment(tags: { tag: string; content: { kind: 'text'; text: string }[] }[]): Comment {
   const blockTags = tags.map((t) => new CommentTag(t.tag as never, t.content));
   return new Comment([], blockTags);
 }
@@ -56,5 +56,25 @@ describe('commentFields — @group / @category', () => {
     );
     const categoryTags = fields.tags?.filter((t) => t.title === 'category') ?? [];
     expect(categoryTags).toEqual([{ title: 'category', text: 'Core/Things' }]);
+  });
+});
+
+describe('summaryToHtml — angle-bracketed words in comment prose', () => {
+  // TypeDoc comment Markdown keeps `<User>` as raw HTML, the same shape JSDoc's
+  // markdown plugin hands setu; setu's shared prose converter must keep it as
+  // text so a generic type name doesn't vanish from the TypeDoc page either.
+  it('reaches the page body as literal text', () => {
+    const description = summaryToHtml(
+      new Comment([{ kind: 'text', text: 'Resolves to a Promise<User> for a generic <T>.' }])
+    );
+    expect(description).toContain('Promise<User>');
+    const site = generateSite(
+      salty.taffy([
+        { kind: 'module', name: 'm', longname: 'module:m', scope: 'global', description },
+      ])
+    );
+    const page = site.pages.find((p) => p.slug === 'module/m');
+    expect(page?.body).toContain('Resolves to a Promise\\<User> for a generic \\<T>.');
+    expect(page?.frontmatter.description).toBe('Resolves to a Promise<User> for a generic <T>.');
   });
 });
