@@ -136,6 +136,38 @@ function tagContentToText(
   return partsToMarkdown(parts, linkResolver).trim();
 }
 
+/**
+ * The bare value of a `@defaultValue` / `@default` tag. setu shows a default
+ * verbatim inside an inline-code span, so it must get the VALUE, not Markdown:
+ * TypeDoc hands the tag content over as code parts already wrapped for display
+ * — `` @defaultValue `'en-US'` `` arrives as `` `'en-US'` `` and a bare
+ * `@defaultValue {}` / `42` as a ```` ```ts ```` fence — which `tagContentToText`
+ * kept, so the backticks or the whole fence showed inside the code span. Unwrap
+ * each code part, keep text, render an inline tag as its text (a code span
+ * can't hold a link), and fold a multi-line value onto one line (the span is
+ * inline).
+ */
+export function defaultTagToText(parts: readonly CommentDisplayPart[]): string {
+  let out = '';
+  for (const part of parts) {
+    out += part.kind === 'code' ? unwrapCode(part.text) : part.text;
+  }
+  return out.replace(/\s*\n\s*/g, ' ').trim();
+}
+
+/** Strip a Markdown code fence or code-span delimiters from a code part. */
+function unwrapCode(code: string): string {
+  const fence = /^(`{3,}|~{3,})[^\n]*\n([\s\S]*?)\n?\1\s*$/.exec(code);
+  if (fence) return fence[2];
+  const span = /^(`+)([\s\S]*?)\1$/.exec(code);
+  if (span) {
+    // CommonMark drops one padding space from each side of a code span.
+    const inner = span[2];
+    return /^ [\s\S]* $/.test(inner) && inner.trim() ? inner.slice(1, -1) : inner;
+  }
+  return code;
+}
+
 /** The subset of doclet fields derived from a comment's block tags + flags. */
 export interface CommentFields {
   description?: string;
@@ -229,7 +261,7 @@ export function commentFields(
         break;
       case 'defaultvalue':
       case 'default':
-        fields.defaultvalue = tagContentToText(block.content, linkResolver);
+        fields.defaultvalue = defaultTagToText(block.content);
         break;
       case 'since':
         fields.since = tagContentToText(block.content, linkResolver);
