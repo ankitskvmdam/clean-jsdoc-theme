@@ -12,5 +12,7 @@ content warning, the build log listed it with a blank label (`-  (line 8:2): …
 because its slug is empty. It is now shown as `(home page)`. Other pages keep
 their slug as the label.
 
-The warning for a doc page skipped because its slug is empty (it would shadow
-the home page) now names the page by its title instead of printing `slug ""`.
+A doc page that is skipped because its slug is empty or already taken is now
+named by its title and source file, e.g. `skipping doc page "Bangs"
+(docs/!!!.md): its slug is empty, which would collide with the home page`,
+instead of `slug ""`.
