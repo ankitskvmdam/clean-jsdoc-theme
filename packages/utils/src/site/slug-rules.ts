@@ -25,12 +25,6 @@ const NON_SLUG_PATH = /[^\p{L}\p{N}\p{M}]+/gu;
 // their own: `## ⚠️` used to slug to a lone U+FE0F. Always dropped.
 const EMOJI_PRESENTATION = /[\ufe0e\ufe0f\u20e3]/g;
 
-// A run of marks not attached to a letter or digit (at the start, or after a
-// space/hyphen) once the symbol it decorated has been dropped. Marks that
-// follow a letter, digit or another attached mark (Devanagari matras, the kana
-// voiced-sound mark) are kept, so those slugs are unchanged.
-const ORPHAN_MARKS = /(^|[^\p{L}\p{N}\p{M}])\p{M}+/gu;
-
 // A usable slug has at least one letter or digit; anything else is invisible.
 const HAS_LETTER_OR_DIGIT = /[\p{L}\p{N}]/u;
 
@@ -74,7 +68,6 @@ function plainHeadingSlug(text: string): string {
     .toLowerCase()
     .replace(NON_SLUG_HEADING, '') // drop punctuation
     .replace(EMOJI_PRESENTATION, '') // drop invisible emoji styling marks
-    .replace(ORPHAN_MARKS, '$1') // drop marks left without a base character
     .trim()
     .replace(/[\s-]+/g, '-') // collapse whitespace/hyphens
     .replace(/^-+|-+$/g, '') // trim hyphens
@@ -87,8 +80,8 @@ function plainHeadingSlug(text: string): string {
  *   - lowercase
  *   - strip combining diacritics (after NFKD normalization)
  *   - drop any character that isn't a letter, number, mark, space, or hyphen
- *   - drop emoji presentation marks (U+FE0E, U+FE0F, U+20E3) and any mark left
- *     without a letter/digit to attach to (`⚠️ Warning` → `warning`)
+ *   - drop the emoji presentation marks U+FE0E, U+FE0F and U+20E3
+ *     (`⚠️ Warning` → `warning`); other marks are kept exactly as before
  *   - collapse runs of whitespace/hyphens into a single hyphen
  *   - trim leading/trailing hyphens
  *   - recompose to NFC so non-Latin slugs match what authors type in

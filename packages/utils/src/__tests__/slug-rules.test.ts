@@ -112,6 +112,16 @@ describe('slugifyHeading — fallback for text with no slug', () => {
     expect(slugifyHeading('\u304b\u3099')).toBe('\u304c'); // ka + voiced mark -> ga
   });
 
+  it('keeps stray non-emoji marks exactly as before', () => {
+    // Arabic presentation form: NFKD gives a space + fatha, and the fatha stays.
+    expect(slugifyHeading('a \ufe76 b')).toBe('a-\u064e-b');
+    // Spacing voiced-sound mark: NFKD gives a space + U+3099, which stays.
+    expect(slugifyHeading('\u304b\u309b')).toBe('\u304b-\u3099');
+    // `\u2260` decomposes to `=` + U+0338, which is in the Latin combining block and
+    // so is always stripped.
+    expect(slugifyHeading('a \u2260 b')).toBe('a-b');
+  });
+
   it('honors a custom fallback prefix', () => {
     expect(slugifyHeading('$', undefined, 'x')).toBe('x--24');
   });

@@ -44,6 +44,10 @@ describe('heading ids: setu TOC === dwar rendered', () => {
       '### Getting started',
       '## Café',
       '## Section',
+      '## ⚠️ Warning',
+      '## 1️⃣ Step',
+      '## ⚠️',
+      '## a ≠ b',
     ].join('\n\n');
     const { pages } = buildDocPages([{ path: 'parity', content, type: 'markdown' }]);
     const page = pages[0];
@@ -56,6 +60,10 @@ describe('heading ids: setu TOC === dwar rendered', () => {
       'getting-started-1',
       'cafe',
       'section',
+      'warning',
+      '1-step',
+      'section--26a0_fe0f',
+      'a-b', // control: `≠` is `=` + U+0338, a Latin-block mark, always stripped
     ]);
 
     const manifest: SiteManifest = { pages: [page], nav: [], buildId: 'parity' };
