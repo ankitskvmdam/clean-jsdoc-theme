@@ -291,7 +291,7 @@ function tsCallableSignature(
 
 /** Visible form of a member name for headings, the TOC and search. A
  *  whitespace-only name (TypeDoc keeps a TS key `' '`) is shown as a quoted
- *  literal with control characters escaped (`' '`, `'	'`), the way the
+ *  literal with control characters escaped (`' '`, `'\t'`), the way the
  *  source spells it; every other name is returned as is. Anchors never use
  *  this: `memberAnchor` reads the raw name. */
 export function displayMemberName(name: string): string {
