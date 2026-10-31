@@ -499,7 +499,9 @@ function overloadSignatureBlocks(
   const out: RootContent[] = [];
   for (const sig of signatures) {
     out.push(
-      signature(tsCallableSignature(displayMemberName(name), sig.typeParams, sig.params, sig.returns))
+      signature(
+        tsCallableSignature(displayMemberName(name), sig.typeParams, sig.params, sig.returns)
+      )
     );
     // A synthetic doclet carrying only this signature's data, so docletBlocks
     // renders its Type Parameters / Parameters / Returns (and the overload's own
