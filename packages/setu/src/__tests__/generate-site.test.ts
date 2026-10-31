@@ -166,6 +166,25 @@ describe('extractHeadings', () => {
     expect(headings.map((h) => h.id)).toEqual(['foo', 'foo-1']);
   });
 
+  it('reads a hard line break as a space, as the rendered heading does', () => {
+    const tree = {
+      type: 'root' as const,
+      children: [
+        {
+          type: 'heading' as const,
+          depth: 2 as const,
+          children: [
+            { type: 'text' as const, value: 'a' },
+            { type: 'break' as const },
+            { type: 'text' as const, value: 'b' },
+          ],
+        },
+      ],
+    };
+    const [heading] = extractHeadings(tree);
+    expect({ text: heading.text, id: heading.id }).toEqual({ text: 'a b', id: 'a-b' });
+  });
+
   it('gives punctuation/emoji-only headings a deduped fallback id, never `id=""`', () => {
     const heading = (value: string) => ({
       type: 'heading' as const,

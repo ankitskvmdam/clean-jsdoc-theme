@@ -148,15 +148,19 @@ export function makePlaygroundResolver(
 
 /**
  * The visible text of a heading, read recursively through its phrasing
- * children (`**Bold** title` → `Bold title`, `[link](x)` → `link`). Only
- * `text` and `inlineCode` contribute; images, breaks, raw HTML tags and MDX
- * expressions add nothing. This must match what dwar's `hastText` reads from
- * the rendered heading, since both feed `slugifyHeading`: reading only direct
- * children made the TOC id of a formatted heading miss its rendered anchor.
+ * children (`**Bold** title` → `Bold title`, `[link](x)` → `link`). `text` and
+ * `inlineCode` contribute their value and a `break` contributes a space (setu
+ * serialises it as a line break, which dwar's `hastText` reads as whitespace);
+ * images, raw HTML and MDX expressions add nothing. A footnote reference
+ * reaches this tree as a link to `#user-content-fn-…` whose text is the
+ * footnote number, so `## Intro[^1]` reads `Intro1` — the same text dwar's
+ * `hastText` sees in the rendered heading and the id GitHub generates. Both
+ * feed `slugifyHeading`, so the TOC id equals the rendered id.
  */
 function headingText(node: MdastHeading): string {
   const visit = (n: { type: string; value?: unknown; children?: unknown[] }): string => {
     if (n.type === 'text' || n.type === 'inlineCode') return String(n.value ?? '');
+    if (n.type === 'break') return ' '; // serialised as a line break; dwar reads the newline as whitespace
     if (!Array.isArray(n.children)) return '';
     return n.children.map((c) => visit(c as Parameters<typeof visit>[0])).join('');
   };

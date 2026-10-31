@@ -105,4 +105,41 @@ describe('heading ids: setu TOC === dwar rendered', () => {
     const dwarIds = [...html.matchAll(/<h[2-6][^>]*\sid="([^"]*)"/g)].map((m) => m[1]);
     expect(dwarIds).toEqual(setuIds);
   });
+
+  it('match for footnotes, line breaks, images, strikethrough and {@link}', async () => {
+    const markdown = [
+      '# Inline',
+      '## Intro[^1]',
+      '## a<br>b',
+      '## Logo ![alt](x.png)',
+      '## ~~old~~ new',
+      '## See {@link Foo}',
+      '[^1]: note',
+    ].join('\n\n');
+    const resolve = (t: string) => (t === 'Foo' ? { href: '/foo/', external: false } : null);
+    const { pages } = buildDocPages(
+      [
+        { path: 'inline', content: markdown, type: 'markdown' },
+        { path: 'raw', content: '<h2>a<br>b</h2><h2>Intro<sup>1</sup></h2>', type: 'html' },
+      ],
+      {},
+      resolve
+    );
+    const expected: Record<string, string[]> = {
+      // The footnote definition adds GFM's own `Footnotes` section heading.
+      inline: ['intro1', 'a-b', 'logo', 'old-new', 'see-foo', 'footnotes'],
+      raw: ['a-b', 'intro1'],
+    };
+
+    const manifest: SiteManifest = { pages, nav: [], buildId: 'inline' };
+    const result = await render(manifest, { theme });
+    expect(result.errors ?? []).toEqual([]);
+    for (const page of pages) {
+      const setuIds = (page.headings ?? []).map((h) => h.id);
+      expect(setuIds).toEqual(expected[page.slug]);
+      const html = asString(result.files.find((f) => f.path === `${page.slug}/index.html`)!);
+      const dwarIds = [...html.matchAll(/<h[2-6][^>]*\sid="([^"]*)"/g)].map((m) => m[1]);
+      expect(dwarIds).toEqual(setuIds);
+    }
+  });
 });
