@@ -37,7 +37,8 @@ Give every heading a visible anchor that the table of contents links to.
   the anchor `#member--20`, and is shown as `' '` in the heading, the table of
   contents and search. A name made only of characters that print nothing — a
   no-break space, a zero-width space, a soft hyphen, a lone combining mark, a
-  tab — is shown as a quoted escape (`'\u00a0'`, `'\u200b'`, `'\t'`), so its
+  tab, a Braille blank (U+2800), a lone surrogate half — is shown as a quoted
+  escape (`'\u00a0'`, `'\u200b'`, `'\t'`, `'\u2800'`, `'\ud800'`), so its
   heading and table-of-contents row are never blank and two such names never
   look the same; the anchor keeps the code points (`#member--200b`). A name
   with any visible character, such as `$` or `a b`, is unchanged.

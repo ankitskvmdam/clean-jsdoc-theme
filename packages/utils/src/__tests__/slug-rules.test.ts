@@ -185,6 +185,11 @@ describe('memberAnchor', () => {
   it('falls back for an emoji name instead of an invisible id', () => {
     expect(memberAnchor('\u2764\ufe0f')).toBe('member--2764_fe0f');
   });
+
+  it('falls back to the code points for a Braille blank or a lone surrogate half', () => {
+    expect(memberAnchor('\u2800')).toBe('member--2800');
+    expect(memberAnchor('\ud800')).toBe('member--d800');
+  });
 });
 
 describe('slugifyPath', () => {
