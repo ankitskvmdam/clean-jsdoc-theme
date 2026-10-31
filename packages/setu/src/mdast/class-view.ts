@@ -331,7 +331,7 @@ function objectLiteralFromProperties(properties: readonly TDocletParam[]): strin
     .filter((p) => p.name && !p.name.includes('.'))
     .map((p) => {
       const t = tsType(p.type);
-      return `${displayMemberName(p.name)}${p.optional ? '?' : ''}${t ? `: ${t}` : ''}`;
+      return `${displayMemberName(p.name ?? '')}${p.optional ? '?' : ''}${t ? `: ${t}` : ''}`;
     });
   if (members.length === 0) return '{}';
   const single = `{ ${members.join('; ')} }`;
