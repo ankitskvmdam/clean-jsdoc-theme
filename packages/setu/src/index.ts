@@ -377,7 +377,10 @@ export function generateSite(collection: unknown, opts?: GenerateSiteOptions): S
   let docNav: NavNode[] = [];
   if (opts?.docs && opts.docs.length > 0) {
     const built = buildDocPages(opts.docs, { defaultDocGroup: opts.defaultDocGroup }, resolveLink);
-    const droppedSlugs = new Set<string>();
+    // Nav nodes of the pages skipped below, removed by identity: a skipped page
+    // shares its slug with the page that beat it to it, so filtering by slug
+    // would also take the kept page's sidebar entry away.
+    const droppedNav = new Set<NavNode>();
     for (const page of built.pages) {
       if (page.slug === '' && page.frontmatter.kind === 'index') {
         // Root index.md → the home page (overrides the README home, below).
@@ -386,7 +389,8 @@ export function generateSite(collection: unknown, opts?: GenerateSiteOptions): S
       }
       // A doc may not shadow the home or an already-claimed API/source slug.
       if (page.slug === '' || claimedSlugs.has(page.slug)) {
-        droppedSlugs.add(page.slug);
+        const node = built.navOf.get(page);
+        if (node) droppedNav.add(node);
         // Non-fatal: skip deterministically and warn (the bridge surfaces logs).
         // Name the page by its title and the file it came from (the bridges set
         // `source`; otherwise the docs-relative path), so the author can find it:
@@ -403,9 +407,9 @@ export function generateSite(collection: unknown, opts?: GenerateSiteOptions): S
       claimedSlugs.add(page.slug);
       docPages.push(page);
     }
-    // Drop nav entries for the skipped doc pages so the sidebar matches the
-    // emitted pages (a dropped slug never reaches the manifest).
-    docNav = built.nav.filter((n) => n.slug !== undefined && !droppedSlugs.has(n.slug));
+    // Drop only the skipped pages' own nav entries so the sidebar matches the
+    // emitted pages; a kept page that shares a skipped page's slug keeps its link.
+    docNav = built.nav.filter((n) => !droppedNav.has(n));
   }
 
   // README → home page (slug ''), the always-first ungrouped "Home" link. A root

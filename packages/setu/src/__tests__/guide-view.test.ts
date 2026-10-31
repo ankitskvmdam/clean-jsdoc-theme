@@ -103,6 +103,24 @@ describe('buildDocPages — inputs', () => {
   });
 });
 
+describe('buildDocPages — navOf', () => {
+  it('maps each page that has a nav entry to that node; hidden and home pages have none', () => {
+    const docs: DocInput[] = [
+      { path: 'index', content: '# Home', type: 'markdown' },
+      { path: 'a', content: '---\nhidden: true\n---\n# A', type: 'markdown' },
+      { path: 'b', content: '# B', type: 'markdown' },
+    ];
+    const built = buildDocPages(docs);
+    const [home, hidden, b] = built.pages;
+    expect(built.nav).toHaveLength(1);
+    expect(built.navOf.get(home)).toBeUndefined();
+    expect(built.navOf.get(hidden)).toBeUndefined();
+    // The very node in `nav`, so a caller can remove it by identity.
+    expect(built.navOf.get(b)).toBe(built.nav[0]);
+    expect(built.navOf.get(b)?.label).toBe('B');
+  });
+});
+
 describe('buildDocPages — group precedence', () => {
   it('uses frontmatter group over directory and input', () => {
     const docs: DocInput[] = [

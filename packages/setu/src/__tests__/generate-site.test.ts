@@ -656,6 +656,55 @@ describe('generateSite — docs', () => {
     warn.mockRestore();
   });
 
+  it('keeps the first doc and its sidebar entry when a later doc shares its slug', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    // `foo-bar` and `foo_bar` both slugify to `foo-bar`: the first is built and
+    // the second skipped, and the skip must not take the kept page's link too.
+    const manifest = generateSite(getJSDocTaffyData(), {
+      docs: [
+        {
+          path: 'foo-bar',
+          source: 'docs/foo-bar.md',
+          content: '---\ntitle: Hyphen\n---\n# Hyphen',
+          type: 'markdown',
+        },
+        {
+          path: 'foo_bar',
+          source: 'docs/foo_bar.md',
+          content: '---\ntitle: Underscore\n---\n# Underscore',
+          type: 'markdown',
+        },
+      ],
+      defaultDocGroup: 'Docs',
+    });
+    const fooPages = manifest.pages.filter((p) => p.slug === 'foo-bar');
+    expect(fooPages).toHaveLength(1);
+    expect(fooPages[0].frontmatter.title).toBe('Hyphen');
+    expect(warn).toHaveBeenCalledWith(
+      '[setu] skipping doc page "Underscore" (docs/foo_bar.md): its slug "foo-bar" collides with an existing page'
+    );
+    const fooNav = manifest.nav.filter((n) => n.slug === 'foo-bar');
+    expect(fooNav).toHaveLength(1);
+    expect(fooNav[0].label).toBe('Hyphen');
+    expect(fooNav[0].group).toBe('Docs');
+    warn.mockRestore();
+  });
+
+  it('gives a doc skipped behind a hidden doc of the same slug no sidebar entry', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const manifest = generateSite(getJSDocTaffyData(), {
+      docs: [
+        { path: 'a', content: '---\nhidden: true\n---\n# Hidden', type: 'markdown' },
+        { path: 'A', content: '# Visible', type: 'markdown' },
+      ],
+    });
+    const aPages = manifest.pages.filter((p) => p.slug === 'a');
+    expect(aPages).toHaveLength(1);
+    expect(aPages[0].frontmatter.hidden).toBe(true);
+    expect(manifest.nav.some((n) => n.slug === 'a')).toBe(false);
+    warn.mockRestore();
+  });
+
   it('names a doc whose slug is empty by its title and source file, not `slug ""`', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     // `!!!` slugifies to '' (the home slug) but is not the root index.md.

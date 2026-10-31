@@ -412,16 +412,21 @@ export function composeResolvers(
  *
  * `inputs` maps each built page back to the {@link DocInput} it came from, so a
  * caller that later drops a page can name its source file in the diagnostic.
+ *
+ * `navOf` maps each page that got a nav node to that node (hidden and home pages
+ * have none), so a caller that drops a page can remove only ITS entry — two docs
+ * that slugify alike must not take each other's sidebar link down.
  */
 export function buildDocPages(
   docs: readonly DocInput[],
   opts: BuildDocPagesOptions = {},
   resolveLink?: (target: string) => ResolvedLink | null
-): { pages: Page[]; nav: NavNode[]; inputs: Map<Page, DocInput> } {
+): { pages: Page[]; nav: NavNode[]; inputs: Map<Page, DocInput>; navOf: Map<Page, NavNode> } {
   const { defaultDocGroup, parseFrontmatter: doParse = true } = opts;
   const pages: Page[] = [];
   const nav: NavNode[] = [];
   const inputs = new Map<Page, DocInput>();
+  const navOf = new Map<Page, NavNode>();
 
   for (const input of docs) {
     const { slug, title, group, order, hidden, isHome, kind, body } = deriveDocMeta(input, {
@@ -460,15 +465,17 @@ export function buildDocPages(
 
     // No nav for hidden pages, nor for the home page (added elsewhere).
     if (hidden || isHome) continue;
-    nav.push({
+    const node: NavNode = {
       label: title,
       slug,
       ...(group !== undefined ? { group } : {}),
       ...(order !== undefined ? { order } : {}),
-    });
+    };
+    nav.push(node);
+    navOf.set(page, node);
   }
 
-  return { pages, nav, inputs };
+  return { pages, nav, inputs, navOf };
 }
 
 /** A {@link DocInput}'s derived page metadata — the shared truth for the page
