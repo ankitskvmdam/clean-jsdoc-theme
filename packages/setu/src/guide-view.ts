@@ -65,6 +65,8 @@ export interface DocInput {
   /** Raw content (frontmatter may still be embedded). */
   content: string;
   type: 'markdown' | 'html';
+  /** Where `content` was read from, for diagnostics only: project-relative, forward slashes, with extension. Never affects output. */
+  source?: string;
   /** Explicit override (used by the tutorial adapter). */
   group?: string;
   title?: string;
@@ -407,15 +409,19 @@ export function composeResolvers(
  * A `NavNode` is emitted per page carrying `label`/`slug`/`group`/`order`; nav
  * is skipped for `hidden` pages and for the home page (whose nav entry is added
  * elsewhere, matching `buildReadmePage`).
+ *
+ * `inputs` maps each built page back to the {@link DocInput} it came from, so a
+ * caller that later drops a page can name its source file in the diagnostic.
  */
 export function buildDocPages(
   docs: readonly DocInput[],
   opts: BuildDocPagesOptions = {},
   resolveLink?: (target: string) => ResolvedLink | null
-): { pages: Page[]; nav: NavNode[] } {
+): { pages: Page[]; nav: NavNode[]; inputs: Map<Page, DocInput> } {
   const { defaultDocGroup, parseFrontmatter: doParse = true } = opts;
   const pages: Page[] = [];
   const nav: NavNode[] = [];
+  const inputs = new Map<Page, DocInput>();
 
   for (const input of docs) {
     const { slug, title, group, order, hidden, isHome, kind, body } = deriveDocMeta(input, {
@@ -448,7 +454,9 @@ export function buildDocPages(
     const pageBody = toMdx(tree, { frontmatter });
     const headings = extractHeadings(tree);
 
-    pages.push({ slug, frontmatter, body: pageBody, mdast: tree, headings });
+    const page: Page = { slug, frontmatter, body: pageBody, mdast: tree, headings };
+    pages.push(page);
+    inputs.set(page, input);
 
     // No nav for hidden pages, nor for the home page (added elsewhere).
     if (hidden || isHome) continue;
@@ -460,7 +468,7 @@ export function buildDocPages(
     });
   }
 
-  return { pages, nav };
+  return { pages, nav, inputs };
 }
 
 /** A {@link DocInput}'s derived page metadata — the shared truth for the page

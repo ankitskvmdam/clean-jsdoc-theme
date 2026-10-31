@@ -1,6 +1,6 @@
 import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { afterAll, beforeAll, describe, it, expect, vi } from 'vitest';
 import {
   collectDocs,
@@ -440,6 +440,13 @@ describe('collectDocs', () => {
     expect(paths).not.toContain('notes');
     expect(paths).not.toContain('.hidden');
     expect(paths.some((p) => p.includes('node_modules'))).toBe(false);
+  });
+
+  it('records each file as a cwd-relative, forward-slash source for diagnostics', async () => {
+    const docs = await collectDocs(dir);
+    const advanced = docs.find((d) => d.path === 'guides/advanced')!;
+    expect(advanced.source).toMatch(new RegExp(`(^|/)${basename(dir)}/guides/advanced\\.md$`));
+    expect(advanced.source).not.toContain('\\');
   });
 
   it('returns [] for a missing directory (never throws)', async () => {

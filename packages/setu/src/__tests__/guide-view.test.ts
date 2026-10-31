@@ -89,6 +89,20 @@ describe('buildDocPages — slug from path', () => {
   });
 });
 
+describe('buildDocPages — inputs', () => {
+  it('maps each page back to the input it was built from', () => {
+    const docs: DocInput[] = [
+      { path: 'a', source: 'docs/a.md', content: '# A', type: 'markdown' },
+      { path: 'empty', content: '', type: 'markdown' },
+      { path: 'b', content: '# B', type: 'markdown' },
+    ];
+    const { pages, inputs } = buildDocPages(docs);
+    expect(pages).toHaveLength(2);
+    expect(inputs.get(pages[0])).toBe(docs[0]);
+    expect(inputs.get(pages[1])).toBe(docs[2]);
+  });
+});
+
 describe('buildDocPages — group precedence', () => {
   it('uses frontmatter group over directory and input', () => {
     const docs: DocInput[] = [

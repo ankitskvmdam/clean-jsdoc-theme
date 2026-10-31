@@ -12,7 +12,6 @@ import {
 } from './generate-site';
 import { getContainerView, mergeContainerViews, type ContainerView } from './class-view';
 import {
-  HOME_PAGE_LABEL,
   resolveCollapsibleSections,
   slugifyPath,
   topLevelSectionLabels,
@@ -389,13 +388,16 @@ export function generateSite(collection: unknown, opts?: GenerateSiteOptions): S
       if (page.slug === '' || claimedSlugs.has(page.slug)) {
         droppedSlugs.add(page.slug);
         // Non-fatal: skip deterministically and warn (the bridge surfaces logs).
-        // An empty slug would print as `slug ""`; name the page by its title and
-        // say whose slug it is instead.
-        console.warn(
+        // Name the page by its title and the file it came from (the bridges set
+        // `source`; otherwise the docs-relative path), so the author can find it:
+        // an empty slug alone would print as the unhelpful `slug ""`.
+        const input = built.inputs.get(page);
+        const where = input?.source ?? input?.path ?? page.slug;
+        const reason =
           page.slug === ''
-            ? `[setu] skipping doc page "${page.frontmatter.title}": its slug is empty, which is the slug of the ${HOME_PAGE_LABEL}`
-            : `[setu] skipping doc page: slug "${page.slug}" collides with an existing page`
-        );
+            ? 'its slug is empty, which would collide with the home page'
+            : `its slug "${page.slug}" collides with an existing page`;
+        console.warn(`[setu] skipping doc page "${page.frontmatter.title}" (${where}): ${reason}`);
         continue;
       }
       claimedSlugs.add(page.slug);

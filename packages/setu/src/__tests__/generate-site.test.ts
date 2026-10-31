@@ -647,26 +647,47 @@ describe('generateSite — docs', () => {
     // No nav entry for the skipped doc.
     expect(manifest.nav.some((n) => n.slug === 'global' && n.group !== 'Globals')).toBe(false);
     // Warned, did not throw; all slugs remain unique.
+    // Named by title and, with no `source`, its docs-relative path.
     expect(warn).toHaveBeenCalledWith(
-      '[setu] skipping doc page: slug "global" collides with an existing page'
+      '[setu] skipping doc page "Global" (global): its slug "global" collides with an existing page'
     );
     const slugs = manifest.pages.map((p) => p.slug);
     expect(new Set(slugs).size).toBe(slugs.length);
     warn.mockRestore();
   });
 
-  it('names a doc whose slug is empty by its title, not `slug ""`', () => {
+  it('names a doc whose slug is empty by its title and source file, not `slug ""`', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     // `!!!` slugifies to '' (the home slug) but is not the root index.md.
     generateSite(getJSDocTaffyData(), {
-      docs: [{ path: '!!!', title: 'Bangs', content: '# Bangs', type: 'markdown' }],
+      docs: [
+        {
+          path: '!!!',
+          source: 'docs/bangs.md',
+          title: 'Bangs',
+          content: '# Bangs',
+          type: 'markdown',
+        },
+      ],
     });
     const messages = warn.mock.calls.map((c) => String(c[0]));
     const skip = messages.find((m) => m.includes('skipping doc page'));
     expect(skip).toBe(
-      '[setu] skipping doc page "Bangs": its slug is empty, which is the slug of the (home page)'
+      '[setu] skipping doc page "Bangs" (docs/bangs.md): its slug is empty, which would collide with the home page'
     );
     expect(messages.some((m) => m.includes('slug ""'))).toBe(false);
+    warn.mockRestore();
+  });
+
+  it('falls back to the docs-relative path when a skipped doc has no source', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    generateSite(getJSDocTaffyData(), {
+      docs: [{ path: '!!!', title: 'Bangs', content: '# Bangs', type: 'markdown' }],
+    });
+    const skip = warn.mock.calls.map((c) => String(c[0])).find((m) => m.includes('skipping'));
+    expect(skip).toBe(
+      '[setu] skipping doc page "Bangs" (!!!): its slug is empty, which would collide with the home page'
+    );
     warn.mockRestore();
   });
 
