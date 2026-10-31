@@ -19,6 +19,10 @@ const SOURCE = `
 export interface Odd {
   /** A single space. */
   ' ': string;
+  /** A no-break space. */
+  '\\u00a0': string;
+  /** A zero-width space. */
+  '\\u200b': string;
   /** The empty string. */
   '': number;
   /** A normal key. */
@@ -77,6 +81,8 @@ describe('blank and empty member names (TypeDoc)', () => {
     const names = doclets.map((d) => d.name);
     expect(names).toContain(' ');
     expect(names).toContain('');
+    expect(names).toContain('\u00a0');
+    expect(names).toContain('\u200b');
   });
 
   it('gives a blank member the fallback anchor instead of throwing', () => {
@@ -89,6 +95,12 @@ describe('blank and empty member names (TypeDoc)', () => {
     expect(odd?.body).toContain(`sig="' ': string"`);
     expect(weird?.body).toContain(`name="' '"`);
     expect(weird?.body).toContain(`sig="' ': 1"`);
+    // A name with no visible character is shown as a quoted escape; its anchor
+    // keeps the code point.
+    expect(odd?.body).toContain('id="member--a0"');
+    expect(odd?.body).toContain('id="member--200b"');
+    expect(odd?.body).toContain(`name="'\\u00a0'"`);
+    expect(odd?.body).toContain(`name="'\\u200b'"`);
     // Controls: normal members keep their plain anchors.
     expect(odd?.body).toContain('id="normal"');
     expect(weird?.body).toContain('id="normal"');

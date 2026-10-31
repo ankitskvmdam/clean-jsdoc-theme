@@ -305,6 +305,24 @@ describe('blank member names (TypeDoc keeps a literal single-space key)', () => 
       },
       {
         kind: 'member',
+        name: '\u00a0',
+        longname: 'Odd.\u00a0',
+        memberof: 'Odd',
+        scope: 'instance',
+        description: 'A no-break space.',
+        type: { names: ['string'] },
+      },
+      {
+        kind: 'member',
+        name: '\u200b',
+        longname: 'Odd.\u200b',
+        memberof: 'Odd',
+        scope: 'instance',
+        description: 'A zero-width space.',
+        type: { names: ['string'] },
+      },
+      {
+        kind: 'member',
         name: '',
         longname: 'Odd.',
         memberof: 'Odd',
@@ -333,5 +351,19 @@ describe('blank member names (TypeDoc keeps a literal single-space key)', () => 
     expect(page!.headings).toContainEqual(
       expect.objectContaining({ text: "' '", id: 'member--20' })
     );
+    // Names with no visible character are shown as quoted escapes, never blank
+    // and never alike; the anchors keep the code points.
+    expect(page!.body).toContain('id="member--a0"');
+    expect(page!.body).toContain('id="member--200b"');
+    expect(page!.body).toContain(`name="'\\u00a0'"`);
+    expect(page!.body).toContain(`sig="'\\u200b': string"`);
+    expect(page!.headings).toContainEqual(
+      expect.objectContaining({ text: "'\\u00a0'", id: 'member--a0' })
+    );
+    expect(page!.headings).toContainEqual(
+      expect.objectContaining({ text: "'\\u200b'", id: 'member--200b' })
+    );
+    const texts = (page!.headings ?? []).map((h) => h.text);
+    expect(new Set(texts).size).toBe(texts.length);
   });
 });

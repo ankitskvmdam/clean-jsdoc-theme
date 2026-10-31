@@ -289,14 +289,45 @@ function tsCallableSignature(
   return formatCallable(name, tsTypeParamParts(typeParams), tsParamParts(params), ret ? `: ${ret}` : '');
 }
 
-/** Visible form of a member name for headings, the TOC and search. A
- *  whitespace-only name (TypeDoc keeps a TS key `' '`) is shown as a quoted
- *  literal with control characters escaped (`' '`, `'\t'`), the way the
- *  source spells it; every other name is returned as is. Anchors never use
- *  this: `memberAnchor` reads the raw name. */
+// A character that prints nothing on its own: whitespace of any kind (space,
+// NBSP, ideographic space, line/paragraph separators), controls, format
+// characters (zero-width space/joiner, BOM, soft hyphen, bidi marks), lone
+// combining and enclosing marks, and the other default-ignorables (Hangul
+// fillers, variation selectors). `White_Space` already covers Zs/Zl/Zp and the
+// TAB..CR controls. Spacing marks (`Mc`) take up width and are not included.
+const INVISIBLE_ONLY =
+  /^[\p{White_Space}\p{Cc}\p{Cf}\p{Mn}\p{Me}\p{Default_Ignorable_Code_Point}]*$/u;
+// Every invisible character except U+0020, which stays a literal space inside
+// the quotes (`' '`), the way TypeScript prints such a key.
+const INVISIBLE_EXCEPT_SPACE =
+  /(?! )[\p{White_Space}\p{Cc}\p{Cf}\p{Mn}\p{Me}\p{Default_Ignorable_Code_Point}]/gu;
+const SHORT_ESCAPES: Readonly<Record<string, string>> = {
+  '\b': '\\b',
+  '\t': '\\t',
+  '\n': '\\n',
+  '\f': '\\f',
+  '\r': '\\r',
+};
+
+/** `\t`-style for the common controls, else `\uXXXX` (lowercase, like the
+ *  `member--XXXX` anchor hex) or `\u{XXXXX}` beyond the BMP. */
+function escapeInvisible(ch: string): string {
+  const short = SHORT_ESCAPES[ch];
+  if (short) return short;
+  const cp = ch.codePointAt(0)!;
+  return cp > 0xffff ? `\\u{${cp.toString(16)}}` : `\\u${cp.toString(16).padStart(4, '0')}`;
+}
+
+/** Visible form of a member name for headings, the TOC and search. A name with
+ *  no visible character at all (TypeDoc keeps a TS key `' '`, `'\u00a0'` or
+ *  `'\u200b'`) is shown as a quoted literal with every character but U+0020
+ *  escaped — `' '`, `'\t'`, `'\u00a0'`, `'\u200b'` — so its heading and TOC row
+ *  are never blank and two such names never look alike. Any name with at least
+ *  one visible character (`$`, `_`, `->`, `a b`, and a mixed `a\u200bb`) is
+ *  returned as is. Anchors never use this: `memberAnchor` reads the raw name. */
 export function displayMemberName(name: string): string {
-  if (name.trim() !== '') return name;
-  return `'${JSON.stringify(name).slice(1, -1)}'`;
+  if (!INVISIBLE_ONLY.test(name)) return name;
+  return `'${name.replace(INVISIBLE_EXCEPT_SPACE, escapeInvisible)}'`;
 }
 
 /**

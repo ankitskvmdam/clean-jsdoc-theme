@@ -32,10 +32,15 @@ Give every heading a visible anchor that the table of contents links to.
 - **Hard line breaks in headings.** `## a<br>b` was listed as `ab` linking to
   `#ab` while the page rendered `#a-b`; the table of contents now links to
   `#a-b`.
-- **TypeDoc members named with a single space.** A TypeScript property or enum
+- **TypeDoc members with no visible name.** A TypeScript property or enum
   member literally named `' '` aborted the TypeDoc build. It now renders with
   the anchor `#member--20`, and is shown as `' '` in the heading, the table of
-  contents and search.
+  contents and search. A name made only of characters that print nothing — a
+  no-break space, a zero-width space, a soft hyphen, a lone combining mark, a
+  tab — is shown as a quoted escape (`'\u00a0'`, `'\u200b'`, `'\t'`), so its
+  heading and table-of-contents row are never blank and two such names never
+  look the same; the anchor keeps the code points (`#member--200b`). A name
+  with any visible character, such as `$` or `a b`, is unchanged.
 
 The table of contents, the rendered page and `{@link}` always use the same
 anchor. Any heading whose anchor already contained a letter or digit and none
