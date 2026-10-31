@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { default as salty } from '@jsdoc/salty';
-import type { TDoclet, TJSDocSaltyCollection } from '@clean-jsdoc-theme/utils';
+import type { NavNode, TDoclet, TJSDocSaltyCollection } from '@clean-jsdoc-theme/utils';
 import { generateMdx, generateSite } from '../index';
 import {
   buildClassPage,
@@ -746,6 +746,97 @@ describe('generateSite — docs', () => {
     expect(b.pages.map((p) => p.slug)).toEqual(a.pages.map((p) => p.slug));
     expect(b.pages.map((p) => p.body)).toEqual(a.pages.map((p) => p.body));
     expect(b.nav).toEqual(a.nav);
+  });
+});
+
+describe('generateSite — tutorials', () => {
+  // Nav nodes with a slug, at any depth (nested tutorials sit under a branch).
+  const navLeaves = (nodes: NavNode[]): NavNode[] =>
+    nodes.flatMap((n) => [...(n.slug !== undefined ? [n] : []), ...navLeaves(n.children ?? [])]);
+
+  it('keeps the first tutorial and its sidebar entry when a later tutorial shares its slug', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    // `foo-bar` and `foo_bar` are distinct JSDoc tutorial names that both slugify
+    // to `tutorials/foo-bar`: the first is built, the second skipped with a
+    // warning, and the skip must not take the kept page's link too.
+    const manifest = generateSite(getJSDocTaffyData(), {
+      tutorials: [
+        { name: 'foo-bar', title: 'Hyphen', type: 'markdown', content: '# Hyphen' },
+        { name: 'foo_bar', title: 'Underscore', type: 'markdown', content: '# Underscore' },
+      ],
+    });
+    const fooPages = manifest.pages.filter((p) => p.slug === 'tutorials/foo-bar');
+    expect(fooPages).toHaveLength(1);
+    expect(fooPages[0].frontmatter.title).toBe('Hyphen');
+    expect(warn).toHaveBeenCalledWith(
+      '[setu] skipping tutorial "Underscore" (tutorials/foo_bar): its slug "tutorials/foo-bar" collides with an existing page'
+    );
+    const fooNav = navLeaves(manifest.nav).filter((n) => n.slug === 'tutorials/foo-bar');
+    expect(fooNav).toHaveLength(1);
+    expect(fooNav[0].label).toBe('Hyphen');
+    warn.mockRestore();
+  });
+
+  it('skips a tutorial whose slug a doc page already owns, with no sidebar entry for it', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    // Docs are claimed before tutorials, so `docs/tutorials/intro.md` wins.
+    const manifest = generateSite(getJSDocTaffyData(), {
+      docs: [
+        { path: 'tutorials/intro', content: '---\ntitle: Doc Intro\n---\n# Doc', type: 'markdown' },
+      ],
+      tutorials: [{ name: 'intro', title: 'Tutorial Intro', type: 'markdown', content: '# Tut' }],
+    });
+    const introPages = manifest.pages.filter((p) => p.slug === 'tutorials/intro');
+    expect(introPages).toHaveLength(1);
+    expect(introPages[0].frontmatter.title).toBe('Doc Intro');
+    expect(warn).toHaveBeenCalledWith(
+      '[setu] skipping tutorial "Tutorial Intro" (tutorials/intro): its slug "tutorials/intro" collides with an existing page'
+    );
+    const introNav = navLeaves(manifest.nav).filter((n) => n.slug === 'tutorials/intro');
+    expect(introNav.map((n) => n.label)).toEqual(['Doc Intro']);
+    warn.mockRestore();
+  });
+
+  it('drops only the colliding child of a nested tutorial, keeping the parent branch', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const manifest = generateSite(getJSDocTaffyData(), {
+      tutorials: [
+        {
+          name: 'guide',
+          title: 'Guide',
+          type: 'markdown',
+          content: '# Guide',
+          children: [
+            { name: 'foo-bar', title: 'Hyphen', type: 'markdown', content: '# Hyphen' },
+            { name: 'foo_bar', title: 'Underscore', type: 'markdown', content: '# Underscore' },
+          ],
+        },
+      ],
+    });
+    const branch = manifest.nav.find((n) => n.label === 'Guide' && n.slug === undefined)!;
+    expect(branch).toBeDefined();
+    // The parent's own page is the first entry inside its branch (assemble-nav.test.ts:73-89).
+    expect(branch.children!.map((c) => c.label)).toEqual(['Guide', 'Hyphen']);
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
+  });
+
+  it('is unchanged when no tutorial collides: every tutorial gets a page and a link, no warning', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const manifest = generateSite(getJSDocTaffyData(), {
+      tutorials: [
+        { name: 'one', title: 'One', type: 'markdown', content: '# One' },
+        { name: 'two', title: 'Two', type: 'markdown', content: '# Two' },
+      ],
+    });
+    const slugs = manifest.pages.filter((p) => p.slug.startsWith('tutorials/')).map((p) => p.slug);
+    expect(slugs).toEqual(['tutorials/one', 'tutorials/two']);
+    const labels = navLeaves(manifest.nav)
+      .filter((n) => n.slug?.startsWith('tutorials/'))
+      .map((n) => n.label);
+    expect(labels).toEqual(['One', 'Two']);
+    expect(warn.mock.calls.some((c) => String(c[0]).includes('skipping tutorial'))).toBe(false);
+    warn.mockRestore();
   });
 });
 

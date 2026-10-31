@@ -389,6 +389,16 @@ export function composeResolvers(
   };
 }
 
+/** What {@link buildDocPages} (and {@link buildTutorialPages}) return. */
+export interface BuiltDocPages {
+  pages: Page[];
+  nav: NavNode[];
+  /** Each page → the {@link DocInput} it came from (for diagnostics). */
+  inputs: Map<Page, DocInput>;
+  /** Each page with a nav entry → that very node in `nav` (hidden/home pages have none). */
+  navOf: Map<Page, NavNode>;
+}
+
 /**
  * Build guide/doc pages + flat nav entries from a list of {@link DocInput}.
  * Shared by the tutorial adapter ({@link tutorialsToDocInputs}) and the docs
@@ -421,7 +431,7 @@ export function buildDocPages(
   docs: readonly DocInput[],
   opts: BuildDocPagesOptions = {},
   resolveLink?: (target: string) => ResolvedLink | null
-): { pages: Page[]; nav: NavNode[]; inputs: Map<Page, DocInput>; navOf: Map<Page, NavNode> } {
+): BuiltDocPages {
   const { defaultDocGroup, parseFrontmatter: doParse = true } = opts;
   const pages: Page[] = [];
   const nav: NavNode[] = [];
@@ -584,10 +594,14 @@ export function tutorialsToDocInputs(tutorials: readonly TutorialInput[]): DocIn
  * disabled so a tutorial whose content begins with `---` keeps its exact output;
  * page slugs / frontmatter / bodies are unchanged — only the nav grouping now
  * reflects the hierarchy.
+ *
+ * Returns the full {@link BuiltDocPages}: `inputs` (each page's
+ * `tutorials/<name>` input) and `navOf` let the caller skip a colliding tutorial
+ * by name and drop only its own nav node.
  */
 export function buildTutorialPages(
   tutorials: readonly TutorialInput[],
   resolveLink?: (target: string) => ResolvedLink | null
-): { pages: Page[]; nav: NavNode[] } {
+): BuiltDocPages {
   return buildDocPages(tutorialsToDocInputs(tutorials), { parseFrontmatter: false }, resolveLink);
 }

@@ -430,14 +430,27 @@ export function generateSite(collection: unknown, opts?: GenerateSiteOptions): S
   let tutorialNav: NavNode[] = [];
   if (opts?.tutorials && opts.tutorials.length > 0) {
     const built = buildTutorialPages(opts.tutorials, resolveLink);
-    // Tutorials slug under `tutorials/<name>`; on the off chance one collides
-    // with an API/doc page, skip it (keep slugs unique across the manifest).
+    // Tutorials slug under `tutorials/<name>`. One can collide with an API/doc
+    // page claimed above, or with an earlier tutorial whose name slugifies alike
+    // (`foo-bar` and `foo_bar`): skip it and warn, as a doc page is. Its nav node
+    // is removed by identity — the page that won the slug keeps its sidebar link
+    // (a slug filter would take both down; see the docs block above).
+    const droppedNav = new Set<NavNode>();
     for (const page of built.pages) {
-      if (claimedSlugs.has(page.slug)) continue;
+      if (claimedSlugs.has(page.slug)) {
+        const node = built.navOf.get(page);
+        if (node) droppedNav.add(node);
+        // Name it by title and `tutorials/<name>` (the raw name, before slugifying).
+        const where = built.inputs.get(page)?.path ?? page.slug;
+        console.warn(
+          `[setu] skipping tutorial "${page.frontmatter.title}" (${where}): its slug "${page.slug}" collides with an existing page`
+        );
+        continue;
+      }
       claimedSlugs.add(page.slug);
       pages.push(page);
     }
-    tutorialNav = built.nav.filter((n) => n.slug === undefined || claimedSlugs.has(n.slug));
+    tutorialNav = built.nav.filter((n) => !droppedNav.has(n));
   }
 
   // Doc pages → prose pages grouped by their doc-group (added after tutorials,
@@ -556,6 +569,7 @@ export {
   tutorialsToDocInputs,
   TUTORIALS_GROUP,
   type BuildDocPagesOptions,
+  type BuiltDocPages,
   type CrossRefResolver,
   type DocInput,
   type ResolvedTutorial,

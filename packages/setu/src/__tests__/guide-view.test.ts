@@ -371,6 +371,16 @@ describe('tutorialsToDocInputs + buildTutorialPages — byte-identical to legacy
     const next = buildTutorialPages(tutorials);
     expect(next.pages[0].body).toBe(legacy.pages[0].body);
   });
+
+  it('returns inputs and navOf so a caller can skip a tutorial by name and drop only its nav node', () => {
+    const built = buildTutorialPages(TUTORIALS);
+    expect(built.pages).toHaveLength(3);
+    expect(built.nav).toHaveLength(3);
+    // The very node in `nav`, so it can be removed by identity.
+    built.pages.forEach((page, i) => expect(built.navOf.get(page)).toBe(built.nav[i]));
+    expect(built.inputs.get(built.pages[0])?.path).toBe('tutorials/getting-started');
+    expect(built.inputs.get(built.pages[1])?.path).toBe('tutorials/install');
+  });
 });
 
 describe('makeTutorialResolver', () => {
