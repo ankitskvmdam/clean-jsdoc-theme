@@ -359,10 +359,10 @@ function tsMemberSignature(member: TDoclet): string | null {
  */
 function objectLiteralFromProperties(properties: readonly TDocletParam[]): string {
   const members = properties
-    .filter((p) => p.name && !p.name.includes('.'))
+    .filter((p): p is TDocletParam & { name: string } => !!p.name && !p.name.includes('.'))
     .map((p) => {
       const t = tsType(p.type);
-      return `${displayMemberName(p.name ?? '')}${p.optional ? '?' : ''}${t ? `: ${t}` : ''}`;
+      return `${displayMemberName(p.name)}${p.optional ? '?' : ''}${t ? `: ${t}` : ''}`;
     });
   if (members.length === 0) return '{}';
   const single = `{ ${members.join('; ')} }`;
@@ -419,7 +419,7 @@ function typedefSignature(doclet: ContainerView['doclet']): string | null {
 
 /** One interface member rendered as a TS declaration line (`name?(p: P): R`). */
 function interfaceMemberLine(member: ClassMember): string {
-  const name = displayMemberName(member.name ?? '');
+  const name = displayMemberName(member.name);
   const opt = member.optional ? '?' : '';
   if (member.kind === 'function') {
     const tp = tsTypeParamParts(member.typeParams);

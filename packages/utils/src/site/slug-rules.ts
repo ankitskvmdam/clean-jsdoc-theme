@@ -117,7 +117,7 @@ export function slugifyHeading(
   registry?: Map<string, number>,
   fallbackPrefix: string = SECTION_FALLBACK_PREFIX
 ): string {
-  const trimmed = String(text ?? '').trim();
+  const trimmed = text.trim();
   const base = plainHeadingSlug(trimmed) || (trimmed ? fallbackSlug(fallbackPrefix, trimmed) : '');
 
   if (!registry) return base;
