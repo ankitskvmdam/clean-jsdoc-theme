@@ -301,6 +301,7 @@ describe('blank member names (TypeDoc keeps a literal single-space key)', () => 
         memberof: 'Odd',
         scope: 'instance',
         description: 'A single space.',
+        type: { names: ['string'] },
       },
       {
         kind: 'member',
@@ -326,5 +327,11 @@ describe('blank member names (TypeDoc keeps a literal single-space key)', () => 
     expect(page!.body).toContain('id="normal"');
     expect(page!.body).not.toContain('id=""');
     expect(page!.body).not.toContain('The empty string.');
+    // The blank name is shown quoted, so its heading and TOC row aren't empty.
+    expect(page!.body).toContain(`name="' '"`);
+    expect(page!.body).toContain(`sig="' ': string"`);
+    expect(page!.headings).toContainEqual(
+      expect.objectContaining({ text: "' '", id: 'member--20' })
+    );
   });
 });

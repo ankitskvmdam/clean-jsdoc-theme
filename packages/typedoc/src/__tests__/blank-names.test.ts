@@ -84,6 +84,11 @@ describe('blank and empty member names (TypeDoc)', () => {
     const weird = site.pages.find((p) => p.frontmatter.longname === 'Weird');
     expect(odd?.body).toContain('id="member--20"');
     expect(weird?.body).toContain('id="member--20"');
+    // The blank name is shown quoted, the way TypeScript prints such a key.
+    expect(odd?.body).toContain(`name="' '"`);
+    expect(odd?.body).toContain(`sig="' ': string"`);
+    expect(weird?.body).toContain(`name="' '"`);
+    expect(weird?.body).toContain(`sig="' ': 1"`);
     // Controls: normal members keep their plain anchors.
     expect(odd?.body).toContain('id="normal"');
     expect(weird?.body).toContain('id="normal"');

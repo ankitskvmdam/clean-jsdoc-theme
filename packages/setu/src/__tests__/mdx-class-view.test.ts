@@ -18,6 +18,7 @@ import { htmlToMdastBlocks, htmlToMdastInline } from '../mdast/from-html';
 import {
   constructorSignature,
   containerViewToMdast,
+  displayMemberName,
   memberBadges,
   memberBlocks,
   memberSignatureSuffix,
@@ -259,6 +260,18 @@ describe('docletBlocks (per-member composer)', () => {
     expect(block).not.toBeNull();
     const json = JSON.stringify(block);
     expect(json).toContain('This module is deprecated and should not be used.');
+  });
+});
+
+describe('displayMemberName', () => {
+  it('quotes a whitespace-only name, escaping control characters', () => {
+    expect(displayMemberName(' ')).toBe("' '");
+    expect(displayMemberName('  ')).toBe("'  '");
+    expect(displayMemberName('\t')).toBe("'\\t'");
+  });
+
+  it('returns every other name as is', () => {
+    for (const name of ['normal', 'a b', ' a']) expect(displayMemberName(name)).toBe(name);
   });
 });
 

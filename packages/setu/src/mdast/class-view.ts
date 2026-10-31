@@ -289,6 +289,16 @@ function tsCallableSignature(
   return formatCallable(name, tsTypeParamParts(typeParams), tsParamParts(params), ret ? `: ${ret}` : '');
 }
 
+/** Visible form of a member name for headings, the TOC and search. A
+ *  whitespace-only name (TypeDoc keeps a TS key `' '`) is shown as a quoted
+ *  literal with control characters escaped (`' '`, `'	'`), the way the
+ *  source spells it; every other name is returned as is. Anchors never use
+ *  this: `memberAnchor` reads the raw name. */
+export function displayMemberName(name: string): string {
+  if (name.trim() !== '') return name;
+  return `'${JSON.stringify(name).slice(1, -1)}'`;
+}
+
 /**
  * Full TS signature for a member: a callable form for functions/methods
  * (`name<T>(p: T): Ret`), `get name(): Type` for accessors, and `name: Type`
@@ -297,8 +307,8 @@ function tsCallableSignature(
  * their container doclet, whose name may be absent.
  */
 function tsMemberSignature(member: TDoclet): string | null {
-  const name = member.name;
-  if (!name) return null;
+  if (!member.name) return null;
+  const name = displayMemberName(member.name);
   if (member.kind === 'function') {
     return tsCallableSignature(name, member.typeParams, member.params, member.returns);
   }
@@ -321,7 +331,7 @@ function objectLiteralFromProperties(properties: readonly TDocletParam[]): strin
     .filter((p) => p.name && !p.name.includes('.'))
     .map((p) => {
       const t = tsType(p.type);
-      return `${p.name}${p.optional ? '?' : ''}${t ? `: ${t}` : ''}`;
+      return `${displayMemberName(p.name)}${p.optional ? '?' : ''}${t ? `: ${t}` : ''}`;
     });
   if (members.length === 0) return '{}';
   const single = `{ ${members.join('; ')} }`;
@@ -378,7 +388,7 @@ function typedefSignature(doclet: ContainerView['doclet']): string | null {
 
 /** One interface member rendered as a TS declaration line (`name?(p: P): R`). */
 function interfaceMemberLine(member: ClassMember): string {
-  const name = member.name ?? '';
+  const name = displayMemberName(member.name ?? '');
   const opt = member.optional ? '?' : '';
   if (member.kind === 'function') {
     const tp = tsTypeParamParts(member.typeParams);
@@ -488,7 +498,9 @@ function overloadSignatureBlocks(
   ];
   const out: RootContent[] = [];
   for (const sig of signatures) {
-    out.push(signature(tsCallableSignature(name, sig.typeParams, sig.params, sig.returns)));
+    out.push(
+      signature(tsCallableSignature(displayMemberName(name), sig.typeParams, sig.params, sig.returns))
+    );
     // A synthetic doclet carrying only this signature's data, so docletBlocks
     // renders its Type Parameters / Parameters / Returns (and the overload's own
     // description, which isn't a skippable section).
@@ -551,9 +563,12 @@ export function memberBlocks(
   // slug). An overloaded member can't put N signatures in one heading, so it
   // keeps a bare-name heading and stacks each signature as a `<Signature>` below.
   const overloaded = options.flavor === 'typedoc' && hasOverloads(member);
-  const sig = overloaded ? name : (tsMemberSignature(member) ?? name);
+  // A blank name (`' '`) is printed quoted so its heading, TOC row and search
+  // entry aren't empty; the anchor still comes from the raw name.
+  const shown = displayMemberName(name);
+  const sig = overloaded ? shown : (tsMemberSignature(member) ?? shown);
   const out: RootContent[] = [
-    memberHeading({ id: memberAnchor(name), depth: headingLevel, name, sig }),
+    memberHeading({ id: memberAnchor(name), depth: headingLevel, name: shown, sig }),
   ];
 
   const badges = memberBadges(member);
