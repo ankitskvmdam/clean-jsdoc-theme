@@ -19,11 +19,69 @@ const DIACRITICS = /[\u0300-\u036f]+/g;
 const NON_SLUG_HEADING = /[^\p{L}\p{N}\p{M}\s-]+/gu;
 const NON_SLUG_PATH = /[^\p{L}\p{N}\p{M}]+/gu;
 
+// Emoji presentation marks: VS15/VS16 (U+FE0E/U+FE0F, text/emoji style) and the
+// combining enclosing keycap (U+20E3, `1️⃣`). They are marks, so the classes above
+// keep them, but they only style the symbol beside them and are invisible on
+// their own: `## ⚠️` used to slug to a lone U+FE0F. Always dropped.
+const EMOJI_PRESENTATION = /[\ufe0e\ufe0f\u20e3]/g;
+
+// A usable slug has at least one letter or digit; anything else is invisible.
+const HAS_LETTER_OR_DIGIT = /[\p{L}\p{N}]/u;
+
+/**
+ * Prefix of the fallback id for a prose heading whose slug would be empty. See
+ * {@link slugifyHeading}.
+ */
+export const SECTION_FALLBACK_PREFIX = 'section';
+
+/**
+ * Prefix of the fallback id for an API member heading whose slug would be
+ * empty. See {@link memberAnchor}.
+ */
+export const MEMBER_FALLBACK_PREFIX = 'member';
+
+/**
+ * Fallback id for heading text that slugifies to nothing (`$`, `_`, `🚀`, `⚠️`):
+ * `<prefix>--` plus the text's code points in lowercase hex, joined by `_`
+ * (`$` → `section--24`, `🚀🚀` → `section--1f680_1f680`, `⚠️` →
+ * `section--26a0_fe0f`). The text is used as given; callers decide whether to
+ * trim it first.
+ *
+ * Neither separator can come out of the normal slug pipeline: it collapses every
+ * whitespace/hyphen run to a single `-` (so never `--`) and drops `_` as
+ * punctuation. A fallback therefore can't collide with a real slug, and a
+ * dedupe suffix (`-1`) can't be mistaken for part of the code-point list.
+ */
+function fallbackSlug(prefix: string, text: string): string {
+  const codes = Array.from(text, (ch) => ch.codePointAt(0)!.toString(16));
+  return `${prefix}--${codes.join('_')}`;
+}
+
+/**
+ * The plain slug of `text` (the pipeline described on {@link slugifyHeading}),
+ * or `''` when it has no letter or digit.
+ */
+function plainHeadingSlug(text: string): string {
+  const slug = text
+    .normalize('NFKD')
+    .replace(DIACRITICS, '')
+    .toLowerCase()
+    .replace(NON_SLUG_HEADING, '') // drop punctuation
+    .replace(EMOJI_PRESENTATION, '') // drop invisible emoji styling marks
+    .trim()
+    .replace(/[\s-]+/g, '-') // collapse whitespace/hyphens
+    .replace(/^-+|-+$/g, '') // trim hyphens
+    .normalize('NFC'); // recompose marks split apart by NFKD
+  return HAS_LETTER_OR_DIGIT.test(slug) ? slug : '';
+}
+
 /**
  * GitHub-style heading slugifier:
  *   - lowercase
  *   - strip combining diacritics (after NFKD normalization)
  *   - drop any character that isn't a letter, number, mark, space, or hyphen
+ *   - drop the emoji presentation marks U+FE0E, U+FE0F and U+20E3
+ *     (`⚠️ Warning` → `warning`); other marks are kept exactly as before
  *   - collapse runs of whitespace/hyphens into a single hyphen
  *   - trim leading/trailing hyphens
  *   - recompose to NFC so non-Latin slugs match what authors type in
@@ -33,31 +91,66 @@ const NON_SLUG_PATH = /[^\p{L}\p{N}\p{M}]+/gu;
  * and Japanese headings produce meaningful, non-empty slugs — not the empty or
  * Latin-only degenerate slugs an ASCII-only class would yield.
  *
+ * Text with no letter or digit (`## $`, `## 🚀`, `## ⚠️`) would slugify to
+ * nothing (or to invisible marks), leaving an id the TOC can't usefully link
+ * to. Such text gets a
+ * {@link fallbackSlug} of its trimmed text instead (`fallbackPrefix--<hex>`,
+ * `section` by default).
+ * Every heading id goes through here — setu's TOC (`extractHeadings`), dwar's
+ * rendered ids and {@link memberAnchor} — so both sides always agree. Text with
+ * a non-empty slug is unaffected; blank text still yields `''` (callers skip
+ * blank headings).
+ *
  * When `registry` is provided, repeated slugs are deduped by appending `-1`,
  * `-2`, ... — the registry tracks how many times each base slug has been seen
- * so callers can reuse it across all headings on a page.
+ * so callers can reuse it across all headings on a page. Fallback ids dedupe the
+ * same way (`section--1f680`, `section--1f680-1`).
  *
  * @example
  *   const reg = new Map<string, number>();
  *   slugifyHeading('Hello World', reg); // 'hello-world'
  *   slugifyHeading('Hello World', reg); // 'hello-world-1'
+ *   slugifyHeading('🚀');               // 'section--1f680'
  */
-export function slugifyHeading(text: string, registry?: Map<string, number>): string {
-  const base = String(text ?? '')
-    .normalize('NFKD')
-    .replace(DIACRITICS, '')
-    .toLowerCase()
-    .replace(NON_SLUG_HEADING, '') // drop punctuation
-    .trim()
-    .replace(/[\s-]+/g, '-') // collapse whitespace/hyphens
-    .replace(/^-+|-+$/g, '') // trim hyphens
-    .normalize('NFC'); // recompose marks split apart by NFKD
+export function slugifyHeading(
+  text: string,
+  registry?: Map<string, number>,
+  fallbackPrefix: string = SECTION_FALLBACK_PREFIX
+): string {
+  const trimmed = text.trim();
+  const base = plainHeadingSlug(trimmed) || (trimmed ? fallbackSlug(fallbackPrefix, trimmed) : '');
 
   if (!registry) return base;
 
   const seen = registry.get(base) ?? 0;
   registry.set(base, seen + 1);
   return seen === 0 ? base : `${base}-${seen}`;
+}
+
+/**
+ * Anchor id for an API member heading, used by both the rendered
+ * `<MemberHeading>` and the link registry so a `{@link}` lands on the heading.
+ *
+ * Same plain slug as {@link slugifyHeading}; when that is empty the fallback
+ * uses the `member` prefix (`$` → `member--24`, `$$` → `member--24_24`).
+ * Member headings carry explicit ids that bypass the per-page dedupe registry,
+ * so a prefix distinct from prose headings' `section` keeps a member `$` and a
+ * prose `## $` on the same page apart. Any name with a non-empty slug keeps its
+ * plain slug.
+ *
+ * Unlike prose text, a member name is not trimmed for the fallback: TypeDoc
+ * keeps a TS property or enum member literally named `' '`, and it gets
+ * `member--20` rather than nothing. Never throws, since a bad name must not
+ * abort a build: the empty string (unreachable in practice, as setu drops
+ * nameless doclets when it reads members) maps to the fixed id `member--`.
+ *
+ * @example
+ *   memberAnchor('process'); // 'process'
+ *   memberAnchor('$');       // 'member--24'
+ *   memberAnchor(' ');       // 'member--20'
+ */
+export function memberAnchor(name: string): string {
+  return plainHeadingSlug(name) || fallbackSlug(MEMBER_FALLBACK_PREFIX, name);
 }
 
 /**

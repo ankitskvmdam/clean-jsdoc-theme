@@ -10,6 +10,11 @@ import {
 export type GetClassViewOptions = FilterDocletsOptions;
 
 export interface ClassMember extends TDoclet {
+  /**
+   * Always non-empty: members are only read through `getMembersOf` /
+   * `getGlobalDoclets`, which drop nameless doclets (see `isNamedDoclet`).
+   */
+  name: string;
   /** Longname of the ancestor this member was inherited from. Absent on own members. */
   inheritedFrom?: string;
 }

@@ -35,6 +35,19 @@ describe('formatRenderError', () => {
     );
   });
 
+  it('labels the home page (empty slug) instead of printing a blank label', () => {
+    const out = formatRenderError({ slug: '', message: 'boom', line: 8, column: 2 });
+    expect(out).toBe('  - (home page) (line 8:2): boom');
+  });
+
+  it('labels the home page in the unpositioned form too', () => {
+    expect(formatRenderError({ slug: '', message: 'boom' })).toBe('  - (home page): boom');
+  });
+
+  it('keeps a real `index` slug distinct from the home page', () => {
+    expect(formatRenderError({ slug: 'index', message: 'boom' })).toBe('  - index: boom');
+  });
+
   it('honors a custom indent', () => {
     const out = formatRenderError({ slug: 'x', message: 'm' }, '    ');
     expect(out).toBe('    - x: m');

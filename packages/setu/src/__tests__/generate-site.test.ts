@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { default as salty } from '@jsdoc/salty';
-import type { TDoclet, TJSDocSaltyCollection } from '@clean-jsdoc-theme/utils';
+import type { NavNode, TDoclet, TJSDocSaltyCollection } from '@clean-jsdoc-theme/utils';
 import { generateMdx, generateSite } from '../index';
 import {
   buildClassPage,
@@ -164,6 +164,68 @@ describe('extractHeadings', () => {
     };
     const headings = extractHeadings(tree);
     expect(headings.map((h) => h.id)).toEqual(['foo', 'foo-1']);
+  });
+
+  it('reads a hard line break as a space, as the rendered heading does', () => {
+    const tree = {
+      type: 'root' as const,
+      children: [
+        {
+          type: 'heading' as const,
+          depth: 2 as const,
+          children: [
+            { type: 'text' as const, value: 'a' },
+            { type: 'break' as const },
+            { type: 'text' as const, value: 'b' },
+          ],
+        },
+      ],
+    };
+    const [heading] = extractHeadings(tree);
+    expect({ text: heading.text, id: heading.id }).toEqual({ text: 'a b', id: 'a-b' });
+  });
+
+  it('gives punctuation/emoji-only headings a deduped fallback id, never `id=""`', () => {
+    const heading = (value: string) => ({
+      type: 'heading' as const,
+      depth: 2 as const,
+      children: [{ type: 'text' as const, value }],
+    });
+    const tree = {
+      type: 'root' as const,
+      children: ['$', '🚀', '🚀', 'Intro', 'Intro'].map(heading),
+    };
+    expect(extractHeadings(tree).map((h) => h.id)).toEqual([
+      'section--24',
+      'section--1f680',
+      'section--1f680-1',
+      'intro',
+      'intro-1',
+    ]);
+  });
+
+  it('keeps a member `$` and a prose `## $` on distinct ids', () => {
+    const tree = {
+      type: 'root' as const,
+      children: [
+        {
+          type: 'heading' as const,
+          depth: 2 as const,
+          children: [{ type: 'text' as const, value: '$' }],
+        },
+        {
+          type: 'mdxJsxFlowElement' as const,
+          name: 'MemberHeading',
+          attributes: [
+            { type: 'mdxJsxAttribute' as const, name: 'id', value: 'member--24' },
+            { type: 'mdxJsxAttribute' as const, name: 'depth', value: '3' },
+            { type: 'mdxJsxAttribute' as const, name: 'name', value: '$' },
+          ],
+          children: [],
+        },
+      ],
+    } as unknown as Parameters<typeof extractHeadings>[0];
+    expect(extractHeadings(tree).map((h) => h.id)).toEqual(['section--24', 'member--24']);
   });
 
   it('skips a lone h1 (it is the page title)', () => {
@@ -585,9 +647,96 @@ describe('generateSite — docs', () => {
     // No nav entry for the skipped doc.
     expect(manifest.nav.some((n) => n.slug === 'global' && n.group !== 'Globals')).toBe(false);
     // Warned, did not throw; all slugs remain unique.
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining('skipping doc page'));
+    // Named by title and, with no `source`, its docs-relative path.
+    expect(warn).toHaveBeenCalledWith(
+      '[setu] skipping doc page "Global" (global): its slug "global" collides with an existing page'
+    );
     const slugs = manifest.pages.map((p) => p.slug);
     expect(new Set(slugs).size).toBe(slugs.length);
+    warn.mockRestore();
+  });
+
+  it('keeps the first doc and its sidebar entry when a later doc shares its slug', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    // `foo-bar` and `foo_bar` both slugify to `foo-bar`: the first is built and
+    // the second skipped, and the skip must not take the kept page's link too.
+    const manifest = generateSite(getJSDocTaffyData(), {
+      docs: [
+        {
+          path: 'foo-bar',
+          source: 'docs/foo-bar.md',
+          content: '---\ntitle: Hyphen\n---\n# Hyphen',
+          type: 'markdown',
+        },
+        {
+          path: 'foo_bar',
+          source: 'docs/foo_bar.md',
+          content: '---\ntitle: Underscore\n---\n# Underscore',
+          type: 'markdown',
+        },
+      ],
+      defaultDocGroup: 'Docs',
+    });
+    const fooPages = manifest.pages.filter((p) => p.slug === 'foo-bar');
+    expect(fooPages).toHaveLength(1);
+    expect(fooPages[0].frontmatter.title).toBe('Hyphen');
+    expect(warn).toHaveBeenCalledWith(
+      '[setu] skipping doc page "Underscore" (docs/foo_bar.md): its slug "foo-bar" collides with an existing page'
+    );
+    const fooNav = manifest.nav.filter((n) => n.slug === 'foo-bar');
+    expect(fooNav).toHaveLength(1);
+    expect(fooNav[0].label).toBe('Hyphen');
+    expect(fooNav[0].group).toBe('Docs');
+    warn.mockRestore();
+  });
+
+  it('gives a doc skipped behind a hidden doc of the same slug no sidebar entry', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const manifest = generateSite(getJSDocTaffyData(), {
+      docs: [
+        { path: 'a', content: '---\nhidden: true\n---\n# Hidden', type: 'markdown' },
+        { path: 'A', content: '# Visible', type: 'markdown' },
+      ],
+    });
+    const aPages = manifest.pages.filter((p) => p.slug === 'a');
+    expect(aPages).toHaveLength(1);
+    expect(aPages[0].frontmatter.hidden).toBe(true);
+    expect(manifest.nav.some((n) => n.slug === 'a')).toBe(false);
+    warn.mockRestore();
+  });
+
+  it('names a doc whose slug is empty by its title and source file, not `slug ""`', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    // `!!!` slugifies to '' (the home slug) but is not the root index.md.
+    generateSite(getJSDocTaffyData(), {
+      docs: [
+        {
+          path: '!!!',
+          source: 'docs/bangs.md',
+          title: 'Bangs',
+          content: '# Bangs',
+          type: 'markdown',
+        },
+      ],
+    });
+    const messages = warn.mock.calls.map((c) => String(c[0]));
+    const skip = messages.find((m) => m.includes('skipping doc page'));
+    expect(skip).toBe(
+      '[setu] skipping doc page "Bangs" (docs/bangs.md): its slug is empty, which would collide with the home page'
+    );
+    expect(messages.some((m) => m.includes('slug ""'))).toBe(false);
+    warn.mockRestore();
+  });
+
+  it('falls back to the docs-relative path when a skipped doc has no source', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    generateSite(getJSDocTaffyData(), {
+      docs: [{ path: '!!!', title: 'Bangs', content: '# Bangs', type: 'markdown' }],
+    });
+    const skip = warn.mock.calls.map((c) => String(c[0])).find((m) => m.includes('skipping'));
+    expect(skip).toBe(
+      '[setu] skipping doc page "Bangs" (!!!): its slug is empty, which would collide with the home page'
+    );
     warn.mockRestore();
   });
 
@@ -597,6 +746,97 @@ describe('generateSite — docs', () => {
     expect(b.pages.map((p) => p.slug)).toEqual(a.pages.map((p) => p.slug));
     expect(b.pages.map((p) => p.body)).toEqual(a.pages.map((p) => p.body));
     expect(b.nav).toEqual(a.nav);
+  });
+});
+
+describe('generateSite — tutorials', () => {
+  // Nav nodes with a slug, at any depth (nested tutorials sit under a branch).
+  const navLeaves = (nodes: NavNode[]): NavNode[] =>
+    nodes.flatMap((n) => [...(n.slug !== undefined ? [n] : []), ...navLeaves(n.children ?? [])]);
+
+  it('keeps the first tutorial and its sidebar entry when a later tutorial shares its slug', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    // `foo-bar` and `foo_bar` are distinct JSDoc tutorial names that both slugify
+    // to `tutorials/foo-bar`: the first is built, the second skipped with a
+    // warning, and the skip must not take the kept page's link too.
+    const manifest = generateSite(getJSDocTaffyData(), {
+      tutorials: [
+        { name: 'foo-bar', title: 'Hyphen', type: 'markdown', content: '# Hyphen' },
+        { name: 'foo_bar', title: 'Underscore', type: 'markdown', content: '# Underscore' },
+      ],
+    });
+    const fooPages = manifest.pages.filter((p) => p.slug === 'tutorials/foo-bar');
+    expect(fooPages).toHaveLength(1);
+    expect(fooPages[0].frontmatter.title).toBe('Hyphen');
+    expect(warn).toHaveBeenCalledWith(
+      '[setu] skipping tutorial "Underscore" (tutorials/foo_bar): its slug "tutorials/foo-bar" collides with an existing page'
+    );
+    const fooNav = navLeaves(manifest.nav).filter((n) => n.slug === 'tutorials/foo-bar');
+    expect(fooNav).toHaveLength(1);
+    expect(fooNav[0].label).toBe('Hyphen');
+    warn.mockRestore();
+  });
+
+  it('skips a tutorial whose slug a doc page already owns, with no sidebar entry for it', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    // Docs are claimed before tutorials, so `docs/tutorials/intro.md` wins.
+    const manifest = generateSite(getJSDocTaffyData(), {
+      docs: [
+        { path: 'tutorials/intro', content: '---\ntitle: Doc Intro\n---\n# Doc', type: 'markdown' },
+      ],
+      tutorials: [{ name: 'intro', title: 'Tutorial Intro', type: 'markdown', content: '# Tut' }],
+    });
+    const introPages = manifest.pages.filter((p) => p.slug === 'tutorials/intro');
+    expect(introPages).toHaveLength(1);
+    expect(introPages[0].frontmatter.title).toBe('Doc Intro');
+    expect(warn).toHaveBeenCalledWith(
+      '[setu] skipping tutorial "Tutorial Intro" (tutorials/intro): its slug "tutorials/intro" collides with an existing page'
+    );
+    const introNav = navLeaves(manifest.nav).filter((n) => n.slug === 'tutorials/intro');
+    expect(introNav.map((n) => n.label)).toEqual(['Doc Intro']);
+    warn.mockRestore();
+  });
+
+  it('drops only the colliding child of a nested tutorial, keeping the parent branch', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const manifest = generateSite(getJSDocTaffyData(), {
+      tutorials: [
+        {
+          name: 'guide',
+          title: 'Guide',
+          type: 'markdown',
+          content: '# Guide',
+          children: [
+            { name: 'foo-bar', title: 'Hyphen', type: 'markdown', content: '# Hyphen' },
+            { name: 'foo_bar', title: 'Underscore', type: 'markdown', content: '# Underscore' },
+          ],
+        },
+      ],
+    });
+    const branch = manifest.nav.find((n) => n.label === 'Guide' && n.slug === undefined)!;
+    expect(branch).toBeDefined();
+    // The parent's own page is the first entry inside its branch (assemble-nav.test.ts:73-89).
+    expect(branch.children!.map((c) => c.label)).toEqual(['Guide', 'Hyphen']);
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
+  });
+
+  it('is unchanged when no tutorial collides: every tutorial gets a page and a link, no warning', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const manifest = generateSite(getJSDocTaffyData(), {
+      tutorials: [
+        { name: 'one', title: 'One', type: 'markdown', content: '# One' },
+        { name: 'two', title: 'Two', type: 'markdown', content: '# Two' },
+      ],
+    });
+    const slugs = manifest.pages.filter((p) => p.slug.startsWith('tutorials/')).map((p) => p.slug);
+    expect(slugs).toEqual(['tutorials/one', 'tutorials/two']);
+    const labels = navLeaves(manifest.nav)
+      .filter((n) => n.slug?.startsWith('tutorials/'))
+      .map((n) => n.label);
+    expect(labels).toEqual(['One', 'Two']);
+    expect(warn.mock.calls.some((c) => String(c[0]).includes('skipping tutorial'))).toBe(false);
+    warn.mockRestore();
   });
 });
 

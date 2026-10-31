@@ -89,6 +89,38 @@ describe('buildDocPages — slug from path', () => {
   });
 });
 
+describe('buildDocPages — inputs', () => {
+  it('maps each page back to the input it was built from', () => {
+    const docs: DocInput[] = [
+      { path: 'a', source: 'docs/a.md', content: '# A', type: 'markdown' },
+      { path: 'empty', content: '', type: 'markdown' },
+      { path: 'b', content: '# B', type: 'markdown' },
+    ];
+    const { pages, inputs } = buildDocPages(docs);
+    expect(pages).toHaveLength(2);
+    expect(inputs.get(pages[0])).toBe(docs[0]);
+    expect(inputs.get(pages[1])).toBe(docs[2]);
+  });
+});
+
+describe('buildDocPages — navOf', () => {
+  it('maps each page that has a nav entry to that node; hidden and home pages have none', () => {
+    const docs: DocInput[] = [
+      { path: 'index', content: '# Home', type: 'markdown' },
+      { path: 'a', content: '---\nhidden: true\n---\n# A', type: 'markdown' },
+      { path: 'b', content: '# B', type: 'markdown' },
+    ];
+    const built = buildDocPages(docs);
+    const [home, hidden, b] = built.pages;
+    expect(built.nav).toHaveLength(1);
+    expect(built.navOf.get(home)).toBeUndefined();
+    expect(built.navOf.get(hidden)).toBeUndefined();
+    // The very node in `nav`, so a caller can remove it by identity.
+    expect(built.navOf.get(b)).toBe(built.nav[0]);
+    expect(built.navOf.get(b)?.label).toBe('B');
+  });
+});
+
 describe('buildDocPages — group precedence', () => {
   it('uses frontmatter group over directory and input', () => {
     const docs: DocInput[] = [
@@ -338,6 +370,16 @@ describe('tutorialsToDocInputs + buildTutorialPages — byte-identical to legacy
     const legacy = legacyBuildTutorialPages(tutorials);
     const next = buildTutorialPages(tutorials);
     expect(next.pages[0].body).toBe(legacy.pages[0].body);
+  });
+
+  it('returns inputs and navOf so a caller can skip a tutorial by name and drop only its nav node', () => {
+    const built = buildTutorialPages(TUTORIALS);
+    expect(built.pages).toHaveLength(3);
+    expect(built.nav).toHaveLength(3);
+    // The very node in `nav`, so it can be removed by identity.
+    built.pages.forEach((page, i) => expect(built.navOf.get(page)).toBe(built.nav[i]));
+    expect(built.inputs.get(built.pages[0])?.path).toBe('tutorials/getting-started');
+    expect(built.inputs.get(built.pages[1])?.path).toBe('tutorials/install');
   });
 });
 

@@ -6,7 +6,15 @@
 import { mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { basename, dirname, extname, join as joinPath, resolve as resolvePath } from 'node:path';
+import {
+  basename,
+  dirname,
+  extname,
+  join as joinPath,
+  relative as relativePath,
+  resolve as resolvePath,
+  sep,
+} from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type {
   CopyPageAction,
@@ -1326,7 +1334,9 @@ export async function collectDocs(dir: string): Promise<DocInput[]> {
       const relPath = relPrefix ? `${relPrefix}/${stem}` : stem;
       try {
         const content = await readFile(abs, 'utf8');
-        docs.push({ path: relPath, content, type });
+        // `source` only names the file in diagnostics (e.g. a skipped page).
+        const source = relativePath(process.cwd(), abs).split(sep).join('/');
+        docs.push({ path: relPath, content, type, source });
       } catch (err) {
         console.warn(
           `clean-jsdoc-theme: could not read doc file '${abs}' — ${(err as Error).message}; skipping.`

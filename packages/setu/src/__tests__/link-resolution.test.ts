@@ -334,3 +334,59 @@ describe('link resolution — type names link to the symbol they reference (v4 p
     expect(body).not.toContain('[`string`]');
   });
 });
+
+describe('link resolution — punctuation-only member names', () => {
+  /**
+   * JSDoc emits members named `$`, `_` and `$$` (legal JS identifiers) whose
+   * heading slug is empty. Each must get a non-empty, page-unique anchor, and a
+   * `{@link}` to it must resolve to that same anchor.
+   */
+  function punctuationCollection(): TJSDocSaltyCollection<TDoclet> {
+    const member = (name: string, longname: string, scope: string) => ({
+      kind: 'function',
+      name,
+      longname,
+      memberof: 'Sym',
+      scope,
+      description: `${name} member.`,
+      meta: { filename: 'sym.js', path: 'src', lineno: 2 },
+    });
+    return makeCollection([
+      {
+        kind: 'class',
+        name: 'Sym',
+        longname: 'Sym',
+        scope: 'global',
+        classdesc:
+          'See {@link Sym#$}, {@link Sym#_}, {@link Sym.$$}, {@link Sym#run} and ' +
+          '{@link Sym#"member-24"}.',
+        meta: { filename: 'sym.js', path: 'src', lineno: 1 },
+      },
+      member('$', 'Sym#$', 'instance'),
+      member('_', 'Sym#_', 'instance'),
+      member('$$', 'Sym.$$', 'static'),
+      member('run', 'Sym#run', 'instance'),
+      // A quoted name that looks like a fallback id; must not collide with `$`.
+      member('member-24', 'Sym#"member-24"', 'instance'),
+    ]);
+  }
+
+  it('gives each heading a distinct non-empty id that its {@link} targets', () => {
+    const manifest = generateSite(punctuationCollection());
+    const page = manifest.pages.find((p) => p.frontmatter.longname === 'Sym');
+    expect(page).toBeDefined();
+    const body = contentOf(manifest, 'Sym');
+
+    expect(body).not.toContain('id=""');
+    const ids = (page!.headings ?? []).map((h) => h.id);
+    expect(ids).toEqual(
+      expect.arrayContaining(['member--24', 'member--5f', 'member--24_24', 'run', 'member-24'])
+    );
+    expect(new Set(ids).size).toBe(ids.length);
+
+    for (const id of ['member--24', 'member--5f', 'member--24_24', 'run', 'member-24']) {
+      expect(body).toContain(`id="${id}"`);
+      expect(body).toContain(`(/sym#${id})`);
+    }
+  });
+});

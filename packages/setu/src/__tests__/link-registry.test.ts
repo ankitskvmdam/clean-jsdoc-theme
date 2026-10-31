@@ -87,7 +87,32 @@ describe('registerContainerView', () => {
     });
   });
 
-  it('skips members lacking a longname or name', () => {
+  it('falls back to a non-empty anchor only for punctuation-only names', () => {
+    const registry: LinkRegistry = new Map();
+    const view = {
+      ...emptyBuckets,
+      kind: 'class',
+      augments: [],
+      constructorParams: [],
+      doclet: { longname: 'Sym' },
+      instanceMethods: [
+        { longname: 'Sym#$', name: '$' },
+        { longname: 'Sym#_', name: '_' },
+        { longname: 'Sym#run', name: 'run' },
+      ],
+      staticMethods: [{ longname: 'Sym.$$', name: '$$' }],
+      instanceFields: [{ longname: 'Sym#$f', name: '$f' }],
+    } as unknown as ContainerView;
+    registerContainerView(registry, view, 'sym');
+    expect(registry.get('Sym#$')).toEqual({ slug: 'sym', anchor: 'member--24' });
+    expect(registry.get('Sym#_')).toEqual({ slug: 'sym', anchor: 'member--5f' });
+    expect(registry.get('Sym.$$')).toEqual({ slug: 'sym', anchor: 'member--24_24' });
+    // Controls: names with a non-empty slug keep their existing anchor.
+    expect(registry.get('Sym#run')).toEqual({ slug: 'sym', anchor: 'run' });
+    expect(registry.get('Sym#$f')).toEqual({ slug: 'sym', anchor: 'f' });
+  });
+
+  it('skips members lacking a longname', () => {
     const registry: LinkRegistry = new Map();
     const view = {
       ...emptyBuckets,
@@ -95,11 +120,27 @@ describe('registerContainerView', () => {
       augments: [],
       constructorParams: [],
       doclet: { longname: 'mod' },
-      other: [{ name: 'noLongname' }, { longname: 'mod.noName' }],
+      other: [{ name: 'noLongname' }],
     } as unknown as ContainerView;
     registerContainerView(registry, view, 'mod');
-    expect(registry.has('mod.noName')).toBe(false);
     expect(registry.size).toBe(1); // only the page-level symbol
+  });
+
+  it('never throws on a hand-built view with a nameless member', () => {
+    // Views built from a collection can't hold one (getMembersOf/getGlobalDoclets
+    // drop nameless doclets), but a view forged around that contract still must
+    // not abort a build: it gets memberAnchor's fixed `member--` id.
+    const view = {
+      ...emptyBuckets,
+      kind: 'module',
+      augments: [],
+      constructorParams: [],
+      doclet: { longname: 'mod' },
+      other: [{ longname: 'mod.noName', name: '' }],
+    } as unknown as ContainerView;
+    const registry: LinkRegistry = new Map();
+    registerContainerView(registry, view, 'mod');
+    expect(registry.get('mod.noName')).toEqual({ slug: 'mod', anchor: 'member--' });
   });
 });
 
