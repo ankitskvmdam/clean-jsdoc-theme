@@ -96,8 +96,11 @@ utils/src/
 │   ├── site-name.ts      # SiteName (text | logo set) + siteNameText/resolveSiteLogo
 │   ├── islands.ts        # IslandName union + IslandPropsMap
 │   ├── slug-rules.ts     # slugifyHeading, slugifyPath, slugifySourcePath  (setu AND dwar)
-│   ├── markdown-scan.ts  # fencedCodeRanges + htmlCommentRanges: code-aware comment
-│   │                     #   extents (setu's splitters AND dwar's comment pre-pass)
+│   ├── markdown-scan.ts  # fencedCodeRanges + htmlCommentRanges (Markdown, code-aware),
+│   │                     #   htmlCommentRangesInHtml (raw HTML), replaceHtmlComments /
+│   │                     #   maskHtmlComments: ONE definition of a comment per format for
+│   │                     #   setu's splitters + description excerpt AND dwar's comment
+│   │                     #   pre-pass, backtick warnings and search text
 │   ├── collapsible.ts    # collapsibleSidebarSections resolver (build-time →
 │   │                     #   manifest.collapsibleGroups; boolean | string[])
 │   └── index.ts          # barrel — the setu↔dwar boundary
