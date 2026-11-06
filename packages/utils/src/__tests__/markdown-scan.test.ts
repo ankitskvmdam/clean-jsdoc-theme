@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { fencedCodeRanges, htmlCommentRanges } from '../site/markdown-scan';
+import {
+  fencedCodeRanges,
+  htmlCommentRanges,
+  htmlCommentRangesInHtml,
+  maskHtmlComments,
+  replaceHtmlComments,
+} from '../site/markdown-scan';
 
 /** Slice each range out of the source — easier to assert on. */
 const slices = (src: string, ranges: { start: number; end: number }[]): string[] =>
@@ -249,6 +255,60 @@ describe('htmlCommentRanges', () => {
   it('opens no code span on an escaped backtick', () => {
     expect(closed('x \\`a` <!-- c -->\n')).toEqual(['<!-- c -->']);
   });
+
+  it('returns nothing, cheaply, for a body without an opener', () => {
+    expect(htmlCommentRanges('```\n`\n')).toEqual([]);
+  });
+});
+
+describe('HTML-format comments and the replace/mask helpers', () => {
+  it('htmlCommentRangesInHtml finds every literal comment, code included', () => {
+    const src = 'a <!-- x --> <code>&lt;!-- y --&gt;</code> `<!-- z -->` <!--> <!---> <!---->';
+    expect(slices(src, htmlCommentRangesInHtml(src))).toEqual([
+      '<!-- x -->',
+      '<!-- z -->',
+      '<!-->',
+      '<!--->',
+      '<!---->',
+    ]);
+  });
+
+  it('htmlCommentRangesInHtml ends a comment at the first --> (a nested opener is text)', () => {
+    const src = '<!-- a <!-- b --> c';
+    expect(slices(src, htmlCommentRangesInHtml(src))).toEqual(['<!-- a <!-- b -->']);
+  });
+
+  it('htmlCommentRangesInHtml reports every unclosed opener and keeps going', () => {
+    expect(htmlCommentRangesInHtml('<!-- a --> b <!-- c <!-- d')).toEqual([
+      { start: 0, end: 10, closed: true },
+      { start: 13, end: 17, closed: false },
+      { start: 20, end: 24, closed: false },
+    ]);
+  });
+
+  it('replaceHtmlComments hands each range and its text to the replacer', () => {
+    const src = 'a <!-- x --> b <!-- y';
+    const seen: string[] = [];
+    const out = replaceHtmlComments(src, htmlCommentRangesInHtml(src), (c, t) => {
+      seen.push(`${c.closed}:${t}`);
+      return c.closed ? '_' : '?';
+    });
+    expect(out).toBe('a _ b ? y');
+    expect(seen).toEqual(['true:<!-- x -->', 'false:<!--']);
+  });
+
+  it('replaceHtmlComments returns the same string when there is nothing to replace', () => {
+    const src = 'plain';
+    expect(replaceHtmlComments(src, [], () => '')).toBe(src);
+  });
+
+  it('maskHtmlComments keeps length, line breaks and unclosed openers', () => {
+    const src = 'a <!-- x\ny --> b <!-- z';
+    const masked = maskHtmlComments(src, htmlCommentRanges(src));
+    expect(masked).toBe('a       \n      b <!-- z');
+    expect(masked.length).toBe(src.length);
+    expect(maskHtmlComments(src, htmlCommentRanges(src), '#')).toBe('a ######\n##### b <!-- z');
+  });
 });
 
 // Every page body goes through these scanners several times per build, so a
@@ -266,7 +326,9 @@ describe('markdown-scan performance', () => {
     ['unclosed inline openers on one line', 'a <!-- '.repeat(MB / 7)],
     ['unclosed inline openers on many lines', 'a <!-- b\n'.repeat(MB / 9)],
     ['unclosed line-start openers', '<!-- x\n'.repeat(MB / 7)],
-    ['closers without openers', 'a --> '.repeat(MB / 6)],
+    // A body without `<!--` short-circuits; the trailing opener keeps the
+    // tokenizer running over these.
+    ['closers without openers', 'a --> '.repeat(MB / 6) + '<!--'],
     ['closed inline comments across lines', 'a <!-- b\nc --> d\n'.repeat(MB / 17)],
     [
       'fences with spans and comments',
@@ -277,8 +339,8 @@ describe('markdown-scan performance', () => {
       'paragraph-crossing openers with one closer at the end',
       'a <!-- b\n\n'.repeat(MB / 10) + '-->',
     ],
-    ['stray backticks of mixed lengths', '` a `` b ``` c '.repeat(MB / 15)],
-    ['unterminated tag attributes', '<a b="x '.repeat(MB / 8)],
+    ['stray backticks of mixed lengths', '` a `` b ``` c '.repeat(MB / 15) + '<!--'],
+    ['unterminated tag attributes', '<a b="x '.repeat(MB / 8) + '<!--'],
   ])('%s (1MB) scans in under a second', (_name, src) => {
     expect(time(src)).toBeLessThan(1000);
   });
