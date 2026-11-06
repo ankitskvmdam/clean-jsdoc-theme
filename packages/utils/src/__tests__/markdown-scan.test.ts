@@ -309,13 +309,19 @@ describe('htmlCommentRanges', () => {
     expect(closed('| h |\n|---|\n| a <!-- x --> c |\n')).toEqual(['<!-- x -->']);
   });
 
-  it('ends a GFM table where GFM does', () => {
+  it('ends a GFM table where MDX does', () => {
     // A blank line, a list item, a lazy line in a list item or quote: the
     // paragraph after it may hold a multi-line comment again.
     expect(closed('a|b\n-|-\nx\n\np <!--\n-->\n')).toEqual(['<!--\n-->']);
     expect(closed('a|b\n-|-\nx\n- p <!--\n  -->\n')).toEqual(['<!--\n  -->']);
     expect(closed('- a|b\n  -|-\n  x\np <!--\n-->\n')).toEqual(['<!--\n-->']);
     expect(closed('> a|b\n> -|-\n> x\np <!--\n-->\n')).toEqual(['<!--\n-->']);
+    // MDX has no indented code: a row indented four or more columns (past a
+    // list item's content, too) is still a row, where GFM would end the table.
+    expect(htmlCommentRanges('| h |\n|---|\n    | a <!--\n| b --> |\n')[0].closed).toBe(false);
+    expect(htmlCommentRanges('- | h |\n  |---|\n       | a <!--\n  | b --> |\n')[0].closed).toBe(
+      false
+    );
   });
 
   it('reads no table without a matching delimiter row', () => {

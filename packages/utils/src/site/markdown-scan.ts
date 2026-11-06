@@ -311,9 +311,11 @@ function codeSpanFinder(source: string): (start: number, end: number) => number 
  *     cells) breaks at every one of its rows, so an inline comment can't span
  *     two rows — each row is its own block. The header row interrupts the
  *     paragraph above it; the table ends at a blank line or a line that starts
- *     another block (any list item, a quote of another depth, code indented
- *     four columns, a heading, a fence, …), or — inside a list item — at a
- *     line indented less than the item's content.
+ *     another block (any list item, a quote of another depth, a heading, a
+ *     fence, …), or — inside a list item — at a line indented less than the
+ *     item's content. A row indented four or more columns stays in the table:
+ *     MDX, which renders these pages, has no indented code (GFM would end the
+ *     table there).
  */
 function scanBlocks(source: string): BlockScan {
   const fences: TextRange[] = [];
@@ -403,7 +405,6 @@ function scanBlocks(source: string): BlockScan {
       const row =
         pos === table.delim ||
         (depth === table.depth &&
-          indent - table.indent < 4 &&
           !(table.inItem && indent < table.indent) &&
           !open &&
           !comment &&
