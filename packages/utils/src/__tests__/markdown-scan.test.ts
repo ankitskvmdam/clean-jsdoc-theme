@@ -288,6 +288,17 @@ describe('htmlCommentRanges', () => {
     expect(closed('x `a\n> q <!-- c --> `\n')).toEqual(['<!-- c -->']);
   });
 
+  it('reads a fence opener or list item holding a bare CR or a line separator', () => {
+    // micromark: the fence opens (its info string or first line takes the
+    // rest), and the item interrupts the paragraph so the comment stays open.
+    for (const odd of ['\r', String.fromCharCode(0x2028)]) {
+      expect(htmlCommentRanges('```js' + odd + 'x\n<!-- c -->\n```\n')).toEqual([]);
+      expect(htmlCommentRanges('p <!--\n- a' + odd + 'b -->\n')).toEqual([
+        { start: 2, end: 6, closed: false },
+      ]);
+    }
+  });
+
   it('returns nothing, cheaply, for a body without an opener', () => {
     expect(htmlCommentRanges('```\n`\n')).toEqual([]);
   });

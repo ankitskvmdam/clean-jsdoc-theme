@@ -52,7 +52,9 @@ const QUOTE_PREFIX = /^(?:[ \t]{0,3}>[ \t]?)*/;
 // paragraph indentation is not capped, so a fence deep in a list item counts;
 // the price is that a 4-space indented code block holding ``` reads as a
 // fence, which only ever protects more text, never less.
-const FENCE_OPEN = /^([ \t]*(?:(?:[-*+]|\d{1,9}[.)])[ \t]+)?)(`{3,}|~{3,})(.*)$/;
+// (`[^\n]*`, not `.*`: a line may hold a bare `\r` or a U+2028/U+2029, which
+// `.` does not match — the same goes for LIST_ITEM.)
+const FENCE_OPEN = /^([ \t]*(?:(?:[-*+]|\d{1,9}[.)])[ \t]+)?)(`{3,}|~{3,})([^\n]*)$/;
 // A fence closer: a run of the opener's character at least as long, then only
 // whitespace. Group 1 is its indentation.
 const FENCE_CLOSE = /^([ \t]*)(`{3,}|~{3,})[ \t]*$/;
@@ -65,7 +67,7 @@ const ATX_HEADING = /^#{1,6}(?:[ \t]|$)/;
 const THEMATIC_BREAK = /^([-*_])(?:[ \t]*\1){2,}[ \t]*$/;
 const SETEXT_UNDERLINE = /^(?:=+|-+)[ \t]*$/;
 // A list item: group 1 the marker, group 2 the spaces after it, group 3 text.
-const LIST_ITEM = /^([-*+]|\d{1,9}[.)])([ \t]+|$)(.*)$/;
+const LIST_ITEM = /^([-*+]|\d{1,9}[.)])([ \t]+|$)([^\n]*)$/;
 // HTML blocks that may interrupt a paragraph (CommonMark start conditions 1-6;
 // condition 7, any other tag, may not). Built on first use from the type-6 tag
 // names (see the note at the top).
