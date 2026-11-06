@@ -30,7 +30,9 @@ fix.
 
 The search index's text now strips tags with a pass that reads quoted attribute
 values whole, so a value holding `>` (such as a member signature) no longer
-leaves fragments such as `" /` in a page's search `content`.
+leaves fragments such as `" /` in a page's search `content`, and a `<` in inline
+code (a generic type such as `Array<Map<string, T>>`) is no longer taken for the
+start of a tag, so the code's text stays in the search index.
 
 `@example` captions are parsed with the same GitHub-Flavored Markdown as every
 other prose surface (`~~strikethrough~~`, bare URLs), and ones holding raw HTML
