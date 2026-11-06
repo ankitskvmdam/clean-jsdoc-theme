@@ -437,12 +437,14 @@ export function fencedCodeRanges(source: string): TextRange[] {
 //     `codeSpanEnd`), because a regex closer search backtracks into shorter
 //     opener runs and rescans the paragraph once per length;
 //   - an MDX JSX / HTML tag, whose quoted attribute values (double- or
-//     single-quoted; MDX accepts both) are literal strings;
+//     single-quoted; MDX accepts both) are literal strings — its name may be
+//     dashed, namespaced or a member (`my-element`, `svg:rect`, `Tabs.Item`),
+//     and so may an attribute name (`xlink:href`);
 //   - a link/image tail `](destination "title")` — MDX takes destinations and
 //     titles verbatim, so `[a](http://x/<!--y-->z)` keeps its URL (an escaped
 //     `\]` is consumed above, so it opens no tail and protects nothing).
 const TOKEN =
-  /\\[^\n]|`+|<\/?[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][\w-]*(?:="[^"]*"|='[^']*')?)*\s*\/?>|\]\((?:<[^<>\n]*>|(?:[^\s()\\]|\\.|\((?:[^\s()\\]|\\.)*\))*)(?:\s+(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\((?:[^()\\]|\\.)*\)))?\s*\)|<!--/g;
+  /\\[^\n]|`+|<\/?[A-Za-z][\w.:-]*(?:\s+[A-Za-z_:][\w.:-]*(?:="[^"]*"|='[^']*')?)*\s*\/?>|\]\((?:<[^<>\n]*>|(?:[^\s()\\]|\\.|\((?:[^\s()\\]|\\.)*\))*)(?:\s+(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\((?:[^()\\]|\\.)*\)))?\s*\)|<!--/g;
 
 /**
  * Every HTML comment in prose — outside fenced code, inline code, tags and link
@@ -455,6 +457,13 @@ const TOKEN =
  *     `scanBlocks`);
  *   - `<!-->` and `<!--->` are complete empty comments.
  * An opener that finds no valid `-->` is reported with `closed: false`.
+ *
+ * Not modelled: a reference definition's destination and title
+ * (`[a]: http://x/<!--y-->z`) — telling one from a paragraph line that merely
+ * looks like it takes block context this scan does not keep, and protecting a
+ * look-alike would hand its `<!--` to MDX, which rejects it. Its comment is
+ * reported (and so dropped), changing the URL; a link's inline `](…)` tail is
+ * protected.
  */
 export function htmlCommentRanges(source: string): HtmlCommentRange[] {
   if (!source.includes('<!--')) return [];

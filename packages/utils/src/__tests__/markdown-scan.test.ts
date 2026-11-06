@@ -242,6 +242,15 @@ describe('htmlCommentRanges', () => {
     expect(htmlCommentRanges("<img src='x.png' alt='<!-- oops' />\n")).toEqual([]);
   });
 
+  it('protects attribute values of dashed, namespaced and member tag names', () => {
+    expect(
+      htmlCommentRanges('<my-element title="<!-- not a comment -->">x</my-element>\n')
+    ).toEqual([]);
+    expect(htmlCommentRanges('a <svg:use xlink:href="#<!-- x -->" /> b\n')).toEqual([]);
+    expect(htmlCommentRanges('a <Tabs.Item label="<!-- x -->" /> b\n')).toEqual([]);
+    expect(closed('a <my-element /> <!-- c --> b\n')).toEqual(['<!-- c -->']);
+  });
+
   it('reads an opener after an even run of backslashes as a comment (odd = escaped)', () => {
     expect(closed('a \\\\<!-- c --> b\n')).toEqual(['<!-- c -->']);
     expect(htmlCommentRanges('a \\<!-- c --> b\n')).toEqual([]);
