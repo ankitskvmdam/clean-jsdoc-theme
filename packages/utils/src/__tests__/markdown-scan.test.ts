@@ -290,6 +290,71 @@ describe('HTML-format comments and the replace/mask helpers', () => {
     ]);
   });
 
+  it('htmlCommentRangesInHtml skips a <!-- inside a tag (a quoted value may hold > too)', () => {
+    const cases: [string, string[]][] = [
+      ['<p><a title="<!--" href="u">L</a> Promise<User> <!-- c --> end</p>', ['<!-- c -->']],
+      ["<a title='<!--'>L</a> x --> y", []],
+      ['<a title="x > <!-- y">L</a> <!-- z --> w', ['<!-- z -->']],
+      ["<a title='x > <!-- y'>L</a> <!-- z --> w", ['<!-- z -->']],
+      ['<a b = "x>y" c=\'<!--\'>t</a> <!-- z -->', ['<!-- z -->']],
+      ['<a\nb="<!--"\n>x <!-- y --> z', ['<!-- y -->']],
+      ['<A TITLE="<!--">x</A> <!-- y -->', ['<!-- y -->']],
+      ['<a title="<!--" data="-->">x<!-- y --> z', ['<!-- y -->']],
+      ['</p title="<!--"> <!-- y -->', ['<!-- y -->']],
+      // Attribute names and unquoted values take `<!--`, `<` and `"` as plain
+      // characters; an unquoted value ends at the `>`.
+      ['<a title=<!-->L</a> x --> y', []],
+      ['<a b=c<!-- d --> e', []],
+      ['<a b="x" <!-- c --> d', []],
+      ['<a <!-- y --> <!-- z -->', ['<!-- z -->']],
+      ['<a b=x"y>z" <!-- w --> v', ['<!-- w -->']],
+      // A `<` that opens no tag is text.
+      ['<3 <!-- x --> y', ['<!-- x -->']],
+      ['a < b <!-- x --> y', ['<!-- x -->']],
+      ['<br/><!-- x -->', ['<!-- x -->']],
+    ];
+    for (const [src, want] of cases) {
+      expect(slices(src, htmlCommentRangesInHtml(src)), src).toEqual(want);
+    }
+  });
+
+  it('htmlCommentRangesInHtml reports nothing after a tag left open at the end of the input', () => {
+    for (const src of [
+      '<a title="<!-- x --> y',
+      '<a b= "x>y <!-- z -->',
+      '<a title="x" <!-- unterminated',
+      '<a <!-- y',
+      '<a b=',
+    ]) {
+      expect(htmlCommentRangesInHtml(src), src).toEqual([]);
+    }
+    // Everything before it is still scanned.
+    const src = '<!-- a --> <a b="<!-- c -->';
+    expect(slices(src, htmlCommentRangesInHtml(src))).toEqual(['<!-- a -->']);
+  });
+
+  it('htmlCommentRangesInHtml reads <?…>, <!DOCTYPE …>, <![CDATA[… and </ … as bogus comments to the next >', () => {
+    for (const src of [
+      '<p>a <?php <!-- ?> b --> c</p>',
+      '<p>a <![CDATA[ <!-- ]]> b --> c</p>',
+      '<p>a <!DOCTYPE <!-- > b --> c</p>',
+      '</ <!-- x --> y',
+      '<!x <!-- y -->',
+      '<?x <!-- y',
+    ]) {
+      expect(htmlCommentRangesInHtml(src), src).toEqual([]);
+    }
+    const src = '<?x> <!-- y -->';
+    expect(slices(src, htmlCommentRangesInHtml(src))).toEqual(['<!-- y -->']);
+  });
+
+  it('htmlCommentRangesInHtml does not model raw-text elements (a <!-- in <script> is a comment)', () => {
+    // A documented simplification, shared with the Markdown scanner; see the
+    // helper's doc comment.
+    const src = '<script>a <!-- b --> c</script>';
+    expect(slices(src, htmlCommentRangesInHtml(src))).toEqual(['<!-- b -->']);
+  });
+
   it('replaceHtmlComments hands each range and its text to the replacer', () => {
     const src = 'a <!-- x --> b <!-- y';
     const seen: string[] = [];
@@ -347,5 +412,25 @@ describe('markdown-scan performance', () => {
     ['unterminated tag attributes', '<a b="x '.repeat(MB / 8) + '<!--'],
   ])('%s (1MB) scans in under a second', (_name, src) => {
     expect(time(src)).toBeLessThan(1000);
+  });
+
+  const timeHtml = (src: string): number => {
+    const t = performance.now();
+    htmlCommentRangesInHtml(src);
+    return performance.now() - t;
+  };
+
+  it.each([
+    ['unclosed openers', 'a <!-- '.repeat(MB / 7)],
+    ['closers without openers', 'a --> '.repeat(MB / 6) + '<!--'],
+    ['unterminated tag attributes', '<a b="x '.repeat(MB / 8) + '<!--'],
+    ['one quote that never closes, then openers', '<a b="' + 'x <!-- '.repeat(MB / 7)],
+    ['tags whose quoted values hold >', '<a b="x>y" c=\'z\'>'.repeat(MB / 17) + '<!--'],
+    ['openers in attributes with closers after', '<a t="<!--">x --> '.repeat(MB / 18)],
+    ['lone < everywhere', '<'.repeat(MB) + '<!--'],
+    ['bogus comments', '<?x> '.repeat(MB / 5) + '<!--'],
+    ['one tag full of = signs', '<a ' + '= '.repeat(MB / 2) + '<!--'],
+  ])('%s (1MB) scans as raw HTML in under a second', (_name, src) => {
+    expect(timeHtml(src)).toBeLessThan(1000);
   });
 });
