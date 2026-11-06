@@ -127,7 +127,8 @@ members, constants, enums, events — एक एकल synthetic **Globals** pag
 sidebar entry, search entry या `llms.txt` line नहीं मिलती — और किसी hidden
 namespace, module या class के अंदर documented किसी भी चीज़ को भी नहीं। जिस class का
 केवल constructor private है, उसका page बना रहता है; केवल Constructor section छिपाया
-जाता है।
+जाता है। Constructor पर `@ignore` अलग है: JSDoc constructor comment को class में merge
+करता है, इसलिए पूरी class छिप जाती है।
 
 Private symbols को document करने के लिए JSDoc को `--private` के साथ, या
 `--access private` या `--access all` के साथ चलाएँ (`jsdoc.json` में `opts` के

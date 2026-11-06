@@ -121,7 +121,8 @@ functions、members、constants、enums、events —— 都会被收集到单个
 带有 `@private`（或 `@access private`）或 `@ignore` 标签的符号不会获得页面、
 侧边栏条目、搜索条目或 `llms.txt` 行 —— 在被隐藏的 namespace、module 或 class
 内部记录文档的任何内容也同样如此。只有构造函数是私有的 class 会保留它的页面；
-只有 Constructor 区块会被隐藏。
+只有 Constructor 区块会被隐藏。构造函数上的 `@ignore` 则不同：JSDoc 会把构造函数的
+注释合并到 class 中，因此整个 class 都会被隐藏。
 
 要为私有符号生成文档，请在运行 JSDoc 时加上 `--private`，或加上
 `--access private` 或 `--access all`（在 `jsdoc.json` 的 `opts` 下写 `"private": true` 或

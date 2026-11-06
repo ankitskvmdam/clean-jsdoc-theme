@@ -121,6 +121,8 @@ A symbol tagged `@private` (or `@access private`) or `@ignore` gets no page,
 sidebar entry, search entry or `llms.txt` line — and neither does anything
 documented inside a hidden namespace, module or class. A class whose only private
 part is its constructor keeps its page; only the Constructor section is hidden.
+`@ignore` on a constructor is different: JSDoc merges the constructor comment
+into the class, so the whole class is hidden.
 
 To document private symbols, run JSDoc with `--private`, or with
 `--access private` or `--access all` (`"private": true` or `"access": "all"` under

@@ -126,6 +126,8 @@ section mapping のない symbol kind は catch-all の **Other** section に入
 sidebar entry、search entry、`llms.txt` の行のいずれも作られません — hidden な
 namespace、module、class の中で documented されたものも同様です。private なのが
 constructor だけの class は page が残り、Constructor section だけが隠されます。
+constructor に付けた `@ignore` は異なります: JSDoc は constructor の comment を class
+に merge するため、class 全体が隠されます。
 
 private な symbol を document するには、JSDoc を `--private`、または
 `--access private` か `--access all` を付けて実行します（`jsdoc.json` の `opts`
