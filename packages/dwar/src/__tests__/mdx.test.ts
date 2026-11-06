@@ -371,30 +371,40 @@ describe('escapeEsmLookalikes (issue #347)', () => {
 // all-contributors marker, a note in a doc comment) aborted the whole page.
 // The pre-pass drops comments from prose and leaves code alone.
 describe('stripHtmlComments', () => {
-  it('drops a comment on its own line, leaving the line blank', () => {
+  it('replaces a comment on its own line with an empty comment expression', () => {
     expect(stripHtmlComments('# Tutorial\n\n<!-- a comment -->\n\nimport it.\n')).toBe(
-      '# Tutorial\n\n\n\nimport it.\n'
+      '# Tutorial\n\n{/**/}\n\nimport it.\n'
     );
   });
 
   it('drops a comment in the middle of a sentence (the doc-comment repro)', () => {
     expect(
       stripHtmlComments('HTML comment in a description <!-- internal note -->should not break.\n')
-    ).toBe('HTML comment in a description should not break.\n');
+    ).toBe('HTML comment in a description {/**/}should not break.\n');
   });
 
   it('drops a comment directly adjacent to text on both sides', () => {
-    expect(stripHtmlComments('before<!--x-->after\n')).toBe('beforeafter\n');
+    expect(stripHtmlComments('before<!--x-->after\n')).toBe('before{/**/}after\n');
   });
 
   it('drops several comments on one line', () => {
-    expect(stripHtmlComments('a <!-- x --> b <!-- y --> c <!--z-->\n')).toBe('a  b  c \n');
+    expect(stripHtmlComments('a <!-- x --> b <!-- y --> c <!--z-->\n')).toBe(
+      'a {/**/} b {/**/} c {/**/}\n'
+    );
+  });
+
+  it('keeps the inline syntax on either side of a dropped comment apart', () => {
+    // Dropped without a trace, these would join: one code span "a``b", one
+    // reference link [a][b], or a run of seven backticks opening a fence.
+    expect(stripHtmlComments('`a`<!-- x -->`b`\n')).toBe('`a`{/**/}`b`\n');
+    expect(stripHtmlComments('[a]<!-- x -->[b]\n')).toBe('[a]{/**/}[b]\n');
+    expect(stripHtmlComments('```<!-- x -->```` x\n')).toBe('```{/**/}```` x\n');
   });
 
   it('drops a multi-line comment, including one that spans a blank line', () => {
     // The comment's four newlines stay, so later line numbers don't move.
     expect(stripHtmlComments('a\n\n<!--\nline one\n\nline two\n-->\n\nb\n')).toBe(
-      'a\n\n' + '\n'.repeat(4) + '\n\nb\n'
+      'a\n\n{/**/}' + '\n'.repeat(4) + '\n\nb\n'
     );
   });
 
@@ -416,14 +426,41 @@ describe('stripHtmlComments', () => {
     expect(stripHtmlComments('> a <!--\n> x\n> --> b\n')).toBe('> a {/*\n> */}{/*\n> */} b\n');
   });
 
-  it('leaves a line-starting multi-line comment as blank lines, after markers or a dropped comment', () => {
-    expect(stripHtmlComments('a\n- <!-- x\n  y --> b\n')).toBe('a\n- \n b\n');
-    expect(stripHtmlComments('<!-- a --> <!-- b\nc -->\nd\n')).toBe(' \n\nd\n');
+  it('leaves a line-starting multi-line comment as a placeholder and blank lines', () => {
+    // After list markers or a dropped comment too. The blank lines keep their
+    // quote markers and indentation, so the container goes on past them.
+    expect(stripHtmlComments('a\n- <!-- x\n  y --> b\n')).toBe('a\n- {/**/}\n   b\n');
+    expect(stripHtmlComments('<!-- a --> <!-- b\nc -->\nd\n')).toBe('{/**/} {/**/}\n\nd\n');
+    expect(stripHtmlComments('> <!-- x\n> y -->\n> b\n')).toBe('> {/**/}\n> \n> b\n');
+    // A deeper quote marker inside the comment is not kept: a blank `> >`
+    // line would open an empty inner quote.
+    expect(stripHtmlComments('> <!-- x\n> > y\n> -->\n')).toBe('> {/**/}\n> \n> \n');
+  });
+
+  it('never leaves a bare list marker where a commented-out item was', () => {
+    // A bare `- ` or `1. ` can't interrupt the paragraph above it, so the
+    // list would fold into it (or turn it into a setext heading).
+    expect(stripHtmlComments('Features:\n- <!-- TODO -->\n- Fast\n')).toBe(
+      'Features:\n- {/**/}\n- Fast\n'
+    );
+    expect(stripHtmlComments('Features:\n* <!-- TODO -->\n* Fast\n')).toBe(
+      'Features:\n* {/**/}\n* Fast\n'
+    );
+    expect(stripHtmlComments('Steps:\n1. <!-- TODO -->\n2. Run\n')).toBe(
+      'Steps:\n1. {/**/}\n2. Run\n'
+    );
+  });
+
+  it('keeps two lists apart around the <!-- --> separator idiom', () => {
+    expect(stripHtmlComments('- a\n\n<!-- -->\n\n- b\n')).toBe('- a\n\n{/**/}\n\n- b\n');
   });
 
   it('lets the brace pass keep the comment expressions it leaves', () => {
     const out = escapeStrayBraces(stripHtmlComments('a {x} <!--\n  y\n--> b\n'));
     expect(out).toBe('a \\{x\\} {/*\n  */}{/*\n*/} b\n');
+    expect(escapeStrayBraces(stripHtmlComments('a {x} <!-- y --> b {z}\n'))).toBe(
+      'a \\{x\\} {/**/} b \\{z\\}\n'
+    );
   });
 
   it('drops all-contributors style START/END marker pairs but keeps what they wrap', () => {
@@ -446,22 +483,24 @@ describe('stripHtmlComments', () => {
 
   it('drops a comment inside an HTML block (README `<p align="center">` header)', () => {
     const src = '<p align="center">\n  <!-- logo -->\n  <img src="logo.png" />\n</p>\n';
-    expect(stripHtmlComments(src)).toBe('<p align="center">\n  \n  <img src="logo.png" />\n</p>\n');
+    expect(stripHtmlComments(src)).toBe(
+      '<p align="center">\n  {/**/}\n  <img src="logo.png" />\n</p>\n'
+    );
   });
 
   it('drops a comment that is the first body line after the frontmatter, keeping the frontmatter', () => {
     const fm = '---\ntitle: Home\nnote: "<!-- not a comment, YAML -->"\n---\n';
     expect(stripHtmlComments(`${fm}<!-- badges -->\n[![npm](x.svg)](y)\n`)).toBe(
-      `${fm}\n[![npm](x.svg)](y)\n`
+      `${fm}{/**/}\n[![npm](x.svg)](y)\n`
     );
   });
 
   it('drops the CommonMark empty forms <!----> , <!--> and <!--->', () => {
-    expect(stripHtmlComments('a<!---->b <!-->c <!--->d\n')).toBe('ab c d\n');
+    expect(stripHtmlComments('a<!---->b <!-->c <!--->d\n')).toBe('a{/**/}b {/**/}c {/**/}d\n');
   });
 
   it('ends a comment at the first -->', () => {
-    expect(stripHtmlComments('<!-- a --> shown <!-- b -->\n')).toBe(' shown \n');
+    expect(stripHtmlComments('<!-- a --> shown <!-- b -->\n')).toBe('{/**/} shown {/**/}\n');
   });
 
   it('leaves comments inside fenced code blocks verbatim', () => {
@@ -491,7 +530,7 @@ describe('stripHtmlComments', () => {
   });
 
   it('pairs an opener with the first --> (HTML semantics), escaping only a trailing unterminated one', () => {
-    expect(stripHtmlComments('<!-- a --> b <!-- c\n')).toBe(' b \\<!-- c\n');
+    expect(stripHtmlComments('<!-- a --> b <!-- c\n')).toBe('{/**/} b \\<!-- c\n');
   });
 
   it('leaves a --> with no opener alone (> is not special to MDX)', () => {
@@ -505,8 +544,12 @@ describe('stripHtmlComments', () => {
   });
 
   it('runs before the ESM pass, so a line exposed by a dropped comment is still neutralized', () => {
-    const out = escapeEsmLookalikes(stripHtmlComments('<!-- note -->import it first.\n'));
-    expect(out).toBe('&#x69;mport it first.\n');
+    const out = escapeEsmLookalikes(stripHtmlComments('<!-- note\n-->import it first.\n'));
+    expect(out).toBe('{/**/}\n&#x69;mport it first.\n');
+    // On one line the placeholder stays in front: no longer a column-0 keyword.
+    expect(escapeEsmLookalikes(stripHtmlComments('<!-- note -->import it.\n'))).toBe(
+      '{/**/}import it.\n'
+    );
   });
 
   it('hides a backtick inside a comment from findStrayBackticks', () => {
@@ -525,7 +568,7 @@ describe('stripHtmlComments', () => {
   it('keeps code/prose parity after a fence holding an odd number of ``` lines', () => {
     const src = '````md\n```js\n````\n\nText <!-- c --> after.\n\n```js\n<!-- x -->\n```\n';
     expect(stripHtmlComments(src)).toBe(
-      '````md\n```js\n````\n\nText  after.\n\n```js\n<!-- x -->\n```\n'
+      '````md\n```js\n````\n\nText {/**/} after.\n\n```js\n<!-- x -->\n```\n'
     );
   });
 
@@ -536,19 +579,19 @@ describe('stripHtmlComments', () => {
 
   it('drops a comment after escaped brackets (no link, so nothing protects it)', () => {
     expect(stripHtmlComments('\\[a\\](http://x/<!--y-->z) more\n')).toBe(
-      '\\[a\\](http://x/z) more\n'
+      '\\[a\\](http://x/{/**/}z) more\n'
     );
   });
 
   it('does not open a fence on a lone fence line inside a comment block', () => {
     expect(stripHtmlComments('<!--\n```js\n-->\n\nText <!-- c --> after.\n')).toBe(
-      '\n\n' + '\n\nText  after.\n'
+      '{/**/}\n\n' + '\n\nText {/**/} after.\n'
     );
   });
 
   it('ends a fence opened in a blockquote with the quote', () => {
     expect(stripHtmlComments('> ```\n> code\n\nText <!-- c --> after.\n\n```js\nx\n```\n')).toBe(
-      '> ```\n> code\n\nText  after.\n\n```js\nx\n```\n'
+      '> ```\n> code\n\nText {/**/} after.\n\n```js\nx\n```\n'
     );
   });
 
@@ -572,7 +615,7 @@ describe('stripHtmlComments', () => {
 
   it('drops a line-starting comment that wraps a whole section, code block included', () => {
     const src = 'Keep.\n\n<!--\n## Old\n\n```js\nold();\n```\n-->\n\nAlso keep.\n';
-    expect(stripHtmlComments(src)).toBe('Keep.\n\n' + '\n'.repeat(6) + '\n\nAlso keep.\n');
+    expect(stripHtmlComments(src)).toBe('Keep.\n\n{/**/}' + '\n'.repeat(6) + '\n\nAlso keep.\n');
   });
 
   it('keeps every line number: a multi-line comment becomes blank lines', () => {
@@ -588,11 +631,11 @@ describe('stripHtmlComments', () => {
   });
 
   it('drops a comment after an escaped backslash (even run = not escaped)', () => {
-    expect(stripHtmlComments('a \\\\<!-- c --> b\n')).toBe('a \\\\ b\n');
+    expect(stripHtmlComments('a \\\\<!-- c --> b\n')).toBe('a \\\\{/**/} b\n');
   });
 
   it('drops a comment on a quote/heading/list line after an unclosed backtick', () => {
-    expect(stripHtmlComments('a `x\n> b <!-- c --> d` e\n')).toBe('a `x\n> b  d` e\n');
+    expect(stripHtmlComments('a `x\n> b <!-- c --> d` e\n')).toBe('a `x\n> b {/**/} d` e\n');
   });
 
   it('keeps a comment that is code after an over-indented or deeper-quoted fence line', () => {
@@ -606,6 +649,6 @@ describe('stripHtmlComments', () => {
 
   it('accepts precomputed ranges', () => {
     const src = '---\ntitle: x\n---\na <!-- b --> c\n';
-    expect(stripHtmlComments(src, pageCommentRanges(src))).toBe('---\ntitle: x\n---\na  c\n');
+    expect(stripHtmlComments(src, pageCommentRanges(src))).toBe('---\ntitle: x\n---\na {/**/} c\n');
   });
 });

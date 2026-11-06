@@ -1035,6 +1035,28 @@ describe('render() — HTML comments in prose', () => {
     expect(main).toMatch(/<li[^>]*>item one\s+still item one<\/li>/);
   });
 
+  it('keeps the list after a paragraph line whose first item is commented out', async () => {
+    const { err, html } = await renderOne('item-comment', 'Features:\n- <!-- TODO -->\n- Fast\n');
+    expect(err, err?.message).toBeUndefined();
+    const main = mainOf(html);
+    expect(main).not.toContain('TODO');
+    expect(main).not.toMatch(/<h2[ >]/);
+    expect(main).toMatch(/<p[^>]*>Features:<\/p>/);
+    expect(main.match(/<ul[ >]/g)).toHaveLength(1);
+    expect(main.match(/<li[ >]/g)).toHaveLength(2);
+  });
+
+  it('keeps two code spans apart across a dropped comment, and two lists apart', async () => {
+    const { err, html } = await renderOne(
+      'apart',
+      '`a`<!-- x -->`b`\n\n- one\n\n<!-- -->\n\n- two\n'
+    );
+    expect(err, err?.message).toBeUndefined();
+    const main = mainOf(html);
+    expect(main.match(/<code[ >]/g)).toHaveLength(2);
+    expect(main.match(/<ul[ >]/g)).toHaveLength(2);
+  });
+
   it('renders a table whose row opens a comment that a later row closes', async () => {
     // GFM: rows are separate blocks, so the opener is literal text (as GitHub
     // shows it) — the page must not abort on an expression spanning rows.
