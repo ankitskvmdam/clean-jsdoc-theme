@@ -474,32 +474,81 @@ export function htmlCommentRanges(source: string): HtmlCommentRange[] {
   return out;
 }
 
+// How the HTML tokenizer reads a `<` in text, which decides whether a later
+// `<!--` is still text:
+//   - `<` or `</` then an ASCII letter opens a tag, which runs to its `>`; a
+//     quoted attribute value in it (`="…"` / `='…'`, HTML whitespace allowed
+//     after the `=`) may hold `>`, `<` and `<!--` as plain characters, and so
+//     may an attribute name (`<a <!-- >`) or an unquoted value;
+//   - `<!` (other than `<!--`), `<?` and `</` + non-letter open a doctype or
+//     "bogus comment", which runs to the next `>`;
+//   - any other `<` is text.
+// A tag or bogus comment with no `>` runs to the end of the input, as in a
+// browser (nothing after it is content), and so ends the scan.
+const TAG_OPEN = /<\/?[A-Za-z]/y;
+// The rest of a tag after `<name`, up to (not including) its `>`. The branches
+// are disjoint on their first character — an `=` goes only to the `=` branch,
+// which takes the quoted value after it whole, or just the `=` (and whitespace)
+// when no quote follows — so the match is one pass over the tag. It stops at the
+// `>`, at an `=` whose quoted value never closes, or at the end of the input.
+const TAG_BODY = /(?:[^>=]|=[ \t\n\f\r]*(?:"[^"]*"|'[^']*'|(?![ \t\n\f\r"'])))*/y;
+
 /**
- * Every `<!-- … -->` in raw HTML (not Markdown). There is no code to skip —
- * code reaches an HTML string entity-escaped (`&lt;!--`) — so every literal
- * opener is real. HTML semantics: a comment ends at the first `-->` after its
- * opener (a nested `<!--` is comment text); `<!-->` and `<!--->` are complete
- * empty comments; an opener with no `-->` after it is reported `closed: false`
- * over its four characters (the HTML parser would run it to the end of the
- * input — callers decide what to do with it), and the scan goes on, so every
- * later opener is reported too. Linear: one `indexOf` per opener, one per closer.
+ * Every `<!-- … -->` in raw HTML (not Markdown), per the HTML tokenizer. Code
+ * reaches an HTML string entity-escaped (`&lt;!--`), so there is no code to
+ * skip — only tags: a `<!--` inside a start or end tag (in a quoted attribute
+ * value such as `title="<!--"`, an attribute name or an unquoted value) is
+ * part of the tag, and one inside a doctype, `<?…>` or other bogus comment
+ * (`<![CDATA[…`, `</ …`) is part of that, which ends at the next `>`. A tag or
+ * bogus comment left open at the end of the input runs to the end, so nothing
+ * after it is reported. Comment semantics are unchanged: a comment ends at the
+ * first `-->` after its opener (a nested `<!--` is comment text); `<!-->` and
+ * `<!--->` are complete empty comments; an opener with no `-->` after it is
+ * reported `closed: false` over its four characters (the HTML parser would run
+ * it to the end of the input — callers decide what to do with it), and the scan
+ * goes on, so every later opener is reported too. Not modelled: the raw-text
+ * elements (`<script>`, `<style>`, `<textarea>`, `<title>`), whose content the
+ * tokenizer never reads as a comment — a `<!--` there is reported as one, as
+ * the Markdown scanner also does — and `--!>`, which the tokenizer accepts as
+ * a closer. Linear: one `indexOf` per `<`, one pass over each tag, one
+ * `indexOf` per `-->`.
  */
 export function htmlCommentRangesInHtml(source: string): HtmlCommentRange[] {
   const out: HtmlCommentRange[] = [];
   if (!source.includes('<!--')) return out;
   const nextCloser = closerFinder(source);
   for (let from = 0; ; ) {
-    const start = source.indexOf('<!--', from);
-    if (start === -1) return out;
-    const openEnd = start + 4;
-    const empty = /^-?>/.exec(source.slice(openEnd, openEnd + 2));
-    if (empty) out.push({ start, end: openEnd + empty[0].length, closed: true });
-    else {
-      const closer = nextCloser(openEnd);
-      if (closer === -1) out.push({ start, end: openEnd, closed: false });
-      else out.push({ start, end: closer + 3, closed: true });
+    const lt = source.indexOf('<', from);
+    if (lt === -1) return out;
+    if (source.startsWith('<!--', lt)) {
+      const openEnd = lt + 4;
+      const empty = /^-?>/.exec(source.slice(openEnd, openEnd + 2));
+      if (empty) out.push({ start: lt, end: openEnd + empty[0].length, closed: true });
+      else {
+        const closer = nextCloser(openEnd);
+        if (closer === -1) out.push({ start: lt, end: openEnd, closed: false });
+        else out.push({ start: lt, end: closer + 3, closed: true });
+      }
+      from = out[out.length - 1].end;
+      continue;
     }
-    from = out[out.length - 1].end;
+    TAG_OPEN.lastIndex = lt;
+    if (TAG_OPEN.test(source)) {
+      TAG_BODY.lastIndex = TAG_OPEN.lastIndex;
+      TAG_BODY.test(source); // always matches (possibly nothing); lastIndex is where it stopped
+      const gt = TAG_BODY.lastIndex;
+      if (source[gt] !== '>') return out; // the tag runs to the end of the input
+      from = gt + 1;
+      continue;
+    }
+    const next = source[lt + 1];
+    if (next === '!' || next === '?' || next === '/') {
+      const gt = source.indexOf('>', lt + 2);
+      if (gt === -1) return out; // the bogus comment runs to the end of the input
+      from = gt + 1;
+      continue;
+    }
+    from = lt + 1; // a `<` that opens nothing is text
   }
 }
 

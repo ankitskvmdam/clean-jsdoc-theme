@@ -65,6 +65,12 @@ describe('HTML comments through the HTML normalization', () => {
     expect(out).toContain('`<!--`');
   });
 
+  it('leaves a <!-- inside an attribute value alone (it is not a comment)', () => {
+    // The `\<` is toMdx escaping `<` in a link title, not the neutralizer.
+    const out = mdx(htmlToMdastBlocks('<p><a title="<!--" href="u">L</a> rest</p><p>after</p>'));
+    expect(out).toBe('[L](u "\\<!--") rest\n\nafter\n');
+  });
+
   it('escapes many unterminated openers in linear time', () => {
     const html = `<p>${'a <!-- '.repeat(100_000)}</p>`;
     const t = performance.now();
@@ -120,6 +126,15 @@ describe('commented-out containers and playgrounds stay commented out', () => {
     const out = mdx(markdownToMdastBlocks(`<!--\n${TABS}\n-->\n\n${STEPS}`));
     expect(out).toContain('<Steps');
     expect(out).not.toContain('<Tabs');
+  });
+
+  it('HTML: still expands a live container after a tag whose attribute holds <!--', () => {
+    const out = mdx(
+      htmlToMdastBlocks(`<p><a title="<!--" href="u">L</a></p>\n${TABS}\n<p>x --> y</p>`)
+    );
+    expect(out).toContain('<Tabs>');
+    expect(out).toContain('one');
+    expect(out).toContain('x --> y');
   });
 
   it('still lowers a live playground fence next to a commented-out one', () => {

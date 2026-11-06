@@ -139,7 +139,8 @@ type ProseFormat = 'markdown' | 'html';
  * from `raw`, so the comments travel on inside the item text, where the HTML
  * normalization drops them ({@link dropComments}). Markdown needs the shared
  * code-aware scanner dwar also uses; in HTML (JSDoc descriptions) code is
- * already entity-escaped, so every literal `<!--` is a comment.
+ * already entity-escaped, so the scanner has only tags to skip — a `<!--` in an
+ * attribute value is not a comment.
  */
 function maskComments(raw: string, format: ProseFormat): string {
   return maskHtmlComments(
@@ -327,10 +328,10 @@ function expandContainers(
  * HTML spec an unclosed comment runs to the end of the input, so a single stray
  * opener — a half-deleted badge comment in a README, a typo in a doc comment —
  * would silently hide everything after it on the page. Escaped, it parses as
- * the literal text the author typed and the rest of the content survives. A
- * literal `<!--` in this string is always markup: code reaches here already
- * entity-escaped (`<pre><code>&lt;!--`), and in an attribute value `&lt;`
- * decodes back to the same `<`. `<!-->` / `<!--->` are complete (empty)
+ * the literal text the author typed and the rest of the content survives. Only
+ * a `<!--` in text is one: code reaches here already entity-escaped
+ * (`<pre><code>&lt;!--`), and the scanner skips tags, so an attribute value
+ * holding `<!--` is left as written. `<!-->` / `<!--->` are complete (empty)
  * comments, so they are left alone. Terminated comments become hast comment
  * nodes, which {@link dropComments} removes.
  */
