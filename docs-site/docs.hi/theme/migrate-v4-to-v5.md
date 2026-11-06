@@ -167,8 +167,9 @@ JSDoc plugin `opts.title` या `opts.search` का मालिक हो स
       { title: "GitHub", link: "https://github.com/me/lib", icon: "simpleicons:github" },
     ],
     sectionOrder: ["Classes", "Modules", "Globals"],
+    footer: "© My Library",
     customCssFile: "./static/custom.css",
-    // हटाए गए: default_theme (auto), search (हमेशा on), footer (derived)
+    // हटाए गए: default_theme (auto), search (हमेशा on)
     docs: "./docs", // वैकल्पिक v5 फ़ायदा
   },
 }

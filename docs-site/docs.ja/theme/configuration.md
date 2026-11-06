@@ -307,8 +307,8 @@ opts: { readme: "./README.md" }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-// JSDoc only. TypeDoc reads its own top-level `readme` option — set that
-// instead. (`cleanJsdocTheme.readme` is ignored with a warning.)
+// JSDoc 専用です。TypeDoc は自身の top-level `readme` option を読むので、そちらを
+// 設定してください（`cleanJsdocTheme.readme` は警告とともに無視されます）。
 ```
 
 </tab>
@@ -705,8 +705,8 @@ opts: {
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-// JSDoc only — the TypeDoc flavor doesn't support `colors` / `darkColors` yet.
-// In `cleanJsdocTheme` they're ignored with an `opts/unsupported-in-typedoc` warning.
+// JSDoc 専用です — TypeDoc flavor はまだ `colors` / `darkColors` に対応していません。
+// `cleanJsdocTheme` 内では `opts/unsupported-in-typedoc` の警告とともに無視されます。
 ```
 
 </tab>
@@ -782,8 +782,8 @@ opts: { customCss: ".my-banner { color: rebeccapurple; }" }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-// JSDoc only — the TypeDoc flavor doesn't support `customCss` / `customJs` yet.
-// In `cleanJsdocTheme` they're ignored with an `opts/unsupported-in-typedoc` warning.
+// JSDoc 専用です — TypeDoc flavor はまだ `customCss` / `customJs` に対応していません。
+// `cleanJsdocTheme` 内では `opts/unsupported-in-typedoc` の警告とともに無視されます。
 ```
 
 </tab>
@@ -810,8 +810,8 @@ opts: { customCssFile: "./extra.css", customJsFile: "./extra.js" }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-// JSDoc only — the TypeDoc flavor doesn't support `customCssFile` / `customJsFile` yet.
-// In `cleanJsdocTheme` they're ignored with an `opts/unsupported-in-typedoc` warning.
+// JSDoc 専用です — TypeDoc flavor はまだ `customCssFile` / `customJsFile` に対応していません。
+// `cleanJsdocTheme` 内では `opts/unsupported-in-typedoc` の警告とともに無視されます。
 ```
 
 </tab>
@@ -838,8 +838,9 @@ opts: { hashCustomAssets: false }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-// JSDoc only — the TypeDoc flavor doesn't support custom asset files (`hashCustomAssets`) yet.
-// In `cleanJsdocTheme` it's ignored with an `opts/unsupported-in-typedoc` warning.
+// JSDoc 専用です — TypeDoc flavor はまだ custom asset files（`hashCustomAssets`）に
+// 対応していません。`cleanJsdocTheme` 内では `opts/unsupported-in-typedoc` の警告
+// とともに無視されます。
 ```
 
 </tab>
@@ -1106,8 +1107,8 @@ opts: { progress: false }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-// JSDoc only — TypeDoc prints its own progress output. In `cleanJsdocTheme`
-// `progress` is ignored with an `opts/unsupported-in-typedoc` warning.
+// JSDoc 専用です — TypeDoc は自身の progress 出力を表示します。`cleanJsdocTheme`
+// 内の `progress` は `opts/unsupported-in-typedoc` の警告とともに無視されます。
 ```
 
 </tab>
