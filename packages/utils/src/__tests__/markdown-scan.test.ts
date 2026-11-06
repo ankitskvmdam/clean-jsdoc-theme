@@ -503,6 +503,20 @@ describe('markdown-scan performance', () => {
     expect(time(src)).toBeLessThan(1000);
   });
 
+  // The line tests must not recurse per repetition: as regexes, a thematic
+  // break or delimiter row test overflowed the stack on lines this long.
+  it.each([
+    ['a thematic-break line', 'a <!--\n' + '--- '.repeat((5 * MB) / 4) + '\n-->\n'],
+    ['a dash line under a paragraph', 'a <!--\n' + '-'.repeat(5 * MB) + '\n-->\n'],
+    ['a delimiter row', 'a | b <!--\n' + '|---'.repeat((8 * MB) / 4) + '|\n-->\n'],
+    [
+      'a delimiter row under a matching header',
+      '|' + ' a |'.repeat(2 * MB) + '\n' + '|---'.repeat(2 * MB) + '|\n<!-- c -->\n',
+    ],
+  ])('%s of several MB on one line scans in under a second', (_name, src) => {
+    expect(time(src)).toBeLessThan(1000);
+  });
+
   const timeHtml = (src: string): number => {
     const t = performance.now();
     htmlCommentRangesInHtml(src);

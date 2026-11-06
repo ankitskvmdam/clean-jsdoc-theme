@@ -64,7 +64,6 @@ const COMMENT_BLOCK = /^([ \t]*(?:(?:[-*+]|\d{1,9}[.)])[ \t]+)?)<!--/;
 
 // The rest are tested on a line with its quote prefix AND indentation removed.
 const ATX_HEADING = /^#{1,6}(?:[ \t]|$)/;
-const THEMATIC_BREAK = /^([-*_])(?:[ \t]*\1){2,}[ \t]*$/;
 const SETEXT_UNDERLINE = /^(?:=+|-+)[ \t]*$/;
 // A list item: group 1 the marker, group 2 the spaces after it, group 3 text.
 const LIST_ITEM = /^([-*+]|\d{1,9}[.)])([ \t]+|$)([^\n]*)$/;
@@ -151,9 +150,59 @@ function columns(ws: string): number {
   return n;
 }
 
-// A GFM table delimiter row (on a line with its quote prefix and indentation
-// removed): cells of dashes with optional alignment colons, split by pipes.
-const TABLE_DELIMITER = /^\|?[ \t]*:?-+:?[ \t]*(?:\|[ \t]*:?-+:?[ \t]*)*\|?[ \t]*$/;
+// The two line tests below are written out by hand: as regexes
+// (`^([-*_])(?:[ \t]*\1){2,}[ \t]*$` and
+// `^\|?[ \t]*:?-+:?[ \t]*(?:\|[ \t]*:?-+:?[ \t]*)*\|?[ \t]*$`) V8 runs out of
+// stack on a single line of a few megabytes (`--- --- …`, `|---|---|…`) and
+// throws. Each is one linear pass over the line.
+
+/** Whether `s` holds nothing but spaces and tabs from `i` on. */
+function blankFrom(s: string, i: number): boolean {
+  while (i < s.length && (s[i] === ' ' || s[i] === '\t')) i++;
+  return i === s.length;
+}
+
+/**
+ * A thematic break (on a line with its quote prefix and indentation removed):
+ * three or more of the same `-`, `*` or `_`, with only spaces or tabs between
+ * and after them.
+ */
+function isThematicBreak(rest: string): boolean {
+  const ch = rest[0];
+  if (ch !== '-' && ch !== '*' && ch !== '_') return false;
+  let count = 0;
+  for (let i = 0; i < rest.length; i++) {
+    if (rest[i] === ch) count++;
+    else if (rest[i] !== ' ' && rest[i] !== '\t') return false;
+  }
+  return count >= 3;
+}
+
+/**
+ * A GFM table delimiter row (on a line with its quote prefix and indentation
+ * removed): cells of dashes with optional alignment colons (`:?-+:?`), split by
+ * pipes, with an optional pipe opening and closing the row and spaces or tabs
+ * around each cell.
+ */
+function isTableDelimiter(rest: string): boolean {
+  const n = rest.length;
+  let i = rest[0] === '|' ? 1 : 0;
+  for (;;) {
+    while (i < n && (rest[i] === ' ' || rest[i] === '\t')) i++;
+    // A cell: `:?-+:?`.
+    if (rest[i] === ':') i++;
+    const dashes = i;
+    while (rest[i] === '-') i++;
+    if (i === dashes) return false;
+    if (rest[i] === ':') i++;
+    while (i < n && (rest[i] === ' ' || rest[i] === '\t')) i++;
+    if (i === n) return true;
+    if (rest[i] !== '|') return false;
+    i++;
+    // A pipe closing the row.
+    if (blankFrom(rest, i)) return true;
+  }
+}
 
 /**
  * The number of cells in a GFM table row: its unescaped pipes split it, and a
@@ -359,7 +408,7 @@ function scanBlocks(source: string): BlockScan {
           !comment &&
           !item &&
           !ATX_HEADING.test(rest) &&
-          !THEMATIC_BREAK.test(rest) &&
+          !isThematicBreak(rest) &&
           !htmlBlockStartRe().test(rest));
       // Every row is its own block; the line that ends the table starts one.
       breaks.push(pos);
@@ -414,7 +463,7 @@ function scanBlocks(source: string): BlockScan {
       }
     } else if (
       ATX_HEADING.test(rest) ||
-      THEMATIC_BREAK.test(rest) ||
+      isThematicBreak(rest) ||
       (para && SETEXT_UNDERLINE.test(rest))
     ) {
       // One-line blocks: the next line starts a new block too, so an inline
@@ -468,7 +517,7 @@ function scanBlocks(source: string): BlockScan {
         i2 < para.indent + 4 &&
         !(para.inItem && i2 < para.indent) &&
         /[|:]/.test(delim) &&
-        TABLE_DELIMITER.test(delim) &&
+        isTableDelimiter(delim) &&
         // `- | -` is a list item, which interrupts the paragraph first.
         !LIST_ITEM.test(delim) &&
         tableCells(delim) === tableCells(paraText)
