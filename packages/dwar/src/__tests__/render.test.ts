@@ -987,6 +987,45 @@ describe('render() — HTML comments in prose', () => {
     expect(entry.content).toBe('Visible text.');
     expect(entry.excerpt).toBe('Visible text.');
   });
+
+  it('reports an MDX error on its real line after a multi-line comment (codeFrame contract)', async () => {
+    const body = [
+      'l1',
+      'l2',
+      '<!--',
+      'c4',
+      'c5',
+      'c6',
+      '-->',
+      'l8',
+      'l9',
+      'l10',
+      'bad <Unclosed line 11',
+      'l12',
+      '',
+    ].join('\n');
+    const { err } = await renderOne('drift', body);
+    expect(err?.line).toBe(11);
+    expect(err?.snippet).toContain('11 | bad <Unclosed line 11');
+  });
+
+  it('renders a comment on a quote line that follows an unclosed backtick', async () => {
+    const { err, html } = await renderOne('span-break', 'a `x\n> b <!-- c --> d` e\n');
+    expect(err, err?.message).toBeUndefined();
+    expect(html).not.toContain('c --&gt;');
+    expect(html).not.toContain('c -->');
+  });
+
+  it('warns about a backtick left unbalanced by a dropped comment, and only that one', async () => {
+    const { result } = await renderOne(
+      'bt',
+      'ok <!-- ` --> see `code` here\n\ntext <!-- use `foo --> and `bar here\n'
+    );
+    const w = (result.warnings ?? []).filter((x) => x.slug === 'bt');
+    expect(w).toHaveLength(1);
+    expect(w[0]).toMatchObject({ line: 3, column: 28 });
+    expect(w[0].snippet).toContain('text <!-- use `foo --> and `bar here');
+  });
 });
 
 describe('render() — issue #333: render-error diagnostics', () => {

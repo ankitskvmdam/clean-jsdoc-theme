@@ -14,7 +14,11 @@
  * script and a tiny inline loader that lazy-imports island chunks.
  */
 
-import { htmlCommentRanges } from '@clean-jsdoc-theme/utils';
+import {
+  htmlCommentRanges,
+  replaceHtmlComments,
+  type HtmlCommentRange,
+} from '@clean-jsdoc-theme/utils';
 import type { Page, IslandName, MetaTag, ScrollbarMode } from '@clean-jsdoc-theme/utils';
 import type { IslandRecord } from './layout';
 import { getPreHydrationThemeScript } from './theme-script';
@@ -351,20 +355,14 @@ export function renderHtmlDocument(opts: HtmlDocumentOptions): string {
 
 /**
  * Remove the HTML comments the page never renders (dwar's MDX pre-pass drops
- * them) before the search text is derived. Done first, with the same
- * code-aware scanner, so a backtick or `>` inside a comment can't pair with
- * real inline code or end a tag strip early. An unterminated `<!--` is left as
- * the literal text the page shows.
+ * them) before the search text is derived — with the same ranges, so a
+ * backtick or `>` inside a comment can't pair with real inline code or end a
+ * tag strip early. An unterminated `<!--` is left as the literal text the page
+ * shows. `render()` passes the page's ranges (computed once); a direct call
+ * scans the body itself.
  */
-function dropHtmlComments(body: string): string {
-  let out = '';
-  let cursor = 0;
-  for (const c of htmlCommentRanges(body)) {
-    if (!c.closed) continue;
-    out += body.slice(cursor, c.start) + ' ';
-    cursor = c.end;
-  }
-  return out + body.slice(cursor);
+function dropHtmlComments(body: string, comments: readonly HtmlCommentRange[]): string {
+  return replaceHtmlComments(body, comments, (c, text) => (c.closed ? ' ' : text));
 }
 
 /**
@@ -381,8 +379,12 @@ const TAG = /<(?:"[^"]*"|'[^']*'|[^"'<>])+>/g;
  * Heuristic, not exhaustive: fences, headings, links, images, formatting marks,
  * and any HTML tags get peeled away.
  */
-export function extractExcerpt(mdxBody: string, max = 200): string {
-  let text = dropHtmlComments(mdxBody)
+export function extractExcerpt(
+  mdxBody: string,
+  max = 200,
+  comments: readonly HtmlCommentRange[] = htmlCommentRanges(mdxBody)
+): string {
+  let text = dropHtmlComments(mdxBody, comments)
     .replace(/^---[\s\S]*?---\s*/u, '') // frontmatter
     .replace(/```[\s\S]*?```/g, ' ') // fenced code
     .replace(/`[^`]*`/g, ' ') // inline code
@@ -409,8 +411,12 @@ export function extractExcerpt(mdxBody: string, max = 200): string {
  * ranking). The result is capped at `max` to keep the index from ballooning on
  * a pathologically long page.
  */
-export function extractSearchText(mdxBody: string, max = 20000): string {
-  const text = dropHtmlComments(mdxBody)
+export function extractSearchText(
+  mdxBody: string,
+  max = 20000,
+  comments: readonly HtmlCommentRange[] = htmlCommentRanges(mdxBody)
+): string {
+  const text = dropHtmlComments(mdxBody, comments)
     .replace(/^---[\s\S]*?---\s*/u, '') // frontmatter
     .replace(/```[\s\S]*?```/g, ' ') // fenced code (noisy/large)
     .replace(/`([^`]*)`/g, '$1') // inline code → keep the identifier
