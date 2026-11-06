@@ -1,7 +1,8 @@
+import { existsSync } from 'node:fs';
 import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
-import { afterAll, beforeAll, describe, it, expect, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, it, expect, vi } from 'vitest';
 import {
   collectDocs,
   resolveDocImages,
@@ -20,6 +21,9 @@ import {
   normalizePlayground,
   normalizeSectionOrder,
   outputSourceFilesEnabled,
+  publish,
+  reportBuildFailure,
+  resolveCustomAssets,
   resolveFooter,
 } from '../publish';
 
@@ -81,6 +85,201 @@ describe('resolveFooter', () => {
       expect(warn).toHaveBeenCalled();
     } finally {
       warn.mockRestore();
+    }
+  });
+});
+
+describe('publish failure handling', () => {
+  const resetExitCode = () => {
+    process.exitCode = undefined;
+  };
+
+  it('outside JSDoc, rejects and leaves the exit code to the caller', async () => {
+    resetExitCode();
+    try {
+      // No `destination` → the bridge throws before doing any work.
+      await expect(publish({}, {})).rejects.toThrow('opts.destination is required');
+      expect(process.exitCode).toBeUndefined();
+    } finally {
+      resetExitCode();
+    }
+  });
+
+  it("inside JSDoc, reports once through JSDoc's logger and resolves", () => {
+    const logged: string[] = [];
+    try {
+      reportBuildFailure(new Error('boom'), false, () => ({ error: (m) => logged.push(m) }));
+      expect(logged).toEqual(['boom']);
+      expect(process.exitCode).toBe(1);
+    } finally {
+      resetExitCode();
+    }
+  });
+
+  it('adds the stack trace only when asked (JSDoc --debug/--verbose)', () => {
+    const logged: string[] = [];
+    try {
+      reportBuildFailure(new Error('boom'), true, () => ({ error: (m) => logged.push(m) }));
+      expect(logged[0]).toMatch(/^boom\n.*Error: boom/s);
+    } finally {
+      resetExitCode();
+    }
+  });
+});
+
+describe('publish: option problems (strict escalation, printed once)', () => {
+  // An empty JSDoc collection: setu only ever calls `collection(query).get()`.
+  const emptyCollection = (): { get: () => unknown[] } => ({ get: () => [] });
+  let dir: string;
+  let printed: { log: string[]; warn: string[]; error: string[] };
+  /** Every printed line, in order, across the three streams. */
+  let printedInOrder: string[];
+  let spies: Array<{ mockRestore: () => void }>;
+
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), 'cjt-publish-'));
+    printed = { log: [], warn: [], error: [] };
+    printedInOrder = [];
+    spies = (['log', 'warn', 'error'] as const).map((level) =>
+      vi.spyOn(console, level).mockImplementation((...args: unknown[]) => {
+        const line = args.map(String).join(' ');
+        printed[level].push(line);
+        printedInOrder.push(line);
+      })
+    );
+    process.exitCode = undefined;
+  });
+
+  afterEach(async () => {
+    spies.forEach((s) => s.mockRestore());
+    delete process.env.CLEAN_JSDOC_THEME_BUILD;
+    process.exitCode = undefined;
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  /** How many printed lines (any stream) mention `needle`. */
+  const timesPrinted = (needle: string): number =>
+    printedInOrder.filter((m) => m.includes(needle)).length;
+  const firstPrinted = (needle: string): number =>
+    printedInOrder.findIndex((m) => m.includes(needle));
+
+  it('strict: an unreadable favicon fails the build before anything is written', async () => {
+    const destination = join(dir, 'out');
+    await expect(
+      publish(emptyCollection, {
+        destination,
+        progress: false,
+        strict: true,
+        favicon: join(dir, 'missing.ico'),
+      })
+    ).rejects.toThrow('clean-jsdoc-theme: 1 option problem(s) in strict mode');
+    expect(printed.error.filter((m) => m.includes('could not read favicon'))).toHaveLength(1);
+    expect(timesPrinted('could not read favicon')).toBe(1);
+    expect(existsSync(destination)).toBe(false);
+  }, 60_000);
+
+  it('strict: counts every post-validation problem; prints v4-name warnings once on the way out', async () => {
+    const destination = join(dir, 'out');
+    await expect(
+      publish(emptyCollection, {
+        destination,
+        progress: false,
+        strict: true,
+        scrollbar: 'weird',
+        collapsibleSidebarSections: ['Nope'],
+        // A top-level v4 name stays a warning under strict (another plugin may own it).
+        title: 'Old title',
+      } as Parameters<typeof publish>[1])
+    ).rejects.toThrow('clean-jsdoc-theme: 2 option problem(s) in strict mode');
+    expect(printed.error.some((m) => m.includes('scrollbar'))).toBe(true);
+    expect(printed.error.some((m) => m.includes("'Nope'"))).toBe(true);
+    expect(timesPrinted('opts/v4-name')).toBe(1);
+    expect(printed.warn.some((m) => m.includes('opts/v4-name'))).toBe(true);
+    expect(existsSync(destination)).toBe(false);
+  }, 60_000);
+
+  it('non-strict: warns, builds, and prints each option warning once, after the build report', async () => {
+    const destination = join(dir, 'out');
+    await publish(emptyCollection, {
+      destination,
+      progress: false,
+      favicon: join(dir, 'missing.ico'),
+      readme: '<p>Home</p>',
+      siteNme: 'Typo',
+    } as Parameters<typeof publish>[1]);
+    expect(existsSync(join(destination, 'index.html'))).toBe(true);
+    expect(printed.error).toEqual([]);
+    expect(printed.warn.filter((m) => m.includes('could not read favicon'))).toHaveLength(1);
+    // The typo warning: once, on stderr, and not before the build report.
+    expect(timesPrinted('siteNme')).toBe(1);
+    expect(printed.warn.some((m) => m.includes('siteNme'))).toBe(true);
+    expect(firstPrinted('build complete')).toBeGreaterThanOrEqual(0);
+    expect(firstPrinted('siteNme')).toBeGreaterThan(firstPrinted('build complete'));
+    expect(process.exitCode).toBeUndefined();
+  }, 60_000);
+
+  it('localized build (one JSDoc process per locale): each option warning once', async () => {
+    const destination = join(dir, 'out-fr');
+    const specPath = join(dir, 'build-spec.json');
+    await writeFile(
+      specPath,
+      JSON.stringify({
+        version: 1,
+        locale: 'fr',
+        defaultLocale: 'en',
+        apiMessages: {},
+        chromeMessages: {},
+        destination,
+        basePath: '/fr/',
+        siteBasePath: '/',
+        locales: [{ code: 'en' }, { code: 'fr' }],
+      }),
+      'utf8'
+    );
+    process.env.CLEAN_JSDOC_THEME_BUILD = specPath;
+    await publish(emptyCollection, {
+      destination: join(dir, 'ignored'),
+      progress: false,
+      readme: '<p>Home</p>',
+      siteNme: 'Typo',
+    } as Parameters<typeof publish>[1]);
+    expect(existsSync(join(destination, 'index.html'))).toBe(true);
+    expect(timesPrinted('siteNme')).toBe(1);
+  }, 60_000);
+});
+
+describe('resolveCustomAssets', () => {
+  const href = (p: string): string => '/' + p;
+
+  it('warns on (and skips) v4-style CDN objects and remote URLs', async () => {
+    const warnings: string[] = [];
+    const out = await resolveCustomAssets(
+      {
+        customCssFile: [{ href: 'https://cdn.example/x.css', integrity: 'sha-1' }],
+        customJsFile: 'https://code.jquery.com/jquery.js',
+      },
+      href,
+      (m) => warnings.push(m)
+    );
+    expect(out.files).toEqual([]);
+    expect(warnings).toHaveLength(2);
+    expect(warnings[0]).toContain('customCssFile takes local file paths');
+    expect(warnings[0]).toContain('`@import url(…)` it from `customCss`');
+    expect(warnings[1]).toContain("customJsFile only copies local files; skipping 'https://");
+  });
+
+  it('copies a local file without warning', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'cjt-custom-'));
+    try {
+      const fp = join(dir, 'site.css');
+      await writeFile(fp, 'body{}', 'utf8');
+      const warnings: string[] = [];
+      const out = await resolveCustomAssets({ customCssFile: fp }, href, (m) => warnings.push(m));
+      expect(out.files).toHaveLength(1);
+      expect(out.theme.customCssLinks?.[0]).toMatch(/^\/_assets\/site\.[0-9a-f]{8}\.css$/);
+      expect(warnings).toEqual([]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
     }
   });
 });

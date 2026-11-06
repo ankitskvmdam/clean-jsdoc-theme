@@ -143,24 +143,35 @@ const { value, diagnostics } = await validateThemeOpts({
   opts: { siteName: 'My API', fonts: { heading: 'Roboto', body: 'Roboto' } },
   fontResolver,
   unknownKeyPolicy: 'suggest-typos', // only flag near-miss typos of a known key
+  checkV4Options: true, // flag a leftover v4 `theme_opts` block / v4 option names
+  strict: false, // true → every warning comes back as an error (top-level v4 names excepted)
 });
 
 // value.siteName / value.fonts are normalized; decide your own policy on findings:
 if (diagnostics.list.length > 0) console.log(formatDiagnostics(diagnostics, { color: true }));
 if (diagnostics.hasErrors()) {
-  // strict mode is the *caller's* choice — utils never throws
+  // failing the build is the *caller's* choice — utils never throws
 }
+
+// `strict` is `DiagnosticBag.escalateWarnings(keep?)` under the hood; call it on
+// any bag, with a predicate for the findings that must stay warnings:
+diagnostics.escalateWarnings((d) => d.code === 'opts/v4-name');
 ```
 
 This is exactly how the real bridges wire it. The JSDoc bridge in
 [`publish.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/clean-jsdoc-theme/src/publish.ts)
 builds the resolver, calls `validateThemeOpts` with `unknownKeyPolicy:
-'suggest-typos'` (JSDoc's own opts share the flat namespace), then logs the bag
-and only throws when `opts.strict` is set *and* `diagnostics.hasErrors()`. The
-TypeDoc plugin in
+'suggest-typos'` (JSDoc's own opts share the flat namespace), `checkV4Options:
+true` and `strict` from `opts.strict`, then logs the bag and fails the build when
+`opts.strict` is set *and* `diagnostics.hasErrors()`. The failure doesn't escape
+to JSDoc as a rejected promise (JSDoc 4 printed that and still exited 0):
+`publish()` reports it once through JSDoc's own logger, which makes JSDoc exit 1.
+The TypeDoc plugin in
 [`write-site.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/typedoc/src/write-site.ts)
 does the same but with `unknownKeyPolicy: 'warn-all'`, since its options live in
-a dedicated namespaced block rather than a shared flat one.
+a dedicated namespaced block rather than a shared flat one, and without the v4
+check (TypeDoc never had v4 options). It throws on a strict failure; TypeDoc logs
+that as an error and exits non-zero.
 
 For tests or a custom runtime you can inject a fake `fetch` instead of hitting
 the network — the resolver only needs the minimal `FetchLike` slice

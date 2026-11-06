@@ -17,9 +17,12 @@ page theme के अपने options का दस्तावेज़ है
 खाए वही चुनें।
 
 > [!WARNING]
-> अनजान या ग़लत-वर्तनी वाले options default रूप से सिर्फ़ **चेतावनी** देते हैं (एक
-> "did you mean?" संकेत के साथ) — build जारी रहता है। उन चेतावनियों को errors में
-> बदलने के लिए [`strict`](#strict) सेट करें।
+> ग़लत-वर्तनी वाला option default रूप से सिर्फ़ **चेतावनी** देता है (एक "did you
+> mean?" संकेत के साथ) — build जारी रहता है। JSDoc में यह किसी theme option नाम से
+> मिलता-जुलता नाम होता है (`opts` JSDoc और उसके plugins के साथ साझा है, इसलिए बाकी
+> अनजान keys पर कुछ नहीं कहा जाता); TypeDoc में `cleanJsdocTheme` की कोई भी अनजान
+> key। option चेतावनियों को build विफल करने वाली errors में बदलने के लिए
+> [`strict`](#strict) सेट करें।
 
 > [!TIP]
 > यहाँ documented कोई option नहीं दिख रहा? सुनिश्चित करें कि आप theme के **latest
@@ -302,7 +305,8 @@ opts: { readme: "./README.md" }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-cleanJsdocTheme: { readme: "./README.md" }
+// JSDoc only. TypeDoc reads its own top-level `readme` option — set that
+// instead. (`cleanJsdocTheme.readme` is ignored with a warning.)
 ```
 
 </tab>
@@ -417,7 +421,8 @@ opts: { tutorials: "./tutorials" }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-cleanJsdocTheme: { tutorials: "./tutorials" }
+// JSDoc only. Under TypeDoc, use `projectDocuments` or `cleanJsdocTheme.docs`.
+// (`cleanJsdocTheme.tutorials` is ignored with a warning.)
 ```
 
 </tab>
@@ -697,10 +702,8 @@ opts: {
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-cleanJsdocTheme: {
-  colors: { bg: "oklch(0.99 0.01 95)", accent: "oklch(0.55 0.2 250)" },
-  darkColors: { bg: "oklch(0.18 0.01 250)", accent: "oklch(0.7 0.16 250)" },
-}
+// JSDoc only — the TypeDoc flavor doesn't support `colors` / `darkColors` yet.
+// In `cleanJsdocTheme` they're ignored with an `opts/unsupported-in-typedoc` warning.
 ```
 
 </tab>
@@ -776,7 +779,8 @@ opts: { customCss: ".my-banner { color: rebeccapurple; }" }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-cleanJsdocTheme: { customCss: ".my-banner { color: rebeccapurple; }" }
+// JSDoc only — the TypeDoc flavor doesn't support `customCss` / `customJs` yet.
+// In `cleanJsdocTheme` they're ignored with an `opts/unsupported-in-typedoc` warning.
 ```
 
 </tab>
@@ -803,7 +807,8 @@ opts: { customCssFile: "./extra.css", customJsFile: "./extra.js" }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-cleanJsdocTheme: { customCssFile: "./extra.css", customJsFile: "./extra.js" }
+// JSDoc only — the TypeDoc flavor doesn't support `customCssFile` / `customJsFile` yet.
+// In `cleanJsdocTheme` they're ignored with an `opts/unsupported-in-typedoc` warning.
 ```
 
 </tab>
@@ -830,7 +835,8 @@ opts: { hashCustomAssets: false }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-cleanJsdocTheme: { hashCustomAssets: false }
+// JSDoc only — the TypeDoc flavor doesn't support custom asset files (`hashCustomAssets`) yet.
+// In `cleanJsdocTheme` it's ignored with an `opts/unsupported-in-typedoc` warning.
 ```
 
 </tab>
@@ -1029,8 +1035,32 @@ cleanJsdocTheme: { defaultLocale: "en" }
 
 ### `strict`
 
-option diagnostics (एक ख़राब font नाम, एक अनजान key) को चेतावनियों से कठोर build
-errors में बढ़ा दें।
+option की समस्याओं पर build विफल करें। default रूप से उन्हें report किया जाता है
+और build उस option के बिना चलता रहता है। `strict: true` के साथ कोई भी option
+warning या error build को कुछ भी लिखने से पहले रोक देता है, और process non-zero
+के साथ exit करता है — उदाहरण के लिए:
+
+- ग़लत-वर्तनी वाली key। TypeDoc में `cleanJsdocTheme` की कोई भी अनजान key गिनी
+  जाती है; JSDoc में सिर्फ़ किसी theme option नाम से मिलते-जुलते नाम पकड़े जाते
+  हैं, क्योंकि बाकी अनजान keys JSDoc के साझा `opts` namespace की होती हैं;
+- ऐसा font जो Google Fonts पर नहीं है;
+- अनुपयोगी `siteUrl`, जिसमें sub-path वाला पर बिना `basePath` का `siteUrl` भी
+  शामिल है (वह path हर URL से छूट जाता)। TypeDoc में यह site URL के रूप में
+  इस्तेमाल हुए `hostedBaseUrl` पर भी लागू होता है, जिसमें अक्सर sub-path होता है;
+- न पढ़ी जा सकने वाली `footer` / `favicon` / logo / custom CSS या JS file, या
+  ऐसी `meta` / `customCssFile` / `customJsFile` entry जिसे छोड़ना पड़े;
+- बचा हुआ v4 `theme_opts` block।
+
+इन पर असर नहीं — ये `strict` में भी चेतावनी या सूचना ही रहते हैं:
+
+- content चेतावनियाँ (जैसे किसी comment में बिना जोड़ी का backtick) और render न
+  हो पाने वाले pages;
+- JSDoc में `opts.title` या `opts.search` जैसा top-level v4 option नाम, क्योंकि
+  वह किसी दूसरे JSDoc plugin का हो सकता है;
+- TypeDoc में `colors` जैसा JSDoc-only option (एक `opts/unsupported-in-typedoc`
+  चेतावनी के साथ अनदेखा), और `cleanJsdocTheme.siteUrl` व `hostedBaseUrl` को
+  अलग-अलग मान देना — यह documented override है; build बस बताता है कि कौन-सा
+  लागू हुआ।
 
 **अपेक्षित:** एक boolean। Default `false`।
 
@@ -1073,7 +1103,8 @@ opts: { progress: false }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-cleanJsdocTheme: { progress: false }
+// JSDoc only — TypeDoc prints its own progress output. In `cleanJsdocTheme`
+// `progress` is ignored with an `opts/unsupported-in-typedoc` warning.
 ```
 
 </tab>

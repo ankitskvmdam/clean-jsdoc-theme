@@ -39,17 +39,18 @@ v4 将主题选项嵌套在 **`opts.theme_opts.*`** 之下。v5 则**直接从 `
 
 <step label="Check compatibility">
 
-v5 需要 **JSDoc ≥ 4** 和 **Node ≥ 20**。主题不再需要 `plugins/markdown` 插件
-（v5 自己渲染 Markdown），不过保留它也无妨。暂时想留在 v4？请固定
-`"clean-jsdoc-theme": "^4"`——v5 预发布版本在 npm `next` 标签下发布，因此 `^4`
-不会拉取到它们。
+v5 需要 **JSDoc ≥ 4** 和 **Node ≥ 22**。请在 `plugins` 列表中保留
+`plugins/markdown` 插件——v5 仍然**必须**使用它（JSDoc 用它在主题处理之前渲染
+comment 中的 Markdown）。缺少它时构建会报错失败：不会写出任何文件，进程以非零退出码
+退出。暂时想留在 v4？请固定 `"clean-jsdoc-theme": "^4"`——v5 是 npm 的 `latest`，
+因此未固定版本的安装或 `@latest` 都会拉取 v5。
 
 </step>
 
 <step label="Upgrade the package">
 
 ```sh
-npm i -D clean-jsdoc-theme@latest   # or @next during the v5 prerelease
+npm i -D clean-jsdoc-theme@latest
 ```
 
 </step>
@@ -76,10 +77,12 @@ npx jsdoc -c jsdoc.json
 npx serve <destination>   # islands 与搜索索引是 fetch 来的，所以需要 HTTP
 ```
 
-对于任何遗留的 `theme_opts` 键或 v4 选项名，v5 会**发出警告**（并附带
-“did you mean?” 提示）并继续构建——请阅读输出并修正它标记的内容。在迁移期间，
-可设置 [`strict: true`](/theme/configuration#strict) 将这些警告变为硬错误，
-之后再放宽。
+对于遗留的 v4 选项，v5 会**发出警告**并继续构建：`theme_opts` 块（以及其中每个键
+各一条警告），以及任何不是 v5 选项的顶层 v4 选项名（`base_url`、`homepageTitle`
+等）。每条警告的提示会给出 v5 中的替代选项，或说明该选项已被移除——请阅读输出并
+修正它标记的内容。设置 [`strict: true`](/theme/configuration#strict) 后，
+`theme_opts` 相关的警告会变为错误：构建不写出任何文件，并以非零退出码退出。顶层的 v4
+选项名即使这样也仍是警告，因为 `opts.title` 或 `opts.search` 可能属于其他 JSDoc 插件。
 
 </step>
 
@@ -95,11 +98,11 @@ npx serve <destination>   # islands 与搜索索引是 fetch 来的，所以需�
 | `base_url` | `basePath` | 已重命名 | 站点根路径，作为前缀加到链接上。 |
 | `title` | `siteName` | 已变更 | 字符串**或**一个 logo 集 `{ default, dark, light, alt }`。 |
 | `menu` | `menu` | 已变更 | 已重塑：`{ id?, title?, link/href?, icon?, target?, class? }` —— 新增 `icon` 与 `id` 内置项。 |
-| `sections` | `sectionOrder` | 已重命名 | 筛选并排序侧边栏区块。 |
+| `sections` | `sectionOrder` | 已变更 | 筛选并排序侧边栏区块。`Global` 区块现在叫 `Globals`（遗留的 `"Global"` 仍然可用）。 |
 | `create_style` | `customCss` | 已重命名 | 内联 CSS（在主题样式表之后加载）。 |
-| `include_css` / `add_style_path` | `customCssFile` | 已重命名/已变更 | CSS 文件 → 带内容哈希的资源链接。 |
+| `include_css` / `add_style_path` | `customCssFile` | 已重命名/已变更 | 本地 CSS 文件 → 带内容哈希的资源链接。不支持远程 URL（v4 `add_style_path` 的 CDN 条目）：请下载该文件，或在 `customCss` 中 `@import url(…)`。 |
 | `add_scripts` | `customJs` | 已重命名 | 内联 JS（最后运行）。 |
-| `include_js` / `add_script_path` | `customJsFile` | 已重命名/已变更 | JS 文件 → 带内容哈希的资源。 |
+| `include_js` / `add_script_path` | `customJsFile` | 已重命名/已变更 | 本地 JS 文件 → 带内容哈希的资源。不支持远程 URL（v4 `add_script_path` 的 CDN 条目）：请下载该文件，或在 `customJs` 中加载它。 |
 | `homepageTitle` | — | 已移除 | 首页 `<title>` 由 README / `docs/index.md` + `siteName` 派生。 |
 | `includeFilesListInHomepage` | — | 已移除 | Source Files 区块会列出文件。 |
 | `meta` | `meta` | 已变更 | 再次受支持 —— 一个由 attribute map 组成的数组 → `<head>` 中的 `<meta>` tags。参见 [`meta`](/theme/configuration#meta)。 |
@@ -107,7 +110,7 @@ npx serve <destination>   # islands 与搜索索引是 fetch 来的，所以需�
 | `codepen` | `playground` | 已变更 | v4 从 `@example` 预填一个 CodePen；v5 将其泛化为 [`playground`](/components/playground) —— 通过 `opts.playground` + `@playground` tag，在 CodePen、JSFiddle 或 CodeSandbox 中打开一个示例。（要通过 URL 嵌入一个现成的 pen，请使用 [`@iframe`](/components/embeds)。） |
 | `static_dir` | — | 已移除 | 使用 JSDoc 自身的静态文件配置。 |
 | `footer` | `footer` | 已变更 | 再次受支持 —— 一个内联 HTML 字符串或 `{ file: "./footer.html" }`。用 `customCss` / `customCssFile` 为其设置样式。参见 [`footer`](/theme/configuration#footer)。 |
-| `exclude_inherited`, `displayModuleHeader`, `sort` | — | 已移除 | 没有等价项。 |
+| `exclude_inherited`, `displayModuleHeader`, `sort`, `resizeable`, `prefixModuleToSidebarItems_experimental` | — | 已移除 | 没有等价项。 |
 | `shouldRemoveScrollbarStyle` | `scrollbar` | 已变更 | v4 的布尔值只能禁用滚动条样式。v5 的 `scrollbar` 是一个三态枚举：`"styled"`（默认）\| `"visible"` \| `"native"`。`shouldRemoveScrollbarStyle: true` → `scrollbar: "native"`。 |
 
 > [!NOTE]
@@ -157,7 +160,7 @@ npx serve <destination>   # islands 与搜索索引是 fetch 来的，所以需�
       { id: "home", title: "Home" },
       { title: "GitHub", link: "https://github.com/me/lib", icon: "simpleicons:github" },
     ],
-    sectionOrder: ["Classes", "Modules", "Global"],
+    sectionOrder: ["Classes", "Modules", "Globals"],
     footer: "© My Library",
     customCssFile: "./static/custom.css",
     // dropped: default_theme (auto), search (always on)

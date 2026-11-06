@@ -251,9 +251,12 @@ emit किए गए `<link>` की ज़रूरत होती है। 
 
 ### मेरा build किसी unknown option के बारे में चेतावनी क्यों देता है?
 
-अज्ञात या गलत spelling वाले options default रूप से **चेतावनी** देते हैं (एक "did
-you mean?" संकेत के साथ) और build जारी रहता है। उन चेतावनियों को errors में बदलने
-के लिए [`strict`](/theme/configuration#strict) सेट करें।
+गलत spelling वाला option default रूप से **चेतावनी** देता है (एक "did you mean?"
+संकेत के साथ) और build जारी रहता है। JSDoc में सिर्फ़ किसी theme option नाम से
+मिलता-जुलता नाम चेतावनी देता है, क्योंकि `opts` JSDoc और उसके plugins के साथ साझा
+है; TypeDoc में `cleanJsdocTheme` की कोई भी अनजान key। option चेतावनियों को build
+विफल करने वाली errors में बदलने के लिए [`strict`](/theme/configuration#strict)
+सेट करें।
 
 ## Localization
 

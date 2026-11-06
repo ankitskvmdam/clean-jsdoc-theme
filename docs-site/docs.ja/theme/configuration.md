@@ -17,9 +17,12 @@ TypeDoc](#jsdoc-vs-typedoc) を参照）。残りの build のセットアップ
 に合うものを選んでください。
 
 > [!WARNING]
-> 不明な、あるいは綴り間違いの options は、default では **警告** を出すだけです
-> （「もしかして?」のヒント付き） — build は続行します。それらの警告を errors に
-> 変えるには [`strict`](#strict) を設定してください。
+> 綴り間違いの option は、default では **警告** を出すだけです（「もしかして?」の
+> ヒント付き） — build は続行します。JSDoc では theme option 名に近い名前が対象です
+> （`opts` は JSDoc やその plugins と共有されるため、それ以外の不明な keys には何も
+> 出しません）。TypeDoc では `cleanJsdocTheme` 内の不明な key すべてが対象です。
+> option の警告を build を失敗させる errors に変えるには [`strict`](#strict) を
+> 設定してください。
 
 > [!TIP]
 > ここに記載されている option が見つかりませんか？theme が **最新バージョン** で
@@ -304,7 +307,8 @@ opts: { readme: "./README.md" }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-cleanJsdocTheme: { readme: "./README.md" }
+// JSDoc 専用です。TypeDoc は自身の top-level `readme` option を読むので、そちらを
+// 設定してください（`cleanJsdocTheme.readme` は警告とともに無視されます）。
 ```
 
 </tab>
@@ -419,7 +423,8 @@ opts: { tutorials: "./tutorials" }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-cleanJsdocTheme: { tutorials: "./tutorials" }
+// JSDoc 専用です。TypeDoc では `projectDocuments` か `cleanJsdocTheme.docs` を
+// 使ってください（`cleanJsdocTheme.tutorials` は警告とともに無視されます）。
 ```
 
 </tab>
@@ -700,10 +705,8 @@ opts: {
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-cleanJsdocTheme: {
-  colors: { bg: "oklch(0.99 0.01 95)", accent: "oklch(0.55 0.2 250)" },
-  darkColors: { bg: "oklch(0.18 0.01 250)", accent: "oklch(0.7 0.16 250)" },
-}
+// JSDoc 専用です — TypeDoc flavor はまだ `colors` / `darkColors` に対応していません。
+// `cleanJsdocTheme` 内では `opts/unsupported-in-typedoc` の警告とともに無視されます。
 ```
 
 </tab>
@@ -779,7 +782,8 @@ opts: { customCss: ".my-banner { color: rebeccapurple; }" }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-cleanJsdocTheme: { customCss: ".my-banner { color: rebeccapurple; }" }
+// JSDoc 専用です — TypeDoc flavor はまだ `customCss` / `customJs` に対応していません。
+// `cleanJsdocTheme` 内では `opts/unsupported-in-typedoc` の警告とともに無視されます。
 ```
 
 </tab>
@@ -806,7 +810,8 @@ opts: { customCssFile: "./extra.css", customJsFile: "./extra.js" }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-cleanJsdocTheme: { customCssFile: "./extra.css", customJsFile: "./extra.js" }
+// JSDoc 専用です — TypeDoc flavor はまだ `customCssFile` / `customJsFile` に対応していません。
+// `cleanJsdocTheme` 内では `opts/unsupported-in-typedoc` の警告とともに無視されます。
 ```
 
 </tab>
@@ -833,7 +838,9 @@ opts: { hashCustomAssets: false }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-cleanJsdocTheme: { hashCustomAssets: false }
+// JSDoc 専用です — TypeDoc flavor はまだ custom asset files（`hashCustomAssets`）に
+// 対応していません。`cleanJsdocTheme` 内では `opts/unsupported-in-typedoc` の警告
+// とともに無視されます。
 ```
 
 </tab>
@@ -1032,8 +1039,32 @@ cleanJsdocTheme: { defaultLocale: "en" }
 
 ### `strict`
 
-option の diagnostics（不正な font 名、不明な key）を、警告から厳格な build errors
-に格上げします。
+option の問題で build を失敗させます。default では問題は報告され、build はその
+option なしで続行します。`strict: true` では、option の warning や error のどれもが
+何かを書き出す前に build を止め、process は 0 以外の exit code で終了します。
+たとえば:
+
+- 綴り間違いの key。TypeDoc では `cleanJsdocTheme` 内の不明な key すべてが対象です。
+  JSDoc では theme option 名に近い typo だけが対象です — それ以外の不明な key は
+  JSDoc の共有された `opts` namespace のものだからです;
+- Google Fonts にない font;
+- 使えない `siteUrl`。sub-path を含むのに `basePath` がない `siteUrl` も含みます
+  （その path はすべての URL から落ちてしまいます）。TypeDoc では site URL として
+  使われる `hostedBaseUrl` も対象で、これはよく sub-path を含みます;
+- 読み込めない `footer` / `favicon` / logo / custom CSS や JS file、または skip
+  せざるを得ない `meta` / `customCssFile` / `customJsFile` の entry;
+- 残っている v4 の `theme_opts` block。
+
+影響しないもの — `strict` でも警告や通知のままです:
+
+- content の警告（comment 内の対になっていない backtick など）と、render に失敗
+  した pages;
+- JSDoc では、`opts.title` や `opts.search` のような top-level の v4 option 名
+  （別の JSDoc plugin のものかもしれないため）;
+- TypeDoc では、`colors` のような JSDoc 専用の option（`opts/unsupported-in-typedoc`
+  の警告とともに無視されます）と、`cleanJsdocTheme.siteUrl` と `hostedBaseUrl` に
+  異なる値を設定すること — これは文書化された override で、build はどちらが使われる
+  かを知らせるだけです。
 
 **期待される値:** boolean。default は `false`。
 
@@ -1076,7 +1107,8 @@ opts: { progress: false }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-cleanJsdocTheme: { progress: false }
+// JSDoc 専用です — TypeDoc は自身の progress 出力を表示します。`cleanJsdocTheme`
+// 内の `progress` は `opts/unsupported-in-typedoc` の警告とともに無視されます。
 ```
 
 </tab>
