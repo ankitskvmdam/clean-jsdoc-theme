@@ -227,6 +227,10 @@ describe('htmlCommentRanges', () => {
   it('does not let a tag attribute or a link title cross a line that ends the paragraph', () => {
     expect(closed('<Sig code="a\n> b" /> <!-- c -->\n')).toEqual(['<!-- c -->']);
     expect(closed('[a](u "t\n# h") <!-- c -->\n')).toEqual(['<!-- c -->']);
+    // The comment INSIDE the would-be attribute/title, on the line that ends
+    // the paragraph, is a comment (micromark: blockquote/heading holding html).
+    expect(closed('<Sig code="a\n> b <!-- c --> d" />\n')).toEqual(['<!-- c -->']);
+    expect(closed('[a](u "t\n# h <!-- c --> x")\n')).toEqual(['<!-- c -->']);
   });
 
   it('lets a tag attribute span tab-indented continuation lines (setu signatures)', () => {
