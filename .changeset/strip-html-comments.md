@@ -2,6 +2,7 @@
 'clean-jsdoc-theme': patch
 '@clean-jsdoc-theme/dwar': patch
 '@clean-jsdoc-theme/setu': patch
+'@clean-jsdoc-theme/typedoc': patch
 '@clean-jsdoc-theme/utils': patch
 ---
 
@@ -24,7 +25,12 @@ is kept as written, and a comment that starts a line hides everything up to its
 live `<steps>`/`<tabs>`, or a playground fence — works as on GitHub. An
 unterminated `<!--` is shown as literal text instead of hiding the rest of the
 page, and a comment removed from the middle of a page no longer shifts the line
-numbers reported for a later render error.
+numbers reported for a later render error. TypeDoc doc comments get the same
+fix.
+
+The search index's text now strips tags with a pass that reads quoted attribute
+values whole, so a value holding `>` (such as a member signature) no longer
+leaves fragments such as `" /` in a page's search `content`.
 
 `@example` captions are parsed with the same GitHub-Flavored Markdown as every
 other prose surface (`~~strikethrough~~`, bare URLs), and ones holding raw HTML
