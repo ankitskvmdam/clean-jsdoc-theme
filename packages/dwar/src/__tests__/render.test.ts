@@ -1070,6 +1070,18 @@ describe('render() — HTML comments in prose', () => {
     expect(main).toContain('>--> c<');
   });
 
+  it('renders a table whose header row follows a comment on its line', async () => {
+    // MDX reads `{/**/} Name | Version` as the header row, so a comment opened
+    // in a body row can't run on into the next row.
+    const body = '<!-- note --> Name | Version\n--- | ---\n| x <!--\n--> |\n';
+    const { err, html } = await renderOne('header-comment', body);
+    expect(err, err?.message).toBeUndefined();
+    const main = mainOf(html);
+    expect(main).not.toContain('note');
+    expect(main.match(/<th[ >]/g)).toHaveLength(2);
+    expect(main).toContain('x &lt;!--');
+  });
+
   it('reports an MDX error on its real line after an inline multi-line comment', async () => {
     const body = ['l1 <!--', 'c2', 'c3 -->', 'l4', 'bad <Unclosed line 5', 'l6', ''].join('\n');
     const { err } = await renderOne('drift-inline', body);

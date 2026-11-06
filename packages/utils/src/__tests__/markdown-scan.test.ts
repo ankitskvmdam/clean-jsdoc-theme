@@ -160,6 +160,50 @@ describe('htmlCommentRanges', () => {
     expect(closed('<!-- a\nb --> mid <!-- c -->\n')).toEqual(['<!-- a\nb -->', '<!-- c -->']);
   });
 
+  // dwar drops the comment, and MDX reads the text after it as a paragraph
+  // line, so the paragraph rules apply to the lines below.
+  it('reads the text after a line-starting comment as a paragraph line', () => {
+    const states = (src: string): boolean[] => htmlCommentRanges(src).map((c) => c.closed);
+    // A delimiter row below makes the text a table's header row; an inline
+    // comment can't span two body rows.
+    expect(states('<!-- note --> Name | Version\n--- | ---\n| x <!--\n--> |\n')).toEqual([
+      true,
+      false,
+    ]);
+    // A deeper blockquote ends the paragraph…
+    expect(states('<!-- a --> text <!-- b\n> c --> d\n')).toEqual([true, false]);
+    // …and a code span with it, so the comment after it is not in a span.
+    expect(closed('<!-- a -->x`l\n>> b <!-- c -->\nm`\n')).toEqual(['<!-- a -->', '<!-- c -->']);
+    // In a list item, after a `-->` on a later line, and after an opener
+    // left unclosed (literal text).
+    expect(states('- <!-- a --> text <!-- b\n  > c --> d\n')).toEqual([true, false]);
+    expect(states('<!-- a\nb --> h | i\n-|-\n| x <!--\n--> |\n')).toEqual([true, false]);
+    expect(
+      slices('<!-- x`l\n>> b <!-- c\nm`\n', htmlCommentRanges('<!-- x`l\n>> b <!-- c\nm`\n'))
+    ).toEqual(['<!--', '<!--']);
+    // A comment alone on its line still opens nothing: the text below starts
+    // a paragraph of its own, which a later line may continue.
+    expect(closed('<!-- a -->\ntext <!-- b\nc -->\n')).toEqual(['<!-- a -->', '<!-- b\nc -->']);
+  });
+
+  // MDX reads `{/**/} text` and `\<!-- text` (what dwar leaves) as text, which
+  // continues the paragraph above; and it rejects a raw `<!` starting a line
+  // even inside a code span, so such a comment is always reported.
+  it('reads a line-starting comment with text after it as a continuation line', () => {
+    // The paragraph goes on, so an inline comment above may close below…
+    expect(closed('a <!-- x\n<!-- y --> b -->\n')).toEqual(['<!-- x\n<!-- y -->']);
+    // …a code span may run across it (a backtick inside it does not count)…
+    expect(closed('`l\n<!-- ` --> m` <!-- c -->\n')).toEqual(['<!-- ` -->', '<!-- c -->']);
+    // …and it is reported even inside that span, closed or not.
+    expect(closed('`l\n<!-->`<!--`g\n')).toEqual(['<!-->']);
+    expect(slices('m`\n<!--\n`<!--`\n', htmlCommentRanges('m`\n<!--\n`<!--`\n'))).toEqual([
+      '<!--',
+      '<!--',
+    ]);
+    // In a table it is a row.
+    expect(htmlCommentRanges('| h |\n|---|\n<!-- x --> a <!--\n| b --> |\n')[1].closed).toBe(false);
+  });
+
   it('does not let an escaped \\] start a protected link tail', () => {
     expect(closed('\\[a\\](http://x/<!--y-->z) more')).toEqual(['<!--y-->']);
   });

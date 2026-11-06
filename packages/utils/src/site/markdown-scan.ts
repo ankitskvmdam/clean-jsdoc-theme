@@ -150,6 +150,46 @@ function columns(ws: string): number {
   return n;
 }
 
+/** A line split into its blockquote markers, indentation and the rest. */
+interface LineParts {
+  /** The quote prefix ({@link QUOTE_PREFIX}). */
+  quote: string;
+  /** Its `>` count: the line's quote depth. */
+  depth: number;
+  /** The spaces/tabs after the quote prefix. */
+  ws: string;
+  /** Their column width. */
+  indent: number;
+  /** The line after both. */
+  rest: string;
+}
+
+function lineParts(line: string): LineParts {
+  const quote = QUOTE_PREFIX.exec(line)![0];
+  let depth = 0;
+  for (const ch of quote) if (ch === '>') depth++;
+  const body = line.slice(quote.length);
+  const ws = /^[ \t]*/.exec(body)![0];
+  return { quote, depth, ws, indent: columns(ws), rest: body.slice(ws.length) };
+}
+
+/**
+ * What dwar's `stripHtmlComments` keeps of a later line of a multi-line comment
+ * block opened at quote depth `depth`: the line's quote markers and
+ * indentation, or — when it is quoted deeper — just its first `depth` markers
+ * (each with the one space it may take).
+ */
+function blockContinuationPrefix(line: string, depth: number): string {
+  const p = lineParts(line);
+  if (p.depth <= depth) return p.quote + p.ws;
+  let i = 0;
+  for (let d = 0; d < depth; d++) {
+    i = p.quote.indexOf('>', i) + 1;
+    if (p.quote[i] === ' ' || p.quote[i] === '\t') i++;
+  }
+  return p.quote.slice(0, i);
+}
+
 // The two line tests below are written out by hand: as regexes
 // (`^([-*_])(?:[ \t]*\1){2,}[ \t]*$` and
 // `^\|?[ \t]*:?-+:?[ \t]*(?:\|[ \t]*:?-+:?[ \t]*)*\|?[ \t]*$`) V8 runs out of
@@ -229,8 +269,14 @@ function tableCells(row: string): number {
 /** Block-level structure of a source: fences, comment blocks, paragraph breaks. */
 interface BlockScan {
   fences: TextRange[];
-  /** Comments that start a line (closed or not), in source order. */
+  /** Comment blocks (all closed; see `scanBlocks`), in source order. */
   blockComments: HtmlCommentRange[];
+  /**
+   * Comments that start a line of text — no block, as MDX reads the line — in
+   * source order: one that closes on its line with text after it, or an
+   * unclosed opener (covering just the `<!--`).
+   */
+  lineComments: HtmlCommentRange[];
   /** Sorted start offsets of lines that end the paragraph before them. */
   breaks: number[];
 }
@@ -264,15 +310,24 @@ function closerFinder(source: string): (from: number) => number {
  * cursor that only moves forward — so an unclosed run costs one step past each
  * later run of its own length, never a rescan of the paragraph (a regex closer
  * search rescans it once per unclosed run, and once more per shorter length).
+ *
+ * Runs inside the sorted, disjoint `ignore` ranges (comments dwar drops before
+ * MDX reads the text) are not runs at all.
  */
-function codeSpanFinder(source: string): (start: number, end: number) => number {
+function codeSpanFinder(
+  source: string,
+  ignore: readonly TextRange[] = []
+): (start: number, end: number) => number {
   let runsByLength: Map<number, number[]> | undefined;
   const cursors = new Map<number, number>();
   return (start, end) => {
     if (!runsByLength) {
       runsByLength = new Map();
       const run = /`+/g;
+      let g = 0;
       for (let m = run.exec(source); m !== null; m = run.exec(source)) {
+        while (g < ignore.length && ignore[g].end <= m.index) g++;
+        if (g < ignore.length && ignore[g].start <= m.index) continue;
         const runs = runsByLength.get(m[0].length);
         if (runs) runs.push(m.index);
         else runsByLength.set(m[0].length, [m.index]);
@@ -298,7 +353,11 @@ function codeSpanFinder(source: string): (start: number, end: number) => number 
  *     less than the item's content;
  *   - a comment block (a line starting `<!--`) opens only outside a fence and
  *     runs through the line holding its `-->`, so a fence line inside one is
- *     not a fence;
+ *     not a fence. The rules follow MDX, which reads the page once dwar has
+ *     dropped the comment: text after a `-->` on a later line opens a
+ *     paragraph, and a line where the comment closes with text after it, or
+ *     whose `<!--` is unclosed (literal), is no comment block at all but a
+ *     line of text like any other — it may continue the paragraph above it;
  *   - a line ends the paragraph before it (a "break", where an inline comment
  *     must stop) only if CommonMark lets it interrupt a paragraph: blank, an
  *     ATX heading, a thematic break or (in the paragraph's own container, not
@@ -320,6 +379,7 @@ function codeSpanFinder(source: string): (start: number, end: number) => number 
 function scanBlocks(source: string): BlockScan {
   const fences: TextRange[] = [];
   const blockComments: HtmlCommentRange[] = [];
+  const lineComments: HtmlCommentRange[] = [];
   const breaks: number[] = [];
   const nextCloser = closerFinder(source);
 
@@ -348,13 +408,8 @@ function scanBlocks(source: string): BlockScan {
     const line = source.slice(pos, lineEnd).replace(/\r$/, '');
     let next = nl === -1 ? source.length + 1 : nl + 1;
 
-    const quote = QUOTE_PREFIX.exec(line)![0];
-    let depth = 0;
-    for (const ch of quote) if (ch === '>') depth++;
+    const { quote, depth, indent, rest } = lineParts(line);
     const body = line.slice(quote.length);
-    const ws = /^[ \t]*/.exec(body)![0];
-    const indent = columns(ws);
-    const rest = body.slice(ws.length);
 
     // A fence opened inside a blockquote ends with the quote.
     if (fence && depth < fence.depth) {
@@ -398,7 +453,24 @@ function scanBlocks(source: string): BlockScan {
     }
 
     const open = FENCE_OPEN.exec(body);
-    const comment = open ? null : COMMENT_BLOCK.exec(body);
+    // A comment starting the line: a comment block, unless MDX reads the line
+    // as text — when dwar leaves text on it, after the `{/**/}` of a comment
+    // that closes on the line, or after the `\<!--` of one left unclosed. Such
+    // a line is read like any other (it may continue the paragraph above, or
+    // be a table row), and its comment is a line comment.
+    let comment: TextRange | undefined;
+    const commentOpen = open ? null : COMMENT_BLOCK.exec(body);
+    if (commentOpen) {
+      const start = pos + quote.length + commentOpen[1].length;
+      const openEnd = start + 4;
+      const empty = /^-?>/.exec(source.slice(openEnd, openEnd + 2));
+      const closer = empty ? -1 : nextCloser(openEnd);
+      const end = empty ? openEnd + empty[0].length : closer === -1 ? -1 : closer + 3;
+      if (end === -1) lineComments.push({ start, end: openEnd, closed: false });
+      else if (end <= lineEnd && source.slice(end, lineEnd).trim() !== '') {
+        lineComments.push({ start, end, closed: true });
+      } else comment = { start, end };
+    }
     const item = LIST_ITEM.exec(rest);
 
     if (table) {
@@ -448,20 +520,23 @@ function scanBlocks(source: string): BlockScan {
     } else if (comment) {
       breaks.push(pos);
       para = undefined;
-      const start = pos + quote.length + comment[1].length;
-      const openEnd = start + 4;
-      const empty = /^-?>/.exec(source.slice(openEnd, openEnd + 2));
-      const closer = empty ? -1 : nextCloser(openEnd);
-      if (empty) {
-        blockComments.push({ start, end: openEnd + empty[0].length, closed: true });
-      } else if (closer === -1) {
-        blockComments.push({ start, end: openEnd, closed: false });
-      } else {
-        blockComments.push({ start, end: closer + 3, closed: true });
+      blockComments.push({ ...comment, closed: true });
+      if (comment.end > lineEnd) {
         // The block ends with the line holding `-->`; whatever follows the
-        // closer on that line is left to the inline scan.
-        const closeLineEnd = source.indexOf('\n', closer + 3);
+        // closer on that line is left to the inline scan. MDX reads it as a
+        // paragraph: dwar blanks the lines in between, each keeping its
+        // prefix, so the text starts one after the closer line's prefix.
+        const closeLine = source.lastIndexOf('\n', comment.end - 1) + 1;
+        const closeLineEnd = source.indexOf('\n', comment.end);
         next = closeLineEnd === -1 ? source.length + 1 : closeLineEnd + 1;
+        const text = source.slice(comment.end, next - 1).replace(/\r$/, '');
+        if (text.trim() !== '') {
+          const p = lineParts(
+            blockContinuationPrefix(source.slice(closeLine, comment.end), depth) + text
+          );
+          para = { indent: p.indent, depth: p.depth };
+          paraText = p.rest;
+        }
       }
     } else if (
       ATX_HEADING.test(rest) ||
@@ -507,20 +582,17 @@ function scanBlocks(source: string): BlockScan {
       paraText = rest;
     }
     if (para && paraText !== undefined && next < source.length) {
-      // A delimiter row on the next line, at this depth and within three
-      // columns of the paragraph's content, with as many cells: a table, whose
-      // header row interrupts the paragraph.
+      // A delimiter row on the next line, at the paragraph's depth and within
+      // three columns of its content, with as many cells: a table, whose header
+      // row interrupts the paragraph.
       const nl2 = source.indexOf('\n', next);
-      const below = source.slice(next, nl2 === -1 ? source.length : nl2).replace(/\r$/, '');
-      const q2 = QUOTE_PREFIX.exec(below)![0];
-      let d2 = 0;
-      for (const ch of q2) if (ch === '>') d2++;
-      const b2 = below.slice(q2.length);
-      const ws2 = /^[ \t]*/.exec(b2)![0];
-      const delim = b2.slice(ws2.length);
-      const i2 = columns(ws2);
+      const below = lineParts(
+        source.slice(next, nl2 === -1 ? source.length : nl2).replace(/\r$/, '')
+      );
+      const delim = below.rest;
+      const i2 = below.indent;
       if (
-        d2 === depth &&
+        below.depth === para.depth &&
         i2 < para.indent + 4 &&
         !(para.inItem && i2 < para.indent) &&
         /[|:]/.test(delim) &&
@@ -531,7 +603,7 @@ function scanBlocks(source: string): BlockScan {
       ) {
         breaks.push(pos);
         table = {
-          depth,
+          depth: para.depth,
           indent: para.inItem ? para.indent : 0,
           inItem: para.inItem === true,
           delim: next,
@@ -542,7 +614,7 @@ function scanBlocks(source: string): BlockScan {
     pos = next;
   }
   if (fence) fences.push({ start: fence.start, end: source.length });
-  return { fences, blockComments, breaks };
+  return { fences, blockComments, lineComments, breaks };
 }
 
 /** First value in sorted `arr` strictly greater than `x`, or `Infinity`. */
@@ -613,9 +685,15 @@ const TOKEN =
 /**
  * Every HTML comment in prose — outside fenced code, inline code, tags and link
  * destinations/titles — with CommonMark's extent:
- *   - one that starts a line (after any quote/list markers) is an HTML block
- *     and runs to the first `-->` anywhere, even across blank lines and fences
- *     (the usual way to comment out a whole section, code blocks included);
+ *   - one that starts a line (after any quote/list markers) and ends it or
+ *     runs past it is an HTML block and runs to the first `-->` anywhere, even
+ *     across blank lines and fences (the usual way to comment out a whole
+ *     section, code blocks included);
+ *   - one that starts a line and closes on it with text after it, and an
+ *     unclosed opener starting a line, are always reported: MDX rejects a raw
+ *     `<!` at the start of a line even inside a code span or a tag. A code
+ *     span, tag or link may still run across such a comment, as MDX reads the
+ *     line around it;
  *   - one inside a paragraph ends at the first `-->` before the paragraph does,
  *     so it may not cross a line that interrupts the paragraph (see
  *     `scanBlocks`);
@@ -631,7 +709,7 @@ const TOKEN =
  */
 export function htmlCommentRanges(source: string): HtmlCommentRange[] {
   if (!source.includes('<!--')) return [];
-  const { fences, blockComments, breaks } = scanBlocks(source);
+  const { fences, blockComments, lineComments, breaks } = scanBlocks(source);
   // Fences and comment blocks never overlap (one pass decided both), so one
   // sorted list of regions the inline scan must skip, walked with a pointer.
   const regions: HtmlCommentRange[] = [
@@ -639,13 +717,25 @@ export function htmlCommentRanges(source: string): HtmlCommentRange[] {
     ...blockComments,
   ].sort((a, b) => a.start - b.start);
   let r = 0;
+  // Line comments are skipped too, but a code span, tag or link may run
+  // across one (MDX reads the text around it as one paragraph), and a
+  // backtick inside one opens or closes no span (dwar drops it).
+  let l = 0;
   const nextCloser = closerFinder(source);
-  const codeSpanEnd = codeSpanFinder(source);
+  const codeSpanEnd = codeSpanFinder(source, lineComments);
 
+  // The comments scanBlocks found, in source order, each reported once the
+  // scan has passed its start — unless an inline comment before it ran on
+  // into it (its `<!--` is that comment's text).
+  const found: HtmlCommentRange[] = [...blockComments, ...lineComments].sort(
+    (x, y) => x.start - y.start
+  );
   const out: HtmlCommentRange[] = [];
   let b = 0;
-  const flushBlocksBefore = (pos: number): void => {
-    while (b < blockComments.length && blockComments[b].start < pos) out.push(blockComments[b++]);
+  const flushFoundBefore = (pos: number): void => {
+    for (; b < found.length && found[b].start < pos; b++) {
+      if (out.length === 0 || out[out.length - 1].end <= found[b].start) out.push(found[b]);
+    }
   };
 
   TOKEN.lastIndex = 0;
@@ -656,6 +746,11 @@ export function htmlCommentRanges(source: string): HtmlCommentRange[] {
     const region = regions[r];
     if (region && region.start <= start) {
       TOKEN.lastIndex = Math.max(region.end, start + 1);
+      continue;
+    }
+    while (l < lineComments.length && lineComments[l].end <= start) l++;
+    if (l < lineComments.length && lineComments[l].start <= start) {
+      TOKEN.lastIndex = lineComments[l].end;
       continue;
     }
     if (m[0][0] === '`') {
@@ -693,7 +788,7 @@ export function htmlCommentRanges(source: string): HtmlCommentRange[] {
       // block always starts on a break line, so the next break covers both.
       if (closer !== -1 && closer + 3 <= firstAfter(breaks, start)) end = closer + 3;
     }
-    flushBlocksBefore(start);
+    flushFoundBefore(start);
     if (end === -1) {
       out.push({ start, end: openEnd, closed: false });
       TOKEN.lastIndex = openEnd;
@@ -702,7 +797,7 @@ export function htmlCommentRanges(source: string): HtmlCommentRange[] {
       TOKEN.lastIndex = end;
     }
   }
-  flushBlocksBefore(Infinity);
+  flushFoundBefore(Infinity);
   return out;
 }
 
