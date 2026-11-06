@@ -177,8 +177,10 @@ function closerFinder(source: string): (from: number) => number {
  * ends, or -1 when the run opens none, for runs at increasing positions.
  * CommonMark: a run of N backticks closes on the next maximal run of exactly N
  * (backslashes are literal INSIDE a span, so `a\` closes on the backtick after
- * the backslash), and a span never crosses a blank line; a run with no closer
- * is literal backticks.
+ * the backslash); a run with no closer is literal backticks. A span may not
+ * cross a blank line either, but that is the caller's check: every blank line
+ * outside a fence or comment block is one of `scanBlocks`' paragraph breaks,
+ * which `htmlCommentRanges` already tests each span against.
  *
  * Linear in the source however the runs fall: the maximal runs are collected
  * once, on the first call, and grouped by length, and each length keeps a
@@ -189,9 +191,6 @@ function closerFinder(source: string): (from: number) => number {
 function codeSpanFinder(source: string): (start: number, end: number) => number {
   let runsByLength: Map<number, number[]> | undefined;
   const cursors = new Map<number, number>();
-  // Newlines that start a blank line (the next line is empty or whitespace).
-  const blankLines: number[] = [];
-  let blank = 0;
   return (start, end) => {
     if (!runsByLength) {
       runsByLength = new Map();
@@ -201,8 +200,6 @@ function codeSpanFinder(source: string): (start: number, end: number) => number 
         if (runs) runs.push(m.index);
         else runsByLength.set(m[0].length, [m.index]);
       }
-      const nl = /\n(?=[ \t\r]*\n)/g;
-      for (let m = nl.exec(source); m !== null; m = nl.exec(source)) blankLines.push(m.index);
     }
     const len = end - start;
     const runs = runsByLength.get(len);
@@ -211,10 +208,7 @@ function codeSpanFinder(source: string): (start: number, end: number) => number 
     while (c < runs.length && runs[c] < end) c++;
     cursors.set(len, c);
     if (c === runs.length) return -1;
-    const close = runs[c];
-    while (blank < blankLines.length && blankLines[blank] < end) blank++;
-    if (blank < blankLines.length && blankLines[blank] < close) return -1;
-    return close + len;
+    return runs[c] + len;
   };
 }
 
