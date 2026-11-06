@@ -401,6 +401,25 @@ describe('stripHtmlComments', () => {
     expect(stripHtmlComments('```<!-- x -->```` x\n')).toBe('```{/**/}```` x\n');
   });
 
+  it('ends a bare URL where a comment glued to it stood', () => {
+    // GFM's autolink literal would take the placeholder as part of the URL;
+    // an empty fragment ends it, as the comment's `<` does on GitHub.
+    expect(stripHtmlComments('See https://example.com/docs<!-- TODO -->.\n')).toBe(
+      'See https://example.com/docs<></>{/**/}.\n'
+    );
+    expect(stripHtmlComments('www.x.org<!-- a --><!-- b -->/y\n')).toBe(
+      'www.x.org<></>{/**/}{/**/}/y\n'
+    );
+    expect(stripHtmlComments('See http://x/a<!-- a\nb -->.\n')).toBe(
+      'See http://x/a<></>{/*\n*/}.\n'
+    );
+    // Not after a space, or once the run since the URL holds one.
+    expect(stripHtmlComments('See https://x.y/a <!-- a -->.\n')).toBe(
+      'See https://x.y/a {/**/}.\n'
+    );
+    expect(stripHtmlComments('https://x.y/a b<!-- a -->c\n')).toBe('https://x.y/a b{/**/}c\n');
+  });
+
   it('drops a multi-line comment, including one that spans a blank line', () => {
     // The comment's four newlines stay, so later line numbers don't move.
     expect(stripHtmlComments('a\n\n<!--\nline one\n\nline two\n-->\n\nb\n')).toBe(
@@ -579,7 +598,8 @@ describe('stripHtmlComments', () => {
 
   it('drops a comment after escaped brackets (no link, so nothing protects it)', () => {
     expect(stripHtmlComments('\\[a\\](http://x/<!--y-->z) more\n')).toBe(
-      '\\[a\\](http://x/{/**/}z) more\n'
+      // The bare URL is an autolink, which the fragment ends where `<` did.
+      '\\[a\\](http://x/<></>{/**/}z) more\n'
     );
   });
 

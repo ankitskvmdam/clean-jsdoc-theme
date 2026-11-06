@@ -1082,6 +1082,17 @@ describe('render() — HTML comments in prose', () => {
     expect(main).toContain('x &lt;!--');
   });
 
+  it('ends a bare URL where a comment glued to it stood', async () => {
+    const body = 'See https://example.com/docs<!-- TODO -->. And `a`<!-- b -->`c`.\n';
+    const { err, html } = await renderOne('url-comment', body);
+    expect(err, err?.message).toBeUndefined();
+    const main = mainOf(html);
+    expect(main).toContain('href="https://example.com/docs"');
+    expect(main).not.toContain('%7B');
+    expect(main).not.toContain('TODO');
+    expect(main.match(/<code[ >]/g)).toHaveLength(2);
+  });
+
   it('reports an MDX error on its real line after an inline multi-line comment', async () => {
     const body = ['l1 <!--', 'c2', 'c3 -->', 'l4', 'bad <Unclosed line 5', 'l6', ''].join('\n');
     const { err } = await renderOne('drift-inline', body);

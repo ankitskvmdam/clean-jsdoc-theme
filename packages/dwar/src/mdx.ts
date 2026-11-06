@@ -272,9 +272,12 @@ export function pageCommentRanges(source: string): HtmlCommentRange[] {
  * the paragraph or a setext heading), the inline syntax on either side doesn't
  * join (`` `a`<!-- x -->`b` `` stays two code spans, `[a]<!-- -->[b]` two
  * references), and the `<!-- -->` idiom between two lists still separates
- * them. The newlines are kept, outside the expression, so later line numbers
- * (and `codeFrame`) stay exact, which decides what a comment spanning lines
- * leaves behind:
+ * them. Right after a bare URL an empty JSX fragment, `<></>`, comes first: a
+ * GFM autolink literal would take the placeholder as more of its URL, and runs
+ * only up to a `<` — where the comment's own `<` ends it on GitHub. The
+ * newlines are kept, outside the expression, so later line numbers (and
+ * `codeFrame`) stay exact, which decides what a comment spanning lines leaves
+ * behind:
  *   - one that starts a line (an HTML block in CommonMark) leaves the
  *     placeholder and then its other lines blank — ending the paragraph
  *     before it, as CommonMark's HTML block does (a list item that continues
@@ -328,12 +331,19 @@ export function stripHtmlComments(
   };
   let cursor = 0;
   for (const c of comments) {
-    append(source.slice(cursor, c.start));
+    const before = source.slice(cursor, c.start);
+    append(before);
     cursor = c.end;
     if (!c.closed) {
       append('\\<!--');
       continue;
     }
+    // Glued to a bare URL, the placeholder would be read as more of the URL
+    // (GFM autolink literals run up to whitespace or `<`): an empty fragment
+    // goes first, ending the link where the comment's `<` ends it on GitHub.
+    // (Only the text since the previous comment can hold one: a URL before
+    // that comment was ended there.)
+    if (endsInAutolink(before)) append(EMPTY_FRAGMENT);
     const lines = source.slice(c.start, c.end).split('\n');
     if (lines.length === 1) {
       append(EMPTY_COMMENT);
@@ -367,6 +377,20 @@ export function stripHtmlComments(
 
 /** What {@link stripHtmlComments} leaves where a comment's first line stood. */
 const EMPTY_COMMENT = '{/**/}';
+/** An empty JSX fragment: renders nothing, and its `<` ends an autolink literal. */
+const EMPTY_FRAGMENT = '<></>';
+
+/**
+ * Whether `text` ends in a GFM autolink literal (`https://…`, `www.…`): its
+ * last run without whitespace or `<` holds a protocol or `www.`. Linear — a
+ * regex tried at every protocol in a long run would rescan the run each time.
+ */
+function endsInAutolink(text: string): boolean {
+  let i = text.length;
+  while (i > 0 && !/[\s<]/.test(text[i - 1])) i--;
+  return /https?:\/\/|www\./i.test(text.slice(i));
+}
+
 /** Text that may precede a line-starting (block) comment: quote/list markers and whitespace. */
 const LINE_START = /^(?:[ \t]{0,3}>[ \t]?)*[ \t]*(?:(?:[-*+]|\d{1,9}[.)])[ \t]+)?$/;
 /** The quote markers and indentation opening a continuation line. */
