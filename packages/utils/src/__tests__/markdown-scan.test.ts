@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import {
   fencedCodeRanges,
@@ -589,5 +590,25 @@ describe('markdown-scan performance', () => {
     ['one tag full of = signs', '<a ' + '= '.repeat(MB / 2) + '<!--'],
   ])('%s (1MB) scans as raw HTML in under a second', (_name, src) => {
     expect(timeHtml(src)).toBeLessThan(1000);
+  });
+});
+
+describe('markdown-scan in the browser bundle', () => {
+  // rang bundles this module into the island script, and a bundler keeps a
+  // module-level `RegExp(…)` call even when nothing uses it (see the note at
+  // the top of the module): every pattern must be a literal or built lazily.
+  it('builds a RegExp only inside the lazy htmlBlockStartRe', () => {
+    const lines = readFileSync(new URL('../site/markdown-scan.ts', import.meta.url), 'utf8').split(
+      /\r?\n/
+    );
+    const from = lines.findIndex((l) => l.startsWith('function htmlBlockStartRe('));
+    const to = lines.findIndex((l, i) => i > from && l === '}');
+    expect(from).toBeGreaterThan(-1);
+    // Lines of code (not comments) that call RegExp.
+    const calls = lines
+      .map((l, i) => (/^\s*(?:\/\/|\/?\*)/.test(l) || !l.includes('RegExp(') ? -1 : i))
+      .filter((i) => i !== -1);
+    expect(calls.length).toBeGreaterThan(0);
+    for (const i of calls) expect(i > from && i < to, `line ${i + 1}: ${lines[i]}`).toBe(true);
   });
 });
