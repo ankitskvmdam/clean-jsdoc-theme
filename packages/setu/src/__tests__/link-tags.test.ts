@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { InlineCode, Link, Paragraph, Root, Text } from 'mdast';
-import { resolveLinkTags } from '../mdast/link-tags';
+import { hasLinkTag, linkTagsToPhrasing, resolveLinkTags } from '../mdast/link-tags';
 import { inlineCode, p, root, text } from '../mdast/builders';
 import type { ResolvedLink } from '../link-registry';
 
@@ -155,5 +155,39 @@ describe('resolveLinkTags', () => {
     const emphasis = children(tree)[0] as { children: Link[] };
     expect(emphasis.children[0].type).toBe('link');
     expect(emphasis.children[0].url).toBe('/baseentity');
+  });
+});
+
+describe('hasLinkTag', () => {
+  it('is true for every tag shape, false for anything else, and stateless', () => {
+    expect(hasLinkTag('{@link BaseEntity}')).toBe(true);
+    expect(hasLinkTag('{@linkcode BaseEntity}')).toBe(true);
+    expect(hasLinkTag('{@linkplain BaseEntity}')).toBe(true);
+    expect(hasLinkTag('[end]{@link base/chains#end}')).toBe(true);
+    expect(hasLinkTag('{@link BaseEntity} | 0')).toBe(true);
+    expect(hasLinkTag('"see {@link BaseEntity}"')).toBe(true);
+    expect(hasLinkTag('{@tutorial intro}')).toBe(false);
+    expect(hasLinkTag('{a: 1}')).toBe(false);
+    expect(hasLinkTag('""')).toBe(false);
+    expect(hasLinkTag('')).toBe(false);
+    // The global regex must not carry `lastIndex` between calls.
+    expect(hasLinkTag('{@link BaseEntity}')).toBe(true);
+    expect(hasLinkTag('{@link BaseEntity}')).toBe(true);
+  });
+});
+
+describe('linkTagsToPhrasing', () => {
+  it('links a tag and keeps the text around it', () => {
+    expect(linkTagsToPhrasing('{@link BaseEntity} | 0', resolve)).toEqual([
+      { type: 'link', url: '/baseentity', children: [{ type: 'text', value: 'BaseEntity' }] },
+      { type: 'text', value: ' | 0' },
+    ]);
+  });
+
+  it('falls back to inlineCode for an unresolved target, text for no tag', () => {
+    expect(linkTagsToPhrasing('{@link Nope}', resolve)).toEqual([
+      { type: 'inlineCode', value: 'Nope' },
+    ]);
+    expect(linkTagsToPhrasing('plain', resolve)).toEqual([{ type: 'text', value: 'plain' }]);
   });
 });

@@ -115,6 +115,22 @@ there are no qualifying globals, no Globals page is emitted. See
 A symbol kind with no section mapping falls into a catch-all **Other** section,
 appended last — a safety net that's empty in practice.
 
+### Private and ignored symbols
+
+A symbol tagged `@private` (or `@access private`) or `@ignore` gets no page,
+sidebar entry, search entry or `llms.txt` line — and neither does anything
+documented inside a hidden namespace, module or class. A class whose only private
+part is its constructor keeps its page; only the Constructor section is hidden.
+`@ignore` on a constructor is different: JSDoc merges the constructor comment
+into the class, so the whole class is hidden.
+
+To document private symbols, run JSDoc with `--private`, or with
+`--access private` or `--access all` (`"private": true` or `"access": "all"` under
+`opts` in `jsdoc.json` works too). The other `--access` levels (`public`,
+`protected`, `package`, `undefined`) are not supported: symbols with those access
+levels are always documented. `@ignore`d symbols are never shown. Under TypeDoc,
+private symbols follow TypeDoc's own `excludePrivate` option.
+
 ## The source-file viewer
 
 When source viewing is on, the theme renders each project source file as a

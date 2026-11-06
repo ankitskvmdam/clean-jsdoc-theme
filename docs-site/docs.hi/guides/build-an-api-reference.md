@@ -121,6 +121,23 @@ members, constants, enums, events — एक एकल synthetic **Globals** pag
 में आता है, जो सबसे अंत में जोड़ा जाता है — एक सुरक्षा-जाल जो व्यवहार में खाली
 रहता है।
 
+### Private और ignored symbols
+
+`@private` (या `@access private`) या `@ignore` से tag किए गए symbol को कोई page,
+sidebar entry, search entry या `llms.txt` line नहीं मिलती — और किसी hidden
+namespace, module या class के अंदर documented किसी भी चीज़ को भी नहीं। जिस class का
+केवल constructor private है, उसका page बना रहता है; केवल Constructor section छिपाया
+जाता है। Constructor पर `@ignore` अलग है: JSDoc constructor comment को class में merge
+करता है, इसलिए पूरी class छिप जाती है।
+
+Private symbols को document करने के लिए JSDoc को `--private` के साथ, या
+`--access private` या `--access all` के साथ चलाएँ (`jsdoc.json` में `opts` के
+अंतर्गत `"private": true` या `"access": "all"` भी काम करता है)। बाकी `--access`
+levels (`public`, `protected`, `package`, `undefined`) समर्थित नहीं हैं: उन access
+levels वाले symbols हमेशा documented रहते हैं। `@ignore` किए गए symbols कभी नहीं
+दिखाए जाते। TypeDoc में, private symbols TypeDoc के अपने `excludePrivate` option का
+पालन करते हैं।
+
 ## Source-file viewer
 
 जब source viewing चालू हो, theme प्रत्येक project source file को एक read-only,

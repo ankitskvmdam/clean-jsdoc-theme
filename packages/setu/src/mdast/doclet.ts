@@ -21,6 +21,7 @@ import {
 import type { PlaygroundOpts } from '../playground';
 import { htmlToMdastBlocks, htmlToMdastInline, markdownToMdastInline } from './from-html';
 import { resolveSlotText, type SlotResolver } from '../slots';
+import { hasLinkTag, linkTagsToPhrasing } from './link-tags';
 
 // ── Small extractors ────────────────────────────────────────────────────────
 
@@ -558,6 +559,53 @@ function nestParamItems(
   return items;
 }
 
+/**
+ * A default value as the author wrote it, for an inline-code span — or `null`
+ * when there is nothing to show. JSDoc (and the TypeDoc bridge) hand string
+ * defaults over as SOURCE TEXT, quotes included (`[name=""]` → `'""'`,
+ * `[sep='']` → `"''"`, `[o={}]` → `'{}'`), so a string is shown verbatim —
+ * JSON-stringifying it again is what turned `""` into `"\"\""`. JSDoc casts
+ * bare literals to values (`jsdoc/util/cast`: `[n=0]` → `0`, `[f=true]` →
+ * `true`, `[x=null]` → `null`, `[a=NaN]` → `NaN`), so a non-string primitive is
+ * printed with `String` — `JSON.stringify` would turn `NaN`/`Infinity` into
+ * `null` — keeping `-0`'s sign, which `String` drops. Only a real object (never
+ * produced by JSDoc's cast, but `defaultvalue` is untyped) is JSON-encoded.
+ * Callers wrap the result in `inlineCode` (see `defaultValuePhrasing`), so
+ * braces, `<`, and backticks in a default can't be read as MDX expressions/JSX
+ * or break the span (the serializer widens the fence). An empty string would
+ * make an empty code span, so it shows nothing.
+ */
+export function formatDefaultValue(value: unknown): string | null {
+  if (value === undefined) return null;
+  let label: string | undefined;
+  if (typeof value === 'string') label = value;
+  else if (Object.is(value, -0)) label = '-0';
+  else if (value !== null && typeof value === 'object') label = JSON.stringify(value);
+  else label = String(value);
+  return label === undefined || label === '' ? null : label;
+}
+
+/**
+ * Phrasing for a default value: an inline-code span holding it exactly as
+ * written (see {@link formatDefaultValue}) — unless it carries a `{@link}` /
+ * `{@linkcode}` / `{@linkplain}` tag and a resolver is at hand, in which case it
+ * gets the same link phrasing a description gets: a resolved tag becomes a link
+ * (code-styled for `@linkcode`), an unresolved one the inert code span, text
+ * around a tag plain text. The page-level `resolveLinkTags` pass never looks
+ * inside a code span, so a `[priority={@link Priority.NORMAL}]` default would
+ * otherwise print the raw tag. Without a resolver the tag stays verbatim in
+ * code. `null` when there is nothing to show.
+ */
+function defaultValuePhrasing(
+  value: unknown,
+  resolveLink: LinkResolver | undefined
+): PhrasingContent[] | null {
+  const label = formatDefaultValue(value);
+  if (label === null) return null;
+  if (resolveLink && hasLinkTag(label)) return linkTagsToPhrasing(label, resolveLink);
+  return [inlineCode(label)];
+}
+
 function paramListItem(
   param: TDocletParam,
   ctx: ParamSlotCtx | undefined,
@@ -569,22 +617,21 @@ function paramListItem(
 
   // The parenthetical is `(type, optional, default: value)`. The type is the
   // only linkable piece, so it renders as phrasing (a plain-text link when it
-  // resolves) while optional/default stay flat text — concatenating to the same
-  // string as before when nothing links.
+  // resolves); `optional` is flat text and the default an inline-code span — or
+  // link phrasing when it is a `{@link}` tag (see `defaultValuePhrasing`).
   const typeNodes = typeExpressionPhrasing(param.type, ctx?.resolveLink, 'text');
-  const trailingFlags: string[] = [];
-  if (param.optional) trailingFlags.push('optional');
-  if (param.defaultvalue !== undefined)
-    trailingFlags.push(`default: ${JSON.stringify(param.defaultvalue)}`);
-  if (typeNodes || trailingFlags.length > 0) {
+  const flags: PhrasingContent[][] = [];
+  if (param.optional) flags.push([text('optional')]);
+  const dv = defaultValuePhrasing(param.defaultvalue, ctx?.resolveLink);
+  if (dv) flags.push([text('default: '), ...dv]);
+  if (typeNodes || flags.length > 0) {
     if (line.length > 0) line.push(text(' '));
     line.push(text('('));
-    if (typeNodes) {
-      line.push(...typeNodes);
-      if (trailingFlags.length > 0) line.push(text(`, ${trailingFlags.join(', ')}`));
-    } else {
-      line.push(text(trailingFlags.join(', ')));
-    }
+    if (typeNodes) line.push(...typeNodes);
+    flags.forEach((flag, i) => {
+      if (typeNodes || i > 0) line.push(text(', '));
+      line.push(...flag);
+    });
     line.push(text(')'));
   }
 
@@ -953,10 +1000,17 @@ export function docletBlocks(
     if (typeNodes) blocks.push(p(strong(text('Type'))), p(...typeNodes));
   }
 
-  if (!skip.has('default') && doclet.defaultvalue !== undefined) {
-    const dv = doclet.defaultvalue;
-    const label = typeof dv === 'string' ? dv : JSON.stringify(dv);
-    blocks.push(p(strong(text('Default:')), text(' '), inlineCode(label)));
+  // A prose default (TypeDoc `@defaultValue see the docs`) renders as phrasing
+  // so its links and code spans survive; a value goes in a code span, or links
+  // when it is a `{@link}` tag (`defaultValuePhrasing`).
+  const defaultProse = skip.has('default') ? [] : htmlToMdastInline(doclet.defaultvaluehtml);
+  const defaultValue = skip.has('default')
+    ? null
+    : defaultValuePhrasing(doclet.defaultvalue, options.resolveLink);
+  if (defaultProse.length > 0) {
+    blocks.push(p(strong(text('Default:')), text(' '), ...defaultProse));
+  } else if (defaultValue) {
+    blocks.push(p(strong(text('Default:')), text(' '), ...defaultValue));
   }
 
   if (!skip.has('fires') && doclet.fires && doclet.fires.length > 0) {

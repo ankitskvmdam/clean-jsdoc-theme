@@ -136,6 +136,64 @@ function tagContentToText(
   return partsToMarkdown(parts, linkResolver).trim();
 }
 
+/**
+ * Doclet fields for a `@defaultValue` / `@default` tag: `defaultvalue` (a bare
+ * value, which setu shows in an inline-code span) or `defaultvaluehtml` (prose,
+ * which setu renders as phrasing so links and inline code survive).
+ *
+ * Follows TypeDoc's own model (`defaultBlockContent` in its comment parser):
+ * with `jsDocCompatibility.defaultTag` on (the default), TypeDoc wraps the tag
+ * in a ```` ```ts ```` fence only when the content has no code or inline-tag
+ * part of its own, and its default theme renders that as code. So:
+ * - exactly one code part (TypeDoc's fence, an author's fence, or one code
+ *   span) → a value, unwrapped and folded onto one line. That includes prose
+ *   TypeDoc fenced (`the current working directory`, `see [docs](url)`), which
+ *   TypeDoc's theme shows as code too;
+ * - mixed content (text with code spans, or any `{@link}`) → the author wrote
+ *   Markdown → prose;
+ * - plain text only (possible only with `jsDocCompatibility.defaultTag` off)
+ *   → prose if it contains whitespace, else a value (`42`).
+ */
+export function defaultTagFields(
+  parts: readonly CommentDisplayPart[],
+  linkResolver?: LinkResolver
+): { defaultvalue?: string; defaultvaluehtml?: string } {
+  const meaningful = parts.filter((p) => !(p.kind === 'text' && p.text.trim() === ''));
+  if (meaningful.length === 0) return {};
+  if (meaningful.length === 1 && meaningful[0].kind === 'code') {
+    const value = oneLine(unwrapCode(meaningful[0].text));
+    return value ? { defaultvalue: value } : {};
+  }
+  const textOnly = meaningful.every((p) => p.kind === 'text');
+  if (textOnly) {
+    const text = meaningful
+      .map((p) => p.text)
+      .join('')
+      .trim();
+    if (!/\s/.test(text)) return { defaultvalue: text };
+  }
+  const html = markdownToHtml(partsToMarkdown(parts, linkResolver));
+  return html ? { defaultvaluehtml: html } : {};
+}
+
+/** Fold a multi-line value onto one line (setu's code span is inline). */
+function oneLine(value: string): string {
+  return value.replace(/\s*\n\s*/g, ' ').trim();
+}
+
+/** Strip a Markdown code fence or code-span delimiters from a code part. */
+function unwrapCode(code: string): string {
+  const fence = /^(`{3,}|~{3,})[^\n]*\n([\s\S]*?)\n?\1\s*$/.exec(code);
+  if (fence) return fence[2];
+  const span = /^(`+)([\s\S]*?)\1$/.exec(code);
+  if (span) {
+    // CommonMark drops one padding space from each side of a code span.
+    const inner = span[2];
+    return /^ [\s\S]* $/.test(inner) && inner.trim() ? inner.slice(1, -1) : inner;
+  }
+  return code;
+}
+
 /** The subset of doclet fields derived from a comment's block tags + flags. */
 export interface CommentFields {
   description?: string;
@@ -147,6 +205,8 @@ export interface CommentFields {
   see?: string[];
   deprecated?: string | boolean;
   defaultvalue?: string;
+  /** A prose `@defaultValue` (HTML); see {@link defaultTagFields}. */
+  defaultvaluehtml?: string;
   since?: string;
   author?: string[];
   tags?: TDocletTag[];
@@ -229,7 +289,7 @@ export function commentFields(
         break;
       case 'defaultvalue':
       case 'default':
-        fields.defaultvalue = tagContentToText(block.content, linkResolver);
+        Object.assign(fields, defaultTagFields(block.content, linkResolver));
         break;
       case 'since':
         fields.since = tagContentToText(block.content, linkResolver);
@@ -348,6 +408,7 @@ export function applyCommentFields(doclet: TDoclet, fields: CommentFields): void
   if (fields.see) doclet.see = fields.see;
   if (fields.deprecated !== undefined) doclet.deprecated = fields.deprecated;
   if (fields.defaultvalue !== undefined) doclet.defaultvalue = fields.defaultvalue;
+  if (fields.defaultvaluehtml !== undefined) doclet.defaultvaluehtml = fields.defaultvaluehtml;
   if (fields.since !== undefined) doclet.since = fields.since;
   if (fields.author) doclet.author = fields.author;
   if (fields.tags) doclet.tags = fields.tags;

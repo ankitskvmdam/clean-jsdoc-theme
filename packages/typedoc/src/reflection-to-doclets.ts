@@ -358,6 +358,16 @@ function adaptContainer(
   resolveLink: LinkResolver
 ): void {
   const ctor = reflection.children?.find((c) => c.kindOf(ReflectionKind.Constructor));
+  // TypeDoc gives every class a Constructor reflection — an implicit one too —
+  // and removes it only when it excludes it (`private constructor()` under the
+  // default `excludePrivate`, `@internal`/`@hidden`). setu would still render a
+  // bare `new Name()`, advertising a constructor the user can't call, so hide
+  // the section instead.
+  if (!ctor && reflection.kindOf(ReflectionKind.Class)) doclet.hideconstructor = true;
+  // A kept non-public constructor (`excludePrivate: false`, or `protected`):
+  // setu badges the Constructor section with it.
+  const ctorAccess = ctor ? flagFields(ctor).access : undefined;
+  if (ctorAccess) doclet.constructoraccess = ctorAccess;
   const signature = firstSignature(ctor);
   if (signature) {
     const params = adaptParameters(signature, new Map(), resolveLink);
@@ -601,8 +611,11 @@ function adaptValue(
 
   // TypeDoc emits `...` as a placeholder for an initializer it doesn't print
   // (an object / complex value) — never a meaningful default, so don't carry it
-  // (it would render as a bare "Default: ..." line).
-  if (reflection.defaultValue !== undefined && reflection.defaultValue !== '...') {
+  // (it would render as a bare "Default: ..." line). An explicit
+  // `@defaultValue` tag (applied from the comment above) wins over the
+  // initializer: it is what the author chose to document.
+  const tagged = doclet.defaultvalue !== undefined || doclet.defaultvaluehtml !== undefined;
+  if (!tagged && reflection.defaultValue !== undefined && reflection.defaultValue !== '...') {
     doclet.defaultvalue = reflection.defaultValue;
   }
 
@@ -664,7 +677,12 @@ function adaptParameter(
 
   if (param.flags?.isOptional) out.optional = true;
   if (param.flags?.isRest) out.variable = true;
-  if (param.defaultValue !== undefined) out.defaultvalue = param.defaultValue;
+  // Same `...` placeholder as for properties (see `adaptProperty`): TypeDoc
+  // prints it for an object / array / complex initializer, so it never says
+  // anything — it rendered as a bare `` default: `...` ``.
+  if (param.defaultValue !== undefined && param.defaultValue !== '...') {
+    out.defaultvalue = param.defaultValue;
+  }
 
   // Description: prefer the parameter's own comment, fall back to a `@param` block.
   const ownDescription = summaryToHtml(param.comment, resolveLink);

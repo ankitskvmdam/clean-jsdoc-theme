@@ -48,13 +48,31 @@ const TAG_RE =
 type Tag = 'link' | 'linkcode' | 'linkplain';
 
 /**
- * Split one text value into a sequence of `text` / `link` / `inlineCode` nodes.
+ * Whether `value` carries at least one `{@link}` / `{@linkcode}` /
+ * `{@linkplain}` tag (either shape). `TAG_RE` is global/stateful, so its
+ * `lastIndex` is reset before and after the probe.
+ */
+export function hasLinkTag(value: string): boolean {
+  TAG_RE.lastIndex = 0;
+  const hit = TAG_RE.test(value);
+  TAG_RE.lastIndex = 0;
+  return hit;
+}
+
+/**
+ * Split one text value into a sequence of `text` / `link` / `inlineCode` nodes:
+ * each tag becomes a `link` when its target resolves (monospaced child for
+ * `@linkcode`, plain text otherwise) and an inert `inlineCode` span when it
+ * doesn't; the runs between tags stay `text`. This is the per-string half of
+ * {@link resolveLinkTags}, exported so a builder that holds a string it would
+ * otherwise put in a code span (a `{@link}` parameter default) can link it the
+ * same way a description is linked.
  *
  * Gaps between tags (and surrounding prose/punctuation) are preserved as `text`
  * nodes. A value with no tags returns a single-element array holding the
  * original node, so the common case allocates nothing extra.
  */
-function splitText(
+export function linkTagsToPhrasing(
   value: string,
   resolve: (target: string) => ResolvedLink | null
 ): PhrasingContent[] {
@@ -122,7 +140,7 @@ function buildNode(
  * Rewrite every `{@link}` family tag in `tree` in place.
  *
  * Walks all parents recursively, rebuilding each one's children: `text` children
- * are run through {@link splitText} (which may fan out into several nodes),
+ * are run through {@link linkTagsToPhrasing} (which may fan out into several nodes),
  * `code` / `inlineCode` children pass through untouched (and we never recurse
  * into them), and any other parent is recursed into and kept.
  */
@@ -139,7 +157,7 @@ function walk(parent: HasChildren, resolve: (target: string) => ResolvedLink | n
 
   for (const child of children) {
     if (child.type === 'text') {
-      next.push(...splitText(child.value, resolve));
+      next.push(...linkTagsToPhrasing(child.value, resolve));
     } else if (child.type === 'code' || child.type === 'inlineCode') {
       // Never rewrite a tag shown literally inside a code span/block.
       next.push(child);

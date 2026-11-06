@@ -15,6 +15,7 @@ import {
   normalizeDocGroups,
   normalizeMenu,
   cleanOutputDirEnabled,
+  includePrivateEnabled,
   normalizeMeta,
   normalizePlayground,
   normalizeSectionOrder,
@@ -148,6 +149,37 @@ describe('hasMarkdownPlugin', () => {
   it('does not match unrelated names that merely contain "markdown"', () => {
     expect(hasMarkdownPlugin(['plugins/markdown-extra'])).toBe(false);
     expect(hasMarkdownPlugin(['my-markdownish'])).toBe(false);
+  });
+});
+
+describe('includePrivateEnabled (JSDoc --private / --access)', () => {
+  it('defaults to false (private symbols hidden, like the default template)', () => {
+    expect(includePrivateEnabled({} as never)).toBe(false);
+    expect(includePrivateEnabled({ private: false } as never)).toBe(false);
+  });
+
+  it('honors --private', () => {
+    expect(includePrivateEnabled({ private: true } as never)).toBe(true);
+  });
+
+  it('honors --access naming private or all, as a CLI array or a config string', () => {
+    expect(includePrivateEnabled({ access: ['public', 'private'] } as never)).toBe(true);
+    expect(includePrivateEnabled({ access: ['all'] } as never)).toBe(true);
+    expect(includePrivateEnabled({ access: 'private' } as never)).toBe(true);
+    expect(includePrivateEnabled({ access: ['public', 'protected'] } as never)).toBe(false);
+    expect(includePrivateEnabled({ access: 'public' } as never)).toBe(false);
+  });
+
+  it('matches JSDoc prune exactly: truthy --private, substring match on a string', () => {
+    expect(includePrivateEnabled({ private: 1 } as never)).toBe(true);
+    expect(includePrivateEnabled({ private: 'yes' } as never)).toBe(true);
+    expect(includePrivateEnabled({ private: 0 } as never)).toBe(false);
+    expect(includePrivateEnabled({ access: 'private,protected' } as never)).toBe(true);
+    expect(includePrivateEnabled({ access: 'all' } as never)).toBe(true);
+    expect(includePrivateEnabled({ access: 'public,protected' } as never)).toBe(false);
+    // Array entries match whole (Array#includes), as in JSDoc.
+    expect(includePrivateEnabled({ access: ['private,protected'] } as never)).toBe(false);
+    expect(includePrivateEnabled({ access: 42 } as never)).toBe(false);
   });
 });
 

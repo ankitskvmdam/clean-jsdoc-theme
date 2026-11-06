@@ -116,6 +116,21 @@ functions、members、constants、enums、events —— 都会被收集到单个
 没有任何区块映射的符号种类会落入一个兜底的 **Other** 区块，
 追加在最后 —— 这是一个在实践中为空的安全网。
 
+### 私有与被忽略的符号
+
+带有 `@private`（或 `@access private`）或 `@ignore` 标签的符号不会获得页面、
+侧边栏条目、搜索条目或 `llms.txt` 行 —— 在被隐藏的 namespace、module 或 class
+内部记录文档的任何内容也同样如此。只有构造函数是私有的 class 会保留它的页面；
+只有 Constructor 区块会被隐藏。构造函数上的 `@ignore` 则不同：JSDoc 会把构造函数的
+注释合并到 class 中，因此整个 class 都会被隐藏。
+
+要为私有符号生成文档，请在运行 JSDoc 时加上 `--private`，或加上
+`--access private` 或 `--access all`（在 `jsdoc.json` 的 `opts` 下写 `"private": true` 或
+`"access": "all"` 也可以）。其他 `--access` 级别（`public`、`protected`、
+`package`、`undefined`）不受支持：具有这些访问级别的符号始终会被记录到文档中。
+被 `@ignore` 的符号永远不会显示。在 TypeDoc 下，私有符号遵循 TypeDoc 自身的
+`excludePrivate` 选项。
+
 ## 源码文件查看器
 
 当源码查看开启时，主题会将每个项目源码文件渲染为一个只读的、
