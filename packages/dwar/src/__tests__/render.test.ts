@@ -1009,6 +1009,39 @@ describe('render() — HTML comments in prose', () => {
     expect(err?.snippet).toContain('11 | bad <Unclosed line 11');
   });
 
+  /** The page's `<main>` content, where the body renders. */
+  const mainOf = (html: string | undefined): string =>
+    html ? html.slice(html.indexOf('<main'), html.indexOf('</main>')) : '';
+
+  it('keeps a paragraph whole around an inline comment spanning three lines', async () => {
+    const body = 'Some text <!--\nTODO: fix wording\n--> and the sentence continues.\n';
+    const { err, html } = await renderOne('para-comment', body);
+    expect(err, err?.message).toBeUndefined();
+    const main = mainOf(html);
+    expect(main).not.toContain('TODO');
+    expect(main.match(/<p[ >]/g)).toHaveLength(1);
+    expect(main).toMatch(/<p[^>]*>Some text\s+and the sentence continues\.<\/p>/);
+  });
+
+  it('keeps a list whole around an inline comment spanning three lines', async () => {
+    const body = '- item one <!--\n  secret note\n  --> still item one\n- item two\n';
+    const { err, html } = await renderOne('list-comment', body);
+    expect(err, err?.message).toBeUndefined();
+    const main = mainOf(html);
+    expect(main).not.toContain('secret note');
+    expect(main.match(/<ul[ >]/g)).toHaveLength(1);
+    expect(main.match(/<li[ >]/g)).toHaveLength(2);
+    expect(main).not.toMatch(/<p[ >]/);
+    expect(main).toMatch(/<li[^>]*>item one\s+still item one<\/li>/);
+  });
+
+  it('reports an MDX error on its real line after an inline multi-line comment', async () => {
+    const body = ['l1 <!--', 'c2', 'c3 -->', 'l4', 'bad <Unclosed line 5', 'l6', ''].join('\n');
+    const { err } = await renderOne('drift-inline', body);
+    expect(err?.line).toBe(5);
+    expect(err?.snippet).toContain('5 | bad <Unclosed line 5');
+  });
+
   it('renders a comment on a quote line that follows an unclosed backtick', async () => {
     const { err, html } = await renderOne('span-break', 'a `x\n> b <!-- c --> d` e\n');
     expect(err, err?.message).toBeUndefined();

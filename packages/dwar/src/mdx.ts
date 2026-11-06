@@ -18,7 +18,6 @@ import type { SignatureHighlighter } from '@clean-jsdoc-theme/rang';
 import {
   htmlCommentRanges,
   maskHtmlComments,
-  replaceHtmlComments,
   slugifyHeading,
   type HtmlCommentRange,
 } from '@clean-jsdoc-theme/utils';
@@ -183,8 +182,13 @@ export function escapeStrayBraces(source: string): string {
   // closes only on a *maximal* run of exactly N — a longer run inside (e.g. ```
   // in a `…` span) is literal content — and (b) ignores a backslash-escaped
   // backtick (`\``), which is a literal backtick per CommonMark, not a delimiter.
+  //
+  // An empty comment expression wrapping one newline (`{/*`, the newline, then
+  // any quote markers or indentation and `*/}`) is what {@link stripHtmlComments}
+  // leaves for each line break of a comment inside a paragraph; it passes
+  // through so MDX drops it.
   const re =
-    /(```[\s\S]*?```|~~~[\s\S]*?~~~)|(<\/?[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][\w-]*(?:="[^"]*"|='[^']*')?)*\s*\/?>)|(?<![`\\])(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`)|([{}])/g;
+    /(```[\s\S]*?```|~~~[\s\S]*?~~~)|(<\/?[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][\w-]*(?:="[^"]*"|='[^']*')?)*\s*\/?>)|(?<![`\\])(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`)|\{\/\*\n[ \t>]*\*\/\}|([{}])/g;
   const escaped = body.replace(re, (m, _fence, _jsx, _ticks, brace) => (brace ? `\\${brace}` : m));
   return prefix + escaped;
 }
@@ -262,9 +266,24 @@ export function pageCommentRanges(source: string): HtmlCommentRange[] {
  *
  * The comment is dropped rather than translated to an MDX `{/* *\/}` comment:
  * it renders to nothing either way, and dropping needs no escaping of a `*\/`
- * inside it. A comment that occupies a whole line leaves that line blank, which
- * splits the surrounding paragraph exactly as CommonMark's HTML block would.
- * Its newlines are kept so later line numbers (and `codeFrame`) stay exact.
+ * inside it. Its newlines are kept so later line numbers (and `codeFrame`) stay
+ * exact, which decides what a comment spanning lines leaves behind:
+ *   - one that starts a line (an HTML block in CommonMark) keeps just its
+ *     newlines, so the lines it filled are left blank — ending the paragraph
+ *     before it, as CommonMark's HTML block does;
+ *   - one inside a paragraph or list item must not leave a blank line, which
+ *     would split the paragraph (or the list) in two where CommonMark keeps
+ *     one. Each of its newlines becomes an empty MDX comment expression
+ *     wrapping that newline (`{/*`, newline, `*\/}`), chained, so a three-line
+ *     comment leaves `text {/*` / `*\/}{/*` / `*\/} more`. No line is blank,
+ *     nothing renders, and the line count is unchanged (one expression cannot
+ *     hold the whole comment: it may not span a blank line). Any quote
+ *     marker or indentation that opened a continuation line is kept inside its
+ *     expression. {@link escapeStrayBraces} leaves exactly this form alone.
+ * "Starts a line" is judged on the output: a comment after only quote or list
+ * markers and whitespace — or after an earlier comment on its line that was
+ * dropped — takes the first form, since an expression there would open an MDX
+ * flow expression, which rejects a lazy continuation line in a list item.
  *
  * What counts as a comment is decided by the shared, code-aware
  * `htmlCommentRanges` (utils), the same scanner setu uses: fenced code blocks
@@ -288,12 +307,47 @@ export function stripHtmlComments(
 ): string {
   // Only the comment's characters go; its newlines stay, so every later line
   // keeps its number and an MDX error position still maps onto the page body
-  // (`codeFrame` relies on the pre-passes preserving line counts). A comment
-  // that fills a line thus leaves it blank, as CommonMark's HTML block would.
-  return replaceHtmlComments(source, comments, (c, text) =>
-    c.closed ? text.replace(/[^\n]/g, '') : '\\<!--'
-  );
+  // (`codeFrame` relies on the pre-passes preserving line counts).
+  if (comments.length === 0) return source;
+  let out = '';
+  // The output since its last newline: what precedes the next comment on its line.
+  let line = '';
+  const append = (text: string): void => {
+    out += text;
+    const nl = text.lastIndexOf('\n');
+    line = nl === -1 ? line + text : text.slice(nl + 1);
+  };
+  let cursor = 0;
+  for (const c of comments) {
+    append(source.slice(cursor, c.start));
+    cursor = c.end;
+    if (!c.closed) {
+      append('\\<!--');
+      continue;
+    }
+    const lines = source.slice(c.start, c.end).split('\n');
+    if (lines.length === 1) continue;
+    if (LINE_START.test(line)) {
+      // Leaves its lines blank, as CommonMark's HTML block does.
+      append('\n'.repeat(lines.length - 1));
+    } else {
+      // Inline: one empty comment expression per newline, so no line is blank.
+      append(
+        lines
+          .slice(1)
+          .map((l) => `{/*\n${CONTINUATION_PREFIX.exec(l)![0]}*/}`)
+          .join('')
+      );
+    }
+  }
+  append(source.slice(cursor));
+  return out;
 }
+
+/** Text that may precede a line-starting (block) comment: quote/list markers and whitespace. */
+const LINE_START = /^(?:[ \t]{0,3}>[ \t]?)*[ \t]*(?:(?:[-*+]|\d{1,9}[.)])[ \t]+)?$/;
+/** The quote markers and indentation opening a continuation line. */
+const CONTINUATION_PREFIX = /^(?:[ \t]{0,3}>[ \t]?)*[ \t]*/;
 
 /** A backtick run that opened no inline-code span — i.e. an unbalanced backtick. */
 export interface StrayBacktick {

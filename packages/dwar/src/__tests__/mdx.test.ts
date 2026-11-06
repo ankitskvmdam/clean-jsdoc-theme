@@ -398,6 +398,34 @@ describe('stripHtmlComments', () => {
     );
   });
 
+  it('leaves no blank line for a multi-line comment inside a paragraph', () => {
+    // A blank line would split the paragraph; each newline is wrapped in an
+    // empty MDX comment expression instead, keeping the line count.
+    const src = 'Some text <!--\nTODO: fix wording\n--> and the sentence continues.\n';
+    const out = stripHtmlComments(src);
+    expect(out).toBe('Some text {/*\n*/}{/*\n*/} and the sentence continues.\n');
+    expect(out.split('\n')).toHaveLength(src.split('\n').length);
+    // Two lines, closing at the end of its line: the next line is not left blank.
+    expect(stripHtmlComments('a <!-- x\n-->\nb\n')).toBe('a {/*\n*/}\nb\n');
+  });
+
+  it('keeps list-item indentation and quote markers inside the comment expressions', () => {
+    expect(stripHtmlComments('- item one <!--\n  hidden\n  --> still one\n- item two\n')).toBe(
+      '- item one {/*\n  */}{/*\n  */} still one\n- item two\n'
+    );
+    expect(stripHtmlComments('> a <!--\n> x\n> --> b\n')).toBe('> a {/*\n> */}{/*\n> */} b\n');
+  });
+
+  it('leaves a line-starting multi-line comment as blank lines, after markers or a dropped comment', () => {
+    expect(stripHtmlComments('a\n- <!-- x\n  y --> b\n')).toBe('a\n- \n b\n');
+    expect(stripHtmlComments('<!-- a --> <!-- b\nc -->\nd\n')).toBe(' \n\nd\n');
+  });
+
+  it('lets the brace pass keep the comment expressions it leaves', () => {
+    const out = escapeStrayBraces(stripHtmlComments('a {x} <!--\n  y\n--> b\n'));
+    expect(out).toBe('a \\{x\\} {/*\n  */}{/*\n*/} b\n');
+  });
+
   it('drops all-contributors style START/END marker pairs but keeps what they wrap', () => {
     const src = [
       '<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->',
