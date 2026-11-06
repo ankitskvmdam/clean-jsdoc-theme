@@ -384,6 +384,9 @@ importers:
       '@jsdoc/salty':
         specifier: ^0.2.12
         version: 0.2.12
+      decode-named-character-reference:
+        specifier: ^1.3.0
+        version: 1.3.0
       hast-util-from-html:
         specifier: ^2.0.3
         version: 2.0.3

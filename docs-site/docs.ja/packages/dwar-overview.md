@@ -206,4 +206,3 @@ maintainer はあなたを code へ送りたいと考えています。ここか
   がどこから来るか。
 - [rang Overview](/packages/rang-overview) — dwar が bundle する components と islands。
 - [Configuration](/theme/configuration) — render を駆動する `theme` options。
-</content>

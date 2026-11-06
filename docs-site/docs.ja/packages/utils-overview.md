@@ -188,5 +188,3 @@ maintainer はあなたを code へ送りたいと考えています。ここか
 - [utils Examples](/packages/utils-examples) — これらの types を使った具体的な snippets。
 - [setu Overview](/packages/setu-overview) — `SiteManifest` を *生成する* package。
 - [dwar Overview](/packages/dwar-overview) — それを *消費する* package。
-</content>
-</invoke>

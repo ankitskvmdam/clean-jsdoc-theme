@@ -22,6 +22,7 @@ import {
   type TextRange,
 } from '@clean-jsdoc-theme/utils';
 import { callout, code, playground, step, steps, tab, tabs } from './builders';
+import { escapeLiteralTags } from './literal-tags';
 import {
   KNOWN_PROVIDERS,
   parsePlaygroundSpec,
@@ -335,7 +336,7 @@ function expandContainers(
  * comments, so they are left alone. Terminated comments become hast comment
  * nodes, which {@link dropComments} removes.
  */
-function neutralizeUnterminatedComments(html: string): string {
+export function neutralizeUnterminatedComments(html: string): string {
   // Which openers are unterminated is the shared HTML-format definition,
   // `htmlCommentRangesInHtml`.
   return replaceHtmlComments(html, htmlCommentRangesInHtml(html), (c, text) =>
@@ -380,7 +381,14 @@ function dropComments(node: { children?: unknown[] }): void {
  * for a segment with no containers.
  */
 function htmlBlocksPlain(html: string): RootContent[] {
-  const hast = fromHtml(neutralizeUnterminatedComments(html), { fragment: true });
+  // `Promise<User>` / a generic `<T>` reach here as raw tags; left to the HTML
+  // parser they'd be unwrapped (or worse) and vanish from the page. Escape the
+  // ones that aren't real markup first, while their casing is still visible —
+  // after unterminated comment openers are neutralized, so the tag scan (which
+  // treats `<!--` as running to the end, as HTML does) sees the same comments.
+  const hast = fromHtml(escapeLiteralTags(neutralizeUnterminatedComments(html)), {
+    fragment: true,
+  });
   dropComments(hast);
   const mdast = toMdast(hast) as Root;
   // Promote GitHub-style alert blockquotes (`> [!INFO]`) to typed callouts,
@@ -390,7 +398,36 @@ function htmlBlocksPlain(html: string): RootContent[] {
   // content nested inside steps/tabs, since the container recursion routes item
   // content back through the public functions whose plain segments reach this
   // transform.
-  return promoteCallouts(mdast.children);
+  return promoteCallouts(wrapInlineRuns(mdast.children));
+}
+
+/**
+ * Wrap each run of root-level inline nodes in a paragraph. A fragment that is
+ * only inline content (a `<step>` item without `<p>`, Markdown text after a
+ * dropped comment) lowers to bare text/emphasis nodes at the root, and the MDX
+ * serializer escapes `<` only inside a paragraph — so a literal `Promise<User>`
+ * there reached MDX as a tag and failed the page. Inline callers are unaffected:
+ * {@link blocksToInline} unwraps paragraphs. A whitespace-only run is left as is.
+ */
+function wrapInlineRuns(nodes: RootContent[]): RootContent[] {
+  const out: RootContent[] = [];
+  let run: PhrasingContent[] = [];
+  const flush = (): void => {
+    if (run.length === 0) return;
+    const blank = run.every((n) => n.type === 'text' && n.value.trim() === '');
+    out.push(...(blank ? run : [{ type: 'paragraph', children: run } as RootContent]));
+    run = [];
+  };
+  for (const node of nodes) {
+    if (PHRASING_TYPES.has(node.type)) {
+      run.push(node as PhrasingContent);
+    } else {
+      flush();
+      out.push(node);
+    }
+  }
+  flush();
+  return out;
 }
 
 /**
