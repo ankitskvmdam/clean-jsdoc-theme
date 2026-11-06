@@ -1,7 +1,8 @@
+import { existsSync } from 'node:fs';
 import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
-import { afterAll, beforeAll, describe, it, expect, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, it, expect, vi } from 'vitest';
 import {
   collectDocs,
   resolveDocImages,
@@ -24,7 +25,6 @@ import {
   reportBuildFailure,
   resolveCustomAssets,
   resolveFooter,
-  shouldRecapOptionWarnings,
 } from '../publish';
 
 describe('overlayDocs (per-locale docs overlay)', () => {
@@ -127,11 +127,90 @@ describe('publish failure handling', () => {
   });
 });
 
-describe('shouldRecapOptionWarnings', () => {
-  it('recaps in a normal build, not in a localized (per-locale) one', () => {
-    expect(shouldRecapOptionWarnings(null)).toBe(true);
-    expect(shouldRecapOptionWarnings({ locale: 'fr', destination: 'out/fr' })).toBe(false);
+describe('publish: option problems are printed once', () => {
+  // An empty JSDoc collection: setu only ever calls `collection(query).get()`.
+  const emptyCollection = (): { get: () => unknown[] } => ({ get: () => [] });
+  let dir: string;
+  let printed: { log: string[]; warn: string[]; error: string[] };
+  /** Every printed line, in order, across the three streams. */
+  let printedInOrder: string[];
+  let spies: Array<{ mockRestore: () => void }>;
+
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), 'cjt-publish-'));
+    printed = { log: [], warn: [], error: [] };
+    printedInOrder = [];
+    spies = (['log', 'warn', 'error'] as const).map((level) =>
+      vi.spyOn(console, level).mockImplementation((...args: unknown[]) => {
+        const line = args.map(String).join(' ');
+        printed[level].push(line);
+        printedInOrder.push(line);
+      })
+    );
+    process.exitCode = undefined;
   });
+
+  afterEach(async () => {
+    spies.forEach((s) => s.mockRestore());
+    delete process.env.CLEAN_JSDOC_THEME_BUILD;
+    process.exitCode = undefined;
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  /** How many printed lines (any stream) mention `needle`. */
+  const timesPrinted = (needle: string): number =>
+    printedInOrder.filter((m) => m.includes(needle)).length;
+  const firstPrinted = (needle: string): number =>
+    printedInOrder.findIndex((m) => m.includes(needle));
+
+  it('non-strict: warns, builds, and prints each option warning once, after the build report', async () => {
+    const destination = join(dir, 'out');
+    await publish(emptyCollection, {
+      destination,
+      progress: false,
+      favicon: join(dir, 'missing.ico'),
+      readme: '<p>Home</p>',
+      siteNme: 'Typo',
+    } as Parameters<typeof publish>[1]);
+    expect(existsSync(join(destination, 'index.html'))).toBe(true);
+    expect(printed.error).toEqual([]);
+    expect(printed.warn.filter((m) => m.includes('could not read favicon'))).toHaveLength(1);
+    // The typo warning: once, on stderr, and not before the build report.
+    expect(timesPrinted('siteNme')).toBe(1);
+    expect(printed.warn.some((m) => m.includes('siteNme'))).toBe(true);
+    expect(firstPrinted('build complete')).toBeGreaterThanOrEqual(0);
+    expect(firstPrinted('siteNme')).toBeGreaterThan(firstPrinted('build complete'));
+    expect(process.exitCode).toBeUndefined();
+  }, 60_000);
+
+  it('localized build (one JSDoc process per locale): each option warning once', async () => {
+    const destination = join(dir, 'out-fr');
+    const specPath = join(dir, 'build-spec.json');
+    await writeFile(
+      specPath,
+      JSON.stringify({
+        version: 1,
+        locale: 'fr',
+        defaultLocale: 'en',
+        apiMessages: {},
+        chromeMessages: {},
+        destination,
+        basePath: '/fr/',
+        siteBasePath: '/',
+        locales: [{ code: 'en' }, { code: 'fr' }],
+      }),
+      'utf8'
+    );
+    process.env.CLEAN_JSDOC_THEME_BUILD = specPath;
+    await publish(emptyCollection, {
+      destination: join(dir, 'ignored'),
+      progress: false,
+      readme: '<p>Home</p>',
+      siteNme: 'Typo',
+    } as Parameters<typeof publish>[1]);
+    expect(existsSync(join(destination, 'index.html'))).toBe(true);
+    expect(timesPrinted('siteNme')).toBe(1);
+  }, 60_000);
 });
 
 describe('resolveCustomAssets', () => {

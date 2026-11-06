@@ -145,7 +145,7 @@ const loadUtils = (): Promise<typeof import('@clean-jsdoc-theme/utils')> =>
     'validateThemeOpts',
     'createGoogleFontResolver',
     'formatDiagnostics',
-    'warningsOnly',
+    'DiagnosticBag',
     'formatBuildReport',
     'formatRenderError',
     'normalizeBasePath',
@@ -2089,17 +2089,6 @@ interface BuildSpec {
 }
 
 /**
- * Whether to re-print the option warnings at the end of the build. Not in a
- * localized build (`buildSpec` set — `clean-jsdoc build` runs one JSDoc process
- * per locale and streams each one's output): there every locale is a short
- * build, so the warnings printed at validation are still on screen, and the
- * recap would show each of them twice per locale. Exported for testing.
- */
-export function shouldRecapOptionWarnings(buildSpec: unknown): boolean {
-  return buildSpec === null || buildSpec === undefined;
-}
-
-/**
  * Read the localization build spec when `CLEAN_JSDOC_THEME_BUILD` points at one
  * (set by `aadesh build` per locale). When present, the theme stamps the API
  * translations and renders to the spec's `destination`/`basePath` instead of the
@@ -2142,11 +2131,21 @@ function readBuildSpec(): BuildSpec | null {
  * error) goes through {@link reportBuildFailure} instead.
  */
 export async function publish(data: unknown, opts: JSDocOpts, tutorials?: unknown): Promise<void> {
+  // Option errors/warnings are printed once, at the end of the build (see
+  // `report.optionProblems` in runPublish). If the build throws first, print
+  // them on the way out so a failure never hides them.
+  const report: OptionProblemsReport = { optionProblems: () => {} };
   try {
-    await runPublish(data, opts, tutorials);
+    await runPublish(data, opts, tutorials, report);
   } catch (err) {
+    report.optionProblems();
     reportBuildFailure(err, opts.debug === true || opts.verbose === true);
   }
+}
+
+/** Prints the non-strict option errors/warnings; set by runPublish after validation. */
+interface OptionProblemsReport {
+  optionProblems: () => void;
 }
 
 /** The slice of JSDoc's `jsdoc/util/logger` that {@link reportBuildFailure} uses. */
@@ -2194,7 +2193,12 @@ export function reportBuildFailure(
   logger.error(`${message}${stack}`);
 }
 
-async function runPublish(data: unknown, opts: JSDocOpts, tutorials?: unknown): Promise<void> {
+async function runPublish(
+  data: unknown,
+  opts: JSDocOpts,
+  tutorials: unknown,
+  report: OptionProblemsReport
+): Promise<void> {
   // Localization build mode (aadesh): a per-locale spec overrides the output
   // destination + base path and supplies the API translations to stamp in.
   const buildSpec = readBuildSpec();
@@ -2249,7 +2253,7 @@ async function runPublish(data: unknown, opts: JSDocOpts, tutorials?: unknown): 
       validateThemeOpts,
       createGoogleFontResolver,
       formatDiagnostics,
-      warningsOnly,
+      DiagnosticBag,
       formatBuildReport,
       formatRenderError,
       normalizeBasePath,
@@ -2334,8 +2338,27 @@ async function runPublish(data: unknown, opts: JSDocOpts, tutorials?: unknown): 
           '(see the diagnostics above). Fix the errors or unset `strict`.'
       );
     }
-    console.log(formatted);
+    // Advisory infos now. Errors and warnings are printed once, at the end of
+    // the build — see `report.optionProblems` below.
+    const notes = new DiagnosticBag();
+    for (const d of diagnostics.list) if (d.level === 'info') notes.add(d);
+    if (notes.list.length > 0) console.log(formatDiagnostics(notes, { color }));
   }
+
+  // Non-strict option errors and warnings, printed exactly once, on stderr: at
+  // the end of the build, near the last thing on screen, so a skipped llms.txt
+  // or a font fallback can't scroll away behind the build log (or, via
+  // `publish`, on the way out if the build throws). A localized build runs one
+  // JSDoc process per locale, so each locale prints them once. Same as the
+  // TypeDoc writer.
+  let reported = false;
+  report.optionProblems = () => {
+    if (reported) return;
+    reported = true;
+    const problems = new DiagnosticBag();
+    for (const d of diagnostics.list) if (d.level !== 'info') problems.add(d);
+    if (problems.list.length > 0) console.warn(formatDiagnostics(problems, { color }));
+  };
 
   // Resolved off the kickoff above (started concurrently with the renderer load).
   const pkg = await pkgPromise;
@@ -2495,6 +2518,7 @@ async function runPublish(data: unknown, opts: JSDocOpts, tutorials?: unknown): 
     console.log(
       `clean-jsdoc-theme: extract mode — wrote ${manifest.slots?.length ?? 0} slot(s) to ${target}`
     );
+    report.optionProblems();
     return;
   }
 
@@ -2672,14 +2696,7 @@ async function runPublish(data: unknown, opts: JSDocOpts, tutorials?: unknown): 
     })
   );
 
-  // Opts warnings were printed BEFORE any render work, so by now they've scrolled
-  // away behind the build log. Re-print just the warnings here — this is near the
-  // last thing on screen, so a skipped llms.txt or a font fallback can't go
-  // unnoticed by someone who expected that file in the output.
-  const optsWarnings = warningsOnly(diagnostics);
-  if (optsWarnings.list.length > 0 && shouldRecapOptionWarnings(buildSpec)) {
-    console.warn(formatDiagnostics(optsWarnings, { color }));
-  }
+  report.optionProblems();
 
   // Skipped pages (render failures) are folded in right after the report so the
   // count is visible alongside the successful totals — never fatal.
