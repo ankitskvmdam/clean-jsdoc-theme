@@ -2171,15 +2171,16 @@ function loadJSDocLogger(): JSDocLogger {
  * backstop.
  * Outside a JSDoc process (`jsdoc/util/logger` isn't resolvable — a direct
  * programmatic call, unit tests) rethrow, so the caller still gets the
- * rejection. `withStack` (JSDoc's `--debug`/`--verbose`) adds the stack trace
- * for bug reports. Exported for testing (`loadLogger` is injectable).
+ * rejection, and leave `process.exitCode` alone: the caller decides whether
+ * the failure fails its process. `withStack` (JSDoc's `--debug`/`--verbose`)
+ * adds the stack trace for bug reports. Exported for testing (`loadLogger` is
+ * injectable).
  */
 export function reportBuildFailure(
   err: unknown,
   withStack: boolean,
   loadLogger: () => JSDocLogger = loadJSDocLogger
 ): void {
-  process.exitCode = 1;
   let logger: JSDocLogger | undefined;
   try {
     logger = loadLogger();
@@ -2187,6 +2188,7 @@ export function reportBuildFailure(
     logger = undefined;
   }
   if (!logger || typeof logger.error !== 'function') throw err;
+  process.exitCode = 1;
   const message = err instanceof Error ? err.message : String(err);
   const stack = withStack && err instanceof Error && err.stack ? `\n${err.stack}` : '';
   logger.error(`${message}${stack}`);

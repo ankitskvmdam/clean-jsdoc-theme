@@ -94,11 +94,12 @@ describe('publish failure handling', () => {
     process.exitCode = undefined;
   };
 
-  it('outside JSDoc, rejects and marks the process as failed', async () => {
+  it('outside JSDoc, rejects and leaves the exit code to the caller', async () => {
+    resetExitCode();
     try {
       // No `destination` → the bridge throws before doing any work.
       await expect(publish({}, {})).rejects.toThrow('opts.destination is required');
-      expect(process.exitCode).toBe(1);
+      expect(process.exitCode).toBeUndefined();
     } finally {
       resetExitCode();
     }
