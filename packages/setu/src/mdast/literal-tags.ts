@@ -46,6 +46,8 @@
  * (`Map<B> … </B>`) reads as markup.
  */
 
+import { htmlCommentRangesInHtml, rangeContaining } from '@clean-jsdoc-theme/utils';
+
 /**
  * Lowercase element names the HTML parser treats as markup: the current WHATWG
  * set, the SVG/MathML roots, and the legacy presentational elements old READMEs
@@ -319,25 +321,27 @@ interface Tag {
 }
 
 /**
- * Find every tag outside comments, in order. Comments are skipped whole
- * (`<!-->` and `<!--->` are complete, empty ones); an unterminated `<!--` runs to
+ * Find every tag outside comments, in order. Comments are skipped whole, with
+ * their extent from the shared HTML-format definition (`htmlCommentRangesInHtml`:
+ * `<!-->` and `<!--->` are complete, empty ones); an unterminated `<!--` runs to
  * the end of the input, as in HTML.
+ *
+ * Which `<!--` opens a comment is decided here, not by the ranges: one inside a
+ * quoted attribute value (`title="<!--"`) is skipped with its tag and never
+ * reached. The ranges still give the right end for every opener this scan does
+ * reach — a comment ends at the first `-->` after its opener, so even one that
+ * sits inside a range an attribute's `<!--` started ends where that range does.
  */
 function scanTags(html: string): Tag[] {
   const tags: Tag[] = [];
+  const comments = htmlCommentRangesInHtml(html);
   let i = html.indexOf('<');
   while (i !== -1) {
     if (html.startsWith('<!--', i)) {
-      const empty = /^<!---?>/.exec(html.slice(i, i + 6));
-      let end: number;
-      if (empty) {
-        end = i + empty[0].length;
-      } else {
-        const close = html.indexOf('-->', i + 4);
-        if (close === -1) break;
-        end = close + 3;
-      }
-      i = html.indexOf('<', end);
+      // Every `<!--` lies in one of the ranges (the shared scan reports them all).
+      const comment = rangeContaining(comments, i)!;
+      if (!comment.closed) break;
+      i = html.indexOf('<', comment.end);
       continue;
     }
     TAG_NAME.lastIndex = i;
