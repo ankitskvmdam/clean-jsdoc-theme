@@ -260,6 +260,25 @@ describe('htmlCommentRanges', () => {
     expect(closed('x \\`a` <!-- c -->\n')).toEqual(['<!-- c -->']);
   });
 
+  it('opens a code span on the rest of a run after an escaped backtick', () => {
+    // micromark: the escaped backtick is text; the one after it opens a span.
+    expect(htmlCommentRanges('x \\``a <!-- c --> `\n')).toEqual([]);
+  });
+
+  it('reads a backtick run with no equal-length closer as literal, never a shorter run', () => {
+    // micromark: the `` has no closer, so all of it is text; it is not retried
+    // as a single backtick that the lone one after it would close.
+    expect(closed('`` <!-- c --> ` x `\n')).toEqual(['<!-- c -->']);
+    expect(htmlCommentRanges('`` a ` <!-- c --> `\n')).toEqual([]);
+    expect(closed('a ``` b `` <!-- c --> d ``` e <!-- f -->\n')).toEqual(['<!-- f -->']);
+  });
+
+  it('does not let a code span cross a blank line or a line that ends the paragraph', () => {
+    expect(closed('x `a\n\ny <!-- c --> `\n')).toEqual(['<!-- c -->']);
+    expect(closed('x `a\n# h <!-- c --> `\n')).toEqual(['<!-- c -->']);
+    expect(closed('x `a\n> q <!-- c --> `\n')).toEqual(['<!-- c -->']);
+  });
+
   it('returns nothing, cheaply, for a body without an opener', () => {
     expect(htmlCommentRanges('```\n`\n')).toEqual([]);
   });
@@ -390,6 +409,12 @@ describe('markdown-scan performance', () => {
     htmlCommentRanges(src);
     return performance.now() - t;
   };
+  /** Backtick runs of length 1, 2, 3, … separated by spaces, about `n` long, then `<!--`. */
+  const distinctRuns = (n: number): string => {
+    let s = '';
+    for (let k = 1; s.length < n; k++) s += '`'.repeat(k) + ' ';
+    return s + '<!--';
+  };
 
   it.each([
     ['unclosed inline openers on one line', 'a <!-- '.repeat(MB / 7)],
@@ -409,6 +434,15 @@ describe('markdown-scan performance', () => {
       'a <!-- b\n\n'.repeat(MB / 10) + '-->',
     ],
     ['stray backticks of mixed lengths', '` a `` b ``` c '.repeat(MB / 15) + '<!--'],
+    // Runs of 1, 2, 3, … backticks that never close, then the rest of the
+    // paragraph: a regex closer search rescans that rest once per run (and once
+    // more per shorter length), quadratic in the paragraph.
+    ['unclosed backtick runs of distinct lengths', distinctRuns(MB / 2) + 'word '.repeat(MB / 10)],
+    ['one long unclosed backtick run', '`'.repeat(1000) + ' ' + 'word '.repeat(MB / 5) + '<!--'],
+    [
+      'code spans whose closer is past a break',
+      distinctRuns(MB / 2) + '\n> q\n' + distinctRuns(MB / 2),
+    ],
     ['unterminated tag attributes', '<a b="x '.repeat(MB / 8) + '<!--'],
   ])('%s (1MB) scans in under a second', (_name, src) => {
     expect(time(src)).toBeLessThan(1000);

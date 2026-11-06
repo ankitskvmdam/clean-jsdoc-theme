@@ -4,7 +4,7 @@
  * HTML comments). Both must agree on what is code and what is a comment, or a
  * comment setu left in place would be mis-handled by dwar and vice versa.
  *
- * Both scanners run in linear-ish time — every page body passes through them
+ * Both scanners run in linear time — every page body passes through them
  * several times per build, and a pathological one (a stray `<!--` in a huge
  * generated page) must not stall it — and a body without `<!--` costs one
  * `includes`.
@@ -159,6 +159,52 @@ function closerFinder(source: string): (from: number) => number {
     if (at === -1) return -1;
     if (at < from) at = source.indexOf('-->', from);
     return at;
+  };
+}
+
+/**
+ * Finds where the inline code span opened by the backtick run `[start, end)`
+ * ends, or -1 when the run opens none, for runs at increasing positions.
+ * CommonMark: a run of N backticks closes on the next maximal run of exactly N
+ * (backslashes are literal INSIDE a span, so `a\` closes on the backtick after
+ * the backslash), and a span never crosses a blank line; a run with no closer
+ * is literal backticks.
+ *
+ * Linear in the source however the runs fall: the maximal runs are collected
+ * once, on the first call, and grouped by length, and each length keeps a
+ * cursor that only moves forward — so an unclosed run costs one step past each
+ * later run of its own length, never a rescan of the paragraph (a regex closer
+ * search rescans it once per unclosed run, and once more per shorter length).
+ */
+function codeSpanFinder(source: string): (start: number, end: number) => number {
+  let runsByLength: Map<number, number[]> | undefined;
+  const cursors = new Map<number, number>();
+  // Newlines that start a blank line (the next line is empty or whitespace).
+  const blankLines: number[] = [];
+  let blank = 0;
+  return (start, end) => {
+    if (!runsByLength) {
+      runsByLength = new Map();
+      const run = /`+/g;
+      for (let m = run.exec(source); m !== null; m = run.exec(source)) {
+        const runs = runsByLength.get(m[0].length);
+        if (runs) runs.push(m.index);
+        else runsByLength.set(m[0].length, [m.index]);
+      }
+      const nl = /\n(?=[ \t\r]*\n)/g;
+      for (let m = nl.exec(source); m !== null; m = nl.exec(source)) blankLines.push(m.index);
+    }
+    const len = end - start;
+    const runs = runsByLength.get(len);
+    if (!runs) return -1;
+    let c = cursors.get(len) ?? 0;
+    while (c < runs.length && runs[c] < end) c++;
+    cursors.set(len, c);
+    if (c === runs.length) return -1;
+    const close = runs[c];
+    while (blank < blankLines.length && blankLines[blank] < end) blank++;
+    if (blank < blankLines.length && blankLines[blank] < close) return -1;
+    return close + len;
   };
 }
 
@@ -386,17 +432,17 @@ export function fencedCodeRanges(source: string): TextRange[] {
 //   - a backslash escape `\x` (any char but a newline): consumed as a token, so
 //     `\<!--` and `\`` never start anything, while `\\<!--` is an escaped
 //     backslash followed by a real opener — parity by construction;
-//   - an inline code span — CommonMark delimiter rules: a maximal run of N
-//     backticks closes on the next maximal run of exactly N (backslashes are
-//     literal INSIDE a span, so `a\` closes on the backtick after the
-//     backslash), and it never crosses a blank line;
+//   - a backtick run, which may open an inline code span — matched here as the
+//     whole run only; `htmlCommentRanges` finds its closer by hand (see
+//     `codeSpanEnd`), because a regex closer search backtracks into shorter
+//     opener runs and rescans the paragraph once per length;
 //   - an MDX JSX / HTML tag, whose quoted attribute values (double- or
 //     single-quoted; MDX accepts both) are literal strings;
 //   - a link/image tail `](destination "title")` — MDX takes destinations and
 //     titles verbatim, so `[a](http://x/<!--y-->z)` keeps its URL (an escaped
 //     `\]` is consumed above, so it opens no tail and protects nothing).
 const TOKEN =
-  /\\[^\n]|(?<!`)(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<!`)\1(?!`)|<\/?[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][\w-]*(?:="[^"]*"|='[^']*')?)*\s*\/?>|\]\((?:<[^<>\n]*>|(?:[^\s()\\]|\\.|\((?:[^\s()\\]|\\.)*\))*)(?:\s+(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\((?:[^()\\]|\\.)*\)))?\s*\)|<!--/g;
+  /\\[^\n]|`+|<\/?[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][\w-]*(?:="[^"]*"|='[^']*')?)*\s*\/?>|\]\((?:<[^<>\n]*>|(?:[^\s()\\]|\\.|\((?:[^\s()\\]|\\.)*\))*)(?:\s+(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\((?:[^()\\]|\\.)*\)))?\s*\)|<!--/g;
 
 /**
  * Every HTML comment in prose — outside fenced code, inline code, tags and link
@@ -421,6 +467,7 @@ export function htmlCommentRanges(source: string): HtmlCommentRange[] {
   ].sort((a, b) => a.start - b.start);
   let r = 0;
   const nextCloser = closerFinder(source);
+  const codeSpanEnd = codeSpanFinder(source);
 
   const out: HtmlCommentRange[] = [];
   let b = 0;
@@ -438,8 +485,20 @@ export function htmlCommentRanges(source: string): HtmlCommentRange[] {
       TOKEN.lastIndex = Math.max(region.end, start + 1);
       continue;
     }
+    if (m[0][0] === '`') {
+      // A backtick run: skip its code span, if it opens one. Like a tag or
+      // link below, a span may not reach into a fence or comment block, or
+      // across a line that ends the paragraph; a run that opens no span is
+      // literal backticks, all of them — scanning goes on after the run, and
+      // a shorter run inside it is never tried.
+      const runEnd = start + m[0].length;
+      const end = codeSpanEnd(start, runEnd);
+      const crosses = (region && region.start < end) || firstAfter(breaks, start) < end;
+      TOKEN.lastIndex = end === -1 || crosses ? runEnd : end;
+      continue;
+    }
     if (m[0] !== '<!--') {
-      // A span/tag/link that would reach into a fence or comment block, or
+      // A tag/link that would reach into a fence or comment block, or
       // across a line that ends the paragraph, is not one: the block ends the
       // paragraph first, and inline syntax never spans blocks. Rescan from the
       // next character.
