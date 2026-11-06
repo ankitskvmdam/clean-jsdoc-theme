@@ -409,7 +409,7 @@ describe('stripHtmlComments', () => {
     expect(stripHtmlComments('a <!-- x\n-->\nb\n')).toBe('a {/*\n*/}\nb\n');
   });
 
-  it('keeps list-item indentation and quote markers inside the comment expressions', () => {
+  it('keeps list indentation and quote markers inside the comment expressions', () => {
     expect(stripHtmlComments('- item one <!--\n  hidden\n  --> still one\n- item two\n')).toBe(
       '- item one {/*\n  */}{/*\n  */} still one\n- item two\n'
     );
