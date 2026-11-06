@@ -258,6 +258,15 @@ describe('search text — HTML comments', () => {
     expect(extractSearchText(src, undefined, pageCommentRanges(src))).toBe('Visible text.');
     expect(extractExcerpt(src, undefined, pageCommentRanges(src))).toBe('Visible text.');
   });
+
+  it('skips the YAML frontmatter when scanning a body itself, as render() does', () => {
+    // The `<!--` in the YAML string is YAML: read as a comment, it would run to
+    // the `-->` in the body and take the frontmatter's closing `---` with it.
+    const src = '---\nnote: |\n  <!-- a\n---\nVisible -->text.\n';
+    expect(extractSearchText(src)).toBe(extractSearchText(src, undefined, pageCommentRanges(src)));
+    expect(extractSearchText(src)).toContain('Visible');
+    expect(extractExcerpt(src)).toContain('Visible');
+  });
 });
 
 describe('search text — tag strip', () => {

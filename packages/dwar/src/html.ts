@@ -14,13 +14,10 @@
  * script and a tiny inline loader that lazy-imports island chunks.
  */
 
-import {
-  htmlCommentRanges,
-  replaceHtmlComments,
-  type HtmlCommentRange,
-} from '@clean-jsdoc-theme/utils';
+import { replaceHtmlComments, type HtmlCommentRange } from '@clean-jsdoc-theme/utils';
 import type { Page, IslandName, MetaTag, ScrollbarMode } from '@clean-jsdoc-theme/utils';
 import type { IslandRecord } from './layout';
+import { pageCommentRanges } from './mdx';
 import { getPreHydrationThemeScript } from './theme-script';
 import { getIslandsLoaderScript } from './islands-loader';
 import { getHeadingAnchorsScript } from './heading-anchors';
@@ -354,12 +351,13 @@ export function renderHtmlDocument(opts: HtmlDocumentOptions): string {
 }
 
 /**
- * Remove the HTML comments the page never renders (dwar's MDX pre-pass drops
- * them) before the search text is derived — with the same ranges, so a
+ * Remove the HTML comments, which never render (dwar's MDX pre-pass drops
+ * them), before the search text is derived — with the same ranges, so a
  * backtick or `>` inside a comment can't pair with real inline code or end a
  * tag strip early. An unterminated `<!--` is left as the literal text the page
  * shows. `render()` passes the page's ranges (computed once); a direct call
- * scans the body itself.
+ * scans the body itself with the same `pageCommentRanges`, which skips the
+ * YAML frontmatter.
  */
 function dropHtmlComments(body: string, comments: readonly HtmlCommentRange[]): string {
   return replaceHtmlComments(body, comments, (c, text) => (c.closed ? ' ' : text));
@@ -382,7 +380,7 @@ const TAG = /<(?:"[^"]*"|'[^']*'|[^"'<>])+>/g;
 export function extractExcerpt(
   mdxBody: string,
   max = 200,
-  comments: readonly HtmlCommentRange[] = htmlCommentRanges(mdxBody)
+  comments: readonly HtmlCommentRange[] = pageCommentRanges(mdxBody)
 ): string {
   let text = dropHtmlComments(mdxBody, comments)
     .replace(/^---[\s\S]*?---\s*/u, '') // frontmatter
@@ -414,7 +412,7 @@ export function extractExcerpt(
 export function extractSearchText(
   mdxBody: string,
   max = 20000,
-  comments: readonly HtmlCommentRange[] = htmlCommentRanges(mdxBody)
+  comments: readonly HtmlCommentRange[] = pageCommentRanges(mdxBody)
 ): string {
   const text = dropHtmlComments(mdxBody, comments)
     .replace(/^---[\s\S]*?---\s*/u, '') // frontmatter
