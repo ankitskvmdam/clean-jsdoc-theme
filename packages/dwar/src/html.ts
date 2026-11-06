@@ -373,6 +373,12 @@ function dropHtmlComments(body: string, comments: readonly HtmlCommentRange[]): 
 const TAG = /<(?:"[^"]*"|'[^']*'|[^"'<>])+>/g;
 
 /**
+ * Stands in for a `<` inside inline code while {@link extractSearchText} strips
+ * tags: a private-use character, which no page text is expected to hold.
+ */
+const CODE_LT = String.fromCharCode(0xe000);
+
+/**
  * Strip an MDX/HTML body to a plain-text excerpt for search snippets.
  * Heuristic, not exhaustive: fences, headings, links, images, formatting marks,
  * and any HTML tags get peeled away.
@@ -417,10 +423,13 @@ export function extractSearchText(
   const text = dropHtmlComments(mdxBody, comments)
     .replace(/^---[\s\S]*?---\s*/u, '') // frontmatter
     .replace(/```[\s\S]*?```/g, ' ') // fenced code (noisy/large)
-    .replace(/`([^`]*)`/g, '$1') // inline code → keep the identifier
+    // Inline code → keep the identifier, with its `<` hidden from the tag
+    // strip below (`Array<Map<K, V>>` is a type, not a tag).
+    .replace(/`([^`]*)`/g, (_m, code: string) => code.replaceAll('<', CODE_LT))
     .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ') // images
     .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1') // links → label
     .replace(TAG, ' ') // raw HTML / JSX
+    .replaceAll(CODE_LT, '<')
     .replace(/^#{1,6}\s+/gm, '') // ATX heading markers (keep the text)
     .replace(/[*_~>#|]+/g, ' ') // emphasis / blockquote / table marks
     .replace(/\s+/g, ' ')

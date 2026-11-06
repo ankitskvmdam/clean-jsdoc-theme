@@ -280,6 +280,13 @@ describe('search text — tag strip', () => {
     expect(extractSearchText('<p align="center">Hi <b>there</b></p>')).toBe('Hi there');
   });
 
+  it('keeps a generic type in inline code (it is not a tag)', () => {
+    // The `>` marks go with the blockquote/emphasis strip, as before.
+    expect(extractSearchText('so `Array<Map<string, T>>` becomes <b>x</b>')).toBe(
+      'so Array<Map<string, T becomes x'
+    );
+  });
+
   // The old `/<[^>]+>/` rescanned to the end of the page from every `<` with no
   // `>` after it — minutes for a 1MB page.
   it.each([
