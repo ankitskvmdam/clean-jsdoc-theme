@@ -198,4 +198,14 @@ describe('example captions holding raw HTML', () => {
   it('keeps plain Markdown captions on the direct parse', () => {
     expect(caption('*Basic* use')).toBe('_Basic_ use\n\n```js\nrun();\n```\n');
   });
+
+  it('applies GFM to every caption, with or without a tag', () => {
+    expect(caption('plain ~~strike~~')).toBe('plain ~~strike~~\n\n```js\nrun();\n```\n');
+    expect(caption('a <b>bold</b> ~~strike~~')).toBe(
+      'a **bold** ~~strike~~\n\n```js\nrun();\n```\n'
+    );
+    expect(caption('See https://example.com now')).toContain(
+      '[https://example.com](https://example.com)'
+    );
+  });
 });

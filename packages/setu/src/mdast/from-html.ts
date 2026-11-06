@@ -611,17 +611,22 @@ export function htmlToMdastInline(html: string | null | undefined): PhrasingCont
  * an `@example` `<caption>`, which may carry Markdown (`*emphasis*`) and inline
  * HTML (`<b>`). Block structure is flattened to inline.
  *
- * Raw HTML would otherwise reach MDX untouched, and MDX rejects much of what
- * Markdown accepts — `<?php … ?>`, `<![CDATA[…]]>`, a void `<br>` — skipping
- * the whole page. So a fragment holding any raw HTML takes the same HTML
- * normalization as every other prose surface (see
- * {@link convertMarkdownSegment}); one without stays on the direct parse.
+ * Every caption is parsed with the same GFM extensions as the other Markdown
+ * surfaces, so `~~strikethrough~~`, autolink literals and the like render the
+ * same whether or not the caption also holds a tag. One with raw HTML then
+ * takes the HTML normalization every other prose surface gets (see
+ * {@link convertMarkdownSegment}) — MDX rejects much of what Markdown accepts
+ * (`<?php … ?>`, `<![CDATA[…]]>`, a void `<br>`); as in descriptions, inline
+ * HTML with no mdast equivalent (`<sup>`, `<sub>`) is flattened to its text.
  */
 export function markdownToMdastInline(md: string | null | undefined): PhrasingContent[] {
   if (!md) return [];
   const trimmed = md.trim();
   if (trimmed.length === 0) return [];
-  const blocks = fromMarkdown(trimmed).children;
+  const blocks = fromMarkdown(trimmed, {
+    extensions: [gfm()],
+    mdastExtensions: [gfmFromMarkdown()],
+  }).children;
   return blocksToInline(hasRawHtml(blocks) ? convertMarkdownSegment(trimmed) : blocks);
 }
 
