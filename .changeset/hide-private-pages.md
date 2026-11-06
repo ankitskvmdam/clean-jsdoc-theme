@@ -19,8 +19,12 @@ template, which hides only the private container and keeps an orphan page for a
 public class nested inside it.
 
 A class whose only private part is its ES6 `constructor` (`/** @private */
-constructor()`) keeps its page and public members, whether it is exported, plain,
-a subclass, a class expression or a CommonJS export. Only its Constructor section
+constructor()`) keeps its page and public members, whatever its shape: exported,
+plain, a subclass, a class expression (top-level or nested, as in
+`Ns.Foo = class {…}`), an `export default class`, or a CommonJS export
+(`exports.Foo = class`, `module.exports = Foo`, `module.exports = class`). An ES5
+`@class`/`@constructor` function marked `@private` is the class itself, so it
+stays hidden. On the kept class, only the Constructor section
 is hidden, along with everything else on the constructor comment (`@since`,
 `@see`, …). JSDoc merges the constructor comment into the class, which used to
 show the whole class as `private`. On TypeDoc pages, a `private constructor()`

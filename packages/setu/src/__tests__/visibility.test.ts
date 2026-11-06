@@ -11,7 +11,7 @@ import type { NavNode, TDoclet, TJSDocSaltyCollection } from '@clean-jsdoc-theme
 import { generateSite } from '../index';
 import { pruneHiddenDoclets } from '../doclet';
 import { getJSDocTaffyData } from './factory';
-import { PRIVATE_CTOR_DOCLETS } from './private-ctor-fixture';
+import { PRIVATE_CTOR_ANON_DOCLETS, PRIVATE_CTOR_DOCLETS } from './private-ctor-fixture';
 
 function makeCollection(items: unknown[]): TJSDocSaltyCollection<TDoclet> {
   return salty.taffy(items) as unknown as TJSDocSaltyCollection<TDoclet>;
@@ -231,13 +231,24 @@ describe('generateSite — a @private ES6 constructor (real JSDoc output)', () =
 
   // Every class shape whose ONLY private part is its constructor: exported
   // (`Exp#Exp` ctor record), plain and subclass (ctor record longname = class),
-  // class expression, CommonJS class in a module.
+  // class expression, CommonJS class in a module; then the shapes whose ctor
+  // record longname is neither the class's nor `<class>#<name>`: nested class
+  // expressions (`Outer~Outer.Inner`, `Host~Host.Nested`) and an
+  // `export default class` outside a @module (`module.exports#module.exports`);
+  // plus `export default class` / `module.exports = class` inside a @module,
+  // where the class IS the module. A null member: JSDoc attaches no method to
+  // that page (it lands on Globals, or nowhere).
   it.each([
     ['exp', 'Exported class desc.', 'pub', 'Exp ctor.'],
     ['ctorpriv', 'Plain class desc.', 'm', 'Plain ctor.'],
     ['subpriv', 'Sub desc.', 's', 'Sub ctor.'],
     ['exprcls', 'Expr desc.', 'e', 'Expr ctor.'],
     ['module/cjsmod/cjscls', 'Cjs class desc.', 'c', 'Cjs ctor.'],
+    ['outer/inner', 'Inner class desc.', 'im', 'Inner ctor.'],
+    ['host/nested', 'Nested class desc.', 'nm', 'Nested ctor.'],
+    ['module/exports', 'Default class desc.', null, 'DefExp ctor.'],
+    ['module/defmod', 'Default class desc.', 'd', 'DefExp ctor.'],
+    ['module/anonmod', 'Anonymous class desc.', null, 'Anon ctor.'],
   ])(
     '%s: keeps the class + public members, hides only the constructor',
     (slug, desc, member, ctor) => {
@@ -245,7 +256,7 @@ describe('generateSite — a @private ES6 constructor (real JSDoc output)', () =
       const body = page(m, slug)!.body;
       expect(navSlugs(m.nav)).toContain(slug);
       expect(body).toContain(desc);
-      expect(body).toContain(`name="${member}"`);
+      if (member) expect(body).toContain(`name="${member}"`);
       expect(body).not.toContain('**Modifiers:** `private`');
       expect(body).not.toContain('## Constructor');
       expect(body).not.toContain(ctor);
@@ -266,9 +277,16 @@ describe('generateSite — a @private ES6 constructor (real JSDoc output)', () =
     expect(page(site(), 'module/cjsmod')!.body).toContain('CjsCls');
   });
 
+  it('the namespace / host class pages list the kept nested class', () => {
+    const m = site();
+    expect(page(m, 'outer')!.body).toContain('name="Inner"');
+    expect(page(m, 'host')!.body).toContain('name="Nested"');
+  });
+
   it('controls: a @private class comment, or an ES5 @class/@constructor, stays hidden', () => {
     const m = site();
-    for (const slug of ['sec', 'both', 'es5priv', 'es5ctor']) {
+    // `outer/hiddeninner`: a nested class expression whose class comment is @private.
+    for (const slug of ['sec', 'both', 'es5priv', 'es5ctor', 'outer/hiddeninner']) {
       expect(page(m, slug)).toBeUndefined();
       expect(navSlugs(m.nav)).not.toContain(slug);
     }
@@ -280,6 +298,9 @@ describe('generateSite — a @private ES6 constructor (real JSDoc output)', () =
     expect(body).toContain('Exp ctor.');
     expect(body).toContain('9.9.9');
     expect(body).toContain('name="hid"');
+    const inner = page(site({ includePrivate: true }), 'outer/inner')!.body;
+    expect(inner).toContain('## Constructor');
+    expect(inner).toContain('Inner ctor.');
   });
 
   it('does not mutate the input doclets', () => {
@@ -291,5 +312,31 @@ describe('generateSite — a @private ES6 constructor (real JSDoc output)', () =
     expect(exp.access).toBe('private');
     expect(exp.since).toBe('9.9.9');
     expect(exp.hideconstructor).toBeUndefined();
+  });
+});
+
+describe('generateSite — `module.exports = class` with a @private constructor, no @module', () => {
+  // Its own fixture: the class shares the `module.exports` longname with the
+  // `export default class` in PRIVATE_CTOR_DOCLETS.
+  const site = (opts?: { includePrivate?: boolean }) =>
+    generateSite(makeCollection(PRIVATE_CTOR_ANON_DOCLETS), opts);
+
+  it('keeps the class + public members, hides only the constructor', () => {
+    const m = site();
+    const body = m.pages.find((p) => p.slug === 'module/exports')!.body;
+    expect(navSlugs(m.nav)).toContain('module/exports');
+    expect(body).toContain('Anonymous class desc.');
+    expect(body).toContain('name="an"');
+    expect(body).not.toContain('**Modifiers:** `private`');
+    expect(body).not.toContain('## Constructor');
+    expect(body).not.toContain('Anon ctor.');
+  });
+
+  it('includePrivate shows the constructor again', () => {
+    const body = site({ includePrivate: true }).pages.find(
+      (p) => p.slug === 'module/exports'
+    )!.body;
+    expect(body).toContain('## Constructor');
+    expect(body).toContain('Anon ctor.');
   });
 });

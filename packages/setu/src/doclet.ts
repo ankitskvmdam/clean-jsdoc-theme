@@ -127,6 +127,16 @@ export function pruneHiddenDoclets(
 /** `meta.code.type` of the record JSDoc makes for a class comment. */
 const CLASS_CODE_TYPES = new Set(['ClassDeclaration', 'ClassExpression']);
 
+/** A key for "this source file, this id" (path and filename may be absent). */
+function sourceKey(d: TDoclet, id: string): string {
+  return JSON.stringify([d.meta?.path ?? '', d.meta?.filename ?? '', id]);
+}
+
+/** The source identity a class and its constructor record share (see {@link ctorOnlyPrivate}). */
+function ctorKey(d: TDoclet): string {
+  return sourceKey(d, JSON.stringify([d.name ?? '', d.meta?.code?.name ?? '']));
+}
+
 /** The records a constructor-only-private class is rebuilt from. */
 interface CtorOnlyPrivate {
   /** The record holding the constructor comment's own tags. */
@@ -141,17 +151,25 @@ interface CtorOnlyPrivate {
  * `/** Foo. *\/ class Foo { /** @private *\/ constructor() {} }`, JSDoc 4
  * emits (besides the merged, documented `Foo` that reads `access: 'private'`):
  * - the constructor-comment record: undocumented `kind: 'class'`,
- *   `meta.code.type: 'MethodDefinition'`, `access: 'private'`, longname `Foo`
- *   — or `Foo#Foo` when the class is `export`ed;
+ *   `meta.code.type: 'MethodDefinition'`, `access: 'private'`;
  * - the class-comment record(s): undocumented `kind: 'class'`,
  *   `meta.code.type` `ClassDeclaration`/`ClassExpression`, which carry
  *   `access: 'private'` only when the class comment itself says `@private`.
  *
  * So a private `MethodDefinition` record plus no private class-comment record
- * means only the constructor is private. Holds for exported, plain, subclass,
- * class-expression and CommonJS (`module.exports = Foo`) classes alike. An ES5
- * `@class`/`@constructor` function has no `MethodDefinition` record, so a
- * `@private` one stays hidden.
+ * means only the constructor is private. An ES5 `@class`/`@constructor`
+ * function has no `MethodDefinition` record, so a `@private` one stays hidden.
+ *
+ * The constructor record's longname can't be derived from the class's: it is
+ * `Foo` for a plain, subclass, class-expression or CommonJS class, `Foo#Foo`
+ * for an `export class`, `Ns~Ns.Foo` for a nested `Ns.Foo = class {…}`, and
+ * `module.exports#module.exports` for an `export default class` or
+ * `module.exports = class {…}` outside a `@module` file. What every shape
+ * shares with the merged class doclet is its source identity — the same
+ * `meta.path`, `meta.filename`, `name` and `meta.code.name` (the source text
+ * the class is assigned to, e.g. `Ns.Foo`, `exports.Foo`, `module.exports`) —
+ * so the record is matched on that. Class-comment records are matched on file
+ * + longname, which they always share with the merged doclet.
  */
 function ctorOnlyPrivate(all: readonly TDoclet[]): Map<TDoclet, CtorOnlyPrivate> {
   const privateCtors = new Map<string, TDoclet>();
@@ -160,22 +178,21 @@ function ctorOnlyPrivate(all: readonly TDoclet[]): Map<TDoclet, CtorOnlyPrivate>
     if (!d.undocumented || d.kind !== 'class' || !d.longname) continue;
     const codeType = d.meta?.code?.type;
     if (codeType === 'MethodDefinition' && d.access === 'private') {
-      privateCtors.set(d.longname, d);
+      privateCtors.set(ctorKey(d), d);
     } else if (codeType && CLASS_CODE_TYPES.has(codeType)) {
-      const list = classRecords.get(d.longname) ?? [];
+      const key = sourceKey(d, d.longname);
+      const list = classRecords.get(key) ?? [];
       list.push(d);
-      classRecords.set(d.longname, list);
+      classRecords.set(key, list);
     }
   }
   const out = new Map<TDoclet, CtorOnlyPrivate>();
   if (privateCtors.size === 0) return out;
   for (const d of all) {
     if (d.undocumented || d.kind !== 'class' || d.access !== 'private' || !d.longname) continue;
-    const ctor =
-      privateCtors.get(d.longname) ??
-      (d.name ? privateCtors.get(`${d.longname}#${d.name}`) : undefined);
+    const ctor = privateCtors.get(ctorKey(d));
     if (!ctor) continue;
-    const records = classRecords.get(d.longname) ?? [];
+    const records = classRecords.get(sourceKey(d, d.longname)) ?? [];
     if (records.some((r) => r.access === 'private')) continue; // the class itself is private
     out.set(d, { ctor, cls: records.find((r) => r.classdesc !== undefined) ?? records[0] });
   }
