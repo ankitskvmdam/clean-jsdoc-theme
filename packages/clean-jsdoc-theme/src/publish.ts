@@ -37,6 +37,7 @@ import type {
 } from '@clean-jsdoc-theme/setu';
 import type { PlaygroundProvider } from '@clean-jsdoc-theme/utils';
 import { writeOutputFiles } from './write-output-files';
+import { httpsFetch } from './https-fetch';
 
 // JSDoc's tutorial source-type enum (jsdoc/lib/jsdoc/tutorial.js): HTML = 1,
 // MARKDOWN = 2. A tutorial's `.content` is the RAW source; `.type` says how to
@@ -2309,7 +2310,8 @@ async function runPublish(data: unknown, opts: JSDocOpts, tutorials?: unknown): 
         '(see above). Fix them or unset `strict`.'
     );
   };
-  const fontResolver = createGoogleFontResolver();
+  // `node:https`, not the global fetch: see https-fetch.ts (Windows exit abort).
+  const fontResolver = createGoogleFontResolver({ fetch: httpsFetch });
   const { value, diagnostics } = await progress.stage('Validating options', () =>
     validateThemeOpts({
       opts,

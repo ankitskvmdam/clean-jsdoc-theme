@@ -54,6 +54,7 @@ import {
 } from '@clean-jsdoc-theme/utils';
 import type { FontSet, PlaygroundProvider, TDoclet, ValidatedFonts } from '@clean-jsdoc-theme/utils';
 import { reflectionsToDoclets } from './reflection-to-doclets';
+import { httpsFetch } from './https-fetch';
 import { markdownToHtml, partsToMarkdown } from './comment';
 import {
   collectDocs,
@@ -670,7 +671,8 @@ async function buildSite(
   // Google-Font check is the one networked piece, kept behind an injectable
   // resolver in utils; it's fail-open, so an offline build never breaks on it.
   const block = readThemeOption(app);
-  const fontResolver = createGoogleFontResolver();
+  // `node:https`, not the global fetch: see https-fetch.ts (Windows exit abort).
+  const fontResolver = createGoogleFontResolver({ fetch: httpsFetch });
 
   // Strict mode turns every option warning into an error and fails the build
   // (TypeDoc logs the thrown error and exits non-zero); otherwise (the

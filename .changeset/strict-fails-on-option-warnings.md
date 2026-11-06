@@ -20,6 +20,12 @@ checks each locale's exit code) couldn't see a strict failure, a missing
 `plugins/markdown`, or a bad build spec. The error is now reported once through
 JSDoc's logger and the process exits 1. TypeDoc already exited non-zero.
 
+The Google Fonts check (when `fonts` is set) now uses `node:https` instead of the
+global `fetch` in both the JSDoc and TypeDoc builds. On Windows, a build that
+failed right after the check aborted Node with a libuv assertion
+(`!(handle->flags & UV_HANDLE_CLOSING)`, exit code 127) instead of exiting with
+its normal error code.
+
 `customCssFile` / `customJsFile` entries that aren't local paths (a URL, or a v4
 `{ href, integrity }` object) now warn and are skipped instead of being dropped
 silently.
