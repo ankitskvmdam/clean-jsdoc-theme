@@ -944,3 +944,15 @@ describe('render() — issue #333: render-error diagnostics', () => {
     expect(result.warnings).toBeUndefined();
   });
 });
+
+describe('render() — heading ids for punctuation/emoji-only headings', () => {
+  it('renders a deduped fallback id instead of `id=""`; normal ids unchanged', async () => {
+    const manifest = makeManifest();
+    manifest.pages[0].body = ['# Home', '## $', '## 🚀', '## 🚀', '## Intro'].join('\n\n');
+    const result = await render(manifest, { theme: minimalTheme });
+    const html = asString(result.files.find((f) => f.path === 'index.html')!);
+    const ids = [...html.matchAll(/<h2[^>]*\sid="([^"]*)"/g)].map((m) => m[1]);
+    expect(ids).toEqual(['section--24', 'section--1f680', 'section--1f680-1', 'intro']);
+    expect(html).not.toMatch(/<h[1-6][^>]*\sid=""/);
+  });
+});

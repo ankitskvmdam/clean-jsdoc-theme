@@ -1,8 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import { default as salty } from '@jsdoc/salty';
 import { TDoclet, TJSDocSaltyCollection } from '@clean-jsdoc-theme/utils';
-import { getAllMembersOfClass, getMembersOf } from '../doclet';
-import { getContainerView } from '../class-view';
+import {
+  filterDoclets,
+  getAllMembersOfClass,
+  getGlobalDoclets,
+  getMembersOf,
+  isNamedDoclet,
+} from '../doclet';
+import { getContainerView, getInheritedMembers } from '../class-view';
+import { generateSite } from '../index';
 import { getJSDocTaffyData } from './factory';
 
 function makeCollection(items: unknown[]): TJSDocSaltyCollection<TDoclet> {
@@ -147,5 +154,216 @@ describe('getContainerView — self-referential class', () => {
 
     // The Constructor section is unaffected.
     expect(view!.constructorParams.map((p) => p.name)).toEqual(['id', 'name']);
+  });
+});
+
+/**
+ * Mirrors JSDoc 4's output for a documented ES private method (`#secret() {}`):
+ * the parser can't name it, so the doclet arrives with `name: ''` and
+ * `longname: ''`, yet still `memberof` its class, next to a normal member.
+ */
+function makeClassWithNamelessMember(extra: unknown[] = []): TJSDocSaltyCollection<TDoclet> {
+  return makeCollection([
+    {
+      kind: 'class',
+      name: 'Odd',
+      longname: 'Odd',
+      scope: 'global',
+      classdesc: 'Holder.',
+      meta: { filename: 'odd.js', path: 'src', lineno: 1 },
+    },
+    {
+      kind: 'function',
+      name: '',
+      longname: '',
+      memberof: 'Odd',
+      description: 'Private-ish.',
+      params: [],
+      meta: { filename: 'odd.js', path: 'src', lineno: 3, code: { name: 'Odd#' } },
+    },
+    {
+      kind: 'function',
+      name: 'visible',
+      longname: 'Odd#visible',
+      memberof: 'Odd',
+      scope: 'instance',
+      description: 'Visible.',
+      meta: { filename: 'odd.js', path: 'src', lineno: 5 },
+    },
+    ...extra,
+  ]);
+}
+
+describe('isNamedDoclet', () => {
+  it('is true only for a non-empty string name', () => {
+    expect(isNamedDoclet({ name: 'ok' } as TDoclet)).toBe(true);
+    expect(isNamedDoclet({ name: '' } as TDoclet)).toBe(false);
+    expect(isNamedDoclet({} as TDoclet)).toBe(false);
+  });
+});
+
+describe('getMembersOf — nameless doclets', () => {
+  it('drops the nameless member and keeps the named one', () => {
+    const members = getMembersOf(makeClassWithNamelessMember(), 'Odd');
+    expect(members.map((m) => m.longname)).toEqual(['Odd#visible']);
+  });
+
+  it('drops nameless members whatever the visibility options downstream', () => {
+    // The drop happens at read time, before filterDoclets' visibility policy,
+    // so even "include everything" can't bring a nameless doclet back.
+    const members = filterDoclets(getMembersOf(makeClassWithNamelessMember(), 'Odd'), {
+      includePrivate: true,
+      includeUndocumented: true,
+    });
+    expect(members.map((m) => m.name)).toEqual(['visible']);
+  });
+});
+
+describe('getGlobalDoclets — nameless doclets', () => {
+  it('drops a nameless global-scope doclet and keeps named globals', () => {
+    const collection = makeCollection([
+      { kind: 'function', name: '', longname: '', scope: 'global' },
+      { kind: 'function', name: 'util', longname: 'util', scope: 'global' },
+    ]);
+    expect(getGlobalDoclets(collection).map((d) => d.name)).toEqual(['util']);
+  });
+});
+
+describe('filterDoclets', () => {
+  const named = { kind: 'function', name: 'ok', longname: 'X#ok' } as TDoclet;
+
+  it('applies the private/undocumented policy', () => {
+    const priv = { ...named, name: 'p', longname: 'X#p', access: 'private' } as TDoclet;
+    const undoc = { ...named, name: 'u', longname: 'X#u', undocumented: true } as TDoclet;
+    expect(filterDoclets([named, priv, undoc])).toEqual([named]);
+    expect(filterDoclets([named, priv, undoc], { includePrivate: true })).toEqual([named, priv]);
+  });
+});
+
+describe('nameless members (JSDoc ES #private)', () => {
+  it('are left out of the container view; named members are kept', () => {
+    const view = getContainerView(makeClassWithNamelessMember(), 'Odd', 'class');
+    expect(view).not.toBeNull();
+    const all = [
+      ...view!.instanceMethods,
+      ...view!.instanceFields,
+      ...view!.staticMethods,
+      ...view!.staticFields,
+      ...view!.other,
+    ];
+    expect(all.map((m) => m.name)).toEqual(['visible']);
+  });
+
+  it('are not inherited by a subclass; named inherited members are', () => {
+    const collection = makeClassWithNamelessMember([
+      {
+        kind: 'class',
+        name: 'Child',
+        longname: 'Child',
+        scope: 'global',
+        augments: ['Odd'],
+        classdesc: 'Subclass.',
+        meta: { filename: 'child.js', path: 'src', lineno: 1 },
+      },
+    ]);
+    const inherited = getInheritedMembers(collection, 'Child');
+    expect(inherited.map((m) => m.name)).toEqual(['visible']);
+    expect(inherited[0].inheritedFrom).toBe('Odd');
+
+    const site = generateSite(collection);
+    const child = site.pages.find((p) => p.slug === 'child');
+    expect(child).toBeDefined();
+    expect(child!.body).not.toContain('name=""');
+    expect(child!.body).toContain('name="visible"');
+  });
+
+  it('emit no blank member heading or anchor on the class page', () => {
+    const site = generateSite(makeClassWithNamelessMember());
+    const page = site.pages.find((p) => p.slug === 'odd');
+    expect(page).toBeDefined();
+    expect(page!.body).not.toContain('name=""');
+    expect(page!.body).not.toContain('id=""');
+    expect(page!.body).toContain('name="visible"');
+    const headingIds = (page!.headings ?? []).map((h) => h.id);
+    expect(headingIds).not.toContain('');
+    expect(headingIds).toContain('visible');
+  });
+});
+
+describe('blank member names (TypeDoc keeps a literal single-space key)', () => {
+  it('render with a fallback anchor under the typedoc flavor; empty names drop', () => {
+    const collection = makeCollection([
+      { kind: 'interface', name: 'Odd', longname: 'Odd', scope: 'global', description: 'Odd.' },
+      {
+        kind: 'member',
+        name: ' ',
+        longname: 'Odd. ',
+        memberof: 'Odd',
+        scope: 'instance',
+        description: 'A single space.',
+        type: { names: ['string'] },
+      },
+      {
+        kind: 'member',
+        name: '\u00a0',
+        longname: 'Odd.\u00a0',
+        memberof: 'Odd',
+        scope: 'instance',
+        description: 'A no-break space.',
+        type: { names: ['string'] },
+      },
+      {
+        kind: 'member',
+        name: '\u200b',
+        longname: 'Odd.\u200b',
+        memberof: 'Odd',
+        scope: 'instance',
+        description: 'A zero-width space.',
+        type: { names: ['string'] },
+      },
+      {
+        kind: 'member',
+        name: '',
+        longname: 'Odd.',
+        memberof: 'Odd',
+        scope: 'instance',
+        description: 'The empty string.',
+      },
+      {
+        kind: 'member',
+        name: 'normal',
+        longname: 'Odd.normal',
+        memberof: 'Odd',
+        scope: 'instance',
+        description: 'Normal.',
+      },
+    ]);
+    const site = generateSite(collection, { flavor: 'typedoc' });
+    const page = site.pages.find((p) => p.frontmatter.longname === 'Odd');
+    expect(page).toBeDefined();
+    expect(page!.body).toContain('id="member--20"');
+    expect(page!.body).toContain('id="normal"');
+    expect(page!.body).not.toContain('id=""');
+    expect(page!.body).not.toContain('The empty string.');
+    // The blank name is shown quoted, so its heading and TOC row aren't empty.
+    expect(page!.body).toContain(`name="' '"`);
+    expect(page!.body).toContain(`sig="' ': string"`);
+    expect(page!.headings).toContainEqual(
+      expect.objectContaining({ text: "' '", id: 'member--20' })
+    );
+    // Names with no visible character are shown as quoted escapes, never blank
+    // and never alike; the anchors keep the code points.
+    expect(page!.body).toContain('id="member--a0"');
+    expect(page!.body).toContain('id="member--200b"');
+    expect(page!.body).toContain(`name="'\\u00a0'"`);
+    expect(page!.body).toContain(`sig="'\\u200b': string"`);
+    expect(page!.headings).toContainEqual(
+      expect.objectContaining({ text: "'\\u00a0'", id: 'member--a0' })
+    );
+    expect(page!.headings).toContainEqual(
+      expect.objectContaining({ text: "'\\u200b'", id: 'member--200b' })
+    );
+    const texts = (page!.headings ?? []).map((h) => h.text);
+    expect(new Set(texts).size).toBe(texts.length);
   });
 });

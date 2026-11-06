@@ -11,7 +11,7 @@ import {
 } from '@clean-jsdoc-theme/utils';
 import type { TDoclet, TJSDocSaltyCollection } from '@clean-jsdoc-theme/utils';
 import { bucketClassMembers, getContainerView, type ContainerView } from './class-view';
-import { filterDoclets } from './doclet';
+import { filterDoclets, getGlobalDoclets } from './doclet';
 import { containerViewToMdast } from './mdast/class-view';
 import type { DocletBlocksOptions } from './mdast/doclet';
 import {
@@ -146,15 +146,25 @@ export function makePlaygroundResolver(
   };
 }
 
-/** Concatenate the text content of a heading node's inline children. */
+/**
+ * The visible text of a heading, read recursively through its phrasing
+ * children (`**Bold** title` → `Bold title`, `[link](x)` → `link`). `text` and
+ * `inlineCode` contribute their value and a `break` contributes a space (setu
+ * serialises it as a line break, which dwar's `hastText` reads as whitespace);
+ * images, raw HTML and MDX expressions add nothing. A footnote reference
+ * reaches this tree as a link to `#user-content-fn-…` whose text is the
+ * footnote number, so `## Intro[^1]` reads `Intro1` — the same text dwar's
+ * `hastText` sees in the rendered heading and the id GitHub generates. Both
+ * feed `slugifyHeading`, so the TOC id equals the rendered id.
+ */
 function headingText(node: MdastHeading): string {
-  let out = '';
-  for (const child of node.children) {
-    if (child.type === 'text' || child.type === 'inlineCode') {
-      out += child.value;
-    }
-  }
-  return out;
+  const visit = (n: { type: string; value?: unknown; children?: unknown[] }): string => {
+    if (n.type === 'text' || n.type === 'inlineCode') return String(n.value ?? '');
+    if (n.type === 'break') return ' '; // serialised as a line break; dwar reads the newline as whitespace
+    if (!Array.isArray(n.children)) return '';
+    return n.children.map((c) => visit(c as Parameters<typeof visit>[0])).join('');
+  };
+  return visit(node);
 }
 
 /** Read a string attribute off an mdast-mdx JSX element node. */
@@ -387,7 +397,7 @@ export function buildGlobalsView(
   collection: TJSDocSaltyCollection<TDoclet>,
   flavor: 'jsdoc' | 'typedoc' = 'jsdoc'
 ): { view: ContainerView; slug: string } | null {
-  const globals = filterDoclets(collection({ scope: 'global' }).get());
+  const globals = filterDoclets(getGlobalDoclets(collection));
   // Under the typedoc flavor, enums/functions/variables each get their own
   // standalone page, so they must NOT also land on the aggregated Globals page.
   const excluded =

@@ -18,6 +18,7 @@ import { htmlToMdastBlocks, htmlToMdastInline } from '../mdast/from-html';
 import {
   constructorSignature,
   containerViewToMdast,
+  displayMemberName,
   memberBadges,
   memberBlocks,
   memberSignatureSuffix,
@@ -259,6 +260,64 @@ describe('docletBlocks (per-member composer)', () => {
     expect(block).not.toBeNull();
     const json = JSON.stringify(block);
     expect(json).toContain('This module is deprecated and should not be used.');
+  });
+});
+
+describe('displayMemberName', () => {
+  it('quotes a name with no visible character, escaping everything but U+0020', () => {
+    expect(displayMemberName(' ')).toBe("' '");
+    expect(displayMemberName('  ')).toBe("'  '");
+    expect(displayMemberName('\t')).toBe("'\\t'");
+    expect(displayMemberName('\n')).toBe("'\\n'");
+    expect(displayMemberName('\u00a0')).toBe("'\\u00a0'");
+    expect(displayMemberName('\u3000')).toBe("'\\u3000'");
+    expect(displayMemberName('\u200b')).toBe("'\\u200b'");
+    expect(displayMemberName('\u2060')).toBe("'\\u2060'");
+    expect(displayMemberName('\ufeff')).toBe("'\\ufeff'");
+    expect(displayMemberName('\u00ad')).toBe("'\\u00ad'");
+    expect(displayMemberName('\u0301')).toBe("'\\u0301'");
+    expect(displayMemberName(' \u00a0 ')).toBe("' \\u00a0 '");
+    expect(displayMemberName('\u{e0100}')).toBe("'\\u{e0100}'");
+    expect(displayMemberName('\u2800')).toBe("'\\u2800'");
+    expect(displayMemberName('\ud800')).toBe("'\\ud800'");
+    expect(displayMemberName('\udfff')).toBe("'\\udfff'");
+    expect(displayMemberName('\u2800\ud800')).toBe("'\\u2800\\ud800'");
+  });
+
+  it('never shows two different invisible names alike', () => {
+    const names = [
+      ' ',
+      '  ',
+      '\t',
+      '\u00a0',
+      '\u200b',
+      '\u2060',
+      '\ufeff',
+      '\u00ad',
+      '\u3000',
+      '\u2800',
+      '\ud800',
+    ];
+    expect(new Set(names.map(displayMemberName)).size).toBe(names.length);
+  });
+
+  it('returns a name with any visible character as is', () => {
+    for (const name of [
+      'normal',
+      'a b',
+      ' a',
+      '$',
+      '_',
+      '$$',
+      '->',
+      '\u00e9',
+      'a\u200bb',
+      '\u2801',
+      '\ufffc',
+      '\u{1f680}',
+      'a\u2800',
+    ])
+      expect(displayMemberName(name)).toBe(name);
   });
 });
 

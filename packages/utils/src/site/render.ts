@@ -45,19 +45,28 @@ export interface RenderWarning {
   snippet?: string;
 }
 
+/** Label {@link formatRenderError} prints for the home page (slug `''`). */
+export const HOME_PAGE_LABEL = '(home page)';
+
 /**
  * Format one skipped-page {@link RenderError} (or a {@link RenderWarning}, which
  * has the same shape) for a build log, so both bridges (JSDoc + TypeDoc) print
  * them identically. A positioned entry shows `slug (line L:C): message` followed
  * by its indented code-frame snippet; an unpositioned one falls back to the
  * legacy `slug: message` single line.
+ *
+ * The home page's slug is `''`, which would print as a blank label; it is
+ * shown as {@link HOME_PAGE_LABEL} instead. Not `index`: a real page can have
+ * the slug `index` (it is emitted at `/index/`, see issue #333), so that label
+ * would be ambiguous.
  */
 export function formatRenderError(error: RenderError | RenderWarning, indent = '  '): string {
   const hasLine = typeof error.line === 'number';
   const loc = hasLine
     ? ` (line ${error.line}${typeof error.column === 'number' ? `:${error.column}` : ''})`
     : '';
-  const header = `${indent}- ${error.slug}${loc}: ${error.message}`;
+  const label = error.slug === '' ? HOME_PAGE_LABEL : error.slug;
+  const header = `${indent}- ${label}${loc}: ${error.message}`;
   if (!error.snippet) return header;
   const snippet = error.snippet
     .split('\n')

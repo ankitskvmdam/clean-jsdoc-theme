@@ -1,6 +1,6 @@
 import type { PhrasingContent, Root, RootContent } from 'mdast';
 import { ClassMember, ClassView, ContainerView, MemberBuckets } from '../class-view';
-import { slugifyHeading, TDoclet, TDocletOverload, TDocletParam, TDocletTypeParam } from '@clean-jsdoc-theme/utils';
+import { memberAnchor, TDoclet, TDocletOverload, TDocletParam, TDocletTypeParam } from '@clean-jsdoc-theme/utils';
 import { emphasis, h, hr, inlineCode, li, link, memberHeading, memberMeta, p, root, signature, strong, text, ul } from './builders';
 import {
   docletBlocks,
@@ -289,14 +289,63 @@ function tsCallableSignature(
   return formatCallable(name, tsTypeParamParts(typeParams), tsParamParts(params), ret ? `: ${ret}` : '');
 }
 
+// A character that prints nothing on its own: whitespace of any kind (space,
+// NBSP, ideographic space, line/paragraph separators), controls, format
+// characters (zero-width space/joiner, BOM, soft hyphen, bidi marks), lone
+// combining and enclosing marks, the other default-ignorables (Hangul fillers,
+// variation selectors), U+2800 BRAILLE PATTERN BLANK (a symbol by category, an
+// empty cell by definition) and a lone surrogate half (`Cs`: not a character,
+// so UTF-8 output turns it into U+FFFD and any two would look alike).
+// `White_Space` already covers Zs/Zl/Zp and the TAB..CR controls. Not included,
+// because they render as a visible glyph: spacing marks (`Mc`), the other
+// Braille patterns, U+FFFC/U+FFFD, and unassigned or private-use code points.
+const INVISIBLE_ONLY =
+  /^[\p{White_Space}\p{Cc}\p{Cf}\p{Mn}\p{Me}\p{Default_Ignorable_Code_Point}\p{Cs}\u2800]*$/u;
+// Every invisible character except U+0020, which stays a literal space inside
+// the quotes (`' '`), the way TypeScript prints such a key.
+const INVISIBLE_EXCEPT_SPACE =
+  /(?! )[\p{White_Space}\p{Cc}\p{Cf}\p{Mn}\p{Me}\p{Default_Ignorable_Code_Point}\p{Cs}\u2800]/gu;
+const SHORT_ESCAPES: Readonly<Record<string, string>> = {
+  '\b': '\\b',
+  '\t': '\\t',
+  '\n': '\\n',
+  '\f': '\\f',
+  '\r': '\\r',
+};
+
+/** `\t`-style for the common controls, else `\uXXXX` (lowercase, like the
+ *  `member--XXXX` anchor hex) or `\u{XXXXX}` beyond the BMP. A lone surrogate half
+ *  is one code unit and escapes as itself (`\ud800`). */
+function escapeInvisible(ch: string): string {
+  const short = SHORT_ESCAPES[ch];
+  if (short) return short;
+  const cp = ch.codePointAt(0)!;
+  return cp > 0xffff ? `\\u{${cp.toString(16)}}` : `\\u${cp.toString(16).padStart(4, '0')}`;
+}
+
+/** Visible form of a member name for headings, the TOC and search. A name with
+ *  no visible character at all (TypeDoc keeps a TS key `' '`, `'\u00a0'`,
+ *  `'\u200b'` or `'\u2800'`) is shown as a quoted literal with every character
+ *  but U+0020 escaped — `' '`, `'\t'`, `'\u00a0'`, `'\u200b'`, `'\u2800'`,
+ *  `'\ud800'` — so its heading and TOC row are never blank and two such names
+ *  never look alike. Any name with at least one visible character (`$`, `_`,
+ *  `->`, `a b`, and a mixed `a\u200bb`) is returned as is. Anchors never use
+ *  this: `memberAnchor` reads the raw name. */
+export function displayMemberName(name: string): string {
+  if (!INVISIBLE_ONLY.test(name)) return name;
+  return `'${name.replace(INVISIBLE_EXCEPT_SPACE, escapeInvisible)}'`;
+}
+
 /**
  * Full TS signature for a member: a callable form for functions/methods
  * (`name<T>(p: T): Ret`), `get name(): Type` for accessors, and `name: Type`
- * for fields. Returns `null` when there's nothing meaningful to show.
+ * for fields. Returns `null` when there's nothing meaningful to show. Takes any
+ * doclet (not just a `ClassMember`): standalone function/variable pages pass
+ * their container doclet, whose name may be absent.
  */
-function tsMemberSignature(member: ClassMember): string | null {
-  const name = member.name;
-  if (!name) return null;
+function tsMemberSignature(member: TDoclet): string | null {
+  if (!member.name) return null;
+  const name = displayMemberName(member.name);
   if (member.kind === 'function') {
     return tsCallableSignature(name, member.typeParams, member.params, member.returns);
   }
@@ -316,10 +365,10 @@ function tsMemberSignature(member: ClassMember): string | null {
  */
 function objectLiteralFromProperties(properties: readonly TDocletParam[]): string {
   const members = properties
-    .filter((p) => p.name && !p.name.includes('.'))
+    .filter((p): p is TDocletParam & { name: string } => !!p.name && !p.name.includes('.'))
     .map((p) => {
       const t = tsType(p.type);
-      return `${p.name}${p.optional ? '?' : ''}${t ? `: ${t}` : ''}`;
+      return `${displayMemberName(p.name)}${p.optional ? '?' : ''}${t ? `: ${t}` : ''}`;
     });
   if (members.length === 0) return '{}';
   const single = `{ ${members.join('; ')} }`;
@@ -338,7 +387,7 @@ function variableSignature(doclet: ContainerView['doclet']): string | null {
   if (name && doclet.properties && doclet.properties.length > 0) {
     return `${name}: ${objectLiteralFromProperties(doclet.properties as TDocletParam[])}`;
   }
-  return tsMemberSignature(doclet as ClassMember);
+  return tsMemberSignature(doclet);
 }
 
 /**
@@ -376,7 +425,7 @@ function typedefSignature(doclet: ContainerView['doclet']): string | null {
 
 /** One interface member rendered as a TS declaration line (`name?(p: P): R`). */
 function interfaceMemberLine(member: ClassMember): string {
-  const name = member.name ?? '';
+  const name = displayMemberName(member.name);
   const opt = member.optional ? '?' : '';
   if (member.kind === 'function') {
     const tp = tsTypeParamParts(member.typeParams);
@@ -486,7 +535,11 @@ function overloadSignatureBlocks(
   ];
   const out: RootContent[] = [];
   for (const sig of signatures) {
-    out.push(signature(tsCallableSignature(name, sig.typeParams, sig.params, sig.returns)));
+    out.push(
+      signature(
+        tsCallableSignature(displayMemberName(name), sig.typeParams, sig.params, sig.returns)
+      )
+    );
     // A synthetic doclet carrying only this signature's data, so docletBlocks
     // renders its Type Parameters / Parameters / Returns (and the overload's own
     // description, which isn't a skippable section).
@@ -529,10 +582,11 @@ export function memberBadges(member: ClassMember): string[] {
  * Render one member as: a `<MemberHeading>` (an `h{depth}` whose content is one
  * `<code>` showing the full signature — `process(data) -> Promise.<number>` for
  * methods/functions, the bare name for fields — with an explicit id so the
- * anchor stays `slugifyHeading(name)`); a `<MemberMeta>` row (modifier/kind
- * chips on the left, the `filename:line` source link pinned right); then the
- * doclet's body via {@link docletBlocks}. TOC / search / `{@link}` resolve to
- * `#name` because the signature never feeds the slug (see {@link memberHeading}).
+ * anchor stays `memberAnchor(name)`, the same id the link registry uses); a
+ * `<MemberMeta>` row (modifier/kind chips on the left, the `filename:line`
+ * source link pinned right); then the doclet's body via {@link docletBlocks}.
+ * TOC / search / `{@link}` resolve to `#memberAnchor(name)` because the
+ * signature never feeds the slug (see {@link memberHeading}).
  * The `modifiers` section is skipped — the chips replace that paragraph.
  * Reusable for any kind with named, headed members.
  */
@@ -541,16 +595,19 @@ export function memberBlocks(
   options: DocletBlocksOptions = {},
   headingLevel: 2 | 3 | 4 = 3
 ): RootContent[] {
-  const name = member.name ?? '(anonymous)';
+  const name = member.name;
   // The heading shows the full TypeScript signature (`addChild(child: Component):
   // void`), shiki-highlighted inline by rang's MemberHeading — the same look in
   // both flavors. The anchor stays `#name` (explicit id; the sig never feeds the
   // slug). An overloaded member can't put N signatures in one heading, so it
   // keeps a bare-name heading and stacks each signature as a `<Signature>` below.
   const overloaded = options.flavor === 'typedoc' && hasOverloads(member);
-  const sig = overloaded ? name : (tsMemberSignature(member) ?? name);
+  // A blank name (`' '`) is printed quoted so its heading, TOC row and search
+  // entry aren't empty; the anchor still comes from the raw name.
+  const shown = displayMemberName(name);
+  const sig = overloaded ? shown : (tsMemberSignature(member) ?? shown);
   const out: RootContent[] = [
-    memberHeading({ id: slugifyHeading(name), depth: headingLevel, name, sig }),
+    memberHeading({ id: memberAnchor(name), depth: headingLevel, name: shown, sig }),
   ];
 
   const badges = memberBadges(member);

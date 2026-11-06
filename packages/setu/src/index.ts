@@ -377,7 +377,10 @@ export function generateSite(collection: unknown, opts?: GenerateSiteOptions): S
   let docNav: NavNode[] = [];
   if (opts?.docs && opts.docs.length > 0) {
     const built = buildDocPages(opts.docs, { defaultDocGroup: opts.defaultDocGroup }, resolveLink);
-    const droppedSlugs = new Set<string>();
+    // Nav nodes of the pages skipped below, removed by identity: a skipped page
+    // shares its slug with the page that beat it to it, so filtering by slug
+    // would also take the kept page's sidebar entry away.
+    const droppedNav = new Set<NavNode>();
     for (const page of built.pages) {
       if (page.slug === '' && page.frontmatter.kind === 'index') {
         // Root index.md → the home page (overrides the README home, below).
@@ -386,19 +389,27 @@ export function generateSite(collection: unknown, opts?: GenerateSiteOptions): S
       }
       // A doc may not shadow the home or an already-claimed API/source slug.
       if (page.slug === '' || claimedSlugs.has(page.slug)) {
-        droppedSlugs.add(page.slug);
+        const node = built.navOf.get(page);
+        if (node) droppedNav.add(node);
         // Non-fatal: skip deterministically and warn (the bridge surfaces logs).
-        console.warn(
-          `[setu] skipping doc page: slug "${page.slug}" collides with an existing page`
-        );
+        // Name the page by its title and the file it came from (the bridges set
+        // `source`; otherwise the docs-relative path), so the author can find it:
+        // an empty slug alone would print as the unhelpful `slug ""`.
+        const input = built.inputs.get(page);
+        const where = input?.source ?? input?.path ?? page.slug;
+        const reason =
+          page.slug === ''
+            ? 'its slug is empty, which would collide with the home page'
+            : `its slug "${page.slug}" collides with an existing page`;
+        console.warn(`[setu] skipping doc page "${page.frontmatter.title}" (${where}): ${reason}`);
         continue;
       }
       claimedSlugs.add(page.slug);
       docPages.push(page);
     }
-    // Drop nav entries for the skipped doc pages so the sidebar matches the
-    // emitted pages (a dropped slug never reaches the manifest).
-    docNav = built.nav.filter((n) => n.slug !== undefined && !droppedSlugs.has(n.slug));
+    // Drop only the skipped pages' own nav entries so the sidebar matches the
+    // emitted pages; a kept page that shares a skipped page's slug keeps its link.
+    docNav = built.nav.filter((n) => !droppedNav.has(n));
   }
 
   // README → home page (slug ''), the always-first ungrouped "Home" link. A root
@@ -419,14 +430,27 @@ export function generateSite(collection: unknown, opts?: GenerateSiteOptions): S
   let tutorialNav: NavNode[] = [];
   if (opts?.tutorials && opts.tutorials.length > 0) {
     const built = buildTutorialPages(opts.tutorials, resolveLink);
-    // Tutorials slug under `tutorials/<name>`; on the off chance one collides
-    // with an API/doc page, skip it (keep slugs unique across the manifest).
+    // Tutorials slug under `tutorials/<name>`. One can collide with an API/doc
+    // page claimed above, or with an earlier tutorial whose name slugifies alike
+    // (`foo-bar` and `foo_bar`): skip it and warn, as a doc page is. Its nav node
+    // is removed by identity — the page that won the slug keeps its sidebar link
+    // (a slug filter would take both down; see the docs block above).
+    const droppedNav = new Set<NavNode>();
     for (const page of built.pages) {
-      if (claimedSlugs.has(page.slug)) continue;
+      if (claimedSlugs.has(page.slug)) {
+        const node = built.navOf.get(page);
+        if (node) droppedNav.add(node);
+        // Name it by title and `tutorials/<name>` (the raw name, before slugifying).
+        const where = built.inputs.get(page)?.path ?? page.slug;
+        console.warn(
+          `[setu] skipping tutorial "${page.frontmatter.title}" (${where}): its slug "${page.slug}" collides with an existing page`
+        );
+        continue;
+      }
       claimedSlugs.add(page.slug);
       pages.push(page);
     }
-    tutorialNav = built.nav.filter((n) => n.slug === undefined || claimedSlugs.has(n.slug));
+    tutorialNav = built.nav.filter((n) => !droppedNav.has(n));
   }
 
   // Doc pages → prose pages grouped by their doc-group (added after tutorials,
@@ -545,6 +569,7 @@ export {
   tutorialsToDocInputs,
   TUTORIALS_GROUP,
   type BuildDocPagesOptions,
+  type BuiltDocPages,
   type CrossRefResolver,
   type DocInput,
   type ResolvedTutorial,

@@ -18,7 +18,15 @@
  */
 import { createHash } from 'node:crypto';
 import { readdir, readFile } from 'node:fs/promises';
-import { basename, dirname, extname, join as joinPath, resolve as resolvePath } from 'node:path';
+import {
+  basename,
+  dirname,
+  extname,
+  join as joinPath,
+  relative as relativePath,
+  resolve as resolvePath,
+  sep,
+} from 'node:path';
 import type { DocInput } from '@clean-jsdoc-theme/setu';
 import type { OutputFile } from '@clean-jsdoc-theme/dwar';
 import type { TDoclet } from '@clean-jsdoc-theme/utils';
@@ -97,7 +105,9 @@ export async function collectDocs(dir: string, warn: Warn): Promise<DocInput[]> 
       const relPath = relPrefix ? `${relPrefix}/${stem}` : stem;
       try {
         const content = await readFile(abs, 'utf8');
-        docs.push({ path: relPath, content, type });
+        // `source` only names the file in diagnostics (e.g. a skipped page).
+        const source = relativePath(process.cwd(), abs).split(sep).join('/');
+        docs.push({ path: relPath, content, type, source });
       } catch (err) {
         warn(
           `[clean-jsdoc-theme] could not read doc file '${abs}' — ${(err as Error).message}; skipping.`
