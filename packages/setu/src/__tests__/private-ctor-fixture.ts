@@ -1951,3 +1951,509 @@ export const PRIVATE_CTOR_ANON_DOCLETS: unknown[] = [
     params: [],
   },
 ];
+
+/**
+ * Real JSDoc 4.0.5 `-X` output, trimmed the same way, for two classes JSDoc
+ * gives the same longname (`Foo`) and source identity: a top-level class and a
+ * function-scoped one, each with a `@private` constructor carrying its own
+ * tags. Kept apart: the two share a page.
+ *
+ * twoclasses.js:
+ *
+ * /** Top Foo desc. *∕
+ * class Foo {
+ *   /**
+ *    * Top Foo ctor.
+ *    * @private
+ *    * @see TopSecretSee
+ *    *∕
+ *   constructor() {}
+ *   /** a *∕
+ *   a() {}
+ * }
+ *
+ * function mk() {
+ *   /** Inner Foo desc. *∕
+ *   class Foo {
+ *     /**
+ *      * Inner Foo ctor.
+ *      * @private
+ *      * @since 7.7.7
+ *      *∕
+ *     constructor() {}
+ *     /** b *∕
+ *     b() {}
+ *   }
+ *   return Foo;
+ * }
+ */
+export const PRIVATE_CTOR_SAME_NAME_DOCLETS: unknown[] = [
+  {
+    meta: {
+      filename: 'twoclasses.js',
+      lineno: 2,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Foo',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    classdesc: '<p>Top Foo desc.</p>',
+    name: 'Foo',
+    longname: 'Foo',
+    kind: 'class',
+    scope: 'global',
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'twoclasses.js',
+      lineno: 8,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'Foo',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>Top Foo ctor.</p>',
+    access: 'private',
+    see: ['TopSecretSee'],
+    name: 'Foo',
+    longname: 'Foo',
+    kind: 'class',
+    scope: 'global',
+    params: [],
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'twoclasses.js',
+      lineno: 2,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Foo',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    name: 'Foo',
+    longname: 'Foo',
+    kind: 'class',
+    classdesc: '<p>Top Foo desc.</p>',
+    scope: 'global',
+    description: '<p>Top Foo ctor.</p>',
+    access: 'private',
+    see: ['TopSecretSee'],
+  },
+  {
+    meta: {
+      filename: 'twoclasses.js',
+      lineno: 10,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'Foo#a',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>a</p>',
+    name: 'a',
+    longname: 'Foo#a',
+    kind: 'function',
+    memberof: 'Foo',
+    scope: 'instance',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'twoclasses.js',
+      lineno: 13,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'mk',
+        type: 'FunctionDeclaration',
+        paramnames: [],
+      },
+    },
+    undocumented: true,
+    name: 'mk',
+    longname: 'mk',
+    kind: 'function',
+    scope: 'global',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'twoclasses.js',
+      lineno: 15,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'Foo',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    classdesc: '<p>Inner Foo desc.</p>',
+    name: 'Foo',
+    longname: 'Foo',
+    kind: 'class',
+    scope: 'global',
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'twoclasses.js',
+      lineno: 21,
+      columnno: 4,
+      path: '/src',
+      code: {
+        name: 'Foo',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>Inner Foo ctor.</p>',
+    access: 'private',
+    since: '7.7.7',
+    name: 'Foo',
+    longname: 'Foo',
+    kind: 'class',
+    scope: 'global',
+    params: [],
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'twoclasses.js',
+      lineno: 15,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'Foo',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    name: 'Foo',
+    longname: 'Foo',
+    kind: 'class',
+    classdesc: '<p>Inner Foo desc.</p>',
+    scope: 'global',
+    description: '<p>Inner Foo ctor.</p>',
+    access: 'private',
+    since: '7.7.7',
+  },
+  {
+    meta: {
+      filename: 'twoclasses.js',
+      lineno: 23,
+      columnno: 4,
+      path: '/src',
+      code: {
+        name: 'Foo#b',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>b</p>',
+    name: 'b',
+    longname: 'Foo#b',
+    kind: 'function',
+    memberof: 'Foo',
+    scope: 'instance',
+    params: [],
+  },
+];
+
+/**
+ * Real JSDoc 4.0.5 `-X` output, trimmed the same way, for an ES5 `@class`
+ * function marked `@private` that shares its longname (`Foo`) with a
+ * function-scoped ES6 class whose only private part is its constructor, plus
+ * an unrelated ES5 class and ES6 class in the same file. Kept apart: `Foo`
+ * would clash with {@link PRIVATE_CTOR_SAME_NAME_DOCLETS}.
+ *
+ * es5es6.js:
+ *
+ * /**
+ *  * ES5 private class.
+ *  * @class
+ *  * @private
+ *  *∕
+ * function Foo() {}
+ *
+ * function mk() {
+ *   /** Inner Foo desc. *∕
+ *   class Foo {
+ *     /**
+ *      * Inner Foo ctor.
+ *      * @private
+ *      *∕
+ *     constructor() {}
+ *     /** b *∕
+ *     b() {}
+ *   }
+ *   return Foo;
+ * }
+ *
+ * /** ES5 public class. *∕
+ * function Pub() {}
+ * Pub.prototype.go = function () {};
+ *
+ * /** ES6 class in the same file. *∕
+ * class Mixed {
+ *   /**
+ *    * Mixed ctor.
+ *    * @private
+ *    *∕
+ *   constructor() {}
+ *   /** m *∕
+ *   m() {}
+ * }
+ */
+export const PRIVATE_CTOR_ES5_ES6_DOCLETS: unknown[] = [
+  {
+    meta: {
+      filename: 'es5es6.js',
+      lineno: 6,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Foo',
+        type: 'FunctionDeclaration',
+        paramnames: [],
+      },
+    },
+    description: '<p>ES5 private class.</p>',
+    kind: 'class',
+    access: 'private',
+    name: 'Foo',
+    longname: 'Foo',
+    scope: 'global',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'es5es6.js',
+      lineno: 8,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'mk',
+        type: 'FunctionDeclaration',
+        paramnames: [],
+      },
+    },
+    undocumented: true,
+    name: 'mk',
+    longname: 'mk',
+    kind: 'function',
+    scope: 'global',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'es5es6.js',
+      lineno: 10,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'Foo',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    classdesc: '<p>Inner Foo desc.</p>',
+    name: 'Foo',
+    longname: 'Foo',
+    kind: 'class',
+    scope: 'global',
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'es5es6.js',
+      lineno: 15,
+      columnno: 4,
+      path: '/src',
+      code: {
+        name: 'Foo',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>Inner Foo ctor.</p>',
+    access: 'private',
+    name: 'Foo',
+    longname: 'Foo',
+    kind: 'class',
+    scope: 'global',
+    params: [],
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'es5es6.js',
+      lineno: 10,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'Foo',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    name: 'Foo',
+    longname: 'Foo',
+    kind: 'class',
+    classdesc: '<p>Inner Foo desc.</p>',
+    scope: 'global',
+    description: '<p>Inner Foo ctor.</p>',
+    access: 'private',
+  },
+  {
+    meta: {
+      filename: 'es5es6.js',
+      lineno: 17,
+      columnno: 4,
+      path: '/src',
+      code: {
+        name: 'Foo#b',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>b</p>',
+    name: 'b',
+    longname: 'Foo#b',
+    kind: 'function',
+    memberof: 'Foo',
+    scope: 'instance',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'es5es6.js',
+      lineno: 23,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Pub',
+        type: 'FunctionDeclaration',
+        paramnames: [],
+      },
+    },
+    description: '<p>ES5 public class.</p>',
+    name: 'Pub',
+    longname: 'Pub',
+    kind: 'function',
+    scope: 'global',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'es5es6.js',
+      lineno: 24,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Pub.prototype.go',
+        type: 'FunctionExpression',
+        paramnames: [],
+      },
+    },
+    undocumented: true,
+    name: 'go',
+    longname: 'Pub#go',
+    kind: 'function',
+    memberof: 'Pub',
+    scope: 'instance',
+  },
+  {
+    meta: {
+      filename: 'es5es6.js',
+      lineno: 27,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Mixed',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    classdesc: '<p>ES6 class in the same file.</p>',
+    name: 'Mixed',
+    longname: 'Mixed',
+    kind: 'class',
+    scope: 'global',
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'es5es6.js',
+      lineno: 32,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'Mixed',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>Mixed ctor.</p>',
+    access: 'private',
+    name: 'Mixed',
+    longname: 'Mixed',
+    kind: 'class',
+    scope: 'global',
+    params: [],
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'es5es6.js',
+      lineno: 27,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Mixed',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    name: 'Mixed',
+    longname: 'Mixed',
+    kind: 'class',
+    classdesc: '<p>ES6 class in the same file.</p>',
+    scope: 'global',
+    description: '<p>Mixed ctor.</p>',
+    access: 'private',
+  },
+  {
+    meta: {
+      filename: 'es5es6.js',
+      lineno: 34,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'Mixed#m',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>m</p>',
+    name: 'm',
+    longname: 'Mixed#m',
+    kind: 'function',
+    memberof: 'Mixed',
+    scope: 'instance',
+    params: [],
+  },
+];

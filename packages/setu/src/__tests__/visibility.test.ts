@@ -11,7 +11,12 @@ import type { NavNode, TDoclet, TJSDocSaltyCollection } from '@clean-jsdoc-theme
 import { generateSite } from '../index';
 import { pruneHiddenDoclets } from '../doclet';
 import { getJSDocTaffyData } from './factory';
-import { PRIVATE_CTOR_ANON_DOCLETS, PRIVATE_CTOR_DOCLETS } from './private-ctor-fixture';
+import {
+  PRIVATE_CTOR_ANON_DOCLETS,
+  PRIVATE_CTOR_DOCLETS,
+  PRIVATE_CTOR_ES5_ES6_DOCLETS,
+  PRIVATE_CTOR_SAME_NAME_DOCLETS,
+} from './private-ctor-fixture';
 
 function makeCollection(items: unknown[]): TJSDocSaltyCollection<TDoclet> {
   return salty.taffy(items) as unknown as TJSDocSaltyCollection<TDoclet>;
@@ -343,5 +348,37 @@ describe('generateSite — `module.exports = class` with a @private constructor,
     )!.body;
     expect(body).toContain('## Constructor');
     expect(body).toContain('Anon ctor.');
+  });
+});
+
+describe('generateSite — @private constructors of classes JSDoc gives one longname', () => {
+  const page = (doclets: unknown[], slug: string) =>
+    generateSite(makeCollection(doclets)).pages.find((p) => p.slug === slug);
+
+  it('each class sheds its own constructor comment, not the other one', () => {
+    // A top-level and a function-scoped `class Foo`: one longname, one page.
+    const body = page(PRIVATE_CTOR_SAME_NAME_DOCLETS, 'foo')!.body;
+    expect(body).toContain('Top Foo desc.');
+    expect(body).toContain('name="a"');
+    expect(body).not.toContain('**Modifiers:** `private`');
+    expect(body).not.toContain('## Constructor');
+    // `@see` is on the top-level class's constructor, `@since` on the other's.
+    for (const leak of ['Top Foo ctor.', 'TopSecretSee', 'Inner Foo ctor.', '7.7.7']) {
+      expect(body).not.toContain(leak);
+    }
+  });
+
+  it('an ES5 @private @class stays hidden beside a same-longname ES6 class', () => {
+    // The `foo` page is the function-scoped ES6 class (only its constructor
+    // is private), not the ES5 `@class @private function Foo`.
+    const body = page(PRIVATE_CTOR_ES5_ES6_DOCLETS, 'foo')!.body;
+    expect(body).toContain('Inner Foo desc.');
+    expect(body).toContain('name="b"');
+    expect(body).not.toContain('**Modifiers:** `private`');
+    expect(body).not.toContain('## Constructor');
+    // The unrelated ES6 class in the same file keeps its page too.
+    const mixed = page(PRIVATE_CTOR_ES5_ES6_DOCLETS, 'mixed')!.body;
+    expect(mixed).toContain('name="m"');
+    expect(mixed).not.toContain('Mixed ctor.');
   });
 });

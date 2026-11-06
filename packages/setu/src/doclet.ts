@@ -137,6 +137,12 @@ function ctorKey(d: TDoclet): string {
   return sourceKey(d, d.meta?.code?.name ?? '');
 }
 
+/** True when `a` starts at or after `b` in their (shared) source file. */
+function startsAtOrAfter(a: TDoclet, b: TDoclet): boolean {
+  const [al, bl] = [a.meta?.lineno ?? 0, b.meta?.lineno ?? 0];
+  return al > bl || (al === bl && (a.meta?.columnno ?? 0) >= (b.meta?.columnno ?? 0));
+}
+
 /** The records a constructor-only-private class is rebuilt from. */
 interface CtorOnlyPrivate {
   /** The record holding the constructor comment's own tags. */
@@ -170,17 +176,29 @@ interface CtorOnlyPrivate {
  * shares with the merged class doclet is its source identity — the same
  * `meta.path`, `meta.filename` and `meta.code.name` (the source text the class
  * is assigned to, e.g. `Foo`, `Ns.Foo`, `exports.Foo`, `module.exports`) — so
- * the record is matched on that. Class-comment records are matched on file +
- * longname, which they always share with the merged doclet.
+ * the record is matched on that. When several private constructor records
+ * share it (JSDoc gives a function-scoped `class Foo` the identity of a
+ * top-level one), the class takes the first one at or after its own start —
+ * its own, unless a same-named class is nested in its body ahead of its
+ * constructor — so one class's constructor tags don't leak onto the other's
+ * page. Class-comment records are matched on file + longname, which
+ * they always share with the merged doclet.
+ *
+ * Only a merged doclet whose code is a class node qualifies: an ES5 `@class`
+ * function never has a constructor record of its own, so one that shares a
+ * longname with an ES6 class in the same file can't borrow that class's.
  */
 function ctorOnlyPrivate(all: readonly TDoclet[]): Map<TDoclet, CtorOnlyPrivate> {
-  const privateCtors = new Map<string, TDoclet>();
+  const privateCtors = new Map<string, TDoclet[]>();
   const classRecords = new Map<string, TDoclet[]>();
   for (const d of all) {
     if (!d.undocumented || d.kind !== 'class' || !d.longname) continue;
     const codeType = d.meta?.code?.type;
     if (codeType === 'MethodDefinition' && d.access === 'private') {
-      privateCtors.set(ctorKey(d), d);
+      const key = ctorKey(d);
+      const list = privateCtors.get(key) ?? [];
+      list.push(d);
+      privateCtors.set(key, list);
     } else if (codeType && CLASS_CODE_TYPES.has(codeType)) {
       const key = sourceKey(d, d.longname);
       const list = classRecords.get(key) ?? [];
@@ -192,7 +210,12 @@ function ctorOnlyPrivate(all: readonly TDoclet[]): Map<TDoclet, CtorOnlyPrivate>
   if (privateCtors.size === 0) return out;
   for (const d of all) {
     if (d.undocumented || d.kind !== 'class' || d.access !== 'private' || !d.longname) continue;
-    const ctor = privateCtors.get(ctorKey(d));
+    const codeType = d.meta?.code?.type;
+    if (!codeType || !CLASS_CODE_TYPES.has(codeType)) continue;
+    let ctor: TDoclet | undefined;
+    for (const c of privateCtors.get(ctorKey(d)) ?? []) {
+      if (startsAtOrAfter(c, d) && (!ctor || !startsAtOrAfter(c, ctor))) ctor = c;
+    }
     if (!ctor) continue;
     const records = classRecords.get(sourceKey(d, d.longname)) ?? [];
     if (records.some((r) => r.access === 'private')) continue; // the class itself is private
