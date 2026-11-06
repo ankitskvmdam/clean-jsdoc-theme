@@ -134,7 +134,7 @@ function sourceKey(d: TDoclet, id: string): string {
 
 /** The source identity a class and its constructor record share (see {@link ctorOnlyPrivate}). */
 function ctorKey(d: TDoclet): string {
-  return sourceKey(d, d.meta?.code?.name ?? '');
+  return sourceKey(d, JSON.stringify(d.meta?.code?.name ?? ''));
 }
 
 /** True when `a` starts at or after `b` in their (shared) source file. */
