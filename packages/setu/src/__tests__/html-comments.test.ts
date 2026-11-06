@@ -49,6 +49,12 @@ describe('HTML comments through the HTML normalization', () => {
     expect(out).toContain('c');
   });
 
+  it('escapes every unterminated opener, not just the last', () => {
+    const out = mdx(htmlToMdastBlocks('<p>a <!-- x <!-- y</p><p>z</p>'));
+    expect(out).toContain('\\<!-- x \\<!-- y');
+    expect(out).toContain('z');
+  });
+
   it('treats <!--> and <!---> as complete empty comments', () => {
     expect(mdx(htmlToMdastBlocks('<p>a<!-->b<!--->c</p>'))).toBe('abc\n');
   });
@@ -119,6 +125,52 @@ describe('commented-out containers and playgrounds stay commented out', () => {
   it('still lowers a live playground fence next to a commented-out one', () => {
     const out = mdx(markdownToMdastBlocks(`<!--\n${PG_FENCE}\n-->\n\n${PG_FENCE}`));
     expect(out.match(/<Playground\b/g)).toHaveLength(1);
+  });
+
+  // Inside a LIVE container, the item and close-tag scans are comment-blind too.
+  it('ignores an item inside a comment within a live container', () => {
+    const src =
+      '<steps>\n<!-- <step label="H">hidden</step> -->\n<step label="S">shown</step>\n</steps>';
+    for (const out of [mdx(markdownToMdastBlocks(src)), mdx(htmlToMdastBlocks(src))]) {
+      expect(out).toContain('<Step label="S">');
+      expect(out).not.toContain('hidden');
+      expect(out).not.toContain('<!--');
+    }
+  });
+
+  it('ignores a commented-out close tag inside a live container', () => {
+    const src =
+      '<steps>\n<step label="A">one</step>\n<!-- </steps> -->\n<step label="B">two</step>\n</steps>';
+    for (const out of [mdx(markdownToMdastBlocks(src)), mdx(htmlToMdastBlocks(src))]) {
+      expect(out).toContain('<Step label="A">');
+      expect(out).toContain('<Step label="B">');
+      expect(out).not.toContain('-->');
+    }
+  });
+
+  it('ignores a commented-out item close tag inside an item', () => {
+    const src = '<steps>\n<step label="A">a <!-- x </step> --> b</step>\n</steps>';
+    for (const out of [mdx(markdownToMdastBlocks(src)), mdx(htmlToMdastBlocks(src))]) {
+      expect(out).toMatch(/a\s+b/);
+      expect(out).not.toContain('x');
+      expect(out).not.toContain('<!--');
+    }
+  });
+
+  it('ignores a commented-out nested tabs block inside a live tabs block', () => {
+    const src =
+      '<tabs>\n<tab label="A">a</tab>\n<!-- <tabs><tab label="B">b</tab></tabs> -->\n</tabs>';
+    const out = mdx(markdownToMdastBlocks(src));
+    expect(out).toContain('<Tab label="A">');
+    expect(out).not.toContain('label="B"');
+  });
+
+  it('keeps a playground fence inside a comment out of a live playground scan', () => {
+    const src =
+      '<!-- ```js playground codepen\nhidden();\n``` -->\n\n```js playground codepen\nrun();\n```';
+    const out = mdx(markdownToMdastBlocks(src));
+    expect(out.match(/<Playground\b/g)).toHaveLength(1);
+    expect(out).not.toContain('hidden');
   });
 });
 
