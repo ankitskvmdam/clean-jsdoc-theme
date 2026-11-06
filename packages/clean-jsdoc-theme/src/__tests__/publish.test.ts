@@ -127,7 +127,7 @@ describe('publish failure handling', () => {
   });
 });
 
-describe('publish: option problems are printed once', () => {
+describe('publish: option problems (strict escalation, printed once)', () => {
   // An empty JSDoc collection: setu only ever calls `collection(query).get()`.
   const emptyCollection = (): { get: () => unknown[] } => ({ get: () => [] });
   let dir: string;
@@ -162,6 +162,41 @@ describe('publish: option problems are printed once', () => {
     printedInOrder.filter((m) => m.includes(needle)).length;
   const firstPrinted = (needle: string): number =>
     printedInOrder.findIndex((m) => m.includes(needle));
+
+  it('strict: an unreadable favicon fails the build before anything is written', async () => {
+    const destination = join(dir, 'out');
+    await expect(
+      publish(emptyCollection, {
+        destination,
+        progress: false,
+        strict: true,
+        favicon: join(dir, 'missing.ico'),
+      })
+    ).rejects.toThrow('clean-jsdoc-theme: 1 option problem(s) in strict mode');
+    expect(printed.error.filter((m) => m.includes('could not read favicon'))).toHaveLength(1);
+    expect(timesPrinted('could not read favicon')).toBe(1);
+    expect(existsSync(destination)).toBe(false);
+  }, 60_000);
+
+  it('strict: counts every post-validation problem; prints v4-name warnings once on the way out', async () => {
+    const destination = join(dir, 'out');
+    await expect(
+      publish(emptyCollection, {
+        destination,
+        progress: false,
+        strict: true,
+        scrollbar: 'weird',
+        collapsibleSidebarSections: ['Nope'],
+        // A top-level v4 name stays a warning under strict (another plugin may own it).
+        title: 'Old title',
+      } as Parameters<typeof publish>[1])
+    ).rejects.toThrow('clean-jsdoc-theme: 2 option problem(s) in strict mode');
+    expect(printed.error.some((m) => m.includes('scrollbar'))).toBe(true);
+    expect(printed.error.some((m) => m.includes("'Nope'"))).toBe(true);
+    expect(timesPrinted('opts/v4-name')).toBe(1);
+    expect(printed.warn.some((m) => m.includes('opts/v4-name'))).toBe(true);
+    expect(existsSync(destination)).toBe(false);
+  }, 60_000);
 
   it('non-strict: warns, builds, and prints each option warning once, after the build report', async () => {
     const destination = join(dir, 'out');
