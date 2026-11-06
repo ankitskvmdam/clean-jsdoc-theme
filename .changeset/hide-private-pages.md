@@ -10,8 +10,8 @@ class, namespace, module, interface or mixin used to get a page and a sidebar
 entry, and `@ignore`d globals still showed on the Globals page; only private
 _members_ were hidden. Hidden symbols are now dropped once, before any page,
 sidebar entry, link target, search entry or `llms.txt` line is built. A type that
-names a hidden typedef now renders as plain text instead of linking to a missing
-page.
+names a hidden typedef now renders as plain text; it no longer links to a page for
+the private typedef.
 
 Everything documented inside a `@private` namespace, module or class is hidden
 too, including public symbols nested in it. This differs from JSDoc's default

@@ -188,8 +188,10 @@ describe('formatDefaultValue', () => {
 });
 
 describe('defaults that carry a {@link} tag (examples/basic Queue#enqueue / JobDescriptor shape)', () => {
-  // Mirrors `[priority={@link Priority.NORMAL}]` in examples/basic, with the
-  // target registered (a namespace page + a static member → `/priority#normal`).
+  // The shape of `[priority={@link Priority.NORMAL}]` in examples/basic, with a
+  // resolvable target (a namespace page + a static member → `/priority#normal`).
+  // In examples/basic itself the target does not resolve: the member is
+  // `module:queue/types~Priority.NORMAL`, so it renders as inert code.
   const items = [
     {
       kind: 'namespace',
