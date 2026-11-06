@@ -134,7 +134,7 @@ function sourceKey(d: TDoclet, id: string): string {
 
 /** The source identity a class and its constructor record share (see {@link ctorOnlyPrivate}). */
 function ctorKey(d: TDoclet): string {
-  return sourceKey(d, JSON.stringify([d.name ?? '', d.meta?.code?.name ?? '']));
+  return sourceKey(d, d.meta?.code?.name ?? '');
 }
 
 /** The records a constructor-only-private class is rebuilt from. */
@@ -164,12 +164,14 @@ interface CtorOnlyPrivate {
  * `Foo` for a plain, subclass, class-expression or CommonJS class, `Foo#Foo`
  * for an `export class`, `Ns~Ns.Foo` for a nested `Ns.Foo = class {…}`, and
  * `module.exports#module.exports` for an `export default class` or
- * `module.exports = class {…}` outside a `@module` file. What every shape
+ * `module.exports = class {…}` outside a `@module` file. Its `name` can't be
+ * either: `@alias Bar` renames the merged doclet (and the class-comment
+ * record) to `Bar`, but the constructor record keeps `Foo`. What every shape
  * shares with the merged class doclet is its source identity — the same
- * `meta.path`, `meta.filename`, `name` and `meta.code.name` (the source text
- * the class is assigned to, e.g. `Ns.Foo`, `exports.Foo`, `module.exports`) —
- * so the record is matched on that. Class-comment records are matched on file
- * + longname, which they always share with the merged doclet.
+ * `meta.path`, `meta.filename` and `meta.code.name` (the source text the class
+ * is assigned to, e.g. `Foo`, `Ns.Foo`, `exports.Foo`, `module.exports`) — so
+ * the record is matched on that. Class-comment records are matched on file +
+ * longname, which they always share with the merged doclet.
  */
 function ctorOnlyPrivate(all: readonly TDoclet[]): Map<TDoclet, CtorOnlyPrivate> {
   const privateCtors = new Map<string, TDoclet>();

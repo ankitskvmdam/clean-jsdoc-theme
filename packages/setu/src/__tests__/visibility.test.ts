@@ -236,8 +236,10 @@ describe('generateSite — a @private ES6 constructor (real JSDoc output)', () =
   // expressions (`Outer~Outer.Inner`, `Host~Host.Nested`) and an
   // `export default class` outside a @module (`module.exports#module.exports`);
   // plus `export default class` / `module.exports = class` inside a @module,
-  // where the class IS the module. A null member: JSDoc attaches no method to
-  // that page (it lands on Globals, or nowhere).
+  // where the class IS the module; then `@alias Bar` / `@alias Ns.Bar` /
+  // `@alias Baz` on a class `Foo`, whose ctor record keeps the name `Foo`.
+  // A null member: JSDoc attaches no method to that page (it lands on Globals,
+  // under the unaliased `Foo`, or nowhere).
   it.each([
     ['exp', 'Exported class desc.', 'pub', 'Exp ctor.'],
     ['ctorpriv', 'Plain class desc.', 'm', 'Plain ctor.'],
@@ -249,6 +251,9 @@ describe('generateSite — a @private ES6 constructor (real JSDoc output)', () =
     ['module/exports', 'Default class desc.', null, 'DefExp ctor.'],
     ['module/defmod', 'Default class desc.', 'd', 'DefExp ctor.'],
     ['module/anonmod', 'Anonymous class desc.', null, 'Anon ctor.'],
+    ['bar', 'Aliased class desc.', 'm', 'Aliased ctor.'],
+    ['ns/bar', 'Alias+memberof desc.', 'm', 'Alias+memberof ctor.'],
+    ['baz', 'Exported aliased desc.', null, 'Exported aliased ctor.'],
   ])(
     '%s: keeps the class + public members, hides only the constructor',
     (slug, desc, member, ctor) => {

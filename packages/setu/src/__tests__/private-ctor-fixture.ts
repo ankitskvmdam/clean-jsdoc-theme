@@ -198,6 +198,60 @@
  *   /** d *∕
  *   d() {}
  * }
+ *
+ * Then the `@alias` shapes: JSDoc renames the merged class doclet (and the
+ * class-comment record) to the alias, but the constructor record keeps the
+ * source name:
+ *
+ * alias.js:
+ *
+ * /**
+ *  * Aliased class desc.
+ *  * @alias Bar
+ *  *∕
+ * class Foo {
+ *   /**
+ *    * Aliased ctor.
+ *    * @private
+ *    *∕
+ *   constructor() {}
+ *   /** m *∕
+ *   m() {}
+ * }
+ *
+ * alias-memberof.js:
+ *
+ * /** @namespace *∕
+ * const Ns = {};
+ * /**
+ *  * Alias+memberof desc.
+ *  * @alias Ns.Bar
+ *  *∕
+ * class Foo {
+ *   /**
+ *    * Alias+memberof ctor.
+ *    * @private
+ *    *∕
+ *   constructor() {}
+ *   /** m *∕
+ *   m() {}
+ * }
+ *
+ * alias-export.js:
+ *
+ * /**
+ *  * Exported aliased desc.
+ *  * @alias Baz
+ *  *∕
+ * export class Foo {
+ *   /**
+ *    * Exported aliased ctor.
+ *    * @private
+ *    *∕
+ *   constructor() {}
+ *   /** m *∕
+ *   m() {}
+ * }
  */
 export const PRIVATE_CTOR_DOCLETS: unknown[] = [
   {
@@ -1505,6 +1559,290 @@ export const PRIVATE_CTOR_DOCLETS: unknown[] = [
     longname: 'd',
     kind: 'function',
     scope: 'global',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'alias.js',
+      lineno: 5,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Foo',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    classdesc: '<p>Aliased class desc.</p>',
+    alias: 'Bar',
+    name: 'Bar',
+    longname: 'Bar',
+    kind: 'class',
+    scope: 'global',
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'alias.js',
+      lineno: 10,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'Foo',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>Aliased ctor.</p>',
+    access: 'private',
+    name: 'Foo',
+    longname: 'Foo',
+    kind: 'class',
+    scope: 'global',
+    params: [],
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'alias.js',
+      lineno: 5,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Foo',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    name: 'Bar',
+    longname: 'Bar',
+    kind: 'class',
+    classdesc: '<p>Aliased class desc.</p>',
+    alias: 'Bar',
+    scope: 'global',
+    description: '<p>Aliased ctor.</p>',
+    access: 'private',
+  },
+  {
+    meta: {
+      filename: 'alias.js',
+      lineno: 12,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'Foo#m',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>m</p>',
+    name: 'm',
+    longname: 'Bar#m',
+    kind: 'function',
+    memberof: 'Bar',
+    scope: 'instance',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'alias-memberof.js',
+      lineno: 2,
+      columnno: 6,
+      path: '/src',
+      code: {
+        name: 'Ns',
+        type: 'ObjectExpression',
+      },
+    },
+    kind: 'namespace',
+    name: 'Ns',
+    longname: 'Ns',
+    scope: 'global',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'alias-memberof.js',
+      lineno: 7,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Foo',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    classdesc: '<p>Alias+memberof desc.</p>',
+    alias: 'Ns.Bar',
+    name: 'Bar',
+    longname: 'Ns.Bar',
+    kind: 'class',
+    memberof: 'Ns',
+    scope: 'static',
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'alias-memberof.js',
+      lineno: 12,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'Foo',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>Alias+memberof ctor.</p>',
+    access: 'private',
+    name: 'Foo',
+    longname: 'Ns~Foo',
+    kind: 'class',
+    memberof: 'Ns',
+    scope: 'inner',
+    params: [],
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'alias-memberof.js',
+      lineno: 7,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Foo',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    name: 'Bar',
+    longname: 'Ns.Bar',
+    kind: 'class',
+    classdesc: '<p>Alias+memberof desc.</p>',
+    alias: 'Ns.Bar',
+    memberof: 'Ns',
+    scope: 'static',
+    description: '<p>Alias+memberof ctor.</p>',
+    access: 'private',
+  },
+  {
+    meta: {
+      filename: 'alias-memberof.js',
+      lineno: 14,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'Foo#m',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>m</p>',
+    name: 'm',
+    longname: 'Ns.Bar#m',
+    kind: 'function',
+    memberof: 'Ns.Bar',
+    scope: 'instance',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'alias-export.js',
+      lineno: 5,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'exports.Foo',
+        type: 'ClassDeclaration',
+      },
+    },
+    classdesc: '<p>Exported aliased desc.</p>',
+    alias: 'Baz',
+    name: 'Baz',
+    longname: 'Baz',
+    kind: 'class',
+    scope: 'global',
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'alias-export.js',
+      lineno: 5,
+      columnno: 7,
+      path: '/src',
+      code: {
+        name: 'Foo',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    undocumented: true,
+    name: 'Foo',
+    longname: 'Foo',
+    kind: 'class',
+    scope: 'global',
+  },
+  {
+    meta: {
+      filename: 'alias-export.js',
+      lineno: 10,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'exports.Foo',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>Exported aliased ctor.</p>',
+    access: 'private',
+    name: 'Foo',
+    longname: 'Foo#Foo',
+    kind: 'class',
+    memberof: 'Foo',
+    scope: 'instance',
+    params: [],
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'alias-export.js',
+      lineno: 5,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'exports.Foo',
+        type: 'ClassDeclaration',
+      },
+    },
+    name: 'Baz',
+    longname: 'Baz',
+    kind: 'class',
+    classdesc: '<p>Exported aliased desc.</p>',
+    alias: 'Baz',
+    scope: 'global',
+    description: '<p>Exported aliased ctor.</p>',
+    access: 'private',
+    memberof: 'Foo',
+  },
+  {
+    meta: {
+      filename: 'alias-export.js',
+      lineno: 12,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'Foo#m',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>m</p>',
+    name: 'm',
+    longname: 'Foo#m',
+    kind: 'function',
+    memberof: 'Foo',
+    scope: 'instance',
     params: [],
   },
 ];
