@@ -326,11 +326,11 @@ interface Tag {
  * `<!-->` and `<!--->` are complete, empty ones); an unterminated `<!--` runs to
  * the end of the input, as in HTML.
  *
- * Which `<!--` opens a comment is decided here, not by the ranges: one inside a
- * quoted attribute value (`title="<!--"`) is skipped with its tag and never
- * reached. The ranges still give the right end for every opener this scan does
- * reach — a comment ends at the first `-->` after its opener, so even one that
- * sits inside a range an attribute's `<!--` started ends where that range does.
+ * A `<!--` inside a quoted attribute value (`title="<!--"`) is skipped with its
+ * tag and never reached. The shared scan follows the HTML tokenizer, so it reports
+ * no range for a `<!--` this scan can still reach but HTML doesn't read as a
+ * comment: inside a tag after an unquoted `<` (`<a <!-- y -->`) or inside a bogus
+ * comment (`<?php <!-- ?>`). That one is plain text here, and the scan moves on.
  */
 function scanTags(html: string): Tag[] {
   const tags: Tag[] = [];
@@ -338,8 +338,12 @@ function scanTags(html: string): Tag[] {
   let i = html.indexOf('<');
   while (i !== -1) {
     if (html.startsWith('<!--', i)) {
-      // Every `<!--` lies in one of the ranges (the shared scan reports them all).
-      const comment = rangeContaining(comments, i)!;
+      const comment = rangeContaining(comments, i);
+      if (!comment) {
+        // Not a comment to HTML (see above): treat it as text.
+        i = html.indexOf('<', i + 1);
+        continue;
+      }
       if (!comment.closed) break;
       i = html.indexOf('<', comment.end);
       continue;

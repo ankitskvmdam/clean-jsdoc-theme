@@ -501,6 +501,19 @@ describe('a comment opener inside an attribute value', () => {
     expect(out).toContain('Promise\\<User>');
     expect(out).toMatch(/end$/);
   });
+
+  it('is plain text when HTML reads it as part of a tag or a bogus comment', () => {
+    // The shared comment scan reports no range for these, so the literal-tag scan
+    // must not assume every `<!--` it reaches has one.
+    for (const html of [
+      '<p><a <!-- y --> Promise<User> end</p>',
+      '<p><a b="x" <!-- y --> Promise<User> end</p>',
+      '<p>a <?php <!-- ?> Promise<User> end</p>',
+    ]) {
+      expect(() => escapeLiteralTags(html)).not.toThrow();
+      expect(mdx(htmlToMdastBlocks(html))).toContain('Promise\\<User>');
+    }
+  });
 });
 
 describe('inline-only fragments become paragraphs', () => {
