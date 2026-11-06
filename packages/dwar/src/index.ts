@@ -40,6 +40,7 @@ import type {
   CopyPageAction,
   MetaTag,
   ScrollbarMode,
+  HtmlCommentRange,
 } from '@clean-jsdoc-theme/utils';
 
 import {
@@ -47,6 +48,7 @@ import {
   compileMdxToComponent,
   createSignatureHighlighter,
   findStrayBackticks,
+  pageCommentRanges,
   type MdxComponentMap,
   type ShikiThemes,
 } from './mdx';
@@ -124,8 +126,12 @@ const MAX_BACKTICK_WARNINGS_PER_PAGE = 10;
  * non-fatal {@link RenderWarning}s with a one-line code-frame each. Capped per
  * page; the overflow is summarized in a final entry so the count stays honest.
  */
-function collectBacktickWarnings(slug: string, body: string): RenderWarning[] {
-  const stray = findStrayBackticks(body);
+function collectBacktickWarnings(
+  slug: string,
+  body: string,
+  comments: readonly HtmlCommentRange[]
+): RenderWarning[] {
+  const stray = findStrayBackticks(body, comments);
   if (stray.length === 0) return [];
   const shown = stray.slice(0, MAX_BACKTICK_WARNINGS_PER_PAGE);
   const warnings: RenderWarning[] = shown.map((s) => ({
@@ -297,7 +303,8 @@ async function renderPage(
   neighbors: PageNeighbors | undefined,
   inlineSvgs: Record<string, string>,
   locale: RenderLocale | undefined,
-  playgroundOptions: Record<string, unknown> | undefined
+  playgroundOptions: Record<string, unknown> | undefined,
+  comments: readonly HtmlCommentRange[]
 ): Promise<{ file: OutputFile; search: SearchEntry; islands: IslandRecord[] }> {
   const islands: IslandRecord[] = [];
 
@@ -323,7 +330,8 @@ async function renderPage(
       page.body,
       components,
       shiki,
-      langs
+      langs,
+      comments
     );
     // The copy-page button is for documentation content only — never the source
     // section (its viewer pages are `kind: 'source'` and skip this branch; the
@@ -471,12 +479,12 @@ async function renderPage(
   const search: SearchEntry = {
     slug: page.slug,
     title: page.frontmatter.title,
-    excerpt: isSource ? '' : extractExcerpt(page.body),
+    excerpt: isSource ? '' : extractExcerpt(page.body, undefined, comments),
     // `description` + `content` are matched (not just the title), so README
     // prose, member descriptions, and identifiers across the whole page are
     // findable — not only what fits in the 200-char excerpt.
     description: page.frontmatter.description,
-    content: isSource ? undefined : extractSearchText(page.body),
+    content: isSource ? undefined : extractSearchText(page.body, undefined, comments),
   };
 
   return { file, search, islands };
@@ -643,8 +651,11 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
       }
     | { ok: false; error: RenderError };
 
+  // The page's HTML-comment ranges are computed once here and shared by the MDX
+  // pre-pass, the backtick warnings and the search extractors.
   const task = async (page: Page): Promise<PageResult> => {
     try {
+      const comments = page.body ? pageCommentRanges(page.body) : [];
       const { file, search: entry } = await renderPage(
         page,
         manifest,
@@ -666,7 +677,8 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
         neighborsBySlug.get(page.slug),
         inlineSvgs,
         opts.locale,
-        playgroundOptions
+        playgroundOptions,
+        comments
       );
       const hidden = page.frontmatter.hidden;
       return {
@@ -680,7 +692,7 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
         members: hidden ? undefined : memberSearchEntries(page),
         // Non-fatal: flag unbalanced inline-code backticks so the author can fix
         // the source (the page still rendered). Source-viewer pages have no body.
-        warnings: page.body ? collectBacktickWarnings(page.slug, page.body) : undefined,
+        warnings: page.body ? collectBacktickWarnings(page.slug, page.body, comments) : undefined,
       };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

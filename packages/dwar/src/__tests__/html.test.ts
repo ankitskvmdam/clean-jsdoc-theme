@@ -7,6 +7,7 @@ import {
   mdPathFor,
   renderHtmlDocument,
 } from '../html';
+import { pageCommentRanges } from '../mdx';
 
 const basePage: Page = {
   slug: 'x',
@@ -250,6 +251,12 @@ describe('search text — HTML comments', () => {
 
   it('keeps a comment shown inside a fenced code block out of the text like any code', () => {
     expect(extractSearchText('Text.\n\n```html\n<!-- x -->\n```\n')).toBe('Text.');
+  });
+
+  it('accepts precomputed comment ranges', () => {
+    const src = '---\ntitle: x\n---\nVisible <!-- hidden --> text.';
+    expect(extractSearchText(src, undefined, pageCommentRanges(src))).toBe('Visible text.');
+    expect(extractExcerpt(src, undefined, pageCommentRanges(src))).toBe('Visible text.');
   });
 });
 

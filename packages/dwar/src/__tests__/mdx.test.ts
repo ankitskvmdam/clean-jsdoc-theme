@@ -4,6 +4,7 @@ import {
   escapeEsmLookalikes,
   escapeStrayBraces,
   findStrayBackticks,
+  pageCommentRanges,
   preprocessJsdocInlineTags,
   signatureParamRanges,
   stripHtmlComments,
@@ -156,6 +157,10 @@ describe('escapeStrayBraces', () => {
     // `\`` is a literal backtick, so it does not open a span — the {y} still escapes.
     expect(escapeStrayBraces('a \\` then {y}')).toBe('a \\` then \\{y\\}');
   });
+
+  it('leaves braces inside a single-quoted JSX attribute alone', () => {
+    expect(escapeStrayBraces("<img alt='{x}' />")).toBe("<img alt='{x}' />");
+  });
 });
 
 describe('findStrayBackticks', () => {
@@ -207,6 +212,24 @@ describe('findStrayBackticks', () => {
     const stray = findStrayBackticks(src);
     expect(stray).toHaveLength(1);
     expect(stray[0].line).toBe(2);
+  });
+
+  // Comments are blanked out before tokenizing (the compiled page holds none).
+  it('does not pair a backtick inside a comment with one outside (false warning)', () => {
+    expect(findStrayBackticks('<!-- ` --> see `code` here\n')).toEqual([]);
+  });
+
+  it('reports a backtick left unbalanced once a comment is gone (missed warning)', () => {
+    const out = findStrayBackticks('text <!-- use `foo --> and `bar here\n\nmore\n');
+    expect(out).toEqual([
+      { line: 1, column: 28, lineText: 'text <!-- use `foo --> and `bar here' },
+    ]);
+  });
+
+  it('reports the column in the original line even after a comment on that line', () => {
+    expect(findStrayBackticks('a <!-- x --> `b\n\nc\n')).toEqual([
+      { line: 1, column: 14, lineText: 'a <!-- x --> `b' },
+    ]);
   });
 });
 
@@ -336,6 +359,11 @@ describe('escapeEsmLookalikes (issue #347)', () => {
       '&#x69;mport these functions to your own project. Pass \\{opts\\}.\n'
     );
   });
+
+  it('does not rewrite an import keyword inside a single-quoted attribute spanning lines', () => {
+    const src = "<a title='x\nimport y' />\n";
+    expect(escapeEsmLookalikes(src)).toBe(src);
+  });
 });
 
 // MDX has no HTML-comment syntax: `<!--` reads as a JSX tag whose name starts
@@ -364,7 +392,10 @@ describe('stripHtmlComments', () => {
   });
 
   it('drops a multi-line comment, including one that spans a blank line', () => {
-    expect(stripHtmlComments('a\n\n<!--\nline one\n\nline two\n-->\n\nb\n')).toBe('a\n\n\n\nb\n');
+    // The comment's four newlines stay, so later line numbers don't move.
+    expect(stripHtmlComments('a\n\n<!--\nline one\n\nline two\n-->\n\nb\n')).toBe(
+      'a\n\n' + '\n'.repeat(4) + '\n\nb\n'
+    );
   });
 
   it('drops all-contributors style START/END marker pairs but keeps what they wrap', () => {
@@ -483,7 +514,7 @@ describe('stripHtmlComments', () => {
 
   it('does not open a fence on a lone fence line inside a comment block', () => {
     expect(stripHtmlComments('<!--\n```js\n-->\n\nText <!-- c --> after.\n')).toBe(
-      '\n\nText  after.\n'
+      '\n\n' + '\n\nText  after.\n'
     );
   });
 
@@ -506,6 +537,40 @@ describe('stripHtmlComments', () => {
 
   it('drops a line-starting comment that wraps a whole section, code block included', () => {
     const src = 'Keep.\n\n<!--\n## Old\n\n```js\nold();\n```\n-->\n\nAlso keep.\n';
-    expect(stripHtmlComments(src)).toBe('Keep.\n\n\n\nAlso keep.\n');
+    expect(stripHtmlComments(src)).toBe('Keep.\n\n' + '\n'.repeat(6) + '\n\nAlso keep.\n');
+  });
+
+  it('keeps every line number: a multi-line comment becomes blank lines', () => {
+    const src = 'l1\n<!--\nc3\nc4\n-->\nl6 <Bad\n';
+    const out = stripHtmlComments(src);
+    expect(out.split('\n').length).toBe(src.split('\n').length);
+    expect(out.split('\n')[5]).toBe('l6 <Bad');
+  });
+
+  it('leaves a single-quoted attribute value alone (MDX accepts both quote styles)', () => {
+    const src = "<img src='x.png' alt='<!-- not a comment -->' /> <a title='<!-- oops'>x</a>\n";
+    expect(stripHtmlComments(src)).toBe(src);
+  });
+
+  it('drops a comment after an escaped backslash (even run = not escaped)', () => {
+    expect(stripHtmlComments('a \\\\<!-- c --> b\n')).toBe('a \\\\ b\n');
+  });
+
+  it('drops a comment on a quote/heading/list line after an unclosed backtick', () => {
+    expect(stripHtmlComments('a `x\n> b <!-- c --> d` e\n')).toBe('a `x\n> b  d` e\n');
+  });
+
+  it('keeps a comment that is code after an over-indented or deeper-quoted fence line', () => {
+    for (const src of [
+      '```js\n      ```\n<!-- c -->\n```\n',
+      '> ```\n> > ```\n> <!-- c -->\n> ```\n',
+    ]) {
+      expect(stripHtmlComments(src)).toBe(src);
+    }
+  });
+
+  it('accepts precomputed ranges', () => {
+    const src = '---\ntitle: x\n---\na <!-- b --> c\n';
+    expect(stripHtmlComments(src, pageCommentRanges(src))).toBe('---\ntitle: x\n---\na  c\n');
   });
 });

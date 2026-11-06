@@ -15,7 +15,13 @@ import remarkFrontmatter from 'remark-frontmatter';
 import remarkGfm from 'remark-gfm';
 import { bundledLanguagesInfo, createHighlighter } from 'shiki';
 import type { SignatureHighlighter } from '@clean-jsdoc-theme/rang';
-import { htmlCommentRanges, rangeContaining, slugifyHeading } from '@clean-jsdoc-theme/utils';
+import {
+  htmlCommentRanges,
+  maskHtmlComments,
+  replaceHtmlComments,
+  slugifyHeading,
+  type HtmlCommentRange,
+} from '@clean-jsdoc-theme/utils';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyComponent = ComponentType<any>;
@@ -121,6 +127,13 @@ export function preprocessJsdocInlineTags(source: string): string {
   });
 }
 
+/** Leading YAML frontmatter (setu prepends it); every pre-pass keeps it verbatim. */
+const FRONTMATTER = /^---\n[\s\S]*?\n---\n/;
+function frontmatterLength(source: string): number {
+  const fm = FRONTMATTER.exec(source);
+  return fm ? fm[0].length : 0;
+}
+
 /**
  * Backslash-escape stray `{` / `}` so MDX doesn't treat them as JS expression
  * delimiters. setu emits plain Markdown plus `<Callout>` JSX elements — it never
@@ -158,8 +171,10 @@ export function escapeStrayBraces(source: string): string {
   // signatures as `<MemberHeading sig="fn(): { x: T }" />` / `<Signature
   // code="…" />`, whose object-type braces are a literal string, not an MDX
   // expression. setu downgrades any `"` inside an attribute to `'`, so `="[^"]*"`
-  // safely captures a value containing `{`, `}`, `<`, or `>`. (A bare `a < b` in
-  // prose isn't matched — a tag needs `<` immediately followed by a name.)
+  // / `='[^']*'` safely capture a value containing `{`, `}`, `<`, or `>` (MDX
+  // accepts single-quoted attribute strings too; a README `<img alt='{x}'>` used
+  // to get `\{x\}` with visible backslashes). (A bare `a < b` in prose isn't
+  // matched — a tag needs `<` immediately followed by a name.)
   //
   // The inline-code content `(?:[^\n]|\n(?![ \t\r]*\n))*?` allows single line
   // breaks (CommonMark code spans may span lines) but never a blank line — so an
@@ -169,7 +184,7 @@ export function escapeStrayBraces(source: string): string {
   // in a `…` span) is literal content — and (b) ignores a backslash-escaped
   // backtick (`\``), which is a literal backtick per CommonMark, not a delimiter.
   const re =
-    /(```[\s\S]*?```|~~~[\s\S]*?~~~)|(<\/?[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][\w-]*(?:="[^"]*")?)*\s*\/?>)|(?<![`\\])(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`)|([{}])/g;
+    /(```[\s\S]*?```|~~~[\s\S]*?~~~)|(<\/?[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][\w-]*(?:="[^"]*"|='[^']*')?)*\s*\/?>)|(?<![`\\])(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`)|([{}])/g;
   const escaped = body.replace(re, (m, _fence, _jsx, _ticks, brace) => (brace ? `\\${brace}` : m));
   return prefix + escaped;
 }
@@ -211,11 +226,28 @@ export function escapeEsmLookalikes(source: string): string {
   // JSX tag, OR an inline code span (never crossing a blank line), OR — the only
   // branch that rewrites — a column-0 `import`/`export` keyword + whitespace.
   const re =
-    /(```[\s\S]*?```|~~~[\s\S]*?~~~)|(<\/?[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][\w-]*(?:="[^"]*")?)*\s*\/?>)|(?<![`\\])(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`)|^(import|export)(?=\s)/gm;
+    /(```[\s\S]*?```|~~~[\s\S]*?~~~)|(<\/?[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][\w-]*(?:="[^"]*"|='[^']*')?)*\s*\/?>)|(?<![`\\])(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`)|^(import|export)(?=\s)/gm;
   const escaped = body.replace(re, (m, _fence, _jsx, _ticks, keyword: string | undefined) =>
     keyword ? `&#x${keyword.charCodeAt(0).toString(16)};${keyword.slice(1)}` : m
   );
   return prefix + escaped;
+}
+
+/**
+ * The HTML comments of a page body, with offsets into `source` itself. The YAML
+ * frontmatter is skipped — a `<!--` in a YAML string is YAML, not a comment.
+ * `render()` computes this once per page and hands it to every pass that needs
+ * it ({@link stripHtmlComments}, {@link findStrayBackticks}, the search-text
+ * extractors in `html.ts`); each also accepts a call without it.
+ */
+export function pageCommentRanges(source: string): HtmlCommentRange[] {
+  const bodyStart = frontmatterLength(source);
+  if (bodyStart === 0) return htmlCommentRanges(source);
+  return htmlCommentRanges(source.slice(bodyStart)).map((c) => ({
+    ...c,
+    start: c.start + bodyStart,
+    end: c.end + bodyStart,
+  }));
 }
 
 /**
@@ -232,6 +264,7 @@ export function escapeEsmLookalikes(source: string): string {
  * it renders to nothing either way, and dropping needs no escaping of a `*\/`
  * inside it. A comment that occupies a whole line leaves that line blank, which
  * splits the surrounding paragraph exactly as CommonMark's HTML block would.
+ * Its newlines are kept so later line numbers (and `codeFrame`) stay exact.
  *
  * What counts as a comment is decided by the shared, code-aware
  * `htmlCommentRanges` (utils), the same scanner setu uses: fenced code blocks
@@ -249,19 +282,17 @@ export function escapeEsmLookalikes(source: string): string {
  * original body, so it keeps any comment this pass dropped; the search index
  * drops them too (see `extractSearchText`).
  */
-export function stripHtmlComments(source: string): string {
-  // Keep leading YAML frontmatter verbatim.
-  const fm = /^---\n[\s\S]*?\n---\n/.exec(source);
-  const prefix = fm ? fm[0] : '';
-  const body = fm ? source.slice(fm[0].length) : source;
-
-  let out = prefix;
-  let cursor = 0;
-  for (const c of htmlCommentRanges(body)) {
-    out += body.slice(cursor, c.start) + (c.closed ? '' : '\\<!--');
-    cursor = c.end;
-  }
-  return out + body.slice(cursor);
+export function stripHtmlComments(
+  source: string,
+  comments: readonly HtmlCommentRange[] = pageCommentRanges(source)
+): string {
+  // Only the comment's characters go; its newlines stay, so every later line
+  // keeps its number and an MDX error position still maps onto the page body
+  // (`codeFrame` relies on the pre-passes preserving line counts). A comment
+  // that fills a line thus leaves it blank, as CommonMark's HTML block would.
+  return replaceHtmlComments(source, comments, (c, text) =>
+    c.closed ? text.replace(/[^\n]/g, '') : '\\<!--'
+  );
 }
 
 /** A backtick run that opened no inline-code span — i.e. an unbalanced backtick. */
@@ -281,18 +312,23 @@ export interface StrayBacktick {
  * `` `code` `` span is almost always an authoring slip, so the bridge surfaces
  * them as a non-fatal warning. Mirrors `escapeStrayBraces`' tokenizer: fenced
  * code blocks and YAML frontmatter are skipped (their backticks are legitimate),
- * balanced spans are consumed, and whatever backtick run is left over is stray —
- * unless it sits inside an HTML comment, which {@link stripHtmlComments} drops
- * before compile, so it never renders.
+ * balanced spans are consumed, and whatever backtick run is left over is stray.
+ * Comments are blanked out first (same ranges {@link stripHtmlComments} drops),
+ * so a backtick inside one is neither reported nor paired with one outside.
  * Positions are 1-based, against the same `source` the `.md`/snippets use.
  */
-export function findStrayBackticks(source: string): StrayBacktick[] {
+export function findStrayBackticks(
+  source: string,
+  comments: readonly HtmlCommentRange[] = pageCommentRanges(source)
+): StrayBacktick[] {
   const out: StrayBacktick[] = [];
   // Skip leading YAML frontmatter (backticks there aren't MDX inline code).
-  const fm = /^---\n[\s\S]*?\n---\n/.exec(source);
-  const bodyStart = fm ? fm[0].length : 0;
-  const comments = htmlCommentRanges(source.slice(bodyStart)).filter((c) => c.closed);
-  const inComment = (i: number): boolean => rangeContaining(comments, i - bodyStart) !== undefined;
+  const bodyStart = frontmatterLength(source);
+  // Tokenize a copy with every comment blanked out (same length, same line
+  // breaks): the compiled page holds no comments, so a backtick inside one must
+  // neither pair with a real one outside nor be reported itself. Positions and
+  // line text are read from `source` — the mask keeps every offset.
+  const masked = maskHtmlComments(source, comments);
   // Fenced block | balanced inline span (group 3 = its ticks) | leftover run
   // (group 4). A delimiter run is bounded by `(?<![`\\])…(?!`)`: it closes only on
   // a maximal run of exactly N (a longer run inside a span, e.g. ``` in
@@ -302,9 +338,8 @@ export function findStrayBackticks(source: string): StrayBacktick[] {
     /(```[\s\S]*?```|~~~[\s\S]*?~~~)|(?<![`\\])((`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`))|(?<![`\\])(`+)/g;
   re.lastIndex = bodyStart;
   let m: RegExpExecArray | null;
-  while ((m = re.exec(source)) !== null) {
+  while ((m = re.exec(masked)) !== null) {
     if (m[4] === undefined) continue; // only the leftover (stray) backtick run
-    if (inComment(m.index)) continue; // never rendered
     const idx = m.index;
     const lastNl = source.lastIndexOf('\n', idx - 1);
     const line = source.slice(0, idx).split('\n').length;
@@ -378,8 +413,11 @@ export async function compileMdxToComponent(
   source: string,
   components: MdxComponentMap,
   shiki: ShikiThemes,
-  langs: readonly string[]
+  langs: readonly string[],
+  comments?: readonly HtmlCommentRange[]
 ): Promise<CompiledMdx> {
+  // `comments`: the page's HTML-comment ranges when the caller already has them
+  // (`render()` computes them once per page; see `pageCommentRanges`).
   // Pre-passes, in order: HTML comments dropped, `{@tag}` → code spans (so the
   // braces that follow are protected), ESM look-alike prose lines → character
   // references (issue #347), then stray-brace escaping. Comments go first so no
@@ -389,7 +427,7 @@ export async function compileMdxToComponent(
   // ESM pass runs before the brace pass only so each sees the same code-span
   // boundaries; neither produces input for the other.
   const cleaned = escapeStrayBraces(
-    escapeEsmLookalikes(preprocessJsdocInlineTags(stripHtmlComments(source)))
+    escapeEsmLookalikes(preprocessJsdocInlineTags(stripHtmlComments(source, comments)))
   );
   // The MDX `evaluate` runtime types target the React jsx-runtime signature;
   // Preact's runtime is shape-compatible at runtime but the structural types
