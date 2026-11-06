@@ -1035,6 +1035,19 @@ describe('render() — HTML comments in prose', () => {
     expect(main).toMatch(/<li[^>]*>item one\s+still item one<\/li>/);
   });
 
+  it('renders a table whose row opens a comment that a later row closes', async () => {
+    // GFM: rows are separate blocks, so the opener is literal text (as GitHub
+    // shows it) — the page must not abort on an expression spanning rows.
+    const body = '| h |\n|---|\n| a <!--\nb\n--> c |\n';
+    const { err, html } = await renderOne('table-comment', body);
+    expect(err, err?.message).toBeUndefined();
+    const main = mainOf(html);
+    expect(main.match(/<table[ >]/g)).toHaveLength(1);
+    expect(main.match(/<td[ >]/g)).toHaveLength(3);
+    expect(main).toContain('a &lt;!--');
+    expect(main).toContain('>--> c<');
+  });
+
   it('reports an MDX error on its real line after an inline multi-line comment', async () => {
     const body = ['l1 <!--', 'c2', 'c3 -->', 'l4', 'bad <Unclosed line 5', 'l6', ''].join('\n');
     const { err } = await renderOne('drift-inline', body);

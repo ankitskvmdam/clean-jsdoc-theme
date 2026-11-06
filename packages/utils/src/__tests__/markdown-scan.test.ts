@@ -288,6 +288,41 @@ describe('htmlCommentRanges', () => {
     expect(closed('x `a\n> q <!-- c --> `\n')).toEqual(['<!-- c -->']);
   });
 
+  it('does not let an inline comment span two rows of a GFM table', () => {
+    // GFM: each row is its own block, so the opener is literal text.
+    const unclosed = (src: string): boolean =>
+      htmlCommentRanges(src).every((c) => !c.closed) && htmlCommentRanges(src).length > 0;
+    expect(unclosed('| h |\n|---|\n| a <!--\nb\n--> c |\n')).toBe(true);
+    expect(unclosed('a | b\n--- | :-:\nc <!-- x\n--> d | e\n')).toBe(true);
+    // The header row, and the delimiter row below it, are rows too.
+    expect(unclosed('a | b <!--\n-|-\n--> c\n')).toBe(true);
+    // The header row interrupts the paragraph above it.
+    expect(unclosed('p <!--\na|b\n-|-\n-->\n')).toBe(true);
+    // In a blockquote and in a list item.
+    expect(unclosed('> a|b\n> -|-\n> x <!--\n> -->\n')).toBe(true);
+    expect(unclosed('- a|b\n  -|-\n  x <!--\n  -->\n')).toBe(true);
+    // A comment within one cell is still a comment.
+    expect(closed('| h |\n|---|\n| a <!-- x --> c |\n')).toEqual(['<!-- x -->']);
+  });
+
+  it('ends a GFM table where GFM does', () => {
+    // A blank line, a list item, a lazy line in a list item or quote: the
+    // paragraph after it may hold a multi-line comment again.
+    expect(closed('a|b\n-|-\nx\n\np <!--\n-->\n')).toEqual(['<!--\n-->']);
+    expect(closed('a|b\n-|-\nx\n- p <!--\n  -->\n')).toEqual(['<!--\n  -->']);
+    expect(closed('- a|b\n  -|-\n  x\np <!--\n-->\n')).toEqual(['<!--\n-->']);
+    expect(closed('> a|b\n> -|-\n> x\np <!--\n-->\n')).toEqual(['<!--\n-->']);
+  });
+
+  it('reads no table without a matching delimiter row', () => {
+    // Cell counts differ, a setext underline, a list item: no table, so the
+    // comment spans the lines as in any paragraph.
+    expect(closed('| a | b | <!--\n|---|\n-->\n')).toEqual(['<!--\n|---|\n-->']);
+    expect(closed('a <!-- x\n---\n')).toEqual([]);
+    expect(closed('a|b <!--\nc -->\n')).toEqual(['<!--\nc -->']);
+    expect(htmlCommentRanges('a|b <!--\n- | -\n-->\n')[0].closed).toBe(false);
+  });
+
   it('reads a fence opener or list item holding a bare CR or a line separator', () => {
     // micromark: the fence opens (its info string or first line takes the
     // rest), and the item interrupts the paragraph so the comment stays open.

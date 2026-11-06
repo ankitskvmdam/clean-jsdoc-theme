@@ -151,6 +151,32 @@ function columns(ws: string): number {
   return n;
 }
 
+// A GFM table delimiter row (on a line with its quote prefix and indentation
+// removed): cells of dashes with optional alignment colons, split by pipes.
+const TABLE_DELIMITER = /^\|?[ \t]*:?-+:?[ \t]*(?:\|[ \t]*:?-+:?[ \t]*)*\|?[ \t]*$/;
+
+/**
+ * The number of cells in a GFM table row: its unescaped pipes split it, and a
+ * pipe opening or closing the row only bounds it. (Pipes split cells even
+ * inside a code span, as GFM has it.)
+ */
+function tableCells(row: string): number {
+  const text = row.trim();
+  let pipes = 0;
+  let last = -1;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === '\\') i++;
+    else if (text[i] === '|') {
+      pipes++;
+      last = i;
+    }
+  }
+  let cells = pipes + 1;
+  if (text.startsWith('|')) cells--;
+  if (last === text.length - 1 && last > 0) cells--;
+  return cells;
+}
+
 /** Block-level structure of a source: fences, comment blocks, paragraph breaks. */
 interface BlockScan {
   fences: TextRange[];
@@ -230,7 +256,14 @@ function codeSpanFinder(source: string): (start: number, end: number) => number 
  *     other HTML block of kinds 1-6, a bullet item or an ordered item starting
  *     at 1 (non-empty), or a deeper blockquote — and never when indented four
  *     or more columns past the paragraph's own content (that is continuation
- *     text). A shallower quote depth is a lazy continuation, not a break.
+ *     text). A shallower quote depth is a lazy continuation, not a break;
+ *   - a GFM table (a paragraph line followed by a delimiter row with as many
+ *     cells) breaks at every one of its rows, so an inline comment can't span
+ *     two rows — each row is its own block. The header row interrupts the
+ *     paragraph above it; the table ends at a blank line or a line that starts
+ *     another block (any list item, a quote of another depth, code indented
+ *     four columns, a heading, a fence, …), or — inside a list item — at a
+ *     line indented less than the item's content.
  */
 function scanBlocks(source: string): BlockScan {
   const fences: TextRange[] = [];
@@ -250,8 +283,12 @@ function scanBlocks(source: string): BlockScan {
         inItem: boolean;
       }
     | undefined;
-  // The open paragraph, if any: its content column and quote depth.
-  let para: { indent: number; depth: number } | undefined;
+  // The open paragraph, if any: its content column and quote depth, and
+  // whether it is a list item's first paragraph (its column is then the item's).
+  let para: { indent: number; depth: number; inItem?: boolean } | undefined;
+  // The open GFM table, if any: its quote depth, content column, whether it
+  // sits in a list item, and where its delimiter row starts.
+  let table: { depth: number; indent: number; inItem: boolean; delim: number } | undefined;
   let pos = 0;
   while (pos <= source.length) {
     const nl = source.indexOf('\n', pos);
@@ -303,8 +340,35 @@ function scanBlocks(source: string): BlockScan {
     if (rest === '') {
       breaks.push(pos);
       para = undefined;
+      table = undefined;
       pos = next;
       continue;
+    }
+
+    const open = FENCE_OPEN.exec(body);
+    const comment = open ? null : COMMENT_BLOCK.exec(body);
+    const item = LIST_ITEM.exec(rest);
+
+    if (table) {
+      const row =
+        pos === table.delim ||
+        (depth === table.depth &&
+          indent - table.indent < 4 &&
+          !(table.inItem && indent < table.indent) &&
+          !open &&
+          !comment &&
+          !item &&
+          !ATX_HEADING.test(rest) &&
+          !THEMATIC_BREAK.test(rest) &&
+          !htmlBlockStartRe().test(rest));
+      // Every row is its own block; the line that ends the table starts one.
+      breaks.push(pos);
+      para = undefined;
+      if (row) {
+        pos = next;
+        continue;
+      }
+      table = undefined;
     }
 
     // Inside a paragraph, indentation counts from the paragraph's content
@@ -316,9 +380,9 @@ function scanBlocks(source: string): BlockScan {
       continue;
     }
 
-    const open = FENCE_OPEN.exec(body);
-    const comment = open ? null : COMMENT_BLOCK.exec(body);
-    const item = LIST_ITEM.exec(rest);
+    // The text of a line that holds a paragraph's first or later line, which a
+    // delimiter row below would make a table's header row.
+    let paraText: string | undefined;
     if (open && !(open[2][0] === '`' && open[3].includes('`'))) {
       fence = {
         char: open[2][0],
@@ -372,14 +436,52 @@ function scanBlocks(source: string): BlockScan {
         para =
           item[3].trim() === ''
             ? undefined
-            : { indent: indent + item[1].length + columns(item[2]), depth };
+            : { indent: indent + item[1].length + columns(item[2]), depth, inItem: true };
+        paraText = item[3];
       }
     } else if (para && depth > para.depth) {
       // A deeper blockquote starts here.
       breaks.push(pos);
       para = { indent, depth };
+      paraText = rest;
     } else if (!para) {
       para = { indent, depth };
+      paraText = rest;
+    } else if (depth === para.depth) {
+      paraText = rest;
+    }
+    if (para && paraText !== undefined && next < source.length) {
+      // A delimiter row on the next line, at this depth and within three
+      // columns of the paragraph's content, with as many cells: a table, whose
+      // header row interrupts the paragraph.
+      const nl2 = source.indexOf('\n', next);
+      const below = source.slice(next, nl2 === -1 ? source.length : nl2).replace(/\r$/, '');
+      const q2 = QUOTE_PREFIX.exec(below)![0];
+      let d2 = 0;
+      for (const ch of q2) if (ch === '>') d2++;
+      const b2 = below.slice(q2.length);
+      const ws2 = /^[ \t]*/.exec(b2)![0];
+      const delim = b2.slice(ws2.length);
+      const i2 = columns(ws2);
+      if (
+        d2 === depth &&
+        i2 < para.indent + 4 &&
+        !(para.inItem && i2 < para.indent) &&
+        /[|:]/.test(delim) &&
+        TABLE_DELIMITER.test(delim) &&
+        // `- | -` is a list item, which interrupts the paragraph first.
+        !LIST_ITEM.test(delim) &&
+        tableCells(delim) === tableCells(paraText)
+      ) {
+        breaks.push(pos);
+        table = {
+          depth,
+          indent: para.inItem ? para.indent : 0,
+          inItem: para.inItem === true,
+          delim: next,
+        };
+        para = undefined;
+      }
     }
     pos = next;
   }

@@ -558,6 +558,13 @@ describe('stripHtmlComments', () => {
     );
   });
 
+  it('does not let an inline comment run across the rows of a table', () => {
+    // GFM rows are separate blocks: the opener is literal, as GitHub shows it.
+    expect(stripHtmlComments('| h |\n|---|\n| a <!--\nb\n--> c |\n')).toBe(
+      '| h |\n|---|\n| a \\<!--\nb\n--> c |\n'
+    );
+  });
+
   it('does not let an unterminated inline opener swallow a following fence', () => {
     const src = 'a <!-- b\n\n```html\n<!-- x -->\n```\n\nafter\n';
     expect(stripHtmlComments(src)).toBe('a \\<!-- b\n\n```html\n<!-- x -->\n```\n\nafter\n');
