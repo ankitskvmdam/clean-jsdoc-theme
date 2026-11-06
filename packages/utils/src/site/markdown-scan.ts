@@ -30,12 +30,18 @@ export interface HtmlCommentRange extends TextRange {
   closed: boolean;
 }
 
+// Every pattern here is a regex literal (or built on first use): this module is
+// re-exported from the package root, which rang imports into the browser island
+// bundle, and a bundler keeps a module-level `new RegExp(…)` (a call, so a
+// possible side effect) even when nothing uses it — a literal it can drop.
+
 // Blockquote markers opening a line, each `>` with up to three spaces before
 // it and one optional space after. Its `>` count is the line's quote depth.
 const QUOTE_PREFIX = /^(?:[ \t]{0,3}>[ \t]?)*/;
-// One list-item marker plus its following space(s).
-const LIST_MARKER = String.raw`(?:[-*+]|\d{1,9}[.)])[ \t]+`;
 
+// FENCE_OPEN and COMMENT_BLOCK both start with indentation and an optional
+// list marker plus its following space(s): `(?:[-*+]|\d{1,9}[.)])[ \t]+`.
+//
 // On a line with its quote prefix removed: a fence opener — indentation and an
 // optional list marker (fences nest in list items), then 3+ backticks or
 // tildes. Group 1 is everything before the fence run: its column width is the
@@ -46,13 +52,13 @@ const LIST_MARKER = String.raw`(?:[-*+]|\d{1,9}[.)])[ \t]+`;
 // paragraph indentation is not capped, so a fence deep in a list item counts;
 // the price is that a 4-space indented code block holding ``` reads as a
 // fence, which only ever protects more text, never less.
-const FENCE_OPEN = new RegExp(String.raw`^([ \t]*(?:${LIST_MARKER})?)(\`{3,}|~{3,})(.*)$`);
+const FENCE_OPEN = /^([ \t]*(?:(?:[-*+]|\d{1,9}[.)])[ \t]+)?)(`{3,}|~{3,})(.*)$/;
 // A fence closer: a run of the opener's character at least as long, then only
 // whitespace. Group 1 is its indentation.
 const FENCE_CLOSE = /^([ \t]*)(`{3,}|~{3,})[ \t]*$/;
 // An HTML-comment block (CommonMark HTML block type 2): `<!--` after nothing
 // but indentation and a list marker. Group 1 is that prefix.
-const COMMENT_BLOCK = new RegExp(String.raw`^([ \t]*(?:${LIST_MARKER})?)<!--`);
+const COMMENT_BLOCK = /^([ \t]*(?:(?:[-*+]|\d{1,9}[.)])[ \t]+)?)<!--/;
 
 // The rest are tested on a line with its quote prefix AND indentation removed.
 const ATX_HEADING = /^#{1,6}(?:[ \t]|$)/;
@@ -61,76 +67,80 @@ const SETEXT_UNDERLINE = /^(?:=+|-+)[ \t]*$/;
 // A list item: group 1 the marker, group 2 the spaces after it, group 3 text.
 const LIST_ITEM = /^([-*+]|\d{1,9}[.)])([ \t]+|$)(.*)$/;
 // HTML blocks that may interrupt a paragraph (CommonMark start conditions 1-6;
-// condition 7, any other tag, may not).
-const HTML_BLOCK_START = new RegExp(
-  String.raw`^(?:<(?:script|pre|style|textarea)(?:[ \t>]|$)|<\?|<![A-Za-z]|<!\[CDATA\[|</?(?:` +
-    [
-      'address',
-      'article',
-      'aside',
-      'base',
-      'basefont',
-      'blockquote',
-      'body',
-      'caption',
-      'center',
-      'col',
-      'colgroup',
-      'dd',
-      'details',
-      'dialog',
-      'dir',
-      'div',
-      'dl',
-      'dt',
-      'fieldset',
-      'figcaption',
-      'figure',
-      'footer',
-      'form',
-      'frame',
-      'frameset',
-      'h1',
-      'h2',
-      'h3',
-      'h4',
-      'h5',
-      'h6',
-      'head',
-      'header',
-      'hr',
-      'html',
-      'iframe',
-      'legend',
-      'li',
-      'link',
-      'main',
-      'menu',
-      'menuitem',
-      'nav',
-      'noframes',
-      'ol',
-      'optgroup',
-      'option',
-      'p',
-      'param',
-      'search',
-      'section',
-      'summary',
-      'table',
-      'tbody',
-      'td',
-      'tfoot',
-      'th',
-      'thead',
-      'title',
-      'tr',
-      'track',
-      'ul',
-    ].join('|') +
-    String.raw`)(?:[ \t>]|/>|$))`,
-  'i'
-);
+// condition 7, any other tag, may not). Built on first use from the type-6 tag
+// names (see the note at the top).
+let htmlBlockStart: RegExp | undefined;
+function htmlBlockStartRe(): RegExp {
+  return (htmlBlockStart ??= new RegExp(
+    String.raw`^(?:<(?:script|pre|style|textarea)(?:[ \t>]|$)|<\?|<![A-Za-z]|<!\[CDATA\[|</?(?:` +
+      [
+        'address',
+        'article',
+        'aside',
+        'base',
+        'basefont',
+        'blockquote',
+        'body',
+        'caption',
+        'center',
+        'col',
+        'colgroup',
+        'dd',
+        'details',
+        'dialog',
+        'dir',
+        'div',
+        'dl',
+        'dt',
+        'fieldset',
+        'figcaption',
+        'figure',
+        'footer',
+        'form',
+        'frame',
+        'frameset',
+        'h1',
+        'h2',
+        'h3',
+        'h4',
+        'h5',
+        'h6',
+        'head',
+        'header',
+        'hr',
+        'html',
+        'iframe',
+        'legend',
+        'li',
+        'link',
+        'main',
+        'menu',
+        'menuitem',
+        'nav',
+        'noframes',
+        'ol',
+        'optgroup',
+        'option',
+        'p',
+        'param',
+        'search',
+        'section',
+        'summary',
+        'table',
+        'tbody',
+        'td',
+        'tfoot',
+        'th',
+        'thead',
+        'title',
+        'tr',
+        'track',
+        'ul',
+      ].join('|') +
+      String.raw`)(?:[ \t>]|/>|$))`,
+    'i'
+  ));
+}
 
 /** Column width of a run of spaces/tabs (tabs stop every four columns). */
 function columns(ws: string): number {
@@ -351,7 +361,7 @@ function scanBlocks(source: string): BlockScan {
       // comment in a heading can't run on into it.
       breaks.push(pos, next);
       para = undefined;
-    } else if (HTML_BLOCK_START.test(rest)) {
+    } else if (htmlBlockStartRe().test(rest)) {
       breaks.push(pos);
       para = undefined;
     } else if (item) {
