@@ -6,7 +6,13 @@
  *
  * Both scanners run in linear-ish time — every page body passes through them
  * several times per build, and a pathological one (a stray `<!--` in a huge
- * generated page) must not stall it.
+ * generated page) must not stall it — and a body without `<!--` costs one
+ * `includes`.
+ *
+ * Each format has ONE definition of a comment: {@link htmlCommentRanges} for
+ * Markdown (code-aware) and {@link htmlCommentRangesInHtml} for raw HTML;
+ * {@link replaceHtmlComments} and {@link maskHtmlComments} drop, rewrite or
+ * blank out what either one found.
  */
 
 /** A half-open `[start, end)` span of a string. */
@@ -15,7 +21,7 @@ export interface TextRange {
   end: number;
 }
 
-/** An HTML comment found by {@link htmlCommentRanges}. */
+/** An HTML comment found by {@link htmlCommentRanges} or {@link htmlCommentRangesInHtml}. */
 export interface HtmlCommentRange extends TextRange {
   /**
    * `false` for an opener with no valid `-->`: then the range covers just the
@@ -405,6 +411,7 @@ const TOKEN =
  * An opener that finds no valid `-->` is reported with `closed: false`.
  */
 export function htmlCommentRanges(source: string): HtmlCommentRange[] {
+  if (!source.includes('<!--')) return [];
   const { fences, blockComments, breaks } = scanBlocks(source);
   // Fences and comment blocks never overlap (one pass decided both), so one
   // sorted list of regions the inline scan must skip, walked with a pointer.
@@ -421,14 +428,14 @@ export function htmlCommentRanges(source: string): HtmlCommentRange[] {
     while (b < blockComments.length && blockComments[b].start < pos) out.push(blockComments[b++]);
   };
 
-  const re = new RegExp(TOKEN.source, 'g');
+  TOKEN.lastIndex = 0;
   let m: RegExpExecArray | null;
-  while ((m = re.exec(source)) !== null) {
+  while ((m = TOKEN.exec(source)) !== null) {
     const start = m.index;
     while (r < regions.length && regions[r].end <= start) r++;
     const region = regions[r];
     if (region && region.start <= start) {
-      re.lastIndex = Math.max(region.end, start + 1);
+      TOKEN.lastIndex = Math.max(region.end, start + 1);
       continue;
     }
     if (m[0] !== '<!--') {
@@ -438,7 +445,7 @@ export function htmlCommentRanges(source: string): HtmlCommentRange[] {
       // next character.
       const end = start + m[0].length;
       if ((region && region.start < end) || firstAfter(breaks, start) < end) {
-        re.lastIndex = start + 1;
+        TOKEN.lastIndex = start + 1;
       }
       continue;
     }
@@ -457,12 +464,78 @@ export function htmlCommentRanges(source: string): HtmlCommentRange[] {
     flushBlocksBefore(start);
     if (end === -1) {
       out.push({ start, end: openEnd, closed: false });
-      re.lastIndex = openEnd;
+      TOKEN.lastIndex = openEnd;
     } else {
       out.push({ start, end, closed: true });
-      re.lastIndex = end;
+      TOKEN.lastIndex = end;
     }
   }
   flushBlocksBefore(Infinity);
   return out;
+}
+
+/**
+ * Every `<!-- … -->` in raw HTML (not Markdown). There is no code to skip —
+ * code reaches an HTML string entity-escaped (`&lt;!--`) — so every literal
+ * opener is real. HTML semantics: a comment ends at the first `-->` after its
+ * opener (a nested `<!--` is comment text); `<!-->` and `<!--->` are complete
+ * empty comments; an opener with no `-->` after it is reported `closed: false`
+ * over its four characters (the HTML parser would run it to the end of the
+ * input — callers decide what to do with it), and the scan goes on, so every
+ * later opener is reported too. Linear: one `indexOf` per opener, one per closer.
+ */
+export function htmlCommentRangesInHtml(source: string): HtmlCommentRange[] {
+  const out: HtmlCommentRange[] = [];
+  if (!source.includes('<!--')) return out;
+  const nextCloser = closerFinder(source);
+  for (let from = 0; ; ) {
+    const start = source.indexOf('<!--', from);
+    if (start === -1) return out;
+    const openEnd = start + 4;
+    const empty = /^-?>/.exec(source.slice(openEnd, openEnd + 2));
+    if (empty) out.push({ start, end: openEnd + empty[0].length, closed: true });
+    else {
+      const closer = nextCloser(openEnd);
+      if (closer === -1) out.push({ start, end: openEnd, closed: false });
+      else out.push({ start, end: closer + 3, closed: true });
+    }
+    from = out[out.length - 1].end;
+  }
+}
+
+/**
+ * Rewrite the comments of `source` — the ranges {@link htmlCommentRanges}
+ * (Markdown) or {@link htmlCommentRangesInHtml} (HTML) found in it — through
+ * `replacer`, which receives each range (closed or not) and its text. Text
+ * between comments is copied once; with no comments `source` itself is returned.
+ */
+export function replaceHtmlComments(
+  source: string,
+  comments: readonly HtmlCommentRange[],
+  replacer: (comment: HtmlCommentRange, text: string) => string
+): string {
+  if (comments.length === 0) return source;
+  let out = '';
+  let cursor = 0;
+  for (const c of comments) {
+    out += source.slice(cursor, c.start) + replacer(c, source.slice(c.start, c.end));
+    cursor = c.end;
+  }
+  return out + source.slice(cursor);
+}
+
+/**
+ * A copy of `source` with every CLOSED comment blanked out — each of its
+ * characters but newlines becomes `fill` — so the copy has the same length,
+ * line breaks and offsets as `source`: scan the mask, slice the original. An
+ * unclosed opener is literal text and stays as it is.
+ */
+export function maskHtmlComments(
+  source: string,
+  comments: readonly HtmlCommentRange[],
+  fill = ' '
+): string {
+  return replaceHtmlComments(source, comments, (c, text) =>
+    c.closed ? text.replace(/[^\n]/g, fill) : text
+  );
 }
