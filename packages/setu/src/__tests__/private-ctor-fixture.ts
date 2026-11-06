@@ -1,7 +1,8 @@
 /**
  * Real JSDoc 4.0.5 `-X` output (meta trimmed, `comment` dropped) for the
- * source files below — `a.js`, then `cjs.js` from `/** @module cjsmod *∕` on,
- * then the files named further down
+ * source files below — `a.js`, then `cjs.js` from `/** @module cjsmod *∕` on
+ * (both files' records carry `meta.filename: 'c.js'`; the line numbers restart
+ * at the `cjs.js` ones), then the files named further down
  * (`*∕` stands for a comment close):
  *
  * /** Exported class desc. *∕
