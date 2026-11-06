@@ -11,6 +11,14 @@ as `"''"`. Defaults now render verbatim in a code span (`""`, `''`, `{a: 1}`,
 `() => {}`, `0`, `true`, `null`, `NaN`), the same as a member's **Default:**
 line, on JSDoc and TypeDoc pages alike.
 
+A default that is a `{@link}` tag
+(`@param {number} [priority={@link Priority.NORMAL}]`) now renders the link,
+the way a `{@link}` in a description does: a resolved target becomes a link to
+that symbol (`{@linkcode}` keeps the code look), text around the tag stays
+text, and an unresolved target falls back to the same inert code span
+(`Priority.NORMAL`). The tag used to print raw inside the code span
+(`{@link Priority.NORMAL}`).
+
 On TypeDoc pages, a `@defaultValue` tag no longer shows its own backticks or a
 `ts` code fence inside the **Default:** value, and it now wins over the
 property's initializer. Defaults follow TypeDoc's own model. A tag that is a

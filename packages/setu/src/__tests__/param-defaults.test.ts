@@ -10,7 +10,9 @@ import { describe, it, expect } from 'vitest';
 import { default as salty } from '@jsdoc/salty';
 import type { TDoclet, TJSDocSaltyCollection } from '@clean-jsdoc-theme/utils';
 import { generateSite } from '../index';
-import { formatDefaultValue } from '../mdast/doclet';
+import { formatDefaultValue, paramsList } from '../mdast/doclet';
+import { root } from '../mdast/builders';
+import { toMdx } from '../mdx';
 
 function makeCollection(items: unknown[]): TJSDocSaltyCollection<TDoclet> {
   return salty.taffy(items) as unknown as TJSDocSaltyCollection<TDoclet>;
@@ -182,5 +184,171 @@ describe('formatDefaultValue', () => {
     expect(formatDefaultValue(undefined)).toBeNull();
     // An empty code span would serialize as broken markdown.
     expect(formatDefaultValue('')).toBeNull();
+  });
+});
+
+describe('defaults that carry a {@link} tag (examples/basic Queue#enqueue / JobDescriptor shape)', () => {
+  // Mirrors `[priority={@link Priority.NORMAL}]` in examples/basic, with the
+  // target registered (a namespace page + a static member → `/priority#normal`).
+  const items = [
+    {
+      kind: 'namespace',
+      name: 'Priority',
+      longname: 'Priority',
+      scope: 'global',
+      description: '<p>Levels.</p>',
+    },
+    {
+      kind: 'member',
+      name: 'NORMAL',
+      longname: 'Priority.NORMAL',
+      memberof: 'Priority',
+      scope: 'static',
+      type: { names: ['number'] },
+      defaultvalue: 5,
+      description: '<p>Normal.</p>',
+    },
+    { kind: 'class', name: 'Queue', longname: 'Queue', scope: 'global', classdesc: '<p>Q.</p>' },
+    {
+      kind: 'function',
+      name: 'enqueue',
+      longname: 'Queue#enqueue',
+      memberof: 'Queue',
+      scope: 'instance',
+      params: [
+        {
+          name: 'priority',
+          type: { names: ['number'] },
+          optional: true,
+          defaultvalue: '{@link Priority.NORMAL}',
+          description: '<p>Override.</p>',
+        },
+        {
+          name: 'code',
+          type: { names: ['number'] },
+          optional: true,
+          defaultvalue: '{@linkcode Priority.NORMAL}',
+        },
+        {
+          name: 'labelled',
+          type: { names: ['number'] },
+          optional: true,
+          defaultvalue: '{@link Priority.NORMAL|normal}',
+        },
+        {
+          name: 'leading',
+          type: { names: ['number'] },
+          optional: true,
+          defaultvalue: '[normal]{@link Priority.NORMAL}',
+        },
+        {
+          name: 'mixed',
+          type: { names: ['number'] },
+          optional: true,
+          defaultvalue: '{@link Priority.NORMAL} | 0',
+        },
+        {
+          name: 'quoted',
+          type: { names: ['string'] },
+          optional: true,
+          defaultvalue: '"see {@link Priority.NORMAL}"',
+        },
+        {
+          name: 'missing',
+          type: { names: ['number'] },
+          optional: true,
+          defaultvalue: '{@link Nope}',
+        },
+        {
+          name: 'tutorial',
+          type: { names: ['number'] },
+          optional: true,
+          defaultvalue: '{@tutorial intro}',
+        },
+        { name: 'braces', type: { names: ['Object'] }, optional: true, defaultvalue: '{a: 1}' },
+      ],
+    },
+    {
+      kind: 'typedef',
+      name: 'JobDescriptor',
+      longname: 'JobDescriptor',
+      scope: 'global',
+      type: { names: ['Object'] },
+      properties: [
+        {
+          name: 'priority',
+          type: { names: ['number'] },
+          optional: true,
+          defaultvalue: '{@link Priority.NORMAL}',
+          description: '<p>Weight.</p>',
+        },
+      ],
+    },
+    {
+      kind: 'member',
+      name: 'm',
+      longname: 'Queue#m',
+      memberof: 'Queue',
+      scope: 'instance',
+      description: '<p>prop</p>',
+      defaultvalue: '{@link Priority.NORMAL}',
+    },
+  ];
+  const pages = () => generateSite(makeCollection(items)).pages;
+  const page = (slug: string) => pages().find((p) => p.slug === slug)!.body;
+
+  it('a param default that is a {@link} tag links to the symbol (the regression)', () => {
+    expect(page('queue')).toContain(
+      '- `priority` (number, optional, default: [Priority.NORMAL](/priority#normal)) — Override.\n'
+    );
+  });
+
+  it('a typedef property default links the same way', () => {
+    expect(page('jobdescriptor')).toContain(
+      '- `priority` (number, optional, default: [Priority.NORMAL](/priority#normal)) — Weight.\n'
+    );
+  });
+
+  it('a member Default line links the same way', () => {
+    expect(page('queue')).toContain('**Default:** [Priority.NORMAL](/priority#normal)\n');
+  });
+
+  it('follows the description conventions: linkcode, labels, text around a tag', () => {
+    const body = page('queue');
+    expect(body).toContain(
+      '- `code` (number, optional, default: [`Priority.NORMAL`](/priority#normal))\n'
+    );
+    expect(body).toContain(
+      '- `labelled` (number, optional, default: [normal](/priority#normal))\n'
+    );
+    expect(body).toContain('- `leading` (number, optional, default: [normal](/priority#normal))\n');
+    expect(body).toContain(
+      '- `mixed` (number, optional, default: [Priority.NORMAL](/priority#normal) | 0)\n'
+    );
+    expect(body).toContain(
+      '- `quoted` (string, optional, default: "see [Priority.NORMAL](/priority#normal)")\n'
+    );
+  });
+
+  it('an unresolved target falls back to the inert code span descriptions use', () => {
+    expect(page('queue')).toContain('- `missing` (number, optional, default: `Nope`)\n');
+  });
+
+  it('controls: a non-link inline tag and a braced value stay verbatim in code', () => {
+    const body = page('queue');
+    expect(body).toContain('- `tutorial` (number, optional, default: `{@tutorial intro}`)\n');
+    expect(body).toContain('- `braces` (Object, optional, default: `{a: 1}`)\n');
+  });
+
+  it('no raw link tag survives on any page', () => {
+    for (const p of pages())
+      expect(p.body.replace(/^---\n[\s\S]*?\n---\n/, '')).not.toContain('{@link');
+  });
+
+  it('without a resolver the tag stays exactly as written, in code', () => {
+    const list = paramsList([
+      { name: 'p', optional: true, defaultvalue: '{@link Priority.NORMAL}' },
+    ]);
+    expect(toMdx(root(list!))).toContain('- `p` (optional, default: `{@link Priority.NORMAL}`)');
   });
 });

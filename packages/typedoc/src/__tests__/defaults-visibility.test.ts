@@ -72,6 +72,11 @@ export class Opts {
    * @defaultValue {@link Opts} instance
    */
   linked = 1;
+  /**
+   * Only a link.
+   * @defaultValue {@link Opts}
+   */
+  onlyLink = 2;
 }
 
 /** Only a factory makes one. */
@@ -194,6 +199,13 @@ describe('@defaultValue on the member Default line', () => {
     const body = bodyOf(byDefault.manifest, 'Opts');
     expect(body).toContain('**Default:** `true` when `x` is set');
     expect(body).toMatch(/\*\*Default:\*\* \[Opts\]\([^)]+\) instance/);
+  });
+
+  it('a default that is only a {@link} tag renders as a link, not a raw tag', () => {
+    const body = bodyOf(byDefault.manifest, 'Opts');
+    expect(body).toMatch(/\*\*Default:\*\* \[Opts\]\([^)]+\)\n/);
+    expect(body).not.toContain('{@link');
+    expect(body).not.toContain('**Default:** `2`');
   });
 });
 
