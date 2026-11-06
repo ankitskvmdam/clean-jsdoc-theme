@@ -47,10 +47,11 @@ describe('httpsFetch', () => {
     const [url, options] = get.mock.calls[0]!;
     expect(url).toBe('https://fonts.example/css?family=X');
     expect(options).toEqual({
-      agent: false,
       headers: { 'User-Agent': 'ua' },
       signal: controller.signal,
     });
+    // Default agent, so Node's env-proxy support (NODE_USE_ENV_PROXY) applies.
+    expect(options).not.toHaveProperty('agent');
   });
 
   it('rejects on a request error', async () => {

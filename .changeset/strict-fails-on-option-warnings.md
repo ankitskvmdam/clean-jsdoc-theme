@@ -24,7 +24,9 @@ The Google Fonts check (when `fonts` is set) now uses `node:https` instead of th
 global `fetch` in both the JSDoc and TypeDoc builds. On Windows, a build that
 failed right after the check aborted Node with a libuv assertion
 (`!(handle->flags & UV_HANDLE_CLOSING)`, exit code 127) instead of exiting with
-its normal error code.
+its normal error code. The check uses Node's default HTTPS agent, so it still
+honours the env proxy (`NODE_USE_ENV_PROXY=1` / `--use-env-proxy` with
+`HTTPS_PROXY`, Node 24+) the way `fetch` did.
 
 `customCssFile` / `customJsFile` entries that aren't local paths (a URL, or a v4
 `{ href, integrity }` object) now warn and are skipped instead of being dropped

@@ -9,9 +9,15 @@
  * exit 1. A plain `node:https` request has no such handle and exits cleanly.
  *
  * Only the status code is read; the response body is discarded and the
- * socket is not kept alive (`agent: false`), so nothing lingers after the
- * check. Abort (the resolver's timeout) and network errors reject, which the
+ * socket destroyed (`res.destroy()`), so nothing lingers after the check.
+ * Abort (the resolver's timeout) and network errors reject, which the
  * resolver maps to `'unknown'` (fail-open, an info note) exactly as before.
+ * Redirects are not followed: a 3xx resolves the check to `'unknown'`.
+ *
+ * The request goes through Node's default agent (`https.globalAgent`), so it
+ * honours the env proxy (`NODE_USE_ENV_PROXY=1` / `--use-env-proxy` with
+ * `HTTPS_PROXY`/`NO_PROXY`, Node >= 24) just like the global `fetch`. Don't
+ * pass `agent: false`: that builds a fresh Agent without the proxy settings.
  *
  * utils stays browser-safe because the `node:` import lives here, in the
  * Node-only bridge. The TypeDoc bridge carries a copy
@@ -25,7 +31,6 @@ export const httpsFetch: FetchLike = (url, init) =>
     const req = get(
       url,
       {
-        agent: false,
         ...(init?.headers ? { headers: init.headers } : {}),
         ...(init?.signal ? { signal: init.signal } : {}),
       },
