@@ -301,7 +301,8 @@ function codeSpanFinder(source: string): (start: number, end: number) => number 
  *     not a fence;
  *   - a line ends the paragraph before it (a "break", where an inline comment
  *     must stop) only if CommonMark lets it interrupt a paragraph: blank, an
- *     ATX heading, a thematic break or setext underline, a fence, a comment or
+ *     ATX heading, a thematic break or (in the paragraph's own container, not
+ *     on a lazy line) a setext underline, a fence, a comment or
  *     other HTML block of kinds 1-6, a bullet item or an ordered item starting
  *     at 1 (non-empty), or a deeper blockquote — and never when indented four
  *     or more columns past the paragraph's own content (that is continuation
@@ -464,7 +465,12 @@ function scanBlocks(source: string): BlockScan {
     } else if (
       ATX_HEADING.test(rest) ||
       isThematicBreak(rest) ||
-      (para && SETEXT_UNDERLINE.test(rest))
+      // A setext underline needs a paragraph in its own container: a lazy
+      // line (another quote depth, or outdented out of a list item) is text.
+      (para &&
+        depth === para.depth &&
+        !(para.inItem && indent < para.indent) &&
+        SETEXT_UNDERLINE.test(rest))
     ) {
       // One-line blocks: the next line starts a new block too, so an inline
       // comment in a heading can't run on into it.
