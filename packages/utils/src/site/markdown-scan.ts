@@ -32,11 +32,18 @@ const LIST_MARKER = String.raw`(?:[-*+]|\d{1,9}[.)])[ \t]+`;
 
 // On a line with its quote prefix removed: a fence opener — indentation and an
 // optional list marker (fences nest in list items), then 3+ backticks or
-// tildes. Outside a paragraph indentation is not capped, so a fence deep in a
-// list item counts; the price is that a 4-space indented code block holding
-// ``` reads as a fence, which only ever protects more text, never less.
-const FENCE_OPEN = new RegExp(String.raw`^[ \t]*(?:${LIST_MARKER})?(\`{3,}|~{3,})(.*)$`);
-const FENCE_CLOSE = /^[ \t]*(`{3,}|~{3,})[ \t]*$/;
+// tildes. Group 1 is everything before the fence run: its column width is the
+// content column the closer's indent is measured from (so for a top-level
+// opener indented 1-3 columns, the closer indent is measured from the opener's
+// prefix — CommonMark measures from the container; this only ever reads a
+// little more as prose, never feeds a code block's comment to MDX). Outside a
+// paragraph indentation is not capped, so a fence deep in a list item counts;
+// the price is that a 4-space indented code block holding ``` reads as a
+// fence, which only ever protects more text, never less.
+const FENCE_OPEN = new RegExp(String.raw`^([ \t]*(?:${LIST_MARKER})?)(\`{3,}|~{3,})(.*)$`);
+// A fence closer: a run of the opener's character at least as long, then only
+// whitespace. Group 1 is its indentation.
+const FENCE_CLOSE = /^([ \t]*)(`{3,}|~{3,})[ \t]*$/;
 // An HTML-comment block (CommonMark HTML block type 2): `<!--` after nothing
 // but indentation and a list marker. Group 1 is that prefix.
 const COMMENT_BLOCK = new RegExp(String.raw`^([ \t]*(?:${LIST_MARKER})?)<!--`);
@@ -152,7 +159,10 @@ function closerFinder(source: string): (from: number) => number {
 /**
  * One ordered pass over the lines, per CommonMark block parsing:
  *   - a fence opens only outside a comment block, and closes on a long-enough
- *     run of its character — or when the blockquote it opened in ends;
+ *     run of its character at the same quote depth, indented at most three
+ *     columns past the opener's prefix — or when the blockquote it opened in
+ *     ends; a fence in a list item also ends when a non-blank line is indented
+ *     less than the item's content;
  *   - a comment block (a line starting `<!--`) opens only outside a fence and
  *     runs through the line holding its `-->`, so a fence line inside one is
  *     not a fence;
@@ -170,7 +180,18 @@ function scanBlocks(source: string): BlockScan {
   const breaks: number[] = [];
   const nextCloser = closerFinder(source);
 
-  let fence: { char: string; len: number; start: number; depth: number } | undefined;
+  let fence:
+    | {
+        char: string;
+        len: number;
+        start: number;
+        depth: number;
+        /** Columns before the fence run on the opener line (indentation + list marker). */
+        indent: number;
+        /** Opened on a list-item line: a less-indented line leaves the item and ends it. */
+        inItem: boolean;
+      }
+    | undefined;
   // The open paragraph, if any: its content column and quote depth.
   let para: { indent: number; depth: number } | undefined;
   let pos = 0;
@@ -195,13 +216,30 @@ function scanBlocks(source: string): BlockScan {
     }
 
     if (fence) {
-      const close = FENCE_CLOSE.exec(body);
-      if (close && close[1][0] === fence.char && close[1].length >= fence.len) {
-        fences.push({ start: fence.start, end: lineEnd });
+      if (fence.inItem && depth === fence.depth && rest !== '' && indent < fence.indent) {
+        // A non-blank line indented less than the item's content column leaves
+        // the list item, and the fence with it (fenced code has no lazy
+        // continuation). The line is then read afresh — it may open a new fence.
+        fences.push({ start: fence.start, end: pos - 1 });
         fence = undefined;
+      } else {
+        // The closer sits at the fence's own quote depth (a deeper quote line is
+        // content) and is indented at most three columns past the content
+        // column the opener set (CommonMark): `- ```` closes at columns 2–5, a
+        // bare ``` at 0–3.
+        const close = depth === fence.depth ? FENCE_CLOSE.exec(body) : null;
+        if (
+          close &&
+          close[2][0] === fence.char &&
+          close[2].length >= fence.len &&
+          columns(close[1]) <= fence.indent + 3
+        ) {
+          fences.push({ start: fence.start, end: lineEnd });
+          fence = undefined;
+        }
+        pos = next;
+        continue;
       }
-      pos = next;
-      continue;
     }
 
     if (rest === '') {
@@ -223,8 +261,15 @@ function scanBlocks(source: string): BlockScan {
     const open = FENCE_OPEN.exec(body);
     const comment = open ? null : COMMENT_BLOCK.exec(body);
     const item = LIST_ITEM.exec(rest);
-    if (open && !(open[1][0] === '`' && open[2].includes('`'))) {
-      fence = { char: open[1][0], len: open[1].length, start: pos, depth };
+    if (open && !(open[2][0] === '`' && open[3].includes('`'))) {
+      fence = {
+        char: open[2][0],
+        len: open[2].length,
+        start: pos,
+        depth,
+        indent: columns(open[1]),
+        inItem: /[^ \t]/.test(open[1]),
+      };
       breaks.push(pos);
       para = undefined;
     } else if (comment) {
@@ -331,16 +376,21 @@ export function fencedCodeRanges(source: string): TextRange[] {
 }
 
 // Tokens that can hide a `<!--` from the inline comment scan, then the comment
-// opener itself (not backslash-escaped):
-//   - an inline code span — CommonMark delimiter rules (a maximal run of N
-//     backticks closes on a run of exactly N, `\`` is literal) and it never
-//     crosses a blank line;
-//   - an MDX JSX / HTML tag, whose quoted attribute values are literal strings;
+// opener itself:
+//   - a backslash escape `\x` (any char but a newline): consumed as a token, so
+//     `\<!--` and `\`` never start anything, while `\\<!--` is an escaped
+//     backslash followed by a real opener — parity by construction;
+//   - an inline code span — CommonMark delimiter rules: a maximal run of N
+//     backticks closes on the next maximal run of exactly N (backslashes are
+//     literal INSIDE a span, so `a\` closes on the backtick after the
+//     backslash), and it never crosses a blank line;
+//   - an MDX JSX / HTML tag, whose quoted attribute values (double- or
+//     single-quoted; MDX accepts both) are literal strings;
 //   - a link/image tail `](destination "title")` — MDX takes destinations and
 //     titles verbatim, so `[a](http://x/<!--y-->z)` keeps its URL (an escaped
-//     `\]` closes no link, so it protects nothing).
+//     `\]` is consumed above, so it opens no tail and protects nothing).
 const TOKEN =
-  /(?<![`\\])(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\1(?!`)|<\/?[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][\w-]*(?:="[^"]*")?)*\s*\/?>|(?<!\\)\]\((?:<[^<>\n]*>|(?:[^\s()\\]|\\.|\((?:[^\s()\\]|\\.)*\))*)(?:\s+(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\((?:[^()\\]|\\.)*\)))?\s*\)|(?<!\\)<!--/g;
+  /\\[^\n]|(?<!`)(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<!`)\1(?!`)|<\/?[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][\w-]*(?:="[^"]*"|='[^']*')?)*\s*\/?>|\]\((?:<[^<>\n]*>|(?:[^\s()\\]|\\.|\((?:[^\s()\\]|\\.)*\))*)(?:\s+(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\((?:[^()\\]|\\.)*\)))?\s*\)|<!--/g;
 
 /**
  * Every HTML comment in prose — outside fenced code, inline code, tags and link
@@ -382,9 +432,14 @@ export function htmlCommentRanges(source: string): HtmlCommentRange[] {
       continue;
     }
     if (m[0] !== '<!--') {
-      // A span/tag/link that would reach into a fence or comment block is not
-      // one: that block ends the paragraph first. Rescan from the next char.
-      if (region && region.start < start + m[0].length) re.lastIndex = start + 1;
+      // A span/tag/link that would reach into a fence or comment block, or
+      // across a line that ends the paragraph, is not one: the block ends the
+      // paragraph first, and inline syntax never spans blocks. Rescan from the
+      // next character.
+      const end = start + m[0].length;
+      if ((region && region.start < end) || firstAfter(breaks, start) < end) {
+        re.lastIndex = start + 1;
+      }
       continue;
     }
 
@@ -395,10 +450,9 @@ export function htmlCommentRanges(source: string): HtmlCommentRange[] {
       end = openEnd + empty[0].length;
     } else {
       const closer = nextCloser(openEnd);
-      if (closer !== -1) {
-        const paragraphEnd = Math.min(firstAfter(breaks, start), region ? region.start : Infinity);
-        if (closer + 3 <= paragraphEnd) end = closer + 3;
-      }
+      // The comment may not outlive its paragraph. The next fence or comment
+      // block always starts on a break line, so the next break covers both.
+      if (closer !== -1 && closer + 3 <= firstAfter(breaks, start)) end = closer + 3;
     }
     flushBlocksBefore(start);
     if (end === -1) {

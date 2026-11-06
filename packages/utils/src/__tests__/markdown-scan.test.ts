@@ -5,6 +5,13 @@ import { fencedCodeRanges, htmlCommentRanges } from '../site/markdown-scan';
 const slices = (src: string, ranges: { start: number; end: number }[]): string[] =>
   ranges.map((r) => src.slice(r.start, r.end));
 
+/** The text of each closed comment {@link htmlCommentRanges} finds. */
+const closed = (src: string): string[] =>
+  slices(
+    src,
+    htmlCommentRanges(src).filter((c) => c.closed)
+  );
+
 describe('fencedCodeRanges', () => {
   it('finds backtick and tilde fences, opener line through closer line', () => {
     const src = 'a\n\n```js\nx\n```\n\nb\n\n~~~\ny\n~~~\n';
@@ -41,15 +48,54 @@ describe('fencedCodeRanges', () => {
     const src = 'a ``` b\n```\r\nx\r\n```\r\n';
     expect(slices(src, fencedCodeRanges(src))).toEqual(['```\r\nx\r\n```\r']);
   });
+
+  // Fence closers per CommonMark (checked against micromark): indented at most
+  // three columns past the content column, at the opener's quote depth.
+  it('does not close on a closer indented four or more columns (CommonMark: content)', () => {
+    const src = '```js\n      ```\n<!-- c -->\n```\n';
+    expect(slices(src, fencedCodeRanges(src))).toEqual(['```js\n      ```\n<!-- c -->\n```']);
+    expect(closed(src)).toEqual([]);
+  });
+
+  it('closes on a closer indented up to three columns', () => {
+    const src = '```js\n   ```\nx\n';
+    expect(slices(src, fencedCodeRanges(src))).toEqual(['```js\n   ```']);
+  });
+
+  it('treats a fence line at a deeper quote depth as content', () => {
+    const src = '> ```\n> > ```\n> <!-- c -->\n> ```\n';
+    expect(slices(src, fencedCodeRanges(src))).toEqual(['> ```\n> > ```\n> <!-- c -->\n> ```']);
+  });
+
+  it('closes a list-item fence on a closer up to three columns past the item content', () => {
+    const src = '- ```js\n  x\n     ```\n<!-- c -->\n';
+    expect(slices(src, fencedCodeRanges(src))).toEqual(['- ```js\n  x\n     ```']);
+  });
+
+  it('reads a list-item closer four columns past the item content as content', () => {
+    const src = '- ```js\n  x\n      ```\n<!-- c -->\n```\n';
+    // The item ends at the unindented comment line (an HTML block); the last
+    // ``` opens a new fence.
+    expect(slices(src, fencedCodeRanges(src))).toEqual(['- ```js\n  x\n      ```', '```\n']);
+  });
+
+  it('ends a list-item fence on a less-indented line, which may open a new fence', () => {
+    const src = '- ```js\n  x\n```\n<!-- c -->\n';
+    expect(slices(src, fencedCodeRanges(src))).toEqual(['- ```js\n  x', '```\n<!-- c -->\n']);
+  });
+
+  it('keeps a blank line inside a list-item fence', () => {
+    const src = '- ```js\n\n  x\n  ```\n<!-- c -->\n';
+    expect(slices(src, fencedCodeRanges(src))).toEqual(['- ```js\n\n  x\n  ```']);
+  });
+
+  it('closes an indented top-level opener on an unindented closer', () => {
+    const src = '  ```js\nx\n```\n<!-- c -->\n';
+    expect(slices(src, fencedCodeRanges(src))).toEqual(['  ```js\nx\n```']);
+  });
 });
 
 describe('htmlCommentRanges', () => {
-  const closed = (src: string): string[] =>
-    slices(
-      src,
-      htmlCommentRanges(src).filter((c) => c.closed)
-    );
-
   it('finds inline and block comments', () => {
     expect(closed('<!-- a -->\n\nText <!-- b --> more.\n')).toEqual(['<!-- a -->', '<!-- b -->']);
   });
@@ -156,6 +202,52 @@ describe('htmlCommentRanges', () => {
 
   it('lets an inline comment in a quote continue on the next > line', () => {
     expect(closed('> text <!-- a\n> b -->\n')).toEqual(['<!-- a\n> b -->']);
+  });
+
+  // Inline syntax never spans blocks (checked against micromark): a line that
+  // ends the paragraph also ends an unclosed span, tag or link before it.
+  it.each([
+    ['a blockquote', 'a `x\n> b <!-- c --> d` e\n'],
+    ['an ATX heading', 'a `x\n# b <!-- c --> d` e\n'],
+    ['a list item', 'a `x\n- b <!-- c --> d` e\n'],
+  ])('does not let a code span cross a line starting %s (it ends the paragraph)', (_n, src) => {
+    expect(closed(src)).toEqual(['<!-- c -->']);
+  });
+
+  it('lets a code span continue on a plain continuation line', () => {
+    expect(htmlCommentRanges('a `x\nb <!-- c --> d` e\n')).toEqual([]);
+  });
+
+  it('does not let a tag attribute or a link title cross a line that ends the paragraph', () => {
+    expect(closed('<Sig code="a\n> b" /> <!-- c -->\n')).toEqual(['<!-- c -->']);
+    expect(closed('[a](u "t\n# h") <!-- c -->\n')).toEqual(['<!-- c -->']);
+  });
+
+  it('lets a tag attribute span tab-indented continuation lines (setu signatures)', () => {
+    expect(htmlCommentRanges('<MemberHeading sig="fn(\n\ta: <!-- T\n): U" /> -->\n')).toEqual([]);
+  });
+
+  it('protects a single-quoted attribute value', () => {
+    expect(htmlCommentRanges("<img src='x.png' alt='<!-- not a comment -->' />\n")).toEqual([]);
+    expect(htmlCommentRanges("<img src='x.png' alt='<!-- oops' />\n")).toEqual([]);
+  });
+
+  it('reads an opener after an even run of backslashes as a comment (odd = escaped)', () => {
+    expect(closed('a \\\\<!-- c --> b\n')).toEqual(['<!-- c -->']);
+    expect(htmlCommentRanges('a \\<!-- c --> b\n')).toEqual([]);
+    expect(htmlCommentRanges('a \\\\\\<!-- c --> b\n')).toEqual([]);
+  });
+
+  it('closes a code span on a backtick after a backslash (no escapes inside spans)', () => {
+    expect(closed('`a\\` <!-- c --> `\n')).toEqual(['<!-- c -->']);
+  });
+
+  it('opens a code span on a backtick after an escaped backslash', () => {
+    expect(htmlCommentRanges('x \\\\`a <!-- c --> `\n')).toEqual([]);
+  });
+
+  it('opens no code span on an escaped backtick', () => {
+    expect(closed('x \\`a` <!-- c -->\n')).toEqual(['<!-- c -->']);
   });
 });
 
