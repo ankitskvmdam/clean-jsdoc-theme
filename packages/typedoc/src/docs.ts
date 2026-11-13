@@ -8,8 +8,14 @@
  * Per the repo convention, the two bridges are independent leaf packages: pure
  * helpers are COPIED, never cross-imported. The only behavioural differences are
  * that warnings go through a `warn` callback (TypeDoc's `logger.warn`) rather than
- * `console.warn`, and every served href is threaded through `hrefForServed` for
- * sub-directory (`basePath`) deploys.
+ * `console.warn`.
+ *
+ * Page bodies are site-root-relative and base-free: rewritten image srcs are
+ * `/_assets/…` WITHOUT the deploy `basePath`, like page and source links. The
+ * base is applied exactly once downstream — by rang's `MdxImg` for HTML and by
+ * dwar's `prefixRootRelativeUrls` for the companion `.md` / `llms-full.txt`
+ * (#377). `hrefForServed` in `write-site.ts` is only for theme-level assets
+ * (logos, favicon) whose href is emitted verbatim.
  *
  * The bridge is the I/O layer here — it walks the docs tree and routes every
  * referenced local image (Markdown `![](src)` AND raw `<img src>`) through
@@ -146,10 +152,11 @@ const HTML_IMAGE_RE = /(<img\b[^>]*?\bsrc\s*=\s*(["']))([^"']*)(\2)/gi;
  * A reusable local-image asset pipeline shared by every prose source (docs,
  * README, symbol comments). `resolve(src, baseDir)` copies a local image to
  * `_assets/<base>.<hash><ext>` (content-hashed → cache-busted, deduped across all
- * sources via the shared caches) and returns the served href (via
- * `hrefForServed`). It accumulates each copied file on `files` and each SVG's
- * markup on `inlineSvgs` (keyed by the rewritten href, so the renderer can inline
- * it — its `[data-theme]` styles then track the toggle). A `src` is resolved
+ * sources via the shared caches) and returns the site-root-relative `/_assets/…`
+ * href (no `basePath`; see the module header). It accumulates each copied file
+ * on `files` and each SVG's markup on `inlineSvgs` (keyed by that base-free
+ * href, so the renderer can inline it — its `[data-theme]` styles then track
+ * the toggle). A `src` is resolved
  * relative to the project root when it starts with `/`, else relative to
  * `baseDir`; absolute (`http(s):`, `data:`), `#`-anchor, and unreadable srcs yield
  * `null` (the last warned) so callers leave them untouched. The JSDoc twin is
@@ -161,10 +168,7 @@ export interface ImageCollector {
   readonly inlineSvgs: Record<string, string>;
 }
 
-export function createImageCollector(
-  warn: Warn,
-  hrefForServed: (servedPath: string) => string = (p) => '/' + p
-): ImageCollector {
+export function createImageCollector(warn: Warn): ImageCollector {
   const files: OutputFile[] = [];
   const inlineSvgs: Record<string, string> = {};
   const seenServed = new Set<string>();
@@ -192,7 +196,10 @@ export function createImageCollector(
       seenServed.add(served);
       files.push({ path: served, contents: bytes });
     }
-    const href = hrefForServed(served);
+    // Base-free by design: rang's `MdxImg` adds `basePath` for HTML and dwar's
+    // `prefixRootRelativeUrls` adds it for the companion .md / llms-full.txt —
+    // exactly once each (#377). `inlineSvgs` is keyed by this same href.
+    const href = '/' + served;
     if (ext.toLowerCase() === '.svg') {
       inlineSvgs[href] = bytes
         .toString('utf8')
@@ -272,19 +279,19 @@ export async function rewriteImageRefs(
  * Resolve the local images a doc references and route them through the shared
  * content-hashed `_assets/` pipeline (see {@link createImageCollector}). Each
  * `![alt](src)` / `<img src>` whose `src` points to a file on disk is copied and
- * its `src` rewritten to the served `_assets/<base>.<hash><ext>`, resolved
- * relative to the project root when it starts with `/`, else relative to the
- * doc's own directory. SVGs are also collected for inlining (theme-toggle-aware).
+ * its `src` rewritten to the root-relative `/_assets/<base>.<hash><ext>`
+ * (base-free; see {@link createImageCollector}), resolved relative to the
+ * project root when it starts with `/`, else relative to the doc's own
+ * directory. SVGs are also collected for inlining (theme-toggle-aware).
  */
 export async function resolveDocImages(
   docs: DocInput[],
   docsDir: string,
-  warn: Warn,
-  hrefForServed: (servedPath: string) => string = (p) => '/' + p
+  warn: Warn
 ): Promise<ResolvedDocs> {
   if (docs.length === 0) return { docs, files: [], inlineSvgs: {} };
   const root = resolvePath(docsDir);
-  const collector = createImageCollector(warn, hrefForServed);
+  const collector = createImageCollector(warn);
   const out: DocInput[] = [];
   for (const doc of docs) {
     const docDir = dirname(resolvePath(root, doc.path));

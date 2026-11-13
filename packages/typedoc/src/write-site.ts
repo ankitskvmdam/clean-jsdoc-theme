@@ -762,9 +762,11 @@ async function buildSite(
 
   // Site root prefix so the output can be served from a sub-directory. Bad/empty
   // input fails safe to '/' (the default), so an unset option is byte-identical.
-  // Every served asset href (logos, favicon, doc/comment images) is prefixed
-  // through `hrefForServed`, exactly like the JSDoc bridge — in-content links
-  // (pages, source) are prefixed downstream by dwar from `theme.basePath`.
+  // `hrefForServed` prefixes ONLY theme-level asset hrefs that are emitted
+  // verbatim downstream (logos, favicon) — exactly like the JSDoc bridge. Page
+  // content (links, source links, doc/comment image srcs) stays base-free; rang
+  // prefixes it for HTML and dwar for the companion .md / llms-full.txt, once
+  // each (#377: prefixing images here too produced `/docs/docs/_assets/…`).
   const basePath = normalizeBasePath(block.basePath);
   const hrefForServed = (servedPath: string): string => withBase(basePath, '/' + servedPath);
   const warn = (msg: string): void => logger.warn(msg);
@@ -777,7 +779,7 @@ async function buildSite(
   // bridge-owned array, so `resolveDocletImages` mutates them IN PLACE before
   // `generateSite` reads them; one shared collector dedupes a shared image.
   const doclets = reflectionsToDoclets(project, logger);
-  const proseImages = createImageCollector(warn, hrefForServed);
+  const proseImages = createImageCollector(warn);
   await resolveDocletImages(doclets, proseImages);
   const collection = salty.taffy(doclets);
 
@@ -795,7 +797,7 @@ async function buildSite(
   const docsDir =
     typeof block.docs === 'string' && block.docs.trim().length > 0 ? block.docs.trim() : undefined;
   const resolvedDocs = docsDir
-    ? await resolveDocImages(await collectDocs(docsDir, warn), docsDir, warn, hrefForServed)
+    ? await resolveDocImages(await collectDocs(docsDir, warn), docsDir, warn)
     : { docs: [] as DocInput[], files: [] as OutputFile[], inlineSvgs: {} as Record<string, string> };
   // Native TypeDoc docs (`projectDocuments`/`@document`) → the same DocInput[]
   // pipeline, merged with the opts-walked docs (opts win on a colliding path).

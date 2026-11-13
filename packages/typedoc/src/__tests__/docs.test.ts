@@ -115,12 +115,19 @@ describe('resolveDocImages', () => {
     expect(resolved.docs[0].content).not.toContain('./diagram.png');
   });
 
-  it('threads hrefForServed (basePath) into the rewritten src', async () => {
+  it('emits a base-free root-relative src and inlineSvgs key (basePath is added downstream, #377)', async () => {
     const docs = [
-      { path: 'guides/x', type: 'markdown' as const, content: '![d](./diagram.png)' },
+      {
+        path: 'guides/x',
+        type: 'markdown' as const,
+        content: '![d](./diagram.png)\n![l](./logo.svg)',
+      },
     ];
-    const resolved = await resolveDocImages(docs, dir, noop, (p) => '/docs/' + p);
-    expect(resolved.docs[0].content).toMatch(/!\[d\]\(\/docs\/_assets\/diagram\.[0-9a-f]{8}\.png\)/);
+    const resolved = await resolveDocImages(docs, dir, noop);
+    expect(resolved.docs[0].content).toMatch(/!\[d\]\(\/_assets\/diagram\.[0-9a-f]{8}\.png\)/);
+    const [key] = Object.keys(resolved.inlineSvgs);
+    expect(key).toMatch(/^\/_assets\/logo\.[0-9a-f]{8}\.svg$/);
+    expect(resolved.docs[0].content).toContain(`![l](${key})`);
   });
 
   it('leaves image syntax inside code spans / fenced blocks untouched (no warn)', async () => {
