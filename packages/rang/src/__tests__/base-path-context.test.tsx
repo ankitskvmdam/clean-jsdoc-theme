@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'preact-render-to-string';
 import type { ComponentChildren } from 'preact';
-import { MdxA, SourceLink, MemberMeta } from '../components/mdx-tags';
-import { BasePathContext } from '../components/mdx-utils';
+import { MdxA, MdxImg, SourceLink, MemberMeta } from '../components/mdx-tags';
+import { BasePathContext, InlineSvgContext } from '../components/mdx-utils';
 
 /** Render a node inside a BasePathContext.Provider (SSR-only path dwar uses). */
 function renderWithBase(basePath: string, node: ComponentChildren): string {
@@ -45,5 +45,41 @@ describe('BasePathContext + in-content links', () => {
       <MemberMeta sourceHref="/source/foo.js#L12" sourceLabel="foo.js:12" />
     );
     expect(html).toContain('href="/docs/source/foo.js#L12"');
+  });
+
+  it('MdxImg prefixes a root-relative src with basePath exactly once', () => {
+    const html = renderWithBase('/docs', <MdxImg src="/_assets/d.1a2b3c4d.png" alt="d" />);
+    expect(html).toContain('src="/docs/_assets/d.1a2b3c4d.png"');
+    expect(html).not.toContain('/docs/docs/');
+  });
+
+  it('MdxImg is the identity-prefix at the default root base', () => {
+    expect(render(<MdxImg src="/_assets/d.png" alt="" />)).toContain('src="/_assets/d.png"');
+  });
+
+  it('MdxImg leaves absolute, protocol-relative and data: srcs untouched', () => {
+    for (const src of [
+      'https://x/y.png',
+      '//cdn.x/y.png',
+      'data:image/png;base64,AAAA',
+      './rel.png',
+    ]) {
+      const html = renderWithBase('/docs', <MdxImg src={src} alt="" />);
+      expect(html).toContain(`src="${src}"`);
+      expect(html).not.toContain('/docs');
+    }
+  });
+
+  it('MdxImg inlines an SVG looked up by its base-free src even under a sub-path', () => {
+    const html = render(
+      <BasePathContext.Provider value="/docs">
+        <InlineSvgContext.Provider value={{ '/_assets/l.0000ffff.svg': '<svg data-x="1"></svg>' }}>
+          <MdxImg src="/_assets/l.0000ffff.svg" alt="logo" />
+        </InlineSvgContext.Provider>
+      </BasePathContext.Provider>
+    );
+    expect(html).toContain('role="img"');
+    expect(html).toContain('<svg data-x="1">');
+    expect(html).not.toContain('<img');
   });
 });
