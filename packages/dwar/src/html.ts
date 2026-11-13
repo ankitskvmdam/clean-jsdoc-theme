@@ -450,9 +450,10 @@ export function htmlPathFor(slug: string): string {
 
 /**
  * Slug → companion Markdown path, co-located with the HTML (`index.html` →
- * `index.md`). This is the page's MDX body written verbatim, so an LLM (or a
- * future "copy page" button) can fetch the source markdown for the page it's on
- * by swapping `index.html` for `index.md`.
+ * `index.md`). This is the page's MDX body with `basePath` applied to its
+ * root-relative URLs (verbatim at the root base), so an LLM (or a future "copy
+ * page" button) can fetch the source markdown for the page it's on by swapping
+ * `index.html` for `index.md`.
  */
 export function mdPathFor(slug: string): string {
   return htmlPathFor(slug).replace(/\.html$/, '.md');

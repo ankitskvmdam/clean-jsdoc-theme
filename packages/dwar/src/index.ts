@@ -64,6 +64,7 @@ import { bundleIslands, ALL_ISLANDS } from './islands-bundle';
 import { buildCss } from './css';
 import { buildSitemapXml } from './sitemap';
 import { buildLlmsTxt } from './llms-txt';
+import { prefixRootRelativeUrls } from './md-base-path';
 
 /**
  * Injected from package.json at build time (see tsdown.config.ts `define`). The
@@ -684,10 +685,14 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
       return {
         ok: true,
         file,
-        // Companion .md alongside the .html: the page's MDX body written verbatim
-        // (no transform), so LLMs and the copy-page button can fetch the markdown
-        // source for the current page. Source-viewer pages have no body.
-        mdFile: page.body ? { path: mdPathFor(page.slug), contents: page.body } : undefined,
+        // Companion .md alongside the .html: the page's MDX body, with the deploy
+        // basePath applied to its root-relative URLs (identity at the root base, so
+        // it's the body verbatim) — the Markdown twin of what rang's MdxA/MdxImg do
+        // for HTML. LLMs and the copy-page button fetch it for the current page.
+        // Source-viewer pages have no body.
+        mdFile: page.body
+          ? { path: mdPathFor(page.slug), contents: prefixRootRelativeUrls(page.body, basePath) }
+          : undefined,
         entry: hidden ? undefined : entry,
         members: hidden ? undefined : memberSearchEntries(page),
         // Non-fatal: flag unbalanced inline-code backticks so the author can fix
