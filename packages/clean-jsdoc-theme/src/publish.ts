@@ -1448,7 +1448,11 @@ const HTML_IMAGE_RE = /(<img\b[^>]*?\bsrc\s*=\s*(["']))([^"']*)(\2)/gi;
  * tutorials, README, doclet comments). `resolve(src, baseDir)` copies a local
  * image to `_assets/<base>.<hash><ext>` (content-hashed → cache-busted, deduped
  * across all sources via the shared caches) and returns the root-relative
- * `/_assets/…` href. It accumulates each copied file on `files`, each SVG's
+ * `/_assets/…` href — deliberately WITHOUT `basePath`: rang's `MdxImg` adds it
+ * for HTML and dwar's `prefixRootRelativeUrls` for the companion `.md` /
+ * `llms-full.txt`, once each; `hrefForServed` is only for theme assets (logos,
+ * favicon, custom CSS/JS). The TypeDoc twin (`typedoc/src/docs.ts`) follows the
+ * same rule (#377). It accumulates each copied file on `files`, each SVG's
  * markup on `inlineSvgs` (keyed by the rewritten href, so the renderer can inline
  * it — its `[data-theme]` styles then track the toggle), and the absolute source
  * path of every copied image on `consumed` (so the static-file passthrough can
@@ -1510,7 +1514,7 @@ export function createImageCollector(staticDirs: readonly string[] = []): ImageC
         seenServed.add(served);
         files.push({ path: served, contents: bytes });
       }
-      const href = '/' + served;
+      const href = '/' + served; // base-free by design — see the doc comment above (#377)
       // SVGs are ALSO inlined: the renderer drops the markup into the page so its
       // `[data-theme="dark"]` styles track the theme toggle (an `<img>`-loaded SVG
       // only sees the OS color scheme). A responsive sizing style is injected onto
@@ -1606,9 +1610,9 @@ async function rewriteImageRefs(
  * content-hashed `_assets/` pipeline (see {@link createImageCollector}). Each
  * `![alt](src)` / `<img src>` whose `src` points to a file on disk is copied and
  * its `src` rewritten to the root-relative `/_assets/<base>.<hash><ext>` (rang's
- * `MdxImg` adds the base path, like it does for links), resolved relative to the
- * project root when it starts with `/`, else relative to the doc's own directory.
- * Returns the docs with rewritten content plus the asset files to write. The
+ * `MdxImg` adds the base path, like it does for links, and dwar adds it to the
+ * `.md`/llms outputs), resolved relative to the project root when it starts with
+ * `/`, else relative to the doc's own directory. Returns the docs with rewritten content plus the asset files to write. The
  * bridge is the I/O layer here, so setu/dwar only ever see the final `_assets/`
  * paths.
  */
