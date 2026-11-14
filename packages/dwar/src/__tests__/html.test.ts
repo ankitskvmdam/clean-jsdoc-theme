@@ -8,6 +8,7 @@ import {
   renderHtmlDocument,
 } from '../html';
 import { pageCommentRanges } from '../mdx';
+import { expectLinearScaling, PERF_TEST_TIMEOUT } from './linear-scaling';
 
 const basePage: Page = {
   slug: 'x',
@@ -288,17 +289,22 @@ describe('search text — tag strip', () => {
   });
 
   // The old `/<[^>]+>/` rescanned to the end of the page from every `<` with no
-  // `>` after it — minutes for a 1MB page.
-  it.each([
-    ['unclosed comment openers', 'a <!-- '.repeat(150_000)],
-    ['stray < characters', 'a < b '.repeat(170_000)],
-    ['unclosed quoted attributes', '<a b="x '.repeat(125_000)],
-  ])('stays fast on 1MB of %s', (_name, src) => {
-    const t = performance.now();
-    extractSearchText(src);
-    extractExcerpt(src);
-    expect(performance.now() - t).toBeLessThan(1000);
-  });
+  // `>` after it — minutes for a 1MB page. Each generator takes a size in
+  // characters, roughly (see linear-scaling.ts).
+  it.each<[string, (n: number) => string]>([
+    ['unclosed comment openers', (n) => 'a <!-- '.repeat(n / 7)],
+    ['stray < characters', (n) => 'a < b '.repeat(n / 6)],
+    ['unclosed quoted attributes', (n) => '<a b="x '.repeat(n / 8)],
+  ])(
+    'scales linearly on %s',
+    (_name, makeInput) => {
+      expectLinearScaling(
+        (src: string) => [extractSearchText(src), extractExcerpt(src)],
+        makeInput
+      );
+    },
+    PERF_TEST_TIMEOUT
+  );
 });
 
 describe('renderHtmlDocument — locale (i18n)', () => {

@@ -4,6 +4,7 @@ import type { TDoclet } from '@clean-jsdoc-theme/utils';
 import { examplesBlocks } from '../mdast/doclet';
 import { htmlToMdastBlocks, markdownToMdastBlocks } from '../mdast/from-html';
 import { toMdx } from '../mdx';
+import { expectLinearScaling, PERF_TEST_TIMEOUT } from './linear-scaling';
 
 const mdx = (blocks: Root['children']): string => toMdx({ type: 'root', children: blocks });
 
@@ -71,12 +72,14 @@ describe('HTML comments through the HTML normalization', () => {
     expect(out).toBe('[L](u "\\<!--") rest\n\nafter\n');
   });
 
-  it('escapes many unterminated openers in linear time', () => {
-    const html = `<p>${'a <!-- '.repeat(100_000)}</p>`;
-    const t = performance.now();
-    htmlToMdastBlocks(html);
-    expect(performance.now() - t).toBeLessThan(5000);
-  });
+  it(
+    'escapes many unterminated openers in linear time',
+    () => {
+      // The size is in characters, roughly (see linear-scaling.ts).
+      expectLinearScaling(htmlToMdastBlocks, (n) => `<p>${'a <!-- '.repeat(n / 7)}</p>`);
+    },
+    PERF_TEST_TIMEOUT
+  );
 });
 
 // The container / playground splitters run on raw text before the HTML
