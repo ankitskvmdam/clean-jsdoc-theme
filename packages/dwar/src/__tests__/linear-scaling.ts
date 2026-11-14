@@ -23,9 +23,12 @@
  * Why 8x and 24 rather than 4x and 8: linear code is not exactly linear once
  * its input outgrows the CPU caches. The search-text strip in dwar measured
  * t(4N) / t(N) of 8.4-10.1 for N = 1MB on an idle machine, so a limit of 8
- * would be flaky. The cache step costs a roughly fixed factor (up to about 2.5x), so
- * a larger size step separates the two cases better: at 8x, linear code gives
- * 8 (about 20 with that step) and quadratic code about 64; 24 sits between.
+ * would be flaky. The cache step costs a roughly fixed factor (up to about
+ * 2.5x), so a larger size step separates the two cases better: at 8x, linear
+ * code gives 8 (about 20 at worst) and quadratic code about 64; 24 sits between.
+ * A V8 regex cliff is a different matter: it can add about 4x on its own, so a
+ * case whose input crosses one keeps its window below it with `maxSize` (see
+ * the stray-< case in dwar's html.test.ts).
  *
  * A near miss is retried (`attempts`) to absorb a one-off stall; a ratio of
  * twice the limit or more fails at once, since no stall explains it.

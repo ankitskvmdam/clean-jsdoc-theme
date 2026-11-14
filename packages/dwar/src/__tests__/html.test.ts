@@ -290,7 +290,11 @@ describe('search text — tag strip', () => {
 
   // The old `/<[^>]+>/` rescanned to the end of the page from every `<` with no
   // `>` after it — minutes for a 1MB page. Each generator takes a size in
-  // characters, roughly (see linear-scaling.ts).
+  // characters, roughly (see linear-scaling.ts). `maxSize` keeps the 8x window
+  // at or below 512K characters: past about 1M characters of whitespace-dense
+  // input, V8's `/\s+/g` replace in the extractors slows down by a factor (an
+  // engine cliff, not a regression), which would push correct code over the
+  // limit. The old tag strip still measures far above it in this window.
   it.each<[string, (n: number) => string]>([
     ['unclosed comment openers', (n) => 'a <!-- '.repeat(n / 7)],
     ['stray < characters', (n) => 'a < b '.repeat(n / 6)],
@@ -300,7 +304,8 @@ describe('search text — tag strip', () => {
     (_name, makeInput) => {
       expectLinearScaling(
         (src: string) => [extractSearchText(src), extractExcerpt(src)],
-        makeInput
+        makeInput,
+        { maxSize: 65_536 }
       );
     },
     PERF_TEST_TIMEOUT
