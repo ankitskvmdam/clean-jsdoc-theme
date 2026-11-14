@@ -33,7 +33,11 @@ function asString(file: OutputFile): string {
     : new TextDecoder().decode(file.contents);
 }
 
-describe('heading ids: setu TOC === dwar rendered', () => {
+// Each test runs dwar's full render() (Shiki starts cold, every island chunk is
+// bundled), which can take longer than vitest's default 5 s while every
+// package's suite runs in parallel (#355). dwar's own config allows its render
+// tests 120 s.
+describe('heading ids: setu TOC === dwar rendered', { timeout: 60_000 }, () => {
   it('match for punctuation/emoji-only, duplicate and normal headings', async () => {
     const content = [
       '# Parity',

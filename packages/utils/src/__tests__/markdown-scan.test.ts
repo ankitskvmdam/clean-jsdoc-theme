@@ -7,6 +7,7 @@ import {
   maskHtmlComments,
   replaceHtmlComments,
 } from '../site/markdown-scan';
+import { expectLinearScaling, PERF_TEST_TIMEOUT } from './linear-scaling';
 
 /** Slice each range out of the source — easier to assert on. */
 const slices = (src: string, ranges: { start: number; end: number }[]): string[] =>
@@ -510,15 +511,11 @@ describe('HTML-format comments and the replace/mask helpers', () => {
 });
 
 // Every page body goes through these scanners several times per build, so a
-// pathological one must not stall it. Bounds are generous (the inputs take a few
-// tens of ms); the quadratic versions took seconds to minutes.
+// pathological one must not stall it: each adversarial input must scale
+// linearly (see linear-scaling.ts). The quadratic versions took seconds to
+// minutes on 1MB. Each generator takes a size in characters, roughly.
 describe('markdown-scan performance', () => {
   const MB = 1_000_000;
-  const time = (src: string): number => {
-    const t = performance.now();
-    htmlCommentRanges(src);
-    return performance.now() - t;
-  };
   /** Backtick runs of length 1, 2, 3, … separated by spaces, about `n` long, then `<!--`. */
   const distinctRuns = (n: number): string => {
     let s = '';
@@ -526,71 +523,88 @@ describe('markdown-scan performance', () => {
     return s + '<!--';
   };
 
-  it.each([
-    ['unclosed inline openers on one line', 'a <!-- '.repeat(MB / 7)],
-    ['unclosed inline openers on many lines', 'a <!-- b\n'.repeat(MB / 9)],
-    ['unclosed line-start openers', '<!-- x\n'.repeat(MB / 7)],
+  it.each<[string, (n: number) => string]>([
+    ['unclosed inline openers on one line', (n) => 'a <!-- '.repeat(n / 7)],
+    ['unclosed inline openers on many lines', (n) => 'a <!-- b\n'.repeat(n / 9)],
+    ['unclosed line-start openers', (n) => '<!-- x\n'.repeat(n / 7)],
     // A body without `<!--` short-circuits; the trailing opener keeps the
     // tokenizer running over these.
-    ['closers without openers', 'a --> '.repeat(MB / 6) + '<!--'],
-    ['closed inline comments across lines', 'a <!-- b\nc --> d\n'.repeat(MB / 17)],
+    ['closers without openers', (n) => 'a --> '.repeat(n / 6) + '<!--'],
+    ['closed inline comments across lines', (n) => 'a <!-- b\nc --> d\n'.repeat(n / 17)],
     [
       'fences with spans and comments',
-      '```js\nx\n```\n\nSee `a` <!-- c --> [l](u).\n\n'.repeat(MB / 45),
+      (n) => '```js\nx\n```\n\nSee `a` <!-- c --> [l](u).\n\n'.repeat(n / 45),
     ],
-    ['one opener then a long paragraph', 'a <!-- ' + 'word '.repeat(MB / 5)],
+    ['one opener then a long paragraph', (n) => 'a <!-- ' + 'word '.repeat(n / 5)],
     [
       'paragraph-crossing openers with one closer at the end',
-      'a <!-- b\n\n'.repeat(MB / 10) + '-->',
+      (n) => 'a <!-- b\n\n'.repeat(n / 10) + '-->',
     ],
-    ['stray backticks of mixed lengths', '` a `` b ``` c '.repeat(MB / 15) + '<!--'],
+    ['stray backticks of mixed lengths', (n) => '` a `` b ``` c '.repeat(n / 15) + '<!--'],
     // Runs of 1, 2, 3, … backticks that never close, then the rest of the
     // paragraph: a regex closer search rescans that rest once per run (and once
     // more per shorter length), quadratic in the paragraph.
-    ['unclosed backtick runs of distinct lengths', distinctRuns(MB / 2) + 'word '.repeat(MB / 10)],
-    ['one long unclosed backtick run', '`'.repeat(1000) + ' ' + 'word '.repeat(MB / 5) + '<!--'],
+    [
+      'unclosed backtick runs of distinct lengths',
+      (n) => distinctRuns(n / 2) + 'word '.repeat(n / 10),
+    ],
+    // The run grows with the paragraph (1000 backticks at 1MB) so that a
+    // rescan per backtick of it shows up as quadratic, not as a constant factor.
+    [
+      'one long unclosed backtick run',
+      (n) => '`'.repeat(n / 1000) + ' ' + 'word '.repeat(n / 5) + '<!--',
+    ],
     [
       'code spans whose closer is past a break',
-      distinctRuns(MB / 2) + '\n> q\n' + distinctRuns(MB / 2),
+      (n) => distinctRuns(n / 2) + '\n> q\n' + distinctRuns(n / 2),
     ],
-    ['unterminated tag attributes', '<a b="x '.repeat(MB / 8) + '<!--'],
-  ])('%s (1MB) scans in under a second', (_name, src) => {
-    expect(time(src)).toBeLessThan(1000);
-  });
+    ['unterminated tag attributes', (n) => '<a b="x '.repeat(n / 8) + '<!--'],
+  ])(
+    '%s scales linearly',
+    (_name, makeInput) => {
+      expectLinearScaling(htmlCommentRanges, makeInput);
+    },
+    PERF_TEST_TIMEOUT
+  );
 
   // The line tests must not recurse per repetition: as regexes, a thematic
-  // break or delimiter row test overflowed the stack on lines this long.
-  it.each([
-    ['a thematic-break line', 'a <!--\n' + '--- '.repeat((5 * MB) / 4) + '\n-->\n'],
-    ['a dash line under a paragraph', 'a <!--\n' + '-'.repeat(5 * MB) + '\n-->\n'],
-    ['a delimiter row', 'a | b <!--\n' + '|---'.repeat((8 * MB) / 4) + '|\n-->\n'],
+  // break or delimiter row test overflowed the stack on lines this long. Each
+  // starts at an eighth of the line it used to be checked on, so the larger
+  // input is at least that long.
+  it.each<[string, number, (n: number) => string]>([
+    ['a thematic-break line', 5 * MB, (n) => 'a <!--\n' + '--- '.repeat(n / 4) + '\n-->\n'],
+    ['a dash line under a paragraph', 5 * MB, (n) => 'a <!--\n' + '-'.repeat(n) + '\n-->\n'],
+    ['a delimiter row', 8 * MB, (n) => 'a | b <!--\n' + '|---'.repeat(n / 4) + '|\n-->\n'],
     [
       'a delimiter row under a matching header',
-      '|' + ' a |'.repeat(2 * MB) + '\n' + '|---'.repeat(2 * MB) + '|\n<!-- c -->\n',
+      16 * MB,
+      (n) => '|' + ' a |'.repeat(n / 8) + '\n' + '|---'.repeat(n / 8) + '|\n<!-- c -->\n',
     ],
-  ])('%s of several MB on one line scans in under a second', (_name, src) => {
-    expect(time(src)).toBeLessThan(1000);
-  });
+  ])(
+    '%s of several MB on one line scales linearly',
+    (_name, length, makeInput) => {
+      expectLinearScaling(htmlCommentRanges, makeInput, { startSize: length / 8 });
+    },
+    PERF_TEST_TIMEOUT
+  );
 
-  const timeHtml = (src: string): number => {
-    const t = performance.now();
-    htmlCommentRangesInHtml(src);
-    return performance.now() - t;
-  };
-
-  it.each([
-    ['unclosed openers', 'a <!-- '.repeat(MB / 7)],
-    ['closers without openers', 'a --> '.repeat(MB / 6) + '<!--'],
-    ['unterminated tag attributes', '<a b="x '.repeat(MB / 8) + '<!--'],
-    ['one quote that never closes, then openers', '<a b="' + 'x <!-- '.repeat(MB / 7)],
-    ['tags whose quoted values hold >', '<a b="x>y" c=\'z\'>'.repeat(MB / 17) + '<!--'],
-    ['openers in attributes with closers after', '<a t="<!--">x --> '.repeat(MB / 18)],
-    ['lone < everywhere', '<'.repeat(MB) + '<!--'],
-    ['bogus comments', '<?x> '.repeat(MB / 5) + '<!--'],
-    ['one tag full of = signs', '<a ' + '= '.repeat(MB / 2) + '<!--'],
-  ])('%s (1MB) scans as raw HTML in under a second', (_name, src) => {
-    expect(timeHtml(src)).toBeLessThan(1000);
-  });
+  it.each<[string, (n: number) => string]>([
+    ['unclosed openers', (n) => 'a <!-- '.repeat(n / 7)],
+    ['closers without openers', (n) => 'a --> '.repeat(n / 6) + '<!--'],
+    ['unterminated tag attributes', (n) => '<a b="x '.repeat(n / 8) + '<!--'],
+    ['one quote that never closes, then openers', (n) => '<a b="' + 'x <!-- '.repeat(n / 7)],
+    ['tags whose quoted values hold >', (n) => '<a b="x>y" c=\'z\'>'.repeat(n / 17) + '<!--'],
+    ['openers in attributes with closers after', (n) => '<a t="<!--">x --> '.repeat(n / 18)],
+    ['lone < everywhere', (n) => '<'.repeat(n) + '<!--'],
+    ['bogus comments', (n) => '<?x> '.repeat(n / 5) + '<!--'],
+    ['one tag full of = signs', (n) => '<a ' + '= '.repeat(n / 2) + '<!--'],
+  ])(
+    '%s scales linearly as raw HTML',
+    (_name, makeInput) => {
+      expectLinearScaling(htmlCommentRangesInHtml, makeInput);
+    },
+    PERF_TEST_TIMEOUT
+  );
 });
 
 describe('markdown-scan in the browser bundle', () => {
