@@ -22,6 +22,24 @@ describe('prefixRootRelativeUrls', () => {
     expect(prefixRootRelativeUrls(body, '/docs/')).toBe(want);
   });
 
+  it('prefixes with a nested base', () => {
+    expect(prefixRootRelativeUrls('[a](/g/x#h) ![d](/_assets/d.png)', '/a/b')).toBe(
+      '[a](/a/b/g/x#h) ![d](/a/b/_assets/d.png)'
+    );
+    expect(prefixRootRelativeUrls('<img src="/x.png">', '/a/b/')).toBe('<img src="/a/b/x.png">');
+    expect(prefixRootRelativeUrls('[logo]: /l.svg', '/a/b')).toBe('[logo]: /a/b/l.svg');
+  });
+
+  it('inserts a base containing `$` literally (no replacement-pattern expansion)', () => {
+    expect(prefixRootRelativeUrls('[a](/g/x#h) ![d](/_assets/d.png)', '/a$b')).toBe(
+      '[a](/a$b/g/x#h) ![d](/a$b/_assets/d.png)'
+    );
+    expect(prefixRootRelativeUrls('<a href="/x">x</a>', "/$&$1$'")).toBe(
+      `<a href="/$&$1$'/x">x</a>`
+    );
+    expect(prefixRootRelativeUrls('[logo]: /l.svg', '/$$')).toBe('[logo]: /$$/l.svg');
+  });
+
   it('prefixes links, titled images and angle-bracket destinations', () => {
     expect(prefixRootRelativeUrls('[a](/guide/x#h)', '/docs')).toBe('[a](/docs/guide/x#h)');
     expect(prefixRootRelativeUrls('![d](/_assets/d.png "t")', '/docs')).toBe(

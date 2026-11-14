@@ -1612,9 +1612,9 @@ async function rewriteImageRefs(
  * its `src` rewritten to the root-relative `/_assets/<base>.<hash><ext>` (rang's
  * `MdxImg` adds the base path, like it does for links, and dwar adds it to the
  * `.md`/llms outputs), resolved relative to the project root when it starts with
- * `/`, else relative to the doc's own directory. Returns the docs with rewritten content plus the asset files to write. The
- * bridge is the I/O layer here, so setu/dwar only ever see the final `_assets/`
- * paths.
+ * `/`, else relative to the doc's own directory. Returns the docs with rewritten
+ * content plus the asset files to write. The bridge is the I/O layer here, so
+ * setu/dwar only ever see the final `_assets/` paths.
  */
 export async function resolveDocImages(
   docs: DocInput[],
