@@ -50,7 +50,7 @@ for (const file of result.files) {
 ## What `render()` emits
 
 - `<slug>/index.html` per `Page`. Each `<head>` includes a pre-hydration theme script (before the stylesheet link) to prevent FOUC; the inline heading-anchors + islands loader scripts run before `</body>`.
-- `<slug>/index.md` per content page — the page's MDX body verbatim, co-located with the HTML (for LLMs + the copy-page button). Source-viewer pages emit none.
+- `<slug>/index.md` per content page — the page's MDX body (with `basePath` applied to root-relative links and images; unchanged at `/`), co-located with the HTML (for LLMs + the copy-page button). Source-viewer pages emit none.
 - `_assets/styles.${buildId}.css` — the per-theme `:root` / `[data-theme="dark"]` token block plus the prebuilt static utility layer.
 - `_assets/search-index.${buildId}.json` — the fuzzy search index the `cmdk` island fetches.
 - `_islands/<name>.js` per `IslandName` — content-hashed entry chunks from one split esbuild build, sharing a common Preact + rang chunk.

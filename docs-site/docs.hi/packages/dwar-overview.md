@@ -124,9 +124,10 @@ capture किया जाता है, और बाक़ी site फिर 
   [`html.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/src/html.ts)
   से पूरा document shell।
 - **एक सह-स्थित साथी `.md`** हर content page के लिए — page की MDX body
-  **अक्षरशः** लिखी गई (`<slug>/index.md`), ताकि LLMs और copy-page button मौजूदा
-  page के लिए Markdown source fetch कर सकें। Source-viewer pages की कोई body नहीं
-  होती और वे कोई उत्सर्जित नहीं करते।
+  (`<slug>/index.md`), जो उसके root-relative links और images पर `basePath`
+  लगाकर लिखी जाती है (`basePath` के `/` होने पर अपरिवर्तित), ताकि LLMs और
+  copy-page button मौजूदा page के लिए Markdown source fetch कर सकें। Source-viewer
+  pages की कोई body नहीं होती और वे कोई उत्सर्जित नहीं करते।
 - **एक stylesheet** — theme-variable + utility CSS, build-id से stamped।
 - **fuzzy-search index** — `_assets/search-index.<buildId>.json`, page entries
   साथ ही member deep-links।

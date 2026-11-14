@@ -86,10 +86,14 @@ interface ImgProps extends BaseProps {
   alt?: string;
 }
 
-// Images: base-path-prefix a root-relative `src` (e.g. a copied doc asset at
-// `/assets/diagram.svg`) exactly like MdxA does for links, so it resolves under
-// a sub-path deploy; absolute (`http(s):`, `data:`) and protocol-relative srcs
-// pass through. Capped to the content width so wide diagrams scale down.
+// Images: base-path-prefix a root-relative `src` exactly like MdxA does for
+// links, so it resolves under a sub-path deploy; absolute (`http(s):`, `data:`)
+// and protocol-relative srcs pass through. The bridges deliberately emit every
+// content image src base-FREE (`/_assets/<name>.<hash>.png`) — this is the ONE
+// place the base is added for HTML (dwar does the same for the companion .md),
+// so a bridge must never pre-apply it (#377: that produced `/docs/docs/_assets/…`).
+// The inline-SVG map is keyed by the same base-free src and is looked up BEFORE
+// prefixing. Capped to the content width so wide diagrams scale down.
 export function MdxImg({ src, alt, ...rest }: ImgProps) {
   const basePath = useContext(BasePathContext);
   const inlineSvgs = useContext(InlineSvgContext);

@@ -116,9 +116,10 @@ Everything comes back inside `result.files` (a `OutputFile[]`, each
   the full document shell from
   [`html.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/src/html.ts).
 - **A co-located companion `.md`** for each content page — the page's MDX body
-  written **verbatim** (`<slug>/index.md`), so LLMs and the copy-page button can
-  fetch the Markdown source for the current page. Source-viewer pages have no
-  body and emit none.
+  (`<slug>/index.md`), written with `basePath` applied to its root-relative
+  links and images (unchanged when `basePath` is `/`), so LLMs and the copy-page
+  button can fetch the Markdown source for the current page. Source-viewer pages
+  have no body and emit none.
 - **One stylesheet** — the theme-variable + utility CSS, build-id stamped.
 - **The fuzzy-search index** — `_assets/search-index.<buildId>.json`, page
   entries plus member deep-links.

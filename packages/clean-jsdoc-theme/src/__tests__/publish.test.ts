@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
@@ -927,4 +927,91 @@ describe('llmsTxt opts (JSDoc bridge surface)', () => {
     expect(colored).toContain('[33m');
     expect(colored).toContain('llms.txt will NOT be generated');
   });
+});
+
+describe('publish: basePath + local images (#377)', () => {
+  // An empty JSDoc collection: setu only ever calls `collection(query).get()`.
+  const emptyCollection = (): { get: () => unknown[] } => ({ get: () => [] });
+  /** A 1x1 transparent PNG (bytes), enough to exercise the image asset pipeline. */
+  const PNG_1X1 = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+    'base64'
+  );
+  const SVG =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10"/></svg>';
+  let dir: string;
+  let docsDir: string;
+  let spies: Array<{ mockRestore: () => void }>;
+
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), 'cjt-publish-images-'));
+    docsDir = join(dir, 'mdocs');
+    await mkdir(docsDir, { recursive: true });
+    await writeFile(
+      join(docsDir, 'images.md'),
+      '# Images\n\n![Welcome](./welcome.png)\n\nRaw tag: <img src="./logo.svg" alt="raw">\n\nSee [the guide](/guide) and `![not me](/x.png)`.\n',
+      'utf8'
+    );
+    await writeFile(join(docsDir, 'welcome.png'), PNG_1X1);
+    await writeFile(join(docsDir, 'logo.svg'), SVG, 'utf8');
+    spies = (['log', 'warn', 'error'] as const).map((level) =>
+      vi.spyOn(console, level).mockImplementation(() => {})
+    );
+    process.exitCode = undefined;
+  });
+
+  afterEach(async () => {
+    spies.forEach((s) => s.mockRestore());
+    process.exitCode = undefined;
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  const build = async (destination: string, basePath?: string): Promise<void> => {
+    await publish(emptyCollection, {
+      destination,
+      progress: false,
+      docs: docsDir,
+      siteUrl: 'https://x.example.com',
+      llmsTxt: true,
+      readme: '<p>Home</p>',
+      ...(basePath ? { basePath } : {}),
+    } as Parameters<typeof publish>[1]);
+  };
+  const read = (out: string, rel: string): string =>
+    readFileSync(join(out, ...rel.split('/')), 'utf8');
+
+  it('sub-path: the image src carries basePath exactly once, as do the .md and llms-full.txt; the SVG still inlines', async () => {
+    const out = join(dir, 'out');
+    await build(out, '/docs');
+    const html = read(out, 'images/index.html');
+    expect(html).toMatch(/<img src="\/docs\/_assets\/welcome\.[0-9a-f]{8}\.png"/);
+    expect(html).not.toContain('/docs/docs/');
+    expect(html).toContain('role="img" aria-label="raw"'); // inline SVG, keyed base-free
+    expect(html).not.toMatch(/<img[^>]*logo\.[0-9a-f]{8}\.svg/);
+    expect(html).toContain('href="/docs/guide"');
+    const md = read(out, 'images/index.md');
+    expect(md).toMatch(/!\[Welcome\]\(\/docs\/_assets\/welcome\.[0-9a-f]{8}\.png\)/);
+    expect(md).toMatch(/!\[raw\]\(\/docs\/_assets\/logo\.[0-9a-f]{8}\.svg\)/);
+    expect(md).toContain('[the guide](/docs/guide)');
+    expect(md).toContain('`![not me](/x.png)`'); // code span untouched
+    expect(md).not.toContain('/docs/docs/');
+    const full = read(out, 'llms-full.txt');
+    expect(full).toMatch(/!\[Welcome\]\(\/docs\/_assets\/welcome\.[0-9a-f]{8}\.png\)/);
+    expect(full).not.toContain('/docs/docs/');
+    // The served asset exists where the href points (relative to the site root).
+    const assets = readdirSync(join(out, '_assets'));
+    expect(assets.some((f) => /^welcome\.[0-9a-f]{8}\.png$/.test(f))).toBe(true);
+  }, 60_000);
+
+  it('root (control): the same outputs are base-free', async () => {
+    const out = join(dir, 'out');
+    await build(out);
+    const html = read(out, 'images/index.html');
+    expect(html).toMatch(/<img src="\/_assets\/welcome\.[0-9a-f]{8}\.png"/);
+    expect(html).toContain('role="img" aria-label="raw"');
+    const md = read(out, 'images/index.md');
+    expect(md).toMatch(/!\[Welcome\]\(\/_assets\/welcome\.[0-9a-f]{8}\.png\)/);
+    expect(md).toContain('[the guide](/guide)');
+    expect(read(out, 'llms-full.txt')).toMatch(/\(\/_assets\/welcome\.[0-9a-f]{8}\.png\)/);
+  }, 60_000);
 });

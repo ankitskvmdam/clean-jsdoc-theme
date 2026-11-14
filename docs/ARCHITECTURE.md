@@ -570,7 +570,8 @@ heading/body/mono families are also exposed as `font-heading` / `font-body` /
 **`render()` emits:** `<slug>/index.html` per page (with a pre-hydration theme
 script before the stylesheet and the inline heading-anchors script before
 `</body>`), a co-located `<slug>/index.md` per content page (the page's MDX body
-verbatim — for LLMs + the copy-page button; source-viewer pages have none),
+with `basePath` applied to root-relative URLs; verbatim at the root base — for
+LLMs + the copy-page button; source-viewer pages have none),
 `_assets/styles.<buildId>.css`, `_assets/search-index.<buildId>.json` (the fuzzy
 search index the `cmdk` island fetches — a `SearchEntry` per non-hidden page,
 each carrying `title` + `description` + full-text `content`, plus a deep-link
@@ -750,7 +751,8 @@ typedoc/src/
 │                           #   (copied from the JSDoc bridge): collectDocs (walk dir
 │                           #   → DocInput[]) + createImageCollector/rewriteImageRefs
 │                           #   (Markdown ![](src) AND raw <img src> → content-hashed
-│                           #   _assets/ + inline SVGs; hrefForServed threads basePath)
+│                           #   _assets/ + inline SVGs; srcs are base-free — rang/dwar
+│                           #   add basePath, #377)
 │                           #   + resolveDocImages (docs) + resolveDocletImages
 │                           #   (comment HTML, base = each symbol's meta.path).
 ├── reflection-to-doclets.ts# THE adapter: ProjectReflection → flat TDoclet[].

@@ -7,7 +7,8 @@
  * summary, a prose line, then one `##` section per top-level sidebar group whose
  * entries link each page's COMPANION MARKDOWN (`<slug>/index.md`, which
  * `render()` already emits) rather than its HTML. `llms-full.txt` concatenates
- * those same bodies for one-shot ingestion.
+ * those same bodies for one-shot ingestion, with the same `basePath` applied to
+ * their root-relative URLs as the companion `.md` (see `md-base-path.ts`).
  *
  * Absolute links are mandatory (the file is fetched standalone), so this needs
  * the site's public URL. Like the sitemap, only the ORIGIN is used and the deploy
@@ -23,6 +24,7 @@ import type {
   SiteName,
 } from '@clean-jsdoc-theme/utils';
 import { mdPathFor } from './html';
+import { prefixRootRelativeUrls } from './md-base-path';
 import { pageUrl } from './sitemap';
 
 const API_KINDS = new Set<string>(API_PAGE_KINDS);
@@ -252,7 +254,8 @@ export function buildLlmsTxt(input: LlmsTxtInput): LlmsTxtOutput | null {
       `# ${page.frontmatter.title}`,
       `Source: ${pageUrl(origin, basePath, page.slug)}`,
       '',
-      stripLeadingHeading(stripFrontmatter(page.body)).trimEnd(),
+      // Same base-prefixing as the companion .md (the bodies are base-free).
+      prefixRootRelativeUrls(stripLeadingHeading(stripFrontmatter(page.body)), basePath).trimEnd(),
       ''
     );
   }

@@ -27,7 +27,7 @@ describe('render() — smoke', () => {
     expect(paths).toContain('index.md');
     expect(paths).toContain('guide/intro/index.md');
 
-    // The .md is the page's MDX body written verbatim — no transformation.
+    // The .md is the page's MDX body written verbatim — at the root base, no transform.
     for (const page of manifest.pages) {
       const mdPath = (page.slug ? `${page.slug}/` : '') + 'index.md';
       const md = result.files.find((f) => f.path === mdPath)!;
@@ -36,6 +36,27 @@ describe('render() — smoke', () => {
 
     // The companion .md does not count as a page.
     expect(result.stats.pageCount).toBe(2);
+  });
+
+  it('applies basePath to the root-relative URLs of the .md companion (not the HTML body source)', async () => {
+    const manifest = makeManifest();
+    const guide = manifest.pages.find((p) => p.slug === 'guide/intro')!;
+    guide.body +=
+      '\n[Home](/)\n\n![d](/_assets/d.png)\n\n<SourceLink href="/source/a.ts" label="a.ts:1" />\n\n```md\n[no](/x)\n```\n';
+    const result = await render(manifest, { theme: { ...minimalTheme, basePath: '/docs' } });
+
+    const md = asString(result.files.find((f) => f.path === 'guide/intro/index.md')!);
+    expect(md).toContain('[Home](/docs/)');
+    expect(md).toContain('![d](/docs/_assets/d.png)');
+    expect(md).toContain('href="/docs/source/a.ts"');
+    expect(md).toContain('```md\n[no](/x)\n```'); // fenced example stays verbatim
+    expect(md).not.toContain('/docs/docs/');
+
+    // The HTML goes through rang (MdxImg / SourceLink), which adds the base once.
+    const html = asString(result.files.find((f) => f.path === 'guide/intro/index.html')!);
+    expect(html).toContain('src="/docs/_assets/d.png"');
+    expect(html).toContain('href="/docs/source/a.ts"');
+    expect(html).not.toContain('/docs/docs/');
   });
 
   it('renders the page title into HTML', async () => {

@@ -1,4 +1,4 @@
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -97,23 +97,23 @@ describe('collectProjectDocuments', () => {
   });
 });
 
-describe('writeSite — strict mode', () => {
-  /** The app with a given `cleanJsdocTheme` block (the plugin option isn't declared here). */
-  const withBlock = (
-    block: Record<string, unknown>,
-    typedocOptions: Record<string, unknown> = {}
-  ) => ({
-    logger: app.logger,
-    options: {
-      getValue: (name: string) =>
-        name === 'cleanJsdocTheme'
-          ? block
-          : name in typedocOptions
-            ? typedocOptions[name]
-            : app.options.getValue(name as never),
-    } as unknown as Application['options'],
-  });
+/** The app with a given `cleanJsdocTheme` block (the plugin option isn't declared here). */
+const withBlock = (
+  block: Record<string, unknown>,
+  typedocOptions: Record<string, unknown> = {}
+) => ({
+  logger: app.logger,
+  options: {
+    getValue: (name: string) =>
+      name === 'cleanJsdocTheme'
+        ? block
+        : name in typedocOptions
+          ? typedocOptions[name]
+          : app.options.getValue(name as never),
+  } as unknown as Application['options'],
+});
 
+describe('writeSite — strict mode', () => {
   it('fails on a validation warning (an unknown key) before writing anything', async () => {
     const out = join(tmp, 'out-strict-typo');
     const error = vi.spyOn(app.logger, 'error').mockImplementation(() => {});
@@ -211,4 +211,85 @@ describe('writeSite — strict mode', () => {
       error.mockRestore();
     }
   });
+});
+
+describe('writeSite — basePath + local images (#377)', () => {
+  /** A 1x1 transparent PNG (bytes), enough to exercise the image asset pipeline. */
+  const PNG_1X1 = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+    'base64'
+  );
+  const SVG =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10"/></svg>';
+
+  beforeAll(async () => {
+    // `images.md`, not `guide.md`: opts docs win over the projectDocuments `guide`.
+    const docsDir = join(tmp, 'mdocs');
+    await mkdir(docsDir, { recursive: true });
+    await writeFile(
+      join(docsDir, 'images.md'),
+      '# Images\n\n![Welcome](./welcome.png)\n\nRaw tag: <img src="./logo.svg" alt="raw">\n\nSee [the guide](/guide) and `![not me](/x.png)`.\n',
+      'utf8'
+    );
+    await writeFile(join(docsDir, 'welcome.png'), PNG_1X1);
+    await writeFile(join(docsDir, 'logo.svg'), SVG, 'utf8');
+  });
+
+  const block = (basePath?: string) => ({
+    docs: posix(join(tmp, 'mdocs')),
+    siteUrl: 'https://x.example.com',
+    llmsTxt: true,
+    ...(basePath ? { basePath } : {}),
+  });
+  const read = (out: string, rel: string): string =>
+    readFileSync(join(out, ...rel.split('/')), 'utf8');
+
+  it('sub-path: the image src carries basePath exactly once, as do the .md and llms-full.txt; the SVG still inlines', async () => {
+    const out = join(tmp, 'out-basepath-sub');
+    const warn = vi.spyOn(app.logger, 'warn').mockImplementation(() => {});
+    const info = vi.spyOn(app.logger, 'info').mockImplementation(() => {});
+    try {
+      await writeSite(out, project, withBlock(block('/docs')));
+      const html = read(out, 'images/index.html');
+      expect(html).toMatch(/<img src="\/docs\/_assets\/welcome\.[0-9a-f]{8}\.png"/);
+      expect(html).not.toContain('/docs/docs/');
+      expect(html).toContain('role="img" aria-label="raw"'); // inline SVG, keyed base-free
+      expect(html).not.toMatch(/<img[^>]*logo\.[0-9a-f]{8}\.svg/);
+      expect(html).toContain('href="/docs/guide"');
+      const md = read(out, 'images/index.md');
+      expect(md).toMatch(/!\[Welcome\]\(\/docs\/_assets\/welcome\.[0-9a-f]{8}\.png\)/);
+      expect(md).toMatch(/!\[raw\]\(\/docs\/_assets\/logo\.[0-9a-f]{8}\.svg\)/);
+      expect(md).toContain('[the guide](/docs/guide)');
+      expect(md).toContain('`![not me](/x.png)`'); // code span untouched
+      expect(md).not.toContain('/docs/docs/');
+      const full = read(out, 'llms-full.txt');
+      expect(full).toMatch(/!\[Welcome\]\(\/docs\/_assets\/welcome\.[0-9a-f]{8}\.png\)/);
+      expect(full).not.toContain('/docs/docs/');
+      // The served asset exists where the href points (relative to the site root).
+      const assets = readdirSync(join(out, '_assets'));
+      expect(assets.some((f) => /^welcome\.[0-9a-f]{8}\.png$/.test(f))).toBe(true);
+    } finally {
+      warn.mockRestore();
+      info.mockRestore();
+    }
+  }, 60_000);
+
+  it('root (control): the same outputs are base-free', async () => {
+    const out = join(tmp, 'out-basepath-root');
+    const warn = vi.spyOn(app.logger, 'warn').mockImplementation(() => {});
+    const info = vi.spyOn(app.logger, 'info').mockImplementation(() => {});
+    try {
+      await writeSite(out, project, withBlock(block()));
+      const html = read(out, 'images/index.html');
+      expect(html).toMatch(/<img src="\/_assets\/welcome\.[0-9a-f]{8}\.png"/);
+      expect(html).toContain('role="img" aria-label="raw"');
+      const md = read(out, 'images/index.md');
+      expect(md).toMatch(/!\[Welcome\]\(\/_assets\/welcome\.[0-9a-f]{8}\.png\)/);
+      expect(md).toContain('[the guide](/guide)');
+      expect(read(out, 'llms-full.txt')).toMatch(/\(\/_assets\/welcome\.[0-9a-f]{8}\.png\)/);
+    } finally {
+      warn.mockRestore();
+      info.mockRestore();
+    }
+  }, 60_000);
 });

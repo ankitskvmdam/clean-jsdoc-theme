@@ -212,6 +212,22 @@ describe('buildLlmsTxt', () => {
     expect(out.llms).not.toContain('/docs/docs/');
   });
 
+  it('applies basePath once to the root-relative links and images in llms-full.txt bodies', () => {
+    const manifest = manifestWithApi();
+    const widget = manifest.pages.find((p) => p.slug === 'Widget')!;
+    widget.body += '\nSee [a](/guide/intro) and ![d](/_assets/d.png).\n';
+    const build = (basePath: string) =>
+      buildLlmsTxt({ manifest, siteUrl: 'https://x.com', basePath, config: FULL })!;
+
+    const sub = build('/docs/');
+    expect(sub.full).toContain('[a](/docs/guide/intro)');
+    expect(sub.full).toContain('![d](/docs/_assets/d.png)');
+    expect(sub.full).not.toContain('/docs/docs/');
+
+    // At the root base the body text is unchanged.
+    expect(build('/').full).toContain('See [a](/guide/intro) and ![d](/_assets/d.png).');
+  });
+
   it('api: "index" drops API descriptions and API bodies from llms-full.txt', () => {
     const out = buildLlmsTxt({
       manifest: manifestWithApi(),
