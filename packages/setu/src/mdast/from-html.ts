@@ -14,6 +14,13 @@ import { fromMarkdown } from 'mdast-util-from-markdown';
 import { gfmFromMarkdown } from 'mdast-util-gfm';
 import { toHast } from 'mdast-util-to-hast';
 import { gfm } from 'micromark-extension-gfm';
+import {
+  htmlCommentRanges,
+  htmlCommentRangesInHtml,
+  maskHtmlComments,
+  replaceHtmlComments,
+  type TextRange,
+} from '@clean-jsdoc-theme/utils';
 import { callout, code, playground, step, steps, tab, tabs } from './builders';
 import {
   KNOWN_PROVIDERS,
@@ -120,6 +127,28 @@ type Segment =
 /** Matches a top-level `<steps …>` / `<tabs …>` / `<playground …>` opening tag. */
 const CONTAINER_OPEN = /<(steps|tabs|playground)(\s[^>]*)?>/i;
 
+/** Which syntax a raw prose string is in — decides how comments are found. */
+type ProseFormat = 'markdown' | 'html';
+
+/**
+ * A copy of `raw` with its comments blanked out (same length, same line
+ * breaks) for the container and playground-fence splitters to scan. They run
+ * on RAW text before the HTML round-trip, so scanning `raw` itself would lift a
+ * `<steps>`, a `</step>` or a ```` ```js playground ```` out of a commented-out
+ * region and publish what the author hid. Offsets found in the mask are sliced
+ * from `raw`, so the comments travel on inside the item text, where the HTML
+ * normalization drops them ({@link dropComments}). Markdown needs the shared
+ * code-aware scanner dwar also uses; in HTML (JSDoc descriptions) code is
+ * already entity-escaped, so the scanner has only tags to skip — a `<!--` in an
+ * attribute value is not a comment.
+ */
+function maskComments(raw: string, format: ProseFormat): string {
+  return maskHtmlComments(
+    raw,
+    format === 'markdown' ? htmlCommentRanges(raw) : htmlCommentRangesInHtml(raw)
+  );
+}
+
 /** Read a quoted attribute (`name="…"` / `name='…'`) off an opening tag. */
 function readAttr(openTag: string, name: string): string | undefined {
   const m = new RegExp(`${name}\\s*=\\s*("([^"]*)"|'([^']*)')`, 'i').exec(openTag);
@@ -127,52 +156,49 @@ function readAttr(openTag: string, name: string): string | undefined {
 }
 
 /**
- * Find the index just past the close tag matching an open tag of `name` that
- * begins at `openEnd` (the position right after the open tag). Depth-counts
- * same-name open/close tags so a `<steps>` nested inside a `<steps>` closes the
- * inner one first. Returns `-1` when no matching close exists.
+ * The close tag matching an open tag of `name` whose open tag ends at
+ * `openEnd`, as a `[start, end)` range in `scan` — depth-counted so a nested
+ * same-name container closes the inner one first. `null` when none matches.
  */
-function findMatchingClose(raw: string, name: string, openEnd: number): number {
+function findMatchingClose(scan: string, name: string, openEnd: number): TextRange | null {
   const tag = new RegExp(`<(/?)${name}(\\s[^>]*)?>`, 'gi');
   tag.lastIndex = openEnd;
   let depth = 1;
   let match: RegExpExecArray | null;
-  while ((match = tag.exec(raw)) !== null) {
+  while ((match = tag.exec(scan)) !== null) {
     if (match[1] === '/') {
-      depth -= 1;
-      if (depth === 0) return tag.lastIndex;
+      if (--depth === 0) return { start: match.index, end: tag.lastIndex };
     } else {
       depth += 1;
     }
   }
-  return -1;
+  return null;
 }
 
 /**
- * Parse a container's INNER string into items by scanning for `<step …>…</step>`
- * (or `<tab …>…</tab>`) elements, depth-counted so a nested same-name container
- * inside an item doesn't terminate it early. Reads `label` from each item's open
- * tag; the item's `raw` is the trimmed inner content. Whitespace/text between
- * items is ignored.
+ * Parse a container's INNER string into items by scanning `masked` (the same
+ * string with comments blanked) for `<step …>…</step>` / `<tab …>…</tab>`,
+ * depth-counted so a nested same-name container inside an item doesn't end it
+ * early. The open tag and the item body are sliced from `inner` by the offsets
+ * found; text between items is ignored.
  */
-function parseItems(inner: string, itemName: string): ContainerItem[] {
+function parseItems(inner: string, masked: string, itemName: string): ContainerItem[] {
   const items: ContainerItem[] = [];
   const open = new RegExp(`<${itemName}(\\s[^>]*)?>`, 'gi');
-  let cursor = 0;
   let match: RegExpExecArray | null;
-  while ((match = open.exec(inner)) !== null) {
-    if (match.index < cursor) continue; // inside a previously consumed item
-    const openTag = match[0];
-    const bodyStart = match.index + openTag.length;
-    const closeIndex = findMatchingClose(inner, itemName, bodyStart);
-    if (closeIndex === -1) break; // unterminated item — stop scanning
-    const close = new RegExp(`</${itemName}(\\s[^>]*)?>\\s*$`, 'i');
-    const body = inner.slice(bodyStart, closeIndex).replace(close, '');
+  while ((match = open.exec(masked)) !== null) {
+    const bodyStart = match.index + match[0].length;
+    const close = findMatchingClose(masked, itemName, bodyStart);
+    if (!close) break; // unterminated item — stop scanning
+    const openTag = inner.slice(match.index, bodyStart);
     const label = readAttr(openTag, 'label');
     const value = readAttr(openTag, 'value');
-    items.push({ label: label || undefined, value: value || undefined, raw: body.trim() });
-    cursor = closeIndex;
-    open.lastIndex = closeIndex;
+    items.push({
+      label: label || undefined,
+      value: value || undefined,
+      raw: inner.slice(bodyStart, close.start).trim(),
+    });
+    open.lastIndex = close.end;
   }
   return items;
 }
@@ -187,51 +213,52 @@ function parseItems(inner: string, itemName: string): ContainerItem[] {
  * This must run on the RAW string BEFORE the HTML round-trip: `fromHtml`/
  * `toMdast` (and the markdown→html lowering) strip these custom lowercase tags,
  * so by the time conversion runs they would be gone.
+ *
+ * Scans a comment-blanked copy of `raw` (see {@link maskComments}) so a
+ * container, item or close tag inside a comment is never seen, and slices
+ * every segment from `raw` by offset.
  */
-function splitContainers(raw: string): Segment[] {
+function splitContainers(raw: string, format: ProseFormat): Segment[] {
   const segments: Segment[] = [];
-  let rest = raw;
+  const masked = maskComments(raw, format);
+  const opener = new RegExp(CONTAINER_OPEN.source, 'gi');
+  let pos = 0;
   for (;;) {
-    const open = CONTAINER_OPEN.exec(rest);
-    if (!open) {
-      if (rest.length > 0) segments.push({ kind: 'plain', raw: rest });
+    opener.lastIndex = pos;
+    const open = opener.exec(masked);
+    const openEnd = open ? open.index + open[0].length : -1;
+    const close = open && findMatchingClose(masked, open[1].toLowerCase(), openEnd);
+    if (!open || !close) {
+      // No further container, or one with no matching close — the remainder
+      // is plain so nothing is dropped.
+      if (pos < raw.length) segments.push({ kind: 'plain', raw: raw.slice(pos) });
       break;
     }
     const name = open[1].toLowerCase() as 'steps' | 'tabs' | 'playground';
-    const openEnd = open.index + open[0].length;
-    const closeEnd = findMatchingClose(rest, name, openEnd);
-    if (closeEnd === -1) {
-      // No matching close — treat the remainder as plain so nothing is dropped.
-      if (rest.length > 0) segments.push({ kind: 'plain', raw: rest });
-      break;
-    }
+    if (open.index > pos) segments.push({ kind: 'plain', raw: raw.slice(pos, open.index) });
 
-    const before = rest.slice(0, open.index);
-    if (before.length > 0) segments.push({ kind: 'plain', raw: before });
-
-    const close = new RegExp(`</${name}(\\s[^>]*)?>\\s*$`, 'i');
-    const inner = rest.slice(openEnd, closeEnd).replace(close, '');
+    const openTag = raw.slice(open.index, openEnd);
+    const inner = raw.slice(openEnd, close.start);
     if (name === 'playground') {
       // The opening tag's attributes ARE the playground config (same token
       // grammar as the `@playground` tag / fence); the inner content holds the
       // single fenced code block, lowered when the segment expands.
-      const spec = parsePlaygroundSpec((open[2] ?? '').trim());
+      const spec = parsePlaygroundSpec(openTag.slice(1 + open[1].length, -1).trim());
       segments.push({ kind: 'playground', spec, raw: inner });
     } else {
       const itemName = name === 'steps' ? 'step' : 'tab';
-      const items = parseItems(inner, itemName);
+      const items = parseItems(inner, masked.slice(openEnd, close.start), itemName);
       if (items.length > 0) {
         // `group` (tabs only) opts the block into cross-block sync; read off the
-        // container's own opening tag (`open[0]`).
-        const group = name === 'tabs' ? readAttr(open[0], 'group') || undefined : undefined;
+        // container's own opening tag.
+        const group = name === 'tabs' ? readAttr(openTag, 'group') || undefined : undefined;
         segments.push({ kind: name, items, group });
       } else {
         // Degenerate container (no items) — keep its source as plain text.
-        segments.push({ kind: 'plain', raw: rest.slice(open.index, closeEnd) });
+        segments.push({ kind: 'plain', raw: raw.slice(open.index, close.end) });
       }
     }
-
-    rest = rest.slice(closeEnd);
+    pos = close.end;
   }
   return segments;
 }
@@ -246,6 +273,7 @@ function splitContainers(raw: string): Segment[] {
  */
 function expandContainers(
   raw: string,
+  format: ProseFormat,
   plainFn: (s: string) => RootContent[],
   recurseFn: (s: string) => RootContent[]
 ): RootContent[] {
@@ -256,7 +284,7 @@ function expandContainers(
   // the builders' `(BlockContent | DefinitionContent)[]` is sound.
   const asBlocks = (nodes: RootContent[]): (BlockContent | DefinitionContent)[] =>
     nodes as (BlockContent | DefinitionContent)[];
-  for (const seg of splitContainers(raw)) {
+  for (const seg of splitContainers(raw, format)) {
     if (seg.kind === 'plain') {
       out.push(...plainFn(seg.raw));
     } else if (seg.kind === 'playground') {
@@ -296,6 +324,43 @@ function expandContainers(
 }
 
 /**
+ * Turn every `<!--` that has no `-->` after it into the text `&lt;!--`. Per the
+ * HTML spec an unclosed comment runs to the end of the input, so a single stray
+ * opener — a half-deleted badge comment in a README, a typo in a doc comment —
+ * would silently hide everything after it on the page. Escaped, it parses as
+ * the literal text the author typed and the rest of the content survives. Only
+ * a `<!--` in text is one: code reaches here already entity-escaped
+ * (`<pre><code>&lt;!--`), and the scanner skips tags, so an attribute value
+ * holding `<!--` is left as written. `<!-->` / `<!--->` are complete (empty)
+ * comments, so they are left alone. Terminated comments become hast comment
+ * nodes, which {@link dropComments} removes.
+ */
+function neutralizeUnterminatedComments(html: string): string {
+  // Which openers are unterminated is the shared HTML-format definition,
+  // `htmlCommentRangesInHtml`.
+  return replaceHtmlComments(html, htmlCommentRangesInHtml(html), (c, text) =>
+    c.closed ? text : '&lt;!--'
+  );
+}
+
+/**
+ * Remove every comment node from a hast tree, in place. Comments render to
+ * nothing, and MDX has no syntax for them: left in, `toMdast` would emit each
+ * one verbatim as a raw `html` node, which dwar's MDX pre-pass then has to
+ * find again in serialized text — where an inline comment that spanned a blank
+ * line (legal in HTML, e.g. `<p>a <!-- x\n\ny --> b</p>`) no longer reads as a
+ * comment at all. Every prose path (README, tutorials, guides, JSDoc and
+ * TypeDoc descriptions, captions with HTML) lowers through here, so dropping
+ * them at the source leaves the page body — and its `.md` companion — clean;
+ * dwar's pass stays as the safety net for bodies that didn't come from setu.
+ */
+function dropComments(node: { children?: unknown[] }): void {
+  if (!node.children) return;
+  node.children = node.children.filter((child) => (child as { type?: string }).type !== 'comment');
+  for (const child of node.children) dropComments(child as { children?: unknown[] });
+}
+
+/**
  * Convert an HTML fragment (as emitted by JSDoc into `description`, `classdesc`,
  * param descriptions, etc.) into block-level mdast nodes. Empty/blank input
  * returns `[]`.
@@ -315,7 +380,8 @@ function expandContainers(
  * for a segment with no containers.
  */
 function htmlBlocksPlain(html: string): RootContent[] {
-  const hast = fromHtml(html, { fragment: true });
+  const hast = fromHtml(neutralizeUnterminatedComments(html), { fragment: true });
+  dropComments(hast);
   const mdast = toMdast(hast) as Root;
   // Promote GitHub-style alert blockquotes (`> [!INFO]`) to typed callouts,
   // recursively so an alert nested in a list item is promoted too. Done here,
@@ -343,7 +409,7 @@ export function htmlToMdastBlocks(html: string | null | undefined): RootContent[
   if (!html) return [];
   const trimmed = html.trim();
   if (trimmed.length === 0) return [];
-  return expandContainers(trimmed, htmlBlocksPlain, htmlToMdastBlocks);
+  return expandContainers(trimmed, 'html', htmlBlocksPlain, htmlToMdastBlocks);
 }
 
 /**
@@ -413,9 +479,15 @@ function splitPlaygroundFences(md: string): FenceSegment[] {
     }
   };
 
+  // Scan a copy with the comments blanked out (same lines), so a fence inside a
+  // commented-out region is never a fence: it stays in the plain run, untouched,
+  // and the comment survives whole (rendering as nothing). The content comes
+  // from `lines`.
+  const scan = maskHtmlComments(md, htmlCommentRanges(md)).split('\n');
+
   let i = 0;
   while (i < lines.length) {
-    const open = FENCE_OPEN.exec(lines[i]);
+    const open = FENCE_OPEN.exec(scan[i]);
     if (!open) {
       plain.push(lines[i]);
       i++;
@@ -434,7 +506,7 @@ function splitPlaygroundFences(md: string): FenceSegment[] {
     const closeRe = new RegExp(`^[ \\t]{0,3}\\${fenceChar}{${fenceLen},}[ \\t]*$`);
     let closeIdx = -1;
     for (let j = i + 1; j < lines.length; j++) {
-      if (closeRe.test(lines[j])) {
+      if (closeRe.test(scan[j])) {
         closeIdx = j;
         break;
       }
@@ -516,7 +588,7 @@ export function markdownToMdastBlocks(md: string | null | undefined): RootConten
   if (!md) return [];
   const trimmed = md.trim();
   if (trimmed.length === 0) return [];
-  return expandContainers(trimmed, markdownBlocksPlain, markdownToMdastBlocks);
+  return expandContainers(trimmed, 'markdown', markdownBlocksPlain, markdownToMdastBlocks);
 }
 
 /**
@@ -539,12 +611,31 @@ export function htmlToMdastInline(html: string | null | undefined): PhrasingCont
  * of JSDoc text that are NOT pre-rendered to HTML by the markdown plugin — e.g.
  * an `@example` `<caption>`, which may carry Markdown (`*emphasis*`) and inline
  * HTML (`<b>`). Block structure is flattened to inline.
+ *
+ * Every caption is parsed with the same GFM extensions as the other Markdown
+ * surfaces, so `~~strikethrough~~`, autolink literals and the like render the
+ * same whether or not the caption also holds a tag. One with raw HTML then
+ * takes the HTML normalization every other prose surface gets (see
+ * {@link convertMarkdownSegment}) — MDX rejects much of what Markdown accepts
+ * (`<?php … ?>`, `<![CDATA[…]]>`, a void `<br>`); as in descriptions, inline
+ * HTML with no mdast equivalent (`<sup>`, `<sub>`) is flattened to its text.
  */
 export function markdownToMdastInline(md: string | null | undefined): PhrasingContent[] {
   if (!md) return [];
   const trimmed = md.trim();
   if (trimmed.length === 0) return [];
-  return blocksToInline(fromMarkdown(trimmed).children);
+  const blocks = fromMarkdown(trimmed, {
+    extensions: [gfm()],
+    mdastExtensions: [gfmFromMarkdown()],
+  }).children;
+  return blocksToInline(hasRawHtml(blocks) ? convertMarkdownSegment(trimmed) : blocks);
+}
+
+/** Whether any node in `nodes` (at any depth) is a raw `html` node. */
+function hasRawHtml(nodes: readonly RootContent[]): boolean {
+  return nodes.some(
+    (n) => n.type === 'html' || ('children' in n && hasRawHtml(n.children as RootContent[]))
+  );
 }
 
 /** mdast phrasing (inline) node types that can sit directly among `blocks`. */

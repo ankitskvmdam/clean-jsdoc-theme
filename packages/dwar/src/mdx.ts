@@ -15,7 +15,12 @@ import remarkFrontmatter from 'remark-frontmatter';
 import remarkGfm from 'remark-gfm';
 import { bundledLanguagesInfo, createHighlighter } from 'shiki';
 import type { SignatureHighlighter } from '@clean-jsdoc-theme/rang';
-import { slugifyHeading } from '@clean-jsdoc-theme/utils';
+import {
+  htmlCommentRanges,
+  maskHtmlComments,
+  slugifyHeading,
+  type HtmlCommentRange,
+} from '@clean-jsdoc-theme/utils';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyComponent = ComponentType<any>;
@@ -121,6 +126,13 @@ export function preprocessJsdocInlineTags(source: string): string {
   });
 }
 
+/** Leading YAML frontmatter (setu prepends it); every pre-pass keeps it verbatim. */
+const FRONTMATTER = /^---\n[\s\S]*?\n---\n/;
+function frontmatterLength(source: string): number {
+  const fm = FRONTMATTER.exec(source);
+  return fm ? fm[0].length : 0;
+}
+
 /**
  * Backslash-escape stray `{` / `}` so MDX doesn't treat them as JS expression
  * delimiters. setu emits plain Markdown plus `<Callout>` JSX elements — it never
@@ -158,8 +170,10 @@ export function escapeStrayBraces(source: string): string {
   // signatures as `<MemberHeading sig="fn(): { x: T }" />` / `<Signature
   // code="…" />`, whose object-type braces are a literal string, not an MDX
   // expression. setu downgrades any `"` inside an attribute to `'`, so `="[^"]*"`
-  // safely captures a value containing `{`, `}`, `<`, or `>`. (A bare `a < b` in
-  // prose isn't matched — a tag needs `<` immediately followed by a name.)
+  // / `='[^']*'` safely capture a value containing `{`, `}`, `<`, or `>` (MDX
+  // accepts single-quoted attribute strings too; a README `<img alt='{x}'>` used
+  // to get `\{x\}` with visible backslashes). (A bare `a < b` in prose isn't
+  // matched — a tag needs `<` immediately followed by a name.)
   //
   // The inline-code content `(?:[^\n]|\n(?![ \t\r]*\n))*?` allows single line
   // breaks (CommonMark code spans may span lines) but never a blank line — so an
@@ -168,8 +182,13 @@ export function escapeStrayBraces(source: string): string {
   // closes only on a *maximal* run of exactly N — a longer run inside (e.g. ```
   // in a `…` span) is literal content — and (b) ignores a backslash-escaped
   // backtick (`\``), which is a literal backtick per CommonMark, not a delimiter.
+  //
+  // The empty comment expressions {@link stripHtmlComments} leaves pass through
+  // so MDX drops them: `{/**/}` where a comment stood, and one wrapping a single
+  // newline (`{/*`, the newline, then any quote markers or indentation and
+  // `*/}`) for each line break of a comment inside a paragraph.
   const re =
-    /(```[\s\S]*?```|~~~[\s\S]*?~~~)|(<\/?[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][\w-]*(?:="[^"]*")?)*\s*\/?>)|(?<![`\\])(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`)|([{}])/g;
+    /(```[\s\S]*?```|~~~[\s\S]*?~~~)|(<\/?[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][\w-]*(?:="[^"]*"|='[^']*')?)*\s*\/?>)|(?<![`\\])(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`)|\{\/\*(?:\n[ \t>]*)?\*\/\}|([{}])/g;
   const escaped = body.replace(re, (m, _fence, _jsx, _ticks, brace) => (brace ? `\\${brace}` : m));
   return prefix + escaped;
 }
@@ -211,11 +230,192 @@ export function escapeEsmLookalikes(source: string): string {
   // JSX tag, OR an inline code span (never crossing a blank line), OR — the only
   // branch that rewrites — a column-0 `import`/`export` keyword + whitespace.
   const re =
-    /(```[\s\S]*?```|~~~[\s\S]*?~~~)|(<\/?[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][\w-]*(?:="[^"]*")?)*\s*\/?>)|(?<![`\\])(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`)|^(import|export)(?=\s)/gm;
+    /(```[\s\S]*?```|~~~[\s\S]*?~~~)|(<\/?[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][\w-]*(?:="[^"]*"|='[^']*')?)*\s*\/?>)|(?<![`\\])(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`)|^(import|export)(?=\s)/gm;
   const escaped = body.replace(re, (m, _fence, _jsx, _ticks, keyword: string | undefined) =>
     keyword ? `&#x${keyword.charCodeAt(0).toString(16)};${keyword.slice(1)}` : m
   );
   return prefix + escaped;
+}
+
+/**
+ * The HTML comments of a page body, with offsets into `source` itself. The YAML
+ * frontmatter is skipped — a `<!--` in a YAML string is YAML, not a comment.
+ * `render()` computes this once per page and hands it to every pass that needs
+ * it ({@link stripHtmlComments}, {@link findStrayBackticks}, the search-text
+ * extractors in `html.ts`); each also accepts a call without it.
+ */
+export function pageCommentRanges(source: string): HtmlCommentRange[] {
+  const bodyStart = frontmatterLength(source);
+  if (bodyStart === 0) return htmlCommentRanges(source);
+  return htmlCommentRanges(source.slice(bodyStart)).map((c) => ({
+    ...c,
+    start: c.start + bodyStart,
+    end: c.end + bodyStart,
+  }));
+}
+
+/**
+ * Remove HTML comments (`<!-- … -->`) from prose. MDX has no HTML-comment
+ * syntax — its JSX tokenizer sees `<` + `!`, rejects it ("Unexpected character
+ * `!` … to create a comment in MDX, use `{/* text *\/}`") and the whole page is
+ * skipped. Comments are everywhere in real Markdown — README badge blocks,
+ * all-contributors `START`/`END` markers, notes left in tutorials and doc
+ * comments — and a single one loses the page (a README one loses the site's
+ * home page). setu drops comments while lowering prose (its `dropComments`),
+ * so this pass is the safety net for any body that still holds one.
+ *
+ * The comment's text is dropped (so a `*\/` inside it needs no escaping) and an
+ * empty MDX comment expression, `{/**\/}`, stands where it was: it renders to
+ * nothing, but unlike nothing at all it keeps the comment's place — a list item
+ * holding only a comment keeps its marker followed by content (a bare `- ` or
+ * `1. ` after a paragraph line can't interrupt it, so the list would fold into
+ * the paragraph or a setext heading), the inline syntax on either side doesn't
+ * join (`` `a`<!-- x -->`b` `` stays two code spans, `[a]<!-- -->[b]` two
+ * references), and the `<!-- -->` idiom between two lists still separates
+ * them. Right after a bare URL an empty JSX fragment, `<></>`, comes first: a
+ * GFM autolink literal would take the placeholder as more of its URL, and runs
+ * only up to a `<` — where the comment's own `<` ends it on GitHub. The
+ * newlines are kept, outside the expression, so later line numbers (and
+ * `codeFrame`) stay exact, which decides what a comment spanning lines leaves
+ * behind:
+ *   - one that starts a line (an HTML block in CommonMark) leaves the
+ *     placeholder and then its other lines blank — ending the paragraph
+ *     before it, as CommonMark's HTML block does (a list item that continues
+ *     after one turns loose: its blank lines separate the item's blocks);
+ *   - one inside a paragraph or list item must not leave a blank line, which
+ *     would split the paragraph (or the list) in two where CommonMark keeps
+ *     one. Each of its newlines becomes an empty MDX comment expression
+ *     wrapping that newline (`{/*`, newline, `*\/}`), chained, so a three-line
+ *     comment leaves `text {/*` / `*\/}{/*` / `*\/} more`. No line is blank,
+ *     nothing renders, and the line count is unchanged (one expression cannot
+ *     hold the whole comment: it may not span a blank line). Any quote
+ *     marker or indentation that opened a continuation line is kept inside its
+ *     expression. {@link escapeStrayBraces} leaves both forms alone.
+ * "Starts a line" is judged on the output: a comment after only quote or list
+ * markers and whitespace — or after an earlier comment on its line that was
+ * dropped — takes the first form, since a multi-line expression there would
+ * open an MDX flow expression, which rejects a lazy continuation line in a
+ * list item (the one-line placeholder is complete on its line).
+ *
+ * What counts as a comment is decided by the shared, code-aware
+ * `htmlCommentRanges` (utils), the same scanner setu uses: fenced code blocks
+ * (line-anchored, closed only by a long-enough run of the same character),
+ * inline code spans, MDX JSX tags, link/image destinations and titles, a
+ * backslash-escaped `\<!--` and the YAML frontmatter are left untouched — an
+ * `<!-- -->` in an HTML `@example` stays code. A comment that starts a line
+ * runs to the first `-->` even across code blocks (commenting out a section);
+ * one inside a paragraph cannot cross a line that ends the paragraph.
+ *
+ * An opener with no valid `-->` is not a comment: it becomes `\<!--`, so it
+ * renders as the literal text the author typed and the rest of the page stays
+ * visible (a browser would hide everything after it). A stray `-->` needs
+ * nothing — `>` is not special to MDX. The `.md` companion is written from the
+ * original body, so it keeps any comment this pass dropped; the search index
+ * drops them too (see `extractSearchText`).
+ */
+export function stripHtmlComments(
+  source: string,
+  comments: readonly HtmlCommentRange[] = pageCommentRanges(source)
+): string {
+  // Only the comment's characters go; its newlines stay, so every later line
+  // keeps its number and an MDX error position still maps onto the page body
+  // (`codeFrame` relies on the pre-passes preserving line counts).
+  if (comments.length === 0) return source;
+  let out = '';
+  // The output since its last newline: what precedes the next comment on its line.
+  let line = '';
+  const append = (text: string): void => {
+    out += text;
+    const nl = text.lastIndexOf('\n');
+    line = nl === -1 ? line + text : text.slice(nl + 1);
+  };
+  let cursor = 0;
+  for (const c of comments) {
+    const before = source.slice(cursor, c.start);
+    append(before);
+    cursor = c.end;
+    if (!c.closed) {
+      append('\\<!--');
+      continue;
+    }
+    // Glued to a bare URL, the placeholder would be read as more of the URL
+    // (GFM autolink literals run up to whitespace or `<`): an empty fragment
+    // goes first, ending the link where the comment's `<` ends it on GitHub.
+    // (Only the text since the previous comment can hold one: a URL before
+    // that comment was ended there.)
+    if (endsInAutolink(before)) append(EMPTY_FRAGMENT);
+    const lines = source.slice(c.start, c.end).split('\n');
+    if (lines.length === 1) {
+      append(EMPTY_COMMENT);
+    } else if (LINE_START.test(line.split(EMPTY_COMMENT).join(''))) {
+      // A placeholder, then its other lines left blank, as CommonMark's HTML
+      // block leaves them — each keeping its quote markers (up to the opening
+      // line's depth, so a blank `> >` can't open an empty inner quote) and
+      // indentation, so the blockquote or list item the comment sits in
+      // carries on past it, text after the `-->` included.
+      const depth = quoteDepth(line);
+      append(
+        EMPTY_COMMENT +
+          lines
+            .slice(1)
+            .map((l) => '\n' + continuationPrefix(l, depth))
+            .join('')
+      );
+    } else {
+      // Inline: one empty comment expression per newline, so no line is blank.
+      append(
+        lines
+          .slice(1)
+          .map((l) => `{/*\n${CONTINUATION_PREFIX.exec(l)![0]}*/}`)
+          .join('')
+      );
+    }
+  }
+  append(source.slice(cursor));
+  return out;
+}
+
+/** What {@link stripHtmlComments} leaves where a comment's first line stood. */
+const EMPTY_COMMENT = '{/**/}';
+/** An empty JSX fragment: renders nothing, and its `<` ends an autolink literal. */
+const EMPTY_FRAGMENT = '<></>';
+
+/**
+ * Whether `text` ends in a GFM autolink literal (`https://…`, `www.…`): its
+ * last run without whitespace or `<` holds a protocol or `www.`. Linear — a
+ * regex tried at every protocol in a long run would rescan the run each time.
+ */
+function endsInAutolink(text: string): boolean {
+  let i = text.length;
+  while (i > 0 && !/[\s<]/.test(text[i - 1])) i--;
+  return /https?:\/\/|www\./i.test(text.slice(i));
+}
+
+/** Text that may precede a line-starting (block) comment: quote/list markers and whitespace. */
+const LINE_START = /^(?:[ \t]{0,3}>[ \t]?)*[ \t]*(?:(?:[-*+]|\d{1,9}[.)])[ \t]+)?$/;
+/** The quote markers and indentation opening a continuation line. */
+const CONTINUATION_PREFIX = /^(?:[ \t]{0,3}>[ \t]?)*[ \t]*/;
+/** One blockquote marker, with the indentation before it and the space after. */
+const QUOTE_MARKER = /[ \t]{0,3}>[ \t]?/y;
+
+/** The number of blockquote markers opening `text`. */
+function quoteDepth(text: string): number {
+  let depth = 0;
+  QUOTE_MARKER.lastIndex = 0;
+  while (QUOTE_MARKER.test(text)) depth++;
+  return depth;
+}
+
+/**
+ * The quote markers and indentation opening `text` (see
+ * {@link CONTINUATION_PREFIX}), or, when it is quoted deeper than `depth`, just
+ * its first `depth` quote markers.
+ */
+function continuationPrefix(text: string, depth: number): string {
+  if (quoteDepth(text) <= depth) return CONTINUATION_PREFIX.exec(text)![0];
+  QUOTE_MARKER.lastIndex = 0;
+  for (let i = 0; i < depth; i++) QUOTE_MARKER.test(text);
+  return text.slice(0, QUOTE_MARKER.lastIndex);
 }
 
 /** A backtick run that opened no inline-code span — i.e. an unbalanced backtick. */
@@ -236,12 +436,22 @@ export interface StrayBacktick {
  * them as a non-fatal warning. Mirrors `escapeStrayBraces`' tokenizer: fenced
  * code blocks and YAML frontmatter are skipped (their backticks are legitimate),
  * balanced spans are consumed, and whatever backtick run is left over is stray.
+ * Comments are blanked out first (same ranges {@link stripHtmlComments} drops),
+ * so a backtick inside one is neither reported nor paired with one outside.
  * Positions are 1-based, against the same `source` the `.md`/snippets use.
  */
-export function findStrayBackticks(source: string): StrayBacktick[] {
+export function findStrayBackticks(
+  source: string,
+  comments: readonly HtmlCommentRange[] = pageCommentRanges(source)
+): StrayBacktick[] {
   const out: StrayBacktick[] = [];
   // Skip leading YAML frontmatter (backticks there aren't MDX inline code).
-  const fm = /^---\n[\s\S]*?\n---\n/.exec(source);
+  const bodyStart = frontmatterLength(source);
+  // Tokenize a copy with every comment blanked out (same length, same line
+  // breaks): the compiled page holds no comments, so a backtick inside one must
+  // neither pair with a real one outside nor be reported itself. Positions and
+  // line text are read from `source` — the mask keeps every offset.
+  const masked = maskHtmlComments(source, comments);
   // Fenced block | balanced inline span (group 3 = its ticks) | leftover run
   // (group 4). A delimiter run is bounded by `(?<![`\\])…(?!`)`: it closes only on
   // a maximal run of exactly N (a longer run inside a span, e.g. ``` in
@@ -249,9 +459,9 @@ export function findStrayBackticks(source: string): StrayBacktick[] {
   // (`\``, a literal backtick) — both match CommonMark, avoiding false strays.
   const re =
     /(```[\s\S]*?```|~~~[\s\S]*?~~~)|(?<![`\\])((`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`))|(?<![`\\])(`+)/g;
-  re.lastIndex = fm ? fm[0].length : 0;
+  re.lastIndex = bodyStart;
   let m: RegExpExecArray | null;
-  while ((m = re.exec(source)) !== null) {
+  while ((m = re.exec(masked)) !== null) {
     if (m[4] === undefined) continue; // only the leftover (stray) backtick run
     const idx = m.index;
     const lastNl = source.lastIndexOf('\n', idx - 1);
@@ -326,14 +536,22 @@ export async function compileMdxToComponent(
   source: string,
   components: MdxComponentMap,
   shiki: ShikiThemes,
-  langs: readonly string[]
+  langs: readonly string[],
+  comments?: readonly HtmlCommentRange[]
 ): Promise<CompiledMdx> {
-  // Pre-passes, in order: `{@tag}` → code spans (so the braces that follow are
-  // protected), ESM look-alike prose lines → character references (issue #347),
-  // then stray-brace escaping. The ESM pass runs before the brace pass only so
-  // each sees the same code-span boundaries; neither produces input for the
-  // other.
-  const cleaned = escapeStrayBraces(escapeEsmLookalikes(preprocessJsdocInlineTags(source)));
+  // `comments`: the page's HTML-comment ranges when the caller already has them
+  // (`render()` computes them once per page; see `pageCommentRanges`).
+  // Pre-passes, in order: HTML comments dropped, `{@tag}` → code spans (so the
+  // braces that follow are protected), ESM look-alike prose lines → character
+  // references (issue #347), then stray-brace escaping. Comments go first so no
+  // later pass sees their (unrendered) contents — a backtick inside one can't
+  // pair with a real code span — and so a line left starting with
+  // `import`/`export` by a dropped leading comment is still neutralized. The
+  // ESM pass runs before the brace pass only so each sees the same code-span
+  // boundaries; neither produces input for the other.
+  const cleaned = escapeStrayBraces(
+    escapeEsmLookalikes(preprocessJsdocInlineTags(stripHtmlComments(source, comments)))
+  );
   // The MDX `evaluate` runtime types target the React jsx-runtime signature;
   // Preact's runtime is shape-compatible at runtime but the structural types
   // diverge enough that we use `unknown` plus a cast at the call site.
