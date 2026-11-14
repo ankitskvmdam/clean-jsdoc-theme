@@ -357,6 +357,15 @@ describe('search text — escaped punctuation reads as rendered', () => {
   it('still strips an unescaped tag and a lone `>`', () => {
     expect(extractSearchText('a <kbd>Ctrl</kbd> b > c')).toBe('a Ctrl b c');
   });
+
+  it("doesn't let a `<` in a code span claim a later tag's `>`", () => {
+    // Only an escaped `<` pairs with the next `>` on its line.
+    expect(extractSearchText('so `a < b` then <kbd>K</kbd> end')).toBe('so a < b then K end');
+    expect(extractSearchText('a \\<User> and `x<y` then <b>z</b> end')).toBe(
+      'a <User> and x<y then z end'
+    );
+    expect(extractExcerpt('so `a < b` then <kbd>K</kbd> end')).toBe('so then K end');
+  });
 });
 
 describe('renderHtmlDocument — locale (i18n)', () => {

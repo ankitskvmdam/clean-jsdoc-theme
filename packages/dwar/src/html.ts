@@ -377,7 +377,6 @@ const PARKED = new RegExp(
 );
 const parkChar = (ch: string): string => String.fromCharCode(PARK_BASE + ch.charCodeAt(0));
 const PUNCTUATION = /[!-/:-@[-`{-~]/g;
-const PARKED_LT = parkChar('<');
 
 /**
  * Move escaped punctuation out of the way of the extractors' tag/mark stripping.
@@ -391,28 +390,43 @@ const PARKED_LT = parkChar('<');
  * parked (backslashes, `<T>`, `snake_case` survive the strip passes as typed;
  * its delimiters stay for the code-span pass). setu escapes only a literal
  * tag's `<`, so the `>` closing an escaped `<` on the same line is parked too,
- * or the blockquote-mark pass would eat it.
+ * or the blockquote-mark pass would eat it. Only an escaped `<` waits for one: a
+ * `<` in a code span opens no tag, so it must not claim the `>` of a real tag
+ * later on the line (`` `Array<T>` then <b>x</b> `` still strips the `<b>`).
  */
 function parkEscapes(text: string): string {
-  const parked = text
-    .replace(GENUINE, (ch) => GUARD + String.fromCharCode(ch.charCodeAt(0) + 0x100))
-    .replace(CODE_OR_ESCAPE, (all, ticks?: string, ch?: string) =>
-      ticks === undefined
-        ? parkChar(ch!)
-        : ticks + all.slice(ticks.length, -ticks.length).replace(PUNCTUATION, parkChar) + ticks
-    );
+  const guarded = text.replace(
+    GENUINE,
+    (ch) => GUARD + String.fromCharCode(ch.charCodeAt(0) + 0x100)
+  );
+  // Escaped `<`s on the current line still waiting for their `>`.
   let open = 0;
   let out = '';
-  for (const ch of parked) {
-    if (ch === PARKED_LT) open++;
-    else if (ch === '\n') open = 0;
-    else if (ch === '>' && open > 0) {
-      open--;
-      out += parkChar('>');
-      continue;
+  const copy = (segment: string): void => {
+    for (const ch of segment) {
+      if (ch === '\n') open = 0;
+      else if (ch === '>' && open > 0) {
+        open--;
+        out += parkChar('>');
+        continue;
+      }
+      out += ch;
     }
-    out += ch;
+  };
+  let last = 0;
+  for (const m of guarded.matchAll(CODE_OR_ESCAPE)) {
+    copy(guarded.slice(last, m.index));
+    last = m.index + m[0].length;
+    const [all, ticks, ch] = m;
+    if (ticks === undefined) {
+      out += parkChar(ch!);
+      if (ch === '<') open++;
+    } else {
+      out += ticks + all.slice(ticks.length, -ticks.length).replace(PUNCTUATION, parkChar) + ticks;
+      if (all.includes('\n')) open = 0;
+    }
   }
+  copy(guarded.slice(last));
   return out;
 }
 
