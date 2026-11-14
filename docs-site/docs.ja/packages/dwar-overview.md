@@ -124,7 +124,8 @@ capture され、残りの site はそのまま render されます。error は 
   [`html.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/src/html.ts)
   からの完全な document shell。
 - **co-located な companion `.md`** が各 content page に対して — page の MDX body
-  を **そのまま (verbatim)** 書き出したもの (`<slug>/index.md`)。これにより LLMs や
+  を、その root-relative な links と images に `basePath` を適用して書き出したもの
+  (`<slug>/index.md`。`basePath` が `/` のときは変更なし)。これにより LLMs や
   copy-page button が現在の page の Markdown source を fetch できます。
   Source-viewer pages は body を持たず、何も emit しません。
 - **1つの stylesheet** — theme-variable + utility CSS、build-id で stamp 済み。

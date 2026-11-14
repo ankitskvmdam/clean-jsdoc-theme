@@ -117,7 +117,8 @@ build。每个页面都在一个 `try/catch` 内部渲染：失败时该页面�
   [`html.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/dwar/src/html.ts)
   的完整 document shell。
 - **一个同位的伴随 `.md`**，对应每个 content 页面 —— 页面的 MDX body
-  被**逐字**写出（`<slug>/index.md`），以便 LLM 和复制页面按钮能够
+  （`<slug>/index.md`），写出时对其 root-relative 的链接和图片应用
+  `basePath`（`basePath` 为 `/` 时保持不变），以便 LLM 和复制页面按钮能够
   fetch 当前页面的 Markdown source。Source-viewer 页面没有 body，
   因此不会生成任何此文件。
 - **一个 stylesheet** —— theme 变量 + 工具类 CSS，加盖了 build-id。
