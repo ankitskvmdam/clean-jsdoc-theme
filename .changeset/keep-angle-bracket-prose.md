@@ -2,6 +2,7 @@
 'clean-jsdoc-theme': patch
 '@clean-jsdoc-theme/setu': patch
 '@clean-jsdoc-theme/dwar': patch
+'@clean-jsdoc-theme/typedoc': patch
 ---
 
 Keep angle-bracketed words like `Promise<User>` and `<T>` in doc-comment prose.
@@ -29,6 +30,12 @@ The rule for a tag, by its name as written:
   covers component tags in component-library docs, such as
   `<Button variant="primary">Click</Button>` or `<Option value>`, and
   mixed-case HTML such as `<Img src>` or `<Div>`, which used to render as HTML.
+- A lone closing tag follows the same rule: one whose name is not an HTML
+  element, or is capitalized, shows as text. Markdown `text</content>` used to
+  render as `text` and now renders `text</content>` (written `text\</content>`
+  in the generated MDX). Check your pages for stray closing tags such as
+  `</content>` or `</invoke>` that the old behavior hid; five of this
+  project's Japanese and Chinese docs pages had them.
 
 The `<steps>`/`<tabs>`/`<playground>` containers work as before. This applies
 to JSDoc and TypeDoc comments, `@example` captions, the README, tutorials and
@@ -39,4 +46,6 @@ The page's meta description and search entry now match the rendered text:
 literal words are kept and character references are decoded once (so
 `&quot;` and `&mdash;` no longer show up in search results). The search
 excerpt and content drop the backslashes that escaped characters left behind
-(`snake\_case` reads `snake_case`), and inline code keeps its text as written.
+(`snake\_case` reads `snake_case`). Inline code in the search content keeps
+its text as written, where `snake_case` used to become `snake case` and
+`Array<Map<string, T>>` lost its `>>`; the excerpt still leaves inline code out.
