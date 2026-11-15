@@ -1,6 +1,6 @@
 {
   "name": "@clean-jsdoc-theme/utils",
-  "version": "5.2.1",
+  "version": "5.3.0",
   "description": "Shared types and schemas for clean-jsdoc-theme",
   "keywords": [
     "clean-jsdoc-theme",
