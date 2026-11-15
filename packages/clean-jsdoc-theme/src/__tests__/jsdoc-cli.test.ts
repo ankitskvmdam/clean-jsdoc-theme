@@ -230,8 +230,19 @@ describe('JSDoc CLI end to end: reported bugs stay fixed', () => {
   });
 
   it('links a parameter type to the class it names (#333)', () => {
-    expect(run.read('global/index.md')).toContain('- `index` ([Index](/index), optional)');
-    expect(run.read('global/index.html')).toMatch(/<a href="\/index"[^>]*>Index<\/a>/);
+    expect(run.read('global/index.md')).toContain('- `index` ([Index](/index/), optional)');
+    expect(run.read('global/index.html')).toMatch(/<a href="\/index\/"[^>]*>Index<\/a>/);
+  });
+
+  it('links the class named Index to its page, not the home page (#333)', () => {
+    // `/index` is served as the home page's index.html by hosts like GitHub Pages.
+    const sidebar = islandProps(run.read('index.html'), 'sidebar') as {
+      nav: Array<{ label: string; slug?: string }>;
+    };
+    expect(sidebar.nav.find((n) => n.label === 'Index')?.slug).toBe('index');
+    const home = run.read('index.html');
+    expect(home).toContain('href="/index/"');
+    expect(home).not.toContain('href="/index"');
   });
 
   it('copies a tutorial image from outside the tutorials directory and rewrites its src (#333)', () => {

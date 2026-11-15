@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeBasePath, withBase } from '../site/base-path';
+import { normalizeBasePath, slugPath, withBase } from '../site/base-path';
 
 describe('normalizeBasePath', () => {
   it('returns "/" for root / empty / unset inputs', () => {
@@ -70,5 +70,25 @@ describe('withBase', () => {
   it('adds a leading slash to a slashless path argument', () => {
     expect(withBase('/doc/api', 'x')).toBe('/doc/api/x');
     expect(withBase('/', 'x')).toBe('/x');
+  });
+});
+
+describe('slugPath', () => {
+  it('maps the empty slug to the site root', () => {
+    expect(slugPath('')).toBe('/');
+  });
+
+  it('prefixes an ordinary slug with a slash and nothing more', () => {
+    expect(slugPath('baseentity')).toBe('/baseentity');
+    expect(slugPath('module/queue')).toBe('/module/queue');
+    expect(slugPath('global#greet')).toBe('/global#greet');
+    expect(slugPath('indexer')).toBe('/indexer');
+    expect(slugPath('reindex')).toBe('/reindex');
+  });
+
+  it('links a page whose slug ends in index to its own directory, not the parent page (#333)', () => {
+    expect(slugPath('index')).toBe('/index/');
+    expect(slugPath('module/index')).toBe('/module/index/');
+    expect(slugPath('index#run')).toBe('/index/#run');
   });
 });

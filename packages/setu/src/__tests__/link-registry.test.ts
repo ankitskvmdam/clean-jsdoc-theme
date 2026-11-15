@@ -35,6 +35,11 @@ describe('hrefFor', () => {
   it('preserves an anchor even on the home page', () => {
     expect(hrefFor('', 'open')).toBe('/#open');
   });
+
+  it('links a class named Index to its own page, not the home page (#333)', () => {
+    expect(hrefFor('index')).toBe('/index/');
+    expect(hrefFor('index', 'run')).toBe('/index/#run');
+  });
 });
 
 describe('registerContainerView', () => {
