@@ -572,7 +572,9 @@ describe('generateSite', () => {
       },
     ]);
     const page = generateSite(collection).pages.find((p) => p.slug === 'widget');
-    expect(page?.frontmatter.description).toBe('L Promise end');
+    // The comment is gone and the text after it kept; the literal `<User>` stays
+    // too (escaped by escapeLiteralTags before the tag strip).
+    expect(page?.frontmatter.description).toBe('L Promise<User> end');
   });
 
   it('headings on at least one page are non-empty with slug-cased ids', () => {

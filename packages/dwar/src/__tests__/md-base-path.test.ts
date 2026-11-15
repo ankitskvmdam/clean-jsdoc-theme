@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { prefixRootRelativeUrls } from '../md-base-path';
+import { expectLinearScaling, PERF_TEST_TIMEOUT } from './linear-scaling';
 
 const FENCE = '```';
 
@@ -94,6 +95,80 @@ describe('prefixRootRelativeUrls', () => {
       const text = `[yes](/y)\n\n${region}\n`;
       expect(prefixRootRelativeUrls(text, '/docs')).toBe(`[yes](/docs/y)\n\n${region}\n`);
     }
+  });
+
+  // setu writes a tag that isn't markup (`<Link href="/x">` in prose) as the
+  // literal text `\<Link href="/x">`, and the HTML page shows its URL as typed.
+  describe('escaped tags', () => {
+    it('leaves the attributes of an escaped tag untouched', () => {
+      const literal = [
+        'Use \\<Link href="/x"> here.',
+        'Or \\<Image src=\'/a.png\' alt="a > b" sourceHref="/s.ts">.',
+        'Closed \\<Link href="/x">Go\\</Link> too.',
+        'Unclosed \\<Link href="/x"',
+      ].join('\n');
+      expect(prefixRootRelativeUrls(literal, '/docs')).toBe(literal);
+    });
+
+    it('prefixes a real tag after an even run of backslashes (an escaped backslash)', () => {
+      expect(prefixRootRelativeUrls('a \\\\<a href="/x">x</a>', '/docs')).toBe(
+        'a \\\\<a href="/docs/x">x</a>'
+      );
+      expect(prefixRootRelativeUrls('\\\\\\\\<img src="/i.png">', '/docs')).toBe(
+        '\\\\\\\\<img src="/docs/i.png">'
+      );
+    });
+
+    it('leaves a tag after an odd run of three backslashes untouched', () => {
+      const literal = 'a \\\\\\<a href="/x">x';
+      expect(prefixRootRelativeUrls(literal, '/docs')).toBe(literal);
+    });
+
+    it('prefixes real tags and links next to an escaped one', () => {
+      expect(
+        prefixRootRelativeUrls(
+          '\\<Link href="/x"> then <a href="/y">y</a> and [z](/z) \\<T> <img src="/i.png">',
+          '/docs'
+        )
+      ).toBe(
+        '\\<Link href="/x"> then <a href="/docs/y">y</a> and [z](/docs/z) \\<T> <img src="/docs/i.png">'
+      );
+    });
+
+    it('ends an escaped tag at an unquoted `<`, so a real tag after it is prefixed', () => {
+      expect(prefixRootRelativeUrls('\\<Foo <a href="/y">y</a>', '/docs')).toBe(
+        '\\<Foo <a href="/docs/y">y</a>'
+      );
+      // A backslash run before a `<` starts the next tag, escaped or not.
+      const literal = '\\<A href="/x" \\<B href="/y"';
+      expect(prefixRootRelativeUrls(literal, '/docs')).toBe(literal);
+      expect(prefixRootRelativeUrls('\\<A \\\\<a href="/y">', '/docs')).toBe(
+        '\\<A \\\\<a href="/docs/y">'
+      );
+    });
+
+    it('does not take an escaped `<` before a non-letter for a tag', () => {
+      expect(prefixRootRelativeUrls('a \\< b <a href="/y">y</a>', '/docs')).toBe(
+        'a \\< b <a href="/docs/y">y</a>'
+      );
+    });
+
+    it.each([
+      ['escaped tags', '\\<Link href="/x"> '],
+      ['unclosed escaped tags', '\\<Link href="/x" '],
+      ['backslash runs before tags', '\\\\\\\\<a href="/x"> '],
+      ['unclosed quotes in escaped tags', '\\<a b="x '],
+    ])(
+      'scales linearly on %s',
+      (_name, unit) => {
+        // The size is in characters, roughly (see linear-scaling.ts).
+        expectLinearScaling(
+          (s: string) => prefixRootRelativeUrls(s, '/docs'),
+          (n) => unit.repeat(n / unit.length)
+        );
+      },
+      PERF_TEST_TIMEOUT
+    );
   });
 
   it('passes a frontmatter block through unchanged', () => {

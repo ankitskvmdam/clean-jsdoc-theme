@@ -351,6 +351,95 @@ export function renderHtmlDocument(opts: HtmlDocumentOptions): string {
 }
 
 /**
+ * An inline code span (CommonMark: a backtick run closed by an equal run, never
+ * across a blank line; a backslash before the opener makes it a literal
+ * backtick) OR a backslash escape (`\<`, `\*`, `\[`, …) outside one.
+ */
+const CODE_OR_ESCAPE =
+  /(?<![`\\])(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<!`)\1(?!`)|\\([!-/:-@[-`{-~])/g;
+
+/** `[from-to]` as a character class, built from code points. */
+const charRange = (from: number, to: number): string =>
+  `[${String.fromCharCode(from)}-${String.fromCharCode(to)}]`;
+
+/**
+ * Parking lot: an escaped ASCII character `c` is held as `PARK_BASE + c` (all
+ * below `PARK_BASE + 0x80`). A private-use character already in the text in
+ * `PARK_BASE…PARK_BASE + 0xff` is first rewritten to `GUARD` + itself shifted by
+ * 0x100, so {@link unparkAll} can tell the two apart and restore both.
+ */
+const PARK_BASE = 0xe000;
+const GUARD = String.fromCharCode(PARK_BASE + 0xff);
+const GENUINE = new RegExp(charRange(PARK_BASE, PARK_BASE + 0xff), 'g');
+const PARKED = new RegExp(
+  `${GUARD}(${charRange(PARK_BASE + 0x100, PARK_BASE + 0x1ff)})|${charRange(PARK_BASE, PARK_BASE + 0x7f)}`,
+  'g'
+);
+const parkChar = (ch: string): string => String.fromCharCode(PARK_BASE + ch.charCodeAt(0));
+const PUNCTUATION = /[!-/:-@[-`{-~]/g;
+
+/**
+ * Move escaped punctuation out of the way of the extractors' tag/mark stripping.
+ *
+ * setu's serializer backslash-escapes prose punctuation MDX would otherwise read
+ * as syntax — a literal `Promise<User>` is written `Promise\<User>` — and the
+ * page renders the bare character. Each escaped character outside inline code
+ * is parked in the Private Use Area (so `\<User>` isn't taken for a tag, nor
+ * `\*` for emphasis) and {@link unparkAll}ed at the end, so the search text reads
+ * like the page. A code span renders verbatim, so all of its punctuation is
+ * parked (backslashes, `<T>`, `snake_case` survive the strip passes as typed;
+ * its delimiters stay for the code-span pass). setu escapes only a literal
+ * tag's `<`, so the `>` closing an escaped `<` on the same line is parked too,
+ * or the blockquote-mark pass would eat it. Only an escaped `<` waits for one: a
+ * `<` in a code span opens no tag, so it must not claim the `>` of a real tag
+ * later on the line (`` `Array<T>` then <b>x</b> `` still strips the `<b>`).
+ */
+function parkEscapes(text: string): string {
+  const guarded = text.replace(
+    GENUINE,
+    (ch) => GUARD + String.fromCharCode(ch.charCodeAt(0) + 0x100)
+  );
+  // Escaped `<`s on the current line still waiting for their `>`.
+  let open = 0;
+  let out = '';
+  const copy = (segment: string): void => {
+    for (const ch of segment) {
+      if (ch === '\n') open = 0;
+      else if (ch === '>' && open > 0) {
+        open--;
+        out += parkChar('>');
+        continue;
+      }
+      out += ch;
+    }
+  };
+  let last = 0;
+  for (const m of guarded.matchAll(CODE_OR_ESCAPE)) {
+    copy(guarded.slice(last, m.index));
+    last = m.index + m[0].length;
+    const [all, ticks, ch] = m;
+    if (ticks === undefined) {
+      out += parkChar(ch!);
+      if (ch === '<') open++;
+    } else {
+      out += ticks + all.slice(ticks.length, -ticks.length).replace(PUNCTUATION, parkChar) + ticks;
+      if (all.includes('\n')) open = 0;
+    }
+  }
+  copy(guarded.slice(last));
+  return out;
+}
+
+/** Restore what {@link parkEscapes} parked, and any guarded private-use character. */
+function unparkAll(text: string): string {
+  return text.replace(PARKED, (ch, guarded?: string) =>
+    String.fromCharCode(
+      guarded !== undefined ? guarded.charCodeAt(0) - 0x100 : ch.charCodeAt(0) - PARK_BASE
+    )
+  );
+}
+
+/**
  * Remove the HTML comments, which never render (dwar's MDX pre-pass drops
  * them), before the search text is derived — with the same ranges, so a
  * backtick or `>` inside a comment can't pair with real inline code or end a
@@ -373,12 +462,6 @@ function dropHtmlComments(body: string, comments: readonly HtmlCommentRange[]): 
 const TAG = /<(?:"[^"]*"|'[^']*'|[^"'<>])+>/g;
 
 /**
- * Stands in for a `<` inside inline code while {@link extractSearchText} strips
- * tags: a private-use character, which no page text is expected to hold.
- */
-const CODE_LT = String.fromCharCode(0xe000);
-
-/**
  * Strip an MDX/HTML body to a plain-text excerpt for search snippets.
  * Heuristic, not exhaustive: fences, headings, links, images, formatting marks,
  * and any HTML tags get peeled away.
@@ -388,17 +471,17 @@ export function extractExcerpt(
   max = 200,
   comments: readonly HtmlCommentRange[] = pageCommentRanges(mdxBody)
 ): string {
-  let text = dropHtmlComments(mdxBody, comments)
+  const prose = dropHtmlComments(mdxBody, comments)
     .replace(/^---[\s\S]*?---\s*/u, '') // frontmatter
-    .replace(/```[\s\S]*?```/g, ' ') // fenced code
+    .replace(/```[\s\S]*?```/g, ' '); // fenced code
+  const stripped = parkEscapes(prose)
     .replace(/`[^`]*`/g, ' ') // inline code
     .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ') // images
     .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1') // links → label
     .replace(TAG, ' ') // raw HTML / JSX
     .replace(/^#{1,6}\s+/gm, '') // ATX headings
-    .replace(/[*_~>#]+/g, ' ') // emphasis & blockquotes
-    .replace(/\s+/g, ' ')
-    .trim();
+    .replace(/[*_~>#]+/g, ' '); // emphasis & blockquotes
+  let text = unparkAll(stripped).replace(/\s+/g, ' ').trim();
   if (text.length > max) {
     text = text.slice(0, max).replace(/\s+\S*$/, '') + '…';
   }
@@ -420,20 +503,19 @@ export function extractSearchText(
   max = 20000,
   comments: readonly HtmlCommentRange[] = pageCommentRanges(mdxBody)
 ): string {
-  const text = dropHtmlComments(mdxBody, comments)
+  const prose = dropHtmlComments(mdxBody, comments)
     .replace(/^---[\s\S]*?---\s*/u, '') // frontmatter
-    .replace(/```[\s\S]*?```/g, ' ') // fenced code (noisy/large)
-    // Inline code → keep the identifier, with its `<` hidden from the tag
-    // strip below (`Array<Map<K, V>>` is a type, not a tag).
-    .replace(/`([^`]*)`/g, (_m, code: string) => code.replaceAll('<', CODE_LT))
+    .replace(/```[\s\S]*?```/g, ' '); // fenced code (noisy/large)
+  const stripped = parkEscapes(prose)
+    // Inline code → keep the identifier; its punctuation is parked, so a
+    // generic (`Array<Map<K, V>>`) is a type, not a tag, to the strip below.
+    .replace(/`([^`]*)`/g, '$1')
     .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ') // images
     .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1') // links → label
     .replace(TAG, ' ') // raw HTML / JSX
-    .replaceAll(CODE_LT, '<')
     .replace(/^#{1,6}\s+/gm, '') // ATX heading markers (keep the text)
-    .replace(/[*_~>#|]+/g, ' ') // emphasis / blockquote / table marks
-    .replace(/\s+/g, ' ')
-    .trim();
+    .replace(/[*_~>#|]+/g, ' '); // emphasis / blockquote / table marks
+  const text = unparkAll(stripped).replace(/\s+/g, ' ').trim();
   return text.length > max ? text.slice(0, max) : text;
 }
 

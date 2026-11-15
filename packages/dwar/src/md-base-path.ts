@@ -11,7 +11,8 @@
  * example syntax must stay verbatim):
  *  - Markdown link/image destinations `](/x` (incl. `](</x`), not `](//host`;
  *  - reference definitions `[id]: /x` at line start;
- *  - `href="/x"`, `src="/x"`, `sourceHref="/x"` attributes (either quote), not `//host`.
+ *  - `href="/x"`, `src="/x"`, `sourceHref="/x"` attributes (either quote), not `//host`,
+ *    and not in a backslash-escaped tag (`\<Link href="/x">` is literal text).
  * Protocol-relative, absolute (`https:`, `data:`, `mailto:`), relative and
  * `#hash` URLs are untouched.
  */
@@ -36,8 +37,20 @@ const CODE_REGION_RE =
 const MD_DEST_RE = /(\]\(<?)\/(?!\/)/g;
 /** `[id]: /x` reference definition at line start (≤3 spaces indent). */
 const MD_DEF_RE = /^([ \t]{0,3}\[[^\]\n]+\]:[ \t]*<?)\/(?!\/)/gm;
-/** `href="/x"` / `src='/x'` / `sourceHref="/x"` HTML or MDX-JSX attribute. */
-const ATTR_RE = /(\b(?:href|src|sourceHref)=["'])\/(?!\/)/g;
+/**
+ * `href="/x"` / `src='/x'` / `sourceHref="/x"` HTML or MDX-JSX attribute (group 2),
+ * OR — matched to be left alone — an escaped tag (group 1): an opener after an
+ * odd run of backslashes, `\<Link href="/x">`, with its attributes up to the
+ * closing `>` (quoted values may hold `>`; an unquoted `<` ends it, and so
+ * does a backslash run before one, which belongs to the next tag). setu
+ * writes a tag that isn't markup as that literal text and the HTML page shows
+ * it as typed, so its URL must stay as typed too. An even run (`\\<a …>`) is an
+ * escaped backslash before a real tag, which gets the prefix. Linear: the
+ * lookbehind lets only the start of a backslash run try the first branch, and
+ * the tag-body alternatives each start with a different character.
+ */
+const ATTR_RE =
+  /(?<!\\)((?:\\\\)*\\<[A-Za-z](?:"[^"]*"|'[^']*'|[^"'<>\\]|\\+(?=[^\\<]))*>?)|(\b(?:href|src|sourceHref)=["'])\/(?!\/)/g;
 
 function rewrite(text: string, prefix: string): string {
   if (!text.includes('/')) return text;
@@ -45,5 +58,7 @@ function rewrite(text: string, prefix: string): string {
   return text
     .replace(MD_DEST_RE, (_m, open: string) => `${open}${p}`)
     .replace(MD_DEF_RE, (_m, open: string) => `${open}${p}`)
-    .replace(ATTR_RE, (_m, open: string) => `${open}${p}`);
+    .replace(ATTR_RE, (m, escapedTag: string | undefined, open: string) =>
+      escapedTag === undefined ? `${open}${p}` : m
+    );
 }
