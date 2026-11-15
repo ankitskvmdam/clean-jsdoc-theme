@@ -1003,6 +1003,26 @@ describe('publish: basePath + local images (#377)', () => {
     expect(assets.some((f) => /^welcome\.[0-9a-f]{8}\.png$/.test(f))).toBe(true);
   }, 60_000);
 
+  it('sub-path: a literal tag in prose keeps its URL as typed in the .md and llms-full.txt', async () => {
+    await writeFile(
+      join(docsDir, 'literal.md'),
+      '# Literal\n\nRender <Link href="/x"> for a link, or a real <a href="/y">anchor</a>.\n',
+      'utf8'
+    );
+    const out = join(dir, 'out');
+    await build(out, '/docs');
+    // The page shows the tag as typed; the real anchor gets the base.
+    const html = read(out, 'literal/index.html');
+    expect(html).toContain('Render &lt;Link href=&quot;/x&quot;> for a link');
+    expect(html).toContain('<a href="/docs/y"');
+    // setu writes the literal tag as `\<Link …>`: the Markdown outputs keep its
+    // URL as typed too, and prefix only the real link.
+    for (const text of [read(out, 'literal/index.md'), read(out, 'llms-full.txt')]) {
+      expect(text).toContain('Render \\<Link href="/x"> for a link, or a real [anchor](/docs/y).');
+      expect(text).not.toContain('/docs/x');
+    }
+  }, 60_000);
+
   it('root (control): the same outputs are base-free', async () => {
     const out = join(dir, 'out');
     await build(out);
