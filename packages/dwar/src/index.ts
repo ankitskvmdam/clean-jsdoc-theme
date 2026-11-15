@@ -22,7 +22,7 @@ import {
   createI18n,
 } from '@clean-jsdoc-theme/rang';
 import type { PageNavLink, SignatureHighlighter } from '@clean-jsdoc-theme/rang';
-import { siteNameText, withBase } from '@clean-jsdoc-theme/utils';
+import { siteNameText, slugPath, withBase } from '@clean-jsdoc-theme/utils';
 import { BasePathContext, InlineSvgContext, SignatureHighlightContext } from '@clean-jsdoc-theme/rang';
 import type {
   OutputFile,
@@ -186,7 +186,7 @@ async function mapWithConcurrency<T, R>(
  */
 function localeHref(siteBase: string, code: string, defaultLocale: string, slug: string): string {
   const seg = code === defaultLocale ? '' : '/' + code;
-  const path = slug ? `${seg}/${slug}` : seg || '/';
+  const path = slug ? `${seg}${slugPath(slug)}` : seg || '/';
   return withBase(siteBase, path);
 }
 

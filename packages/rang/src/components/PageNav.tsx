@@ -11,7 +11,7 @@
 
 import { ArrowLeft, ArrowRight } from 'lucide-preact';
 import { useTranslation } from '@clean-jsdoc-theme/bhasha';
-import { withBase } from '@clean-jsdoc-theme/utils';
+import { slugPath, withBase } from '@clean-jsdoc-theme/utils';
 
 /** One neighbor link in the pager. */
 export interface PageNavLink {
@@ -42,7 +42,7 @@ function PageNavCard({
   const isPrev = dir === 'prev';
   return (
     <a
-      href={withBase(basePath, '/' + link.slug)}
+      href={withBase(basePath, slugPath(link.slug))}
       class={`group flex flex-col gap-1 rounded-lg border border-(--clean-border) p-4 transition-colors hover:border-(--clean-link) hover:bg-(--clean-bg-muted) ${
         isPrev ? 'items-start text-left' : 'items-end text-right'
       }`}

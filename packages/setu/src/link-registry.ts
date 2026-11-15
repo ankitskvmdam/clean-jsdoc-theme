@@ -10,7 +10,7 @@
  * Build order matters: pages link to each other, so the registry must be fully
  * populated before any page body renders (a two-pass build in `generateSite`).
  */
-import { memberAnchor } from '@clean-jsdoc-theme/utils';
+import { memberAnchor, slugPath } from '@clean-jsdoc-theme/utils';
 import type { ContainerView } from './class-view';
 
 /** A resolved location: the page slug and an optional in-page heading anchor. */
@@ -30,7 +30,8 @@ export interface ResolvedLink {
 
 /**
  * Build the `href` for a registry entry. Absolute, leading-slash paths to match
- * how `Sidebar.tsx` renders links (`href={`/${node.slug}`}`).
+ * how `Sidebar.tsx` renders links (`slugPath(node.slug)`; a slug ending in
+ * `index` gets a trailing slash, see issue #333).
  *
  * The empty slug is the home page, so it maps to `/` (not `/`-plus-nothing via
  * the template, which would still be `/` but we special-case for clarity). An
@@ -38,7 +39,7 @@ export interface ResolvedLink {
  */
 export function hrefFor(slug: string, anchor?: string): string {
   if (slug === '') return '/' + (anchor ? `#${anchor}` : '');
-  return `/${slug}` + (anchor ? `#${anchor}` : '');
+  return slugPath(slug) + (anchor ? `#${anchor}` : '');
 }
 
 /**

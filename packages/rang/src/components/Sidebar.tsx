@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { House, CodeXml, Globe, Mail, ExternalLink, ChevronRight } from 'lucide-preact';
 import { useTranslation } from '@clean-jsdoc-theme/bhasha';
 import type { NavNode } from '@clean-jsdoc-theme/utils';
-import { withBase } from '@clean-jsdoc-theme/utils';
+import { slugPath, withBase } from '@clean-jsdoc-theme/utils';
 import { cn } from '../lib/cn';
 import { SimpleIcon } from './SimpleIcon';
 
@@ -175,7 +175,7 @@ function NavLink({
   const isCurrent = node.slug === currentSlug;
   return (
     <a
-      href={withBase(basePath, '/' + node.slug)}
+      href={withBase(basePath, slugPath(node.slug))}
       target={node.target || undefined}
       aria-current={isCurrent ? 'page' : undefined}
       class={cn(ITEM_BASE, align, isCurrent ? ITEM_ACTIVE : ITEM_INACTIVE, node.class)}

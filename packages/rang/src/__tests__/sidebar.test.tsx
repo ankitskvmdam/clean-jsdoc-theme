@@ -51,6 +51,14 @@ describe('Sidebar', () => {
     expect(html).toContain('href="/docs/module/queue-queue"');
   });
 
+  it('links a class named Index to its own page, not the home page (#333)', () => {
+    const nav: NavNode[] = [{ label: 'Index', slug: 'index', group: 'Classes' }];
+    expect(render(<Sidebar nav={nav} currentSlug="" />)).toContain('href="/index/"');
+    expect(render(<Sidebar nav={nav} currentSlug="" basePath="/docs" />)).toContain(
+      'href="/docs/index/"'
+    );
+  });
+
   it('marks the current slug with aria-current="page"', () => {
     const html = render(<Sidebar nav={fixture} currentSlug="dataprocessor" />);
     expect(html).toContain('aria-current="page"');

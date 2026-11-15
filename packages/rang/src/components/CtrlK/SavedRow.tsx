@@ -1,6 +1,6 @@
 import { History, Star, X } from 'lucide-preact';
 import { useTranslation } from '@clean-jsdoc-theme/bhasha';
-import { withBase } from '@clean-jsdoc-theme/utils';
+import { slugPath, withBase } from '@clean-jsdoc-theme/utils';
 import type { SavedKind, SavedSearch } from './types';
 
 export interface SavedRowProps {
@@ -46,7 +46,7 @@ export function SavedRow({
         <History size={16} class="shrink-0 text-muted-foreground" aria-hidden="true" />
       )}
       <a
-        href={withBase(basePath, '/' + item.slug)}
+        href={withBase(basePath, slugPath(item.slug))}
         onClick={onRecord}
         class="block min-w-0 flex-1 text-foreground no-underline"
       >

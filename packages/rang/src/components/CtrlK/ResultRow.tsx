@@ -1,5 +1,5 @@
 import type { SearchEntry } from '@clean-jsdoc-theme/utils';
-import { withBase } from '@clean-jsdoc-theme/utils';
+import { slugPath, withBase } from '@clean-jsdoc-theme/utils';
 import type { FuzzyResult } from '../search-utils';
 import { Highlighted } from './Highlighted';
 
@@ -24,7 +24,7 @@ export function ResultRow({ basePath, result, active, onActivate, onRecord }: Re
       onMouseMove={onActivate}
     >
       <a
-        href={withBase(basePath, '/' + item.slug)}
+        href={withBase(basePath, slugPath(item.slug))}
         onClick={onRecord}
         class="block text-foreground no-underline"
       >

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { useTranslation } from '@clean-jsdoc-theme/bhasha';
-import { withBase } from '@clean-jsdoc-theme/utils';
+import { slugPath, withBase } from '@clean-jsdoc-theme/utils';
 import { useListKeyboardNav } from '../../hooks/use-list-keyboard-nav';
 import { Dialog } from '../Dialog';
 import { SearchFooter } from './SearchFooter';
@@ -44,7 +44,7 @@ export function CtrlK({ basePath, searchIndexUrl }: CtrlKProps) {
     const item = navItems[index];
     if (!item) return;
     recordRecent(item);
-    window.location.href = withBase(basePath, '/' + item.slug);
+    window.location.href = withBase(basePath, slugPath(item.slug));
   };
 
   const { active, setActive } = useListKeyboardNav({

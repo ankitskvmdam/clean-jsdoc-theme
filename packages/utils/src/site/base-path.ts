@@ -65,3 +65,28 @@ export function withBase(basePath: string | undefined, path: string): string {
   const p = path.startsWith('/') ? path : '/' + path;
   return b + p;
 }
+
+/**
+ * The root-relative URL of the page at `slug` (no leading slash; may carry a
+ * `#anchor`), before `basePath` is applied.
+ *
+ * A page is written to `<slug>/index.html`, so `'/' + slug` reaches it through
+ * the host's directory redirect. A slug whose last segment is `index` is the
+ * exception: hosts that map `/x/index` to `x/index.html` (GitHub Pages does)
+ * serve the parent page instead, so a class named `Index` linked as `/index`
+ * opened the home page (issue #333). Such a slug gets a trailing slash, which
+ * names its own directory; every other slug stays `'/' + slug`.
+ *
+ * @example
+ * slugPath('');             // '/'
+ * slugPath('baseentity');   // '/baseentity'
+ * slugPath('index');        // '/index/'
+ * slugPath('index#run');    // '/index/#run'
+ * slugPath('module/index'); // '/module/index/'
+ */
+export function slugPath(slug: string): string {
+  const hash = slug.indexOf('#');
+  const path = hash === -1 ? slug : slug.slice(0, hash);
+  const anchor = hash === -1 ? '' : slug.slice(hash);
+  return '/' + path + (/(^|\/)index$/.test(path) ? '/' : '') + anchor;
+}
