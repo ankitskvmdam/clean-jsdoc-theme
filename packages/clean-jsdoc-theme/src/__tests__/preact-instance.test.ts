@@ -45,7 +45,11 @@ const PREACT_BOUND = ['rang', 'dwar', 'bhasha', 'setu'];
 
 describe('one preact instance for every package manager (#342)', () => {
   it('covers every workspace package', () => {
-    expect(all.sort()).toEqual(
+    expect(
+      all.sort(),
+      'a workspace package was added or removed: classify it in ENTRY_POINTS (users install it) ' +
+        'or PREACT_BOUND (it imports preact), then update this list'
+    ).toEqual(
       ['aadesh', 'bhasha', 'clean-jsdoc-theme', 'dwar', 'rang', 'setu', 'typedoc', 'utils'].sort()
     );
   });

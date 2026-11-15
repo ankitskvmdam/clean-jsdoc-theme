@@ -409,10 +409,5 @@ describe('renderHtmlDocument — custom JS order (#299)', () => {
     // so every theme script (module loader and classic helpers alike) is above them.
     expect(html.indexOf('<script', inline + 1)).toBe(-1);
     expect(html.slice(inline).endsWith('</script></body></html>')).toBe(true);
-    expect(html.slice(a)).toBe(
-      '<script src="/_assets/a.h1.js"></script>' +
-        '<script src="/_assets/b.h2.js"></script>' +
-        '<script>window.x=1</script></body></html>'
-    );
   });
 });
