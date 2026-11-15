@@ -1,5 +1,37 @@
 # @clean-jsdoc-theme/aadesh
 
+## 5.3.0
+
+### Patch Changes
+
+- 1afb7ca: `clean-jsdoc build` and `extract` now pass the JSDoc/TypeDoc process's stderr
+  through as it runs. It used to be captured and dropped, apart from its last line
+  when a build failed, so the reason for a failure (a strict-mode option error, a
+  missing `plugins/markdown`) and the theme's option warnings were hidden.
+
+  The JSDoc theme now prints each option warning once, at the end of the build
+  (on stderr, after the build report, or on the way out if the build fails), like
+  the TypeDoc plugin. It used to print them when the options were validated and
+  again after the build report. A localized build runs one JSDoc process per locale,
+  so each warning shows once per locale.
+
+- Updated dependencies [0e0e148]
+- Updated dependencies [63b035d]
+- Updated dependencies [70ae366]
+- Updated dependencies [614a6a9]
+- Updated dependencies [7ba5ed2]
+- Updated dependencies [834814d]
+- Updated dependencies [4fa057c]
+- Updated dependencies [24b07fe]
+- Updated dependencies [c5936b3]
+- Updated dependencies [e222882]
+- Updated dependencies [0dd64ea]
+- Updated dependencies [452124c]
+- Updated dependencies [66a7ecc]
+  - @clean-jsdoc-theme/setu@5.3.0
+  - @clean-jsdoc-theme/utils@5.3.0
+  - @clean-jsdoc-theme/bhasha@5.3.0
+
 ## 5.2.1
 
 ### Patch Changes

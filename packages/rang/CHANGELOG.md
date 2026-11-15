@@ -1,5 +1,42 @@
 # @clean-jsdoc-theme/rang
 
+## 5.3.0
+
+### Patch Changes
+
+- 6b7b1d6: Fix local images getting the `basePath` prefix twice under TypeDoc (#377). With
+  `cleanJsdocTheme.basePath: "/docs"`, a Markdown image or raw `<img>` in a docs
+  page, the README or a symbol comment rendered as
+  `<img src="/docs/docs/_assets/…">` (404). The TypeDoc plugin pre-applied the base
+  to the rewritten `_assets/` src and the renderer applied it again. Both bridges
+  now emit base-free `/_assets/…` srcs, like page links, and the base is added
+  exactly once at render time. Inline SVGs are unaffected.
+
+  The companion `<page>/index.md` files and `llms-full.txt` now carry `basePath`
+  on their root-relative links and image references, so they resolve when fetched
+  from a sub-path deploy (both flavours; JSDoc's used to emit `/_assets/…` and
+  both emitted base-free page links). Builds without `basePath` are unchanged.
+
+- 4fa057c: Fix links to a class named `Index` opening the home page (#333).
+
+  The page for a symbol named `index` is written to `index/index.html`, but the
+  sidebar, type links, search results, prev/next cards and the language switcher
+  linked it as `/index`. Hosts that serve `/index` from `index.html` (GitHub Pages
+  does) showed the home page instead. Links to a page whose URL ends in `index`
+  (`/index`, `/module/index`) now carry a trailing slash (`/index/`) so they reach
+  the page itself. All other links are unchanged.
+
+- Updated dependencies [0e0e148]
+- Updated dependencies [7ba5ed2]
+- Updated dependencies [4fa057c]
+- Updated dependencies [24b07fe]
+- Updated dependencies [e222882]
+- Updated dependencies [0dd64ea]
+- Updated dependencies [452124c]
+- Updated dependencies [66a7ecc]
+  - @clean-jsdoc-theme/utils@5.3.0
+  - @clean-jsdoc-theme/bhasha@5.3.0
+
 ## 5.2.1
 
 ### Patch Changes

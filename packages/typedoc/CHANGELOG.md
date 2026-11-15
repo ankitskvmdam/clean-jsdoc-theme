@@ -1,5 +1,297 @@
 # @clean-jsdoc-theme/typedoc
 
+## 5.3.0
+
+### Patch Changes
+
+- 6b7b1d6: Fix local images getting the `basePath` prefix twice under TypeDoc (#377). With
+  `cleanJsdocTheme.basePath: "/docs"`, a Markdown image or raw `<img>` in a docs
+  page, the README or a symbol comment rendered as
+  `<img src="/docs/docs/_assets/…">` (404). The TypeDoc plugin pre-applied the base
+  to the rewritten `_assets/` src and the renderer applied it again. Both bridges
+  now emit base-free `/_assets/…` srcs, like page links, and the base is added
+  exactly once at render time. Inline SVGs are unaffected.
+
+  The companion `<page>/index.md` files and `llms-full.txt` now carry `basePath`
+  on their root-relative links and image references, so they resolve when fetched
+  from a sub-path deploy (both flavours; JSDoc's used to emit `/_assets/…` and
+  both emitted base-free page links). Builds without `basePath` are unchanged.
+
+- 0e0e148: `@private` and `@ignore` symbols no longer get their own page. A private typedef,
+  class, namespace, module, interface or mixin used to get a page and a sidebar
+  entry, and `@ignore`d globals still showed on the Globals page; only private
+  _members_ were hidden. Hidden symbols are now dropped once, before any page,
+  sidebar entry, link target, search entry or `llms.txt` line is built. A type that
+  names a hidden typedef now renders as plain text; it no longer links to a page for
+  the private typedef.
+
+  Everything documented inside a `@private` namespace, module or class is hidden
+  too, including public symbols nested in it. This differs from JSDoc's default
+  template, which hides only the private container and keeps an orphan page for a
+  public class nested inside it.
+
+  A class whose only private part is its ES6 `constructor` (`/** @private */
+constructor()`) keeps its page and public members, whatever its shape: exported,
+  plain, a subclass, a class expression (top-level or nested, as in
+  `Ns.Foo = class {…}`), an `export default class`, or a CommonJS export
+  (`exports.Foo = class`, `module.exports = Foo`, `module.exports = class`), with or
+  without an `@alias` on the class comment. An ES5
+  `@class`/`@constructor` function marked `@private` is the class itself, so it
+  stays hidden. On the kept class, only the Constructor section
+  is hidden, along with everything else on the constructor comment (`@since`,
+  `@see`, …). JSDoc merges the constructor comment into the class, which used to
+  show the whole class as `private`. On TypeDoc pages, a `private constructor()`
+  that TypeDoc excludes no longer leaves a `new Name()` Constructor section behind.
+  With `excludePrivate: false`, or for a `protected constructor()`, the section
+  shows a `private` or `protected` badge.
+
+  JSDoc's `--private` (or `--access` naming `private` or `all`) now shows private
+  symbols, members included, as JSDoc's default template does. The other `--access`
+  levels (`public`, `protected`, `package`, `undefined`) are not supported: symbols
+  with those access levels are always documented. Under TypeDoc,
+  `excludePrivate: false` now also shows private members, which were dropped even
+  though TypeDoc had kept them.
+
+- 63b035d: Keep angle-bracketed words like `Promise<User>` and `<T>` in doc-comment prose.
+
+  A description such as "Resolves to a Promise<User> or Array<string>" rendered
+  as "Resolves to a Promise or Array", with no error or warning: the markdown
+  step passes `<User>` through as an HTML tag, and the HTML conversion dropped the
+  unknown tag. A type name that matches an HTML element was worse: `Array<Option>`
+  or `Array<title>` lost the rest of the paragraph or page.
+
+  The rule for a tag, by its name as written:
+  - Lowercase HTML or custom elements are markup (`<kbd>`, `<br>`, `<p>`,
+    `<my-widget>`). The exception is one glued to a word with no attributes, no
+    closing tag in the same block, and not void: `Promise<object>` and
+    `Array<title>` are text, while `foo<br>` still breaks the line.
+  - ALL-CAPS element names of two or more letters are markup (`<BR>`,
+    `<TABLE>`, `<DIV>`), with the same exception: `Array<DATA>` is text.
+  - A single capital letter that names an element is markup only with
+    attributes or a closing tag in the same block (`<B>bold</B>`,
+    `<A HREF="…">`, `<P ALIGN=center>`). On its own (`<T>`, `<P>`) it is a
+    generic and shows as text.
+  - Every other name shows as text: unknown names (`<User>`, `<string>`) and
+    any other capitalized name, even with attributes or a closing tag. That
+    covers component tags in component-library docs, such as
+    `<Button variant="primary">Click</Button>` or `<Option value>`, and
+    mixed-case HTML such as `<Img src>` or `<Div>`, which used to render as HTML.
+  - A lone closing tag follows the same rule: one whose name is not an HTML
+    element, or is capitalized, shows as text. Markdown `text</content>` used to
+    render as `text` and now renders `text</content>` (written `text\</content>`
+    in the generated MDX). Check your pages for stray closing tags such as
+    `</content>` or `</invoke>` that the old behavior hid; five of this
+    project's Japanese and Chinese docs pages had them.
+
+  The `<steps>`/`<tabs>`/`<playground>` containers work as before. This applies
+  to JSDoc and TypeDoc comments, `@example` captions, the README, tutorials and
+  `docs` pages. A literal tag with braces (`<Foo bar="{x}">`) no longer fails
+  the page.
+
+  The page's meta description and search entry now match the rendered text:
+  literal words are kept and character references are decoded once (so
+  `&quot;` and `&mdash;` no longer show up in search results). The search
+  excerpt and content drop the backslashes that escaped characters left behind
+  (`snake\_case` reads `snake_case`). Inline code in the search content keeps
+  its text as written, where `snake_case` used to become `snake case` and
+  `Array<Map<string, T>>` lost its `>>`; the excerpt still leaves inline code out.
+
+- 70ae366: Keep a doc page's sidebar link when a later doc page is skipped for sharing its slug.
+
+  When two files in the docs directory produced the same URL (for example
+  `docs/foo-bar.md` and `docs/foo_bar.md`, both `foo-bar`), the first was built and
+  the second skipped with a warning, but the sidebar dropped both entries, so the
+  built page could only be reached by typing its URL. Only the skipped page's entry
+  is removed now; the page that was built keeps its link. A doc page skipped because
+  an API page already owns its slug still gets no sidebar entry.
+
+- 7ba5ed2: Label the home page in the failed-page and content-warning reports.
+
+  When the home page (README or root `index.md`) failed to render or raised a
+  content warning, the build log listed it with a blank label (`-  (line 8:2): …`)
+  because its slug is empty. It is now shown as `(home page)`. Other pages keep
+  their slug as the label.
+
+  A doc page that is skipped because its slug is empty or already taken is now
+  named by its title and source file, e.g. `skipping doc page "Bangs"
+(docs/!!!.md): its slug is empty, which would collide with the home page`,
+  instead of `slug ""`.
+
+- 4fa057c: Fix links to a class named `Index` opening the home page (#333).
+
+  The page for a symbol named `index` is written to `index/index.html`, but the
+  sidebar, type links, search results, prev/next cards and the language switcher
+  linked it as `/index`. Hosts that serve `/index` from `index.html` (GitHub Pages
+  does) showed the home page instead. Links to a page whose URL ends in `index`
+  (`/index`, `/module/index`) now carry a trailing slash (`/index/`) so they reach
+  the page itself. All other links are unchanged.
+
+- 88de8f4: Clearer npm descriptions and keywords for `clean-jsdoc-theme` and
+  `@clean-jsdoc-theme/typedoc`, so both show up in npm searches for JSDoc and
+  TypeDoc themes. The TypeDoc package also gains the `typedocplugin` keyword,
+  which typedoc.org's plugin list reads.
+- 24b07fe: Give every heading a visible anchor that the table of contents links to.
+  - **Headings with no letters or digits.** A member named `$`, `_` or `$$`, or a
+    Markdown heading like `## $` or `## 🚀`, got an empty anchor: it rendered with
+    `id=""`, and its table-of-contents link (and a `{@link}` to such a member)
+    pointed at the top of the page. These now get an anchor built from their
+    text's code points: `#section--1f680` for a prose `## 🚀` (a repeat becomes
+    `#section--1f680-1`) and `#member--24` for a member `$`.
+  - **Emoji with a variation selector or keycap.** `## ⚠️`, `## ❤️` or `## 1️⃣`
+    used to get an anchor made of invisible characters. A heading that is only
+    such an emoji now gets a fallback like `#section--26a0_fe0f`, and the emoji
+    presentation characters U+FE0E, U+FE0F and the keycap U+20E3 are dropped
+    from mixed text: `## ⚠️ Warning` is now `#warning`, and `## 1️⃣ Step` is now
+    `#1-step`. Links to the old, invisible anchors stop working. A heading whose
+    anchor was made only of combining marks (`## ゛`) also gets a fallback.
+  - **Formatted headings in the table of contents.** For a heading with bold,
+    italic, link or inline-code text, the table of contents only read the plain
+    text around the formatting, so `## **Bold** title` was listed as `title` and
+    linked to `#title` while the heading itself was `#bold-title`. The table of
+    contents now reads the whole heading and links to the anchor the page renders.
+    This includes a footnote reference: `## Intro[^1]` is now listed as `Intro1`
+    and links to `#intro1`, the anchor the page always rendered (and the one
+    GitHub generates).
+  - **Hard line breaks in headings.** `## a<br>b` was listed as `ab` linking to
+    `#ab` while the page rendered `#a-b`; the table of contents now links to
+    `#a-b`.
+  - **TypeDoc members with no visible name.** A TypeScript property or enum
+    member literally named `' '` aborted the TypeDoc build. It now renders with
+    the anchor `#member--20`, and is shown as `' '` in the heading, the table of
+    contents and search. A name made only of characters that print nothing — a
+    no-break space, a zero-width space, a soft hyphen, a lone combining mark, a
+    tab, a Braille blank (U+2800), a lone surrogate half — is shown as a quoted
+    escape (`'\u00a0'`, `'\u200b'`, `'\t'`, `'\u2800'`, `'\ud800'`), so its
+    heading and table-of-contents row are never blank and two such names never
+    look the same; the anchor keeps the code points (`#member--200b`). A name
+    with any visible character, such as `$` or `a b`, is unchanged.
+
+  The table of contents, the rendered page and `{@link}` always use the same
+  anchor. Any heading whose anchor already contained a letter or digit and none
+  of U+FE0E/U+FE0F/U+20E3 keeps its anchor byte for byte; all 1,900 headings in
+  this repo's own docs (en/hi/ja/zh) are unchanged.
+
+- c5936b3: Fix a blank member heading for a member with an empty name.
+
+  JSDoc can't name an ES private method (instance or static), so a doc comment on
+  `#secret() {}` reached the theme as a member with an empty name and rendered as
+  an empty heading with no anchor on its class page. TypeDoc does the same for a
+  TypeScript property declared as `'': number`. Members with an empty name are now
+  left out of every member list in both the JSDoc and TypeDoc themes, so they no
+  longer produce a heading, a table-of-contents entry, a search entry or a link
+  target. Named members are unaffected.
+
+- e222882: **`strict: true` now fails on option warnings, as documented — existing strict
+  builds may start failing.** Before, `strict` only failed on option errors, so a
+  misspelled key, an unusable `siteUrl`, or an unreadable `footer` / `favicon` /
+  logo / custom file was reported and the build carried on. Now every option
+  warning is an error under `strict`, and the build stops before writing anything.
+  The exceptions are a top-level v4 option name under JSDoc (see the v4-options
+  change) and, under TypeDoc, JSDoc-only options and the `siteUrl` override of
+  `hostedBaseUrl` (see the TypeDoc change). Content warnings, such as an unbalanced
+  backtick, are not affected.
+
+  A failed JSDoc build now exits non-zero. JSDoc 4 printed a thrown theme error as
+  `Unhandled rejection …` and still exited 0, so CI (and `clean-jsdoc build`, which
+  checks each locale's exit code) couldn't see a strict failure, a missing
+  `plugins/markdown`, or a bad build spec. The error is now reported once through
+  JSDoc's logger and the process exits 1. TypeDoc already exited non-zero.
+
+  The Google Fonts check (when `fonts` is set) now uses `node:https` instead of the
+  global `fetch` in both the JSDoc and TypeDoc builds. On Windows, a build that
+  failed right after the check aborted Node with a libuv assertion
+  (`!(handle->flags & UV_HANDLE_CLOSING)`, exit code 127) instead of exiting with
+  its normal error code. The check uses Node's default HTTPS agent, so it still
+  honours the env proxy (`NODE_USE_ENV_PROXY=1` / `--use-env-proxy` with
+  `HTTPS_PROXY`, Node 24+) the way `fetch` did.
+
+  `customCssFile` / `customJsFile` entries that aren't local paths (a URL, or a v4
+  `{ href, integrity }` object) now warn and are skipped instead of being dropped
+  silently.
+
+- 0dd64ea: Fix a page being skipped when its prose contains an HTML comment (`<!-- … -->`).
+
+  MDX has no HTML-comment syntax, so a single comment in a README (badge blocks,
+  all-contributors markers), a tutorial or a doc comment made the whole page fail
+  to render with ``Unexpected character `!` (U+0021) before name`` — on the README
+  that left the site without a home page. Comments are now dropped from prose, as
+  a browser would hide them: the generator removes them while converting README,
+  tutorial and doc-comment text — so a generated page's body, its `.md` companion,
+  `llms-full.txt`, the page description and the search index hold no comment text
+  — and the renderer drops any comment left in a body handed to it directly (from
+  the rendered HTML and the search index; the `.md` companion stays the verbatim
+  body, as documented). A comment shown inside a fenced code block (including a
+  four-backtick fence wrapping triple-backtick lines, a fence in a list item or a
+  blockquote), an inline code span, a quoted attribute value or a link URL/title
+  is kept as written, and a comment that starts a line hides everything up to its
+  `-->`, so commenting out a whole section — or a single `<step>`/`<tab>` inside a
+  live `<steps>`/`<tabs>`, or a playground fence — works as on GitHub. An
+  unterminated `<!--` is shown as literal text instead of hiding the rest of the
+  page, and a comment removed from the middle of a page no longer shifts the line
+  numbers reported for a later render error. TypeDoc doc comments get the same
+  fix.
+
+  The search index's text now strips tags with a pass that reads quoted attribute
+  values whole, so a value holding `>` (such as a member signature) no longer
+  leaves fragments such as `" /` in a page's search `content`, and a `<` in inline
+  code (a generic type such as `Array<Map<string, T>>`) is no longer taken for the
+  start of a tag, so the code's text stays in the search index.
+
+  `@example` captions are parsed with the same GitHub-Flavored Markdown as every
+  other prose surface (`~~strikethrough~~`, bare URLs), and ones holding raw HTML
+  such as `<?php … ?>`, `<![CDATA[…]]>` or `<br>` no longer skip the page: they are
+  normalized the same way descriptions already were.
+
+- 64ce0db: JSDoc-only options set in `cleanJsdocTheme` (`colors`, `darkColors`, `customCss`,
+  `customJs`, `customCssFile`, `customJsFile`, `hashCustomAssets`, `progress`,
+  `readme`, `tutorials`) now warn that the TypeDoc flavor ignores them
+  (`opts/unsupported-in-typedoc`). Before, `colors`/`darkColors`/`readme`/`tutorials`
+  were reported as unknown keys, so a strict build failed on them, and the rest
+  were ignored without a word. Neither this warning nor the note that
+  `cleanJsdocTheme.siteUrl` overrides a different `hostedBaseUrl` fails a strict
+  build. A `hostedBaseUrl` with a sub-path and no `basePath` still does.
+- 452124c: Parameter and property defaults now show exactly as written. A string default
+  was quoted a second time, so `[name=""]` displayed as `"\"\""` and `[sep='']`
+  as `"''"`. Defaults now render verbatim in a code span (`""`, `''`, `{a: 1}`,
+  `() => {}`, `0`, `true`, `null`, `NaN`), the same as a member's **Default:**
+  line, on JSDoc and TypeDoc pages alike.
+
+  A default that is a `{@link}` tag
+  (`@param {number} [priority={@link Priority.NORMAL}]`) now renders the link,
+  the way a `{@link}` in a description does: a resolved target becomes a link to
+  that symbol (`{@linkcode}` keeps the code look), text around the tag stays
+  text, and an unresolved target falls back to the same inert code span
+  (`Priority.NORMAL`). The tag used to print raw inside the code span
+  (`{@link Priority.NORMAL}`).
+
+  On TypeDoc pages, a `@defaultValue` tag no longer shows its own backticks or a
+  `ts` code fence inside the **Default:** value, and it now wins over the
+  property's initializer. Defaults follow TypeDoc's own model. A tag that is a
+  single code span or plain content renders as a code value, so prose with no code
+  of its own (`@defaultValue the current working directory`,
+  `see [docs](url)`) shows as code, exactly as in TypeDoc's default theme. A tag
+  that mixes text with code spans or `{@link}` renders as text with working links
+  and code. A parameter with an object or array initializer no longer shows
+  `default: ...`.
+
+- Updated dependencies [6b7b1d6]
+- Updated dependencies [0e0e148]
+- Updated dependencies [63b035d]
+- Updated dependencies [70ae366]
+- Updated dependencies [614a6a9]
+- Updated dependencies [7ba5ed2]
+- Updated dependencies [834814d]
+- Updated dependencies [4fa057c]
+- Updated dependencies [24b07fe]
+- Updated dependencies [c5936b3]
+- Updated dependencies [e222882]
+- Updated dependencies [0dd64ea]
+- Updated dependencies [452124c]
+- Updated dependencies [66a7ecc]
+  - @clean-jsdoc-theme/dwar@5.3.0
+  - @clean-jsdoc-theme/setu@5.3.0
+  - @clean-jsdoc-theme/utils@5.3.0
+
 ## 5.2.1
 
 ### Patch Changes

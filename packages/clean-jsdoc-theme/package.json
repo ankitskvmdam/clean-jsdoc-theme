@@ -1,6 +1,6 @@
 {
   "name": "clean-jsdoc-theme",
-  "version": "5.2.1",
+  "version": "5.3.0",
   "description": "A modern JSDoc theme with dark mode, built-in search, i18n, and LLM-ready Markdown for every page. TypeDoc support via @clean-jsdoc-theme/typedoc.",
   "main": "./dist/publish.js",
   "types": "./dist/publish.d.ts",
