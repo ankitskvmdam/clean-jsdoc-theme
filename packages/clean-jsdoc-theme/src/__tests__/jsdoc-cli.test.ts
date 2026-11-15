@@ -15,7 +15,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 // after `build`, so `dist/` exists here as it would in the tarball.
 const pkgRoot = fileURLToPath(new URL('../../', import.meta.url));
 const JSDOC = createRequire(import.meta.url).resolve('jsdoc/jsdoc.js');
-const posix = (p: string): string => p.split(String.fromCharCode(92)).join('/');
+const posix = (p: string): string => p.split('\\').join('/');
 /** `node_modules/clean-jsdoc-theme`: the v4 template path most configs still use. */
 const TEMPLATE_ROOT = posix(pkgRoot).replace(/\/$/, '');
 
@@ -46,6 +46,9 @@ interface JSDocConf {
 
 const dirs: string[] = [];
 
+/** Per-test budget for a JSDoc spawn: generous, as CI runs loaded tests many times slower. */
+const SPAWN_TEST_TIMEOUT = 300_000;
+
 /** Write `files` into a fresh project, run `jsdoc -c jsdoc.json` in it. */
 async function runJsdoc(files: Record<string, string | Buffer>, conf: JSDocConf): Promise<Run> {
   const dir = await mkdtemp(join(tmpdir(), 'cjt-jsdoc-cli-'));
@@ -69,7 +72,13 @@ async function runJsdoc(files: Record<string, string | Buffer>, conf: JSDocConf)
     cwd: dir,
     encoding: 'utf8',
     env: { ...process.env, NO_COLOR: '1', CLEAN_JSDOC_THEME_BUILD: '' },
+    // spawnSync blocks the worker, so vitest's own timeout can't fire: bound it here.
+    timeout: 90_000,
+    killSignal: 'SIGKILL',
   });
+  if (r.error) {
+    throw new Error(`JSDoc did not finish: ${r.error.message}\n${r.stdout}\n${r.stderr}`);
+  }
   const outPath = (rel: string): string => join(dir, 'out', ...rel.split('/'));
   return {
     status: r.status,
@@ -81,7 +90,7 @@ async function runJsdoc(files: Record<string, string | Buffer>, conf: JSDocConf)
 }
 
 afterAll(async () => {
-  await Promise.all(dirs.map((d) => rm(d, { recursive: true, force: true })));
+  await Promise.all(dirs.map((d) => rm(d, { recursive: true, force: true, maxRetries: 3 })));
 });
 
 /** The props a page hands to the island called `name` (via its data-island-id). */
@@ -194,11 +203,11 @@ describe('JSDoc CLI end to end: reported bugs stay fixed', () => {
         sectionOrder: ['Global', 'Classes', 'Tutorials'],
       },
     });
-  }, 120_000);
+  }, SPAWN_TEST_TIMEOUT);
 
   it('builds with exit 0 and skips no page', () => {
     expect(run.output).not.toContain('failed to render');
-    expect(run.status).toBe(0);
+    expect(run.status, run.output).toBe(0);
   });
 
   it('loads from `template: node_modules/clean-jsdoc-theme`, the package root (PR #356)', () => {
@@ -273,7 +282,7 @@ describe('JSDoc CLI end to end: reported bugs stay fixed', () => {
     expect(md).toContain("- `sep` (string, optional, default: `''`)");
     const html = run.read('global/index.html');
     expect(html).toMatch(/default: <code[^>]*>&quot;&quot;<\/code>/);
-    expect(html).not.toContain(String.fromCharCode(92) + '&quot;');
+    expect(html).not.toContain('\\&quot;');
   });
 
   it('prints no announcement or promotion while generating (#332)', () => {
@@ -320,50 +329,64 @@ describe('JSDoc CLI end to end: reported bugs stay fixed', () => {
 describe('JSDoc CLI end to end: configuration problems (PR #356)', () => {
   const MIN = { 'src/a.js': '/** A thing. */\nexport const a = 1;\n' };
 
-  it('without plugins/markdown: exits 1, says what to add, writes nothing', async () => {
-    const run = await runJsdoc(MIN, {});
-    expect(run.status).toBe(1);
-    expect(run.output).toContain('"plugins": ["plugins/markdown"]');
-    expect(run.output).not.toContain('Unhandled rejection');
-    expect(run.has('global/index.html')).toBe(false);
-  }, 120_000);
+  it(
+    'without plugins/markdown: exits 1, says what to add, writes nothing',
+    async () => {
+      const run = await runJsdoc(MIN, {});
+      expect(run.status, run.output).toBe(1);
+      expect(run.output).toContain('"plugins": ["plugins/markdown"]');
+      expect(run.output).not.toContain('Unhandled rejection');
+      expect(run.has('global/index.html')).toBe(false);
+    },
+    SPAWN_TEST_TIMEOUT
+  );
 
-  it('leftover v4 options: builds, and warns about each one with a hint', async () => {
-    const run = await runJsdoc(MIN, {
-      plugins: ['plugins/markdown'],
-      opts: {
-        theme_opts: { default_theme: 'dark', sections: ['Global', 'Classes'] },
-        title: 'Old title',
-        search: true,
-      },
-    });
-    expect(run.status).toBe(0);
-    expect(run.has('global/index.html')).toBe(true);
-    expect(run.output).toContain('(theme_opts) [opts/v4-theme-opts]');
-    expect(run.output).toContain('(theme_opts.default_theme) [opts/v4-option]');
-    expect(run.output).toContain('(theme_opts.sections) [opts/v4-option]');
-    expect(run.output).toContain('use `sectionOrder` in v5');
-    expect(run.output).toContain('(title) [opts/v4-name]');
-    expect(run.output).toContain('use `siteName` in v5');
-    expect(run.output).toContain('(search) [opts/v4-name]');
-  }, 120_000);
+  describe('leftover v4 options, theme loaded from `template: node_modules/clean-jsdoc-theme/dist`', () => {
+    let run: Run;
 
-  it('strict + a leftover theme_opts block: exits 1 and writes nothing', async () => {
-    const run = await runJsdoc(MIN, {
-      plugins: ['plugins/markdown'],
-      opts: { strict: true, theme_opts: { default_theme: 'dark' } },
-    });
-    expect(run.status).toBe(1);
-    expect(run.output).toContain('theme_opts');
-    expect(run.has('global/index.html')).toBe(false);
-  }, 120_000);
+    // One spawn serves both checks: the dist template path and the v4 warnings.
+    beforeAll(async () => {
+      run = await runJsdoc(MIN, {
+        plugins: ['plugins/markdown'],
+        opts: {
+          template: `${TEMPLATE_ROOT}/dist`,
+          theme_opts: { default_theme: 'dark', sections: ['Global', 'Classes'] },
+          title: 'Old title',
+          search: true,
+        },
+      });
+    }, SPAWN_TEST_TIMEOUT);
 
-  it('`template: node_modules/clean-jsdoc-theme/dist` keeps working', async () => {
-    const run = await runJsdoc(MIN, {
-      plugins: ['plugins/markdown'],
-      opts: { template: `${TEMPLATE_ROOT}/dist` },
+    it('`template: node_modules/clean-jsdoc-theme/dist` keeps working', () => {
+      expect(run.output).not.toContain('Unable to load template');
+      expect(run.status, run.output).toBe(0);
+      expect(run.has('global/index.html')).toBe(true);
     });
-    expect(run.status).toBe(0);
-    expect(run.has('global/index.html')).toBe(true);
-  }, 120_000);
+
+    it('leftover v4 options: builds, and warns about each one with a hint', () => {
+      expect(run.status, run.output).toBe(0);
+      expect(run.has('global/index.html')).toBe(true);
+      expect(run.output).toContain('(theme_opts) [opts/v4-theme-opts]');
+      expect(run.output).toContain('(theme_opts.default_theme) [opts/v4-option]');
+      expect(run.output).toContain('(theme_opts.sections) [opts/v4-option]');
+      expect(run.output).toContain('use `sectionOrder` in v5');
+      expect(run.output).toContain('(title) [opts/v4-name]');
+      expect(run.output).toContain('use `siteName` in v5');
+      expect(run.output).toContain('(search) [opts/v4-name]');
+    });
+  });
+
+  it(
+    'strict + a leftover theme_opts block: exits 1 and writes nothing',
+    async () => {
+      const run = await runJsdoc(MIN, {
+        plugins: ['plugins/markdown'],
+        opts: { strict: true, theme_opts: { default_theme: 'dark' } },
+      });
+      expect(run.status, run.output).toBe(1);
+      expect(run.output).toContain('theme_opts');
+      expect(run.has('global/index.html')).toBe(false);
+    },
+    SPAWN_TEST_TIMEOUT
+  );
 });

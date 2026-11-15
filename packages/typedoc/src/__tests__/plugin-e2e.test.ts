@@ -11,7 +11,7 @@ import { Application } from 'typedoc';
 const PLUGIN = pathToFileURL(fileURLToPath(new URL('../../dist/index.js', import.meta.url))).href;
 
 /** TypeDoc requires posix separators in `entryPoints`/`tsconfig` globs. */
-const posix = (p: string): string => p.split(String.fromCharCode(92)).join('/');
+const posix = (p: string): string => p.split('\\').join('/');
 
 let tmp: string;
 let out: string;
@@ -78,7 +78,7 @@ beforeAll(async () => {
 }, 120_000);
 
 afterAll(async () => {
-  if (tmp) await rm(tmp, { recursive: true, force: true });
+  if (tmp) await rm(tmp, { recursive: true, force: true, maxRetries: 3 });
 });
 
 describe('TypeDoc plugin end to end (typedoc.json as users write it)', () => {
