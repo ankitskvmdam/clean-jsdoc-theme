@@ -1310,3 +1310,26 @@ describe('render() — literal angle-bracket words with braces', () => {
     expect(file && asString(file)).toContain('a &lt;Foo bar=&quot;{x}&quot;>c&lt;/Foo> d');
   });
 });
+
+/** The props a page hands to the island called `name` (via its data-island-id). */
+function islandProps(html: string, name: string): Record<string, unknown> {
+  const id = new RegExp(`data-island="${name}" data-island-id="([^"]+)"`).exec(html)?.[1];
+  expect(id, `no ${name} island on the page`).toBeDefined();
+  const payload = /<script type="application\/json" data-island-props>(.*?)<\/script>/su.exec(
+    html
+  )?.[1];
+  expect(payload, 'no island props payload on the page').toBeDefined();
+  return (JSON.parse(payload!) as Record<string, Record<string, unknown>>)[id!];
+}
+
+describe('render() — the mobile drawer knows the current page (#303)', () => {
+  it('hands the mobile-nav island the same currentSlug and nav as the desktop sidebar', async () => {
+    const result = await render(makeManifest(), { theme: minimalTheme });
+    const page = asString(result.files.find((f) => f.path === 'guide/intro/index.html')!);
+    const mobile = islandProps(page, 'mobile-nav');
+    const desktop = islandProps(page, 'sidebar');
+    expect(mobile.currentSlug).toBe('guide/intro');
+    expect(mobile.currentSlug).toBe(desktop.currentSlug);
+    expect(mobile.nav).toEqual(desktop.nav);
+  });
+});
