@@ -16,6 +16,7 @@ import { examplesBlocks } from '../mdast/doclet';
 import { toMdx } from '../mdx';
 import { generateSite } from '../index';
 import { stripHtml } from '../generate-site';
+import { expectLinearScaling, PERF_TEST_TIMEOUT } from './linear-scaling';
 
 /** Serialize converted blocks the way a page body is written. */
 const mdx = (nodes: RootContent[]): string =>
@@ -336,12 +337,19 @@ describe('comments', () => {
     );
   });
 
-  it('is linear on many unterminated `<!--`', () => {
+  it('leaves many unterminated `<!--` as they are', () => {
     const html = '<!--x'.repeat(40_000);
-    const start = performance.now();
     expect(escapeLiteralTags(html)).toBe(html);
-    expect(performance.now() - start).toBeLessThan(500);
   });
+
+  it(
+    'escapeLiteralTags on many unterminated `<!--` scales linearly',
+    () => {
+      // The size is in characters, roughly (see linear-scaling.ts).
+      expectLinearScaling(escapeLiteralTags, (n) => '<!--x'.repeat(n / 5));
+    },
+    PERF_TEST_TIMEOUT
+  );
 });
 
 describe('@example captions', () => {
@@ -550,15 +558,18 @@ describe('page frontmatter description — comments and size', () => {
     expect(describeOf('<p>a <!-- hidden <T> --> b</p>')).toBe('a b');
   });
 
-  // Timed on stripHtml itself: the body path for such input is bounded by the
-  // MDX serializer, not by anything here.
+  // Measured on stripHtml itself: the body path for such input is bounded by the
+  // MDX serializer, not by anything here. Each input is one unit repeated to
+  // about n characters (see linear-scaling.ts).
   it.each([
-    ['stray < characters', 'a < b '.repeat(170_000)],
-    ['unterminated comment openers', 'a <!-- '.repeat(150_000)],
-    ['unclosed quoted attributes', '<a b="x '.repeat(125_000)],
-  ])('stripHtml stays fast on 1MB of %s', (_name, html) => {
-    const t = performance.now();
-    stripHtml(html);
-    expect(performance.now() - t).toBeLessThan(1000);
-  });
+    ['stray < characters', 'a < b '],
+    ['unterminated comment openers', 'a <!-- '],
+    ['unclosed quoted attributes', '<a b="x '],
+  ])(
+    'stripHtml on %s scales linearly',
+    (_name, unit) => {
+      expectLinearScaling(stripHtml, (n) => unit.repeat(n / unit.length));
+    },
+    PERF_TEST_TIMEOUT
+  );
 });
