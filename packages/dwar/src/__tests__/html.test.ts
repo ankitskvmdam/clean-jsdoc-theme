@@ -390,3 +390,29 @@ describe('renderHtmlDocument — locale (i18n)', () => {
     expect(html).toContain('"locale":"fr"');
   });
 });
+
+describe('renderHtmlDocument — custom JS order (#299)', () => {
+  it('runs custom JS after every theme script, files before the inline string (#299)', () => {
+    const html = doc({
+      customJsLinks: ['/_assets/a.h1.js', '/_assets/b.h2.js'],
+      customJs: 'window.x=1',
+    });
+    const mod = html.lastIndexOf('<script type="module">');
+    const a = html.indexOf('<script src="/_assets/a.h1.js">');
+    const b = html.indexOf('<script src="/_assets/b.h2.js">');
+    const inline = html.indexOf('<script>window.x=1</script>');
+    expect(mod).toBeGreaterThanOrEqual(0);
+    expect(a).toBeGreaterThan(mod);
+    expect(b).toBeGreaterThan(a);
+    expect(inline).toBeGreaterThan(b);
+    // Nothing runs after the user's code: the page ends with the custom scripts,
+    // so every theme script (module loader and classic helpers alike) is above them.
+    expect(html.indexOf('<script', inline + 1)).toBe(-1);
+    expect(html.slice(inline).endsWith('</script></body></html>')).toBe(true);
+    expect(html.slice(a)).toBe(
+      '<script src="/_assets/a.h1.js"></script>' +
+        '<script src="/_assets/b.h2.js"></script>' +
+        '<script>window.x=1</script></body></html>'
+    );
+  });
+});
