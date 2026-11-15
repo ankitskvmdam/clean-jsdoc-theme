@@ -1333,3 +1333,35 @@ describe('render() — the mobile drawer knows the current page (#303)', () => {
     expect(mobile.nav).toEqual(desktop.nav);
   });
 });
+
+describe('render() — locale links to a page whose slug is index (#333)', () => {
+  it('links the Index class page with a trailing slash in the switcher and hreflang', async () => {
+    const manifest = makeManifest();
+    manifest.pages.push({
+      slug: 'index',
+      frontmatter: { title: 'Index', kind: 'class' },
+      body: '# Index\n\nA class named Index.\n',
+      headings: [],
+    });
+    const result = await render(manifest, {
+      theme: minimalTheme,
+      locale: {
+        code: 'en',
+        defaultLocale: 'en',
+        messages: {},
+        siteBasePath: '/',
+        locales: [
+          { code: 'en', label: 'English' },
+          { code: 'fr', label: 'Français' },
+        ],
+      },
+    });
+    const page = asString(result.files.find((f) => f.path === 'index/index.html')!);
+    expect(page).toContain('<link rel="alternate" hreflang="fr" href="/fr/index/"');
+    expect(page).toContain('<link rel="alternate" hreflang="en" href="/index/"');
+    const switcher = islandProps(page, 'language-switcher') as {
+      locales: Array<{ code: string; href: string }>;
+    };
+    expect(switcher.locales.map((l) => l.href)).toEqual(['/index/', '/fr/index/']);
+  });
+});
