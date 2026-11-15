@@ -27,9 +27,14 @@ jobs:
       # Trusted publishing (OIDC) needs npm >= 11.5.1; Node 22 ships npm 10.x.
       # `changeset publish` runs `pnpm publish`, which shells out to the `npm`
       # on PATH, so upgrading the global npm is what makes the token-less
-      # publish below work.
-      - run: npm install -g npm@latest
-      - run: npm --version
+      # publish below work. Pinned to npm 11, not `latest`: npm 12 rejects the
+      # `--git-checks` flag pnpm forwards to it (`EUNKNOWNCONFIG`), which is what
+      # broke the v5.2.1 release run. Re-test before moving to npm 12.
+      - run: npm install -g npm@^11.5.1
+      - name: Check npm supports trusted publishing
+        run: |
+          npm --version
+          node -e "const [a,b]=process.argv[1].split('.').map(Number);if(a!==11||b<5){console.error('npm 11.5.1+ (and below 12) is required for trusted publishing, got '+process.argv[1]);process.exit(1)}" "$(npm --version)"
 
       - run: pnpm install --frozen-lockfile
 

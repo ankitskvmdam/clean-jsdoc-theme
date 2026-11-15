@@ -191,8 +191,10 @@ Gotchas, from npm's docs:
 - `repository.url` in each `package.json` must match the GitHub repo exactly
   (all eight already use `git+https://github.com/ankitskvmdam/clean-jsdoc-theme.git`).
 - Trusted publishing needs **npm ≥ 11.5.1**; Node 22 bundles npm 10, so the
-  workflow runs `npm install -g npm@latest` first. `changeset publish` runs
-  `pnpm publish`, which shells out to that global `npm`.
+  workflow runs `npm install -g npm@^11.5.1` first and fails fast if the result
+  isn't npm 11.5+. `changeset publish` runs `pnpm publish`, which shells out to
+  that global `npm`. Keep it on **npm 11**: npm 12 rejects the `--git-checks`
+  flag pnpm forwards (`EUNKNOWNCONFIG`), which is what broke the v5.2.1 run.
 - Self-hosted runners and reusable (`workflow_call`) workflows aren't supported.
 - Once the publishers work, set each package to *Require two-factor
   authentication and disallow tokens* and revoke the old automation token.
