@@ -113,6 +113,11 @@ functions、members、constants、enums、events —— 都会被收集到单个
 [`generate-site.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/generate-site.ts)
 中的 `buildGlobalsView`。
 
+functions 列在 **Functions** 下，variables 列在 **Members** 下。对于作为参数
+传入或用作 object property 的 class expression，JSDoc 会把它的 methods 报告为
+global functions，因此它们也会出现在这里；在 class 上添加 `@class Name`，并在其
+methods 上添加 `@memberof Name#`，即可为它们生成 class 页面。
+
 没有任何区块映射的符号种类会落入一个兜底的 **Other** 区块，
 追加在最后 —— 这是一个在实践中为空的安全网。
 

@@ -14,6 +14,7 @@ import {
 import { classViewToMdast } from '../mdast/class-view';
 import { getClassView } from '../class-view';
 import { getJSDocTaffyData } from './factory';
+import { CLASS_EXPRESSION_DOCLETS } from './class-expression-fixture';
 
 function makeCollection(items: unknown[]): TJSDocSaltyCollection<TDoclet> {
   return salty.taffy(items) as unknown as TJSDocSaltyCollection<TDoclet>;
@@ -338,6 +339,38 @@ describe('buildGlobalsPage', () => {
     expect(page.body).toContain('name="MAX_USERS"');
     // The global enum constant renders too.
     expect(page.body).toContain('name="Roles"');
+    // Global functions are headed "Functions", not the class page's
+    // "Instance Methods" (#375).
+    expect(page.body).toContain('## Functions');
+    expect(page.body).not.toContain('Instance Methods');
+  });
+
+  it('lists global functions under Functions, never Instance Methods (#375)', () => {
+    const manifest = generateSite(makeCollection(CLASS_EXPRESSION_DOCLETS));
+    const page = manifest.pages.find((p) => p.slug === 'global')!;
+    expect(page).toBeDefined();
+    const body = page.body;
+    expect(body).toContain('## Functions');
+    expect(body).toContain('## Members');
+    expect(body).not.toContain('Instance Methods');
+    expect(body).not.toContain('Static Methods');
+    expect(body).not.toContain('Instance Fields');
+    const section = (title: string) =>
+      body.split('\n## ').find((s) => s.startsWith(`${title}\n`)) ?? '';
+    const functions = section('Functions');
+    // Plain global functions and the class-expression methods JSDoc reports as
+    // globals (`r`/`sr` of an argument-position class, `q`/`sq` of an
+    // object-property class) all land under Functions.
+    for (const name of ['register', 'plain', 'r', 'sr', 'q', 'sq']) {
+      expect(functions).toContain(`name="${name}"`);
+    }
+    expect(section('Members')).toContain('name="counter"');
+    expect(page.headings).toContainEqual(expect.objectContaining({ depth: 2, text: 'Functions' }));
+    // The class-expression methods stay on Globals: no class page is invented.
+    expect(manifest.pages.some((p) => /(^|\/)(o|obj)$/i.test(p.slug))).toBe(false);
+    expect(
+      manifest.pages.filter((p) => p.slug !== 'global').some((p) => p.body.includes('name="q"'))
+    ).toBe(false);
   });
 
   it('does not pull global-scope container/typedef symbols into the globals page', () => {

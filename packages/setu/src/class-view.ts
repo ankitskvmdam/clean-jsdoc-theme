@@ -20,6 +20,11 @@ export interface ClassMember extends TDoclet {
 }
 
 export interface MemberBuckets {
+  /**
+   * "Instance" here means "not static": global- and inner-scope functions land
+   * in this bucket too (and in `instanceFields` for members). The Globals page
+   * relabels them via `globalSections`.
+   */
   instanceMethods: ClassMember[];
   staticMethods: ClassMember[];
   instanceFields: ClassMember[];

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { TDoclet } from '@clean-jsdoc-theme/utils';
-import { getClassView } from '../class-view';
+import { bucketClassMembers, getClassView } from '../class-view';
 import { classViewToMdx } from '../mdx';
 import {
   defaultDeprecationText,
@@ -19,6 +19,7 @@ import {
   constructorSignature,
   containerViewToMdast,
   displayMemberName,
+  globalSections,
   memberBadges,
   memberBlocks,
   memberSignatureSuffix,
@@ -571,6 +572,48 @@ describe('containerViewToMdast — Constructor section (description)', () => {
     });
     const json = flatText(containerViewToMdast(view));
     expect(json.split('Built from a constructor comment.').length - 1).toBe(1);
+  });
+});
+
+describe('globalSections (#375)', () => {
+  const globals: ClassMember[] = [
+    { kind: 'function', scope: 'global', name: 'fn', longname: 'fn' },
+    { kind: 'member', scope: 'global', name: 'v', longname: 'v' },
+    { kind: 'constant', scope: 'global', name: 'C', longname: 'C' },
+  ];
+
+  it('heads global functions "Functions" and global variables "Members"', () => {
+    const sections = globalSections(bucketClassMembers(globals));
+    expect(sections.map((s) => s.title)).toEqual([
+      'Functions',
+      'Members',
+      'Enums',
+      'Events',
+      'Other',
+    ]);
+    expect(sections[0].members.map((m) => m.name)).toEqual(['fn']);
+    expect(sections[1].members.map((m) => m.name)).toEqual(['v']);
+    expect(sections[4].members.map((m) => m.name)).toEqual(['C']);
+  });
+
+  it('is what a jsdoc-flavor Globals view renders with; a class view keeps Instance Methods', () => {
+    const globalView: ContainerView = {
+      ...makeContainerView({ kind: 'global', name: 'Globals' } as unknown as TDoclet, 'global'),
+      ...bucketClassMembers(globals),
+    };
+    const globalJson = flatText(containerViewToMdast(globalView));
+    expect(globalJson).toContain('"Functions"');
+    expect(globalJson).toContain('"Members"');
+    expect(globalJson).not.toContain('Instance Methods');
+    expect(globalJson).not.toContain('Instance Fields');
+
+    const classView: ContainerView = {
+      ...makeContainerView({ kind: 'class', name: 'K', longname: 'K' } as TDoclet),
+      ...bucketClassMembers([{ kind: 'function', scope: 'instance', name: 'm', longname: 'K#m' }]),
+    };
+    const classJson = flatText(containerViewToMdast(classView));
+    expect(classJson).toContain('"Instance Methods"');
+    expect(classJson).not.toContain('"Functions"');
   });
 });
 

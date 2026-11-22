@@ -133,6 +133,17 @@ describe('bucketClassMembers', () => {
     ];
     expect(bucketClassMembers(members).instanceMethods.map((m) => m.name)).toEqual(['a', 'b', 'c']);
   });
+
+  it('files global-scope functions and members under the non-static buckets', () => {
+    // "instance" means "not static": the Globals page relabels these via
+    // globalSections (#375).
+    const b = bucketClassMembers([
+      { kind: 'function', scope: 'global', name: 'fn' },
+      { kind: 'member', scope: 'global', name: 'v' },
+    ]);
+    expect(b.instanceMethods.map((m) => m.name)).toEqual(['fn']);
+    expect(b.instanceFields.map((m) => m.name)).toEqual(['v']);
+  });
 });
 
 describe('walkAugmentsChain', () => {

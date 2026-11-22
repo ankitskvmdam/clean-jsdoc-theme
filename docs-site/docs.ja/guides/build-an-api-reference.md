@@ -117,6 +117,12 @@ members、constants、enums、events — は、1 つの synthetic な **Globals*
 [`generate-site.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/generate-site.ts)
 の `buildGlobalsView` を参照してください。
 
+functions は **Functions** の下に、variables は **Members** の下に一覧されます。
+引数として渡された、または object property として使われた class expression の
+methods を JSDoc は global functions として報告するため、それらもここに表示されます。
+それらに class page を与えるには、class に `@class Name` を、その methods に
+`@memberof Name#` を追加してください。
+
 section mapping のない symbol kind は catch-all の **Other** section に入り、最後に
 追加されます — 実際には空のままのセーフティネットです。
 

@@ -10,6 +10,8 @@ import { describe, it, expect } from 'vitest';
 import { default as salty } from '@jsdoc/salty';
 import type { NavNode, TDoclet, TJSDocSaltyCollection } from '@clean-jsdoc-theme/utils';
 import { generateSite } from '../index';
+import { bucketClassMembers, type ContainerView } from '../class-view';
+import { containerViewToMdast } from '../mdast/class-view';
 
 function makeCollection(items: unknown[]): TJSDocSaltyCollection<TDoclet> {
   return salty.taffy(items) as unknown as TJSDocSaltyCollection<TDoclet>;
@@ -163,6 +165,29 @@ describe('flavor: typedoc — class sections + module index', () => {
     const body = pageByLongname(m, 'module:lib.Widget')!.body;
     expect(body).toContain('## Accessors');
     expect(body).toContain('## Methods');
+  });
+
+  it('keeps TypeDoc labels on a Globals view (the jsdoc "Functions" relabel does not apply)', () => {
+    // Guard for #375: the jsdoc flavor heads Globals functions "Functions"; the
+    // typedoc flavor routes kind 'global' through typedocClassSections, so a
+    // global function stays under "Methods" and a global variable under
+    // "Properties" — unchanged.
+    const view: ContainerView = {
+      doclet: { kind: 'global', name: 'Globals' } as unknown as TDoclet,
+      kind: 'global',
+      augments: [],
+      constructorParams: [],
+      constructorParamNames: [],
+      ...bucketClassMembers([
+        { kind: 'function', scope: 'global', name: 'fn', longname: 'fn' },
+        { kind: 'member', scope: 'global', name: 'v', longname: 'v' },
+      ]),
+    };
+    const json = JSON.stringify(containerViewToMdast(view, { flavor: 'typedoc' }));
+    expect(json).toContain('"Methods"');
+    expect(json).toContain('"Properties"');
+    expect(json).not.toContain('"Functions"');
+    expect(json).not.toContain('"Members"');
   });
 
   it('renders the module page as a kind-grouped index of links', () => {
