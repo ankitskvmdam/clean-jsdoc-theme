@@ -158,4 +158,5 @@ Pick `docs` for a shared, tool-agnostic guides folder; `projectDocuments` if
 you're already organizing docs the TypeDoc-native way. Both route their local
 images (Markdown `![](src)` and raw `<img src>`) through the content-hashed
 `_assets/` pipeline; a `projectDocuments` / `@document` page's images resolve
-relative to that document's own file.
+relative to that document's own file. Reference-style images (`![x][id]` with
+`[id]: ./x.png`) aren't rewritten yet in either.

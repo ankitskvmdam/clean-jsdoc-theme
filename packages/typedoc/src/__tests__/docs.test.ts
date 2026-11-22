@@ -214,6 +214,36 @@ describe('resolveLocatedDocImages', () => {
     expect(warn).not.toHaveBeenCalled();
   });
 
+  it('percent-encodes a file name with a space so the src is a valid destination', async () => {
+    const spaced = join(dir, 'spaced');
+    await mkdir(spaced, { recursive: true });
+    await writeFile(join(spaced, 'my pic.png'), PNG_1X1);
+    const collector = createImageCollector(noop);
+    const docs = await resolveLocatedDocImages(
+      [
+        // A docs-directory style raw <img> with a literal space…
+        {
+          doc: { path: 'a', type: 'html', content: '<img src="./my pic.png">' },
+          baseDir: spaced,
+        },
+        // …and the packages-mode fallback, keyed by TypeDoc's `%20` src text.
+        {
+          doc: { path: 'b', type: 'markdown', content: '![Sp](./my%20pic.png)' },
+          files: new Map([['./my%20pic.png', join(spaced, 'my pic.png')]]),
+        },
+      ],
+      collector
+    );
+    expect(docs[0].content).toMatch(/^<img src="\/_assets\/my%20pic\.[0-9a-f]{8}\.png">$/);
+    expect(docs[1].content).toMatch(/^!\[Sp\]\(\/_assets\/my%20pic\.[0-9a-f]{8}\.png\)$/);
+    // One file, written under its real (decoded) name.
+    expect(collector.files).toHaveLength(1);
+    expect(collector.files[0].path).toMatch(/^_assets\/my pic\.[0-9a-f]{8}\.png$/);
+    expect(decodeURIComponent(docs[1].content.slice('![Sp]('.length, -1))).toBe(
+      '/' + collector.files[0].path
+    );
+  });
+
   it('returns the same doc object when nothing changed', async () => {
     const input = { path: 'x', type: 'markdown' as const, content: 'No images here.' };
     const [doc] = await resolveLocatedDocImages(

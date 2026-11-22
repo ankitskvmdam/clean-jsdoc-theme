@@ -47,6 +47,18 @@ function isServableUrl(value: string): boolean {
   return /^(https?:)?\/\//i.test(value) || /^data:/i.test(value);
 }
 
+/**
+ * Percent-encode an asset file name for use in a URL: `encodeURIComponent`,
+ * plus the `'`, `(` and `)` it leaves alone (they'd end a single-quoted
+ * attribute or a Markdown image destination).
+ */
+function encodeAssetName(name: string): string {
+  return encodeURIComponent(name).replace(
+    /['()]/g,
+    (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase()
+  );
+}
+
 /** Short content hash for cache-busting an asset's served name. */
 function contentHash(bytes: Uint8Array): string {
   return createHash('sha256').update(bytes).digest('hex').slice(0, 8);
@@ -193,15 +205,19 @@ export function createImageCollector(warn: Warn): ImageCollector {
       return null;
     }
     const ext = extname(abs);
-    const served = `_assets/${basename(abs, ext) || 'asset'}.${contentHash(bytes)}${ext}`;
+    const name = `${basename(abs, ext) || 'asset'}.${contentHash(bytes)}${ext}`;
+    const served = `_assets/${name}`;
     if (!seenServed.has(served)) {
       seenServed.add(served);
       files.push({ path: served, contents: bytes });
     }
     // Base-free by design: rang's `MdxImg` adds `basePath` for HTML and dwar's
     // `prefixRootRelativeUrls` adds it for the companion .md / llms-full.txt —
-    // exactly once each (#377). `inlineSvgs` is keyed by this same href.
-    const href = '/' + served;
+    // exactly once each (#377). `inlineSvgs` is keyed by this same href. The
+    // file name is percent-encoded so a name with a space (or `#`, `?`, a paren
+    // or quote) is still a valid Markdown destination / attribute value; a
+    // static server decodes it back to the file written above.
+    const href = '/_assets/' + encodeAssetName(name);
     if (ext.toLowerCase() === '.svg') {
       inlineSvgs[href] = bytes
         .toString('utf8')

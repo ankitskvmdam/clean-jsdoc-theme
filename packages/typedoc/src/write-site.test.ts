@@ -50,10 +50,12 @@ beforeAll(async () => {
   // Project documents with local images (#378): resolved against each doc's own file.
   await writeFile(
     join(tmp, 'documents', 'gallery.md'),
-    '# Gallery\n\n![Shot](./shot.png)\n\n<img src="./shot.png" alt="raw">\n\n![Solo](./solo.png)\n',
+    '# Gallery\n\n![Shot](./shot.png)\n\n<img src="./shot.png" alt="raw">\n\n![Solo](./solo.png)\n\n' +
+      '<img src="./my shot.png" alt="spaced">\n',
     'utf8'
   );
   await writeFile(join(tmp, 'documents', 'shot.png'), PNG_1X1);
+  await writeFile(join(tmp, 'documents', 'my shot.png'), PNG_1X1);
   await writeFile(join(tmp, 'documents', 'solo.png'), Buffer.concat([PNG_1X1, Buffer.from([0])]));
   await mkdir(join(tmp, 'notes'), { recursive: true });
   await writeFile(
@@ -351,6 +353,12 @@ describe('writeSite — projectDocuments local images (#378)', () => {
     expect(read(out, 'api-notes/index.html')).toContain(`<img src="${srcs[0]}"`);
     expect(read(out, 'gallery/index.md')).toContain(`![Shot](${srcs[0]})`);
     expect(warned.some((m) => m.includes('could not read image'))).toBe(false);
+    // A file name with a space: percent-encoded src that decodes to the written file.
+    const spaced = html.match(/<img src="(\/_assets\/my%20shot\.[0-9a-f]{8}\.png)" alt="spaced"/);
+    expect(spaced).not.toBeNull();
+    const onDisk = decodeURIComponent(spaced![1]).slice(1).split('/');
+    expect(existsSync(join(out, ...onDisk))).toBe(true);
+    expect(read(out, 'gallery/index.md')).toContain(`![spaced](${spaced![1]})`);
   }, 60_000);
 
   it('sub-path: the src carries basePath exactly once, in the HTML, the .md and llms-full.txt', async () => {

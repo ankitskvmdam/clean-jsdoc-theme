@@ -134,3 +134,47 @@ describe('TypeDoc plugin end to end (typedoc.json as users write it)', () => {
     expect(logged.join('\n')).not.toContain('could not read image');
   });
 });
+
+// `projectDocuments` turns this single-entry project's root into a module page
+// (moving `block/`), so it gets its own small run instead of the shared one.
+describe('TypeDoc plugin end to end — projectDocuments images (#378)', () => {
+  let pout: string;
+  const plogged: string[] = [];
+
+  beforeAll(async () => {
+    pout = join(tmp, 'dist-pdocs');
+    await mkdir(join(tmp, 'manual', 'img'), { recursive: true });
+    await writeFile(
+      join(tmp, 'manual', 'manual.md'),
+      '# Manual\n\n![Shot](./img/shot.png)\n\n<img src="./img/shot.png" alt="raw">\n',
+      'utf8'
+    );
+    await writeFile(join(tmp, 'manual', 'img', 'shot.png'), PNG_1X1);
+    const app = await Application.bootstrapWithPlugins({
+      entryPoints: [posix(join(tmp, 'src', 'index.ts'))],
+      tsconfig: posix(join(tmp, 'tsconfig.json')),
+      projectDocuments: [posix(join(tmp, 'manual', 'manual.md'))],
+      plugin: [PLUGIN],
+      outputs: [{ name: 'clean-jsdoc-theme', path: posix(pout) }],
+      skipErrorChecking: true,
+    } as Parameters<typeof Application.bootstrapWithPlugins>[0]);
+    vi.spyOn(app.logger, 'log').mockImplementation((message) => {
+      plogged.push(String(message));
+    });
+    const project = await app.convert();
+    if (!project) throw new Error('typedoc convert() returned undefined');
+    await app.generateOutputs(project);
+  }, 120_000);
+
+  it('copies the images and rewrites both forms', () => {
+    expect(plogged.join('\n')).toContain('build complete');
+    const html = readFileSync(join(pout, 'manual', 'index.html'), 'utf8');
+    const srcs = [...html.matchAll(/<img src="(\/_assets\/shot\.[0-9a-f]{8}\.png)"/g)].map(
+      (m) => m[1]
+    );
+    expect(srcs).toHaveLength(2);
+    expect(html).not.toContain('./img/shot.png');
+    expect(existsSync(join(pout, ...srcs[0].slice(1).split('/')))).toBe(true);
+    expect(plogged.join('\n')).not.toContain('could not read image');
+  });
+});
