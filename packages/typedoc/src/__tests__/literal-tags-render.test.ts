@@ -55,7 +55,11 @@ function docPage(md: string): SiteManifest {
   return site;
 }
 
-describe('literal angle-bracket words in inline-only fragments render', () => {
+// Each test runs dwar's full render() (Shiki starts cold, every island chunk is
+// bundled), which can take longer than vitest's default 5 s while every
+// package's suite runs in parallel (#355) — as heading-id-parity.test.ts
+// allows its render tests.
+describe('literal angle-bracket words in inline-only fragments render', { timeout: 60_000 }, () => {
   it.each([
     [
       'a <step> item',
