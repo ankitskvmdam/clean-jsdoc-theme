@@ -1120,6 +1120,40 @@ describe('render() — HTML comments in prose', () => {
     }
   );
 
+  it('keeps the comment placeholder out of image alt text (#380)', async () => {
+    const body = [
+      '![a <!-- x --> b](p.png)',
+      '',
+      '![https://x<!-- c -->](q.png)',
+      '',
+      '![glob src/**/*.js <!-- x -->](r.png)',
+      '',
+      '![CSS /* comment */ example](s.png)',
+      '',
+      '![m <!--',
+      'x',
+      '--> n](t.png)',
+      '',
+      '![a <!-- y --> b][ref]',
+      '',
+      '[ref]: u.png',
+      '',
+      '[l <!-- z --> m](v)',
+      '',
+    ].join('\n');
+    const { err, html } = await renderOne('image-alt-comment', body);
+    expect(err, err?.message).toBeUndefined();
+    const main = mainOf(html);
+    expect(main.match(/alt="a {2}b"/g)).toHaveLength(2);
+    expect(main).toContain('alt="https://x"');
+    expect(main).toContain('alt="glob src/**/*.js "');
+    expect(main).toContain('alt="CSS /* comment */ example"');
+    expect(main).toMatch(/alt="m\s+n"/);
+    expect(main).toMatch(/<a[^>]*>l\s+m<\/a>/);
+    // Only the user's own `/*`s survive (two in the glob, one in the CSS).
+    expect(main.match(/\/\*/g)).toHaveLength(3);
+  });
+
   it('ends a bare URL where a comment glued to it stood', async () => {
     const body = 'See https://example.com/docs<!-- TODO -->. And `a`<!-- b -->`c`.\n';
     const { err, html } = await renderOne('url-comment', body);
