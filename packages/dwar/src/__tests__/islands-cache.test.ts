@@ -9,8 +9,17 @@ const WD = resolve('/nonexistent-cjt-wd/project');
 describe('collectCacheInputs()', () => {
   it('skips virtual / non-file namespaces', () => {
     expect(
-      collectCacheInputs(['island-virtual:sidebar', '(disabled):fs', 'island-virtual:toc'], WD)
+      collectCacheInputs(
+        ['island-virtual:sidebar', '(disabled):fs', 'island-virtual:toc', '<runtime>'],
+        WD
+      )
     ).toEqual([]);
+  });
+
+  it('keeps a relative path whose segment contains a colon', () => {
+    expect(collectCacheInputs(['node_modules/we:ird/index.js'], WD)).toEqual([
+      resolve(WD, 'node_modules/we:ird/package.json'),
+    ]);
   });
 
   it('hashes pnpm-style @clean-jsdoc-theme files as first-party', () => {

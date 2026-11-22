@@ -1,5 +1,6 @@
 import { tmpdir } from 'node:os';
-import { cp, mkdir, mkdtemp, rm, readdir, readFile, writeFile } from 'node:fs/promises';
+import { realpathSync } from 'node:fs';
+import { cp, mkdir, mkdtemp, rm, readdir, readFile, symlink, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, it, expect } from 'vitest';
 import {
@@ -122,7 +123,7 @@ describe('bundleIslands() — cache', () => {
     // Cold: builds and populates the cache.
     const first = await bundleIslands({ islands: ['sidebar'], cacheDir });
     const entries = await readdir(cacheDir);
-    const cacheFile = entries.find((f) => /^islands-v2-.+\.json$/.test(f));
+    const cacheFile = entries.find((f) => /^islands-v3-.+\.json$/.test(f));
     expect(cacheFile, 'expected an islands-*.json cache file').toBeDefined();
 
     // Warm: same inputs → cache HIT, returns an equivalent result.
@@ -191,7 +192,7 @@ describe('bundleIslands() — cache validation (#376)', () => {
     bundleIslands({ islands: ['sidebar'], resolveDir: fx, cacheDir, ...extra });
 
   async function cacheFiles(): Promise<string[]> {
-    return (await readdir(cacheDir)).filter((f) => /^islands-v2-.+\.json$/.test(f));
+    return (await readdir(cacheDir)).filter((f) => /^islands-v3-.+\.json$/.test(f));
   }
 
   async function onlyCacheFile(): Promise<string> {
@@ -279,13 +280,15 @@ describe('bundleIslands() — cache validation (#376)', () => {
     });
     await writeFile(legacyName, legacy);
 
-    // Legacy bare `{ files, entryPaths }` shape inside the v2 file.
+    // Legacy bare `{ files, entryPaths }` shape inside the current file.
     await writeFile(file, legacy);
     expect(has(await run(), SENTINEL)).toBe(false);
 
-    // Same manifest shape, but format 1.
-    await plantSentinel(file, (e) => ({ ...e, format: 1 }));
-    expect(has(await run(), SENTINEL)).toBe(false);
+    // Same manifest shape, but an older format number.
+    for (const format of [1, 2]) {
+      await plantSentinel(file, (e) => ({ ...e, format }));
+      expect(has(await run(), SENTINEL)).toBe(false);
+    }
 
     expect(await readFile(legacyName, 'utf8')).toBe(legacy);
   });
@@ -296,7 +299,7 @@ describe('bundleIslands() — cache validation (#376)', () => {
     await writeFile(file, '{ not json');
     const result = await run();
     expect(has(result, 'UTILS_ONE')).toBe(true);
-    expect((await readEntry(file)).format).toBe(2);
+    expect((await readEntry(file)).format).toBe(3);
   });
 
   it('keys on outDir and resolveDir', async () => {
@@ -321,6 +324,152 @@ describe('bundleIslands() — cache validation (#376)', () => {
     await run();
     expect((await readdir(cacheDir)).filter((f) => f.endsWith('.tmp'))).toEqual([]);
   });
+
+  it('misses when a cached result has the wrong shape', async () => {
+    await run();
+    const file = await onlyCacheFile();
+    const bad: Array<(e: IslandCacheEntry) => void> = [
+      (e) => ((e.result.files[0] as unknown as { contents: number }).contents = 1),
+      (e) => ((e.result.files[0] as unknown as { path: null }).path = null),
+      (e) => ((e.result.entryPaths as unknown as Record<string, number>).sidebar = 7),
+      (e) => ((e as unknown as { edges: unknown }).edges = 'nope'),
+    ];
+    for (const mutate of bad) {
+      await plantSentinel(file, (e) => {
+        mutate(e);
+        return e;
+      });
+      const result = await run();
+      expect(has(result, SENTINEL)).toBe(false);
+      expect(has(result, 'UTILS_ONE')).toBe(true);
+    }
+  });
+
+  it('records where each package import resolved', async () => {
+    await run();
+    const { edges } = await readEntry(await onlyCacheFile());
+    const byName = new Map(edges.map((e) => [e.name, e]));
+    expect(byName.get('preact')?.from).toBe(fx);
+    expect(byName.get('@clean-jsdoc-theme/rang')?.dir).toBe(
+      realpathSync.native(join(fx, 'node_modules', '@clean-jsdoc-theme', 'rang'))
+    );
+    expect(byName.get('@clean-jsdoc-theme/utils')?.from).toBe(
+      join(fx, 'node_modules', '@clean-jsdoc-theme', 'rang')
+    );
+  });
+});
+
+// Re-resolution: the files the cached bundle was built from are untouched, but
+// a package import now lands somewhere else. The manifest hashes alone would
+// still match, so the recorded resolution edges are what must miss.
+describe('bundleIslands() — cache re-resolution (#376)', () => {
+  let tmp: string;
+  let fx: string;
+  let cacheDir: string;
+  const SENTINEL = 'FROM_CACHE_SENTINEL';
+
+  async function put(rel: string, contents: string): Promise<void> {
+    const file = join(fx, rel);
+    await mkdir(dirname(file), { recursive: true });
+    await writeFile(file, contents);
+  }
+
+  /** A pnpm-style store copy of preact whose hydrate() returns a marker. */
+  async function preactStore(version: string): Promise<string> {
+    const rel = `node_modules/.pnpm/preact@${version}/node_modules/preact`;
+    await put(
+      `${rel}/package.json`,
+      `{"name":"preact","version":"${version}","type":"module","main":"index.js"}`
+    );
+    await put(
+      `${rel}/index.js`,
+      `export const hydrate=()=>"PREACT_${version}";export const h=()=>{};`
+    );
+    return join(fx, rel);
+  }
+
+  /** Point `node_modules/<name>` at `target` (a junction on Windows). */
+  async function link(name: string, target: string): Promise<void> {
+    const path = join(fx, 'node_modules', name);
+    await rm(path, { recursive: true, force: true });
+    await mkdir(dirname(path), { recursive: true });
+    await symlink(target, path, 'junction');
+  }
+
+  const has = (r: BundleIslandsResult, s: string) => r.files.some((f) => f.contents.includes(s));
+  const run = () => bundleIslands({ islands: ['sidebar'], resolveDir: fx, cacheDir });
+
+  async function plantSentinel(): Promise<void> {
+    const [name] = (await readdir(cacheDir)).filter((f) => /^islands-v3-.+\.json$/.test(f));
+    const file = join(cacheDir, name!);
+    const entry = JSON.parse(await readFile(file, 'utf8')) as IslandCacheEntry;
+    entry.result.files[0]!.contents += SENTINEL;
+    await writeFile(file, JSON.stringify(entry));
+  }
+
+  beforeEach(async () => {
+    tmp = await mkdtemp(join(tmpdir(), 'island-376-res-'));
+    fx = join(tmp, 'fx');
+    cacheDir = join(tmp, 'cache');
+    await put(
+      'node_modules/@clean-jsdoc-theme/rang/package.json',
+      '{"name":"@clean-jsdoc-theme/rang","version":"0.0.0","type":"module","exports":{".":{"import":"./dist/index.js"}}}'
+    );
+    await put(
+      'node_modules/@clean-jsdoc-theme/rang/dist/index.js',
+      'import {MARK} from "@clean-jsdoc-theme/utils";export const ISLAND_REGISTRY={sidebar:()=>MARK};export const LanguageProvider=()=>{};export const createI18n=()=>{};'
+    );
+    await put(
+      'node_modules/@clean-jsdoc-theme/utils/package.json',
+      '{"name":"@clean-jsdoc-theme/utils","version":"0.0.0","type":"module","exports":{".":{"import":"./dist/index.js"}}}'
+    );
+    await put(
+      'node_modules/@clean-jsdoc-theme/utils/dist/index.js',
+      'export const MARK="UTILS_ONE";'
+    );
+    await link('preact', await preactStore('1.0.0'));
+  });
+
+  afterEach(async () => {
+    await rm(tmp, { recursive: true, force: true });
+  });
+
+  it('still hits while nothing re-resolves', async () => {
+    expect(has(await run(), 'PREACT_1.0.0')).toBe(true);
+    await plantSentinel();
+    expect(has(await run(), SENTINEL)).toBe(true);
+  });
+
+  it('misses when a package link is repointed to a new copy (pnpm bump)', async () => {
+    expect(has(await run(), 'PREACT_1.0.0')).toBe(true);
+    await plantSentinel();
+
+    // pnpm adds the new store dir and repoints the link; the old dir stays.
+    await link('preact', await preactStore('1.0.1'));
+    const oldPkg = join(fx, 'node_modules/.pnpm/preact@1.0.0/node_modules/preact/package.json');
+    expect(await readFile(oldPkg, 'utf8')).toContain('1.0.0');
+
+    const next = await run();
+    expect(has(next, SENTINEL)).toBe(false);
+    expect(has(next, 'PREACT_1.0.1')).toBe(true);
+    expect(has(next, 'PREACT_1.0.0')).toBe(false);
+  });
+
+  it('misses when a nested copy starts shadowing the hoisted package', async () => {
+    expect(has(await run(), 'UTILS_ONE')).toBe(true);
+    await plantSentinel();
+
+    const nested = 'node_modules/@clean-jsdoc-theme/rang/node_modules/@clean-jsdoc-theme/utils';
+    await put(
+      `${nested}/package.json`,
+      '{"name":"@clean-jsdoc-theme/utils","version":"0.0.1","type":"module","exports":{".":{"import":"./dist/index.js"}}}'
+    );
+    await put(`${nested}/dist/index.js`, 'export const MARK="UTILS_NESTED";');
+
+    const next = await run();
+    expect(has(next, SENTINEL)).toBe(false);
+    expect(has(next, 'UTILS_NESTED')).toBe(true);
+  });
 });
 
 describe('bundleIslands() — cache manifest of the real module graph', () => {
@@ -333,7 +482,7 @@ describe('bundleIslands() — cache manifest of the real module graph', () => {
   it('records the first-party dists and third-party package.json files', async () => {
     cacheDir = await mkdtemp(join(tmpdir(), 'island-graph-'));
     await bundleIslands({ islands: ['copy-btn'], cacheDir });
-    const [name] = (await readdir(cacheDir)).filter((f) => /^islands-v2-.+\.json$/.test(f));
+    const [name] = (await readdir(cacheDir)).filter((f) => /^islands-v3-.+\.json$/.test(f));
     const entry = JSON.parse(await readFile(join(cacheDir, name!), 'utf8')) as IslandCacheEntry;
     const paths = entry.inputs.map((i) => i.path);
     for (const re of [

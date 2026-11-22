@@ -17,8 +17,9 @@
  * the chunks import `@clean-jsdoc-theme/rang` and `preact` from dwar's own
  * node_modules (via `resolveDir`) without writing any files to disk.
  *
- * With `cacheDir`, the result is cached on disk and reused only while every
- * file the bundle was built from is unchanged — see `islands-cache.ts`.
+ * With `cacheDir`, the result is cached on disk and reused only while the
+ * files it was built from are unchanged and its package imports still resolve
+ * to the same directories — see `islands-cache.ts`.
  */
 
 import { fileURLToPath } from 'node:url';
@@ -28,6 +29,8 @@ import type { IslandName } from '@clean-jsdoc-theme/utils';
 import { getIslandChunkEntrySource } from './islands-loader';
 import {
   collectCacheInputs,
+  collectResolutionEdges,
+  ISLAND_VIRTUAL_NAMESPACE,
   islandCacheFileName,
   readIslandCache,
   writeIslandCache,
@@ -82,10 +85,11 @@ export interface BundleIslandsOptions {
   /**
    * Optional directory for an on-disk cache of the bundle. The cache file is
    * named by a pre-key (esbuild version + options, outDir, resolveDir, island
-   * entry sources) and records every file the bundle was built from: each
-   * bundled `@clean-jsdoc-theme/*` / workspace file by content hash, each
-   * third-party package by its package.json. A warm rebuild skips esbuild only
-   * while all of them are unchanged (see `islands-cache.ts` for the limits).
+   * entry sources) and records what the bundle was built from: each bundled
+   * `@clean-jsdoc-theme/*` / workspace file by content hash, each third-party
+   * package by its package.json, and where every package import resolved. A
+   * warm rebuild skips esbuild only while all of them are unchanged (see
+   * `islands-cache.ts` for the limits).
    * Fully resilient: any cache read/write error silently falls back to a fresh
    * build — caching never throws out of `bundleIslands`.
    */
@@ -152,7 +156,7 @@ export async function bundleIslands(opts: BundleIslandsOptions = {}): Promise<Bu
   // prefix and tags the path with our namespace, `onLoad` returns the source.
   // `resolveDir` on the load result is what lets the source's bare imports
   // (`preact`, `@clean-jsdoc-theme/rang`) resolve against dwar's node_modules.
-  const NS = 'island-virtual';
+  const NS = ISLAND_VIRTUAL_NAMESPACE;
   const plugin: Plugin = {
     name: 'island-entries',
     setup(b) {
@@ -209,7 +213,8 @@ export async function bundleIslands(opts: BundleIslandsOptions = {}): Promise<Bu
   if (cacheFile) {
     try {
       const inputs = collectCacheInputs(Object.keys(buildResult.metafile.inputs), absWorkingDir);
-      await writeIslandCache(cacheFile, inputs, result);
+      const edges = collectResolutionEdges(buildResult.metafile.inputs, absWorkingDir, resolveDir);
+      await writeIslandCache(cacheFile, inputs, edges, result);
     } catch {
       // Ignore — the build result is still returned; we just didn't cache it.
     }

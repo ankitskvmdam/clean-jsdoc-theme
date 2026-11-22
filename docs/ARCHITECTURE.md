@@ -542,7 +542,8 @@ dwar/src/
 │                         #   inputs (islands-cache.ts)
 ├── islands-cache.ts      # that cache: pre-keyed file name + a manifest of every
 │                         #   bundled input (first-party files by content hash,
-│                         #   third-party packages by package.json), atomic writes
+│                         #   third-party packages by package.json) + where each
+│                         #   package import resolved; atomic writes
 ├── islands-loader.ts     # inline loader (lazy-imports only chunks present on page,
 │                         #   by hashed name; copy-btn + code-viewer read text from the
 │                         #   DOM <pre>; tabs is DOM-enhanced, not Preact-hydrated)
