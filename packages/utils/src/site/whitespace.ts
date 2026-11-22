@@ -40,8 +40,12 @@ const CHUNK = 8192;
  * of code units instead.
  *
  * It works on UTF-16 code units, so a surrogate (paired or lone) passes through
- * untouched, exactly as with the regex. `limit` is a non-negative integer or
- * `Infinity`; a cut may split a surrogate pair, as `slice` would.
+ * untouched, exactly as with the regex. A cut may split a surrogate pair, as
+ * `slice` would.
+ *
+ * @param limit Must be a non-negative integer or `Infinity` (the default). Any
+ *   other value (negative, fractional, `NaN`) is outside the contract: the
+ *   result is then not guaranteed to equal `slice(0, limit)`.
  */
 export function collapseWhitespace(text: string, limit = Infinity): string {
   const n = text.length;

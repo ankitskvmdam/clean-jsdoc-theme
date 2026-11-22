@@ -294,23 +294,41 @@ describe('search text — tag strip', () => {
 
   // The old `/<[^>]+>/` rescanned to the end of the page from every `<` with no
   // `>` after it — minutes for a 1MB page. Each generator takes a size in
-  // characters, roughly (see linear-scaling.ts). The default window reaches
-  // about 4M characters, which also guards #383: a page of several million
-  // characters used to slow down far more than its size, from a per-character
-  // copy of the prose and a many-match `/\s+/g` replace.
+  // characters, roughly (see linear-scaling.ts).
   it.each<[string, (n: number) => string]>([
     ['unclosed comment openers', (n) => 'a <!-- '.repeat(n / 7)],
     ['stray < characters', (n) => 'a < b '.repeat(n / 6)],
     ['unclosed quoted attributes', (n) => '<a b="x '.repeat(n / 8)],
     ['unclosed backtick runs', (n) => '`` a\n\n` b\n\n'.repeat(n / 12)],
-    ['long whitespace runs (#383)', (n) => ('word' + ' \t\n'.repeat(4)).repeat(n / 16)],
-    ['escaped generics (#383)', (n) => 'Promise\\<User> and `a<b>` x > y\n'.repeat(n / 32)],
+    // Exercises an escaped `<` waiting for its `>` (#383); its time is mostly
+    // other passes, so it cannot tell the old copy from the new one.
+    ['escaped generics', (n) => 'Promise\\<User> and `a<b>` x > y\n'.repeat(n / 32)],
   ])(
     'scales linearly on %s',
     (_name, makeInput) => {
       expectLinearScaling(
         (src: string) => [extractSearchText(src), extractExcerpt(src)],
         makeInput
+      );
+    },
+    PERF_TEST_TIMEOUT
+  );
+
+  // #383: on these two shapes, a per-character copy of the prose and a
+  // many-match `/\s+/g` replace made a page of several million characters far
+  // slower than its size. The window is pinned at 512K -> 4M characters, so the
+  // large input crosses 2M, and the limit is tighter than the default: the old
+  // code measured ratios of about 21-22 here, the fixed code about 2-6.
+  it.each<[string, (n: number) => string]>([
+    ['stray < characters (#383)', (n) => 'a < b '.repeat(n / 6)],
+    ['long whitespace runs (#383)', (n) => ('word' + ' \t\n'.repeat(4)).repeat(n / 16)],
+  ])(
+    'scales linearly past 2M characters on %s',
+    (_name, makeInput) => {
+      expectLinearScaling(
+        (src: string) => [extractSearchText(src), extractExcerpt(src)],
+        makeInput,
+        { startSize: 524_288, maxSize: 524_288, maxRatio: 12 }
       );
     },
     PERF_TEST_TIMEOUT
