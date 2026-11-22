@@ -1103,6 +1103,23 @@ describe('render() — HTML comments in prose', () => {
     expect(main).toContain('x &lt;!--');
   });
 
+  it.each([
+    ['before the cells', '<!-- a | b --> h | i\n-|-\n| x <!--\n--> |\n'],
+    ['between the cells', 'h <!-- a | b --> | i\n-|-\n| x <!--\n--> |\n'],
+  ])(
+    'renders a table whose header row holds a comment with a pipe in it, %s (#380)',
+    async (_where, body) => {
+      // MDX drops the comment, pipe and all, and reads a two-cell header row.
+      const { err, html } = await renderOne('header-pipe-comment', body);
+      expect(err, err?.message).toBeUndefined();
+      const main = mainOf(html);
+      expect(main.match(/<table[ >]/g)).toHaveLength(1);
+      expect(main.match(/<th[ >]/g)).toHaveLength(2);
+      expect(main).not.toContain('a | b');
+      expect(main).toContain('x &lt;!--');
+    }
+  );
+
   it('ends a bare URL where a comment glued to it stood', async () => {
     const body = 'See https://example.com/docs<!-- TODO -->. And `a`<!-- b -->`c`.\n';
     const { err, html } = await renderOne('url-comment', body);

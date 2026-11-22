@@ -266,6 +266,29 @@ function tableCells(row: string): number {
   return cells;
 }
 
+/**
+ * Whether `text` (a paragraph line, no newline) is the header row of a table
+ * whose delimiter row has `cells` cells. Either its raw cell count matches, or
+ * the count of the line as MDX reads it when it starts a table: each comment
+ * that opens and closes on the line is dropped by dwar, pipes included, and
+ * leaves an expression behind — a cell's worth of text, never a pipe (so the
+ * stand-in is `x`, not blanks: `<!-- c --> | a | b` is three cells to MDX).
+ *
+ * The comments are found by {@link htmlCommentRanges} on the line alone, so
+ * there is one definition of a comment. That nested scan cannot recurse — the
+ * line has no newline, so its `scanBlocks` never reaches a header check — and
+ * it is done with the shared `TOKEN` regex before the outer scan resets
+ * `TOKEN.lastIndex` and starts its own loop.
+ */
+function isTableHeader(text: string, cells: number): boolean {
+  if (tableCells(text) === cells) return true;
+  if (!text.includes('<!--')) return false;
+  const seen = replaceHtmlComments(text, htmlCommentRanges(text), (c, raw) =>
+    c.closed ? 'x' : raw
+  );
+  return tableCells(seen) === cells;
+}
+
 /** Block-level structure of a source: fences, comment blocks, paragraph breaks. */
 interface BlockScan {
   fences: TextRange[];
@@ -424,7 +447,11 @@ export function inlineCodeSpans(source: string): CodeSpanRange[] {
  *     fence, …), or — inside a list item — at a line indented less than the
  *     item's content. A row indented four or more columns stays in the table:
  *     MDX, which renders these pages, has no indented code (GFM would end the
- *     table there).
+ *     table there). The header row's cells are counted on the raw line, or on
+ *     the line as MDX reads it once dwar drops each comment that opens and
+ *     closes on it (pipes inside included) — either count matching makes a
+ *     table. A table declared where MDX sees none only adds breaks, so a
+ *     comment there stays open (literal `\<!--` at worst), never an error.
  */
 function scanBlocks(source: string): BlockScan {
   const fences: TextRange[] = [];
@@ -649,7 +676,7 @@ function scanBlocks(source: string): BlockScan {
         isTableDelimiter(delim) &&
         // `- | -` is a list item, which interrupts the paragraph first.
         !LIST_ITEM.test(delim) &&
-        tableCells(delim) === tableCells(paraText)
+        isTableHeader(paraText, tableCells(delim))
       ) {
         breaks.push(pos);
         table = {
