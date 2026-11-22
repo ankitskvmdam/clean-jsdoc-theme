@@ -303,6 +303,7 @@ describe('search text — tag strip', () => {
     ['unclosed comment openers', (n) => 'a <!-- '.repeat(n / 7)],
     ['stray < characters', (n) => 'a < b '.repeat(n / 6)],
     ['unclosed quoted attributes', (n) => '<a b="x '.repeat(n / 8)],
+    ['unclosed backtick runs', (n) => '`` a\n\n` b\n\n'.repeat(n / 12)],
   ])(
     'scales linearly on %s',
     (_name, makeInput) => {
@@ -314,6 +315,24 @@ describe('search text — tag strip', () => {
     },
     PERF_TEST_TIMEOUT
   );
+});
+
+describe('search text — code spans of any backtick count (#385)', () => {
+  // [source, excerpt, search text]: the excerpt drops every code span, the
+  // search text unwraps it; an unmatched run is the literal text the page shows.
+  it.each<[string, string, string]>([
+    ['a `` x`y `` b and `` `tick` `` c', 'a b and c', 'a x`y b and `tick` c'],
+    ['one `a` two ``b`` three', 'one two three', 'one a two b three'],
+    ['x ` a `` b ` c', 'x c', 'x a `` b c'],
+    ['`` a ` b', '`` a ` b', '`` a ` b'],
+    ['a \\`not code\\` b', 'a `not code` b', 'a `not code` b'],
+    ['a \\\\`code` b', 'a \\ b', 'a \\code b'],
+    ['`a\n\nb` c', '`a b` c', '`a b` c'],
+    ['so `` a < b `` then <kbd>K</kbd> end', 'so then K end', 'so a < b then K end'],
+  ])('reads %j', (src, excerpt, searchText) => {
+    expect(extractExcerpt(src)).toBe(excerpt);
+    expect(extractSearchText(src)).toBe(searchText);
+  });
 });
 
 describe('search text — escaped punctuation reads as rendered', () => {

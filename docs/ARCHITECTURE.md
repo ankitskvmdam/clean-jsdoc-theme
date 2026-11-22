@@ -100,7 +100,8 @@ utils/src/
 │   │                     #   htmlCommentRangesInHtml (raw HTML), replaceHtmlComments /
 │   │                     #   maskHtmlComments: ONE definition of a comment per format for
 │   │                     #   setu's splitters + description excerpt AND dwar's comment
-│   │                     #   pre-pass, backtick warnings and search text
+│   │                     #   pre-pass, backtick warnings and search text;
+│   │                     #   inlineCodeSpans (CommonMark code spans, for dwar's search text)
 │   ├── collapsible.ts    # collapsibleSidebarSections resolver (build-time →
 │   │                     #   manifest.collapsibleGroups; boolean | string[])
 │   └── index.ts          # barrel — the setu↔dwar boundary

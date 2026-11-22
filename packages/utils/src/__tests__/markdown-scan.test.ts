@@ -4,6 +4,7 @@ import {
   fencedCodeRanges,
   htmlCommentRanges,
   htmlCommentRangesInHtml,
+  inlineCodeSpans,
   maskHtmlComments,
   replaceHtmlComments,
 } from '../site/markdown-scan';
@@ -514,6 +515,30 @@ describe('HTML-format comments and the replace/mask helpers', () => {
 // pathological one must not stall it: each adversarial input must scale
 // linearly (see linear-scaling.ts). The quadratic versions took seconds to
 // minutes on 1MB. Each generator takes a size in characters, roughly.
+describe('inlineCodeSpans', () => {
+  it.each<[string, string[]]>([
+    ['a `x` b', ['`x`']],
+    ['a `` x`y `` b and `` `tick` `` c', ['`` x`y ``', '`` `tick` ``']],
+    ['``` a `` b', []],
+    ['`` a ` b', []],
+    ['x ` a `` b ` c', ['` a `` b `']],
+    ['a \\`not\\` b `x` c', ['`x`']],
+    ['a \\\\`code` b', ['`code`']],
+    ['`a\\` b', ['`a\\`']],
+    // The first run would close across the blank line, so it is literal; the
+    // second opens a span that the third closes.
+    ['`a\n\nb` `c`', ['` `']],
+    ['`a\nb`', ['`a\nb`']],
+    ['no ticks', []],
+  ])('finds the code spans in %j', (src, want) => {
+    expect(slices(src, inlineCodeSpans(src))).toEqual(want);
+  });
+
+  it('reports the delimiter length', () => {
+    expect(inlineCodeSpans('a `` x`y `` b').map((s) => s.ticks)).toEqual([2]);
+  });
+});
+
 describe('markdown-scan performance', () => {
   const MB = 1_000_000;
   /** Backtick runs of length 1, 2, 3, … separated by spaces, about `n` long, then `<!--`. */
@@ -571,6 +596,24 @@ describe('markdown-scan performance', () => {
   // break or delimiter row test overflowed the stack on lines this long. Each
   // starts at an eighth of the line it used to be checked on, so the larger
   // input is at least that long.
+  it.each<[string, (n: number) => string]>([
+    [
+      'backtick runs of distinct lengths',
+      (n) => {
+        let s = '';
+        for (let k = 1; s.length < n; k++) s += '`'.repeat(k) + ' ';
+        return s;
+      },
+    ],
+    ['unclosed backtick runs across blank lines', (n) => '`` a\n\n` b\n\n'.repeat(n / 12)],
+  ])(
+    '%s scales linearly for inlineCodeSpans',
+    (_name, makeInput) => {
+      expectLinearScaling(inlineCodeSpans, makeInput);
+    },
+    PERF_TEST_TIMEOUT
+  );
+
   it.each<[string, number, (n: number) => string]>([
     ['a thematic-break line', 5 * MB, (n) => 'a <!--\n' + '--- '.repeat(n / 4) + '\n-->\n'],
     ['a dash line under a paragraph', 5 * MB, (n) => 'a <!--\n' + '-'.repeat(n) + '\n-->\n'],

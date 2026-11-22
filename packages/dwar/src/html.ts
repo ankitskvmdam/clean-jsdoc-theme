@@ -14,7 +14,11 @@
  * script and a tiny inline loader that lazy-imports island chunks.
  */
 
-import { replaceHtmlComments, type HtmlCommentRange } from '@clean-jsdoc-theme/utils';
+import {
+  inlineCodeSpans,
+  replaceHtmlComments,
+  type HtmlCommentRange,
+} from '@clean-jsdoc-theme/utils';
 import type { Page, IslandName, MetaTag, ScrollbarMode } from '@clean-jsdoc-theme/utils';
 import type { IslandRecord } from './layout';
 import { pageCommentRanges } from './mdx';
@@ -350,13 +354,8 @@ export function renderHtmlDocument(opts: HtmlDocumentOptions): string {
   );
 }
 
-/**
- * An inline code span (CommonMark: a backtick run closed by an equal run, never
- * across a blank line; a backslash before the opener makes it a literal
- * backtick) OR a backslash escape (`\<`, `\*`, `\[`, …) outside one.
- */
-const CODE_OR_ESCAPE =
-  /(?<![`\\])(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<!`)\1(?!`)|\\([!-/:-@[-`{-~])/g;
+/** A backslash escape (`\<`, `\*`, `\[`, …), in prose outside inline code. */
+const ESCAPE = /\\([!-/:-@[-`{-~])/g;
 
 /** `[from-to]` as a character class, built from code points. */
 const charRange = (from: number, to: number): string =>
@@ -386,15 +385,20 @@ const PUNCTUATION = /[!-/:-@[-`{-~]/g;
  * page renders the bare character. Each escaped character outside inline code
  * is parked in the Private Use Area (so `\<User>` isn't taken for a tag, nor
  * `\*` for emphasis) and {@link unparkAll}ed at the end, so the search text reads
- * like the page. A code span renders verbatim, so all of its punctuation is
- * parked (backslashes, `<T>`, `snake_case` survive the strip passes as typed;
- * its delimiters stay for the code-span pass). setu escapes only a literal
+ * like the page.
+ *
+ * Inline code is decided here too, once, by `inlineCodeSpans` (CommonMark's
+ * rules, any backtick count; an unmatched run or an escaped backtick stays
+ * literal text). With `code: 'drop'` (the excerpt) each span becomes a space;
+ * with `'keep'` (the search text) it is unwrapped: its delimiters go, and as a
+ * code span renders verbatim, all of its punctuation is parked (backslashes,
+ * `<T>`, `snake_case` survive the strip passes as typed). setu escapes only a literal
  * tag's `<`, so the `>` closing an escaped `<` on the same line is parked too,
  * or the blockquote-mark pass would eat it. Only an escaped `<` waits for one: a
  * `<` in a code span opens no tag, so it must not claim the `>` of a real tag
  * later on the line (`` `Array<T>` then <b>x</b> `` still strips the `<b>`).
  */
-function parkEscapes(text: string): string {
+function parkEscapes(text: string, code: 'drop' | 'keep'): string {
   const guarded = text.replace(
     GENUINE,
     (ch) => GUARD + String.fromCharCode(ch.charCodeAt(0) + 0x100)
@@ -413,20 +417,28 @@ function parkEscapes(text: string): string {
       out += ch;
     }
   };
-  let last = 0;
-  for (const m of guarded.matchAll(CODE_OR_ESCAPE)) {
-    copy(guarded.slice(last, m.index));
-    last = m.index + m[0].length;
-    const [all, ticks, ch] = m;
-    if (ticks === undefined) {
-      out += parkChar(ch!);
+  // Prose between code spans: copy it, parking each escaped character.
+  const prose = (from: number, to: number): void => {
+    const segment = guarded.slice(from, to);
+    let last = 0;
+    for (const m of segment.matchAll(ESCAPE)) {
+      copy(segment.slice(last, m.index));
+      last = m.index + m[0].length;
+      const ch = m[1];
+      out += parkChar(ch);
       if (ch === '<') open++;
-    } else {
-      out += ticks + all.slice(ticks.length, -ticks.length).replace(PUNCTUATION, parkChar) + ticks;
-      if (all.includes('\n')) open = 0;
     }
+    copy(segment.slice(last));
+  };
+  let last = 0;
+  for (const s of inlineCodeSpans(guarded)) {
+    prose(last, s.start);
+    last = s.end;
+    const content = guarded.slice(s.start + s.ticks, s.end - s.ticks);
+    out += code === 'drop' ? ' ' : content.replace(PUNCTUATION, parkChar);
+    if (content.includes('\n')) open = 0;
   }
-  copy(guarded.slice(last));
+  prose(last, guarded.length);
   return out;
 }
 
@@ -474,8 +486,7 @@ export function extractExcerpt(
   const prose = dropHtmlComments(mdxBody, comments)
     .replace(/^---[\s\S]*?---\s*/u, '') // frontmatter
     .replace(/```[\s\S]*?```/g, ' '); // fenced code
-  const stripped = parkEscapes(prose)
-    .replace(/`[^`]*`/g, ' ') // inline code
+  const stripped = parkEscapes(prose, 'drop') // inline code → a space
     .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ') // images
     .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1') // links → label
     .replace(TAG, ' ') // raw HTML / JSX
@@ -506,10 +517,9 @@ export function extractSearchText(
   const prose = dropHtmlComments(mdxBody, comments)
     .replace(/^---[\s\S]*?---\s*/u, '') // frontmatter
     .replace(/```[\s\S]*?```/g, ' '); // fenced code (noisy/large)
-  const stripped = parkEscapes(prose)
-    // Inline code → keep the identifier; its punctuation is parked, so a
-    // generic (`Array<Map<K, V>>`) is a type, not a tag, to the strip below.
-    .replace(/`([^`]*)`/g, '$1')
+  // Inline code → keep the identifier; its punctuation is parked, so a
+  // generic (`Array<Map<K, V>>`) is a type, not a tag, to the strip below.
+  const stripped = parkEscapes(prose, 'keep')
     .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ') // images
     .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1') // links → label
     .replace(TAG, ' ') // raw HTML / JSX

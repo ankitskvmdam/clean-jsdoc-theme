@@ -344,6 +344,56 @@ function codeSpanFinder(
   };
 }
 
+/** An inline code span found by {@link inlineCodeSpans}. */
+export interface CodeSpanRange extends TextRange {
+  /** Length of each delimiter run; the content is `[start + ticks, end - ticks)`. */
+  ticks: number;
+}
+
+/**
+ * Every inline code span in a stretch of prose, in source order, by CommonMark's
+ * rules: a backtick run opens a span only if the next maximal run of exactly
+ * its length closes it before a blank line; a run with no closer is literal
+ * backticks, all of them (a shorter run inside it is never tried). A backslash
+ * escapes the character after it outside a span, so `` \` `` opens nothing and
+ * `` \\` `` is an escaped backslash then a real opener; inside a span a
+ * backslash is literal, so `` `a\` `` closes on the backtick after it.
+ *
+ * An inline-only scan: the caller removes fenced code and comments first.
+ * Linear in the source however the runs fall (see `codeSpanFinder`).
+ */
+export function inlineCodeSpans(source: string): CodeSpanRange[] {
+  if (!source.includes('`')) return [];
+  const spanEnd = codeSpanFinder(source);
+  // The next blank line at or after a position, for non-decreasing positions
+  // (like `closerFinder`): -1 once there is none.
+  const blank = /\n[ \t\r]*\n/g;
+  let blankAt = -2;
+  const nextBlank = (from: number): number => {
+    if (blankAt === -1 || blankAt >= from) return blankAt;
+    blank.lastIndex = from;
+    const m = blank.exec(source);
+    blankAt = m ? m.index : -1;
+    return blankAt;
+  };
+
+  const out: CodeSpanRange[] = [];
+  const token = /\\[^\n]|`+/g;
+  let m: RegExpExecArray | null;
+  while ((m = token.exec(source)) !== null) {
+    if (m[0][0] !== '`') continue;
+    const start = m.index;
+    const runEnd = start + m[0].length;
+    const end = spanEnd(start, runEnd);
+    if (end === -1) continue;
+    const blankLine = nextBlank(runEnd);
+    if (blankLine !== -1 && blankLine < end) continue;
+    out.push({ start, end, ticks: runEnd - start });
+    token.lastIndex = end;
+  }
+  return out;
+}
+
 /**
  * One ordered pass over the lines, per CommonMark block parsing:
  *   - a fence opens only outside a comment block, and closes on a long-enough
