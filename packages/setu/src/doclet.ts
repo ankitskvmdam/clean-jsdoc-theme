@@ -62,8 +62,10 @@ function isOwnHidden(d: TDoclet, includePrivate: boolean): boolean {
  *
  * A class whose only private part is its CONSTRUCTOR stays: JSDoc merges an ES6
  * `constructor` comment into the class doclet, so `/** @private *\/ constructor`
- * makes the whole class read `access: 'private'` (see {@link ctorOnlyPrivate}).
- * Its page and public members are kept; the copy that replaces the doclet drops
+ * makes the whole class read `access: 'private'` — or, under a class comment
+ * tagged `@public`/`@protected`/`@package`, keeps that access but takes the
+ * constructor's description, params and other tags (see {@link ctorOnlyPrivate}).
+ * Its page, access and public members are kept; the copy that replaces the doclet drops
  * everything merged in from the constructor comment and hides the Constructor
  * section instead.
  *
@@ -143,6 +145,11 @@ function startsAtOrAfter(a: TDoclet, b: TDoclet): boolean {
   return al > bl || (al === bl && (a.meta?.columnno ?? 0) >= (b.meta?.columnno ?? 0));
 }
 
+/** True when `a` and `b` start at the same line and column. */
+function sameStart(a: TDoclet, b: TDoclet): boolean {
+  return a.meta?.lineno === b.meta?.lineno && a.meta?.columnno === b.meta?.columnno;
+}
+
 /** The records a constructor-only-private class is rebuilt from. */
 interface CtorOnlyPrivate {
   /** The record holding the constructor comment's own tags. */
@@ -153,7 +160,8 @@ interface CtorOnlyPrivate {
 
 /**
  * Documented class doclets whose `access: 'private'` came from a `@private`
- * ES6 constructor, not from the class comment. For
+ * ES6 constructor, not from the class comment (or that merged such a
+ * constructor under an explicit class access tag; see the end). For
  * `/** Foo. *\/ class Foo { /** @private *\/ constructor() {} }`, JSDoc 4
  * emits (besides the merged, documented `Foo` that reads `access: 'private'`):
  * - the constructor-comment record: undocumented `kind: 'class'`,
@@ -187,41 +195,77 @@ interface CtorOnlyPrivate {
  * Only a merged doclet whose code is a class node qualifies: an ES5 `@class`
  * function never has a constructor record of its own, so one that shares a
  * longname with an ES6 class in the same file can't borrow that class's.
+ *
+ * A class comment with an explicit access tag (`@public`, `@protected`,
+ * `@package`, `@access …`) wins the merge, so the merged doclet keeps that
+ * access while still taking the private constructor's description, params and
+ * other tags (#373). Such a doclet qualifies only when all of these hold:
+ * - it has a class-comment record starting at its own line and column (it is
+ *   the merge of an explicit constructor, not a class without one);
+ * - that record carries the same access (it came from the class comment, not
+ *   from a `@protected` constructor);
+ * - the first constructor record of ANY access at or after the class start is
+ *   private (a same-named class nested in a public constructor's body, whose
+ *   private constructor comes later, doesn't count);
+ * - the class comment has its own description, or the constructor record's
+ *   description is the merged one (JSDoc copies it in when the class comment
+ *   has none; a mismatch means a same-named class nested ahead of the outer
+ *   public constructor owns that record).
+ * The class-comment record at the same start is then the one restored from.
+ * Known limit: a nested same-named class ahead of the outer public constructor
+ * whose private constructor has the identical (usually absent) description is
+ * still taken for the outer class's.
  */
 function ctorOnlyPrivate(all: readonly TDoclet[]): Map<TDoclet, CtorOnlyPrivate> {
-  const privateCtors = new Map<string, TDoclet[]>();
+  const ctors = new Map<string, TDoclet[]>();
   const classRecords = new Map<string, TDoclet[]>();
+  let anyPrivate = false;
   for (const d of all) {
     if (!d.undocumented || d.kind !== 'class' || !d.longname) continue;
     const codeType = d.meta?.code?.type;
-    if (codeType === 'MethodDefinition' && d.access === 'private') {
-      const key = ctorKey(d);
-      const list = privateCtors.get(key) ?? [];
-      list.push(d);
-      privateCtors.set(key, list);
+    if (codeType === 'MethodDefinition') {
+      pushTo(ctors, ctorKey(d), d);
+      if (d.access === 'private') anyPrivate = true;
     } else if (codeType && CLASS_CODE_TYPES.has(codeType)) {
-      const key = sourceKey(d, d.longname);
-      const list = classRecords.get(key) ?? [];
-      list.push(d);
-      classRecords.set(key, list);
+      pushTo(classRecords, sourceKey(d, d.longname), d);
     }
   }
   const out = new Map<TDoclet, CtorOnlyPrivate>();
-  if (privateCtors.size === 0) return out;
+  if (!anyPrivate) return out;
   for (const d of all) {
-    if (d.undocumented || d.kind !== 'class' || d.access !== 'private' || !d.longname) continue;
+    if (d.undocumented || d.kind !== 'class' || d.access === undefined || !d.longname) continue;
     const codeType = d.meta?.code?.type;
     if (!codeType || !CLASS_CODE_TYPES.has(codeType)) continue;
-    let ctor: TDoclet | undefined;
-    for (const c of privateCtors.get(ctorKey(d)) ?? []) {
-      if (startsAtOrAfter(c, d) && (!ctor || !startsAtOrAfter(c, ctor))) ctor = c;
-    }
-    if (!ctor) continue;
+    const candidates = ctors.get(ctorKey(d)) ?? [];
     const records = classRecords.get(sourceKey(d, d.longname)) ?? [];
-    if (records.some((r) => r.access === 'private')) continue; // the class itself is private
-    out.set(d, { ctor, cls: records.find((r) => r.classdesc !== undefined) ?? records[0] });
+    if (d.access === 'private') {
+      const ctor = firstAtOrAfter(
+        candidates.filter((c) => c.access === 'private'),
+        d
+      );
+      if (!ctor) continue;
+      if (records.some((r) => r.access === 'private')) continue; // the class itself is private
+      out.set(d, { ctor, cls: records.find((r) => r.classdesc !== undefined) ?? records[0] });
+      continue;
+    }
+    // An explicit `@protected`/`@public`/`@package` class comment (#373).
+    const own = records.find((r) => sameStart(r, d));
+    if (!own || own.access !== d.access) continue;
+    const ctor = firstAtOrAfter(candidates, d);
+    if (!ctor || ctor.access !== 'private') continue;
+    if (own.description === undefined && ctor.description !== d.description) continue;
+    out.set(d, { ctor, cls: own });
   }
   return out;
+}
+
+/** The earliest of `candidates` starting at or after `d`. */
+function firstAtOrAfter(candidates: readonly TDoclet[], d: TDoclet): TDoclet | undefined {
+  let first: TDoclet | undefined;
+  for (const c of candidates) {
+    if (startsAtOrAfter(c, d) && (!first || !startsAtOrAfter(c, first))) first = c;
+  }
+  return first;
 }
 
 /** Fields that identify the merged doclet rather than come from either comment. */
@@ -238,8 +282,9 @@ const IDENTITY_KEYS = new Set([
 /**
  * A copy of a class doclet whose constructor is private, with everything JSDoc
  * merged in from the constructor comment taken back out: every field the
- * constructor record carries reverts to the class-comment record's value, or
- * is dropped when the class comment has none. That covers `access`, `params`,
+ * constructor record carries reverts to the class-comment record's value
+ * (including an explicit `@public`/`@protected`/`@package` access), or is
+ * dropped when the class comment has none. That covers `access`, `params`,
  * `description` (the constructor text), and any other tag on the constructor
  * (`@since`, `@see`, `@throws`, `@example`, `@deprecated`, …), so none of the
  * private constructor's comment surfaces on the public class page.

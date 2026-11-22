@@ -2457,3 +2457,2004 @@ export const PRIVATE_CTOR_ES5_ES6_DOCLETS: unknown[] = [
     params: [],
   },
 ];
+
+/**
+ * Real JSDoc 4.0.5 `-X` output, trimmed the same way, for classes whose comment
+ * carries an explicit access tag (`@protected`, `@public`, `@package`,
+ * `@access …`) and whose ES6 constructor is `@private` (#373), plus controls
+ * (a public or `@protected` constructor, `@hideconstructor`, a `@private` class)
+ * and same-named nested classes whose private constructor is not the outer
+ * class's. One file after another:
+ *
+ * protected-class.js:
+ *
+ * /**
+ *  * Prot class desc.
+ *  * @protected
+ *  *∕
+ * class Prot {
+ *   /**
+ *    * Prot ctor.
+ *    * @private
+ *    * @since 9.9.9
+ *    * @see SecretSee
+ *    * @param {number} x the x
+ *    *∕
+ *   constructor(x) {}
+ *   /** m *∕
+ *   m() {}
+ * }
+ *
+ * public-class.js:
+ *
+ * /**
+ *  * Pub class desc.
+ *  * @public
+ *  *∕
+ * class Pub {
+ *   /**
+ *    * Pub ctor.
+ *    * @private
+ *    *∕
+ *   constructor() {}
+ *   /** m *∕
+ *   m() {}
+ * }
+ *
+ * package-class.js:
+ *
+ * /**
+ *  * Pkg class desc.
+ *  * @package
+ *  *∕
+ * class Pkg {
+ *   /**
+ *    * Pkg ctor.
+ *    * @private
+ *    *∕
+ *   constructor() {}
+ *   /** m *∕
+ *   m() {}
+ * }
+ *
+ * access-tag.js:
+ *
+ * /**
+ *  * AccTag class desc.
+ *  * @access protected
+ *  *∕
+ * class AccTag {
+ *   /**
+ *    * AccTag ctor.
+ *    * @access private
+ *    *∕
+ *   constructor() {}
+ *   /** m *∕
+ *   m() {}
+ * }
+ *
+ * bare-private-ctor.js:
+ *
+ * /**
+ *  * ProtNoDesc class desc.
+ *  * @protected
+ *  *∕
+ * class ProtNoDesc {
+ *   /** @private *∕
+ *   constructor() {}
+ *   /** m *∕
+ *   m() {}
+ * }
+ *
+ * protected-export.js:
+ *
+ * /**
+ *  * ExpProt class desc.
+ *  * @protected
+ *  *∕
+ * export class ExpProt {
+ *   /**
+ *    * ExpProt ctor.
+ *    * @private
+ *    *∕
+ *   constructor() {}
+ *   /** m *∕
+ *   m() {}
+ * }
+ *
+ * protected-expr.js:
+ *
+ * /**
+ *  * ExprProt class desc.
+ *  * @protected
+ *  *∕
+ * const ExprProt = class {
+ *   /**
+ *    * ExprProt ctor.
+ *    * @private
+ *    *∕
+ *   constructor() {}
+ *   /** m *∕
+ *   m() {}
+ * };
+ *
+ * /** @namespace *∕
+ * const Ns = {};
+ *
+ * /**
+ *  * NsProt class desc.
+ *  * @protected
+ *  *∕
+ * Ns.NsProt = class {
+ *   /**
+ *    * NsProt ctor.
+ *    * @private
+ *    *∕
+ *   constructor() {}
+ *   /** m *∕
+ *   m() {}
+ * };
+ *
+ * protected-alias.js:
+ *
+ * /** @namespace *∕
+ * const Ns2 = {};
+ *
+ * /**
+ *  * Other class desc.
+ *  * @protected
+ *  * @alias Other
+ *  *∕
+ * Ns2.Foo = class {
+ *   /**
+ *    * Other ctor.
+ *    * @private
+ *    *∕
+ *   constructor() {}
+ *   /** am *∕
+ *   am() {}
+ * };
+ *
+ * controls.js:
+ *
+ * /**
+ *  * ProtPubCtor class desc.
+ *  * @protected
+ *  *∕
+ * class ProtPubCtor {
+ *   /**
+ *    * ProtPubCtor ctor.
+ *    * @param {number} y the y
+ *    *∕
+ *   constructor(y) {}
+ *   /** m *∕
+ *   m() {}
+ * }
+ *
+ * /** CtorProt class desc. *∕
+ * class CtorProt {
+ *   /**
+ *    * CtorProt ctor.
+ *    * @protected
+ *    *∕
+ *   constructor() {}
+ *   /** m *∕
+ *   m() {}
+ * }
+ *
+ * /**
+ *  * ProtHide class desc.
+ *  * @protected
+ *  * @hideconstructor
+ *  *∕
+ * class ProtHide {
+ *   /**
+ *    * ProtHide ctor.
+ *    * @private
+ *    *∕
+ *   constructor() {}
+ *   /** m *∕
+ *   m() {}
+ * }
+ *
+ * /**
+ *  * PrivBoth class desc.
+ *  * @private
+ *  *∕
+ * class PrivBoth {
+ *   /**
+ *    * PrivBoth ctor.
+ *    * @private
+ *    *∕
+ *   constructor() {}
+ *   /** m *∕
+ *   m() {}
+ * }
+ *
+ * nested-trap.js:
+ *
+ * /**
+ *  * Trap class desc.
+ *  * @protected
+ *  *∕
+ * class Trap {
+ *   /**
+ *    * Trap public ctor.
+ *    * @param {number} a the a
+ *    *∕
+ *   constructor(a) {
+ *     /** Inner Trap desc. *∕
+ *     class Trap {
+ *       /**
+ *        * Inner Trap ctor.
+ *        * @private
+ *        *∕
+ *       constructor() {}
+ *     }
+ *   }
+ *   /** m *∕
+ *   m() {}
+ * }
+ *
+ * nested-trap-variants.js:
+ *
+ * /**
+ *  * Trap2 class desc.
+ *  * @protected
+ *  *∕
+ * class Trap2 {
+ *   constructor() {
+ *     /** Inner Trap2 desc. *∕
+ *     class Trap2 {
+ *       /**
+ *        * Inner Trap2 ctor.
+ *        * @private
+ *        *∕
+ *       constructor() {}
+ *     }
+ *   }
+ *   /** m *∕
+ *   m() {}
+ * }
+ *
+ * /**
+ *  * Trap3 class desc.
+ *  * @protected
+ *  *∕
+ * class Trap3 {
+ *   /** m *∕
+ *   m() {
+ *     /** Inner Trap3 desc. *∕
+ *     class Trap3 {
+ *       /**
+ *        * Inner Trap3 ctor.
+ *        * @private
+ *        *∕
+ *       constructor() {}
+ *     }
+ *   }
+ * }
+ *
+ * /**
+ *  * Trap4 class desc.
+ *  * @protected
+ *  *∕
+ * class Trap4 {
+ *   /** m *∕
+ *   m() {
+ *     /** Inner Trap4 desc. *∕
+ *     class Trap4 {
+ *       /**
+ *        * Inner Trap4 ctor.
+ *        * @private
+ *        *∕
+ *       constructor() {}
+ *     }
+ *   }
+ *   /**
+ *    * Trap4 public ctor.
+ *    * @param {number} b the b
+ *    *∕
+ *   constructor(b) {}
+ * }
+ */
+export const PRIVATE_CTOR_CLASS_ACCESS_DOCLETS: unknown[] = [
+  {
+    meta: {
+      filename: 'protected-class.js',
+      lineno: 5,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Prot',
+        type: 'ClassDeclaration',
+        paramnames: ['x'],
+      },
+    },
+    classdesc: '<p>Prot class desc.</p>',
+    access: 'protected',
+    name: 'Prot',
+    longname: 'Prot',
+    kind: 'class',
+    scope: 'global',
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'protected-class.js',
+      lineno: 13,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'Prot',
+        type: 'MethodDefinition',
+        paramnames: ['x'],
+      },
+    },
+    description: '<p>Prot ctor.</p>',
+    access: 'private',
+    since: '9.9.9',
+    see: ['SecretSee'],
+    params: [
+      {
+        type: {
+          names: ['number'],
+        },
+        description: '<p>the x</p>',
+        name: 'x',
+      },
+    ],
+    name: 'Prot',
+    longname: 'Prot',
+    kind: 'class',
+    scope: 'global',
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'protected-class.js',
+      lineno: 5,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Prot',
+        type: 'ClassDeclaration',
+        paramnames: ['x'],
+      },
+    },
+    name: 'Prot',
+    longname: 'Prot',
+    kind: 'class',
+    classdesc: '<p>Prot class desc.</p>',
+    access: 'protected',
+    scope: 'global',
+    description: '<p>Prot ctor.</p>',
+    since: '9.9.9',
+    see: ['SecretSee'],
+    params: [
+      {
+        type: {
+          names: ['number'],
+        },
+        description: '<p>the x</p>',
+        name: 'x',
+      },
+    ],
+  },
+  {
+    meta: {
+      filename: 'protected-class.js',
+      lineno: 15,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'Prot#m',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>m</p>',
+    name: 'm',
+    longname: 'Prot#m',
+    kind: 'function',
+    memberof: 'Prot',
+    scope: 'instance',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'public-class.js',
+      lineno: 5,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Pub',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    classdesc: '<p>Pub class desc.</p>',
+    access: 'public',
+    name: 'Pub',
+    longname: 'Pub',
+    kind: 'class',
+    scope: 'global',
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'public-class.js',
+      lineno: 10,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'Pub',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>Pub ctor.</p>',
+    access: 'private',
+    name: 'Pub',
+    longname: 'Pub',
+    kind: 'class',
+    scope: 'global',
+    params: [],
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'public-class.js',
+      lineno: 5,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Pub',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    name: 'Pub',
+    longname: 'Pub',
+    kind: 'class',
+    classdesc: '<p>Pub class desc.</p>',
+    access: 'public',
+    scope: 'global',
+    description: '<p>Pub ctor.</p>',
+  },
+  {
+    meta: {
+      filename: 'public-class.js',
+      lineno: 12,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'Pub#m',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>m</p>',
+    name: 'm',
+    longname: 'Pub#m',
+    kind: 'function',
+    memberof: 'Pub',
+    scope: 'instance',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'package-class.js',
+      lineno: 5,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Pkg',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    classdesc: '<p>Pkg class desc.</p>',
+    access: 'package',
+    name: 'Pkg',
+    longname: 'Pkg',
+    kind: 'class',
+    scope: 'global',
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'package-class.js',
+      lineno: 10,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'Pkg',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>Pkg ctor.</p>',
+    access: 'private',
+    name: 'Pkg',
+    longname: 'Pkg',
+    kind: 'class',
+    scope: 'global',
+    params: [],
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'package-class.js',
+      lineno: 5,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Pkg',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    name: 'Pkg',
+    longname: 'Pkg',
+    kind: 'class',
+    classdesc: '<p>Pkg class desc.</p>',
+    access: 'package',
+    scope: 'global',
+    description: '<p>Pkg ctor.</p>',
+  },
+  {
+    meta: {
+      filename: 'package-class.js',
+      lineno: 12,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'Pkg#m',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>m</p>',
+    name: 'm',
+    longname: 'Pkg#m',
+    kind: 'function',
+    memberof: 'Pkg',
+    scope: 'instance',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'access-tag.js',
+      lineno: 5,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'AccTag',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    classdesc: '<p>AccTag class desc.</p>',
+    access: 'protected',
+    name: 'AccTag',
+    longname: 'AccTag',
+    kind: 'class',
+    scope: 'global',
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'access-tag.js',
+      lineno: 10,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'AccTag',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>AccTag ctor.</p>',
+    access: 'private',
+    name: 'AccTag',
+    longname: 'AccTag',
+    kind: 'class',
+    scope: 'global',
+    params: [],
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'access-tag.js',
+      lineno: 5,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'AccTag',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    name: 'AccTag',
+    longname: 'AccTag',
+    kind: 'class',
+    classdesc: '<p>AccTag class desc.</p>',
+    access: 'protected',
+    scope: 'global',
+    description: '<p>AccTag ctor.</p>',
+  },
+  {
+    meta: {
+      filename: 'access-tag.js',
+      lineno: 12,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'AccTag#m',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>m</p>',
+    name: 'm',
+    longname: 'AccTag#m',
+    kind: 'function',
+    memberof: 'AccTag',
+    scope: 'instance',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'bare-private-ctor.js',
+      lineno: 5,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'ProtNoDesc',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    classdesc: '<p>ProtNoDesc class desc.</p>',
+    access: 'protected',
+    name: 'ProtNoDesc',
+    longname: 'ProtNoDesc',
+    kind: 'class',
+    scope: 'global',
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'bare-private-ctor.js',
+      lineno: 7,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'ProtNoDesc',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    access: 'private',
+    name: 'ProtNoDesc',
+    longname: 'ProtNoDesc',
+    kind: 'class',
+    scope: 'global',
+    params: [],
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'bare-private-ctor.js',
+      lineno: 5,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'ProtNoDesc',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    name: 'ProtNoDesc',
+    longname: 'ProtNoDesc',
+    kind: 'class',
+    classdesc: '<p>ProtNoDesc class desc.</p>',
+    access: 'protected',
+    scope: 'global',
+  },
+  {
+    meta: {
+      filename: 'bare-private-ctor.js',
+      lineno: 9,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'ProtNoDesc#m',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>m</p>',
+    name: 'm',
+    longname: 'ProtNoDesc#m',
+    kind: 'function',
+    memberof: 'ProtNoDesc',
+    scope: 'instance',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'protected-export.js',
+      lineno: 5,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'exports.ExpProt',
+        type: 'ClassDeclaration',
+      },
+    },
+    classdesc: '<p>ExpProt class desc.</p>',
+    access: 'protected',
+    name: 'ExpProt',
+    longname: 'ExpProt',
+    kind: 'class',
+    scope: 'global',
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'protected-export.js',
+      lineno: 5,
+      columnno: 7,
+      path: '/src',
+      code: {
+        name: 'ExpProt',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    undocumented: true,
+    name: 'ExpProt',
+    longname: 'ExpProt',
+    kind: 'class',
+    scope: 'global',
+  },
+  {
+    meta: {
+      filename: 'protected-export.js',
+      lineno: 10,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'exports.ExpProt',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>ExpProt ctor.</p>',
+    access: 'private',
+    name: 'ExpProt',
+    longname: 'ExpProt#ExpProt',
+    kind: 'class',
+    memberof: 'ExpProt',
+    scope: 'instance',
+    params: [],
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'protected-export.js',
+      lineno: 5,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'exports.ExpProt',
+        type: 'ClassDeclaration',
+      },
+    },
+    name: 'ExpProt',
+    longname: 'ExpProt',
+    kind: 'class',
+    classdesc: '<p>ExpProt class desc.</p>',
+    access: 'protected',
+    scope: 'global',
+    description: '<p>ExpProt ctor.</p>',
+    memberof: 'ExpProt',
+  },
+  {
+    meta: {
+      filename: 'protected-export.js',
+      lineno: 12,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'ExpProt#m',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>m</p>',
+    name: 'm',
+    longname: 'ExpProt#m',
+    kind: 'function',
+    memberof: 'ExpProt',
+    scope: 'instance',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'protected-expr.js',
+      lineno: 5,
+      columnno: 6,
+      path: '/src',
+      code: {
+        name: 'ExprProt',
+        type: 'ClassExpression',
+      },
+    },
+    classdesc: '<p>ExprProt class desc.</p>',
+    access: 'protected',
+    name: 'ExprProt',
+    longname: 'ExprProt',
+    kind: 'class',
+    scope: 'global',
+    params: [],
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'protected-expr.js',
+      lineno: 10,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'ExprProt',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>ExprProt ctor.</p>',
+    access: 'private',
+    name: 'ExprProt',
+    longname: 'ExprProt',
+    kind: 'class',
+    scope: 'global',
+    params: [],
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'protected-expr.js',
+      lineno: 5,
+      columnno: 6,
+      path: '/src',
+      code: {
+        name: 'ExprProt',
+        type: 'ClassExpression',
+      },
+    },
+    name: 'ExprProt',
+    longname: 'ExprProt',
+    kind: 'class',
+    classdesc: '<p>ExprProt class desc.</p>',
+    access: 'protected',
+    scope: 'global',
+    description: '<p>ExprProt ctor.</p>',
+  },
+  {
+    meta: {
+      filename: 'protected-expr.js',
+      lineno: 12,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'ExprProt#m',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>m</p>',
+    name: 'm',
+    longname: 'ExprProt#m',
+    kind: 'function',
+    memberof: 'ExprProt',
+    scope: 'instance',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'protected-expr.js',
+      lineno: 16,
+      columnno: 6,
+      path: '/src',
+      code: {
+        name: 'Ns',
+        type: 'ObjectExpression',
+      },
+    },
+    kind: 'namespace',
+    name: 'Ns',
+    longname: 'Ns',
+    scope: 'global',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'protected-expr.js',
+      lineno: 22,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Ns.NsProt',
+        type: 'ClassExpression',
+        paramnames: [],
+      },
+    },
+    classdesc: '<p>NsProt class desc.</p>',
+    access: 'protected',
+    name: 'NsProt',
+    longname: 'Ns.NsProt',
+    kind: 'class',
+    memberof: 'Ns',
+    scope: 'static',
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'protected-expr.js',
+      lineno: 27,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'Ns.NsProt',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>NsProt ctor.</p>',
+    access: 'private',
+    name: 'NsProt',
+    longname: 'Ns~Ns.NsProt',
+    kind: 'class',
+    memberof: 'Ns~Ns',
+    scope: 'static',
+    params: [],
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'protected-expr.js',
+      lineno: 22,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Ns.NsProt',
+        type: 'ClassExpression',
+        paramnames: [],
+      },
+    },
+    name: 'NsProt',
+    longname: 'Ns.NsProt',
+    kind: 'class',
+    classdesc: '<p>NsProt class desc.</p>',
+    access: 'protected',
+    memberof: 'Ns',
+    scope: 'static',
+    description: '<p>NsProt ctor.</p>',
+  },
+  {
+    meta: {
+      filename: 'protected-expr.js',
+      lineno: 29,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'Ns.NsProt#m',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>m</p>',
+    name: 'm',
+    longname: 'Ns.NsProt#m',
+    kind: 'function',
+    memberof: 'Ns.NsProt',
+    scope: 'instance',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'protected-alias.js',
+      lineno: 2,
+      columnno: 6,
+      path: '/src',
+      code: {
+        name: 'Ns2',
+        type: 'ObjectExpression',
+      },
+    },
+    kind: 'namespace',
+    name: 'Ns2',
+    longname: 'Ns2',
+    scope: 'global',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'protected-alias.js',
+      lineno: 9,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Ns2.Foo',
+        type: 'ClassExpression',
+        paramnames: [],
+      },
+    },
+    classdesc: '<p>Other class desc.</p>',
+    access: 'protected',
+    alias: 'Other',
+    name: 'Other',
+    longname: 'Other',
+    kind: 'class',
+    scope: 'global',
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'protected-alias.js',
+      lineno: 14,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'Ns2.Foo',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>Other ctor.</p>',
+    access: 'private',
+    name: 'Foo',
+    longname: 'Ns2.Foo',
+    kind: 'class',
+    memberof: 'Ns2',
+    scope: 'static',
+    params: [],
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'protected-alias.js',
+      lineno: 9,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Ns2.Foo',
+        type: 'ClassExpression',
+        paramnames: [],
+      },
+    },
+    name: 'Other',
+    longname: 'Other',
+    kind: 'class',
+    classdesc: '<p>Other class desc.</p>',
+    access: 'protected',
+    alias: 'Other',
+    scope: 'global',
+    description: '<p>Other ctor.</p>',
+    memberof: 'Ns2',
+  },
+  {
+    meta: {
+      filename: 'protected-alias.js',
+      lineno: 16,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'Ns2.Foo#am',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>am</p>',
+    name: 'am',
+    longname: 'Ns2.Foo#am',
+    kind: 'function',
+    memberof: 'Ns2.Foo',
+    scope: 'instance',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'controls.js',
+      lineno: 5,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'ProtPubCtor',
+        type: 'ClassDeclaration',
+        paramnames: ['y'],
+      },
+    },
+    classdesc: '<p>ProtPubCtor class desc.</p>',
+    access: 'protected',
+    name: 'ProtPubCtor',
+    longname: 'ProtPubCtor',
+    kind: 'class',
+    scope: 'global',
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'controls.js',
+      lineno: 10,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'ProtPubCtor',
+        type: 'MethodDefinition',
+        paramnames: ['y'],
+      },
+    },
+    description: '<p>ProtPubCtor ctor.</p>',
+    params: [
+      {
+        type: {
+          names: ['number'],
+        },
+        description: '<p>the y</p>',
+        name: 'y',
+      },
+    ],
+    name: 'ProtPubCtor',
+    longname: 'ProtPubCtor',
+    kind: 'class',
+    scope: 'global',
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'controls.js',
+      lineno: 5,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'ProtPubCtor',
+        type: 'ClassDeclaration',
+        paramnames: ['y'],
+      },
+    },
+    name: 'ProtPubCtor',
+    longname: 'ProtPubCtor',
+    kind: 'class',
+    classdesc: '<p>ProtPubCtor class desc.</p>',
+    access: 'protected',
+    scope: 'global',
+    description: '<p>ProtPubCtor ctor.</p>',
+    params: [
+      {
+        type: {
+          names: ['number'],
+        },
+        description: '<p>the y</p>',
+        name: 'y',
+      },
+    ],
+  },
+  {
+    meta: {
+      filename: 'controls.js',
+      lineno: 12,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'ProtPubCtor#m',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>m</p>',
+    name: 'm',
+    longname: 'ProtPubCtor#m',
+    kind: 'function',
+    memberof: 'ProtPubCtor',
+    scope: 'instance',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'controls.js',
+      lineno: 16,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'CtorProt',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    classdesc: '<p>CtorProt class desc.</p>',
+    name: 'CtorProt',
+    longname: 'CtorProt',
+    kind: 'class',
+    scope: 'global',
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'controls.js',
+      lineno: 21,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'CtorProt',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>CtorProt ctor.</p>',
+    access: 'protected',
+    name: 'CtorProt',
+    longname: 'CtorProt',
+    kind: 'class',
+    scope: 'global',
+    params: [],
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'controls.js',
+      lineno: 16,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'CtorProt',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    name: 'CtorProt',
+    longname: 'CtorProt',
+    kind: 'class',
+    classdesc: '<p>CtorProt class desc.</p>',
+    scope: 'global',
+    description: '<p>CtorProt ctor.</p>',
+    access: 'protected',
+  },
+  {
+    meta: {
+      filename: 'controls.js',
+      lineno: 23,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'CtorProt#m',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>m</p>',
+    name: 'm',
+    longname: 'CtorProt#m',
+    kind: 'function',
+    memberof: 'CtorProt',
+    scope: 'instance',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'controls.js',
+      lineno: 31,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'ProtHide',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    classdesc: '<p>ProtHide class desc.</p>',
+    access: 'protected',
+    hideconstructor: true,
+    name: 'ProtHide',
+    longname: 'ProtHide',
+    kind: 'class',
+    scope: 'global',
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'controls.js',
+      lineno: 36,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'ProtHide',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>ProtHide ctor.</p>',
+    access: 'private',
+    name: 'ProtHide',
+    longname: 'ProtHide',
+    kind: 'class',
+    scope: 'global',
+    params: [],
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'controls.js',
+      lineno: 31,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'ProtHide',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    name: 'ProtHide',
+    longname: 'ProtHide',
+    kind: 'class',
+    classdesc: '<p>ProtHide class desc.</p>',
+    access: 'protected',
+    hideconstructor: true,
+    scope: 'global',
+    description: '<p>ProtHide ctor.</p>',
+  },
+  {
+    meta: {
+      filename: 'controls.js',
+      lineno: 38,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'ProtHide#m',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>m</p>',
+    name: 'm',
+    longname: 'ProtHide#m',
+    kind: 'function',
+    memberof: 'ProtHide',
+    scope: 'instance',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'controls.js',
+      lineno: 45,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'PrivBoth',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    classdesc: '<p>PrivBoth class desc.</p>',
+    access: 'private',
+    name: 'PrivBoth',
+    longname: 'PrivBoth',
+    kind: 'class',
+    scope: 'global',
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'controls.js',
+      lineno: 50,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'PrivBoth',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>PrivBoth ctor.</p>',
+    access: 'private',
+    name: 'PrivBoth',
+    longname: 'PrivBoth',
+    kind: 'class',
+    scope: 'global',
+    params: [],
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'controls.js',
+      lineno: 45,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'PrivBoth',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    name: 'PrivBoth',
+    longname: 'PrivBoth',
+    kind: 'class',
+    classdesc: '<p>PrivBoth class desc.</p>',
+    access: 'private',
+    scope: 'global',
+    description: '<p>PrivBoth ctor.</p>',
+  },
+  {
+    meta: {
+      filename: 'controls.js',
+      lineno: 52,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'PrivBoth#m',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>m</p>',
+    name: 'm',
+    longname: 'PrivBoth#m',
+    kind: 'function',
+    memberof: 'PrivBoth',
+    scope: 'instance',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'nested-trap.js',
+      lineno: 5,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Trap',
+        type: 'ClassDeclaration',
+        paramnames: ['a'],
+      },
+    },
+    classdesc: '<p>Trap class desc.</p>',
+    access: 'protected',
+    name: 'Trap',
+    longname: 'Trap',
+    kind: 'class',
+    scope: 'global',
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'nested-trap.js',
+      lineno: 10,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'Trap',
+        type: 'MethodDefinition',
+        paramnames: ['a'],
+      },
+    },
+    description: '<p>Trap public ctor.</p>',
+    params: [
+      {
+        type: {
+          names: ['number'],
+        },
+        description: '<p>the a</p>',
+        name: 'a',
+      },
+    ],
+    name: 'Trap',
+    longname: 'Trap',
+    kind: 'class',
+    scope: 'global',
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'nested-trap.js',
+      lineno: 5,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Trap',
+        type: 'ClassDeclaration',
+        paramnames: ['a'],
+      },
+    },
+    name: 'Trap',
+    longname: 'Trap',
+    kind: 'class',
+    classdesc: '<p>Trap class desc.</p>',
+    access: 'protected',
+    scope: 'global',
+    description: '<p>Trap public ctor.</p>',
+    params: [
+      {
+        type: {
+          names: ['number'],
+        },
+        description: '<p>the a</p>',
+        name: 'a',
+      },
+    ],
+  },
+  {
+    meta: {
+      filename: 'nested-trap.js',
+      lineno: 12,
+      columnno: 4,
+      path: '/src',
+      code: {
+        name: 'Trap',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    classdesc: '<p>Inner Trap desc.</p>',
+    name: 'Trap',
+    longname: 'Trap',
+    kind: 'class',
+    scope: 'global',
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'nested-trap.js',
+      lineno: 17,
+      columnno: 6,
+      path: '/src',
+      code: {
+        name: 'Trap',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>Inner Trap ctor.</p>',
+    access: 'private',
+    name: 'Trap',
+    longname: 'Trap',
+    kind: 'class',
+    scope: 'global',
+    params: [],
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'nested-trap.js',
+      lineno: 12,
+      columnno: 4,
+      path: '/src',
+      code: {
+        name: 'Trap',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    name: 'Trap',
+    longname: 'Trap',
+    kind: 'class',
+    classdesc: '<p>Inner Trap desc.</p>',
+    scope: 'global',
+    description: '<p>Inner Trap ctor.</p>',
+    access: 'private',
+  },
+  {
+    meta: {
+      filename: 'nested-trap.js',
+      lineno: 21,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'Trap#m',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>m</p>',
+    name: 'm',
+    longname: 'Trap#m',
+    kind: 'function',
+    memberof: 'Trap',
+    scope: 'instance',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'nested-trap-variants.js',
+      lineno: 5,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Trap2',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    classdesc: '<p>Trap2 class desc.</p>',
+    access: 'protected',
+    name: 'Trap2',
+    longname: 'Trap2',
+    kind: 'class',
+    scope: 'global',
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'nested-trap-variants.js',
+      lineno: 6,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'Trap2',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    undocumented: true,
+    name: 'Trap2',
+    longname: 'Trap2',
+    kind: 'class',
+    scope: 'global',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'nested-trap-variants.js',
+      lineno: 5,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Trap2',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    name: 'Trap2',
+    longname: 'Trap2',
+    kind: 'class',
+    classdesc: '<p>Trap2 class desc.</p>',
+    access: 'protected',
+    scope: 'global',
+  },
+  {
+    meta: {
+      filename: 'nested-trap-variants.js',
+      lineno: 8,
+      columnno: 4,
+      path: '/src',
+      code: {
+        name: 'Trap2',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    classdesc: '<p>Inner Trap2 desc.</p>',
+    name: 'Trap2',
+    longname: 'Trap2',
+    kind: 'class',
+    scope: 'global',
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'nested-trap-variants.js',
+      lineno: 13,
+      columnno: 6,
+      path: '/src',
+      code: {
+        name: 'Trap2',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>Inner Trap2 ctor.</p>',
+    access: 'private',
+    name: 'Trap2',
+    longname: 'Trap2',
+    kind: 'class',
+    scope: 'global',
+    params: [],
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'nested-trap-variants.js',
+      lineno: 8,
+      columnno: 4,
+      path: '/src',
+      code: {
+        name: 'Trap2',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    name: 'Trap2',
+    longname: 'Trap2',
+    kind: 'class',
+    classdesc: '<p>Inner Trap2 desc.</p>',
+    scope: 'global',
+    description: '<p>Inner Trap2 ctor.</p>',
+    access: 'private',
+  },
+  {
+    meta: {
+      filename: 'nested-trap-variants.js',
+      lineno: 17,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'Trap2#m',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>m</p>',
+    name: 'm',
+    longname: 'Trap2#m',
+    kind: 'function',
+    memberof: 'Trap2',
+    scope: 'instance',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'nested-trap-variants.js',
+      lineno: 24,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Trap3',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    classdesc: '<p>Trap3 class desc.</p>',
+    access: 'protected',
+    name: 'Trap3',
+    longname: 'Trap3',
+    kind: 'class',
+    scope: 'global',
+  },
+  {
+    meta: {
+      filename: 'nested-trap-variants.js',
+      lineno: 26,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'Trap3#m',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>m</p>',
+    name: 'm',
+    longname: 'Trap3#m',
+    kind: 'function',
+    memberof: 'Trap3',
+    scope: 'instance',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'nested-trap-variants.js',
+      lineno: 28,
+      columnno: 4,
+      path: '/src',
+      code: {
+        name: 'Trap3',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    classdesc: '<p>Inner Trap3 desc.</p>',
+    name: 'Trap3',
+    longname: 'Trap3',
+    kind: 'class',
+    scope: 'global',
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'nested-trap-variants.js',
+      lineno: 33,
+      columnno: 6,
+      path: '/src',
+      code: {
+        name: 'Trap3',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>Inner Trap3 ctor.</p>',
+    access: 'private',
+    name: 'Trap3',
+    longname: 'Trap3',
+    kind: 'class',
+    scope: 'global',
+    params: [],
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'nested-trap-variants.js',
+      lineno: 28,
+      columnno: 4,
+      path: '/src',
+      code: {
+        name: 'Trap3',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    name: 'Trap3',
+    longname: 'Trap3',
+    kind: 'class',
+    classdesc: '<p>Inner Trap3 desc.</p>',
+    scope: 'global',
+    description: '<p>Inner Trap3 ctor.</p>',
+    access: 'private',
+  },
+  {
+    meta: {
+      filename: 'nested-trap-variants.js',
+      lineno: 42,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Trap4',
+        type: 'ClassDeclaration',
+        paramnames: ['b'],
+      },
+    },
+    classdesc: '<p>Trap4 class desc.</p>',
+    access: 'protected',
+    name: 'Trap4',
+    longname: 'Trap4',
+    kind: 'class',
+    scope: 'global',
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'nested-trap-variants.js',
+      lineno: 44,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'Trap4#m',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>m</p>',
+    name: 'm',
+    longname: 'Trap4#m',
+    kind: 'function',
+    memberof: 'Trap4',
+    scope: 'instance',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'nested-trap-variants.js',
+      lineno: 46,
+      columnno: 4,
+      path: '/src',
+      code: {
+        name: 'Trap4',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    classdesc: '<p>Inner Trap4 desc.</p>',
+    name: 'Trap4',
+    longname: 'Trap4',
+    kind: 'class',
+    scope: 'global',
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'nested-trap-variants.js',
+      lineno: 51,
+      columnno: 6,
+      path: '/src',
+      code: {
+        name: 'Trap4',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: '<p>Inner Trap4 ctor.</p>',
+    access: 'private',
+    name: 'Trap4',
+    longname: 'Trap4',
+    kind: 'class',
+    scope: 'global',
+    params: [],
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'nested-trap-variants.js',
+      lineno: 46,
+      columnno: 4,
+      path: '/src',
+      code: {
+        name: 'Trap4',
+        type: 'ClassDeclaration',
+        paramnames: [],
+      },
+    },
+    name: 'Trap4',
+    longname: 'Trap4',
+    kind: 'class',
+    classdesc: '<p>Inner Trap4 desc.</p>',
+    scope: 'global',
+    description: '<p>Inner Trap4 ctor.</p>',
+    access: 'private',
+  },
+  {
+    meta: {
+      filename: 'nested-trap-variants.js',
+      lineno: 58,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'Trap4',
+        type: 'MethodDefinition',
+        paramnames: ['b'],
+      },
+    },
+    description: '<p>Trap4 public ctor.</p>',
+    params: [
+      {
+        type: {
+          names: ['number'],
+        },
+        description: '<p>the b</p>',
+        name: 'b',
+      },
+    ],
+    name: 'Trap4',
+    longname: 'Trap4',
+    kind: 'class',
+    scope: 'global',
+    undocumented: true,
+  },
+  {
+    meta: {
+      filename: 'nested-trap-variants.js',
+      lineno: 42,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Trap4',
+        type: 'ClassDeclaration',
+        paramnames: ['b'],
+      },
+    },
+    name: 'Trap4',
+    longname: 'Trap4',
+    kind: 'class',
+    classdesc: '<p>Trap4 class desc.</p>',
+    access: 'protected',
+    scope: 'global',
+    description: '<p>Trap4 public ctor.</p>',
+    params: [
+      {
+        type: {
+          names: ['number'],
+        },
+        description: '<p>the b</p>',
+        name: 'b',
+      },
+    ],
+  },
+];
