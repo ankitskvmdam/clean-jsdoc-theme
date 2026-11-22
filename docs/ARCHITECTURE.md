@@ -752,7 +752,10 @@ typedoc/src/
 │                           #   symbol-comment images through the same _assets/
 │                           #   pipeline via one shared collector (resolveDocletImages
 │                           #   mutates doclets IN PLACE before generateSite; README
-│                           #   base = cwd), merging files (deduped) + inlineSvgs.
+│                           #   base = cwd) and projectDocuments/@document pages
+│                           #   (locateProjectDocuments → resolveLocatedDocImages,
+│                           #   base = each document's source file; colliding
+│                           #   paths dropped first), merging files (deduped) + inlineSvgs.
 │                           #   Prints the utils formatBuildReport (node:zlib gzip
 │                           #   sizer — allowed here, it's the bridge, not utils).
 │                           #   Holds defaultTheme.
@@ -762,7 +765,9 @@ typedoc/src/
 │                           #   (Markdown ![](src) AND raw <img src> → content-hashed
 │                           #   _assets/ + inline SVGs; srcs are base-free — rang/dwar
 │                           #   add basePath, #377)
-│                           #   + resolveDocImages (docs) + resolveDocletImages
+│                           #   + resolveDocImages (docs) + resolveLocatedDocImages
+│                           #   (project documents, base = each document's source
+│                           #   file) + resolveDocletImages
 │                           #   (comment HTML, base = each symbol's meta.path).
 ├── reflection-to-doclets.ts# THE adapter: ProjectReflection → flat TDoclet[].
 │                           #   Class/Interface/Function/Method/Property/Variable/

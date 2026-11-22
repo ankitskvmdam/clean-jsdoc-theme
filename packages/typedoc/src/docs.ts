@@ -1,7 +1,9 @@
 /**
  * Prose-docs collection + local-image asset pipeline for the TypeDoc bridge —
  * the `cleanJsdocTheme.docs` directory front-end, plus the shared image resolver
- * the README and symbol-comment prose also flow through.
+ * the README, symbol-comment prose and TypeDoc project documents
+ * (`projectDocuments` / `@document`, resolved against each document's own file)
+ * also flow through.
  *
  * This is the TypeDoc twin of the JSDoc bridge's `collectDocs` /
  * `resolveDocImages` / `resolveDocletImages` (in `clean-jsdoc-theme/src/publish.ts`).
@@ -292,13 +294,70 @@ export async function resolveDocImages(
   if (docs.length === 0) return { docs, files: [], inlineSvgs: {} };
   const root = resolvePath(docsDir);
   const collector = createImageCollector(warn);
+  const out = await resolveLocatedDocImages(
+    docs.map((doc) => ({ doc, baseDir: dirname(resolvePath(root, doc.path)) })),
+    collector
+  );
+  return { docs: out, files: collector.files, inlineSvgs: collector.inlineSvgs };
+}
+
+/** A doc plus where its relative image srcs resolve from. */
+export interface LocatedDoc {
+  doc: DocInput;
+  /** Absolute directory of the doc's source file. */
+  baseDir?: string;
+  /** Used only when `baseDir` is unknown: raw src text → absolute file path. */
+  files?: ReadonlyMap<string, string>;
+}
+
+/**
+ * A view of `collector` that only resolves `/`-rooted srcs and the srcs listed
+ * in `files` (by their known absolute path). Anything else yields `null` with no
+ * warning: TypeDoc already warned about an unresolvable relative path when it
+ * converted the document. Shares the real collector's `files` / `inlineSvgs`.
+ */
+function knownFilesOnly(
+  collector: ImageCollector,
+  files: ReadonlyMap<string, string>
+): ImageCollector {
+  return {
+    files: collector.files,
+    inlineSvgs: collector.inlineSvgs,
+    resolve: async (rawSrc, baseDir) => {
+      if (rawSrc.trim().startsWith('/')) return collector.resolve(rawSrc, baseDir);
+      const abs = files.get(rawSrc);
+      // `./<name>` from the file's own dir — passing `abs` itself would read as
+      // project-root-relative (leading `/`) on POSIX.
+      return abs ? collector.resolve('./' + basename(abs), dirname(abs)) : null;
+    },
+  };
+}
+
+/**
+ * Route the local images of docs that each carry their own base (TypeDoc
+ * `projectDocuments` / `@document` pages, #378) through `collector`, the same
+ * way {@link resolveDocImages} does for a docs directory. A doc with `baseDir`
+ * resolves relative srcs against it; one without (a package-level document in
+ * `entryPointStrategy: "packages"`, whose source path TypeDoc doesn't keep)
+ * rewrites only the srcs listed in `files`. An unchanged doc is returned as-is.
+ */
+export async function resolveLocatedDocImages(
+  docs: readonly LocatedDoc[],
+  collector: ImageCollector
+): Promise<DocInput[]> {
   const out: DocInput[] = [];
-  for (const doc of docs) {
-    const docDir = dirname(resolvePath(root, doc.path));
-    const content = await rewriteImageRefs(doc.content, docDir, collector);
+  for (const { doc, baseDir, files } of docs) {
+    const content =
+      baseDir !== undefined
+        ? await rewriteImageRefs(doc.content, baseDir, collector)
+        : await rewriteImageRefs(
+            doc.content,
+            process.cwd(),
+            knownFilesOnly(collector, files ?? new Map())
+          );
     out.push(content === doc.content ? doc : { ...doc, content });
   }
-  return { docs: out, files: collector.files, inlineSvgs: collector.inlineSvgs };
+  return out;
 }
 
 /**

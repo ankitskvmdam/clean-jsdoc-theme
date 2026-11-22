@@ -155,6 +155,7 @@ up as ordinary pages in the same sidebar/search:
 They're **merged**, de-duped by path, with the `docs` directory **winning** a
 collision (the explicit directory is the more deliberate authoring surface).
 Pick `docs` for a shared, tool-agnostic guides folder; `projectDocuments` if
-you're already organizing docs the TypeDoc-native way. Note `projectDocuments`
-pages aren't run through the local-image resolver (their image paths are already
-TypeDoc-resolved), whereas `docs` images route through the `_assets/` pipeline.
+you're already organizing docs the TypeDoc-native way. Both route their local
+images (Markdown `![](src)` and raw `<img src>`) through the content-hashed
+`_assets/` pipeline; a `projectDocuments` / `@document` page's images resolve
+relative to that document's own file.
