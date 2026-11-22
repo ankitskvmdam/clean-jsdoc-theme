@@ -464,6 +464,31 @@ describe('HTML-format comments and the replace/mask helpers', () => {
     expect(slices(src, htmlCommentRangesInHtml(src))).toEqual(['<!-- a -->']);
   });
 
+  // A regex over the tag body overflowed the regex engine's backtrack stack on
+  // a tag of several million characters (#382).
+  it.each<[string, () => string]>([
+    ['unclosed quoted values', () => '<a b="x '.repeat(2_000_000) + '<!--'],
+    ['= signs', () => '<a ' + '= '.repeat(4_000_000) + '<!--'],
+    ['one long attribute name', () => '<a ' + 'x'.repeat(16_000_000) + '<!--'],
+  ])(
+    'htmlCommentRangesInHtml reads a multi-megabyte tag of %s to the end of the input (#382)',
+    (_name, makeSource) => {
+      expect(htmlCommentRangesInHtml(makeSource())).toEqual([]);
+    },
+    PERF_TEST_TIMEOUT
+  );
+
+  it(
+    'htmlCommentRangesInHtml finds the comment after a closed multi-megabyte tag (#382)',
+    () => {
+      const src = '<a ' + 'b="x>" '.repeat(2_000_000) + '>' + '<!-- c -->';
+      expect(htmlCommentRangesInHtml(src)).toEqual([
+        { start: src.length - 10, end: src.length, closed: true },
+      ]);
+    },
+    PERF_TEST_TIMEOUT
+  );
+
   it('htmlCommentRangesInHtml reads <?…>, <!DOCTYPE …>, <![CDATA[… and </ … as bogus comments to the next >', () => {
     for (const src of [
       '<p>a <?php <!-- ?> b --> c</p>',
@@ -508,6 +533,172 @@ describe('HTML-format comments and the replace/mask helpers', () => {
     expect(masked).toBe('a       \n      b <!-- z');
     expect(masked.length).toBe(src.length);
     expect(maskHtmlComments(src, htmlCommentRanges(src), '#')).toBe('a ######\n##### b <!-- z');
+  });
+});
+
+describe('htmlCommentRangesInHtml tag bodies match the regex scan they replaced (#382)', () => {
+  // The implementation before #382, kept as the oracle: the tag body was read
+  // by the regex TAG_BODY, and closers were found with a plain indexOf (the
+  // same answers as the cached finder). Valid on small inputs only — the regex
+  // overflows the stack on a tag of several million characters.
+  const REF_TAG_OPEN = /<\/?[A-Za-z]/y;
+  const REF_TAG_BODY = /(?:[^>=]|=[ \t\n\f\r]*(?:"[^"]*"|'[^']*'|(?![ \t\n\f\r"'])))*/y;
+  type Range = { start: number; end: number; closed: boolean };
+  const referenceCommentRangesInHtml = (source: string): Range[] => {
+    const out: Range[] = [];
+    if (!source.includes('<!--')) return out;
+    for (let from = 0; ; ) {
+      const lt = source.indexOf('<', from);
+      if (lt === -1) return out;
+      if (source.startsWith('<!--', lt)) {
+        const openEnd = lt + 4;
+        const empty = /^-?>/.exec(source.slice(openEnd, openEnd + 2));
+        if (empty) out.push({ start: lt, end: openEnd + empty[0].length, closed: true });
+        else {
+          const closer = source.indexOf('-->', openEnd);
+          if (closer === -1) out.push({ start: lt, end: openEnd, closed: false });
+          else out.push({ start: lt, end: closer + 3, closed: true });
+        }
+        from = out[out.length - 1].end;
+        continue;
+      }
+      REF_TAG_OPEN.lastIndex = lt;
+      if (REF_TAG_OPEN.test(source)) {
+        REF_TAG_BODY.lastIndex = REF_TAG_OPEN.lastIndex;
+        REF_TAG_BODY.test(source);
+        const gt = REF_TAG_BODY.lastIndex;
+        if (source[gt] !== '>') return out;
+        from = gt + 1;
+        continue;
+      }
+      const next = source[lt + 1];
+      if (next === '!' || next === '?' || next === '/') {
+        const gt = source.indexOf('>', lt + 2);
+        if (gt === -1) return out;
+        from = gt + 1;
+        continue;
+      }
+      from = lt + 1;
+    }
+  };
+
+  /** Number of sources whose ranges differ from the oracle's, and the first one. */
+  const compare = (sources: Iterable<string>): { mismatches: number; first?: string } => {
+    let mismatches = 0;
+    let first: string | undefined;
+    for (const src of sources) {
+      const got = JSON.stringify(htmlCommentRangesInHtml(src));
+      if (got !== JSON.stringify(referenceCommentRangesInHtml(src))) {
+        mismatches++;
+        first ??= src;
+      }
+    }
+    return { mismatches, first };
+  };
+  const expectSame = (sources: Iterable<string>): void => {
+    const { mismatches, first } = compare(sources);
+    if (first !== undefined) {
+      expect(htmlCommentRangesInHtml(first), JSON.stringify(first)).toEqual(
+        referenceCommentRangesInHtml(first)
+      );
+    }
+    expect(mismatches).toBe(0);
+  };
+
+  it.each<[string, string, string[]]>([
+    ['an unquoted value', '<a b=c> <!-- x -->', ['<!-- x -->']],
+    ['an = at the end of the input', '<!-- x --> <a b=', ['<!-- x -->']],
+    ['an = and a space at the end of the input', '<!-- x --> <a b= ', ['<!-- x -->']],
+    ['=> ending the tag', '<a b=> <!-- x -->', ['<!-- x -->']],
+    ['== re-entering the = branch', '<a b=="y>"> <!-- x -->', ['<!-- x -->']],
+    [
+      '= then CRLF then a quoted value holding > and <!--',
+      '<a b=\r\n"> <!-- y -->"> <!-- x -->',
+      ['<!-- x -->'],
+    ],
+    ['a form feed after =', '<a b=\f"> <!-- y -->"> <!-- x -->', ['<!-- x -->']],
+    [
+      'a vertical tab after = (not whitespace)',
+      '<a b=\v"> <!-- y -->"> <!-- x -->',
+      ['<!-- y -->', '<!-- x -->'],
+    ],
+    ['a quote not after =', '<a "x>y" <!-- c -->', ['<!-- c -->']],
+    ['an unclosed " with a later >', '<a b="x> <!-- c -->', []],
+    ["an unclosed ' with a later >", "<a b='x> <!-- c -->", []],
+    ['mixed quotes', '<a b="\'>" c=\'">\'> <!-- x -->', ['<!-- x -->']],
+    ['< and <a inside a body', '<a < <a b> <!-- x -->', ['<!-- x -->']],
+    ['an end tag with a quoted value', '</p b=">"> <!-- x -->', ['<!-- x -->']],
+    ["a second tag whose = lies beyond the first's >", '<a> <b c=">"> <!-- x -->', ['<!-- x -->']],
+    ['a text = between tags', '<a> = <b c=">"> <!-- x -->', ['<!-- x -->']],
+  ])('matches on %s', (_name, src, want) => {
+    expect(htmlCommentRangesInHtml(src)).toEqual(referenceCommentRangesInHtml(src));
+    expect(slices(src, htmlCommentRangesInHtml(src))).toEqual(want);
+  });
+
+  it('matches on every sequence of up to 5 pieces', () => {
+    const pieces = ['<a', '>', '=', '"', "'", ' ', '\n', 'x', '<!--', '-->', '<!', '</'];
+    const depth = 5;
+    function* sequences(prefix: string, left: number): Generator<string> {
+      yield prefix;
+      yield prefix + '<!-- z -->';
+      if (left === 0) return;
+      for (const p of pieces) yield* sequences(prefix + p, left - 1);
+    }
+    expectSame(sequences('', depth));
+  });
+
+  it('matches on seeded random sequences', () => {
+    const pieces = [
+      '<a',
+      '</a',
+      '<',
+      '>',
+      '=',
+      '"',
+      "'",
+      ' ',
+      '\n',
+      '\r\n',
+      '\t',
+      '\f',
+      '/',
+      'b',
+      'x',
+      '<!--',
+      '-->',
+      '<!',
+      '<?',
+      '</ ',
+      '-',
+      '<!-->',
+      '<!--->',
+      'b="',
+      "c='",
+      '= "',
+      '<A-b',
+    ];
+    let seed = 382;
+    const next = (k: number): number => {
+      seed = (Math.imul(seed, 1_664_525) + 1_013_904_223) >>> 0;
+      return seed % k;
+    };
+    function* randomSources(count: number): Generator<string> {
+      for (let n = 0; n < count; n++) {
+        let s = '';
+        for (let len = 1 + next(24); len > 0; len--) s += pieces[next(pieces.length)];
+        yield s;
+      }
+    }
+    expectSame(randomSources(40_000));
+  });
+
+  it('the oracle is the regex scan (it tells the cases apart)', () => {
+    // Sanity: the oracle is not trivially empty, and it reads a tag body the
+    // way the old regex did.
+    expect(referenceCommentRangesInHtml('<a b=">" <!-- y -->"> <!-- x -->')).toEqual([
+      { start: 22, end: 32, closed: true },
+    ]);
+    expect(referenceCommentRangesInHtml('<a b="x> <!-- c -->')).toEqual([]);
   });
 });
 
@@ -646,6 +837,27 @@ describe('markdown-scan performance', () => {
     '%s scales linearly as raw HTML',
     (_name, makeInput) => {
       expectLinearScaling(htmlCommentRangesInHtml, makeInput);
+    },
+    PERF_TEST_TIMEOUT
+  );
+
+  // The tag body was a regex loop that overflowed the stack on one tag of
+  // several million characters (#382). The window is pinned at 2M and 16M.
+  it.each<[string, (n: number) => string]>([
+    ['unterminated tag attributes', (n) => '<a b="x '.repeat(n / 8) + '<!--'],
+    ['one tag full of = signs', (n) => '<a ' + '= '.repeat(n / 2) + '<!--'],
+    ['one long attribute name', (n) => '<a ' + 'x'.repeat(n) + '<!--'],
+    ['one tag full of quoted values', (n) => '<a ' + 'b="x" '.repeat(n / 6) + '><!--'],
+    ['one tag full of quoted values holding >', (n) => '<a ' + 'b=">" '.repeat(n / 6) + '<!--'],
+    ['many tags then one =', (n) => '<p>'.repeat(n / 3) + '= <!--'],
+    ['whitespace between = and its value', (n) => '<a b=' + ' '.repeat(n) + '"x"><!--'],
+  ])(
+    '%s scales linearly as raw HTML up to 16M characters (#382)',
+    (_name, makeInput) => {
+      expectLinearScaling(htmlCommentRangesInHtml, makeInput, {
+        startSize: 2 * MB,
+        maxSize: 2 * MB,
+      });
     },
     PERF_TEST_TIMEOUT
   );

@@ -861,14 +861,53 @@ export function htmlCommentRanges(source: string): HtmlCommentRange[] {
 //     "bogus comment", which runs to the next `>`;
 //   - any other `<` is text.
 // A tag or bogus comment with no `>` runs to the end of the input, as in a
-// browser (nothing after it is content), and so ends the scan.
+// browser (nothing after it is content), and so ends the scan. The tag opener
+// is this regex; the rest of the tag is read by hand (`tagEndFinder`).
 const TAG_OPEN = /<\/?[A-Za-z]/y;
-// The rest of a tag after `<name`, up to (not including) its `>`. The branches
-// are disjoint on their first character — an `=` goes only to the `=` branch,
-// which takes the quoted value after it whole, or just the `=` (and whitespace)
-// when no quote follows — so the match is one pass over the tag. It stops at the
-// `>`, at an `=` whose quoted value never closes, or at the end of the input.
-const TAG_BODY = /(?:[^>=]|=[ \t\n\f\r]*(?:"[^"]*"|'[^']*'|(?![ \t\n\f\r"'])))*/y;
+
+/**
+ * Finds the `>` that ends a tag whose body (what follows the first letter of
+ * `<name` or `</name`) starts at `from`, or -1 when the tag runs to the end of
+ * the input, for non-decreasing positions. The body grammar:
+ *   - any character but `>` and `=` is part of the body (the rest of the name,
+ *     whitespace, `/`, `<`, `<!--`, `-->`, a quote not right after an `=`);
+ *   - `>` ends the tag;
+ *   - `=` takes the HTML whitespace after it (space, tab, LF, FF, CR — not VT
+ *     or NBSP), then a quoted value whole (`"…"` or `'…'`, anything literal up
+ *     to the same quote) when one follows; a quote that never closes makes the
+ *     tag run to the end of the input, even past a later `>`. Without a quote,
+ *     what follows is ordinary body (`=>` ends the tag, `==` starts over).
+ * Linear over all calls: the next `>` and the next `=` are remembered while they
+ * are still ahead, a quoted value costs one `indexOf`, and -1 is final (the
+ * caller stops). Hand-written because a regex loop over the body,
+ * `(?:[^>=]|=…)*`, overflows the regex engine's backtrack stack on a tag of
+ * several million characters (#382).
+ */
+function tagEndFinder(source: string): (from: number) => number {
+  let gt = -2; // next `>` at or after the cursor; -1 once there is none
+  let eq = -2; // next `=`, likewise
+  return (from) => {
+    let i = from;
+    for (;;) {
+      if (gt !== -1 && gt < i) gt = source.indexOf('>', i);
+      if (gt === -1) return -1;
+      if (eq !== -1 && eq < i) eq = source.indexOf('=', i);
+      if (eq === -1 || eq > gt) return gt;
+      let j = eq + 1;
+      for (;;) {
+        const c = source.charCodeAt(j);
+        if (c === 32 || c === 9 || c === 10 || c === 12 || c === 13) j++;
+        else break;
+      }
+      const quote = source[j];
+      if (quote === '"' || quote === "'") {
+        const close = source.indexOf(quote, j + 1);
+        if (close === -1) return -1; // the value, and so the tag, never ends
+        i = close + 1;
+      } else i = j; // unquoted or missing value: ordinary body from here
+    }
+  };
+}
 
 /**
  * Every `<!-- … -->` in raw HTML (not Markdown), per the HTML tokenizer. Code
@@ -887,13 +926,15 @@ const TAG_BODY = /(?:[^>=]|=[ \t\n\f\r]*(?:"[^"]*"|'[^']*'|(?![ \t\n\f\r"'])))*/
  * elements (`<script>`, `<style>`, `<textarea>`, `<title>`), whose content the
  * tokenizer never reads as a comment — a `<!--` there is reported as one, as
  * the Markdown scanner also does — and `--!>`, which the tokenizer accepts as
- * a closer. Linear: one `indexOf` per `<`, one pass over each tag, one
- * `indexOf` per `-->`.
+ * a closer. Linear: one `indexOf` per `<`, one pass over each tag by
+ * `indexOf` (no regex over a tag body, which overflowed on a multi-megabyte
+ * tag), one `indexOf` per `-->`.
  */
 export function htmlCommentRangesInHtml(source: string): HtmlCommentRange[] {
   const out: HtmlCommentRange[] = [];
   if (!source.includes('<!--')) return out;
   const nextCloser = closerFinder(source);
+  const tagEnd = tagEndFinder(source);
   for (let from = 0; ; ) {
     const lt = source.indexOf('<', from);
     if (lt === -1) return out;
@@ -911,10 +952,8 @@ export function htmlCommentRangesInHtml(source: string): HtmlCommentRange[] {
     }
     TAG_OPEN.lastIndex = lt;
     if (TAG_OPEN.test(source)) {
-      TAG_BODY.lastIndex = TAG_OPEN.lastIndex;
-      TAG_BODY.test(source); // always matches (possibly nothing); lastIndex is where it stopped
-      const gt = TAG_BODY.lastIndex;
-      if (source[gt] !== '>') return out; // the tag runs to the end of the input
+      const gt = tagEnd(TAG_OPEN.lastIndex);
+      if (gt === -1) return out; // the tag runs to the end of the input
       from = gt + 1;
       continue;
     }
