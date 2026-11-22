@@ -889,6 +889,97 @@ describe('mdxCodeRanges', () => {
       [['fence', '````md\r\n```js\r\n{a}\r\n````\r']],
     ],
     ['no code', 'no code at all {x}', []],
+    // MDX has no HTML blocks: a tag line does not end the paragraph.
+    [
+      'a span across a line starting with a tag',
+      'Wrap items in `<ul>\n<li>` tags, pass {x} or `y`.\n',
+      [
+        ['span', '`<ul>\n<li>`'],
+        ['span', '`y`'],
+      ],
+    ],
+    [
+      'a span across a line starting with a block-level tag',
+      'The `{children}\n<div>` wrapper.\n',
+      [['span', '`{children}\n<div>`']],
+    ],
+    // Quote and list markers in any order before the fence run.
+    [
+      'a list marker, then a quoted fence',
+      '- > ```js\n  > const a = {b};\n  > ```\n\nafter {c}\n',
+      [['fence', '- > ```js\n  > const a = {b};\n  > ```']],
+    ],
+    [
+      'an ordered marker, then a quoted fence',
+      '1. > ```js\n   > const a = {b};\n   > ```\n\nafter {c}\n',
+      [['fence', '1. > ```js\n   > const a = {b};\n   > ```']],
+    ],
+    [
+      'two list markers, then a fence holding a blank line',
+      '- - ```js\n    a = {b};\n\n    c = {d};\n    ```\n',
+      [['fence', '- - ```js\n    a = {b};\n\n    c = {d};\n    ```']],
+    ],
+    [
+      'a quoted fence indented four columns in a list item',
+      '1.  Step\n\n    > ~~~js\n    > const a = {b};\n    > ~~~\n',
+      [['fence', '    > ~~~js\n    > const a = {b};\n    > ~~~']],
+    ],
+    [
+      'a marker-then-quote fence ended by a quote line outside the item',
+      '- > ```js\n  > {a}\n> {b}\n',
+      [['fence', '- > ```js\n  > {a}']],
+    ],
+    ['a > alone outside a list-item fence', '- ```\n>\n  {y}\n', [['fence', '- ```']]],
+    // A tab after a list marker reaches the next tab stop.
+    [
+      'a fence in a tab-marker item, ended by the item',
+      '-\tStep\n\n\t```js\n\tconst a = {b};\n\nNext {para}\n',
+      [['fence', '\t```js\n\tconst a = {b};\n']],
+    ],
+    [
+      'a fence in an ordered tab-marker item, ended by the next item',
+      '1.\tStep\n\t```js\n\tconst a = {b};\n2.\tNext {c}\n',
+      [['fence', '\t```js\n\tconst a = {b};']],
+    ],
+    [
+      "a line holding only the comment pass's placeholder (ends the list)",
+      '- item\n{/**/}\n  ```js\nconst a = {b};\n  ```\n',
+      [['fence', '  ```js\nconst a = {b};\n  ```']],
+    ],
+    [
+      'an empty item followed by a blank line (the item ends)',
+      '-\n\n  ```\n```\n{x}\n',
+      [['fence', '  ```\n```']],
+    ],
+    [
+      'a quote inside a list item, then a fence in the item',
+      '- a\n  > q\n\n  ```\n  {x}\n\nout {y}\n',
+      [['fence', '  ```\n  {x}\n']],
+    ],
+    [
+      'a multi-line JSX tag after a list marker',
+      '- <X a="p\n  ```\n  q" />\n\n  text {u}\n',
+      [['tag', '<X a="p\n  ```\n  q" />']],
+    ],
+    [
+      'a list item indented four columns past a paragraph (MDX: an item)',
+      '- a\n  text\n      - deep\n        ```\n        {x}\n      out {y}\n',
+      [['fence', '        ```\n        {x}']],
+    ],
+    [
+      'a fence in a nested item opened on one line, ended by that item',
+      '- - a\n\n    ```\n    {x}\n   out {y}\n',
+      [['fence', '    ```\n    {x}']],
+    ],
+    ['a span in a quote opened after a list marker', '* >`a\n  >{b}`\n', [['span', '`a\n  >{b}`']]],
+    [
+      'tilde fences between paragraphs',
+      '~~~\ncode {a}\n~~~\n\ntext {b}\n\n~~~\ncode {c}\n~~~\n',
+      [
+        ['fence', '~~~\ncode {a}\n~~~'],
+        ['fence', '~~~\ncode {c}\n~~~'],
+      ],
+    ],
   ])('finds the code in %s', (_name, src, want) => {
     expect(code(src)).toEqual(want);
   });
@@ -902,6 +993,9 @@ describe('mdxCodeRanges', () => {
     ['an info string holding a backtick', '```js `x` {a}\n', ['```']],
     ['the run after a span that closed after a backslash', '`a\\` {x}` tail', ['`']],
     ['a ```` fence around ``` lines', '````md\n```js\n{a}\n```\n````\n\nafter `x`', []],
+    ['a span across a line starting with a tag', 'Use `<ul>\n<li>` here.\n', []],
+    ['a marker-then-quote fence', '- > ```js\n  > a\n  > ```\n', []],
+    ['a span across the next ordered item', '1. `a\n2. b` {c}\n', ['`', '`']],
   ])('reports the stray backticks of %s', (_name, src, want) => {
     expect(strays(src)).toEqual(want);
   });
@@ -1125,6 +1219,18 @@ describe('markdown-scan performance', () => {
     ['unterminated tags by line', (n) => "<a b='x\n".repeat(n / 8)],
     ['list-item fences', (n) => '- a\n\n  ```\n  {x}\n  ```\n'.repeat(n / 24)],
     ['flow JSX lines among fences', (n) => '<X a="p\n```\n{b}" />\n\n```\nc\n```\n'.repeat(n / 30)],
+    // No backtick, `<` or backslash between the fences: one token search
+    // must not be restarted from every fence.
+    [
+      'tilde fences between plain paragraphs',
+      (n) => '~~~\ncode {a}\n~~~\n\ntext {b}\n\n'.repeat(n / 27),
+    ],
+    [
+      'backtick fences between plain paragraphs',
+      (n) => '```\ncode {a}\n```\n\ntext {b}\n\n'.repeat(n / 27),
+    ],
+    ['one tag, then tilde fences', (n) => '<b>\n\n' + '~~~\nc\n~~~\n\nt\n\n'.repeat(n / 15)],
+    ['marker-then-quote fences', (n) => '- > ```js\n  > {a}\n  > ```\n\n'.repeat(n / 28)],
   ])(
     '%s scales linearly for mdxCodeRanges',
     (_name, makeInput) => {

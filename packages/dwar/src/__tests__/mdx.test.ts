@@ -760,6 +760,43 @@ describe('the pre-passes read fenced code the way MDX does (#372)', () => {
         '````md\n```\n{/**/}\n````\n\n{/**/}\n',
         '````md\n```\n{/**/}\n````\n\n{}\n',
       ],
+      // Review follow-ups: MDX has no HTML blocks, so a span crosses a line
+      // that starts with a tag (the page was lost on `{x}`).
+      [
+        'a span across a line starting with a tag',
+        'Wrap items in `<ul>\n<li>` tags, pass {x} or `y`.\n',
+        'Wrap items in `<ul>\n<li>` tags, pass \\{x\\} or `y`.\n',
+      ],
+      [
+        'a span across a line starting with a block-level tag',
+        'The `{children}\n<div>` wrapper.\n',
+        'The `{children}\n<div>` wrapper.\n',
+      ],
+      [
+        'a list marker, then a quoted fence',
+        '- > ```js\n  > const a = {b};\n  > ```\n\nafter {c}\n',
+        '- > ```js\n  > const a = {b};\n  > ```\n\nafter \\{c\\}\n',
+      ],
+      [
+        'two list markers, then a fence',
+        '- - ```js\n    a = {b};\n\n    c = {d};\n    ```\n',
+        '- - ```js\n    a = {b};\n\n    c = {d};\n    ```\n',
+      ],
+      [
+        'a quoted fence four columns into a list item',
+        '1.  Step\n\n    > ~~~js\n    > const a = {b};\n    > ~~~\n',
+        '1.  Step\n\n    > ~~~js\n    > const a = {b};\n    > ~~~\n',
+      ],
+      [
+        'a fence in a tab-marker item, ended by the item',
+        '-\tStep\n\n\t```js\n\tconst a = {b};\n\nNext {para}\n',
+        '-\tStep\n\n\t```js\n\tconst a = {b};\n\nNext \\{para\\}\n',
+      ],
+      [
+        "a fence after the comment pass's placeholder line",
+        '- item\n{/**/}\n  ```js\nconst a = {b};\n  ```\n',
+        '- item\n{}\n  ```js\nconst a = {b};\n  ```\n',
+      ],
     ])('handles %s', (_name, src, want) => {
       expect(escapeStrayBraces(src)).toBe(want);
     });
@@ -821,6 +858,9 @@ describe('the pre-passes read fenced code the way MDX does (#372)', () => {
       ['a quoted fence', '> ```js\n> x\n\n`c`\n'],
       ['an unclosed fence', '```js\nx `\n'],
       ['an indented closer', '```\nx\n        ```\n\n`d`\n'],
+      ['a span across a line starting with a tag', 'Use `<ul>\n<li>` here.\n'],
+      ['a list marker, then a quoted fence', '- > ```js\n  > x\n  > ```\n'],
+      ['two list markers, then a fence', '- - ```js\n    x\n    ```\n'],
     ])('reports nothing for %s', (_name, src) => {
       expect(findStrayBackticks(src)).toEqual([]);
     });
@@ -952,34 +992,80 @@ describe('the pre-passes read fenced code the way MDX does (#372)', () => {
         'https://x',
         '\r\n',
       ];
+      expectSameAsReferences(pieces, 30_000, ['braces', 'esm']);
+    });
+
+    // Code spans in plain paragraphs (no fence, heading, list, quote, table,
+    // tag or backslash): spans pair, and a run with no partner before a blank
+    // line is stray, exactly as before.
+    it('reads code spans in plain paragraphs as before', () => {
+      const pieces = [
+        'word ',
+        'a',
+        ' ',
+        ' ',
+        '\n',
+        '\n',
+        '\n\n',
+        '\n  \n',
+        '`',
+        '`',
+        '``',
+        '{x}',
+        '}',
+        'import ',
+        '\nimport x\n',
+        '\t',
+      ];
+      expectSameAsReferences(pieces, 30_000, ['braces', 'esm', 'strays']);
+    });
+
+    /** Seeded random bodies from `pieces` give the references' output for each pass named. */
+    function expectSameAsReferences(
+      pieces: readonly string[],
+      count: number,
+      passes: readonly ('braces' | 'esm' | 'strays')[]
+    ): void {
+      const same = {
+        braces: (s: string) => escapeStrayBraces(s) === referenceBraces(s),
+        esm: (s: string) => escapeEsmLookalikes(s) === referenceEsm(s),
+        strays: (s: string) =>
+          JSON.stringify(findStrayBackticks(s)) === JSON.stringify(referenceStrays(s)),
+      };
       let seed = 372;
       const next = (k: number): number => {
         seed = (Math.imul(seed, 1_664_525) + 1_013_904_223) >>> 0;
         return seed % k;
       };
       const mismatches = { braces: 0, esm: 0, strays: 0 };
+      let strayRuns = 0;
       let first: string | undefined;
-      for (let n = 0; n < 30_000; n++) {
+      for (let n = 0; n < count; n++) {
         let s = next(10) === 0 ? '---\na: {b}\nimport: c\n---\n' : '';
         for (let len = 1 + next(25); len > 0; len--) s += pieces[next(pieces.length)];
-        const differs = {
-          braces: escapeStrayBraces(s) !== referenceBraces(s),
-          esm: escapeEsmLookalikes(s) !== referenceEsm(s),
-          strays: JSON.stringify(findStrayBackticks(s)) !== JSON.stringify(referenceStrays(s)),
-        };
-        for (const k of ['braces', 'esm', 'strays'] as const) {
-          if (differs[k]) {
+        if (passes.includes('strays')) strayRuns += referenceStrays(s).length;
+        for (const k of passes) {
+          if (!same[k](s)) {
             mismatches[k]++;
             first ??= s;
           }
         }
       }
       if (first !== undefined) {
-        expect(escapeStrayBraces(first), JSON.stringify(first)).toBe(referenceBraces(first));
-        expect(escapeEsmLookalikes(first), JSON.stringify(first)).toBe(referenceEsm(first));
+        if (passes.includes('braces')) {
+          expect(escapeStrayBraces(first), JSON.stringify(first)).toBe(referenceBraces(first));
+        }
+        if (passes.includes('esm')) {
+          expect(escapeEsmLookalikes(first), JSON.stringify(first)).toBe(referenceEsm(first));
+        }
+        if (passes.includes('strays')) {
+          expect(findStrayBackticks(first), JSON.stringify(first)).toEqual(referenceStrays(first));
+        }
       }
       expect(mismatches).toEqual({ braces: 0, esm: 0, strays: 0 });
-    });
+      // The stray leg is not vacuous: the inputs hold plenty of stray runs.
+      if (passes.includes('strays')) expect(strayRuns).toBeGreaterThan(count / 10);
+    }
   });
 
   // A page body passes through each of these once per build; none may go
@@ -1013,6 +1099,11 @@ describe('the pre-passes read fenced code the way MDX does (#372)', () => {
       ['one unclosed tag with many attributes', (n) => '<a ' + 'b="c" '.repeat(n / 6) + '{x}\n'],
       ['import lines', (n) => 'import it now\n\n'.repeat(n / 15)],
       ['list-item fences', (n) => '- a\n\n  ```\n  {x}\n  ```\n'.repeat(n / 24)],
+      [
+        'tilde fences between plain paragraphs',
+        (n) => '~~~\ncode {a}\n~~~\n\ntext {b}\n\n'.repeat(n / 27),
+      ],
+      ['marker-then-quote fences', (n) => '- > ```js\n  > {a}\n  > ```\n\n'.repeat(n / 28)],
     ];
     const cases = Object.entries(passes).flatMap(([pass, fn]) =>
       shapes.map(([shape, make]) => [pass, shape, fn, make] as const)
