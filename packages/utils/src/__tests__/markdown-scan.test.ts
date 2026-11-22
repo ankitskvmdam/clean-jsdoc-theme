@@ -616,6 +616,7 @@ describe('htmlCommentRangesInHtml tag bodies match the regex scan they replaced 
       '<a b=\r\n"> <!-- y -->"> <!-- x -->',
       ['<!-- x -->'],
     ],
+    ['a tab after =', '<a b=\t"> <!-- y -->"> <!-- x -->', ['<!-- x -->']],
     ['a form feed after =', '<a b=\f"> <!-- y -->"> <!-- x -->', ['<!-- x -->']],
     [
       'a vertical tab after = (not whitespace)',
