@@ -7,6 +7,7 @@ import {
   createImageCollector,
   resolveDocImages,
   resolveDocletImages,
+  resolveLocatedDocImages,
 } from '../docs';
 
 /** A 1x1 transparent PNG (bytes), enough to exercise the image asset pipeline. */
@@ -148,6 +149,108 @@ describe('resolveDocImages', () => {
     expect(warn).not.toHaveBeenCalled();
     expect(resolved.docs[0].content).toContain('`![alt](./diagram.png)`');
     expect(resolved.docs[0].content).toContain('![alt](./missing.png)');
+  });
+});
+
+describe('resolveLocatedDocImages', () => {
+  it('resolves each doc against its own directory and copies a shared image once', async () => {
+    const collector = createImageCollector(noop);
+    const docs = await resolveLocatedDocImages(
+      [
+        {
+          doc: { path: 'a', type: 'markdown', content: '![d](./diagram.png)' },
+          baseDir: join(dir, 'guides'),
+        },
+        {
+          doc: {
+            path: 'b',
+            type: 'markdown',
+            content: "![d](../guides/diagram.png)\n\n<div><img src='../guides/diagram.png'></div>",
+          },
+          baseDir: join(dir, 'notes'),
+        },
+      ],
+      collector
+    );
+    expect(collector.files).toHaveLength(1);
+    const srcs = docs.flatMap(
+      (d) => d.content.match(/\/_assets\/diagram\.[0-9a-f]{8}\.png/g) ?? []
+    );
+    expect(srcs).toHaveLength(3);
+    expect(new Set(srcs).size).toBe(1);
+    expect(docs[1].content).not.toContain('../guides/diagram.png');
+  });
+
+  it('leaves remote/data/code-span srcs alone and warns once for a missing file', async () => {
+    const warn = vi.fn();
+    const content =
+      '![r](https://e.com/i.png) ![b](data:image/png;base64,AA) `![c](./diagram.png)`\n\n' +
+      '![m](./missing.png) <img src="./missing.png">';
+    const [doc] = await resolveLocatedDocImages(
+      [{ doc: { path: 'x', type: 'markdown', content }, baseDir: join(dir, 'guides') }],
+      createImageCollector(warn)
+    );
+    expect(doc.content).toBe(content);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0][0])).toContain("could not read image './missing.png'");
+  });
+
+  it('without a baseDir, rewrites only the srcs listed in `files` (no warning for the rest)', async () => {
+    const warn = vi.fn();
+    const collector = createImageCollector(warn);
+    const input = {
+      path: 'x',
+      type: 'markdown' as const,
+      content: '![a](./diagram.png) ![b](./other.png)',
+    };
+    const [doc] = await resolveLocatedDocImages(
+      [{ doc: input, files: new Map([['./diagram.png', join(dir, 'guides', 'diagram.png')]]) }],
+      collector
+    );
+    expect(doc.content).toMatch(
+      /^!\[a\]\(\/_assets\/diagram\.[0-9a-f]{8}\.png\) !\[b\]\(\.\/other\.png\)$/
+    );
+    expect(collector.files).toHaveLength(1);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('percent-encodes a file name with a space so the src is a valid destination', async () => {
+    const spaced = join(dir, 'spaced');
+    await mkdir(spaced, { recursive: true });
+    await writeFile(join(spaced, 'my pic.png'), PNG_1X1);
+    const collector = createImageCollector(noop);
+    const docs = await resolveLocatedDocImages(
+      [
+        // A docs-directory style raw <img> with a literal space…
+        {
+          doc: { path: 'a', type: 'html', content: '<img src="./my pic.png">' },
+          baseDir: spaced,
+        },
+        // …and the packages-mode fallback, keyed by TypeDoc's `%20` src text.
+        {
+          doc: { path: 'b', type: 'markdown', content: '![Sp](./my%20pic.png)' },
+          files: new Map([['./my%20pic.png', join(spaced, 'my pic.png')]]),
+        },
+      ],
+      collector
+    );
+    expect(docs[0].content).toMatch(/^<img src="\/_assets\/my%20pic\.[0-9a-f]{8}\.png">$/);
+    expect(docs[1].content).toMatch(/^!\[Sp\]\(\/_assets\/my%20pic\.[0-9a-f]{8}\.png\)$/);
+    // One file, written under its real (decoded) name.
+    expect(collector.files).toHaveLength(1);
+    expect(collector.files[0].path).toMatch(/^_assets\/my pic\.[0-9a-f]{8}\.png$/);
+    expect(decodeURIComponent(docs[1].content.slice('![Sp]('.length, -1))).toBe(
+      '/' + collector.files[0].path
+    );
+  });
+
+  it('returns the same doc object when nothing changed', async () => {
+    const input = { path: 'x', type: 'markdown' as const, content: 'No images here.' };
+    const [doc] = await resolveLocatedDocImages(
+      [{ doc: input, baseDir: dir }],
+      createImageCollector(noop)
+    );
+    expect(doc).toBe(input);
   });
 });
 

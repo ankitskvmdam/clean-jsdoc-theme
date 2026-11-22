@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { Application, ReflectionKind, type ProjectReflection } from 'typedoc';
 import type { DocInput } from '@clean-jsdoc-theme/setu';
-import { collectProjectDocuments, writeSite } from './write-site';
+import { collectProjectDocuments, locateProjectDocuments, writeSite } from './write-site';
 
 /**
  * A minimal project exercising `projectDocuments`: TypeDoc surfaces the
@@ -16,7 +16,19 @@ import { collectProjectDocuments, writeSite } from './write-site';
 const SOURCE = `
 /** A documented function, just so the project has something besides the doc. */
 export function noop(): void {}
+
+/**
+ * A class carrying its own document.
+ * @document ./notes/api-notes.md
+ */
+export class Notes {}
 `;
+
+/** A 1x1 transparent PNG (bytes), enough to exercise the image asset pipeline. */
+const PNG_1X1 = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+  'base64'
+);
 
 let project: ProjectReflection;
 let app: Application;
@@ -33,6 +45,22 @@ beforeAll(async () => {
   await writeFile(
     join(tmp, 'documents', 'guide.md'),
     '# Guide\n\nManual guide page via projectDocuments.\n',
+    'utf8'
+  );
+  // Project documents with local images (#378): resolved against each doc's own file.
+  await writeFile(
+    join(tmp, 'documents', 'gallery.md'),
+    '# Gallery\n\n![Shot](./shot.png)\n\n<img src="./shot.png" alt="raw">\n\n![Solo](./solo.png)\n\n' +
+      '<img src="./my shot.png" alt="spaced">\n',
+    'utf8'
+  );
+  await writeFile(join(tmp, 'documents', 'shot.png'), PNG_1X1);
+  await writeFile(join(tmp, 'documents', 'my shot.png'), PNG_1X1);
+  await writeFile(join(tmp, 'documents', 'solo.png'), Buffer.concat([PNG_1X1, Buffer.from([0])]));
+  await mkdir(join(tmp, 'notes'), { recursive: true });
+  await writeFile(
+    join(tmp, 'notes', 'api-notes.md'),
+    '# API notes\n\n![Up](../documents/shot.png)\n',
     'utf8'
   );
   await writeFile(
@@ -54,7 +82,10 @@ beforeAll(async () => {
     {
       entryPoints: [posix(entry)],
       tsconfig: posix(join(tmp, 'tsconfig.json')),
-      projectDocuments: [posix(join(tmp, 'documents', 'guide.md'))],
+      projectDocuments: [
+        posix(join(tmp, 'documents', 'guide.md')),
+        posix(join(tmp, 'documents', 'gallery.md')),
+      ],
       skipErrorChecking: true,
       logLevel: 'Error',
     },
@@ -77,9 +108,8 @@ describe('collectProjectDocuments', () => {
 
   it('turns a projectDocuments Markdown file into a DocInput', () => {
     const docs = collectProjectDocuments(project);
-    expect(docs).toHaveLength(1);
-    const [doc] = docs;
-    expect(doc.path).toBe('guide');
+    const doc = docs.find((d) => d.path === 'guide')!;
+    expect(doc).toBeDefined();
     expect(doc.type).toBe('markdown');
     expect(doc.content).toContain('Manual guide page via projectDocuments.');
     expect(doc.content).toContain('# Guide');
@@ -92,8 +122,8 @@ describe('collectProjectDocuments', () => {
     for (const d of projectDocs) if (!byPath.has(d.path)) byPath.set(d.path, d);
     const merged = [...byPath.values()];
 
-    expect(merged).toHaveLength(1);
-    expect(merged[0].content).toBe('FROM OPTS');
+    expect(merged).toHaveLength(projectDocs.length);
+    expect(merged.find((d) => d.path === 'guide')!.content).toBe('FROM OPTS');
   });
 });
 
@@ -214,11 +244,6 @@ describe('writeSite — strict mode', () => {
 });
 
 describe('writeSite — basePath + local images (#377)', () => {
-  /** A 1x1 transparent PNG (bytes), enough to exercise the image asset pipeline. */
-  const PNG_1X1 = Buffer.from(
-    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
-    'base64'
-  );
   const SVG =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10"/></svg>';
 
@@ -292,4 +317,112 @@ describe('writeSite — basePath + local images (#377)', () => {
       info.mockRestore();
     }
   }, 60_000);
+});
+
+describe('writeSite — projectDocuments local images (#378)', () => {
+  const read = (out: string, rel: string): string =>
+    readFileSync(join(out, ...rel.split('/')), 'utf8');
+  const shots = (out: string): string[] =>
+    readdirSync(join(out, '_assets')).filter((f) => /^shot\.[0-9a-f]{8}\.png$/.test(f));
+  /** Run `writeSite` with warn/info silenced; returns what was warned. */
+  const build = async (out: string, block: Record<string, unknown>): Promise<string[]> => {
+    const warn = vi.spyOn(app.logger, 'warn').mockImplementation(() => {});
+    const info = vi.spyOn(app.logger, 'info').mockImplementation(() => {});
+    try {
+      await writeSite(out, project, withBlock(block));
+      return warn.mock.calls.map((c) => String(c[0]));
+    } finally {
+      warn.mockRestore();
+      info.mockRestore();
+    }
+  };
+
+  it('root: copies the images next to each document into _assets and rewrites both forms', async () => {
+    const out = join(tmp, 'out-pdocs-root');
+    const warned = await build(out, {});
+    const html = read(out, 'gallery/index.html');
+    const srcs = [...html.matchAll(/<img src="(\/_assets\/shot\.[0-9a-f]{8}\.png)"/g)].map(
+      (m) => m[1]
+    );
+    expect(srcs).toHaveLength(2); // Markdown image + raw <img>
+    expect(new Set(srcs).size).toBe(1);
+    expect(html).not.toContain('./shot.png');
+    expect(existsSync(join(out, ...srcs[0].slice(1).split('/')))).toBe(true);
+    expect(shots(out)).toHaveLength(1);
+    // The `@document` page resolves `../documents/shot.png` from its own file → same asset.
+    expect(read(out, 'api-notes/index.html')).toContain(`<img src="${srcs[0]}"`);
+    expect(read(out, 'gallery/index.md')).toContain(`![Shot](${srcs[0]})`);
+    expect(warned.some((m) => m.includes('could not read image'))).toBe(false);
+    // A file name with a space: percent-encoded src that decodes to the written file.
+    const spaced = html.match(/<img src="(\/_assets\/my%20shot\.[0-9a-f]{8}\.png)" alt="spaced"/);
+    expect(spaced).not.toBeNull();
+    const onDisk = decodeURIComponent(spaced![1]).slice(1).split('/');
+    expect(existsSync(join(out, ...onDisk))).toBe(true);
+    expect(read(out, 'gallery/index.md')).toContain(`![spaced](${spaced![1]})`);
+  }, 60_000);
+
+  it('sub-path: the src carries basePath exactly once, in the HTML, the .md and llms-full.txt', async () => {
+    const out = join(tmp, 'out-pdocs-sub');
+    await build(out, { basePath: '/docs', siteUrl: 'https://x.example.com', llmsTxt: true });
+    const html = read(out, 'gallery/index.html');
+    const m = html.match(/<img src="\/docs(\/_assets\/shot\.[0-9a-f]{8}\.png)"/);
+    expect(m).not.toBeNull();
+    expect(html).not.toContain('/docs/docs/');
+    expect(existsSync(join(out, ...m![1].slice(1).split('/')))).toBe(true);
+    const md = read(out, 'gallery/index.md');
+    expect(md).toContain(`![Shot](/docs${m![1]})`);
+    expect(md).not.toContain('/docs/docs/');
+    const full = read(out, 'llms-full.txt');
+    expect(full).toContain(`![Shot](/docs${m![1]})`);
+    expect(full).not.toContain('/docs/docs/');
+  }, 60_000);
+
+  it('a project document that loses a path collision to the docs directory copies no assets', async () => {
+    const docsDir = join(tmp, 'collide-docs');
+    await mkdir(docsDir, { recursive: true });
+    await writeFile(join(docsDir, 'gallery.md'), '# Gallery\n\nPlain opts page.\n', 'utf8');
+    const out = join(tmp, 'out-pdocs-collide');
+    const warned = await build(out, { docs: posix(docsDir) });
+    expect(read(out, 'gallery/index.html')).toContain('Plain opts page.');
+    const assets = readdirSync(join(out, '_assets'));
+    expect(assets.some((f) => /^solo\./.test(f))).toBe(false);
+    expect(shots(out)).toHaveLength(1); // still used by the @document page
+    expect(warned.some((m) => m.includes('could not read image'))).toBe(false);
+  }, 60_000);
+});
+
+describe('locateProjectDocuments', () => {
+  it('locates each document at its own source file', () => {
+    const located = locateProjectDocuments(project);
+    const gallery = located.find((d) => d.doc.path === 'gallery')!;
+    expect(gallery.baseDir).toBe(join(tmp, 'documents'));
+    const notes = located.find((d) => d.doc.path === 'api-notes')!;
+    expect(notes.baseDir).toBe(join(tmp, 'notes'));
+  });
+
+  it('falls back to the relative-link targets when the source file is unknown (packages mode)', () => {
+    const abs = join(tmp, 'documents', 'shot.png');
+    const doc = {
+      name: 'pkgdoc',
+      content: [
+        { kind: 'text', text: '# Pkg\n\n![P](' },
+        { kind: 'relative-link', text: './pic.png', target: 7 },
+        { kind: 'text', text: ') and [a page](' },
+        { kind: 'relative-link', text: './other.md', target: 8 },
+        { kind: 'text', text: ')' },
+      ],
+    };
+    const stub = {
+      getReflectionsByKind: () => [doc],
+      files: {
+        getReflectionPath: () => undefined,
+        resolve: (id: number) => (id === 7 ? abs : id === 8 ? { name: 'other' } : undefined),
+      },
+    } as unknown as ProjectReflection;
+    const [located] = locateProjectDocuments(stub);
+    expect(located.baseDir).toBeUndefined();
+    expect(located.files?.get('./pic.png')).toBe(abs);
+    expect(located.files?.has('./other.md')).toBe(false);
+    expect(located.doc.content).toContain('![P](./pic.png)');
+  });
 });

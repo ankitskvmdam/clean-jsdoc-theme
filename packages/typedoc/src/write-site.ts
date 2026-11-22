@@ -61,8 +61,10 @@ import {
   createImageCollector,
   resolveDocImages,
   resolveDocletImages,
+  resolveLocatedDocImages,
   rewriteImageRefs,
 } from './docs';
+import type { LocatedDoc } from './docs';
 import { writeOutputFiles } from './write-output-files';
 import {
   JSDOC_ONLY_KEYS,
@@ -471,14 +473,38 @@ function renderReadme(project: ProjectReflection): string | undefined {
  * whose parts render to nothing (blank) is skipped — never emits an empty page.
  */
 export function collectProjectDocuments(project: ProjectReflection): DocInput[] {
-  const docs: DocInput[] = [];
+  return locateProjectDocuments(project).map((d) => d.doc);
+}
+
+/**
+ * {@link collectProjectDocuments}, with where each document's local image srcs
+ * resolve from (#378): the directory of the document's own source file. TypeDoc
+ * doesn't keep that file for a package-level document under
+ * `entryPointStrategy: "packages"`, so there the doc instead carries the
+ * absolute path TypeDoc resolved for each `relative-link` part (keyed by the
+ * src text `partsToMarkdown` kept verbatim).
+ */
+export function locateProjectDocuments(project: ProjectReflection): LocatedDoc[] {
+  const located: LocatedDoc[] = [];
   for (const reflection of project.getReflectionsByKind(ReflectionKind.Document)) {
     const doc = reflection as DocumentReflection;
     const md = partsToMarkdown(doc.content ?? []);
     if (!md.trim()) continue;
-    docs.push({ path: doc.name, content: md, type: 'markdown' });
+    const input: DocInput = { path: doc.name, content: md, type: 'markdown' };
+    const file = project.files.getReflectionPath(doc);
+    if (file) {
+      located.push({ doc: input, baseDir: dirname(resolvePath(file)) });
+      continue;
+    }
+    const files = new Map<string, string>();
+    for (const part of doc.content ?? []) {
+      if (part.kind !== 'relative-link' || part.target === undefined) continue;
+      const target = project.files.resolve(part.target, project);
+      if (typeof target === 'string') files.set(part.text, resolvePath(target));
+    }
+    located.push({ doc: input, files });
   }
-  return docs;
+  return located;
 }
 
 /**
@@ -801,10 +827,16 @@ async function buildSite(
     : { docs: [] as DocInput[], files: [] as OutputFile[], inlineSvgs: {} as Record<string, string> };
   // Native TypeDoc docs (`projectDocuments`/`@document`) → the same DocInput[]
   // pipeline, merged with the opts-walked docs (opts win on a colliding path).
-  // These have no directory of their own for local-image resolution, so they
-  // aren't run through `resolveDocImages` — matching how a `@document` page's
-  // images are just ordinary already-resolved-by-TypeDoc HTML paths.
-  const docs = mergeDocs(resolvedDocs.docs, collectProjectDocuments(project));
+  // TypeDoc keeps their image srcs verbatim, so route them through the shared
+  // `_assets/` collector too, resolved against each document's own file (#378).
+  // Drop the colliding ones first (same priority as `mergeDocs`: opts docs, then
+  // the first project doc) so a page that's never written copies no images.
+  const taken = new Set(resolvedDocs.docs.map((d) => d.path));
+  const located = locateProjectDocuments(project).filter(
+    (d) => !taken.has(d.doc.path) && !!taken.add(d.doc.path)
+  );
+  const projectDocs = await resolveLocatedDocImages(located, proseImages);
+  const docs = mergeDocs(resolvedDocs.docs, projectDocs);
 
   // Merge every source's image assets, deduped by served path (identical bytes →
   // identical content-hashed name, so a shared image is written once), and union
