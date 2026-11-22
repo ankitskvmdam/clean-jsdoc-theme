@@ -122,31 +122,66 @@ function defaultClassFrontmatter(view: ClassView): Record<string, unknown> {
 }
 
 /**
- * Minimal YAML frontmatter serializer. Strings are quoted, scalars are
- * emitted bare. Arrays render as `[a, b]`. Nested objects are not supported
- * — we'd reach for `yaml` proper if we needed that.
+ * Minimal YAML frontmatter serializer. Strings are emitted plain when a YAML
+ * 1.1 or 1.2 parser reads them back as the same string, double-quoted
+ * otherwise. Arrays render as `[a, b]`. Nested objects are not supported.
  */
 function renderFrontmatter(data: Record<string, unknown>): string {
   const lines = Object.entries(data)
     .filter(([, v]) => v !== undefined && v !== null)
-    .map(([k, v]) => `${k}: ${formatYamlScalar(v)}`);
+    .map(([k, v]) => `${formatYamlString(k, false)}: ${formatYamlValue(v, false)}`);
   if (lines.length === 0) return '';
   return ['---', ...lines, '---', '', ''].join('\n');
 }
 
-function formatYamlScalar(v: unknown): string {
-  if (Array.isArray(v)) return `[${v.map((x) => formatYamlScalar(x)).join(', ')}]`;
-  if (typeof v === 'string') return needsYamlQuote(v) ? JSON.stringify(v) : v;
-  return String(v);
+function formatYamlValue(v: unknown, inFlow: boolean): string {
+  if (Array.isArray(v)) return `[${v.map((x) => formatYamlValue(x, true)).join(', ')}]`;
+  if (typeof v === 'string') return formatYamlString(v, inFlow);
+  if (typeof v === 'number') {
+    if (Number.isNaN(v)) return '.nan';
+    if (!Number.isFinite(v)) return v > 0 ? '.inf' : '-.inf';
+    return String(v);
+  }
+  if (typeof v === 'boolean' || typeof v === 'bigint') return String(v);
+  if (v === null || v === undefined) return 'null'; // only reachable inside arrays
+  return formatYamlString(String(v), inFlow);
 }
 
-function needsYamlQuote(s: string): boolean {
+function formatYamlString(s: string, inFlow: boolean): string {
+  return needsYamlQuote(s, inFlow) ? yamlDoubleQuote(s) : s;
+}
+
+// Characters a plain scalar must not carry: C0 controls (tab and line breaks
+// included), DEL, C1 controls, the Unicode line separators, BOM, non-characters
+// and lone surrogates.
+const YAML_UNSAFE_CHAR =
+  // eslint-disable-next-line no-control-regex
+  /[\u0000-\u001f\u007f-\u009f\u2028\u2029\ufeff\ufffe\uffff]|[\ud800-\udbff](?![\udc00-\udfff])|(?<![\ud800-\udbff])[\udc00-\udfff]/;
+// What JSON.stringify leaves raw but a YAML parser rejects or reads as a break.
+const YAML_ESCAPE_EXTRA = /[\u007f-\u009f\u2028\u2029\ufeff\ufffe\uffff]/g;
+
+function needsYamlQuote(s: string, inFlow: boolean): boolean {
   if (s.length === 0) return true;
-  // Leading char that would be interpreted by YAML as a structure indicator.
-  if (/^[\s\-?:,[\]{}#&*!|>'"%@`]/.test(s)) return true;
-  // `: ` mid-string would split into key/value.
-  if (/:\s/.test(s)) return true;
-  // Multiline scalars need quoting.
-  if (/[\n\r]/.test(s)) return true;
+  if (/^\s|\s$/.test(s)) return true; // edge whitespace is trimmed
+  if (/^[-?:,[\]{}#&*!|>'"%@`]/.test(s)) return true; // leading indicator
+  if (/:\s/.test(s) || s.endsWith(':')) return true; // mapping-value indicator
+  if (/\s#/.test(s)) return true; // comment start (#384)
+  if (YAML_UNSAFE_CHAR.test(s)) return true;
+  if (/^(?:~|null|true|false|yes|no|on|off|y|n)$/i.test(s)) return true; // null/bool, 1.1 + 1.2
+  if (s === '<<' || s === '=') return true; // 1.1 merge / value types
+  if (/^[-+]?\.(?:inf|nan)$/i.test(s)) return true;
+  // Deliberately broad: anything spelled only with the number/timestamp
+  // alphabet (ints, floats, hex/octal/binary, 1_000, 1:30 sexagesimal, dates).
+  if (/^[-+]?(?:[.\d]|[eE][-+]?\d)[\d_.,:eExXoObBa-fA-F+\-TtZz ]*$/.test(s)) return true;
+  if (inFlow && /[,[\]{}]/.test(s)) return true; // flow-sequence delimiters
   return false;
+}
+
+/** JSON string syntax is valid YAML double-quoted syntax, once the few
+ *  characters JSON leaves raw are escaped too. Always a single line. */
+function yamlDoubleQuote(s: string): string {
+  return JSON.stringify(s).replace(
+    YAML_ESCAPE_EXTRA,
+    (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`
+  );
 }

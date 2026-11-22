@@ -268,8 +268,34 @@ describe('page frontmatter description', () => {
       '<p>Resolves to a Promise<User> or <code>Array</code>, maybe Map&lt;K, V&gt; &amp; &quot;more&quot;.</p>'
     ).pages.find((p) => p.slug === 'module/m');
     expect(page?.frontmatter.description).toBe(
-      'Resolves to a Promise<User> or Array , maybe Map<K, V> & "more".'
+      'Resolves to a Promise<User> or Array, maybe Map<K, V> & "more".'
     );
+  });
+});
+
+describe('stripHtml — spacing at tag boundaries (#385)', () => {
+  // Only block-level tags (and line breaks) separate words; an inline tag is
+  // removed with nothing, so no space appears before the punctuation after it.
+  it.each([
+    ['a<b>c</b>d', 'acd'],
+    ['<code>x</code>.', 'x.'],
+    ['foo <em>bar</em>', 'foo bar'],
+    ['<p>a</p><p>b</p>', 'a b'],
+    ['<ul><li>a</li><li>b</li></ul>', 'a b'],
+    ['one<br>two', 'one two'],
+    ['one<BR/>two', 'one two'],
+    ['<h2>T</h2>text', 'T text'],
+    ['<p>a , b</p>', 'a , b'],
+    ['<p>Bonjour <em>le monde</em> !</p>', 'Bonjour le monde !'],
+    ['x<sup>2</sup>', 'x2'],
+    ['<p>x <my-widget>y</my-widget>z</p>', 'x yz'],
+    ['<pre-view>a</pre-view>b', 'ab'],
+    ['a <3 and 4> b', 'a b'],
+    ['<fieldset><legend>Title</legend>body</fieldset>', 'Title body'],
+    ['a<img src=x>b', 'a b'],
+    ['<label>Name</label><input><button>Go</button>next', 'Name Go next'],
+  ])('%j reads %j', (html, want) => {
+    expect(stripHtml(html)).toBe(want);
   });
 });
 

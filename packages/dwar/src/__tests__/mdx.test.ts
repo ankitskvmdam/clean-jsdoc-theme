@@ -172,6 +172,18 @@ describe('escapeStrayBraces', () => {
       '\\<T> <Signature code="{ y }" />'
     );
   });
+
+  it("empties the comment placeholders, so an image's alt picks up none of them (#380)", () => {
+    expect(escapeStrayBraces('a {/**/} b')).toBe('a {} b');
+    // A placeholder wrapping a newline keeps it, with its prefix: same line count.
+    expect(escapeStrayBraces('a {/*\n> */}{/*\n  */} b')).toBe('a {\n> }{\n  } b');
+    // Only outside code and JSX tags; a user's own `{x}` is still escaped.
+    expect(escapeStrayBraces('`{/**/}` {/**/} {x}')).toBe('`{/**/}` {} \\{x\\}');
+    expect(escapeStrayBraces('```\n{/**/}\n```\n')).toBe('```\n{/**/}\n```\n');
+    expect(escapeStrayBraces('<X a="{/**/}" />')).toBe('<X a="{/**/}" />');
+    // After the empty fragment that ends a bare URL.
+    expect(escapeStrayBraces('https://x<></>{/**/}')).toBe('https://x<></>{}');
+  });
 });
 
 describe('findStrayBackticks', () => {
@@ -485,11 +497,11 @@ describe('stripHtmlComments', () => {
     expect(stripHtmlComments('- a\n\n<!-- -->\n\n- b\n')).toBe('- a\n\n{/**/}\n\n- b\n');
   });
 
-  it('lets the brace pass keep the comment expressions it leaves', () => {
+  it('lets the brace pass empty the comment expressions it leaves', () => {
     const out = escapeStrayBraces(stripHtmlComments('a {x} <!--\n  y\n--> b\n'));
-    expect(out).toBe('a \\{x\\} {/*\n  */}{/*\n*/} b\n');
+    expect(out).toBe('a \\{x\\} {\n  }{\n} b\n');
     expect(escapeStrayBraces(stripHtmlComments('a {x} <!-- y --> b {z}\n'))).toBe(
-      'a \\{x\\} {/**/} b \\{z\\}\n'
+      'a \\{x\\} {} b \\{z\\}\n'
     );
   });
 

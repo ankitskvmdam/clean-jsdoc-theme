@@ -55,7 +55,8 @@
     "tsdown": "^0.22.14",
     "tsx": "^4.22.3",
     "typescript": "^5.5.0",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.10",
+    "yaml": "^2.9.0"
   },
   "peerDependencies": {
     "preact": "^10.22.0"

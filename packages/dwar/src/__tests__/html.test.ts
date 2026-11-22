@@ -294,26 +294,104 @@ describe('search text — tag strip', () => {
 
   // The old `/<[^>]+>/` rescanned to the end of the page from every `<` with no
   // `>` after it — minutes for a 1MB page. Each generator takes a size in
-  // characters, roughly (see linear-scaling.ts). `maxSize` keeps the 8x window
-  // at or below 512K characters: past about 1M characters of whitespace-dense
-  // input, V8's `/\s+/g` replace in the extractors slows down by a factor (an
-  // engine cliff, not a regression), which would push correct code over the
-  // limit. The old tag strip still measures far above it in this window.
+  // characters, roughly (see linear-scaling.ts).
   it.each<[string, (n: number) => string]>([
     ['unclosed comment openers', (n) => 'a <!-- '.repeat(n / 7)],
     ['stray < characters', (n) => 'a < b '.repeat(n / 6)],
     ['unclosed quoted attributes', (n) => '<a b="x '.repeat(n / 8)],
+    ['unclosed backtick runs', (n) => '`` a\n\n` b\n\n'.repeat(n / 12)],
+    // Exercises an escaped `<` waiting for its `>` (#383); its time is mostly
+    // other passes, so it cannot tell the old copy from the new one.
+    ['escaped generics', (n) => 'Promise\\<User> and `a<b>` x > y\n'.repeat(n / 32)],
   ])(
     'scales linearly on %s',
     (_name, makeInput) => {
       expectLinearScaling(
         (src: string) => [extractSearchText(src), extractExcerpt(src)],
-        makeInput,
-        { maxSize: 65_536 }
+        makeInput
       );
     },
     PERF_TEST_TIMEOUT
   );
+
+  // #383: on these two shapes, a per-character copy of the prose and a
+  // many-match `/\s+/g` replace made a page of several million characters far
+  // slower than its size. The window is pinned at 512K -> 4M characters, so the
+  // large input crosses 2M, and the limit is tighter than the default: the old
+  // code measured ratios of about 21-22 here, the fixed code about 2-6.
+  it.each<[string, (n: number) => string]>([
+    ['stray < characters (#383)', (n) => 'a < b '.repeat(n / 6)],
+    ['long whitespace runs (#383)', (n) => ('word' + ' \t\n'.repeat(4)).repeat(n / 16)],
+  ])(
+    'scales linearly past 2M characters on %s',
+    (_name, makeInput) => {
+      expectLinearScaling(
+        (src: string) => [extractSearchText(src), extractExcerpt(src)],
+        makeInput,
+        { startSize: 524_288, maxSize: 524_288, maxRatio: 12 }
+      );
+    },
+    PERF_TEST_TIMEOUT
+  );
+});
+
+describe('search text — escaped < and its > (#383)', () => {
+  // [source, excerpt, search text]: an escaped `<` parks the next unparked `>`
+  // on its line, so the emphasis/blockquote pass leaves it; a newline forgets it.
+  it.each<[string, string, string]>([
+    ['a \\<b> c > d > e\nf > g', 'a <b> c d e f g', 'a <b> c d e f g'],
+    ['\\<\\< a > b > c > d', '<< a > b > c d', '<< a > b > c d'],
+    ['\\<a\n> b', '<a b', '<a b'],
+    ['`x\\<y>` > \\<T> > >', '<T>', 'x\\<y> <T>'],
+    ['a \\<b \u{1F600} > c > d', 'a <b \u{1F600} > c d', 'a <b \u{1F600} > c d'],
+  ])('reads %j', (src, excerpt, searchText) => {
+    expect(extractExcerpt(src)).toBe(excerpt);
+    expect(extractSearchText(src)).toBe(searchText);
+  });
+});
+
+describe('search text — length caps (#383)', () => {
+  // [source, excerpt (max 10), search text (max 10)]
+  it.each<[string, string, string]>([
+    ['abcd efghi', 'abcd efghi', 'abcd efghi'],
+    ['abcd efghij', 'abcd…', 'abcd efghi'],
+    ['abcd efgh', 'abcd efgh', 'abcd efgh'],
+    ['abcd efghi j', 'abcd…', 'abcd efghi'],
+    ['  \n abcd \t  efghi \n ', 'abcd efghi', 'abcd efghi'],
+    ['  \n abcd \t  efghij \n ', 'abcd…', 'abcd efghi'],
+    ['one two three word   ', 'one two…', 'one two th'],
+    ['one two\u2026 word   ', 'one two\u2026\u2026', 'one two\u2026 w'],
+  ])('caps %j', (src, excerpt, searchText) => {
+    expect(extractExcerpt(src, 10)).toBe(excerpt);
+    expect(extractSearchText(src, 10)).toBe(searchText);
+  });
+});
+
+describe('search text — code spans of any backtick count (#385)', () => {
+  // [source, excerpt, search text]: the excerpt drops every code span, the
+  // search text unwraps it; an unmatched run is the literal text the page shows.
+  it.each<[string, string, string]>([
+    ['a `` x`y `` b and `` `tick` `` c', 'a b and c', 'a x`y b and `tick` c'],
+    ['one `a` two ``b`` three', 'one two three', 'one a two b three'],
+    ['x ` a `` b ` c', 'x c', 'x a `` b c'],
+    ['`` a ` b', '`` a ` b', '`` a ` b'],
+    ['a \\`not code\\` b', 'a `not code` b', 'a `not code` b'],
+    ['a \\\\`code` b', 'a \\ b', 'a \\code b'],
+    ['`a\n\nb` c', '`a b` c', '`a b` c'],
+    ['so `` a < b `` then <kbd>K</kbd> end', 'so then K end', 'so a < b then K end'],
+    ['see `a\nb` here', 'see here', 'see a b here'],
+  ])('reads %j', (src, excerpt, searchText) => {
+    expect(extractExcerpt(src)).toBe(excerpt);
+    expect(extractSearchText(src)).toBe(searchText);
+  });
+
+  it('forgets an escaped < once a span carries the text onto the next line', () => {
+    // The span's newline ends the line, so the `\<` no longer waits for a `>`:
+    // the `>` of `<b>` on the next line is a tag's, and `<b>` is stripped.
+    const src = 'a \\<T `x\ny` <b>z</b>';
+    expect(extractSearchText(src)).toBe('a <T x y z');
+    expect(extractExcerpt(src)).toBe('a <T z');
+  });
 });
 
 describe('search text — escaped punctuation reads as rendered', () => {

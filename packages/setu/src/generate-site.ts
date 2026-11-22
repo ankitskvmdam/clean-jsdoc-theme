@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import type { Heading as MdastHeading, Root } from 'mdast';
 import { decodeNamedCharacterReference } from 'decode-named-character-reference';
 import {
+  collapseWhitespace,
   htmlCommentRangesInHtml,
   replaceHtmlComments,
   slugifyHeading,
@@ -257,6 +258,14 @@ function decodeCharRefs(text: string): string {
  * from every `<` without a `>` (dwar's search strip uses the same pattern).
  */
 const TAG = /<(?:"[^"]*"|'[^']*'|[^"'<>])+>/g;
+/**
+ * Tags that separate words when stripped: block-level elements, line breaks,
+ * replaced and form elements (an image, a control), and the theme's containers.
+ */
+const SPACING_TAG =
+  /^<\/?(?:address|article|aside|audio|blockquote|br|button|caption|center|dd|details|dialog|div|dl|dt|fieldset|figcaption|figure|footer|form|h[1-6]|header|hgroup|hr|iframe|img|input|label|legend|li|main|menu|nav|noscript|object|ol|optgroup|option|p|playground|pre|search|section|select|step|steps|summary|tab|table|tabs|tbody|td|textarea|tfoot|th|thead|tr|ul|video)(?![\w:.-])/i;
+/** Any other well-formed tag name: an inline element, removed without a space. */
+const NAMED_TAG = /^<\/?[A-Za-z]/;
 
 /**
  * Strip HTML tags from a string and collapse whitespace; cheap, not a parser.
@@ -272,13 +281,19 @@ const TAG = /<(?:"[^"]*"|'[^']*'|[^"'<>])+>/g;
  * for a tag. An unterminated `<!--` is neutralized first, as the body does, so
  * its text stays visible here too — and every comment left is terminated, which
  * keeps the comment strip linear.
+ *
+ * Only a block-level tag (a paragraph, list item, heading, `<br>`, an image or
+ * form control, a theme container) leaves a space where it stood; an inline one (`<code>`, `<em>`,
+ * a custom element) is removed with nothing, so `<code>Array</code>, maybe`
+ * reads "Array, maybe", not "Array , maybe". Anything else the tag pattern
+ * matches (`<3 and 4>`, `<?x>`) and a closed comment still become a space.
  */
 export function stripHtml(html: string): string {
   const escaped = escapeLiteralTags(neutralizeUnterminatedComments(html));
   const text = replaceHtmlComments(escaped, htmlCommentRangesInHtml(escaped), (c, comment) =>
     c.closed ? ' ' : comment
-  ).replace(TAG, ' ');
-  return decodeCharRefs(text).replace(/\s+/g, ' ').trim();
+  ).replace(TAG, (tag) => (NAMED_TAG.test(tag) && !SPACING_TAG.test(tag) ? '' : ' '));
+  return collapseWhitespace(decodeCharRefs(text));
 }
 
 /**

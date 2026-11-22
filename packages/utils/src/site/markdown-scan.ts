@@ -266,6 +266,41 @@ function tableCells(row: string): number {
   return cells;
 }
 
+/**
+ * Whether `text` (a paragraph line, no newline) is the header row of a table
+ * whose delimiter row has `cells` cells. Either its raw cell count matches, or
+ * the count of the line as MDX reads it when it starts a table: each comment
+ * that opens and closes on the line is dropped by dwar, pipes included, and
+ * leaves an expression behind — a cell's worth of text, never a pipe (so the
+ * stand-in is `x`, not blanks: `<!-- c --> | a | b` is three cells to MDX).
+ *
+ * The comment-dropped count is used only when every comment on the line
+ * closes on it. An opener left unclosed on the line may close on a later one,
+ * swallowing the delimiter row: MDX then sees no table, and declaring one
+ * would end the paragraph under that comment, leave it unclosed and hand its
+ * text to MDX (`h <!-- a | b --> | i <!-- x <br>` / `-|-` / `-->` failed on
+ * the `<br>`). Such a line keeps the raw count alone, as before.
+ *
+ * The comments are found by {@link htmlCommentRanges} on the line alone, so
+ * there is one definition of a comment. That nested scan cannot recurse — the
+ * line has no newline, so its `scanBlocks` never reaches a header check — and
+ * it is done with the shared `TOKEN` regex before the outer scan resets
+ * `TOKEN.lastIndex` and starts its own loop.
+ *
+ * Known gap: a comment opened on the paragraph line above and closed on this
+ * one (`a <!-- note` then `" > | | <!-- c --><!-- | -->` over `-|-|-`) is not
+ * seen by the one-line scan, whose count can then differ from MDX's. Getting
+ * it right needs the inline comment state in `scanBlocks`.
+ */
+function isTableHeader(text: string, cells: number): boolean {
+  if (tableCells(text) === cells) return true;
+  if (!text.includes('<!--')) return false;
+  const ranges = htmlCommentRanges(text);
+  if (ranges.some((c) => !c.closed)) return false;
+  const seen = replaceHtmlComments(text, ranges, () => 'x');
+  return tableCells(seen) === cells;
+}
+
 /** Block-level structure of a source: fences, comment blocks, paragraph breaks. */
 interface BlockScan {
   fences: TextRange[];
@@ -344,6 +379,56 @@ function codeSpanFinder(
   };
 }
 
+/** An inline code span found by {@link inlineCodeSpans}. */
+export interface CodeSpanRange extends TextRange {
+  /** Length of each delimiter run; the content is `[start + ticks, end - ticks)`. */
+  ticks: number;
+}
+
+/**
+ * Every inline code span in a stretch of prose, in source order, by CommonMark's
+ * rules: a backtick run opens a span only if the next maximal run of exactly
+ * its length closes it before a blank line; a run with no closer is literal
+ * backticks, all of them (a shorter run inside it is never tried). A backslash
+ * escapes the character after it outside a span, so `` \` `` opens nothing and
+ * `` \\` `` is an escaped backslash then a real opener; inside a span a
+ * backslash is literal, so `` `a\` `` closes on the backtick after it.
+ *
+ * An inline-only scan: the caller removes fenced code and comments first.
+ * Linear in the source however the runs fall (see `codeSpanFinder`).
+ */
+export function inlineCodeSpans(source: string): CodeSpanRange[] {
+  if (!source.includes('`')) return [];
+  const spanEnd = codeSpanFinder(source);
+  // The next blank line at or after a position, for non-decreasing positions
+  // (like `closerFinder`): -1 once there is none.
+  const blank = /\n[ \t\r]*\n/g;
+  let blankAt = -2;
+  const nextBlank = (from: number): number => {
+    if (blankAt === -1 || blankAt >= from) return blankAt;
+    blank.lastIndex = from;
+    const m = blank.exec(source);
+    blankAt = m ? m.index : -1;
+    return blankAt;
+  };
+
+  const out: CodeSpanRange[] = [];
+  const token = /\\[^\n]|`+/g;
+  let m: RegExpExecArray | null;
+  while ((m = token.exec(source)) !== null) {
+    if (m[0][0] !== '`') continue;
+    const start = m.index;
+    const runEnd = start + m[0].length;
+    const end = spanEnd(start, runEnd);
+    if (end === -1) continue;
+    const blankLine = nextBlank(runEnd);
+    if (blankLine !== -1 && blankLine < end) continue;
+    out.push({ start, end, ticks: runEnd - start });
+    token.lastIndex = end;
+  }
+  return out;
+}
+
 /**
  * One ordered pass over the lines, per CommonMark block parsing:
  *   - a fence opens only outside a comment block, and closes on a long-enough
@@ -374,7 +459,13 @@ function codeSpanFinder(
  *     fence, …), or — inside a list item — at a line indented less than the
  *     item's content. A row indented four or more columns stays in the table:
  *     MDX, which renders these pages, has no indented code (GFM would end the
- *     table there).
+ *     table there). The header row's cells are counted on the raw line, or —
+ *     when every comment on the line closes on it — on the line as MDX reads
+ *     it once dwar drops those comments (pipes inside included); either count
+ *     matching makes a table. A comment left open on the header line keeps
+ *     the raw count alone: it may close below and swallow the delimiter row,
+ *     and a table declared there would hand its text to MDX (see
+ *     `isTableHeader`).
  */
 function scanBlocks(source: string): BlockScan {
   const fences: TextRange[] = [];
@@ -599,7 +690,7 @@ function scanBlocks(source: string): BlockScan {
         isTableDelimiter(delim) &&
         // `- | -` is a list item, which interrupts the paragraph first.
         !LIST_ITEM.test(delim) &&
-        tableCells(delim) === tableCells(paraText)
+        isTableHeader(paraText, tableCells(delim))
       ) {
         breaks.push(pos);
         table = {
@@ -811,14 +902,53 @@ export function htmlCommentRanges(source: string): HtmlCommentRange[] {
 //     "bogus comment", which runs to the next `>`;
 //   - any other `<` is text.
 // A tag or bogus comment with no `>` runs to the end of the input, as in a
-// browser (nothing after it is content), and so ends the scan.
+// browser (nothing after it is content), and so ends the scan. The tag opener
+// is this regex; the rest of the tag is read by hand (`tagEndFinder`).
 const TAG_OPEN = /<\/?[A-Za-z]/y;
-// The rest of a tag after `<name`, up to (not including) its `>`. The branches
-// are disjoint on their first character — an `=` goes only to the `=` branch,
-// which takes the quoted value after it whole, or just the `=` (and whitespace)
-// when no quote follows — so the match is one pass over the tag. It stops at the
-// `>`, at an `=` whose quoted value never closes, or at the end of the input.
-const TAG_BODY = /(?:[^>=]|=[ \t\n\f\r]*(?:"[^"]*"|'[^']*'|(?![ \t\n\f\r"'])))*/y;
+
+/**
+ * Finds the `>` that ends a tag whose body (what follows the first letter of
+ * `<name` or `</name`) starts at `from`, or -1 when the tag runs to the end of
+ * the input, for non-decreasing positions. The body grammar:
+ *   - any character but `>` and `=` is part of the body (the rest of the name,
+ *     whitespace, `/`, `<`, `<!--`, `-->`, a quote not right after an `=`);
+ *   - `>` ends the tag;
+ *   - `=` takes the HTML whitespace after it (space, tab, LF, FF, CR — not VT
+ *     or NBSP), then a quoted value whole (`"…"` or `'…'`, anything literal up
+ *     to the same quote) when one follows; a quote that never closes makes the
+ *     tag run to the end of the input, even past a later `>`. Without a quote,
+ *     what follows is ordinary body (`=>` ends the tag, `==` starts over).
+ * Linear over all calls: the next `>` and the next `=` are remembered while they
+ * are still ahead, a quoted value costs one `indexOf`, and -1 is final (the
+ * caller stops). Hand-written because a regex loop over the body,
+ * `(?:[^>=]|=…)*`, overflows the regex engine's backtrack stack on a tag of
+ * several million characters (#382).
+ */
+function tagEndFinder(source: string): (from: number) => number {
+  let gt = -2; // next `>` at or after the cursor; -1 once there is none
+  let eq = -2; // next `=`, likewise
+  return (from) => {
+    let i = from;
+    for (;;) {
+      if (gt !== -1 && gt < i) gt = source.indexOf('>', i);
+      if (gt === -1) return -1;
+      if (eq !== -1 && eq < i) eq = source.indexOf('=', i);
+      if (eq === -1 || eq > gt) return gt;
+      let j = eq + 1;
+      for (;;) {
+        const c = source.charCodeAt(j);
+        if (c === 32 || c === 9 || c === 10 || c === 12 || c === 13) j++;
+        else break;
+      }
+      const quote = source[j];
+      if (quote === '"' || quote === "'") {
+        const close = source.indexOf(quote, j + 1);
+        if (close === -1) return -1; // the value, and so the tag, never ends
+        i = close + 1;
+      } else i = j; // unquoted or missing value: ordinary body from here
+    }
+  };
+}
 
 /**
  * Every `<!-- … -->` in raw HTML (not Markdown), per the HTML tokenizer. Code
@@ -837,13 +967,15 @@ const TAG_BODY = /(?:[^>=]|=[ \t\n\f\r]*(?:"[^"]*"|'[^']*'|(?![ \t\n\f\r"'])))*/
  * elements (`<script>`, `<style>`, `<textarea>`, `<title>`), whose content the
  * tokenizer never reads as a comment — a `<!--` there is reported as one, as
  * the Markdown scanner also does — and `--!>`, which the tokenizer accepts as
- * a closer. Linear: one `indexOf` per `<`, one pass over each tag, one
- * `indexOf` per `-->`.
+ * a closer. Linear: one `indexOf` per `<`, one pass over each tag by
+ * `indexOf` (no regex over a tag body, which overflowed on a multi-megabyte
+ * tag), one `indexOf` per `-->`.
  */
 export function htmlCommentRangesInHtml(source: string): HtmlCommentRange[] {
   const out: HtmlCommentRange[] = [];
   if (!source.includes('<!--')) return out;
   const nextCloser = closerFinder(source);
+  const tagEnd = tagEndFinder(source);
   for (let from = 0; ; ) {
     const lt = source.indexOf('<', from);
     if (lt === -1) return out;
@@ -861,10 +993,8 @@ export function htmlCommentRangesInHtml(source: string): HtmlCommentRange[] {
     }
     TAG_OPEN.lastIndex = lt;
     if (TAG_OPEN.test(source)) {
-      TAG_BODY.lastIndex = TAG_OPEN.lastIndex;
-      TAG_BODY.test(source); // always matches (possibly nothing); lastIndex is where it stopped
-      const gt = TAG_BODY.lastIndex;
-      if (source[gt] !== '>') return out; // the tag runs to the end of the input
+      const gt = tagEnd(TAG_OPEN.lastIndex);
+      if (gt === -1) return out; // the tag runs to the end of the input
       from = gt + 1;
       continue;
     }
