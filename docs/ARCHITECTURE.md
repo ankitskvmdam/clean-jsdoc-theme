@@ -102,6 +102,7 @@ utils/src/
 │   │                     #   setu's splitters + description excerpt AND dwar's comment
 │   │                     #   pre-pass, backtick warnings and search text;
 │   │                     #   inlineCodeSpans (CommonMark code spans, for dwar's search text)
+│   ├── whitespace.ts     # collapseWhitespace: linear /\s+/g → ' ' + trim (dwar search text, setu descriptions)
 │   ├── collapsible.ts    # collapsibleSidebarSections resolver (build-time →
 │   │                     #   manifest.collapsibleGroups; boolean | string[])
 │   └── index.ts          # barrel — the setu↔dwar boundary

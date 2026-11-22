@@ -21,14 +21,16 @@
  *      at that size).
  *
  * Why 8x and 24 rather than 4x and 8: linear code is not exactly linear once
- * its input outgrows the CPU caches. The search-text strip in dwar measured
- * t(4N) / t(N) of 8.4-10.1 for N = 1MB on an idle machine, so a limit of 8
- * would be flaky. The cache step costs a roughly fixed factor (up to about
- * 2.5x), so a larger size step separates the two cases better: at 8x, linear
- * code gives 8 (about 20 at worst) and quadratic code about 64; 24 sits between.
- * A V8 regex cliff is a different matter: it can add about 4x on its own, so a
- * case whose input crosses one keeps its window below it with `maxSize` (see
- * the stray-< case in dwar's html.test.ts).
+ * its input outgrows the CPU caches, which costs a roughly fixed factor (up to
+ * about 2.5x). (dwar's search-text strip once measured t(4N) / t(N) of 8.4-10.1
+ * for N = 1MB; that traced to a per-character string build and a many-match
+ * regex replace, both fixed in #383.) A larger size step separates the two
+ * cases better: at 8x, linear code gives 8 (about 20 at worst) and quadratic
+ * code about 64; 24 sits between.
+ * A V8 engine cliff is a different matter: a global regex replace slows down
+ * once one call makes several hundred thousand matches, which can add about 4x
+ * on its own. A case that must stay under such a cliff keeps its window below
+ * it with `maxSize`.
  *
  * A near miss is retried (`attempts`) to absorb a one-off stall; a ratio of
  * twice the limit or more fails at once, since no stall explains it.

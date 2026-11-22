@@ -15,6 +15,7 @@
  */
 
 import {
+  collapseWhitespace,
   inlineCodeSpans,
   replaceHtmlComments,
   type HtmlCommentRange,
@@ -397,6 +398,11 @@ const PUNCTUATION = /[!-/:-@[-`{-~]/g;
  * or the blockquote-mark pass would eat it. Only an escaped `<` waits for one: a
  * `<` in a code span opens no tag, so it must not claim the `>` of a real tag
  * later on the line (`` `Array<T>` then <b>x</b> `` still strips the `<b>`).
+ *
+ * Prose is copied by slice, not character by character: appending each
+ * character of a multi-megabyte page to a string was the largest superlinear
+ * cost in the extractors (#383). Only a line with an escaped `<` still open is
+ * scanned, and only until its `>`s are found or the line ends.
  */
 function parkEscapes(text: string, code: 'drop' | 'keep'): string {
   const guarded = text.replace(
@@ -407,15 +413,22 @@ function parkEscapes(text: string, code: 'drop' | 'keep'): string {
   let open = 0;
   let out = '';
   const copy = (segment: string): void => {
-    for (const ch of segment) {
-      if (ch === '\n') open = 0;
-      else if (ch === '>' && open > 0) {
-        open--;
-        out += parkChar('>');
-        continue;
-      }
-      out += ch;
+    // Nothing is waiting for a `>`: the segment goes through as it is.
+    if (open === 0) {
+      out += segment;
+      return;
     }
+    let from = 0;
+    for (let i = 0; i < segment.length && open > 0; i++) {
+      const c = segment.charCodeAt(i);
+      if (c === 0x0a) open = 0;
+      else if (c === 0x3e) {
+        open--;
+        out += segment.slice(from, i) + parkChar('>');
+        from = i + 1;
+      }
+    }
+    out += segment.slice(from);
   };
   // Prose between code spans: copy it, parking each escaped character.
   const prose = (from: number, to: number): void => {
@@ -492,7 +505,8 @@ export function extractExcerpt(
     .replace(TAG, ' ') // raw HTML / JSX
     .replace(/^#{1,6}\s+/gm, '') // ATX headings
     .replace(/[*_~>#]+/g, ' '); // emphasis & blockquotes
-  let text = unparkAll(stripped).replace(/\s+/g, ' ').trim();
+  // One character past `max` is enough to tell whether the text was cut.
+  let text = collapseWhitespace(unparkAll(stripped), max + 1);
   if (text.length > max) {
     text = text.slice(0, max).replace(/\s+\S*$/, '') + '…';
   }
@@ -525,8 +539,7 @@ export function extractSearchText(
     .replace(TAG, ' ') // raw HTML / JSX
     .replace(/^#{1,6}\s+/gm, '') // ATX heading markers (keep the text)
     .replace(/[*_~>#|]+/g, ' '); // emphasis / blockquote / table marks
-  const text = unparkAll(stripped).replace(/\s+/g, ' ').trim();
-  return text.length > max ? text.slice(0, max) : text;
+  return collapseWhitespace(unparkAll(stripped), max);
 }
 
 /**

@@ -294,27 +294,59 @@ describe('search text — tag strip', () => {
 
   // The old `/<[^>]+>/` rescanned to the end of the page from every `<` with no
   // `>` after it — minutes for a 1MB page. Each generator takes a size in
-  // characters, roughly (see linear-scaling.ts). `maxSize` keeps the 8x window
-  // at or below 512K characters: past about 1M characters of whitespace-dense
-  // input, V8's `/\s+/g` replace in the extractors slows down by a factor (an
-  // engine cliff, not a regression), which would push correct code over the
-  // limit. The old tag strip still measures far above it in this window.
+  // characters, roughly (see linear-scaling.ts). The default window reaches
+  // about 4M characters, which also guards #383: a page of several million
+  // characters used to slow down far more than its size, from a per-character
+  // copy of the prose and a many-match `/\s+/g` replace.
   it.each<[string, (n: number) => string]>([
     ['unclosed comment openers', (n) => 'a <!-- '.repeat(n / 7)],
     ['stray < characters', (n) => 'a < b '.repeat(n / 6)],
     ['unclosed quoted attributes', (n) => '<a b="x '.repeat(n / 8)],
     ['unclosed backtick runs', (n) => '`` a\n\n` b\n\n'.repeat(n / 12)],
+    ['long whitespace runs (#383)', (n) => ('word' + ' \t\n'.repeat(4)).repeat(n / 16)],
+    ['escaped generics (#383)', (n) => 'Promise\\<User> and `a<b>` x > y\n'.repeat(n / 32)],
   ])(
     'scales linearly on %s',
     (_name, makeInput) => {
       expectLinearScaling(
         (src: string) => [extractSearchText(src), extractExcerpt(src)],
-        makeInput,
-        { maxSize: 65_536 }
+        makeInput
       );
     },
     PERF_TEST_TIMEOUT
   );
+});
+
+describe('search text — escaped < and its > (#383)', () => {
+  // [source, excerpt, search text]: an escaped `<` parks the next unparked `>`
+  // on its line, so the emphasis/blockquote pass leaves it; a newline forgets it.
+  it.each<[string, string, string]>([
+    ['a \\<b> c > d > e\nf > g', 'a <b> c d e f g', 'a <b> c d e f g'],
+    ['\\<\\< a > b > c > d', '<< a > b > c d', '<< a > b > c d'],
+    ['\\<a\n> b', '<a b', '<a b'],
+    ['`x\\<y>` > \\<T> > >', '<T>', 'x\\<y> <T>'],
+    ['a \\<b \u{1F600} > c > d', 'a <b \u{1F600} > c d', 'a <b \u{1F600} > c d'],
+  ])('reads %j', (src, excerpt, searchText) => {
+    expect(extractExcerpt(src)).toBe(excerpt);
+    expect(extractSearchText(src)).toBe(searchText);
+  });
+});
+
+describe('search text — length caps (#383)', () => {
+  // [source, excerpt (max 10), search text (max 10)]
+  it.each<[string, string, string]>([
+    ['abcd efghi', 'abcd efghi', 'abcd efghi'],
+    ['abcd efghij', 'abcd…', 'abcd efghi'],
+    ['abcd efgh', 'abcd efgh', 'abcd efgh'],
+    ['abcd efghi j', 'abcd…', 'abcd efghi'],
+    ['  \n abcd \t  efghi \n ', 'abcd efghi', 'abcd efghi'],
+    ['  \n abcd \t  efghij \n ', 'abcd…', 'abcd efghi'],
+    ['one two three word   ', 'one two…', 'one two th'],
+    ['one two\u2026 word   ', 'one two\u2026\u2026', 'one two\u2026 w'],
+  ])('caps %j', (src, excerpt, searchText) => {
+    expect(extractExcerpt(src, 10)).toBe(excerpt);
+    expect(extractSearchText(src, 10)).toBe(searchText);
+  });
 });
 
 describe('search text — code spans of any backtick count (#385)', () => {

@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import type { Heading as MdastHeading, Root } from 'mdast';
 import { decodeNamedCharacterReference } from 'decode-named-character-reference';
 import {
+  collapseWhitespace,
   htmlCommentRangesInHtml,
   replaceHtmlComments,
   slugifyHeading,
@@ -292,7 +293,7 @@ export function stripHtml(html: string): string {
   const text = replaceHtmlComments(escaped, htmlCommentRangesInHtml(escaped), (c, comment) =>
     c.closed ? ' ' : comment
   ).replace(TAG, (tag) => (NAMED_TAG.test(tag) && !SPACING_TAG.test(tag) ? '' : ' '));
-  return decodeCharRefs(text).replace(/\s+/g, ' ').trim();
+  return collapseWhitespace(decodeCharRefs(text));
 }
 
 /**
