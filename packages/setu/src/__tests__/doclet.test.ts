@@ -12,7 +12,13 @@ import {
 import { getContainerView, getInheritedMembers } from '../class-view';
 import { generateSite } from '../index';
 import { getJSDocTaffyData } from './factory';
-import { ALIAS_COLLISION_DOCLETS, ALIAS_DOCLETS, ALIAS_MODULE_DOCLETS } from './alias-fixture';
+import {
+  ALIAS_CJS_FILES_DOCLETS,
+  ALIAS_COLLISION_DOCLETS,
+  ALIAS_DOCLETS,
+  ALIAS_MODULE_DOCLETS,
+  ALIAS_REPLACEMENT_DOCLETS,
+} from './alias-fixture';
 
 function makeCollection(items: unknown[]): TJSDocSaltyCollection<TDoclet> {
   return salty.taffy(items) as unknown as TJSDocSaltyCollection<TDoclet>;
@@ -528,6 +534,63 @@ describe('rehomeAliasedMembers (real JSDoc output, #374)', () => {
     expect(renamed.get('module:c.Foo')).toBe('module:c.Baz');
     // The undocumented ESM class record under the original name is left alone.
     expect(find(collection, (d) => d.longname === 'module:m.Foo')).toHaveLength(1);
+  });
+
+  it('never moves a member across files under a per-file original (module.exports)', () => {
+    const { collection, renamed } = rehomeAliasedMembers(makeCollection(ALIAS_CJS_FILES_DOCLETS));
+    const memberOf = (name: string) => find(collection, (d) => d.name === name)[0]!;
+    // a.js: the aliased class's own method moves.
+    expect(memberOf('m')).toMatchObject({ longname: 'A#m', memberof: 'A' });
+    // d.js: an unrelated `module.exports` object keeps its member.
+    expect(memberOf('dfn')).toMatchObject({
+      longname: 'module.exports.dfn',
+      memberof: 'module.exports',
+    });
+    expect(renamed.has('module.exports')).toBe(false);
+    expect(renamed.has('module.exports.dfn')).toBe(false);
+  });
+
+  it('an uncommented reassignment of the original keeps the members after it', () => {
+    const { collection } = rehomeAliasedMembers(makeCollection(ALIAS_REPLACEMENT_DOCLETS));
+    const memberOf = (name: string) => find(collection, (d) => d.name === name)[0]?.memberof;
+    // undocreal.js: `Ns.Foo = class` with no comment after the aliased one.
+    expect(memberOf('m')).toBe('Other');
+    expect(memberOf('m2')).toBe('Ns.Foo');
+    // fnrepl.js: the same with ES5 functions.
+    expect(memberOf('om')).toBe('Other');
+    expect(memberOf('nm')).toBe('Ns.Foo');
+  });
+
+  it('leaves an original longname two owners map differently out of renamed', () => {
+    const at = (lineno: number, code: string) => ({
+      filename: 'dup.js',
+      path: '/src',
+      lineno,
+      columnno: 0,
+      code: { name: code },
+    });
+    const owner = (name: string, lineno: number) => ({
+      kind: 'class',
+      name,
+      longname: name,
+      scope: 'global',
+      alias: name,
+      meta: at(lineno, 'Ns.Dup'),
+    });
+    const m = (lineno: number) => ({
+      kind: 'function',
+      name: 'm',
+      longname: 'Ns.Dup#m',
+      memberof: 'Ns.Dup',
+      scope: 'instance',
+      meta: at(lineno, 'Ns.Dup#m'),
+    });
+    const { collection, renamed } = rehomeAliasedMembers(
+      makeCollection([owner('A', 1), m(3), owner('B', 6), m(8)])
+    );
+    expect(find(collection, (d) => d.name === 'm').map((d) => d.longname)).toEqual(['A#m', 'B#m']);
+    expect(renamed.has('Ns.Dup#m')).toBe(false);
+    expect(renamed.has('Ns.Dup')).toBe(false);
   });
 
   describe('a member in another file', () => {

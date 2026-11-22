@@ -1142,3 +1142,317 @@ export const ALIAS_MODULE_DOCLETS: unknown[] = [
     params: [],
   },
 ];
+
+/**
+ * An aliased class, then an UNCOMMENTED reassignment of its original name
+ * (JSDoc emits an undocumented class/function record for it), one run over:
+ *
+ * undocreal.js:
+ *
+ * /** @namespace *∕
+ * var Ns = {};
+ * /**
+ *  * Foo.
+ *  * @alias Other
+ *  *∕
+ * Ns.Foo = class {
+ *   /** M. *∕
+ *   m() {}
+ * };
+ * Ns.Foo = class {
+ *   /** M2 of the undocumented replacement. *∕
+ *   m2() {}
+ * };
+ *
+ * fnrepl.js:
+ *
+ * /**
+ *  * Other class.
+ *  * @class
+ *  * @alias Other
+ *  *∕
+ * Ns.Foo = function () {};
+ *
+ * /** om method. *∕
+ * Ns.Foo.prototype.om = function () {};
+ *
+ * Ns.Foo = function () {};
+ *
+ * /** nm method. *∕
+ * Ns.Foo.prototype.nm = function () {};
+ */
+export const ALIAS_REPLACEMENT_DOCLETS: unknown[] = [
+  {
+    meta: {
+      filename: 'undocreal.js',
+      lineno: 2,
+      columnno: 4,
+      path: '/src',
+      code: {
+        name: 'Ns',
+        type: 'ObjectExpression',
+      },
+    },
+    kind: 'namespace',
+    name: 'Ns',
+    longname: 'Ns',
+    scope: 'global',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'undocreal.js',
+      lineno: 7,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Ns.Foo',
+        type: 'ClassExpression',
+        paramnames: [],
+      },
+    },
+    classdesc: 'Foo.',
+    alias: 'Other',
+    name: 'Other',
+    longname: 'Other',
+    kind: 'class',
+    scope: 'global',
+  },
+  {
+    meta: {
+      filename: 'undocreal.js',
+      lineno: 9,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'Ns.Foo#m',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: 'M.',
+    name: 'm',
+    longname: 'Ns.Foo#m',
+    kind: 'function',
+    memberof: 'Ns.Foo',
+    scope: 'instance',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'undocreal.js',
+      lineno: 11,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Ns.Foo',
+        type: 'ClassExpression',
+        paramnames: [],
+      },
+    },
+    undocumented: true,
+    name: 'Foo',
+    longname: 'Ns.Foo',
+    kind: 'class',
+    memberof: 'Ns',
+    scope: 'static',
+  },
+  {
+    meta: {
+      filename: 'undocreal.js',
+      lineno: 13,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'Ns.Foo#m2',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: 'M2 of the undocumented replacement.',
+    name: 'm2',
+    longname: 'Ns.Foo#m2',
+    kind: 'function',
+    memberof: 'Ns.Foo',
+    scope: 'instance',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'fnrepl.js',
+      lineno: 6,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Ns.Foo',
+        type: 'FunctionExpression',
+        paramnames: [],
+      },
+    },
+    description: 'Other class.',
+    kind: 'class',
+    alias: 'Other',
+    name: 'Other',
+    longname: 'Other',
+    scope: 'global',
+  },
+  {
+    meta: {
+      filename: 'fnrepl.js',
+      lineno: 9,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Ns.Foo.prototype.om',
+        type: 'FunctionExpression',
+        paramnames: [],
+      },
+    },
+    description: 'om method.',
+    name: 'om',
+    longname: 'Ns.Foo#om',
+    kind: 'function',
+    memberof: 'Ns.Foo',
+    scope: 'instance',
+  },
+  {
+    meta: {
+      filename: 'fnrepl.js',
+      lineno: 11,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Ns.Foo',
+        type: 'FunctionExpression',
+        paramnames: [],
+      },
+    },
+    undocumented: true,
+    name: 'Foo',
+    longname: 'Ns.Foo',
+    kind: 'function',
+    memberof: 'Ns',
+    scope: 'static',
+  },
+  {
+    meta: {
+      filename: 'fnrepl.js',
+      lineno: 14,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'Ns.Foo.prototype.nm',
+        type: 'FunctionExpression',
+        paramnames: [],
+      },
+    },
+    description: 'nm method.',
+    name: 'nm',
+    longname: 'Ns.Foo#nm',
+    kind: 'function',
+    memberof: 'Ns.Foo',
+    scope: 'instance',
+  },
+];
+
+/**
+ * `module.exports` means something different in every file. An aliased
+ * `module.exports = class` in one file and an unrelated `module.exports`
+ * object (no `@module`) in another, one run over:
+ *
+ * a.js:
+ *
+ * /**
+ *  * A.
+ *  * @alias A
+ *  *∕
+ * module.exports = class {
+ *   /** M. *∕
+ *   m() {}
+ * };
+ *
+ * d.js:
+ *
+ * module.exports = {
+ *   /** Dfn. *∕
+ *   dfn: function () {},
+ * };
+ */
+export const ALIAS_CJS_FILES_DOCLETS: unknown[] = [
+  {
+    meta: {
+      filename: 'a.js',
+      lineno: 5,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'module.exports',
+        type: 'ClassExpression',
+        paramnames: [],
+      },
+    },
+    classdesc: 'A.',
+    alias: 'A',
+    name: 'A',
+    longname: 'A',
+    kind: 'class',
+    scope: 'global',
+  },
+  {
+    meta: {
+      filename: 'a.js',
+      lineno: 7,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'module.exports#m',
+        type: 'MethodDefinition',
+        paramnames: [],
+      },
+    },
+    description: 'M.',
+    name: 'm',
+    longname: 'module.exports#m',
+    kind: 'function',
+    memberof: 'module.exports',
+    scope: 'instance',
+    params: [],
+  },
+  {
+    meta: {
+      filename: 'd.js',
+      lineno: 1,
+      columnno: 0,
+      path: '/src',
+      code: {
+        name: 'module.exports',
+        type: 'ObjectExpression',
+        paramnames: [],
+      },
+    },
+    undocumented: true,
+    name: 'exports',
+    longname: 'module.exports',
+    kind: 'member',
+    memberof: 'module',
+    scope: 'static',
+  },
+  {
+    meta: {
+      filename: 'd.js',
+      lineno: 3,
+      columnno: 2,
+      path: '/src',
+      code: {
+        name: 'dfn',
+        type: 'FunctionExpression',
+      },
+    },
+    description: 'Dfn.',
+    name: 'dfn',
+    longname: 'module.exports.dfn',
+    kind: 'function',
+    memberof: 'module.exports',
+    scope: 'static',
+  },
+];

@@ -343,11 +343,17 @@ export function generateSite(rawCollection: unknown, opts?: GenerateSiteOptions)
   // Names a re-homed `@alias` member had before the move (`Ns.Foo#m`, `Ns.Foo`)
   // resolve where it now lives — only when it was registered (a hidden symbol
   // stays unlinked) and the old name is unclaimed (a real `Ns.Foo` keeps its own).
+  // They stay out of the short-name index: `Ns.Foo` must not make `{@link Foo}`
+  // ambiguous with an unrelated `Lib.Foo`.
+  const exactOnly = new Set<string>();
   for (const [original, current] of rehomed.renamed) {
     const entry = registry.get(current);
-    if (entry && !registry.has(original)) registry.set(original, entry);
+    if (entry && !registry.has(original)) {
+      registry.set(original, entry);
+      exactOnly.add(original);
+    }
   }
-  const resolveLink = makeLinkResolver(registry);
+  const resolveLink = makeLinkResolver(registry, exactOnly);
 
   // `@tutorial <name>` resolver. Tutorials resolve by their tutorial name; docs
   // resolve by their slug (e.g. `@tutorial guides/advanced`). Both are derived

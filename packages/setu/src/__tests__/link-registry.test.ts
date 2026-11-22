@@ -254,6 +254,17 @@ describe('makeLinkResolver — unique short-name fallback', () => {
     expect(resolve('open')).toBeNull();
   });
 
+  it('keeps exactOnly keys out of the short-name index', () => {
+    const registry: LinkRegistry = new Map([
+      ['Lib.Foo', { slug: 'lib', anchor: 'foo' }],
+      ['Ns.Foo', { slug: 'other' }],
+    ]);
+    expect(makeLinkResolver(registry)('Foo')).toBeNull();
+    const resolve = makeLinkResolver(registry, new Set(['Ns.Foo']));
+    expect(resolve('Foo')).toEqual({ href: '/lib#foo', external: false });
+    expect(resolve('Ns.Foo')).toEqual({ href: '/other', external: false });
+  });
+
   it('treats the same target seen twice as non-ambiguous', () => {
     const registry: LinkRegistry = new Map([
       ['module:CoreSchema~BaseEntity', { slug: 'pages/base-entity' }],

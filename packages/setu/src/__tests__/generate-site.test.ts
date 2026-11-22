@@ -15,7 +15,13 @@ import { classViewToMdast } from '../mdast/class-view';
 import { getClassView } from '../class-view';
 import { getJSDocTaffyData } from './factory';
 import { CLASS_EXPRESSION_DOCLETS } from './class-expression-fixture';
-import { ALIAS_COLLISION_DOCLETS, ALIAS_DOCLETS, ALIAS_MODULE_DOCLETS } from './alias-fixture';
+import {
+  ALIAS_CJS_FILES_DOCLETS,
+  ALIAS_COLLISION_DOCLETS,
+  ALIAS_DOCLETS,
+  ALIAS_MODULE_DOCLETS,
+  ALIAS_REPLACEMENT_DOCLETS,
+} from './alias-fixture';
 
 function makeCollection(items: unknown[]): TJSDocSaltyCollection<TDoclet> {
   return salty.taffy(items) as unknown as TJSDocSaltyCollection<TDoclet>;
@@ -691,6 +697,76 @@ describe("generateSite — members of an @alias'd nested class (real JSDoc outpu
     expect(foo).not.toContain('name="m"');
     expect(pageOf(ALIAS_COLLISION_DOCLETS, 'a')!.body).toContain('name="am"');
     expect(pageOf(ALIAS_COLLISION_DOCLETS, 'b')!.body).toContain('name="bm"');
+  });
+
+  it('an original name does not make a short-name link ambiguous', () => {
+    const at = (filename: string, lineno: number, code: string) => ({
+      filename,
+      path: '/src',
+      lineno,
+      columnno: 0,
+      code: { name: code },
+    });
+    const m = generateSite(
+      makeCollection([
+        {
+          kind: 'namespace',
+          name: 'Ns',
+          longname: 'Ns',
+          scope: 'global',
+          meta: at('a.js', 1, 'Ns'),
+        },
+        {
+          kind: 'class',
+          name: 'Other',
+          longname: 'Other',
+          scope: 'global',
+          alias: 'Other',
+          meta: at('a.js', 3, 'Ns.Foo'),
+        },
+        {
+          kind: 'function',
+          name: 'm',
+          longname: 'Ns.Foo#m',
+          memberof: 'Ns.Foo',
+          scope: 'instance',
+          description: 'See {@link Foo} and {@link Ns.Foo}.',
+          meta: at('a.js', 5, 'Ns.Foo#m'),
+        },
+        {
+          kind: 'namespace',
+          name: 'Lib',
+          longname: 'Lib',
+          scope: 'global',
+          meta: at('b.js', 1, 'Lib'),
+        },
+        {
+          kind: 'function',
+          name: 'Foo',
+          longname: 'Lib.Foo',
+          memberof: 'Lib',
+          scope: 'static',
+          meta: at('b.js', 3, 'Lib.Foo'),
+        },
+      ])
+    );
+    const body = m.pages.find((p) => p.slug === 'other')!.body;
+    expect(body).toContain('[Foo](/lib#foo)');
+    expect(body).toContain('[Ns.Foo](/other)');
+  });
+
+  it('a per-file original never pulls in another file’s members', () => {
+    const a = pageOf(ALIAS_CJS_FILES_DOCLETS, 'a')!.body;
+    expect(a).toContain('name="m"');
+    expect(a).not.toContain('dfn');
+  });
+
+  it('an uncommented reassignment keeps the members after it off the alias page', () => {
+    const body = pageOf(ALIAS_REPLACEMENT_DOCLETS, 'other')!.body;
+    expect(body).toContain('name="m"');
+    expect(body).toContain('name="om"');
+    expect(body).not.toContain('name="m2"');
+    expect(body).not.toContain('name="nm"');
   });
 
   it('an aliased class exported from a @module gets its methods', () => {

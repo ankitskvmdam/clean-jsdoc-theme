@@ -11,4 +11,7 @@ aliased class exported from a `@module`) under the original name, so the alias
 page showed only its constructor and fields. They now appear on the alias page,
 and links by either name (`{@link Ns.Foo#m}`, `{@link Other#m}`) resolve there.
 An aliased global class is no longer listed as a member of its original
-namespace. The TypeDoc flavor is unchanged.
+namespace. Pages of containers nested under the original name move under the
+alias, so their URLs change (for example `ns/foo/opts` becomes `other/opts`, and
+`ns/in/foo/inner` becomes `ns/pub/inner`), and their translation slot keys move
+with them. The TypeDoc flavor is unchanged.
