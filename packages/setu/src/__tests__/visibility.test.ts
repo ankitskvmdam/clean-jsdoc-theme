@@ -17,6 +17,7 @@ import {
   PRIVATE_CTOR_ES5_ES6_DOCLETS,
   PRIVATE_CTOR_SAME_NAME_DOCLETS,
 } from './private-ctor-fixture';
+import { ALIAS_DOCLETS } from './alias-fixture';
 
 function makeCollection(items: unknown[]): TJSDocSaltyCollection<TDoclet> {
   return salty.taffy(items) as unknown as TJSDocSaltyCollection<TDoclet>;
@@ -348,6 +349,34 @@ describe('generateSite — `module.exports = class` with a @private constructor,
     )!.body;
     expect(body).toContain('## Constructor');
     expect(body).toContain('Anon ctor.');
+  });
+});
+
+describe('generateSite — @alias on a nested class expression (real JSDoc output, #374)', () => {
+  const site = (opts?: { includePrivate?: boolean }) =>
+    generateSite(makeCollection(ALIAS_DOCLETS), opts);
+  const page = (m: ReturnType<typeof generateSite>, slug: string) =>
+    m.pages.find((p) => p.slug === slug);
+
+  it('a @private constructor hides only the Constructor; the moved members stay', () => {
+    const body = page(site(), 'pc')!.body;
+    expect(body).toContain('Pc class.');
+    expect(body).toContain('name="pcm"');
+    expect(body).not.toContain('## Constructor');
+    expect(body).not.toContain('Secret ctor.');
+  });
+
+  it('a @private aliased class takes its moved members with it', () => {
+    const m = site();
+    expect(page(m, 'hid')).toBeUndefined();
+    expect(navSlugs(m.nav)).not.toContain('hid');
+    for (const p of m.pages) expect(p.body).not.toContain('name="hm"');
+  });
+
+  it('includePrivate shows the private aliased class with its members', () => {
+    const m = site({ includePrivate: true });
+    expect(page(m, 'hid')!.body).toContain('name="hm"');
+    expect(page(m, 'pc')!.body).toContain('## Constructor');
   });
 });
 

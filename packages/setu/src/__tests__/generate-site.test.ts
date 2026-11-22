@@ -15,6 +15,7 @@ import { classViewToMdast } from '../mdast/class-view';
 import { getClassView } from '../class-view';
 import { getJSDocTaffyData } from './factory';
 import { CLASS_EXPRESSION_DOCLETS } from './class-expression-fixture';
+import { ALIAS_COLLISION_DOCLETS, ALIAS_DOCLETS, ALIAS_MODULE_DOCLETS } from './alias-fixture';
 
 function makeCollection(items: unknown[]): TJSDocSaltyCollection<TDoclet> {
   return salty.taffy(items) as unknown as TJSDocSaltyCollection<TDoclet>;
@@ -623,6 +624,78 @@ describe('generateSite', () => {
       expect(h.id).toMatch(/^[a-z0-9-]+$/);
       expect(h.id).not.toMatch(/\s/);
     }
+  });
+});
+
+describe("generateSite — members of an @alias'd nested class (real JSDoc output, #374)", () => {
+  const pageOf = (items: unknown[], slug: string) =>
+    generateSite(makeCollection(items)).pages.find((p) => p.slug === slug);
+  const section = (body: string, title: string) =>
+    body.split('\n## ').find((s) => s.startsWith(`${title}\n`)) ?? '';
+
+  it('lists every member on the alias page, under its usual section', () => {
+    const body = pageOf(ALIAS_DOCLETS, 'other')!.body;
+    expect(body).toContain('## Constructor');
+    expect(section(body, 'Instance Methods')).toContain('id="m"');
+    expect(section(body, 'Static Methods')).toContain('id="s"');
+    expect(section(body, 'Static Methods')).toContain('id="late"');
+    expect(section(body, 'Instance Fields')).toContain('id="f"');
+    expect(section(body, 'Instance Fields')).toContain('id="g"');
+    expect(section(body, 'Events')).toContain('id="ev"');
+    expect(section(body, 'Other')).toContain('name="Opts"');
+    expect(pageOf(ALIAS_DOCLETS, 'other/opts')).toBeDefined();
+  });
+
+  it('no longer lists a global alias as a member of its original namespace', () => {
+    const body = pageOf(ALIAS_DOCLETS, 'ns')!.body;
+    expect(body).not.toContain('id="other"');
+  });
+
+  it('a subclass extending the alias inherits the moved members', () => {
+    const body = pageOf(ALIAS_DOCLETS, 'sub')!.body;
+    expect(body).toContain('name="m"');
+    expect(body).toContain('[`Other`](/other)');
+  });
+
+  it('links by the original or the alias name resolve to the alias page', () => {
+    const body = pageOf(ALIAS_DOCLETS, 'other')!.body;
+    expect(body).toContain('(/other#m)');
+    expect(body).toContain('(/other#s)');
+  });
+
+  it('a dotted alias moves members and nested classes, depth included', () => {
+    const pub = pageOf(ALIAS_DOCLETS, 'ns/pub')!.body;
+    expect(pub).toContain('name="m"');
+    expect(pub).toContain('name="Inner"');
+    expect(pageOf(ALIAS_DOCLETS, 'ns/pub/inner')!.body).toContain('name="im"');
+    expect(pageOf(ALIAS_DOCLETS, 'ns/in/foo/inner')).toBeUndefined();
+  });
+
+  it('an ES5 @class with @alias gets its prototype and static methods', () => {
+    const body = pageOf(ALIAS_DOCLETS, 'es')!.body;
+    expect(section(body, 'Instance Methods')).toContain('id="pm"');
+    expect(section(body, 'Static Methods')).toContain('id="sm"');
+    expect(body).toContain('name="tp"');
+  });
+
+  it('control: an aliased class declaration is unchanged', () => {
+    const body = pageOf(ALIAS_DOCLETS, 'bar')!.body;
+    expect(section(body, 'Instance Methods')).toContain('id="bm"');
+  });
+
+  it('attributes members by position when two classes claim one name', () => {
+    const other = pageOf(ALIAS_COLLISION_DOCLETS, 'other')!.body;
+    expect(other).toContain('name="m"');
+    const foo = pageOf(ALIAS_COLLISION_DOCLETS, 'ns/foo')!.body;
+    expect(foo).toContain('name="m2"');
+    expect(foo).not.toContain('name="m"');
+    expect(pageOf(ALIAS_COLLISION_DOCLETS, 'a')!.body).toContain('name="am"');
+    expect(pageOf(ALIAS_COLLISION_DOCLETS, 'b')!.body).toContain('name="bm"');
+  });
+
+  it('an aliased class exported from a @module gets its methods', () => {
+    expect(pageOf(ALIAS_MODULE_DOCLETS, 'module/m/bar')!.body).toContain('name="m"');
+    expect(pageOf(ALIAS_MODULE_DOCLETS, 'module/c/baz')!.body).toContain('name="cm"');
   });
 });
 

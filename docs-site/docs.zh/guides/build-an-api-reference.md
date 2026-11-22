@@ -96,6 +96,10 @@ setu 会枚举你已记录文档的符号，并将每一个转换成一个页面
 完全相同的 `buildContainerPage` 路径，因此一个 typedef 的 `@type`、`@property` 列表，
 以及（对于函数签名 typedef）`@param`/`@returns` 都会渲染在它的页面上。
 
+用 `@alias` 重新命名的 class 或命名空间会以别名记录文档，连同它的成员一起。
+JSDoc 会把带别名的 `Ns.Foo = class {…}` 的成员留在原来的名字下；主题会把它们
+移到别名的页面上，`{@link Ns.Foo#m}` 也仍然解析到那里。
+
 > [!NOTE]
 > 上面的顺序同时也是 **slug 冲突优先级**：当两个符号
 > 想要占用同一个 slug 时，靠前的种类胜出（因此 `module` 会击败靠后的

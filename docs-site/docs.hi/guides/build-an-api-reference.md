@@ -100,6 +100,11 @@ setu आपके documented symbols की गणना करता है औ
 `@property` list, और (function-signature typedefs के लिए) `@param`/`@returns` सब
 उसके page पर render होते हैं।
 
+`@alias` से नया नाम दी गई class या namespace अपने members के साथ alias के नाम से
+document होती है। JSDoc एक aliased `Ns.Foo = class {…}` के members को मूल नाम के
+नीचे छोड़ देता है; theme उन्हें alias के page पर ले जाती है, और `{@link Ns.Foo#m}`
+तब भी वहीं resolve होता है।
+
 > [!NOTE]
 > ऊपर का क्रम **slug-collision precedence** भी है: जब दो symbols एक ही slug का
 > दावा करें, तब पहले वाला kind जीतता है (तो एक `module` बाद के `class` को हरा

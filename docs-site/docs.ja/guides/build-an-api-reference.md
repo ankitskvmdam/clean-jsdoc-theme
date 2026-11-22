@@ -100,6 +100,11 @@ section に振り分けられます。**Typedefs は first-class です** — �
 （function-signature typedefs の場合）`@param`/`@returns` がすべてその page に render
 されます。
 
+`@alias` で名前を変えた class や namespace は、その members とともに alias の名前で
+document されます。JSDoc は alias を付けた `Ns.Foo = class {…}` の members を元の名前の
+下に残しますが、theme はそれらを alias の page に移し、`{@link Ns.Foo#m}` も引き続き
+そこへ resolve されます。
+
 > [!NOTE]
 > 上記の順序は **slug-collision precedence** でもあります: 2 つの symbol が同じ slug
 > を要求するとき、先の kind が勝ちます（つまり `module` は後の `class` を破ります）。

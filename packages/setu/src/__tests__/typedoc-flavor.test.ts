@@ -959,3 +959,40 @@ describe('flavor: jsdoc (default) — nav stays kind-bucketed (guard)', () => {
     expect(labels).not.toContain('components');
   });
 });
+
+describe('flavor: typedoc — @alias member re-homing is JSDoc-only (#374)', () => {
+  // TypeDoc never sets `alias`; a JSDoc-looking aliased class must not be touched.
+  const items = () => [
+    { kind: 'namespace', name: 'Ns', longname: 'Ns', scope: 'global', comment: '/** Ns. */' },
+    {
+      kind: 'class',
+      name: 'Other',
+      longname: 'Other',
+      memberof: 'Ns',
+      scope: 'global',
+      alias: 'Other',
+      comment: '/** Other. */',
+      meta: { filename: 'a.ts', path: '/src', lineno: 1, columnno: 0, code: { name: 'Ns.Foo' } },
+    },
+    {
+      kind: 'function',
+      name: 'm',
+      longname: 'Ns.Foo#m',
+      memberof: 'Ns.Foo',
+      scope: 'instance',
+      comment: '/** m. */',
+      meta: { filename: 'a.ts', path: '/src', lineno: 3, columnno: 2, code: { name: 'Ns.Foo#m' } },
+    },
+  ];
+
+  const otherBody = (flavor: 'jsdoc' | 'typedoc') =>
+    generateSite(makeCollection(items()), { flavor }).pages.find(
+      (p) => p.frontmatter.longname === 'Other'
+    )!.body;
+
+  it('leaves the members where they are under the typedoc flavor', () => {
+    expect(otherBody('typedoc')).not.toContain('name="m"');
+    // The same collection under the JSDoc flavor IS re-homed.
+    expect(otherBody('jsdoc')).toContain('name="m"');
+  });
+});

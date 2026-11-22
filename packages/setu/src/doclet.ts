@@ -256,6 +256,167 @@ function withoutPrivateConstructor(d: TDoclet, { ctor, cls }: CtorOnlyPrivate): 
   return copy as TDoclet;
 }
 
+/** A key for "this source file" (path and filename may be absent). */
+function fileKey(d: TDoclet): string {
+  return JSON.stringify([d.meta?.path ?? '', d.meta?.filename ?? '']);
+}
+
+/** `exports.Foo` / `module.exports.Foo`: the code name of a class exported from a module. */
+const EXPORTS_CODE_NAME = /^(?:module\.)?exports\.(.+)$/;
+
+/** The result of {@link rehomeAliasedMembers}. */
+export interface RehomedAliases {
+  /** The collection with the members moved (the input itself when nothing moved). */
+  collection: TJSDocSaltyCollection<TDoclet>;
+  /**
+   * Original longname → re-homed longname, for every moved documented doclet,
+   * plus each aliased owner's own original name when no other class claims it.
+   * The link registry aliases these so `{@link Ns.Foo#m}` still resolves.
+   */
+  renamed: Map<string, string>;
+}
+
+/** Push onto a list-valued map entry. */
+function pushTo<K, V>(map: Map<K, V[]>, key: K, value: V): void {
+  const list = map.get(key);
+  if (list) list.push(value);
+  else map.set(key, [value]);
+}
+
+/**
+ * Move the members JSDoc leaves under an `@alias`ed symbol's ORIGINAL name onto
+ * the alias (#374). Run on the raw collection, before {@link pruneHiddenDoclets},
+ * so a hidden aliased class takes its members with it. JSDoc flavor only.
+ *
+ * For `/** @alias Other *\/ Ns.Foo = class { m() {} static s() {} }`, JSDoc 4
+ * names the merged class doclet `Other` (`alias: 'Other'`, `meta.code.name:
+ * 'Ns.Foo'`), but every method, getter, static, later `Ns.Foo.x = …`
+ * assignment, nested `Ns.Foo.Inner` class (and ITS members), and
+ * `@event Ns.Foo#ev` / `@typedef Ns.Foo.T` comment keeps `memberof: 'Ns.Foo'`
+ * and a `Ns.Foo…` longname — so the alias page showed only its constructor and
+ * `this.x` fields (those do follow the alias). The same holds for an ES5
+ * `/** @class @alias Es *\/ Ns.Old = function` (`Ns.Old#pm`, `Ns.Old.sm`), and
+ * for `exports.Foo = class` / `export class Foo` in a `@module m` file with
+ * `@alias module:m.Bar`, whose code name is `exports.Foo` and whose members
+ * are `module:m.Foo#m`. A global-scope alias also keeps a stale `memberof:
+ * 'Ns'` from the constructor comment, listing it as a member of `Ns`.
+ * Not affected: `class Foo {}` / `const Foo = class` / `function Foo` with
+ * `@alias` (JSDoc renames their members), and the shapes where JSDoc does the
+ * re-homing itself (`@exports`, a namespace object with `@alias`).
+ *
+ * An aliased owner is a documented doclet with `alias === longname` whose
+ * `meta.code.name` is DOTTED and differs from the longname. The dot rules out
+ * the other tags that set `alias` (`@constructs` gives `meta.code.name:
+ * 'initialize'`) and the shapes above that JSDoc already handles. Its original
+ * name is the code name, or `<module>.Foo` for each `@module` in the same file
+ * when the code name is `exports.Foo`.
+ *
+ * Every doclet (documented or not) whose `memberof` is an original name, or
+ * starts with it followed by `.`, `#` or `~`, is copied with that prefix of its
+ * `memberof` and `longname` replaced by the alias; `name`, `scope` and `meta`
+ * are kept. Several classes can claim one original name (two `@alias`es of
+ * `Ns.Foo`, or an aliased and a real `Ns.Foo`): a member goes to the latest
+ * claimant starting at or before it in its own file, and stays put when that is
+ * the real class. A member in a file with no such claimant moves only when the
+ * name has exactly one aliased owner and no real class. The record JSDoc names
+ * after the original itself (the constructor `MethodDefinition` record) is never
+ * renamed. Links and types naming the original are resolved through `renamed`
+ * instead of rewriting `augments`/`fires`/`see`. Does not mutate.
+ */
+export function rehomeAliasedMembers(collection: TJSDocSaltyCollection<TDoclet>): RehomedAliases {
+  const renamed = new Map<string, string>();
+  const unchanged = { collection, renamed };
+  const all = collection().get();
+  if (!all.some((d) => d.alias !== undefined)) return unchanged;
+
+  const modulesByFile = new Map<string, string[]>();
+  for (const d of all) {
+    if (d.kind === 'module' && d.longname) pushTo(modulesByFile, fileKey(d), d.longname);
+  }
+
+  // Original name → the aliased owners / real (documented) doclets claiming it.
+  const ownersOf = new Map<string, TDoclet[]>();
+  const owners = new Set<TDoclet>();
+  for (const d of all) {
+    if (d.undocumented || !d.longname || d.alias !== d.longname) continue;
+    const code = d.meta?.code?.name;
+    if (typeof code !== 'string' || !code.includes('.') || code === d.longname) continue;
+    const exported = EXPORTS_CODE_NAME.exec(code);
+    const originals = exported
+      ? (modulesByFile.get(fileKey(d)) ?? []).map((mod) => `${mod}.${exported[1]}`)
+      : [code];
+    for (const original of originals) {
+      if (original === d.longname) continue;
+      pushTo(ownersOf, original, d);
+      owners.add(d);
+    }
+  }
+  if (ownersOf.size === 0) return unchanged;
+
+  const realOf = new Map<string, TDoclet[]>();
+  for (const d of all) {
+    if (d.undocumented || owners.has(d) || !d.longname || !ownersOf.has(d.longname)) continue;
+    pushTo(realOf, d.longname, d);
+  }
+  // Longest first, so a nested original (`Ns.Foo.Inner`) is tried before its parent's.
+  const originals = [...ownersOf.keys()].sort((a, b) => b.length - a.length);
+  const soleOwner = (original: string): TDoclet | undefined => {
+    const own = ownersOf.get(original) ?? [];
+    return own.length === 1 && !realOf.has(original) ? own[0] : undefined;
+  };
+  for (const original of originals) {
+    const owner = soleOwner(original);
+    if (owner) renamed.set(original, owner.longname!);
+  }
+
+  /** Whether `name` is `original` or lies under it. */
+  const under = (name: string, original: string) =>
+    name === original ||
+    (name.startsWith(original) && '.#~'.includes(name.charAt(original.length)));
+
+  /** The aliased owner `d` belongs to under `original`, if any. */
+  const ownerFor = (d: TDoclet, original: string): TDoclet | undefined => {
+    const own = ownersOf.get(original) ?? [];
+    const file = fileKey(d);
+    let latest: TDoclet | undefined;
+    for (const c of [...own, ...(realOf.get(original) ?? [])]) {
+      if (fileKey(c) !== file || !startsAtOrAfter(d, c)) continue;
+      if (!latest || startsAtOrAfter(c, latest)) latest = c;
+    }
+    if (latest) return own.includes(latest) ? latest : undefined;
+    return soleOwner(original);
+  };
+
+  let changed = false;
+  const out = all.map((d) => {
+    if (owners.has(d)) {
+      // A global alias keeps the stale `memberof` of its original name.
+      if (d.scope !== 'global' || d.memberof === undefined) return d;
+      changed = true;
+      const copy: TDoclet = { ...d };
+      delete copy.memberof;
+      return copy;
+    }
+    const memberof = d.memberof;
+    if (!memberof) return d;
+    for (const original of originals) {
+      if (!under(memberof, original) || d.longname === original) continue;
+      const owner = ownerFor(d, original);
+      if (!owner) continue;
+      const swap = (name: string) => owner.longname! + name.slice(original.length);
+      const longname = d.longname && under(d.longname, original) ? swap(d.longname) : d.longname;
+      if (!d.undocumented && d.longname && longname && !renamed.has(d.longname)) {
+        renamed.set(d.longname, longname);
+      }
+      changed = true;
+      return { ...d, memberof: swap(memberof), longname };
+    }
+    return d;
+  });
+  if (!changed) return unchanged;
+  return { collection: salty.taffy<TDoclet>(out), renamed };
+}
+
 /** A doclet with a non-empty `name`: the only kind that can become a member. */
 export type NamedDoclet = TDoclet & { name: string };
 

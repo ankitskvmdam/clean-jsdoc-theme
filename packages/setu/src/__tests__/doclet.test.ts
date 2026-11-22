@@ -7,10 +7,12 @@ import {
   getGlobalDoclets,
   getMembersOf,
   isNamedDoclet,
+  rehomeAliasedMembers,
 } from '../doclet';
 import { getContainerView, getInheritedMembers } from '../class-view';
 import { generateSite } from '../index';
 import { getJSDocTaffyData } from './factory';
+import { ALIAS_COLLISION_DOCLETS, ALIAS_DOCLETS, ALIAS_MODULE_DOCLETS } from './alias-fixture';
 
 function makeCollection(items: unknown[]): TJSDocSaltyCollection<TDoclet> {
   return salty.taffy(items) as unknown as TJSDocSaltyCollection<TDoclet>;
@@ -365,5 +367,203 @@ describe('blank member names (TypeDoc keeps a literal single-space key)', () => 
     );
     const texts = (page!.headings ?? []).map((h) => h.text);
     expect(new Set(texts).size).toBe(texts.length);
+  });
+});
+
+describe('rehomeAliasedMembers (real JSDoc output, #374)', () => {
+  const docs = (c: TJSDocSaltyCollection<TDoclet>) => c().get();
+  const find = (c: TJSDocSaltyCollection<TDoclet>, pred: (d: TDoclet) => boolean) =>
+    docs(c).filter(pred);
+  const fromFile = (items: unknown[], filename: string) =>
+    items.filter((d) => (d as TDoclet).meta?.filename === filename);
+
+  it('returns the input collection itself when no doclet has an alias', () => {
+    const c = getJSDocTaffyData();
+    const { collection, renamed } = rehomeAliasedMembers(c);
+    expect(collection).toBe(c);
+    expect(renamed.size).toBe(0);
+  });
+
+  it('returns the input collection itself for an aliased class declaration (not broken)', () => {
+    const c = makeCollection(fromFile(ALIAS_DOCLETS, 'decl.js'));
+    const { collection, renamed } = rehomeAliasedMembers(c);
+    expect(collection).toBe(c);
+    expect(renamed.size).toBe(0);
+  });
+
+  it('ignores a @constructs-style doclet (alias set, undotted code name)', () => {
+    const c = makeCollection([
+      {
+        kind: 'class',
+        name: 'K',
+        longname: 'Ns.K',
+        memberof: 'Ns',
+        scope: 'static',
+        alias: 'Ns.K',
+        meta: {
+          filename: 'k.js',
+          path: '/src',
+          lineno: 3,
+          columnno: 2,
+          code: { name: 'initialize' },
+        },
+      },
+      {
+        kind: 'function',
+        name: 'x',
+        longname: 'initialize.x',
+        memberof: 'initialize',
+        scope: 'static',
+        meta: {
+          filename: 'k.js',
+          path: '/src',
+          lineno: 5,
+          columnno: 2,
+          code: { name: 'initialize.x' },
+        },
+      },
+    ]);
+    expect(rehomeAliasedMembers(c).collection).toBe(c);
+  });
+
+  it('moves members left under the original name onto the alias, renaming them', () => {
+    const { collection, renamed } = rehomeAliasedMembers(makeCollection(ALIAS_DOCLETS));
+    const memberLongnames = (owner: string) =>
+      find(collection, (d) => d.memberof === owner)
+        .map((d) => d.longname)
+        .sort();
+    expect(memberLongnames('Other')).toEqual([
+      'Other#event:ev',
+      'Other#f',
+      'Other#g',
+      'Other#m',
+      'Other.Opts',
+      'Other.late',
+      'Other.s',
+    ]);
+    expect(memberLongnames('Ns.Foo')).toEqual([]);
+    expect(memberLongnames('Ns.Pub')).toEqual(['Ns.Pub#m', 'Ns.Pub.Inner']);
+    expect(memberLongnames('Ns.Pub.Inner')).toEqual(['Ns.Pub.Inner#im']);
+    expect(memberLongnames('Es')).toEqual(['Es#pm', 'Es#tp', 'Es.sm']);
+    expect(memberLongnames('Pc')).toEqual(['Pc#pcm']);
+    expect(memberLongnames('Hid')).toEqual(['Hid#hm']);
+    // name / scope / meta are kept.
+    const m = find(collection, (d) => d.longname === 'Other#m')[0]!;
+    expect(m).toMatchObject({ name: 'm', scope: 'instance', meta: { code: { name: 'Ns.Foo#m' } } });
+    expect(Object.fromEntries(renamed)).toEqual({
+      'Ns.Foo': 'Other',
+      'Ns.Foo#event:ev': 'Other#event:ev',
+      'Ns.Foo#m': 'Other#m',
+      'Ns.Foo.s': 'Other.s',
+      'Ns.Foo#g': 'Other#g',
+      'Ns.Foo.late': 'Other.late',
+      'Ns.Foo.Opts': 'Other.Opts',
+      'Ns.In.Foo': 'Ns.Pub',
+      'Ns.In.Foo#m': 'Ns.Pub#m',
+      'Ns.In.Foo.Inner': 'Ns.Pub.Inner',
+      'Ns.In.Foo.Inner#im': 'Ns.Pub.Inner#im',
+      'Ns.Old': 'Es',
+      'Ns.Old#pm': 'Es#pm',
+      'Ns.Old.sm': 'Es.sm',
+      'Ns.Pv': 'Pc',
+      'Ns.Pv#pcm': 'Pc#pcm',
+      'Ns.Hd': 'Hid',
+      'Ns.Hd#hm': 'Hid#hm',
+    });
+  });
+
+  it('leaves the constructor record under the original name and drops the stale memberof', () => {
+    const { collection } = rehomeAliasedMembers(makeCollection(ALIAS_DOCLETS));
+    const ctor = find(
+      collection,
+      (d) => d.meta?.code?.type === 'MethodDefinition' && d.kind === 'class'
+    );
+    expect(ctor.map((d) => [d.longname, d.memberof])).toEqual([
+      ['Ns.Foo', 'Ns'],
+      ['Ns.Pv', 'Ns'],
+    ]);
+    for (const ln of ['Other', 'Pc']) {
+      for (const d of find(collection, (x) => x.longname === ln)) {
+        expect(d.memberof).toBeUndefined();
+      }
+    }
+    // A static-scope alias keeps its (correct) memberof.
+    expect(find(collection, (d) => d.longname === 'Ns.Pub')[0]!.memberof).toBe('Ns');
+    // Doclet order is preserved.
+    expect(docs(collection).map((d) => d.meta?.lineno)).toEqual(
+      (ALIAS_DOCLETS as TDoclet[]).map((d) => d.meta?.lineno)
+    );
+  });
+
+  it('does not mutate the input doclets', () => {
+    const c = makeCollection(ALIAS_DOCLETS);
+    const before = JSON.stringify(docs(c));
+    rehomeAliasedMembers(c);
+    expect(JSON.stringify(docs(c))).toBe(before);
+  });
+
+  it('attributes members by position when two classes claim one original name', () => {
+    const { collection, renamed } = rehomeAliasedMembers(makeCollection(ALIAS_COLLISION_DOCLETS));
+    const memberOf = (ln: string) => find(collection, (d) => d.longname === ln)[0]?.memberof;
+    // collide.js: aliased `Ns.Foo` (→ Other), then a real `Ns.Foo`.
+    expect(memberOf('Other#m')).toBe('Other');
+    expect(memberOf('Ns.Foo#m2')).toBe('Ns.Foo');
+    expect(memberOf('Ns.Foo#m')).toBeUndefined();
+    // twice.js: `Ns.Dup` aliased as A, then again as B.
+    expect(memberOf('A#am')).toBe('A');
+    expect(memberOf('B#bm')).toBe('B');
+    // An original name with a real claimant, or two aliases, is not re-pointed.
+    expect(renamed.has('Ns.Foo')).toBe(false);
+    expect(renamed.has('Ns.Dup')).toBe(false);
+    expect(renamed.get('Ns.Foo#m')).toBe('Other#m');
+  });
+
+  it('maps exports.Foo onto the module for ESM and CommonJS', () => {
+    const { collection, renamed } = rehomeAliasedMembers(makeCollection(ALIAS_MODULE_DOCLETS));
+    const ln = (owner: string) =>
+      find(collection, (d) => d.memberof === owner && d.kind === 'function').map((d) => d.longname);
+    expect(ln('module:m.Bar')).toEqual(['module:m.Bar#m']);
+    expect(ln('module:c.Baz')).toEqual(['module:c.Baz#cm']);
+    expect(renamed.get('module:m.Foo')).toBe('module:m.Bar');
+    expect(renamed.get('module:c.Foo')).toBe('module:c.Baz');
+    // The undocumented ESM class record under the original name is left alone.
+    expect(find(collection, (d) => d.longname === 'module:m.Foo')).toHaveLength(1);
+  });
+
+  describe('a member in another file', () => {
+    const owner = {
+      kind: 'class',
+      name: 'Other',
+      longname: 'Other',
+      scope: 'global',
+      alias: 'Other',
+      meta: { filename: 'a.js', path: '/src', lineno: 5, columnno: 0, code: { name: 'Ns.Foo' } },
+    };
+    const member = {
+      kind: 'function',
+      name: 'x',
+      longname: 'Ns.Foo#x',
+      memberof: 'Ns.Foo',
+      scope: 'instance',
+      meta: { filename: 'c.js', path: '/src', lineno: 1, columnno: 0, code: { name: 'Ns.Foo#x' } },
+    };
+    const real = {
+      kind: 'class',
+      name: 'Foo',
+      longname: 'Ns.Foo',
+      memberof: 'Ns',
+      scope: 'static',
+      meta: { filename: 'b.js', path: '/src', lineno: 5, columnno: 0, code: { name: 'Ns.Foo' } },
+    };
+
+    it('moves to the only aliased owner when no real class claims the name', () => {
+      const { collection } = rehomeAliasedMembers(makeCollection([owner, member]));
+      expect(find(collection, (d) => d.name === 'x')[0]!.longname).toBe('Other#x');
+    });
+
+    it('stays put when a real class elsewhere has the original name', () => {
+      const { collection } = rehomeAliasedMembers(makeCollection([owner, real, member]));
+      expect(find(collection, (d) => d.name === 'x')[0]!.longname).toBe('Ns.Foo#x');
+    });
   });
 });

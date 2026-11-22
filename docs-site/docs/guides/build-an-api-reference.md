@@ -96,6 +96,11 @@ bucketed into sections. **Typedefs are first-class** — they go through the
 identical `buildContainerPage` path, so a typedef's `@type`, `@property` list,
 and (for function-signature typedefs) `@param`/`@returns` all render on its page.
 
+A class or namespace renamed with `@alias` is documented under the alias,
+together with its members. JSDoc leaves the members of an aliased
+`Ns.Foo = class {…}` under the original name; the theme moves them to the alias
+page, and `{@link Ns.Foo#m}` still resolves there.
+
 > [!NOTE]
 > The order above is also the **slug-collision precedence**: when two symbols
 > would claim the same slug, the earlier kind wins (so a `module` beats a later
