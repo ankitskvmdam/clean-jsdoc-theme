@@ -1,8 +1,13 @@
 import { tmpdir } from 'node:os';
-import { mkdtemp, rm, readdir } from 'node:fs/promises';
-import { join } from 'node:path';
-import { afterEach, describe, it, expect } from 'vitest';
-import { bundleIslands } from '../islands-bundle';
+import { cp, mkdir, mkdtemp, rm, readdir, readFile, writeFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+import { afterEach, beforeEach, describe, it, expect } from 'vitest';
+import {
+  bundleIslands,
+  type BundleIslandsOptions,
+  type BundleIslandsResult,
+} from '../islands-bundle';
+import type { IslandCacheEntry } from '../islands-cache';
 import { getIslandChunkEntrySource } from '../islands-loader';
 
 describe('bundleIslands() — resolveDir default', () => {
@@ -117,7 +122,7 @@ describe('bundleIslands() — cache', () => {
     // Cold: builds and populates the cache.
     const first = await bundleIslands({ islands: ['sidebar'], cacheDir });
     const entries = await readdir(cacheDir);
-    const cacheFile = entries.find((f) => /^islands-.+\.json$/.test(f));
+    const cacheFile = entries.find((f) => /^islands-v2-.+\.json$/.test(f));
     expect(cacheFile, 'expected an islands-*.json cache file').toBeDefined();
 
     // Warm: same inputs → cache HIT, returns an equivalent result.
@@ -132,5 +137,216 @@ describe('bundleIslands() — cache', () => {
     expect(result.entryPaths.sidebar).toMatch(/^_islands\/sidebar-[A-Za-z0-9]+\.js$/);
     // The unrelated tmpdir must remain empty — no cache was requested.
     expect(await readdir(cacheDir)).toEqual([]);
+  });
+});
+
+// #376: the cache must be invalidated by ANY bundled input, not just rang's
+// output and the preact version. These run against a tiny stub module graph
+// (preact + rang + utils under a temp node_modules) so each edit is cheap.
+describe('bundleIslands() — cache validation (#376)', () => {
+  let tmp: string;
+  let fx: string;
+  let cacheDir: string;
+
+  const UTILS_DIST = () =>
+    join(fx, 'node_modules', '@clean-jsdoc-theme', 'utils', 'dist', 'index.js');
+  const PREACT_PKG = () => join(fx, 'node_modules', 'preact', 'package.json');
+  const SENTINEL = 'FROM_CACHE_SENTINEL';
+
+  async function put(rel: string, contents: string): Promise<void> {
+    const file = join(fx, rel);
+    await mkdir(dirname(file), { recursive: true });
+    await writeFile(file, contents);
+  }
+
+  async function makeFixture(): Promise<void> {
+    tmp = await mkdtemp(join(tmpdir(), 'island-376-'));
+    fx = join(tmp, 'fx');
+    cacheDir = join(tmp, 'cache');
+    await put(
+      'node_modules/preact/package.json',
+      '{"name":"preact","version":"1.0.0","type":"module","main":"index.js"}'
+    );
+    await put('node_modules/preact/index.js', 'export const hydrate=()=>{};export const h=()=>{};');
+    await put(
+      'node_modules/@clean-jsdoc-theme/rang/package.json',
+      '{"name":"@clean-jsdoc-theme/rang","version":"0.0.0","type":"module","exports":{".":{"import":"./dist/index.js"}}}'
+    );
+    await put(
+      'node_modules/@clean-jsdoc-theme/rang/dist/index.js',
+      'import {MARK} from "@clean-jsdoc-theme/utils";export const ISLAND_REGISTRY={sidebar:()=>MARK};export const LanguageProvider=()=>{};export const createI18n=()=>{};'
+    );
+    await put(
+      'node_modules/@clean-jsdoc-theme/utils/package.json',
+      '{"name":"@clean-jsdoc-theme/utils","version":"0.0.0","type":"module","exports":{".":{"import":"./dist/index.js"}}}'
+    );
+    await put(
+      'node_modules/@clean-jsdoc-theme/utils/dist/index.js',
+      'export const MARK="UTILS_ONE";'
+    );
+  }
+
+  const has = (r: BundleIslandsResult, s: string) => r.files.some((f) => f.contents.includes(s));
+  const run = (extra: Partial<BundleIslandsOptions> = {}) =>
+    bundleIslands({ islands: ['sidebar'], resolveDir: fx, cacheDir, ...extra });
+
+  async function cacheFiles(): Promise<string[]> {
+    return (await readdir(cacheDir)).filter((f) => /^islands-v2-.+\.json$/.test(f));
+  }
+
+  async function onlyCacheFile(): Promise<string> {
+    const files = await cacheFiles();
+    expect(files).toHaveLength(1);
+    return join(cacheDir, files[0]!);
+  }
+
+  async function readEntry(file: string): Promise<IslandCacheEntry> {
+    return JSON.parse(await readFile(file, 'utf8')) as IslandCacheEntry;
+  }
+
+  /** Mark the cached payload so a hit is distinguishable from a rebuild. */
+  async function plantSentinel(file: string, mutate?: (e: IslandCacheEntry) => unknown) {
+    const entry = await readEntry(file);
+    entry.result.files[0]!.contents += SENTINEL;
+    const next = mutate ? mutate(entry) : entry;
+    await writeFile(file, JSON.stringify(next));
+  }
+
+  beforeEach(async () => {
+    await makeFixture();
+  });
+
+  afterEach(async () => {
+    await rm(tmp, { recursive: true, force: true });
+  });
+
+  it('rebuilds when a bundled @clean-jsdoc-theme/utils file changes', async () => {
+    const cold = await run();
+    expect(has(cold, 'UTILS_ONE')).toBe(true);
+
+    await writeFile(UTILS_DIST(), 'export const MARK="UTILS_TWO";');
+    const next = await run();
+    expect(has(next, 'UTILS_TWO')).toBe(true);
+    expect(has(next, 'UTILS_ONE')).toBe(false);
+    expect(await cacheFiles()).toHaveLength(1);
+  });
+
+  it('reuses the cache while every input is unchanged', async () => {
+    await run();
+    await plantSentinel(await onlyCacheFile());
+    expect(has(await run(), SENTINEL)).toBe(true);
+  });
+
+  it('rebuilds when a third-party package.json changes (version bump)', async () => {
+    await run();
+    await plantSentinel(await onlyCacheFile());
+    await writeFile(
+      PREACT_PKG(),
+      '{"name":"preact","version":"1.0.1","type":"module","main":"index.js"}'
+    );
+    expect(has(await run(), SENTINEL)).toBe(false);
+  });
+
+  it('fingerprints a third-party package by its package.json, not its files', async () => {
+    await run();
+    const paths = (await readEntry(await onlyCacheFile())).inputs.map((i) => i.path);
+    expect(paths).toContain(PREACT_PKG());
+    expect(paths).not.toContain(join(fx, 'node_modules', 'preact', 'index.js'));
+    expect(paths).toContain(UTILS_DIST());
+  });
+
+  it('misses when a recorded input no longer exists, and rewrites the entry', async () => {
+    await run();
+    const file = await onlyCacheFile();
+    const gone = join(tmp, 'gone.js');
+    await plantSentinel(file, (e) => {
+      e.inputs.push({ path: gone, hash: 'x' });
+      return e;
+    });
+    expect(has(await run(), SENTINEL)).toBe(false);
+    const rewritten = await readEntry(file);
+    expect(rewritten.inputs.map((i) => i.path)).not.toContain(gone);
+  });
+
+  it('ignores entries in an older format and leaves legacy files alone', async () => {
+    await run();
+    const file = await onlyCacheFile();
+    const legacyName = join(cacheDir, 'islands-0123456789abcdef.json');
+    const fresh = await readEntry(file);
+    const legacy = JSON.stringify({
+      ...fresh.result,
+      files: [{ ...fresh.result.files[0], contents: SENTINEL }],
+    });
+    await writeFile(legacyName, legacy);
+
+    // Legacy bare `{ files, entryPaths }` shape inside the v2 file.
+    await writeFile(file, legacy);
+    expect(has(await run(), SENTINEL)).toBe(false);
+
+    // Same manifest shape, but format 1.
+    await plantSentinel(file, (e) => ({ ...e, format: 1 }));
+    expect(has(await run(), SENTINEL)).toBe(false);
+
+    expect(await readFile(legacyName, 'utf8')).toBe(legacy);
+  });
+
+  it('rebuilds without throwing when the cache file is corrupt', async () => {
+    await run();
+    const file = await onlyCacheFile();
+    await writeFile(file, '{ not json');
+    const result = await run();
+    expect(has(result, 'UTILS_ONE')).toBe(true);
+    expect((await readEntry(file)).format).toBe(2);
+  });
+
+  it('keys on outDir and resolveDir', async () => {
+    await run();
+    const other = await run({ outDir: 'other' });
+    expect(other.entryPaths.sidebar).toMatch(/^other\/sidebar-[A-Za-z0-9]+\.js$/);
+    expect(other.files.every((f) => f.path.startsWith('other/'))).toBe(true);
+    expect(await cacheFiles()).toHaveLength(2);
+
+    // A second module graph at another resolveDir must not reuse the first's.
+    const fx2 = join(tmp, 'fx2');
+    await cp(fx, fx2, { recursive: true });
+    await writeFile(
+      join(fx2, 'node_modules', '@clean-jsdoc-theme', 'utils', 'dist', 'index.js'),
+      'export const MARK="UTILS_FX2";'
+    );
+    expect(has(await run({ resolveDir: fx2 }), 'UTILS_FX2')).toBe(true);
+    expect(await cacheFiles()).toHaveLength(3);
+  });
+
+  it('leaves no temp files behind after a build', async () => {
+    await run();
+    expect((await readdir(cacheDir)).filter((f) => f.endsWith('.tmp'))).toEqual([]);
+  });
+});
+
+describe('bundleIslands() — cache manifest of the real module graph', () => {
+  let cacheDir: string | undefined;
+
+  afterEach(async () => {
+    if (cacheDir) await rm(cacheDir, { recursive: true, force: true });
+  });
+
+  it('records the first-party dists and third-party package.json files', async () => {
+    cacheDir = await mkdtemp(join(tmpdir(), 'island-graph-'));
+    await bundleIslands({ islands: ['copy-btn'], cacheDir });
+    const [name] = (await readdir(cacheDir)).filter((f) => /^islands-v2-.+\.json$/.test(f));
+    const entry = JSON.parse(await readFile(join(cacheDir, name!), 'utf8')) as IslandCacheEntry;
+    const paths = entry.inputs.map((i) => i.path);
+    for (const re of [
+      /utils[\\/]dist[\\/]index\.js$/,
+      /rang[\\/]dist[\\/]/,
+      /bhasha[\\/]dist[\\/]/,
+      /lucide-preact[\\/]package\.json$/,
+    ]) {
+      expect(
+        paths.some((p) => re.test(p)),
+        `no manifest input matches ${re}`
+      ).toBe(true);
+    }
+    expect(paths.length).toBeLessThan(50);
   });
 });
