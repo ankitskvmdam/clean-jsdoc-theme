@@ -112,14 +112,15 @@ there are no qualifying globals, no Globals page is emitted. See
 `buildGlobalsView` in
 [`generate-site.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/generate-site.ts).
 
-Functions are listed under **Functions** and variables under **Members**. JSDoc
-reports methods of a class expression passed as an argument or used as an
-object property as global functions, so they appear here too; add
-`@class Name` to the class and `@memberof Name#` to its methods to give them a
-class page.
+Functions are listed under **Functions**, and variables and constants under
+**Members**. JSDoc reports methods of a class expression passed as an argument
+or used as an object property as global functions, so they appear here too; add
+`@class Name` to the class, `@memberof Name#` to its instance methods and
+`@memberof Name` to its static methods to give them a class page.
 
 A symbol kind with no section mapping falls into a catch-all **Other** section,
-appended last — a safety net that's empty in practice.
+appended last. On the Globals page that is a safety net that's empty in
+practice, since constants go under **Members**.
 
 ### Private and ignored symbols
 

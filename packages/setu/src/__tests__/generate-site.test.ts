@@ -343,6 +343,10 @@ describe('buildGlobalsPage', () => {
     // "Instance Methods" (#375).
     expect(page.body).toContain('## Functions');
     expect(page.body).not.toContain('Instance Methods');
+    // A global `const` is listed with the variables under Members, not Other.
+    const members = page.body.split('\n## ').find((s) => s.startsWith('Members\n')) ?? '';
+    expect(members).toContain('name="MAX_USERS"');
+    expect(page.body).not.toContain('## Other');
   });
 
   it('lists global functions under Functions, never Instance Methods (#375)', () => {

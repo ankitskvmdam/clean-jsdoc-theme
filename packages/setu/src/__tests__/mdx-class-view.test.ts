@@ -580,9 +580,10 @@ describe('globalSections (#375)', () => {
     { kind: 'function', scope: 'global', name: 'fn', longname: 'fn' },
     { kind: 'member', scope: 'global', name: 'v', longname: 'v' },
     { kind: 'constant', scope: 'global', name: 'C', longname: 'C' },
+    { kind: 'typedef', scope: 'global', name: 'T', longname: 'T' },
   ];
 
-  it('heads global functions "Functions" and global variables "Members"', () => {
+  it('heads global functions "Functions" and global variables/constants "Members"', () => {
     const sections = globalSections(bucketClassMembers(globals));
     expect(sections.map((s) => s.title)).toEqual([
       'Functions',
@@ -592,8 +593,9 @@ describe('globalSections (#375)', () => {
       'Other',
     ]);
     expect(sections[0].members.map((m) => m.name)).toEqual(['fn']);
-    expect(sections[1].members.map((m) => m.name)).toEqual(['v']);
-    expect(sections[4].members.map((m) => m.name)).toEqual(['C']);
+    // Constants join the variables, after them; non-constant leftovers stay in Other.
+    expect(sections[1].members.map((m) => m.name)).toEqual(['v', 'C']);
+    expect(sections[4].members.map((m) => m.name)).toEqual(['T']);
   });
 
   it('is what a jsdoc-flavor Globals view renders with; a class view keeps Instance Methods', () => {

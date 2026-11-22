@@ -117,15 +117,16 @@ members, constants, enums, events — एक एकल synthetic **Globals** pag
 [`generate-site.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/generate-site.ts)
 में `buildGlobalsView`।
 
-Functions **Functions** के अंतर्गत और variables **Members** के अंतर्गत सूचीबद्ध
-होते हैं। argument के रूप में पास की गई या object property के रूप में उपयोग की गई
-class expression के methods को JSDoc global functions के रूप में report करता है,
-इसलिए वे भी यहीं दिखते हैं; उन्हें class page देने के लिए class पर `@class Name`
-और उसके methods पर `@memberof Name#` जोड़ें।
+Functions **Functions** के अंतर्गत, और variables तथा constants **Members** के
+अंतर्गत सूचीबद्ध होते हैं। argument के रूप में पास की गई या object property के रूप
+में उपयोग की गई class expression के methods को JSDoc global functions के रूप में
+report करता है, इसलिए वे भी यहीं दिखते हैं; उन्हें class page देने के लिए class पर
+`@class Name`, उसके instance methods पर `@memberof Name#` और static methods पर
+`@memberof Name` जोड़ें।
 
 जिस symbol kind का कोई section mapping नहीं है, वह एक catch-all **Other** section
-में आता है, जो सबसे अंत में जोड़ा जाता है — एक सुरक्षा-जाल जो व्यवहार में खाली
-रहता है।
+में आता है, जो सबसे अंत में जोड़ा जाता है। Globals page पर यह एक सुरक्षा-जाल है जो
+व्यवहार में खाली रहता है, क्योंकि constants **Members** के अंतर्गत जाते हैं।
 
 ### Private और ignored symbols
 

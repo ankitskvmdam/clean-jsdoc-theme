@@ -56,14 +56,22 @@ export function defaultSections(buckets: MemberBuckets): SectionSpec[] {
  * class page's "Instance Methods"/"Instance Fields" titles would be wrong here.
  * This also covers methods of a class expression passed as an argument or used
  * as an object property value, which JSDoc emits as global functions (#375).
+ * Global `const`s (kind `'constant'`, which `bucketClassMembers` files under
+ * `other`) join the variables under Members, after the fields; each bucket
+ * keeps its own (source) order.
  */
 export function globalSections(buckets: MemberBuckets): SectionSpec[] {
+  const constants = buckets.other.filter((m) => m.kind === 'constant');
+  const other = buckets.other.filter((m) => m.kind !== 'constant');
   return [
     { title: 'Functions', members: [...buckets.instanceMethods, ...buckets.staticMethods] },
-    { title: 'Members', members: [...buckets.instanceFields, ...buckets.staticFields] },
+    {
+      title: 'Members',
+      members: [...buckets.instanceFields, ...buckets.staticFields, ...constants],
+    },
     { title: 'Enums', members: buckets.enums },
     { title: 'Events', members: buckets.events },
-    { title: 'Other', members: buckets.other },
+    { title: 'Other', members: other },
   ];
 }
 
