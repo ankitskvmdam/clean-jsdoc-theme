@@ -413,6 +413,21 @@ describe('htmlCommentRanges', () => {
     expect(states('<!-- a | b --> h\n-|-\nx <!--\n--> y\n')).toEqual([true, false]);
   });
 
+  it('keeps the raw header count when the header line holds an unclosed comment (#380)', () => {
+    // The opener closes on a later line, swallowing the delimiter row: MDX sees
+    // no table, so the comment must stay closed or its text reaches MDX.
+    expect(htmlCommentRanges('<!-- a | b --> h | i <!-- old\n-|-\n<br> -->\n')).toEqual([
+      { start: 0, end: 14, closed: true },
+      { start: 21, end: 42, closed: true },
+    ]);
+    expect(
+      htmlCommentRanges('h <!-- a | b --> | i <!-- TODO: <details>\n-|-\n| x | y |\n-->\n')
+    ).toEqual([
+      { start: 2, end: 16, closed: true },
+      { start: 21, end: 59, closed: true },
+    ]);
+  });
+
   it('reads a fence opener or list item holding a bare CR or a line separator', () => {
     // micromark: the fence opens (its info string or first line takes the
     // rest), and the item interrupts the paragraph so the comment stays open.

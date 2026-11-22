@@ -1120,6 +1120,22 @@ describe('render() — HTML comments in prose', () => {
     }
   );
 
+  it.each([
+    '<!-- a | b --> h | i <!-- old\n-|-\n<br> -->\n',
+    'h <!-- a | b --> | i <!-- TODO: <details>\n-|-\n| x | y |\n-->\n',
+  ])(
+    'reads no table when the header line opens a comment that closes below (#380): %j',
+    async (body: string) => {
+      // The comment swallows the delimiter row, so MDX sees a paragraph and
+      // none of the comment's text.
+      const { err, html } = await renderOne('header-open-comment', body);
+      expect(err, err?.message).toBeUndefined();
+      const main = mainOf(html);
+      expect(main).not.toMatch(/<table[ >]/);
+      expect(main).not.toContain('&lt;!--');
+    }
+  );
+
   it('keeps the comment placeholder out of image alt text (#380)', async () => {
     const body = [
       '![a <!-- x --> b](p.png)',
