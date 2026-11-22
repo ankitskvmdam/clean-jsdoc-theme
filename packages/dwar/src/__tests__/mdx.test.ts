@@ -9,6 +9,7 @@ import {
   signatureParamRanges,
   stripHtmlComments,
 } from '../mdx';
+import { expectLinearScaling, PERF_TEST_TIMEOUT } from './linear-scaling';
 
 describe('signatureParamRanges', () => {
   /** Slice each returned range out of the source — easier to assert on. */
@@ -693,5 +694,362 @@ describe('stripHtmlComments', () => {
   it('accepts precomputed ranges', () => {
     const src = '---\ntitle: x\n---\na <!-- b --> c\n';
     expect(stripHtmlComments(src, pageCommentRanges(src))).toBe('---\ntitle: x\n---\na {/**/} c\n');
+  });
+});
+
+// #372: the brace, ESM and backtick passes found code with an unanchored,
+// length-blind regex, so a ```` fence around ``` lines (or an odd number of
+// fence lines) desynced them: a false backtick warning, a visible `\{` in code,
+// or prose read as code and left for MDX to reject. They now read fences the
+// way MDX does, through the shared `mdxCodeRanges` scanner.
+describe('the pre-passes read fenced code the way MDX does (#372)', () => {
+  const README =
+    "# T\n\n````md\n```js\nconst a = {x: 1};\n```\nimport x from 'y'\n```\n````\n\nAfter {y: 2} and `code`.\n";
+  const LOST = '````md\n```js\ncode\n````\n\nprose {b: 1} here\n\n```js\nx\n```\n';
+  const LOST_ESM = '````md\n```js\ncode\n````\n\nimport this module first.\n\n```js\nx\n```\n';
+
+  describe('escapeStrayBraces', () => {
+    it('leaves a ```` fence around ``` lines alone and escapes the prose after it', () => {
+      expect(escapeStrayBraces(README)).toBe(README.replace('{y: 2}', '\\{y: 2\\}'));
+    });
+
+    it('escapes prose after a ```` fence holding one ``` line (the page was lost)', () => {
+      expect(escapeStrayBraces(LOST)).toBe(LOST.replace('{b: 1}', '\\{b: 1\\}'));
+    });
+
+    it.each<[string, string, string]>([
+      [
+        'a ~~~ fence around a ``` line',
+        '~~~md\n```\n{c}\n~~~\n\n{d}\n',
+        '~~~md\n```\n{c}\n~~~\n\n\\{d\\}\n',
+      ],
+      [
+        'a list-item fence',
+        '- item\n\n  ```js\n  const o = {l: 1};\n  ```\n\ntail {n}\n',
+        '- item\n\n  ```js\n  const o = {l: 1};\n  ```\n\ntail \\{n\\}\n',
+      ],
+      [
+        'a list-item fence ended by an outdented line',
+        '- a\n\n  ```js\n  {l: 1}\nout {m}\n',
+        '- a\n\n  ```js\n  {l: 1}\nout \\{m\\}\n',
+      ],
+      [
+        "a quoted fence ended by the quote's end",
+        '> ```js\n> {l: 1}\n\nout {m}\n',
+        '> ```js\n> {l: 1}\n\nout \\{m\\}\n',
+      ],
+      [
+        'an unclosed fence',
+        'text {j}\n\n```js\nconst o = {k: 1};\n',
+        'text \\{j\\}\n\n```js\nconst o = {k: 1};\n',
+      ],
+      [
+        'an indented closer',
+        '```\n{x}\n        ```\n\n{z}\n',
+        '```\n{x}\n        ```\n\n\\{z\\}\n',
+      ],
+      [
+        'an indented opener after a paragraph',
+        'para\n    ```\n{x}\n    ```\n\n{z}\n',
+        'para\n    ```\n{x}\n    ```\n\n\\{z\\}\n',
+      ],
+      ['an indented line (MDX has no indented code)', 'para\n\n    {x}\n', 'para\n\n    \\{x\\}\n'],
+      ["an author's escaped braces", 'a \\{x\\} b\n', 'a \\{x\\} b\n'],
+      [
+        'a comment placeholder inside a ```` fence',
+        '````md\n```\n{/**/}\n````\n\n{/**/}\n',
+        '````md\n```\n{/**/}\n````\n\n{}\n',
+      ],
+    ])('handles %s', (_name, src, want) => {
+      expect(escapeStrayBraces(src)).toBe(want);
+    });
+  });
+
+  describe('escapeEsmLookalikes', () => {
+    it('leaves an import inside a nested fence alone and escapes the prose import after it', () => {
+      expect(escapeEsmLookalikes(README)).toBe(README);
+      expect(escapeEsmLookalikes(LOST_ESM)).toBe(
+        LOST_ESM.replace('import this', '&#x69;mport this')
+      );
+    });
+
+    it.each<[string, string, string]>([
+      [
+        'a ~~~ fence around a ``` line',
+        '~~~md\n```\nimport a from "b"\n~~~\n\nimport this later.\n',
+        '~~~md\n```\nimport a from "b"\n~~~\n\n&#x69;mport this later.\n',
+      ],
+      [
+        'a list-item fence ended by an outdented line',
+        '- a\n\n  ```js\n  x\nimport out\n',
+        '- a\n\n  ```js\n  x\n&#x69;mport out\n',
+      ],
+      [
+        "a quoted fence ended by the quote's end",
+        '> ```js\n> x\n\nimport out\n',
+        '> ```js\n> x\n\n&#x69;mport out\n',
+      ],
+      [
+        'an unclosed fence',
+        "text\n\n```js\nimport z from 'z'\n",
+        "text\n\n```js\nimport z from 'z'\n",
+      ],
+      [
+        'an indented closer',
+        '```\nimport y\n        ```\n\nimport z\n',
+        '```\nimport y\n        ```\n\n&#x69;mport z\n',
+      ],
+      [
+        'an indented opener after a paragraph',
+        'para\n    ```\nimport y\n    ```\n\nexport z\n',
+        'para\n    ```\nimport y\n    ```\n\n&#x65;xport z\n',
+      ],
+    ])('handles %s', (_name, src, want) => {
+      expect(escapeEsmLookalikes(src)).toBe(want);
+    });
+  });
+
+  describe('findStrayBackticks', () => {
+    it('reports nothing for a ```` fence around ``` lines', () => {
+      expect(findStrayBackticks(README)).toEqual([]);
+      expect(findStrayBackticks(LOST)).toEqual([]);
+    });
+
+    it.each<[string, string]>([
+      ['a ~~~ fence around a ``` line', '~~~md\n```\n~~~\n\n`a`\n'],
+      ['a list-item fence', '- a\n\n  ```js\n  x\n  ```\n\n`b`\n'],
+      ['a quoted fence', '> ```js\n> x\n\n`c`\n'],
+      ['an unclosed fence', '```js\nx `\n'],
+      ['an indented closer', '```\nx\n        ```\n\n`d`\n'],
+    ])('reports nothing for %s', (_name, src) => {
+      expect(findStrayBackticks(src)).toEqual([]);
+    });
+
+    it('reports the line and column of a stray backtick after the frontmatter', () => {
+      expect(findStrayBackticks('---\na: `1\n---\n\nx `y\n\nz\n')).toEqual([
+        { line: 5, column: 3, lineText: 'x `y' },
+      ]);
+    });
+
+    it('reports a stray backtick on a line past many others', () => {
+      const src = 'a\n'.repeat(1000) + 'b `c\n\n`d` `\n';
+      expect(findStrayBackticks(src)).toEqual([
+        { line: 1001, column: 3, lineText: 'b `c' },
+        { line: 1003, column: 5, lineText: '`d` `' },
+      ]);
+    });
+  });
+
+  // The three regex implementations these passes replaced, kept as oracles:
+  // on prose without backticks, tildes or backslashes (no fence, no span, no
+  // escape) the rewrite must give the same output.
+  describe('prose reads as before', () => {
+    const REF_FRONTMATTER = /^---\n[\s\S]*?\n---\n/;
+    const referenceBraces = (source: string): string => {
+      const fm = REF_FRONTMATTER.exec(source);
+      const prefix = fm ? fm[0] : '';
+      const body = fm ? source.slice(fm[0].length) : source;
+      const re =
+        /(```[\s\S]*?```|~~~[\s\S]*?~~~)|((?<!\\)<\/?[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][\w-]*(?:="[^"]*"|='[^']*')?)*\s*\/?>)|(?<![`\\])(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`)|(\{\/\*(\n[ \t>]*)?\*\/\})|([{}])/g;
+      return (
+        prefix +
+        body.replace(
+          re,
+          (
+            m,
+            _fence,
+            _jsx,
+            _ticks,
+            placeholder: string | undefined,
+            gap: string | undefined,
+            brace: string | undefined
+          ) => (placeholder ? `{${gap ?? ''}}` : brace ? `\\${brace}` : m)
+        )
+      );
+    };
+    const referenceEsm = (source: string): string => {
+      const fm = REF_FRONTMATTER.exec(source);
+      const prefix = fm ? fm[0] : '';
+      const body = fm ? source.slice(fm[0].length) : source;
+      const re =
+        /(```[\s\S]*?```|~~~[\s\S]*?~~~)|((?<!\\)<\/?[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][\w-]*(?:="[^"]*"|='[^']*')?)*\s*\/?>)|(?<![`\\])(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`)|^(import|export)(?=\s)/gm;
+      return (
+        prefix +
+        body.replace(re, (m, _fence, _jsx, _ticks, keyword: string | undefined) =>
+          keyword ? `&#x${keyword.charCodeAt(0).toString(16)};${keyword.slice(1)}` : m
+        )
+      );
+    };
+    // Comments are not masked: the inputs hold none.
+    const referenceStrays = (
+      source: string
+    ): { line: number; column: number; lineText: string }[] => {
+      const out: { line: number; column: number; lineText: string }[] = [];
+      const fm = REF_FRONTMATTER.exec(source);
+      const re =
+        /(```[\s\S]*?```|~~~[\s\S]*?~~~)|(?<![`\\])((`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`))|(?<![`\\])(`+)/g;
+      re.lastIndex = fm ? fm[0].length : 0;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(source)) !== null) {
+        if (m[4] === undefined) continue;
+        const idx = m.index;
+        const lastNl = source.lastIndexOf('\n', idx - 1);
+        const nextNl = source.indexOf('\n', idx);
+        out.push({
+          line: source.slice(0, idx).split('\n').length,
+          column: idx - lastNl,
+          lineText: source.slice(lastNl + 1, nextNl === -1 ? source.length : nextNl),
+        });
+      }
+      return out;
+    };
+
+    it('the references tell the cases apart', () => {
+      expect(referenceBraces('a {b} <X a="{c}" /> {/**/}')).toBe('a \\{b\\} <X a="{c}" /> {}');
+      expect(referenceEsm('import a\n<X a="\nimport b" />\n')).toBe(
+        '&#x69;mport a\n<X a="\nimport b" />\n'
+      );
+      expect(referenceStrays('a `b\n\nc')).toEqual([{ line: 1, column: 3, lineText: 'a `b' }]);
+    });
+
+    it('gives the same output on seeded random prose', () => {
+      const pieces = [
+        'word ',
+        'a',
+        ' ',
+        ' ',
+        '\n',
+        '\n',
+        '\n\n',
+        '{',
+        '}',
+        '{x}',
+        '{/**/}',
+        '{/*\n> */}',
+        '{/*\n*/}',
+        'import ',
+        'export ',
+        '\nimport x\n',
+        '> ',
+        '- ',
+        '# ',
+        '1. ',
+        '<',
+        '>',
+        '<X a="{q}" />',
+        "<img alt='{x}\n\nimport y'>",
+        '</b>',
+        '<b>',
+        '"',
+        "'",
+        '=',
+        '    ',
+        '\t',
+        '|',
+        '---',
+        '***',
+        '<></>',
+        'https://x',
+        '\r\n',
+      ];
+      let seed = 372;
+      const next = (k: number): number => {
+        seed = (Math.imul(seed, 1_664_525) + 1_013_904_223) >>> 0;
+        return seed % k;
+      };
+      const mismatches = { braces: 0, esm: 0, strays: 0 };
+      let first: string | undefined;
+      for (let n = 0; n < 30_000; n++) {
+        let s = next(10) === 0 ? '---\na: {b}\nimport: c\n---\n' : '';
+        for (let len = 1 + next(25); len > 0; len--) s += pieces[next(pieces.length)];
+        const differs = {
+          braces: escapeStrayBraces(s) !== referenceBraces(s),
+          esm: escapeEsmLookalikes(s) !== referenceEsm(s),
+          strays: JSON.stringify(findStrayBackticks(s)) !== JSON.stringify(referenceStrays(s)),
+        };
+        for (const k of ['braces', 'esm', 'strays'] as const) {
+          if (differs[k]) {
+            mismatches[k]++;
+            first ??= s;
+          }
+        }
+      }
+      if (first !== undefined) {
+        expect(escapeStrayBraces(first), JSON.stringify(first)).toBe(referenceBraces(first));
+        expect(escapeEsmLookalikes(first), JSON.stringify(first)).toBe(referenceEsm(first));
+      }
+      expect(mismatches).toEqual({ braces: 0, esm: 0, strays: 0 });
+    });
+  });
+
+  // A page body passes through each of these once per build; none may go
+  // quadratic or overflow the stack (they did on a code span of 8M characters).
+  describe('performance', () => {
+    const passes = {
+      escapeStrayBraces,
+      escapeEsmLookalikes,
+      findStrayBackticks: (s: string) => findStrayBackticks(s, []),
+    };
+    const shapes: [string, (n: number) => string][] = [
+      [
+        'fences, spans and tags',
+        (n) =>
+          '````md\n```js\n{a}\n````\n\nSee `a{b}` <X a="{c}" /> {d}.\n\nimport it\n\n'.repeat(
+            n / 58
+          ),
+      ],
+      ['one code span over many lines', (n) => '`' + 'word {x}\n'.repeat(n / 9) + '` {y}\n'],
+      ['an unclosed backtick then a long paragraph', (n) => '`' + 'word {x}\n'.repeat(n / 9)],
+      ['many stray backticks', (n) => '` a `` b ``` c {x}\n\n'.repeat(n / 20)],
+      [
+        'unclosed backtick runs of distinct lengths',
+        (n) => {
+          let s = '';
+          for (let k = 1; s.length < n / 2; k++) s += '`'.repeat(k) + ' ';
+          return s + 'word {x} '.repeat(n / 18);
+        },
+      ],
+      ['one tag with many attributes', (n) => '<a ' + 'b="c" '.repeat(n / 6) + '/> {x}\n'],
+      ['one unclosed tag with many attributes', (n) => '<a ' + 'b="c" '.repeat(n / 6) + '{x}\n'],
+      ['import lines', (n) => 'import it now\n\n'.repeat(n / 15)],
+      ['list-item fences', (n) => '- a\n\n  ```\n  {x}\n  ```\n'.repeat(n / 24)],
+    ];
+    const cases = Object.entries(passes).flatMap(([pass, fn]) =>
+      shapes.map(([shape, make]) => [pass, shape, fn, make] as const)
+    );
+
+    it.each(cases)(
+      '%s: %s scales linearly',
+      (_pass, _shape, fn, makeInput) => {
+        expectLinearScaling(fn, makeInput);
+      },
+      PERF_TEST_TIMEOUT
+    );
+
+    // One global replace over a gap full of braces slows down past several
+    // hundred thousand matches (a V8 cliff, see linear-scaling.ts): the window
+    // stays below it.
+    it(
+      'escapeStrayBraces: a page of braces scales linearly',
+      () => {
+        expectLinearScaling(escapeStrayBraces, (n) => 'a {b} c\n'.repeat(n / 8), {
+          maxSize: 32_768,
+        });
+      },
+      PERF_TEST_TIMEOUT
+    );
+
+    it('none throws on a code span or a tag of 16M characters', () => {
+      const n = 16 * 1024 * 1024;
+      const span = '`' + 'x'.repeat(n) + '` {y}\nimport z\n';
+      expect(escapeStrayBraces(span).endsWith('` \\{y\\}\nimport z\n')).toBe(true);
+      expect(escapeEsmLookalikes(span).endsWith('` {y}\n&#x69;mport z\n')).toBe(true);
+      expect(findStrayBackticks(span, [])).toEqual([]);
+      const tag = '<a ' + 'b="c" '.repeat(n / 6) + '/> {x}\n';
+      expect(escapeStrayBraces(tag).endsWith('/> \\{x\\}\n')).toBe(true);
+      expect(escapeEsmLookalikes(tag)).toBe(tag);
+      const open = '`' + 'x'.repeat(n) + ' {y}\n';
+      expect(findStrayBackticks(open, [])).toHaveLength(1);
+    });
   });
 });

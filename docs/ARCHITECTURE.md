@@ -101,7 +101,9 @@ utils/src/
 │   │                     #   maskHtmlComments: ONE definition of a comment per format for
 │   │                     #   setu's splitters + description excerpt AND dwar's comment
 │   │                     #   pre-pass, backtick warnings and search text;
-│   │                     #   inlineCodeSpans (CommonMark code spans, for dwar's search text)
+│   │                     #   inlineCodeSpans (CommonMark code spans, for dwar's search text);
+│   │                     #   mdxCodeRanges (fences read as MDX reads them + code spans +
+│   │                     #   JSX tags + stray ticks, for dwar's brace/ESM/backtick passes)
 │   ├── whitespace.ts     # collapseWhitespace: linear /\s+/g → ' ' + trim (dwar search text, setu descriptions)
 │   ├── collapsible.ts    # collapsibleSidebarSections resolver (build-time →
 │   │                     #   manifest.collapsibleGroups; boolean | string[])
@@ -519,6 +521,9 @@ dwar/src/
 │                         #   inline-code matching follows CommonMark — a code span can't
 │                         #   cross a blank line — so a stray backtick can't desync a
 │                         #   whole page). findStrayBackticks flags those unbalanced ticks.
+│                         #   All three find code with utils' mdxCodeRanges, which
+│                         #   reads fences as MDX does (a ```` fence around ```
+│                         #   lines is one block, #372).
 ├── html.ts               # HTML document skeleton, slug→path, excerpt, payload escaping
 │                         #   + <meta> tags: theme defaults first (charset/viewport/
 │                         #   `generator` = clean-jsdoc-theme <__PKG_VERSION__>/auto

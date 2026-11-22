@@ -18,8 +18,10 @@ import type { SignatureHighlighter } from '@clean-jsdoc-theme/rang';
 import {
   htmlCommentRanges,
   maskHtmlComments,
+  mdxCodeRanges,
   slugifyHeading,
   type HtmlCommentRange,
+  type TextRange,
 } from '@clean-jsdoc-theme/utils';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -142,73 +144,83 @@ function frontmatterLength(source: string): number {
  * ("Could not parse expression with acorn" / "Unexpected lazy line in
  * expression in container").
  *
- * Braces inside code (fenced blocks + inline spans) and the YAML frontmatter are
- * left untouched — MDX doesn't parse expressions there, and escaping would leak
- * visible backslashes. Run this AFTER {@link preprocessJsdocInlineTags} so the
- * inline-code spans it produces for `{@link}` are protected here.
+ * Braces inside code and the YAML frontmatter are left untouched — MDX doesn't
+ * parse expressions there, and escaping would leak visible backslashes. Code is
+ * what the shared `mdxCodeRanges` scanner (utils) finds: fenced blocks, read
+ * the way MDX reads them (a ```` fence around ``` lines is one block, #372),
+ * inline code spans and MDX JSX tags. Run this AFTER
+ * {@link preprocessJsdocInlineTags} so the inline-code spans it produces for
+ * `{@link}` are protected here.
  *
- * The inline-code matcher mirrors CommonMark's rule that a code span **cannot
- * contain a blank line** (a code span lives within one paragraph). This matters
- * on a big aggregated page (e.g. Globals): a single unbalanced backtick in one
- * doc comment must not pair with a far-away backtick in another, swallowing
- * everything between as "code" and leaving its braces un-escaped — MDX, which
- * stops a code span at the blank line, would then read those braces as a JS
- * expression and abort the page (issue #333, dwv `splitKeyValueString`). So a
- * stray backtick that has no equal-length partner before the next blank line is
- * left literal, and the braces around it are escaped like any other prose.
+ * The JSX tags protect braces inside an attribute value — setu emits
+ * signatures as `<MemberHeading sig="fn(): { x: T }" />` / `<Signature
+ * code="…" />`, whose object-type braces are a literal string, not an MDX
+ * expression (a README `<img alt='{x}'>` likewise). A bare `a < b` in prose is
+ * no tag, and nor is a backslash-escaped `\<Foo bar="{x}">`: that's the literal
+ * text setu writes for a non-markup tag in prose, so its braces are prose
+ * braces and get escaped. A backslash escape in prose is left as it is, so an
+ * author's `\{x\}` stays put.
+ *
+ * A code span follows CommonMark: it cannot cross a blank line (or another
+ * line that ends the paragraph). This matters on a big aggregated page (e.g.
+ * Globals): a single unbalanced backtick in one doc comment must not pair with
+ * a far-away backtick in another, swallowing everything between as "code" and
+ * leaving its braces un-escaped — MDX, which stops a code span at the blank
+ * line, would then read those braces as a JS expression and abort the page
+ * (issue #333, dwv `splitKeyValueString`). So a stray backtick that has no
+ * equal-length partner in its paragraph is left literal, and the braces around
+ * it are escaped like any other prose.
+ *
+ * The empty comment expressions {@link stripHtmlComments} leaves — `{/**\/}`
+ * where a comment stood, and one wrapping a single newline (`{/*`, the newline,
+ * then any quote markers or indentation and `*\/}`) for each line break of a
+ * comment inside a paragraph — become empty expressions, `{}` and `{`, the
+ * newline and its prefix, `}`. Neither renders, but a comment expression keeps
+ * its `/**\/` as the node's value, and an image's alt is its label's text,
+ * expressions included (`![a <!-- x --> b](p.png)` had the alt `a /**\/ b`); an
+ * empty one has no text. Only in prose: a `{/**\/}` in code is the user's own
+ * text.
  */
 export function escapeStrayBraces(source: string): string {
   // Keep leading YAML frontmatter verbatim (braces there are YAML, not MDX).
-  const fm = /^---\n[\s\S]*?\n---\n/.exec(source);
-  const prefix = fm ? fm[0] : '';
-  const body = fm ? source.slice(fm[0].length) : source;
-
-  // Single scan: a fenced code block, OR an MDX JSX tag, OR an inline code span,
-  // OR a lone brace. Code + JSX-tag matches pass through; lone braces get escaped.
-  //
-  // The JSX-tag branch protects braces inside an attribute value — setu emits
-  // signatures as `<MemberHeading sig="fn(): { x: T }" />` / `<Signature
-  // code="…" />`, whose object-type braces are a literal string, not an MDX
-  // expression. setu downgrades any `"` inside an attribute to `'`, so `="[^"]*"`
-  // / `='[^']*'` safely capture a value containing `{`, `}`, `<`, or `>` (MDX
-  // accepts single-quoted attribute strings too; a README `<img alt='{x}'>` used
-  // to get `\{x\}` with visible backslashes). (A bare `a < b` in prose isn't
-  // matched — a tag needs `<` immediately followed by a name. Nor is a
-  // backslash-escaped `\<Foo bar="{x}">`: that's the literal text setu writes
-  // for a non-markup tag in prose, so its braces are prose braces and get escaped.)
-  //
-  // The inline-code content `(?:[^\n]|\n(?![ \t\r]*\n))*?` allows single line
-  // breaks (CommonMark code spans may span lines) but never a blank line — so an
-  // unclosed backtick can't run past a paragraph break and mis-swallow another
-  // comment's braces. A delimiter run is bounded by `(?<![`\\])…(?!`)` so it (a)
-  // closes only on a *maximal* run of exactly N — a longer run inside (e.g. ```
-  // in a `…` span) is literal content — and (b) ignores a backslash-escaped
-  // backtick (`\``), which is a literal backtick per CommonMark, not a delimiter.
-  //
-  // The empty comment expressions {@link stripHtmlComments} leaves — `{/**/}`
-  // where a comment stood, and one wrapping a single newline (`{/*`, the
-  // newline, then any quote markers or indentation and `*/}`) for each line
-  // break of a comment inside a paragraph — become empty expressions, `{}` and
-  // `{`, the newline and its prefix, `}`. Neither renders, but a comment
-  // expression keeps its `/**/` as the node's value, and an image's alt is its
-  // label's text, expressions included (`![a <!-- x --> b](p.png)` had the alt
-  // `a /**/ b`); an empty one has no text. Only here, outside code and tags: a
-  // `{/**/}` in a code span is the user's own text.
-  const re =
-    /(```[\s\S]*?```|~~~[\s\S]*?~~~)|((?<!\\)<\/?[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][\w-]*(?:="[^"]*"|='[^']*')?)*\s*\/?>)|(?<![`\\])(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`)|(\{\/\*(\n[ \t>]*)?\*\/\})|([{}])/g;
-  const escaped = body.replace(
-    re,
-    (
-      m,
-      _fence,
-      _jsx,
-      _ticks,
-      placeholder: string | undefined,
-      gap: string | undefined,
-      brace: string | undefined
-    ) => (placeholder ? `{${gap ?? ''}}` : brace ? `\\${brace}` : m)
+  const bodyStart = frontmatterLength(source);
+  const body = bodyStart ? source.slice(bodyStart) : source;
+  if (!body.includes('{') && !body.includes('}')) return source;
+  const out = mapProse(body, mdxCodeRanges(body).code, (prose) =>
+    prose.replace(
+      PROSE_BRACE,
+      (m, placeholder: string | undefined, gap: string | undefined, brace: string | undefined) =>
+        placeholder ? `{${gap ?? ''}}` : brace ? `\\${brace}` : m
+    )
   );
-  return prefix + escaped;
+  return bodyStart ? source.slice(0, bodyStart) + out : out;
+}
+
+/**
+ * In prose: a backslash escape (left as it is), a comment placeholder (group
+ * 1, the newline and prefix it wraps in group 2), or a lone brace (group 3).
+ */
+const PROSE_BRACE = /\\[^\n]|(\{\/\*(\n[ \t>]*)?\*\/\})|([{}])/g;
+
+/**
+ * `body` with each stretch outside the sorted, disjoint `code` ranges passed
+ * through `rewrite`, and the code copied as it is.
+ */
+function mapProse(
+  body: string,
+  code: readonly TextRange[],
+  rewrite: (prose: string) => string
+): string {
+  if (code.length === 0) return rewrite(body);
+  const parts: string[] = [];
+  let cursor = 0;
+  for (const r of code) {
+    if (r.start > cursor) parts.push(rewrite(body.slice(cursor, r.start)));
+    parts.push(body.slice(r.start, r.end));
+    cursor = r.end;
+  }
+  if (cursor < body.length) parts.push(rewrite(body.slice(cursor)));
+  return parts.join('');
 }
 
 /**
@@ -226,9 +238,10 @@ export function escapeStrayBraces(source: string): string {
  * escapes ASCII punctuation, so `\import` would render a literal backslash —
  * whereas MDX's tokenizer sees `&`, never starts the ESM construct, and the
  * reference decodes back to the plain letter in the rendered text. Lines inside
- * fenced code blocks, inline code spans, MDX JSX tags and the YAML frontmatter
- * are left untouched (a real `import x from 'y'` in an `@example` must stay
- * code). Only column-0 lines are touched — an indented line is never ESM — and
+ * code — fenced code blocks (read the way MDX reads them, #372), inline code
+ * spans and MDX JSX tags, as the shared `mdxCodeRanges` scanner (utils) finds
+ * them — and the YAML frontmatter are left untouched (a real `import x from
+ * 'y'` in an `@example` must stay code). Only column-0 lines are touched — an indented line is never ESM — and
  * words that merely start with the keyword (`important`, `imports`) don't match
  * because the keyword must be followed by whitespace. A column-0 lazy
  * continuation line ("Use it.\nimport it anywhere.") is also rewritten: it isn't
@@ -240,19 +253,29 @@ export function escapeStrayBraces(source: string): string {
  */
 export function escapeEsmLookalikes(source: string): string {
   // Keep leading YAML frontmatter verbatim.
-  const fm = /^---\n[\s\S]*?\n---\n/.exec(source);
-  const prefix = fm ? fm[0] : '';
-  const body = fm ? source.slice(fm[0].length) : source;
-
-  // Same tokenizer shape as escapeStrayBraces: a fenced code block, OR an MDX
-  // JSX tag, OR an inline code span (never crossing a blank line), OR — the only
-  // branch that rewrites — a column-0 `import`/`export` keyword + whitespace.
-  const re =
-    /(```[\s\S]*?```|~~~[\s\S]*?~~~)|((?<!\\)<\/?[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][\w-]*(?:="[^"]*"|='[^']*')?)*\s*\/?>)|(?<![`\\])(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`)|^(import|export)(?=\s)/gm;
-  const escaped = body.replace(re, (m, _fence, _jsx, _ticks, keyword: string | undefined) =>
-    keyword ? `&#x${keyword.charCodeAt(0).toString(16)};${keyword.slice(1)}` : m
-  );
-  return prefix + escaped;
+  const bodyStart = frontmatterLength(source);
+  const body = bodyStart ? source.slice(bodyStart) : source;
+  const keyword = /^(import|export)(?=\s)/gm;
+  let m = keyword.exec(body);
+  if (m === null) return source;
+  const code = mdxCodeRanges(body).code;
+  const parts: string[] = [];
+  let cursor = 0;
+  // Code ranges are sorted and the matches come in order: one pointer serves.
+  let c = 0;
+  for (; m !== null; m = keyword.exec(body)) {
+    while (c < code.length && code[c].end <= m.index) c++;
+    if (c < code.length && code[c].start <= m.index) {
+      // Inside code: resume after it.
+      keyword.lastIndex = Math.max(code[c].end, m.index + 1);
+      continue;
+    }
+    parts.push(body.slice(cursor, m.index), `&#x${m[1].charCodeAt(0).toString(16)};`);
+    cursor = m.index + 1;
+  }
+  parts.push(body.slice(cursor));
+  const out = parts.join('');
+  return bodyStart ? source.slice(0, bodyStart) + out : out;
 }
 
 /**
@@ -456,45 +479,44 @@ export interface StrayBacktick {
  * next blank line — i.e. **unbalanced** backticks. {@link escapeStrayBraces} now
  * leaves these literal (so they no longer break the page), but an unclosed
  * `` `code` `` span is almost always an authoring slip, so the bridge surfaces
- * them as a non-fatal warning. Mirrors `escapeStrayBraces`' tokenizer: fenced
- * code blocks and YAML frontmatter are skipped (their backticks are legitimate),
- * balanced spans are consumed, and whatever backtick run is left over is stray.
- * Comments are blanked out first (same ranges {@link stripHtmlComments} drops),
- * so a backtick inside one is neither reported nor paired with one outside.
- * Positions are 1-based, against the same `source` the `.md`/snippets use.
+ * them as a non-fatal warning. Reads code like `escapeStrayBraces`, through the
+ * shared `mdxCodeRanges` scanner (utils): fenced code blocks (read the way MDX
+ * reads them, #372), JSX tags and the YAML frontmatter are skipped (their
+ * backticks are legitimate), balanced spans are consumed, and whatever backtick
+ * run is left over is stray. Comments are blanked out first (same ranges
+ * {@link stripHtmlComments} drops), so a backtick inside one is neither
+ * reported nor paired with one outside. Positions are 1-based, against the
+ * same `source` the `.md`/snippets use.
  */
 export function findStrayBackticks(
   source: string,
   comments: readonly HtmlCommentRange[] = pageCommentRanges(source)
 ): StrayBacktick[] {
   const out: StrayBacktick[] = [];
+  if (!source.includes('`')) return out;
   // Skip leading YAML frontmatter (backticks there aren't MDX inline code).
   const bodyStart = frontmatterLength(source);
-  // Tokenize a copy with every comment blanked out (same length, same line
+  // Scan a copy with every comment blanked out (same length, same line
   // breaks): the compiled page holds no comments, so a backtick inside one must
   // neither pair with a real one outside nor be reported itself. Positions and
   // line text are read from `source` — the mask keeps every offset.
   const masked = maskHtmlComments(source, comments);
-  // Fenced block | balanced inline span (group 3 = its ticks) | leftover run
-  // (group 4). A delimiter run is bounded by `(?<![`\\])…(?!`)`: it closes only on
-  // a maximal run of exactly N (a longer run inside a span, e.g. ``` in
-  // `` ` ```x ` ``, is literal content) and ignores backslash-escaped backticks
-  // (`\``, a literal backtick) — both match CommonMark, avoiding false strays.
-  const re =
-    /(```[\s\S]*?```|~~~[\s\S]*?~~~)|(?<![`\\])((`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`))|(?<![`\\])(`+)/g;
-  re.lastIndex = bodyStart;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(masked)) !== null) {
-    if (m[4] === undefined) continue; // only the leftover (stray) backtick run
-    const idx = m.index;
-    const lastNl = source.lastIndexOf('\n', idx - 1);
-    const line = source.slice(0, idx).split('\n').length;
-    const column = idx - lastNl;
+  const { strayTicks } = mdxCodeRanges(bodyStart ? masked.slice(bodyStart) : masked);
+  // One forward pass over the newlines for all the strays (they come in order).
+  let line = 1;
+  let lineStart = 0;
+  for (const tick of strayTicks) {
+    const idx = tick.start + bodyStart;
+    for (let nl = source.indexOf('\n', lineStart); nl !== -1 && nl < idx; ) {
+      line++;
+      lineStart = nl + 1;
+      nl = source.indexOf('\n', lineStart);
+    }
     const nextNl = source.indexOf('\n', idx);
     out.push({
       line,
-      column,
-      lineText: source.slice(lastNl + 1, nextNl === -1 ? source.length : nextNl),
+      column: idx - lineStart + 1,
+      lineText: source.slice(lineStart, nextNl === -1 ? source.length : nextNl),
     });
   }
   return out;

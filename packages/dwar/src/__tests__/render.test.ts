@@ -1300,6 +1300,46 @@ describe('render() — issue #333: render-error diagnostics', () => {
     const result = await render(makeManifest(), { theme: minimalTheme });
     expect(result.warnings).toBeUndefined();
   });
+
+  // issue #372: a ```` fence around ``` lines (a README showing Markdown)
+  // desynced the pre-passes, which paired fence runs regardless of length.
+  async function renderPage(slug: string, body: string) {
+    const m = makeManifest();
+    m.pages.push({
+      slug,
+      frontmatter: { title: 'Fences', kind: 'guide', description: 'Nested fences.' },
+      body,
+      headings: [],
+    });
+    const result = await render(m, { theme: minimalTheme });
+    const file = result.files.find((f) => f.path === `${slug}/index.html`);
+    // The visible text, with Shiki's token spans gone.
+    const text = file ? asString(file).replace(/<[^>]*>/g, '') : undefined;
+    return { result, text };
+  }
+
+  it('renders a ```` fence around ``` lines without a warning or a visible \\{ (#372)', async () => {
+    const { result, text } = await renderPage(
+      'nested',
+      "# T\n\n````md\n```js\nconst a = {x: 1};\n```\nimport x from 'y'\n```\n````\n\nAfter {y: 2} and `code`.\n"
+    );
+    expect(result.errors?.find((e) => e.slug === 'nested')?.message).toBeUndefined();
+    expect((result.warnings ?? []).filter((w) => w.slug === 'nested')).toEqual([]);
+    expect(text).toContain('const a = {x: 1};');
+    expect(text).toContain('After {y: 2} and');
+    expect(text).not.toContain('\\{');
+  });
+
+  it('renders the prose after a ```` fence holding one ``` line (#372)', async () => {
+    const { result, text } = await renderPage(
+      'lost',
+      '````md\n```js\ncode\n````\n\nprose {b: 1} here\n\nimport this module first.\n\n```js\nx\n```\n'
+    );
+    expect(result.errors?.find((e) => e.slug === 'lost')?.message).toBeUndefined();
+    expect((result.warnings ?? []).filter((w) => w.slug === 'lost')).toEqual([]);
+    expect(text).toContain('prose {b: 1} here');
+    expect(text).toContain('import this module first.');
+  });
 });
 
 describe('render() — heading ids for punctuation/emoji-only headings', () => {
