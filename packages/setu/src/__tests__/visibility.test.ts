@@ -468,6 +468,8 @@ describe('generateSite — a @private constructor on a class with an explicit ac
     expect(protHide).toContain('**Modifiers:** `protected`');
     expect(protHide).not.toContain('## Constructor');
     expect(protHide).not.toContain('ProtHide ctor.');
+    // `@since` on the private constructor of a `@hideconstructor` class.
+    expect(protHide).not.toContain('7.7.7');
   });
 
   it("a same-named nested class's private constructor does not hide the outer one", () => {
@@ -523,6 +525,9 @@ describe('pruneHiddenDoclets — a @private constructor on a class with an acces
   });
 
   it('leaves an outer class alone when a nested same-named class precedes its public constructor', () => {
+    // Checked here, not on the page: the method-local inner Trap4 (private only
+    // via its constructor) shares the outer longname, is emitted first, and so
+    // owns the shared `trap4` page — pre-existing behaviour, not fixed here.
     const c = makeCollection(PRIVATE_CTOR_CLASS_ACCESS_DOCLETS);
     const outer = documented(c, 'Trap4', 42);
     const pruned = documented(pruneHiddenDoclets(c), 'Trap4', 42);

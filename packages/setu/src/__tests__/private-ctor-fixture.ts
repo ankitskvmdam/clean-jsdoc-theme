@@ -2459,6 +2459,7 @@ export const PRIVATE_CTOR_ES5_ES6_DOCLETS: unknown[] = [
 ];
 
 /**
+/**
  * Real JSDoc 4.0.5 `-X` output, trimmed the same way, for classes whose comment
  * carries an explicit access tag (`@protected`, `@public`, `@package`,
  * `@access …`) and whose ES6 constructor is `@private` (#373), plus controls
@@ -2651,6 +2652,7 @@ export const PRIVATE_CTOR_ES5_ES6_DOCLETS: unknown[] = [
  *   /**
  *    * ProtHide ctor.
  *    * @private
+ *    * @since 7.7.7
  *    *∕
  *   constructor() {}
  *   /** m *∕
@@ -3766,7 +3768,7 @@ export const PRIVATE_CTOR_CLASS_ACCESS_DOCLETS: unknown[] = [
   {
     meta: {
       filename: 'controls.js',
-      lineno: 36,
+      lineno: 37,
       columnno: 2,
       path: '/src',
       code: {
@@ -3777,6 +3779,7 @@ export const PRIVATE_CTOR_CLASS_ACCESS_DOCLETS: unknown[] = [
     },
     description: '<p>ProtHide ctor.</p>',
     access: 'private',
+    since: '7.7.7',
     name: 'ProtHide',
     longname: 'ProtHide',
     kind: 'class',
@@ -3804,11 +3807,12 @@ export const PRIVATE_CTOR_CLASS_ACCESS_DOCLETS: unknown[] = [
     hideconstructor: true,
     scope: 'global',
     description: '<p>ProtHide ctor.</p>',
+    since: '7.7.7',
   },
   {
     meta: {
       filename: 'controls.js',
-      lineno: 38,
+      lineno: 39,
       columnno: 2,
       path: '/src',
       code: {
@@ -3828,7 +3832,7 @@ export const PRIVATE_CTOR_CLASS_ACCESS_DOCLETS: unknown[] = [
   {
     meta: {
       filename: 'controls.js',
-      lineno: 45,
+      lineno: 46,
       columnno: 0,
       path: '/src',
       code: {
@@ -3848,7 +3852,7 @@ export const PRIVATE_CTOR_CLASS_ACCESS_DOCLETS: unknown[] = [
   {
     meta: {
       filename: 'controls.js',
-      lineno: 50,
+      lineno: 51,
       columnno: 2,
       path: '/src',
       code: {
@@ -3869,7 +3873,7 @@ export const PRIVATE_CTOR_CLASS_ACCESS_DOCLETS: unknown[] = [
   {
     meta: {
       filename: 'controls.js',
-      lineno: 45,
+      lineno: 46,
       columnno: 0,
       path: '/src',
       code: {
@@ -3889,7 +3893,7 @@ export const PRIVATE_CTOR_CLASS_ACCESS_DOCLETS: unknown[] = [
   {
     meta: {
       filename: 'controls.js',
-      lineno: 52,
+      lineno: 53,
       columnno: 2,
       path: '/src',
       code: {
