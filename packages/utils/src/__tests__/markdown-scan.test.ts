@@ -380,6 +380,54 @@ describe('htmlCommentRanges', () => {
     expect(htmlCommentRanges('a|b <!--\n- | -\n-->\n')[0].closed).toBe(false);
   });
 
+  it("counts a table header's cells as MDX reads the line (#380)", () => {
+    // dwar drops a comment that opens and closes on the header row, pipes
+    // and all, so MDX may see a table the raw cell count misses: each row is
+    // then its own block, and a body-row comment may not span two rows.
+    const states = (src: string): boolean[] => htmlCommentRanges(src).map((c) => c.closed);
+    expect(states('<!-- a | b --> h | i\n-|-\n| x <!--\n--> |\n')).toEqual([true, false]);
+    expect(states('h <!-- a | b --> | i\n-|-\n| x <!--\n--> |\n')).toEqual([true, false]);
+    expect(states('- <!-- a | b --> h | i\n  -|-\n  | x <!--\n  --> |\n')).toEqual([true, false]);
+    expect(states('> h <!-- a | b --> | i\n> -|-\n> | x <!--\n> --> |\n')).toEqual([true, false]);
+    // A comment closing on the header row after opening on the line above.
+    expect(states('<!-- a\nb | c --> h <!-- x | y --> | i\n-|-\n| x <!--\n--> |\n')).toEqual([
+      true,
+      true,
+      false,
+    ]);
+    // Several comments, and the empty ones, on the header row.
+    expect(states('h <!-- a | b --> <!-- c | d --> | i\n-|-\n| x <!--\n--> |\n')).toEqual([
+      true,
+      true,
+      false,
+    ]);
+    expect(states('h <!-->|<!---> | i\n-|-|-\n| x <!--\n--> |\n')).toEqual([true, true, false]);
+    // An escaped pipe in the comment is dropped with it; one outside still escapes.
+    expect(states('h <!-- a \\| b --> \\| i | j\n-|-\n| x <!--\n--> |\n')).toEqual([true, false]);
+    // No comment on the header row: in a code span, behind `\<!--`, or one
+    // that runs past the row. Its pipes count, so there is no table.
+    expect(closed('h `<!-- a | b -->` | i\n-|-\n| x <!--\n--> |\n')).toEqual(['<!--\n-->']);
+    expect(closed('h \\<!-- a | b --> | i\n-|-\n| x <!--\n--> |\n')).toEqual(['<!--\n-->']);
+    expect(closed('h | i <!-- a | b\n-|-\n--> c\n')).toEqual(['<!-- a | b\n-|-\n-->']);
+    // The raw count still makes a table on its own.
+    expect(states('<!-- a | b --> h\n-|-\nx <!--\n--> y\n')).toEqual([true, false]);
+  });
+
+  it('keeps the raw header count when the header line holds an unclosed comment (#380)', () => {
+    // The opener closes on a later line, swallowing the delimiter row: MDX sees
+    // no table, so the comment must stay closed or its text reaches MDX.
+    expect(htmlCommentRanges('<!-- a | b --> h | i <!-- old\n-|-\n<br> -->\n')).toEqual([
+      { start: 0, end: 14, closed: true },
+      { start: 21, end: 42, closed: true },
+    ]);
+    expect(
+      htmlCommentRanges('h <!-- a | b --> | i <!-- TODO: <details>\n-|-\n| x | y |\n-->\n')
+    ).toEqual([
+      { start: 2, end: 16, closed: true },
+      { start: 21, end: 59, closed: true },
+    ]);
+  });
+
   it('reads a fence opener or list item holding a bare CR or a line separator', () => {
     // micromark: the fence opens (its info string or first line takes the
     // rest), and the item interrupts the paragraph so the comment stays open.
@@ -777,6 +825,24 @@ describe('markdown-scan performance', () => {
       (n) => distinctRuns(n / 2) + '\n> q\n' + distinctRuns(n / 2),
     ],
     ['unterminated tag attributes', (n) => '<a b="x '.repeat(n / 8) + '<!--'],
+    [
+      'a header row of comments holding pipes',
+      (n) => {
+        const k = Math.floor(n / 18);
+        return 'h <!-- | --> |'.repeat(k) + '\n' + '|---'.repeat(k) + '|\n| x <!--\n--> |\n';
+      },
+    ],
+    [
+      'a header row of unclosed openers',
+      (n) => {
+        const k = Math.floor(n / 13);
+        return 'a <!-- | '.repeat(k) + '\n' + '|---'.repeat(k) + '|\n';
+      },
+    ],
+    [
+      'many small header rows with a commented pipe',
+      (n) => 'a <!-- | --> b | c\n-|-\n\n'.repeat(Math.floor(n / 25)),
+    ],
   ])(
     '%s scales linearly',
     (_name, makeInput) => {

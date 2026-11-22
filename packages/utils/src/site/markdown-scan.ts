@@ -266,6 +266,41 @@ function tableCells(row: string): number {
   return cells;
 }
 
+/**
+ * Whether `text` (a paragraph line, no newline) is the header row of a table
+ * whose delimiter row has `cells` cells. Either its raw cell count matches, or
+ * the count of the line as MDX reads it when it starts a table: each comment
+ * that opens and closes on the line is dropped by dwar, pipes included, and
+ * leaves an expression behind — a cell's worth of text, never a pipe (so the
+ * stand-in is `x`, not blanks: `<!-- c --> | a | b` is three cells to MDX).
+ *
+ * The comment-dropped count is used only when every comment on the line
+ * closes on it. An opener left unclosed on the line may close on a later one,
+ * swallowing the delimiter row: MDX then sees no table, and declaring one
+ * would end the paragraph under that comment, leave it unclosed and hand its
+ * text to MDX (`h <!-- a | b --> | i <!-- x <br>` / `-|-` / `-->` failed on
+ * the `<br>`). Such a line keeps the raw count alone, as before.
+ *
+ * The comments are found by {@link htmlCommentRanges} on the line alone, so
+ * there is one definition of a comment. That nested scan cannot recurse — the
+ * line has no newline, so its `scanBlocks` never reaches a header check — and
+ * it is done with the shared `TOKEN` regex before the outer scan resets
+ * `TOKEN.lastIndex` and starts its own loop.
+ *
+ * Known gap: a comment opened on the paragraph line above and closed on this
+ * one (`a <!-- note` then `" > | | <!-- c --><!-- | -->` over `-|-|-`) is not
+ * seen by the one-line scan, whose count can then differ from MDX's. Getting
+ * it right needs the inline comment state in `scanBlocks`.
+ */
+function isTableHeader(text: string, cells: number): boolean {
+  if (tableCells(text) === cells) return true;
+  if (!text.includes('<!--')) return false;
+  const ranges = htmlCommentRanges(text);
+  if (ranges.some((c) => !c.closed)) return false;
+  const seen = replaceHtmlComments(text, ranges, () => 'x');
+  return tableCells(seen) === cells;
+}
+
 /** Block-level structure of a source: fences, comment blocks, paragraph breaks. */
 interface BlockScan {
   fences: TextRange[];
@@ -424,7 +459,13 @@ export function inlineCodeSpans(source: string): CodeSpanRange[] {
  *     fence, …), or — inside a list item — at a line indented less than the
  *     item's content. A row indented four or more columns stays in the table:
  *     MDX, which renders these pages, has no indented code (GFM would end the
- *     table there).
+ *     table there). The header row's cells are counted on the raw line, or —
+ *     when every comment on the line closes on it — on the line as MDX reads
+ *     it once dwar drops those comments (pipes inside included); either count
+ *     matching makes a table. A comment left open on the header line keeps
+ *     the raw count alone: it may close below and swallow the delimiter row,
+ *     and a table declared there would hand its text to MDX (see
+ *     `isTableHeader`).
  */
 function scanBlocks(source: string): BlockScan {
   const fences: TextRange[] = [];
@@ -649,7 +690,7 @@ function scanBlocks(source: string): BlockScan {
         isTableDelimiter(delim) &&
         // `- | -` is a list item, which interrupts the paragraph first.
         !LIST_ITEM.test(delim) &&
-        tableCells(delim) === tableCells(paraText)
+        isTableHeader(paraText, tableCells(delim))
       ) {
         breaks.push(pos);
         table = {

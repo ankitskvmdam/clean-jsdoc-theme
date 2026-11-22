@@ -185,13 +185,29 @@ export function escapeStrayBraces(source: string): string {
   // in a `…` span) is literal content — and (b) ignores a backslash-escaped
   // backtick (`\``), which is a literal backtick per CommonMark, not a delimiter.
   //
-  // The empty comment expressions {@link stripHtmlComments} leaves pass through
-  // so MDX drops them: `{/**/}` where a comment stood, and one wrapping a single
-  // newline (`{/*`, the newline, then any quote markers or indentation and
-  // `*/}`) for each line break of a comment inside a paragraph.
+  // The empty comment expressions {@link stripHtmlComments} leaves — `{/**/}`
+  // where a comment stood, and one wrapping a single newline (`{/*`, the
+  // newline, then any quote markers or indentation and `*/}`) for each line
+  // break of a comment inside a paragraph — become empty expressions, `{}` and
+  // `{`, the newline and its prefix, `}`. Neither renders, but a comment
+  // expression keeps its `/**/` as the node's value, and an image's alt is its
+  // label's text, expressions included (`![a <!-- x --> b](p.png)` had the alt
+  // `a /**/ b`); an empty one has no text. Only here, outside code and tags: a
+  // `{/**/}` in a code span is the user's own text.
   const re =
-    /(```[\s\S]*?```|~~~[\s\S]*?~~~)|((?<!\\)<\/?[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][\w-]*(?:="[^"]*"|='[^']*')?)*\s*\/?>)|(?<![`\\])(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`)|\{\/\*(?:\n[ \t>]*)?\*\/\}|([{}])/g;
-  const escaped = body.replace(re, (m, _fence, _jsx, _ticks, brace) => (brace ? `\\${brace}` : m));
+    /(```[\s\S]*?```|~~~[\s\S]*?~~~)|((?<!\\)<\/?[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][\w-]*(?:="[^"]*"|='[^']*')?)*\s*\/?>)|(?<![`\\])(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`)|(\{\/\*(\n[ \t>]*)?\*\/\})|([{}])/g;
+  const escaped = body.replace(
+    re,
+    (
+      m,
+      _fence,
+      _jsx,
+      _ticks,
+      placeholder: string | undefined,
+      gap: string | undefined,
+      brace: string | undefined
+    ) => (placeholder ? `{${gap ?? ''}}` : brace ? `\\${brace}` : m)
+  );
   return prefix + escaped;
 }
 
@@ -292,7 +308,8 @@ export function pageCommentRanges(source: string): HtmlCommentRange[] {
  *     nothing renders, and the line count is unchanged (one expression cannot
  *     hold the whole comment: it may not span a blank line). Any quote
  *     marker or indentation that opened a continuation line is kept inside its
- *     expression. {@link escapeStrayBraces} leaves both forms alone.
+ *     expression. {@link escapeStrayBraces} empties both forms, so the
+ *     expression has no text for an image's alt to pick up.
  * "Starts a line" is judged on the output: a comment after only quote or list
  * markers and whitespace — or after an earlier comment on its line that was
  * dropped — takes the first form, since a multi-line expression there would
@@ -377,7 +394,11 @@ export function stripHtmlComments(
   return out;
 }
 
-/** What {@link stripHtmlComments} leaves where a comment's first line stood. */
+/**
+ * What {@link stripHtmlComments} leaves where a comment's first line stood: a
+ * marker {@link escapeStrayBraces} tells from a user's literal `{}` (which it
+ * escapes) and empties to `{}`.
+ */
 const EMPTY_COMMENT = '{/**/}';
 /** An empty JSX fragment: renders nothing, and its `<` ends an autolink literal. */
 const EMPTY_FRAGMENT = '<></>';
@@ -550,7 +571,9 @@ export async function compileMdxToComponent(
   // pair with a real code span — and so a line left starting with
   // `import`/`export` by a dropped leading comment is still neutralized. The
   // ESM pass runs before the brace pass only so each sees the same code-span
-  // boundaries; neither produces input for the other.
+  // boundaries; neither produces input for the other. The brace pass also
+  // empties the comment placeholders (`{/**/}` → `{}`), so none of a comment's
+  // text reaches an image's alt.
   const cleaned = escapeStrayBraces(
     escapeEsmLookalikes(preprocessJsdocInlineTags(stripHtmlComments(source, comments)))
   );
