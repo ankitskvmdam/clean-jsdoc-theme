@@ -291,6 +291,9 @@ describe('stripHtml — spacing at tag boundaries (#385)', () => {
     ['<p>x <my-widget>y</my-widget>z</p>', 'x yz'],
     ['<pre-view>a</pre-view>b', 'ab'],
     ['a <3 and 4> b', 'a b'],
+    ['<fieldset><legend>Title</legend>body</fieldset>', 'Title body'],
+    ['a<img src=x>b', 'a b'],
+    ['<label>Name</label><input><button>Go</button>next', 'Name Go next'],
   ])('%j reads %j', (html, want) => {
     expect(stripHtml(html)).toBe(want);
   });

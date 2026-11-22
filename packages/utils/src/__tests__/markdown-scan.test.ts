@@ -511,10 +511,6 @@ describe('HTML-format comments and the replace/mask helpers', () => {
   });
 });
 
-// Every page body goes through these scanners several times per build, so a
-// pathological one must not stall it: each adversarial input must scale
-// linearly (see linear-scaling.ts). The quadratic versions took seconds to
-// minutes on 1MB. Each generator takes a size in characters, roughly.
 describe('inlineCodeSpans', () => {
   it.each<[string, string[]]>([
     ['a `x` b', ['`x`']],
@@ -528,6 +524,7 @@ describe('inlineCodeSpans', () => {
     // The first run would close across the blank line, so it is literal; the
     // second opens a span that the third closes.
     ['`a\n\nb` `c`', ['` `']],
+    ['`a\r\n\r\nb` `c`', ['` `']],
     ['`a\nb`', ['`a\nb`']],
     ['no ticks', []],
   ])('finds the code spans in %j', (src, want) => {
@@ -539,6 +536,10 @@ describe('inlineCodeSpans', () => {
   });
 });
 
+// Every page body goes through these scanners several times per build, so a
+// pathological one must not stall it: each adversarial input must scale
+// linearly (see linear-scaling.ts). The quadratic versions took seconds to
+// minutes on 1MB. Each generator takes a size in characters, roughly.
 describe('markdown-scan performance', () => {
   const MB = 1_000_000;
   /** Backtick runs of length 1, 2, 3, … separated by spaces, about `n` long, then `<!--`. */
@@ -592,10 +593,6 @@ describe('markdown-scan performance', () => {
     PERF_TEST_TIMEOUT
   );
 
-  // The line tests must not recurse per repetition: as regexes, a thematic
-  // break or delimiter row test overflowed the stack on lines this long. Each
-  // starts at an eighth of the line it used to be checked on, so the larger
-  // input is at least that long.
   it.each<[string, (n: number) => string]>([
     [
       'backtick runs of distinct lengths',
@@ -614,6 +611,10 @@ describe('markdown-scan performance', () => {
     PERF_TEST_TIMEOUT
   );
 
+  // The line tests must not recurse per repetition: as regexes, a thematic
+  // break or delimiter row test overflowed the stack on lines this long. Each
+  // starts at an eighth of the line it used to be checked on, so the larger
+  // input is at least that long.
   it.each<[string, number, (n: number) => string]>([
     ['a thematic-break line', 5 * MB, (n) => 'a <!--\n' + '--- '.repeat(n / 4) + '\n-->\n'],
     ['a dash line under a paragraph', 5 * MB, (n) => 'a <!--\n' + '-'.repeat(n) + '\n-->\n'],

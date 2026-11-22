@@ -329,9 +329,18 @@ describe('search text — code spans of any backtick count (#385)', () => {
     ['a \\\\`code` b', 'a \\ b', 'a \\code b'],
     ['`a\n\nb` c', '`a b` c', '`a b` c'],
     ['so `` a < b `` then <kbd>K</kbd> end', 'so then K end', 'so a < b then K end'],
+    ['see `a\nb` here', 'see here', 'see a b here'],
   ])('reads %j', (src, excerpt, searchText) => {
     expect(extractExcerpt(src)).toBe(excerpt);
     expect(extractSearchText(src)).toBe(searchText);
+  });
+
+  it('forgets an escaped < once a span carries the text onto the next line', () => {
+    // The span's newline ends the line, so the `\<` no longer waits for a `>`:
+    // the `>` of `<b>` on the next line is a tag's, and `<b>` is stripped.
+    const src = 'a \\<T `x\ny` <b>z</b>';
+    expect(extractSearchText(src)).toBe('a <T x y z');
+    expect(extractExcerpt(src)).toBe('a <T z');
   });
 });
 
