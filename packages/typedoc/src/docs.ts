@@ -60,7 +60,7 @@ function encodeAssetName(name: string): string {
 }
 
 /** Short content hash for cache-busting an asset's served name. */
-function contentHash(bytes: Uint8Array): string {
+export function contentHash(bytes: Uint8Array): string {
   return createHash('sha256').update(bytes).digest('hex').slice(0, 8);
 }
 
