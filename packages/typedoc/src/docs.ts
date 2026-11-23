@@ -25,6 +25,7 @@
  * already-rewritten `/_assets/…` srcs, and `dwar.render()` stays pure.
  */
 import { createHash } from 'node:crypto';
+import { existsSync } from 'node:fs';
 import { readdir, readFile } from 'node:fs/promises';
 import {
   basename,
@@ -322,8 +323,14 @@ export interface LocatedDoc {
   doc: DocInput;
   /** Absolute directory of the doc's source file. */
   baseDir?: string;
-  /** Used only when `baseDir` is unknown: raw src text → absolute file path. */
+  /**
+   * Raw src text → the absolute file path TypeDoc resolved for it. Without a
+   * `baseDir` only these srcs are rewritten; with one, it is the fallback for a
+   * src whose literal path isn't a file (TypeDoc decodes `%20`, drops `#…`).
+   */
   files?: ReadonlyMap<string, string>;
+  /** Srcs TypeDoc found no file for at convert time and already warned about. */
+  missing?: ReadonlySet<string>;
 }
 
 /**
@@ -342,9 +349,44 @@ function knownFilesOnly(
     resolve: async (rawSrc, baseDir) => {
       if (rawSrc.trim().startsWith('/')) return collector.resolve(rawSrc, baseDir);
       const abs = files.get(rawSrc);
-      // `./<name>` from the file's own dir — passing `abs` itself would read as
-      // project-root-relative (leading `/`) on POSIX.
-      return abs ? collector.resolve('./' + basename(abs), dirname(abs)) : null;
+      return abs ? resolveAbsolute(collector, abs) : null;
+    },
+  };
+}
+
+/**
+ * Resolve a known absolute file through `collector`: as `./<name>` from the
+ * file's own dir — passing `abs` itself would read as project-root-relative
+ * (leading `/`) on POSIX.
+ */
+function resolveAbsolute(collector: ImageCollector, abs: string): Promise<string | null> {
+  return collector.resolve('./' + basename(abs), dirname(abs));
+}
+
+/**
+ * A view of `collector` for a doc with a `baseDir` (#397): a src whose literal
+ * path is a file resolves as usual; otherwise the file TypeDoc resolved for it
+ * (`files`: TypeDoc decodes `%20` and drops a `#anchor`); otherwise a src in
+ * `missing` yields `null` with no warning (TypeDoc already warned, with the
+ * file/line); anything else falls through to `collector` (which warns). Shares
+ * the real collector's `files` / `inlineSvgs`.
+ */
+function locatedFiles(
+  collector: ImageCollector,
+  files: ReadonlyMap<string, string>,
+  missing: ReadonlySet<string>
+): ImageCollector {
+  return {
+    files: collector.files,
+    inlineSvgs: collector.inlineSvgs,
+    resolve: async (rawSrc, baseDir) => {
+      const src = rawSrc.trim();
+      if (src.startsWith('/') || existsSync(resolvePath(baseDir, src))) {
+        return collector.resolve(rawSrc, baseDir);
+      }
+      const abs = files.get(rawSrc);
+      if (abs) return resolveAbsolute(collector, abs);
+      return missing.has(rawSrc) ? null : collector.resolve(rawSrc, baseDir);
     },
   };
 }
@@ -355,17 +397,26 @@ function knownFilesOnly(
  * way {@link resolveDocImages} does for a docs directory. A doc with `baseDir`
  * resolves relative srcs against it; one without (a package-level document in
  * `entryPointStrategy: "packages"`, whose source path TypeDoc doesn't keep)
- * rewrites only the srcs listed in `files`. An unchanged doc is returned as-is.
+ * rewrites only the srcs listed in `files`. A doc with `baseDir` also falls
+ * back to `files`, and leaves the srcs in `missing` as-is without a second
+ * warning (TypeDoc's own carries the file/line, #397). An unchanged doc is
+ * returned as-is.
  */
 export async function resolveLocatedDocImages(
   docs: readonly LocatedDoc[],
   collector: ImageCollector
 ): Promise<DocInput[]> {
   const out: DocInput[] = [];
-  for (const { doc, baseDir, files } of docs) {
+  for (const { doc, baseDir, files, missing } of docs) {
     const content =
       baseDir !== undefined
-        ? await rewriteImageRefs(doc.content, baseDir, collector)
+        ? await rewriteImageRefs(
+            doc.content,
+            baseDir,
+            files?.size || missing?.size
+              ? locatedFiles(collector, files ?? new Map(), missing ?? new Set())
+              : collector
+          )
         : await rewriteImageRefs(
             doc.content,
             process.cwd(),

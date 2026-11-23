@@ -466,7 +466,9 @@ function renderReadme(project: ProjectReflection): string | undefined {
  * identical docs pipeline — no new renderer. Each `DocumentReflection` (surfaced
  * as `ReflectionKind.Document` on the project tree) becomes one `DocInput`:
  * `path` is the document's `name` (TypeDoc derives it from the source file's
- * basename, extension-stripped — matching `collectDocs`'s own slugs), `content`
+ * basename, extension-stripped — or, when `projectDocuments` span directories,
+ * its path relative to their common directory, POSIX-normalised here (#397) —
+ * matching `collectDocs`'s own slugs), `content`
  * is its `content: CommentDisplayPart[]` rendered to markdown via the SAME
  * `partsToMarkdown` helper the README/comment prose use, and `type` is
  * `'markdown'` (TypeDoc documents are always Markdown-sourced). A reflection
@@ -480,9 +482,12 @@ export function collectProjectDocuments(project: ProjectReflection): DocInput[] 
  * {@link collectProjectDocuments}, with where each document's local image srcs
  * resolve from (#378): the directory of the document's own source file. TypeDoc
  * doesn't keep that file for a package-level document under
- * `entryPointStrategy: "packages"`, so there the doc instead carries the
+ * `entryPointStrategy: "packages"`, so there the doc carries only the
  * absolute path TypeDoc resolved for each `relative-link` part (keyed by the
- * src text `partsToMarkdown` kept verbatim).
+ * src text `partsToMarkdown` kept verbatim). With a source file, those paths
+ * are the fallback for a src that isn't a file read literally (TypeDoc decodes
+ * `%20` and drops a `#anchor`), and `missing` lists the srcs TypeDoc found no
+ * file for (#397).
  */
 export function locateProjectDocuments(project: ProjectReflection): LocatedDoc[] {
   const located: LocatedDoc[] = [];
@@ -490,19 +495,27 @@ export function locateProjectDocuments(project: ProjectReflection): LocatedDoc[]
     const doc = reflection as DocumentReflection;
     const md = partsToMarkdown(doc.content ?? []);
     if (!md.trim()) continue;
-    const input: DocInput = { path: doc.name, content: md, type: 'markdown' };
-    const file = project.files.getReflectionPath(doc);
-    if (file) {
-      located.push({ doc: input, baseDir: dirname(resolvePath(file)) });
-      continue;
-    }
+    // TypeDoc names a document from projectDocuments spanning directories by
+    // its OS-native relative path (`pdocs\intro` on Windows); slugs are POSIX (#397).
+    const input: DocInput = { path: doc.name.replace(/\\/g, '/'), content: md, type: 'markdown' };
     const files = new Map<string, string>();
+    // A relative link TypeDoc found no file for: it already warned, so we don't (#397).
+    const missing = new Set<string>();
     for (const part of doc.content ?? []) {
-      if (part.kind !== 'relative-link' || part.target === undefined) continue;
+      if (part.kind !== 'relative-link') continue;
+      if (part.target === undefined) {
+        missing.add(part.text);
+        continue;
+      }
       const target = project.files.resolve(part.target, project);
       if (typeof target === 'string') files.set(part.text, resolvePath(target));
     }
-    located.push({ doc: input, files });
+    const file = project.files.getReflectionPath(doc);
+    located.push(
+      file
+        ? { doc: input, baseDir: dirname(resolvePath(file)), files, missing }
+        : { doc: input, files }
+    );
   }
   return located;
 }
