@@ -76,6 +76,52 @@ describe('deriveDocDescription (#370)', () => {
     expect(d.endsWith('…')).toBe(true);
   });
 
+  it('hard-cuts instead of using a space too early in the text', () => {
+    const cjk = `clean-jsdoc-theme 是${'一个很长的句子'.repeat(60)}`;
+    const d = deriveDocDescription(md(cjk))!;
+    expect(d.length).toBe(DOC_DESCRIPTION_MAX);
+    expect(d.startsWith('clean-jsdoc-theme 是一个')).toBe(true);
+    const token = deriveDocDescription(md(`See ${'y'.repeat(400)}`))!;
+    expect(token.length).toBe(DOC_DESCRIPTION_MAX);
+    expect(token.startsWith('See yyy')).toBe(true);
+  });
+
+  it('cuts after CJK punctuation when it is far enough in', () => {
+    const text = `${'这是一段说明'.repeat(40)}，${'更多内容'.repeat(40)}`;
+    const d = deriveDocDescription(md(text))!;
+    expect(d).toBe(`${'这是一段说明'.repeat(40)}…`);
+  });
+
+  it('trims trailing , : ; and an unclosed ( before the ellipsis', () => {
+    const words = Array.from({ length: 40 }, (_, i) => `word${i}`).join(' ');
+    const comma = deriveDocDescription(md(`${words}, ${'z'.repeat(400)}`))!;
+    expect(comma).toBe(`${words}…`);
+    const paren = deriveDocDescription(md(`${words} (see ${'z '.repeat(200)}`))!;
+    expect(paren).toBe(`${words}…`);
+  });
+
+  it('reduces inline tags split by autolinks or inline markup', () => {
+    expect(
+      deriveDocDescription(
+        md('See {@link https://example.com/a|Example} and {@link https://example.com}.')
+      )
+    ).toBe('See Example and https://example.com.');
+    expect(deriveDocDescription(md('Use {@link *Foo*} or {@link Foo `x`}.'))).toBe('Use Foo or x.');
+  });
+
+  it('drops footnote reference markers', () => {
+    expect(deriveDocDescription(md('A note[^1] here.\n\n[^1]: The note.'))).toBe('A note here.');
+  });
+
+  it('skips a paragraph made only of links', () => {
+    const tree = md('[Docs](/d) | [API](/a) | [GitHub](https://g.h)\n\nThe intro.');
+    expect(deriveDocDescription(tree)).toBe('The intro.');
+    // A sentence with links in it is kept.
+    expect(deriveDocDescription(md('Read [the docs](/d) or [the API](/a).'))).toBe(
+      'Read the docs or the API.'
+    );
+  });
+
   it('returns undefined when there is no prose paragraph', () => {
     expect(deriveDocDescription(md('# Only a heading\n\n```js\nx();\n```'))).toBeUndefined();
     expect(deriveDocDescription({ type: 'root', children: [] })).toBeUndefined();

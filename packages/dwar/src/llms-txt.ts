@@ -255,7 +255,9 @@ export function buildLlmsTxt(input: LlmsTxtInput): LlmsTxtOutput | null {
       `Source: ${pageUrl(origin, basePath, page.slug)}`,
       '',
       // Same base-prefixing as the companion .md (the bodies are base-free).
-      prefixRootRelativeUrls(stripLeadingHeading(stripFrontmatter(page.body)), basePath).trimEnd(),
+      // Prefix the whole body first: it skips the real frontmatter, which a
+      // stripped body would no longer have (a leading `---` rule is not one).
+      stripLeadingHeading(stripFrontmatter(prefixRootRelativeUrls(page.body, basePath))).trimEnd(),
       ''
     );
   }

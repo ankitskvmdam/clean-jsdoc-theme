@@ -35,7 +35,12 @@ export function prefixRootRelativeUrls(body: string, basePath: string | undefine
   return out.join('');
 }
 
-/** A leading `---` … `---` frontmatter block (as llms-txt's `stripFrontmatter` finds it). */
+/**
+ * A leading `---` … `---` frontmatter block (as llms-txt's `stripFrontmatter`
+ * finds it). Callers pass the WHOLE page body, never one already stripped, or a
+ * leading `---` rule would be taken for frontmatter.
+ * TODO(#393): switch to the shared `frontmatterLength` once that lands.
+ */
 const FRONTMATTER_RE = /^---\r?\n[\s\S]*?\r?\n---[ \t]*(?:\r?\n|$)/;
 
 /** Same code-region regex as the bridges' `CODE_REGION_RE` (publish.ts / docs.ts). */

@@ -557,6 +557,13 @@ describe('buildDocPages — description (#370)', () => {
     expect(page.frontmatter.description).toBe('Real prose.');
   });
 
+  it('treats a YAML block-scalar indicator as no description', () => {
+    for (const ind of ['>-', '>', '|', '|+', '>2']) {
+      const [page] = one(`---\ndescription: ${ind}\n  A folded\n  description.\n---\nBody intro.`);
+      expect(page.frontmatter.description).toBe('Body intro.');
+    }
+  });
+
   it('derives one for hidden pages too', () => {
     const [page] = one('---\nhidden: true\n---\nSecret intro.');
     expect(page.frontmatter.description).toBe('Secret intro.');

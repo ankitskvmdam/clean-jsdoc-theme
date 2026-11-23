@@ -260,6 +260,9 @@ function asString(value: unknown): string | undefined {
   return undefined;
 }
 
+/** A YAML block-scalar header (`>`, `|-`, `>+2`, `|2-`, …) standing alone as a value. */
+const BLOCK_SCALAR_INDICATOR = /^[>|](?:[+-]?\d?|\d[+-])$/;
+
 /** Coerce a frontmatter value to a finite number, else `undefined`. */
 function asNumber(value: unknown): number | undefined {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -559,9 +562,14 @@ function deriveDocMeta(
   // title: frontmatter → input → humanized basename.
   const title = asString(data.title) ?? (input.title?.trim() || undefined) ?? humanize(basename);
 
-  // description: frontmatter only; buildDocPages falls back to the body.
+  // description: frontmatter only; buildDocPages falls back to the body. The
+  // parser reads one line, so a YAML block scalar (`description: >-` with the
+  // text on the lines below) leaves only its indicator: treat that as absent.
   const fmDescription = asString(data.description);
-  const description = fmDescription === undefined ? undefined : collapseWhitespace(fmDescription);
+  const description =
+    fmDescription === undefined || BLOCK_SCALAR_INDICATOR.test(fmDescription)
+      ? undefined
+      : collapseWhitespace(fmDescription);
 
   // group: frontmatter → input → directory path (humanized) → default.
   const dirSegments = segments.slice(0, -1);
