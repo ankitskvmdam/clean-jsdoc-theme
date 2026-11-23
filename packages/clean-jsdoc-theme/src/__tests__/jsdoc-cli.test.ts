@@ -42,6 +42,7 @@ interface JSDocConf {
   plugins?: string[];
   source?: { include: string[] };
   opts?: Record<string, unknown>;
+  templates?: Record<string, unknown>;
 }
 
 const dirs: string[] = [];
@@ -386,6 +387,21 @@ describe('JSDoc CLI end to end: configuration problems (PR #356)', () => {
       expect(run.status, run.output).toBe(1);
       expect(run.output).toContain('theme_opts');
       expect(run.has('global/index.html')).toBe(false);
+    },
+    SPAWN_TEST_TIMEOUT
+  );
+
+  it(
+    'templates.default.strict is not a strict switch: a typo still only warns (#368)',
+    async () => {
+      const run = await runJsdoc(MIN, {
+        plugins: ['plugins/markdown'],
+        templates: { default: { strict: true } },
+        opts: { siteNme: 'Typo' },
+      });
+      expect(run.status, run.output).toBe(0);
+      expect(run.output).toContain('siteNme');
+      expect(run.has('global/index.html')).toBe(true);
     },
     SPAWN_TEST_TIMEOUT
   );
