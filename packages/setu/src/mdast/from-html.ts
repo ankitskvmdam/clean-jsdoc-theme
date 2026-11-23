@@ -702,12 +702,20 @@ const PHRASING_TYPES = new Set<string>([
  * phrasing node that the conversion left at the top level. A short HTML/text
  * fragment (e.g. a bare `@deprecated` reason like `use foo instead`) lowers to
  * a root-level `text` node rather than a paragraph — without this it would be
- * silently dropped. Genuine block nodes (tables, lists) are still skipped.
+ * silently dropped. Genuine block nodes (tables, lists) are still skipped; a
+ * `<details>` gives up its summary and body, as it did before it was kept.
  */
 function blocksToInline(blocks: RootContent[]): PhrasingContent[] {
   const out: PhrasingContent[] = [];
   for (const block of blocks) {
     if (block.type === 'paragraph') {
+      out.push(...block.children);
+    } else if (
+      block.type === 'mdxJsxFlowElement' &&
+      (block.name === 'details' || block.name === 'summary')
+    ) {
+      out.push(...blocksToInline(block.children as RootContent[]));
+    } else if (block.type === 'mdxJsxTextElement' && block.name === 'summary') {
       out.push(...block.children);
     } else if (PHRASING_TYPES.has(block.type)) {
       out.push(block as PhrasingContent);

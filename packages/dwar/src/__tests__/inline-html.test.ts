@@ -73,3 +73,35 @@ describe('render() — inline HTML passthrough (#360)', () => {
     expect(entry?.content).not.toContain(GUARD);
   });
 });
+
+describe('render() — <details> from setu (#360)', () => {
+  it('renders a collapsible block with its summary first', async () => {
+    const manifest = makeManifest();
+    manifest.pages.push({
+      slug: 'more',
+      frontmatter: { title: 'More', kind: 'module', description: 'More.' },
+      body: [
+        '# More',
+        '',
+        '<details open>',
+        '  <summary>More <sub>x</sub></summary>',
+        '',
+        '  Body',
+        '',
+        '  ```js',
+        '  const a = 1;',
+        '  ```',
+        '</details>',
+        '',
+      ].join('\n'),
+    });
+    const result = await render(manifest, { theme: minimalTheme });
+    expect(result.errors?.some((e) => e.slug === 'more')).toBeFalsy();
+    expect(result.warnings?.some((w) => w.slug === 'more')).toBeFalsy();
+    const html = asString(result.files.find((f) => f.path === 'more/index.html')!);
+    expect(html).toContain(
+      '<details open><summary>More <sub>x</sub></summary><p class="my-3 leading-relaxed">Body</p>'
+    );
+    expect(html).toMatch(/<pre[^>]*>[\s\S]*const[\s\S]*<\/pre><\/div><\/details>/);
+  });
+});

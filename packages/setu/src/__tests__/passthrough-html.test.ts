@@ -212,3 +212,82 @@ describe('frontmatter description (#360)', () => {
     expect(page?.body).toContain('Water is H<sub>2</sub>O and E = mc<sup>2</sup>.');
   });
 });
+
+describe('<details>/<summary> stay collapsible (#360)', () => {
+  it('keeps <details> with its <summary> first and the body as flow', () => {
+    const blocks = htmlToMdastBlocks(
+      '<details><summary>More <sub>x</sub></summary><p>Body</p><p>Two</p></details>'
+    );
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({
+      type: 'mdxJsxFlowElement',
+      name: 'details',
+      attributes: [],
+      children: [
+        { type: 'mdxJsxTextElement', name: 'summary' },
+        { type: 'paragraph' },
+        { type: 'paragraph' },
+      ],
+    });
+    expect(mdx(blocks)).toBe(
+      '<details>\n  <summary>More <sub>x</sub></summary>\n\n  Body\n\n  Two\n</details>\n'
+    );
+  });
+
+  it('keeps the open attribute', () => {
+    expect(body('<details open><summary>S</summary><p>B</p></details>')).toMatch(
+      /^<details open>\n {2}<summary>S<\/summary>/
+    );
+  });
+
+  it('wraps bare body text in a paragraph', () => {
+    const blocks = htmlToMdastBlocks('<details><summary>S</summary>bare <b>text</b></details>');
+    expect(
+      (blocks[0] as { children: Array<{ type: string }> }).children.map((c) => c.type)
+    ).toEqual(['mdxJsxTextElement', 'paragraph']);
+  });
+
+  it('keeps a <details> with no <summary>', () => {
+    expect(body('<details><p>B</p></details>')).toBe('<details>\n  B\n</details>');
+  });
+
+  it('unwraps a stray <summary>', () => {
+    const out = body('<summary>S</summary><p>B</p>');
+    expect(out).not.toContain('<summary');
+    expect(out).toContain('S');
+    expect(out).toContain('B');
+  });
+
+  it('nests in a list item', () => {
+    const out = body(
+      '<ul><li><p>Item</p><details><summary>S</summary><p>B</p></details></li></ul>'
+    );
+    expect(out).toContain('<details>');
+    expect(out).toContain('<summary>S</summary>');
+  });
+
+  it('flattens a <details> in a table cell to its text, as before', () => {
+    const out = body(
+      '<table><thead><tr><th>A</th></tr></thead><tbody><tr><td><div><details><summary>S</summary><p>B</p></details></div></td></tr></tbody></table>'
+    );
+    expect(out).not.toContain('<details');
+    expect(out.split('\n')).toHaveLength(3);
+    expect(out).toContain('| SB |');
+  });
+
+  it('keeps a fenced code block inside', () => {
+    const out = mdx(
+      markdownToMdastBlocks(
+        '<details>\n<summary>Code</summary>\n\n```js\nconst a = 1;\n```\n\n</details>'
+      )
+    );
+    expect(out).toContain('<summary>Code</summary>');
+    expect(out).toContain('```js\n  const a = 1;\n  ```');
+  });
+
+  it('keeps the text of <details> in inline conversion', () => {
+    const inline = htmlToMdastInline('<details><summary>S</summary><p>B</p></details>');
+    expect(JSON.stringify(inline)).toContain('"S"');
+    expect(JSON.stringify(inline)).toContain('"B"');
+  });
+});

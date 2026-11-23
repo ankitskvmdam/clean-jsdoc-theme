@@ -16,5 +16,9 @@ reach the page as written. Only `title`, `lang` and `dir` attributes are kept
 handlers and the rest are dropped. `<mark>` and `<u>` are no longer turned into
 italics.
 
+`<details>` stays collapsible, with its `<summary>` and `open` attribute;
+it used to be flattened to plain paragraphs. Headings inside a `<details>`
+don't appear in the page's table of contents.
+
 Search text and excerpts join the text of these elements to their neighbours
 (`H2O`, not `H 2 O`).
