@@ -179,10 +179,50 @@ const PROJECT: Record<string, string | Buffer> = {
     '  return name + sep;',
     '}'
   ),
+  // #360: inline HTML with no Markdown form in a module description.
+  'src/chem.js': lines(
+    '/**',
+    ' * Water is H<sub>2</sub>O and E = mc<sup>2</sup>.',
+    ' * @module chem',
+    ' */',
+    'export const water = 1;'
+  ),
+  // #360: escaped markup in a <summary> stays text.
+  'src/chem-details.js': lines(
+    '/**',
+    ' * Details.',
+    ' *',
+    ' * <details><summary>Generic Array&lt;T&gt; &lt;script&gt;alert(2)&lt;/script&gt;' +
+      ' &lt;img src="x" onerror="alert(2)" /&gt; &lt;a href="javascript:alert(2)"&gt;c&lt;/a&gt;' +
+      '</summary>body</details>',
+    ' * @module chemdetails',
+    ' */',
+    'export const details = 1;'
+  ),
+  // #359: the reporter's fenced block in a module description.
+  'src/plainjs.js': lines(
+    '/**',
+    ' * Plain:',
+    ' * ```js',
+    ' * console.log(4);',
+    ' * ```',
+    ' * @module plainjs',
+    ' */',
+    'export const plain = 1;'
+  ),
   // #333: a tutorial image outside the tutorials directory.
   'tutorials/io.md': lines('# IO', '', '![classes-io](../img/classes-io.png)'),
   'img/classes-io.png': PNG_1X1,
-  'README.md': lines('# Home', '', 'Welcome to the fixture home page.'),
+  // #359: a fenced block in the README keeps its language.
+  'README.md': lines(
+    '# Home',
+    '',
+    'Welcome to the fixture home page.',
+    '',
+    '```bash',
+    'npm i',
+    '```'
+  ),
   'custom.css': '.fixture-custom{color:red}\n',
   'custom.js': 'window.__fixtureCustom = true;\n',
 };
@@ -382,6 +422,36 @@ describe('JSDoc CLI end to end: reported bugs stay fixed', () => {
     expect(mobile.currentSlug).toBe('global');
     expect(mobile.currentSlug).toBe(desktop.currentSlug);
     expect(mobile.nav).toEqual(desktop.nav);
+  });
+
+  it('keeps <sub> and <sup> in prose, and joins their text in the meta description (#360)', () => {
+    const html = run.read('module/chem/index.html');
+    expect(html).toContain('H<sub>2</sub>O');
+    expect(html).toContain('mc<sup>2</sup>');
+    expect(html).toContain('content="Water is H2O and E = mc2."');
+    expect(run.read('module/chem/index.md')).toContain('H<sub>2</sub>O');
+  });
+
+  it('keeps escaped markup in a <details> summary as text (#360)', () => {
+    const html = run.read('module/chemdetails/index.html');
+    expect(html).toContain('<details><summary>Generic Array&lt;T> &lt;script>alert(2)&lt;/script>');
+    expect(html).not.toContain('<script>alert');
+    expect(html).not.toMatch(/<img[^>]*onerror/);
+    expect(html).not.toContain('href="javascript:');
+  });
+
+  it('keeps the language of a fenced block in a description, and highlights it (#359)', () => {
+    expect(run.read('module/plainjs/index.md')).toContain('```js\nconsole.log(4);\n```');
+    // Highlighted: the block holding the code carries several token colours, not
+    // just the plain-text foreground/background pair.
+    const html = run.read('module/plainjs/index.html');
+    const pre = /<pre[^>]*>(?:(?!<\/pre>)[\s\S])*console(?:(?!<\/pre>)[\s\S])*<\/pre>/.exec(
+      html
+    )?.[0];
+    expect(pre, 'no code block holding console.log').toBeDefined();
+    const colours = new Set(pre!.match(/#[0-9a-f]{6}/gi)?.map((c) => c.toLowerCase()));
+    expect(colours.size).toBeGreaterThan(2);
+    expect(run.read('index.md')).toContain('```bash\nnpm i\n```');
   });
 });
 

@@ -15,3 +15,4 @@ export * from './collapsible';
 export * from './llms';
 export * from './markdown-scan';
 export * from './whitespace';
+export * from './inline-html';
