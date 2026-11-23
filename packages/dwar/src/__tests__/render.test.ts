@@ -1418,6 +1418,66 @@ describe('render() — literal angle-bracket words with braces', () => {
   });
 });
 
+describe('render() — braces in page text always render as written (#363)', () => {
+  async function renderBody(body: string): Promise<string> {
+    const m = makeManifest();
+    m.pages.push({
+      slug: 'module/braces',
+      frontmatter: { title: 'braces', kind: 'module', description: 'A page.' },
+      body: `# braces\n\n${body}`,
+      headings: [],
+    });
+    m.nav.push({ label: 'braces', slug: 'module/braces' });
+    const result = await render(m, { theme: minimalTheme });
+    const err = result.errors?.find((e) => e.slug === 'module/braces');
+    expect(err, err?.message).toBeUndefined();
+    const file = result.files.find((f) => f.path === 'module/braces/index.html');
+    expect(file).toBeDefined();
+    return asString(file!);
+  }
+  /** The page's main text, markup removed. */
+  const textOf = (html: string): string =>
+    (/<main[\s\S]*<\/main>/.exec(html)?.[0] ?? html).replace(/<[^>]+>/g, '');
+
+  // Each shape holds a backtick the pre-passes and MDX read differently, so the
+  // braces after it reach MDX unescaped; they must still render as text.
+  it.each<[string, string]>([
+    ['a backtick in a link title', "[t](u '`') {1+2} `"],
+    ['a backtick in an image title', '![t](u "`") {1+2} `'],
+    ['a backtick in a reference label', '[t][b`c] {1+2} `\n\n[b`c]: u'],
+    ['a backtick in a spaced attribute', '<a href = "`">x</a> {1+2} `'],
+    ['a backtick in a hyphenated tag', '<x-y a="`"></x-y> {1+2} `'],
+    ['a backtick in a namespaced tag', '<a:b c="`"></a:b> {1+2} `'],
+    ['a backtick after a namespaced attribute', '<p a:b="`"></p> {1+2} `'],
+    ['a backtick after a `$` attribute', '<p $a="`"></p> {1+2} `'],
+    ['a backtick after a `_` attribute', '<p _a="`"></p> {1+2} `'],
+    ['a backtick after unspaced attributes', '<p a="1"b="`"></p> {1+2} `'],
+    ['a backtick at the end of a bare URL', 'see http://a.b/e` {1+2} ` end'],
+    ['a braces line inside a backtick pair', 'a `b\n{1+2}\nc` d'],
+    ['a footnote definition inside a backtick pair', 'a `b [^1] {1+2}\n[^1]: c` d'],
+    ['lone carriage returns inside a backtick pair', 'a `b\r{1+2}\rc` d'],
+  ])('with %s', async (_name, body) => {
+    expect(textOf(await renderBody(body))).toContain('{1+2}');
+  });
+
+  it('renders an attribute written with braces as a string attribute', async () => {
+    const html = await renderBody("[t](u '`') <x1 a={1+2}>z</x1> `");
+    expect(html).toContain('<x1 a="{1+2}">z</x1>');
+  });
+
+  it('drops a spread attribute', async () => {
+    const html = await renderBody("[t](u '`') <x1 {...{ a: 1 }}>z</x1> `");
+    expect(html).toContain('<x1>z</x1>');
+  });
+
+  it('still renders nothing for an HTML comment', async () => {
+    const html = await renderBody('a <!-- note --> b\n\n- <!-- x -->\n- y\n');
+    expect(textOf(html)).toContain('a  b');
+    expect(html).not.toContain('note');
+    expect(html).not.toContain('/**/');
+  });
+});
+
 describe('render() — inline tags inside code (#363)', () => {
   async function renderBody(body: string): Promise<string> {
     const m = makeManifest();
@@ -1475,10 +1535,10 @@ describe('render() — inline tags inside code (#363)', () => {
   });
 
   it('a code span in a table cell ends at the cell boundary', async () => {
-    const html = await renderBody('| a | b |\n|---|---|\n| `x | {42000+363}` | c |\n');
+    const html = await renderBody('| a | b |\n|---|---|\n| `x | {1+2}` | c |\n');
     const text = html.replace(/<[^>]+>/g, '');
-    expect(text).toContain('{42000+363}`');
-    expect(text).not.toContain('42363');
+    expect(text).toContain('`x');
+    expect(text).toContain('{1+2}`');
   });
 });
 

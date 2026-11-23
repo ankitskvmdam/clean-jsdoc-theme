@@ -26,6 +26,7 @@ import {
   type MdxCodeScan,
   type TextRange,
 } from '@clean-jsdoc-theme/utils';
+import { remarkLiteralExpressions } from './mdx-literal';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyComponent = ComponentType<any>;
@@ -748,7 +749,11 @@ export async function compileMdxToComponent(
     // paragraph text, leaking raw frontmatter into the rendered output. remarkGfm
     // adds tables / strikethrough / task-lists / autolinks — common in README and
     // tutorial Markdown, and rendered by rang's MDX component map.
-    remarkPlugins: [remarkFrontmatter, remarkGfm],
+    // remarkLiteralExpressions runs first among the tree passes: whatever the
+    // pre-passes above did not escape, a `{…}` in the page text, an attribute
+    // written `a={…}` or an `import`/`export` block shows as the text it was
+    // written as (setu emits none of them; its tags take string attributes).
+    remarkPlugins: [remarkLiteralExpressions, remarkFrontmatter, remarkGfm],
     // Syntax highlighting at compile time. Shiki keeps render() pure (it loads
     // grammars/themes from bundled JS — no fs, no network) while emitting
     // meaningful SSR HTML. Dual themes encode both palettes into CSS variables:
