@@ -99,10 +99,11 @@ export interface RenderResult {
    * A content page is any page whose `frontmatter.kind` is not `'source'`.
    * `failed` counts the failed content pages (or every failure, when the
    * manifest had no content pages); `first` is the first such failure in page
-   * order. render() still never throws — the bridges turn this into a failed
-   * build, via {@link renderFailureMessage}, before writing anything.
+   * order; `sameMessage` is how many of those `failed` share `first`'s message
+   * (`first` included). render() still never throws — the bridges turn this
+   * into a failed build, via {@link renderFailureMessage}, before writing the site.
    */
-  noContentRendered?: { failed: number; first: RenderError };
+  noContentRendered?: { failed: number; first: RenderError; sameMessage: number };
   stats: {
     /** Pages successfully rendered (excludes any in `errors`). */
     pageCount: number;
@@ -118,25 +119,28 @@ export interface RenderResult {
  * or `undefined` when {@link RenderResult.noContentRendered} is unset. Shared by
  * both bridges so they fail identically; each adds its own prefix. One error,
  * not the full list: the count, the first failure (with its code frame), and
- * whether the other failures share its message.
+ * whether the other counted failures share its message. Every number refers to
+ * the same set of failures (`failed`). The install/renderer hint is shown only
+ * when several pages failed with one message — a single failing page is more
+ * likely a genuine content error.
  */
 export function renderFailureMessage(result: RenderResult): string | undefined {
   const flag = result.noContentRendered;
   if (!flag) return undefined;
-  const all = result.errors ?? [flag.first];
+  const { failed, first, sameMessage } = flag;
   const lines = [
-    `no page could be rendered: all ${flag.failed} content page(s) failed, so nothing was written.`,
+    `no page could be rendered: all ${failed} content page(s) failed, so this site was not written.`,
     'First failure:',
-    formatRenderError(flag.first),
+    formatRenderError(first),
   ];
-  if (all.length > 1) {
+  if (failed > 1 && sameMessage === failed) {
     lines.push(
-      all.every((e) => e.message === flag.first.message)
-        ? `All ${all.length} failures share this message.`
-        : `${all.length - 1} more page(s) failed, not all with this message.`
+      `All ${failed} failures share this message.`,
+      'This usually points at the install or the renderer, not at your docs.'
     );
+  } else if (failed > 1) {
+    lines.push(`${failed - 1} more page(s) failed, not all with this message.`);
   }
-  lines.push('This usually points at the install or the renderer, not at your docs.');
   return lines.join('\n');
 }
 

@@ -96,7 +96,7 @@ interface RenderResult {
   files: OutputFile[];        // { path, contents } — everything to write
   search?: SearchEntry[];     // per-page entries (the JSON index is already in `files`)
   errors?: RenderError[];     // { slug, message } — pages skipped, present only on failure
-  noContentRendered?: { failed: number; first: RenderError }; // set only when no content page rendered
+  noContentRendered?: { failed: number; first: RenderError; sameMessage: number }; // set only when no content page rendered
   stats: {
     pageCount: number;        // pages rendered successfully (excludes errors)
     assetCount: number;       // non-HTML files (CSS + JS chunks + search index)
@@ -130,6 +130,8 @@ for (const file of result.files) {
 CSS/JS、doc images）と concatenate し、それらすべてを書きます:
 
 ```ts
+import { renderFailureMessage } from '@clean-jsdoc-theme/utils';
+
 const result = await render(manifest, {
   theme: { ...resolveTheme(opts, siteName, fonts, basePath), ...customAssets.theme },
   destination: absoluteDestination,

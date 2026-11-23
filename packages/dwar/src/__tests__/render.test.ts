@@ -1450,6 +1450,7 @@ describe('render() — every page fails (#401)', () => {
     expect(result.errors).toHaveLength(2);
     expect(result.noContentRendered).toBeDefined();
     expect(result.noContentRendered!.failed).toBe(2);
+    expect(result.noContentRendered!.sameMessage).toBe(2);
     // The first failure in page order: the home page.
     expect(result.noContentRendered!.first).toMatchObject({ slug: '' });
     expect(result.noContentRendered!.first.snippet).toContain('See <https://example.com>');
@@ -1474,7 +1475,12 @@ describe('render() — every page fails (#401)', () => {
     });
     const result = await render(m, { theme: minimalTheme });
     expect(result.stats.pageCount).toBe(1); // the source viewer
-    expect(result.noContentRendered).toMatchObject({ failed: 2, first: { slug: '' } });
+    // The rendered source viewer doesn't count; the two content failures do.
+    expect(result.noContentRendered).toMatchObject({
+      failed: 2,
+      sameMessage: 2,
+      first: { slug: '' },
+    });
   });
 
   it('does not flag an empty manifest', async () => {

@@ -733,8 +733,7 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
   // source viewers skip MDX, so they can still render when every content page
   // fails systemically (#401) — counting them would hide that failure.
   let renderedContent = 0;
-  let failedContent = 0;
-  let firstContentError: RenderError | undefined;
+  const contentErrors: RenderError[] = [];
   for (let i = 0; i < results.length; i++) {
     const result = results[i];
     const isContent = manifest.pages[i].frontmatter.kind !== 'source';
@@ -748,20 +747,27 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
       if (result.warnings) warnings.push(...result.warnings);
     } else {
       errors.push(result.error);
-      if (isContent) {
-        failedContent++;
-        firstContentError ??= result.error;
-      }
+      if (isContent) contentErrors.push(result.error);
     }
   }
 
   // #401: no content page rendered and at least one page failed — the bridges
   // fail the build on this. Counts the content failures, or every failure when
   // the manifest had no content pages. An empty manifest (no errors) is fine.
-  const noContentRendered =
-    errors.length > 0 && renderedContent === 0 && (failedContent > 0 || renderedPageCount === 0)
-      ? { failed: failedContent || errors.length, first: firstContentError ?? errors[0] }
-      : undefined;
+  let noContentRendered: RenderResult['noContentRendered'];
+  if (
+    errors.length > 0 &&
+    renderedContent === 0 &&
+    (contentErrors.length > 0 || renderedPageCount === 0)
+  ) {
+    const counted = contentErrors.length > 0 ? contentErrors : errors;
+    const first = counted[0];
+    noContentRendered = {
+      failed: counted.length,
+      first,
+      sameMessage: counted.filter((e) => e.message === first.message).length,
+    };
+  }
 
   // CSS file.
   files.push({ path: css.path, contents: css.contents });
