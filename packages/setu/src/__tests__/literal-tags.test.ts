@@ -204,11 +204,12 @@ describe('controls — real markup and plain comparisons are unchanged', () => {
     expect(text(blocks)).toBe('a < b, b<c, x <= 3, <T>');
   });
 
-  it('still lowers real inline HTML (tags dropped, content kept)', () => {
+  it('still lowers real inline HTML (<kbd> to code, <sub>/<sup> kept as markup, #360)', () => {
     const blocks = htmlToMdastBlocks(
       '<p>Press <kbd>Ctrl</kbd>, H<sub>2</sub>O, x<sup>2</sup>.</p><details><summary>More</summary><p>Body</p></details>'
     );
     expect(text(blocks)).toBe('Press Ctrl, H2O, x2.\nMore\nBody');
+    expect(mdx(blocks)).toBe('Press `Ctrl`, H<sub>2</sub>O, x<sup>2</sup>.\n\nMore\n\nBody');
   });
 
   it('still converts <br>, <img>, links and all-caps markup', () => {

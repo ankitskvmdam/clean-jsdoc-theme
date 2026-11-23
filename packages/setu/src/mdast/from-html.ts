@@ -23,6 +23,7 @@ import {
 } from '@clean-jsdoc-theme/utils';
 import { callout, code, playground, step, steps, tab, tabs } from './builders';
 import { escapeLiteralTags } from './literal-tags';
+import { passthroughHandlers } from './passthrough-html';
 import {
   KNOWN_PROVIDERS,
   parsePlaygroundSpec,
@@ -390,7 +391,8 @@ function htmlBlocksPlain(html: string): RootContent[] {
     fragment: true,
   });
   dropComments(hast);
-  const mdast = toMdast(hast) as Root;
+  // Inline HTML with no Markdown form (`<sub>`, `<sup>`, …) stays markup (#360).
+  const mdast = toMdast(hast, { handlers: passthroughHandlers }) as Root;
   // Promote GitHub-style alert blockquotes (`> [!INFO]`) to typed callouts,
   // recursively so an alert nested in a list item is promoted too. Done here,
   // after the HTML normalization, so it applies uniformly to every prose source
@@ -459,7 +461,9 @@ export function htmlToMdastBlocks(html: string | null | undefined): RootContent[
  * autolinks (`<https://…>`), void/unclosed raw HTML (`<img …>`), and inline HTML
  * MDX would otherwise parse as JSX and reject. Re-parsing the rendered HTML with
  * a lenient HTML parser (`fromHtml`) and lowering it through `hast-util-to-mdast`
- * yields only structured mdast nodes (links, images, tables, …) — no raw HTML —
+ * yields only structured mdast nodes (links, images, tables, …) — no raw HTML;
+ * inline HTML with no Markdown form (`<sub>`, `<abbr>`) becomes lowercase MDX
+ * JSX with allow-listed attributes (see `./passthrough-html`) —
  * which {@link import('../mdx').toMdx} can serialize into MDX-safe Markdown. This
  * mirrors the README path exactly, so tutorials and the README render identically.
  *
@@ -655,7 +659,7 @@ export function htmlToMdastInline(html: string | null | undefined): PhrasingCont
  * takes the HTML normalization every other prose surface gets (see
  * {@link convertMarkdownSegment}) — MDX rejects much of what Markdown accepts
  * (`<?php … ?>`, `<![CDATA[…]]>`, a void `<br>`); as in descriptions, inline
- * HTML with no mdast equivalent (`<sup>`, `<sub>`) is flattened to its text.
+ * HTML with no mdast equivalent (`<sup>`, `<sub>`) is kept as lowercase JSX.
  */
 export function markdownToMdastInline(md: string | null | undefined): PhrasingContent[] {
   if (!md) return [];
@@ -689,6 +693,8 @@ const PHRASING_TYPES = new Set<string>([
   'break',
   'html',
   'footnoteReference',
+  // Inline HTML with no Markdown form, kept as JSX (`./passthrough-html`).
+  'mdxJsxTextElement',
 ]);
 
 /**

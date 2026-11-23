@@ -178,6 +178,14 @@ const PROJECT: Record<string, string | Buffer> = {
     '  return name + sep;',
     '}'
   ),
+  // #360: inline HTML with no Markdown form in a module description.
+  'src/chem.js': lines(
+    '/**',
+    ' * Water is H<sub>2</sub>O and E = mc<sup>2</sup>.',
+    ' * @module chem',
+    ' */',
+    'export const water = 1;'
+  ),
   // #333: a tutorial image outside the tutorials directory.
   'tutorials/io.md': lines('# IO', '', '![classes-io](../img/classes-io.png)'),
   'img/classes-io.png': PNG_1X1,
@@ -323,6 +331,14 @@ describe('JSDoc CLI end to end: reported bugs stay fixed', () => {
     expect(mobile.currentSlug).toBe('global');
     expect(mobile.currentSlug).toBe(desktop.currentSlug);
     expect(mobile.nav).toEqual(desktop.nav);
+  });
+
+  it('keeps <sub> and <sup> in prose, and joins their text in the meta description (#360)', () => {
+    const html = run.read('module/chem/index.html');
+    expect(html).toContain('H<sub>2</sub>O');
+    expect(html).toContain('mc<sup>2</sup>');
+    expect(html).toContain('content="Water is H2O and E = mc2."');
+    expect(run.read('module/chem/index.md')).toContain('H<sub>2</sub>O');
   });
 });
 

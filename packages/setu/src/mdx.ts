@@ -1,11 +1,13 @@
-import type { Link, Parents } from 'mdast';
+import type { Link, Paragraph, Parents } from 'mdast';
 import type { Root } from 'mdast';
-import { toMarkdown } from 'mdast-util-to-markdown';
+import { defaultHandlers, toMarkdown } from 'mdast-util-to-markdown';
 import type { Info, State } from 'mdast-util-to-markdown';
 import { mdxJsxToMarkdown } from 'mdast-util-mdx-jsx';
 import { gfmToMarkdown } from 'mdast-util-gfm';
+import { JSX_PARAGRAPH_GUARD } from '@clean-jsdoc-theme/utils';
 import { ClassView } from './class-view';
 import { classViewToMdast, ClassViewToMdastOptions } from './mdast/class-view';
+import { isJsxOnlyParagraph } from './mdast/passthrough-html';
 
 /**
  * Link serializer that always emits the resource form `[label](url)`, never the
@@ -65,6 +67,22 @@ function resourceLink(node: Link, _parent: Parents | undefined, state: State, in
 // leading `[` if needed — always `[` since we never autolink.
 resourceLink.peek = (): string => '[';
 
+/**
+ * Paragraph serializer that ends a paragraph of only JSX elements and
+ * whitespace (`<mark>a</mark> <sub>b</sub>`) with {@link JSX_PARAGRAPH_GUARD}:
+ * MDX would otherwise unravel it, dropping the `<p>` and the spaces between the
+ * elements. Done at serialization so the mdast stays free of the character.
+ */
+function guardedParagraph(
+  node: Paragraph,
+  parent: Parents | undefined,
+  state: State,
+  info: Info
+): string {
+  const value = defaultHandlers.paragraph(node, parent, state, info);
+  return isJsxOnlyParagraph(node) ? value + JSX_PARAGRAPH_GUARD : value;
+}
+
 export interface ToMdxOptions {
   /** Optional YAML frontmatter object. Serialized at the top of the document. */
   frontmatter?: Record<string, unknown>;
@@ -86,8 +104,9 @@ export function toMdx(tree: Root, options: ToMdxOptions = {}): string {
     // converted to mdast — back into the `| … |` Markdown that dwar's remark-gfm
     // re-parses and rang renders.
     extensions: [mdxJsxToMarkdown(), gfmToMarkdown()],
-    // Force resource-form links so no `<url>` autolink reaches dwar's MDX compile.
-    handlers: { link: resourceLink },
+    // Force resource-form links so no `<url>` autolink reaches dwar's MDX compile,
+    // and keep JSX-only paragraphs paragraphs.
+    handlers: { link: resourceLink, paragraph: guardedParagraph },
   });
   return withFrontmatter(body, options.frontmatter);
 }

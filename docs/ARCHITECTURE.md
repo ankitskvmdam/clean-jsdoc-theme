@@ -169,9 +169,15 @@ Markdown → HTML → the same converter). This is deliberate: raw Markdown is G
 not MDX, so passing it through verbatim lets MDX-hostile constructs — angle-bracket
 autolinks (`<https://…>`), void/unclosed raw HTML (`<img …>`) — abort the page
 compile in dwar. The HTML round-trip lowers everything to structured nodes (links,
-images, tables — no raw HTML), and `toMdx` serializes links in resource form
-(`[text](url)`, never `<url>`) so nothing MDX-hostile survives. GFM (tables, task
-lists, strikethrough, footnotes) is preserved throughout.
+images, tables — no raw HTML); inline HTML with no Markdown form (`<sub>`, `<sup>`,
+`<abbr>`, `<mark>`, … — the list is `PASSTHROUGH_INLINE_HTML` in utils) passes
+through as lowercase MDX JSX that keeps only allow-listed attributes (`title`,
+`lang`, `dir`, plus `datetime`/`value`/`cite` where they apply), always as plain
+strings. A paragraph holding only such elements ends in an invisible U+2060
+(`JSX_PARAGRAPH_GUARD`), or MDX would unravel it and drop its `<p>`. `toMdx`
+serializes links in resource form (`[text](url)`, never `<url>`) so nothing
+MDX-hostile survives. GFM (tables, task lists, strikethrough, footnotes) is
+preserved throughout.
 
 **Embeds.** Sandboxed iframes (CodePen, live demos) lower to a capitalized
 `<Embed>` MDX JSX node — the same round-trip as callouts — from two sources:
