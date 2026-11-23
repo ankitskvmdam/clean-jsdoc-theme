@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { mdxCodeRanges } from '@clean-jsdoc-theme/utils';
+import { h } from 'preact';
+import { renderToString } from 'preact-render-to-string';
 import {
   collectUsedLangs,
+  compileMdxToComponent,
   escapeEsmLookalikes,
   escapeStrayBraces,
   findStrayBackticks,
@@ -113,10 +115,10 @@ describe('escapeStrayBraces', () => {
     expect(out).toContain('body \\{z\\}');
   });
 
-  it('protects the code spans that the inline-tag pass produces', () => {
-    // `{@link base#x}` → inline code, then a bare `{base#y}` gets escaped.
+  it('leaves the placeholders of the inline-tag pass alone', () => {
+    // `{@link base#x}` → placeholders (no braces left), then a bare `{base#y}` gets escaped.
     const out = escapeStrayBraces(preprocessJsdocInlineTags('{@link base#x} and {base#y}'));
-    expect(out).toBe('`@link base#x` and \\{base#y\\}');
+    expect(out).toBe('\uE000@link base#x\uE001 and \\{base#y\\}');
   });
 
   it('allows a code span to cross a single line break', () => {
@@ -190,206 +192,130 @@ describe('escapeStrayBraces', () => {
 
 describe('preprocessJsdocInlineTags (#363)', () => {
   const p = preprocessJsdocInlineTags;
+  /** The placeholders shown as `«` and `»`, so the expectations read. */
+  const shown = (s: string): string => s.replace(/\uE000/g, '«').replace(/\uE001/g, '»');
 
-  describe('leaves a tag inside code as written', () => {
-    it.each<[string, string]>([
-      ['an @example line', '```js\n// shows a tag: {@link Foo}\nconst doc = "{@link Foo}";\n```\n'],
-      ['a ~~~ fence', '~~~\n{@link Foo}\n~~~\n'],
-      ['a ```` fence around ``` lines', '````md\n```js\n{@link Foo}\n```\n{@link Bar}\n````\n'],
-      ['an unclosed fence', 'text\n\n```js\n{@link Foo}\n'],
-      ['a code span holding only the tag', 'see `{@link Foo}` here'],
-      ['a code span with text around the tag', 'a `see {@link Foo} here` b'],
-      ['a JSX attribute value', '<Callout title="{@link Foo}">\n\nbody\n\n</Callout>\n'],
-    ])('in %s', (_name, src) => {
-      expect(p(src)).toBe(src);
-    });
-
-    it('in the frontmatter, while a tag in the body below is still rewritten', () => {
-      expect(p('---\ntitle: "{@link Foo}"\n---\n\nsee {@link Bar}\n')).toBe(
-        '---\ntitle: "{@link Foo}"\n---\n\nsee `@link Bar`\n'
-      );
-    });
-
-    it('in code, while a prose tag on the same page is still rewritten', () => {
-      expect(p('see {@link A}\n\n```js\n{@link B}\n```\n\nand `{@link C}` or {@link D}')).toBe(
-        'see `@link A`\n\n```js\n{@link B}\n```\n\nand `{@link C}` or `@link D`'
-      );
-    });
+  it('stands a placeholder for each brace of a tag', () => {
+    expect(shown(p('see {@link Foo} and {@link Bar|label}'))).toBe(
+      'see «@link Foo» and «@link Bar|label»'
+    );
+    expect(shown(p('see {@link Foo\nBar} end'))).toBe('see «@link Foo\nBar» end');
+    expect(shown(p('- {@a}{@b}\n> {@link `x` y}'))).toBe('- «@a»«@b»\n> «@link `x` y»');
   });
 
-  describe('rewrites a prose tag as before', () => {
-    it.each<[string, string, string]>([
-      [
-        'two tags',
-        'see {@link Foo} and {@link Bar|label}',
-        'see `@link Foo` and `@link Bar|label`',
-      ],
-      ['a tag wrapped across a line break', 'see {@link Foo\nBar} end', 'see `@link Foo\nBar` end'],
-      ['a tag in a list item', '- see {@link Foo}\n', '- see `@link Foo`\n'],
-      ['a tag in a quote', '> see {@link Foo}\n', '> see `@link Foo`\n'],
-      ['a tag with trailing space', 'see {@link Foo } end', 'see `@link Foo` end'],
-    ])('for %s', (_name, src, want) => {
-      expect(p(src)).toBe(want);
-    });
+  it('marks a tag in code too: the tree pass restores its braces there', () => {
+    expect(shown(p('a `b {@link Foo} c`\n\n```js\n{@link Bar}\n```\n'))).toBe(
+      'a `b «@link Foo» c`\n\n```js\n«@link Bar»\n```\n'
+    );
   });
 
-  describe('picks a delimiter the text cannot close', () => {
-    it.each<[string, string, string]>([
-      ['one backtick', '{@link a`b}', '``@link a`b``'],
-      ['one- and two-backtick runs', '{@link a`b``c}', '```@link a`b``c```'],
-      ['text ending in a backtick', '{@link a`}', '`` @link a` ``'],
-      ['a whole code span in the tag', '{@link `Foo` label}', '``@link `Foo` label``'],
-      ['a stray backtick earlier in the paragraph', 'a ` b {@link Foo} c', 'a ` b ``@link Foo`` c'],
-    ])('for %s', (_name, src, want) => {
-      expect(p(src)).toBe(want);
-    });
+  it('changes nothing else: every other character, offset and line stays', () => {
+    const src = 'a `{@link a`b}` {@x}\n- {@link `c` d}\n> {@y\nz} {@ {x} {@1} @link{a} {@a {b}}';
+    const out = p(src);
+    expect(out.length).toBe(src.length);
+    expect(out.replace(/\uE000/g, '{').replace(/\uE001/g, '}')).toBe(src);
+    expect(shown(out)).toBe(
+      'a `«@link a`b»` «@x»\n- «@link `c` d»\n> «@y\nz» {@ {x} {@1} @link{a} {@a {b}}'
+    );
   });
 
-  describe('keeps a tag apart from a neighbouring code span', () => {
-    it.each<[string, string, string]>([
-      ['a span before it', '`a`{@link b}', '`a`{/**/}`@link b`'],
-      ['a span after it', '{@link b}`a`', '`@link b`{/**/}`a`'],
-      ['another tag', '{@a}{@b}', '`@a`{/**/}`@b`'],
-    ])('for %s', (_name, src, want) => {
-      expect(p(src)).toBe(want);
-    });
-
-    it('leaves an empty expression between them after the brace pass', () => {
-      expect(escapeStrayBraces(p('`a`{@link b}'))).toBe('`a`{}`@link b`');
-      expect(escapeStrayBraces(p('{@a}{@b}'))).toBe('`@a`{}`@b`');
-    });
+  it.each<[string, string]>([
+    ['a backslash-escaped tag', 'see \\{@link Foo} here'],
+    ['braces that are not a tag', '{@ x} {@1} {x} {@link {x}}'],
+    ['a page without tags', 'a `b` {c}\n'],
+  ])('leaves %s as written', (_name, src) => {
+    expect(p(src)).toBe(src);
   });
 
-  describe('leaves a tag as written when no single code span can hold it', () => {
-    it.each<[string, string]>([
-      ['an escaped brace', '\\{@link Foo}'],
-      ['a tag across a blank line', 'a {@link Foo\n\nBar} b'],
-      ['a tag across a heading line', 'a {@link Foo\n# Bar} b'],
-      ['a tag across a list-item line', 'a {@link Foo\n- Bar} b'],
-      ['a multi-line tag at a line start needing three backticks', '{@link a\nb``c}'],
-      ['a tag ending inside a later code span', 'a {@link Foo `x} y` z'],
-    ])('for %s', (_name, src) => {
-      expect(p(src)).toBe(src);
-    });
-
-    it('while another tag on the page is still rewritten', () => {
-      expect(p('a {@link Foo\n\nBar} b\n\nsee {@link Baz}\n')).toBe(
-        'a {@link Foo\n\nBar} b\n\nsee `@link Baz`\n'
-      );
-      expect(p('| a | b |\n|---|---|\n| {@link x|y} | c |\n\nsee {@link Foo}\n')).toBe(
-        '| a | b |\n|---|---|\n| {@link x|y} | c |\n\nsee `@link Foo`\n'
-      );
-    });
-
-    it('and the brace pass then shows it as literal text', () => {
-      expect(escapeStrayBraces(p('a {@link Foo\n\nBar} b'))).toBe('a \\{@link Foo\n\nBar\\} b');
-    });
+  it('leaves the frontmatter as written', () => {
+    expect(shown(p('---\ntitle: "{@link Foo}"\n---\n\nsee {@link Bar}\n'))).toBe(
+      '---\ntitle: "{@link Foo}"\n---\n\nsee «@link Bar»\n'
+    );
   });
 
-  // The pass only turns prose into code: every code range of the input that no
-  // rewritten tag covers is still there (shifted) after it, and each rewritten
-  // tag is exactly one code span.
-  it('keeps every other code range and makes each rewritten tag one span (seeded)', () => {
-    const pieces = [
+  it('guards the private-use characters already in the text', () => {
+    const out = p('a \uE000 b \uE001 c \uE002\uE010 {@link Foo}');
+    expect([...out].filter((c) => c === '\uE000')).toHaveLength(1);
+    expect([...out].filter((c) => c === '\uE001')).toHaveLength(1);
+    expect(out.endsWith('\uE000@link Foo\uE001')).toBe(true);
+  });
+
+  // An ordinary tag in prose renders exactly as the code span the pass used to
+  // write in its place (`` `@link Foo` ``) did.
+  it('renders ordinary prose tags as before (seeded)', async () => {
+    const legacy = (s: string): string =>
+      s.replace(/\{@([a-zA-Z][a-zA-Z0-9]*)([^{}]*)\}/g, (_m, tag: string, rest: string) => {
+        const text = `@${tag}${rest}`.trim();
+        const ticks = text.includes('`') ? '``' : '`';
+        return ticks + text + ticks;
+      });
+    const html = async (s: string): Promise<string> => {
+      const shiki = { light: 'github-light', dark: 'github-dark' };
+      const { Component } = await compileMdxToComponent(s, {}, shiki, ['js']);
+      return renderToString(h(Component, {}));
+    };
+    const tags = [
+      ' {@link Foo} ',
+      ' {@link Foo|bar} ',
+      ' {@link Foo bar baz} ',
+      ' {@tutorial x} ',
+      ' {@link  Foo  } ',
+      ' {@link\nFoo} ',
+      ' {@link Foo \n bar} ',
+      ' {@link Foo\n  Bar} ',
+      ' {@link Foo\n\tbar} ',
+      ' {@link Foo  \nbar} ',
+      ' {@link https://a.b/c} ',
+      ' {@link https://a.b/c|label} ',
+      ' {@link www.a.b} ',
+      ' {@link a@b.co} ',
+      ' {@link Foo|*bar*} ',
+      ' {@link Foo_bar_baz} ',
+      ' {@link a~b~} ',
+      ' {@link a\\*b} ',
+      ' {@link a &amp; b} ',
+      ' {@link Foo#bar} ',
+    ];
+    const other = [
       'word ',
       ' ',
       '\n',
-      '\n',
       '\n\n',
-      '`',
-      '``',
-      '{@link a}',
-      '{@link a`b}',
-      '{@link `c` d}',
-      '{@x ',
-      '}',
-      '{',
-      '|',
-      '| a | b |\n|---|---|\n',
       '- ',
+      '-\t',
+      '1. ',
       '> ',
+      '- > ',
       '# ',
-      '```\n',
-      '~~~\n',
-      '<X a="{@link q}" />',
-      '<b>',
-      '\\',
-      'x`',
-      '<x1/>',
+      '\n  ',
+      '\n> ',
+      '.',
+      '(',
+      '*',
+      '_',
+      '**',
+      '[a](b)',
     ];
+    const pieces = [...tags, ...tags, ...other];
     let seed = 363;
     const next = (k: number): number => {
       seed = (Math.imul(seed, 1_664_525) + 1_013_904_223) >>> 0;
-      return seed % k;
+      return (seed >>> 8) % k;
     };
-    let rewritten = 0;
-    for (let n = 0; n < 20_000; n++) {
+    let compared = 0;
+    for (let n = 0; n < 300; n++) {
       let s = '';
-      for (let len = 1 + next(20); len > 0; len--) s += pieces[next(pieces.length)];
-      const out = p(s);
-      const { spans, shift } = alignRewrites(s, out);
-      rewritten += spans.length;
-      const want = [
-        ...mdxCodeRanges(s)
-          .code.filter((r) => !spans.some((t) => r.start >= t.from && r.start < t.to))
-          .map((r) => ({
-            start: shift(r.start),
-            end: shift(r.start) + r.end - r.start,
-            kind: r.kind,
-          })),
-        ...spans.map((t) => ({ start: t.start, end: t.end, kind: 'span' as const })),
-      ].sort((a, b) => a.start - b.start);
-      expect(mdxCodeRanges(out).code, JSON.stringify(s)).toEqual(want);
+      for (let len = 1 + next(12); len > 0; len--) s += pieces[next(pieces.length)];
+      if (!s.includes('{@')) continue;
+      const now = await html(s);
+      // A tag whose text runs into another block (past a heading's line, say)
+      // shows as written; its code span used to break the text around it.
+      if (now.includes('{@')) continue;
+      expect(now, JSON.stringify(s)).toBe(await html(legacy(s)));
+      compared++;
     }
-    expect(rewritten).toBeGreaterThan(1000);
-  });
-
-  /**
-   * Lines `out` up with `src`, where `out` is `src` with some `{@…}` tags each
-   * replaced by one code span (an empty `{/**\/}` comment may stand on either
-   * side): the input extent (`from`, `to`) and output span (`start`, `end`) of
-   * each, and a map from an input offset outside them to the output.
-   */
-  function alignRewrites(
-    src: string,
-    out: string
-  ): {
-    spans: { from: number; to: number; start: number; end: number }[];
-    shift: (pos: number) => number;
-  } {
-    const spans: { from: number; to: number; start: number; end: number }[] = [];
-    const map: number[] = [];
-    const where = (): string => `${JSON.stringify(src)} → ${JSON.stringify(out)}`;
-    let i = 0;
-    let j = 0;
-    while (i < src.length) {
-      // A rewritten tag starts with its span's backticks, or the comment before it.
-      if (src.startsWith('{@', i)) {
-        let k = j;
-        if (out.startsWith('{/**/}', k)) k += 6;
-        if (out[k] === '`') {
-          const to = src.indexOf('}', i) + 1;
-          const text = src.slice(i + 1, to - 1).trim();
-          let n = 0;
-          while (out[k + n] === '`') n++;
-          const ticks = '`'.repeat(n);
-          const pad = text.endsWith('`') ? ' ' : '';
-          const span = ticks + pad + text + pad + ticks;
-          expect(out.startsWith(span, k), where()).toBe(true);
-          spans.push({ from: i, to, start: k, end: k + span.length });
-          i = to;
-          j = k + span.length;
-          // The comment after a span that a backtick follows.
-          if (src[i] === '`' && out.startsWith('{/**/}', j)) j += 6;
-          continue;
-        }
-      }
-      expect(out[j], where()).toBe(src[i]);
-      map[i++] = j++;
-    }
-    expect(j, where()).toBe(out.length);
-    return { spans, shift: (pos) => map[pos] };
-  }
+    expect(compared).toBeGreaterThan(250);
+  }, 60_000);
 });
 
 describe('findStrayBackticks', () => {
@@ -1313,6 +1239,11 @@ describe('the pre-passes read fenced code the way MDX does (#372)', () => {
       ['a page of prose tags', (n) => 'see {@link Foo} and `x` {@b c`d}.\n\n'.repeat(n / 35)],
       ['tags inside code spans', (n) => 'a `b {@link c} d` e\n'.repeat(n / 20)],
       ['unclosed tag openers', (n) => '{@a '.repeat(n / 4)],
+      ['a tag opener with a long name and no close', (n) => '{@' + 'a'.repeat(n)],
+      [
+        'tag openers with long names and no close',
+        (n) => ('{@' + 'a'.repeat(2000) + ' x ').repeat(n / 2005),
+      ],
     ];
     const cases = Object.entries(passes).flatMap(([pass, fn]) =>
       shapes.map(([shape, make]) => [pass, shape, fn, make] as const)
@@ -1350,10 +1281,10 @@ describe('the pre-passes read fenced code the way MDX does (#372)', () => {
       expect(escapeEsmLookalikes(tag)).toBe(tag);
       const open = '`' + 'x'.repeat(n) + ' {y}\n';
       expect(findStrayBackticks(open, [])).toHaveLength(1);
-      expect(preprocessJsdocInlineTags(span + '{@link y}\n')).toBe(span + '`@link y`\n');
-      expect(preprocessJsdocInlineTags(tag + '{@link y}\n')).toBe(tag + '`@link y`\n');
+      expect(preprocessJsdocInlineTags(span + '{@link y}\n')).toBe(span + '\uE000@link y\uE001\n');
+      expect(preprocessJsdocInlineTags(tag + '{@link y}\n')).toBe(tag + '\uE000@link y\uE001\n');
       const long = '{@link ' + 'x'.repeat(n) + '}\n';
-      expect(preprocessJsdocInlineTags(long)).toBe('`@link ' + 'x'.repeat(n) + '`\n');
+      expect(preprocessJsdocInlineTags(long)).toBe('\uE000@link ' + 'x'.repeat(n) + '\uE001\n');
     });
   });
 });

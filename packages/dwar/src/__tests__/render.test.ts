@@ -1540,6 +1540,105 @@ describe('render() — inline tags inside code (#363)', () => {
     expect(text).toContain('`x');
     expect(text).toContain('{1+2}`');
   });
+
+  /** The page's main content. */
+  const mainOf = (html: string): string => /<main[\s\S]*<\/main>/.exec(html)?.[0] ?? html;
+
+  it('shows prose tags as inline code, as before', async () => {
+    const html = mainOf(
+      await renderBody(
+        'see {@link Foo} and {@link Bar|label}.\n\n' +
+          '- a {@tutorial x} in a list\n\n' +
+          '> a {@link https://a.b/c|site} in a quote\n\n' +
+          'a {@link Foo|*b*} and {@link a\\*b &amp; c} and {@link `Foo` label}\n\n' +
+          'see {@link Foo\nBar} end\n'
+      )
+    );
+    expect(codeTexts(html)).toEqual([
+      '@link Foo',
+      '@link Bar|label',
+      '@tutorial x',
+      '@link https://a.b/c|site',
+      '@link Foo|*b*',
+      '@link a\\*b &amp;amp; c',
+      '@link `Foo` label',
+      '@link Foo Bar',
+    ]);
+    expect(html.replace(/<code [^>]*>/g, '<code>')).toContain(
+      'see <code>@link Foo</code> and <code>@link Bar|label</code>.'
+    );
+  });
+
+  it('keeps the braces of a tag in a fence, a code span, an attribute and an image', async () => {
+    const html = mainOf(
+      await renderBody(
+        '```\n{@link A}\n```\n\n' +
+          'a `{@link B}` b\n\n' +
+          '<span title="{@link C}">s</span>\n\n' +
+          '![see {@link D}](d.png)\n\n' +
+          '[e](u "{@link F}")\n'
+      )
+    );
+    const text = html.replace(/<[^>]+>/g, '');
+    expect(text).toContain('{@link A}');
+    expect(codeTexts(html)).toContain('{@link B}');
+    expect(html).toContain('title="{@link C}"');
+    expect(html).toContain('alt="see @link D"');
+    expect(html).toContain('title="{@link F}"');
+    expect(html).not.toMatch(/[\uE000-\uE002]/);
+  });
+
+  it('shows a tag split across blocks or table cells as written', async () => {
+    const text = mainOf(
+      await renderBody('a {@link Foo\n\nBar} b\n\n| a | b |\n|---|---|\n| {@link x|y} | c |\n')
+    ).replace(/<[^>]+>/g, '');
+    expect(text).toContain('a {@link Foo');
+    expect(text).toContain('Bar} b');
+    expect(text).toContain('{@link x');
+    expect(text).toContain('y}');
+  });
+
+  it('keeps private-use characters already in the text', async () => {
+    const text = mainOf(
+      await renderBody('a \uE000 b \uE001 c \uE002\uE010 {@link Foo} d\n')
+    ).replace(/<[^>]+>/g, '');
+    expect(text).toContain('a \uE000 b \uE001 c \uE002\uE010 @link Foo d');
+  });
+
+  // A backtick MDX reads as part of a link, an attribute or a URL must not turn
+  // the code span after it into markup.
+  it.each<[string, string]>([
+    ['a link title', "[t](u '`') `a {@link <x1/>} c` y `"],
+    ['an image title', '![t](u "`") `a {@link Foo} <x1/>` y `'],
+    ['a hyphenated tag', '<x-y a="`"/> `a {@link <x1/>} c` y `'],
+    ['a footnote definition', 'p ` q[^1]\n[^1]: `a {@link <x1/>} c` y `'],
+    ['lone carriage returns', 'p ` q\r\r`a {@link <x1/>} c` y `'],
+    ['a reference label', '[t][b`c] `a {@link <x1/>} c` y `\n\n[b`c]: u'],
+    ['a bare URL', 'http://a.b/c` `a {@link <x1/>} c` y `'],
+    ['a braces line', 'p ` q\n{1}\n`a {@link <x1/>} c` y `'],
+  ])('a tag inside a code span stays code after %s', async (_name, body) => {
+    const html = mainOf(await renderBody(body));
+    expect(html).not.toContain('<x1');
+    expect(html.replace(/<[^>]+>/g, '')).toContain('&lt;x1/>');
+  });
+
+  it.each<[string, string]>([
+    ['a bare URL', 'see http://a.b/c{@link Foo} and `<x1/>` end'],
+    ['a bare URL in parentheses', '(see https://a.b/c){@link Foo} and `<x1/>` end'],
+    ['a www. link', 'www.a.b{@link Foo} and `<x1/>` end'],
+    ['an email address', 'a@b.co{@link Foo} and `<x1/>` end'],
+    ['a URL and two tags', 'see http://a.b/c{@link Foo}{@link Bar} and `<x1/>` end'],
+  ])('a tag glued to %s leaves the code span after it code', async (_name, body) => {
+    const html = mainOf(await renderBody(body));
+    expect(html).not.toContain('<x1');
+    expect(codeTexts(html)).toContain('&lt;x1/>');
+  });
+
+  it('turns a tag holding markup into one code span', async () => {
+    const html = mainOf(await renderBody('see {@link a <x1/> *b* c} here\n'));
+    expect(html).not.toContain('<x1');
+    expect(codeTexts(html)).toContain('@link a &lt;x1/> *b* c');
+  });
 });
 
 /** The props a page hands to the island called `name` (via its data-island-id). */
