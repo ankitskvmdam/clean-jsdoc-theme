@@ -154,6 +154,7 @@ const loadUtils = (): Promise<typeof import('@clean-jsdoc-theme/utils')> =>
     'normalizeCollapsibleSidebarSections',
     'unmatchedCollapsibleSections',
     'topLevelSectionLabels',
+    'unknownSectionOrderLabels',
     'normalizeScrollbar',
   ]);
 
@@ -2251,7 +2252,7 @@ async function runPublish(
   const progress = createBuildProgress(ora);
 
   const [
-    { generateSite, stampSite },
+    { generateSite, stampSite, DEFAULT_SECTION_ORDER, DOCS_SECTION },
     { render },
     {
       validateThemeOpts,
@@ -2266,6 +2267,7 @@ async function runPublish(
       normalizeCollapsibleSidebarSections,
       unmatchedCollapsibleSections,
       topLevelSectionLabels,
+      unknownSectionOrderLabels,
       normalizeScrollbar,
     },
     // Loaded sequentially (not Promise.all) so the spinner can step its label
@@ -2503,6 +2505,25 @@ async function runPublish(
         `clean-jsdoc-theme: collapsibleSidebarSections — no sidebar section matches ` +
           `${unmatched.map((l) => `'${l}'`).join(', ')}. ` +
           `Available sections: ${present.join(', ')}.`
+      );
+    }
+  }
+
+  // A `sectionOrder` label that names no section (#352): a built-in kind label
+  // (even with no pages), the docs section, or a @category / doc group in this
+  // build. v4's `Global` is accepted (read as `Globals`) but never suggested.
+  if (sectionOrder) {
+    const known = [
+      ...new Set([...topLevelSectionLabels(manifest.nav), ...DEFAULT_SECTION_ORDER, DOCS_SECTION]),
+    ];
+    const unknown = unknownSectionOrderLabels(sectionOrder, known, ['Global']);
+    if (unknown.length > 0) {
+      warnOption(
+        `clean-jsdoc-theme: sectionOrder — no sidebar section matches ` +
+          unknown
+            .map((u) => `'${u.label}'` + (u.suggestion ? ` (did you mean '${u.suggestion}'?)` : ''))
+            .join(', ') +
+          `. Known sections: ${known.join(', ')}.`
       );
     }
   }
