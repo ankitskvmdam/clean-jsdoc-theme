@@ -94,6 +94,7 @@ interface RenderResult {
   files: OutputFile[];        // { path, contents } — everything to write
   search?: SearchEntry[];     // per-page entries (the JSON index is already in `files`)
   errors?: RenderError[];     // { slug, message } — pages skipped, present only on failure
+  noContentRendered?: { failed: number; first: RenderError }; // set only when no content page rendered
   stats: {
     pageCount: number;        // pages rendered successfully (excludes errors)
     assetCount: number;       // non-HTML files (CSS + JS chunks + search index)
@@ -134,10 +135,14 @@ const result = await render(manifest, {
   inlineSvgs,
 });
 
+// No content page rendered: fail before anything is written (the old site stays).
+const renderFailure = renderFailureMessage(result);
+if (renderFailure) throw new Error(`clean-jsdoc-theme: ${renderFailure}`);
+
 const outputFiles = [...result.files, ...logoFiles, ...customAssets.files, ...docImageFiles];
 await writeOutputFiles(absoluteDestination, outputFiles);
 
-// Render failures are reported, never fatal.
+// A skipped page is reported, not fatal — unless none rendered (thrown above).
 if (result.errors && result.errors.length > 0) {
   for (const e of result.errors) console.warn(`  - ${e.slug}: ${e.message}`);
 }
@@ -146,7 +151,8 @@ if (result.errors && result.errors.length > 0) {
 TypeDoc 桥接器
 （[`write-site.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/typedoc/src/write-site.ts)）
 在 ESM 中做同样的事情：`render(manifest, { theme, destination, islandCacheDir })`，
-然后是 `writeOutputFiles`。两者都将 `errors` 数组视为警告。
+然后是 `writeOutputFiles`。两者都将 `errors` 数组视为警告；当
+`renderFailureMessage(result)` 返回一条消息时，两者都会（在写入之前）让 build 失败。
 
 > 注意写入循环中的分工：**dwar 的 `result.files`** 是
 > HTML、配套的 `.md`、样式表、island 分块以及

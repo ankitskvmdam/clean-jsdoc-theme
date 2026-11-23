@@ -148,6 +148,7 @@ const loadUtils = (): Promise<typeof import('@clean-jsdoc-theme/utils')> =>
     'DiagnosticBag',
     'formatBuildReport',
     'formatRenderError',
+    'renderFailureMessage',
     'normalizeBasePath',
     'withBase',
     'toExtractManifest',
@@ -2260,6 +2261,7 @@ async function runPublish(
       DiagnosticBag,
       formatBuildReport,
       formatRenderError,
+      renderFailureMessage,
       normalizeBasePath,
       withBase,
       toExtractManifest,
@@ -2628,6 +2630,12 @@ async function runPublish(
     })
   );
 
+  // #401: no content page rendered (e.g. a systemic MDX/Preact failure). Fail
+  // here, before the destination is cleaned or written, so the previous build
+  // survives; publish()'s catch reports it and exits non-zero.
+  const renderFailure = renderFailureMessage(result);
+  if (renderFailure) throw new Error(`clean-jsdoc-theme: ${renderFailure}`);
+
   const generatedFiles = [
     ...result.files,
     ...logoFiles,
@@ -2703,7 +2711,8 @@ async function runPublish(
   report.optionProblems();
 
   // Skipped pages (render failures) are folded in right after the report so the
-  // count is visible alongside the successful totals — never fatal.
+  // count is visible alongside the successful totals — not fatal (the case where
+  // no content page rendered already threw above, before anything was written).
   if (result.errors && result.errors.length > 0) {
     console.warn(
       `clean-jsdoc-theme: ${result.errors.length} page(s) failed to render and were skipped:`

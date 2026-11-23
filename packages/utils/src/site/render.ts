@@ -83,7 +83,9 @@ export interface RenderResult {
   /**
    * Pages that failed to render and were skipped. A single bad page (e.g. MDX
    * that won't compile) must not abort the whole build — render() collects the
-   * failures here so the caller can surface them. Empty when all pages render.
+   * failures here so the caller can surface them. Absent when all pages render.
+   * When no content page rendered at all, {@link RenderResult.noContentRendered}
+   * is also set and the bridges fail the build instead (#401).
    */
   errors?: RenderError[];
   /**
@@ -92,6 +94,15 @@ export interface RenderResult {
    * clean up the source. Empty/absent when nothing was flagged.
    */
   warnings?: RenderWarning[];
+  /**
+   * Set only when no content page rendered and at least one page failed (#401).
+   * A content page is any page whose `frontmatter.kind` is not `'source'`.
+   * `failed` counts the failed content pages (or every failure, when the
+   * manifest had no content pages); `first` is the first such failure in page
+   * order. render() still never throws — the bridges turn this into a failed
+   * build, via {@link renderFailureMessage}, before writing anything.
+   */
+  noContentRendered?: { failed: number; first: RenderError };
   stats: {
     /** Pages successfully rendered (excludes any in `errors`). */
     pageCount: number;
@@ -100,6 +111,33 @@ export interface RenderResult {
     jsBytes: number;
     durationMs: number;
   };
+}
+
+/**
+ * The build-failure message for a render where no content page rendered (#401),
+ * or `undefined` when {@link RenderResult.noContentRendered} is unset. Shared by
+ * both bridges so they fail identically; each adds its own prefix. One error,
+ * not the full list: the count, the first failure (with its code frame), and
+ * whether the other failures share its message.
+ */
+export function renderFailureMessage(result: RenderResult): string | undefined {
+  const flag = result.noContentRendered;
+  if (!flag) return undefined;
+  const all = result.errors ?? [flag.first];
+  const lines = [
+    `no page could be rendered: all ${flag.failed} content page(s) failed, so nothing was written.`,
+    'First failure:',
+    formatRenderError(flag.first),
+  ];
+  if (all.length > 1) {
+    lines.push(
+      all.every((e) => e.message === flag.first.message)
+        ? `All ${all.length} failures share this message.`
+        : `${all.length - 1} more page(s) failed, not all with this message.`
+    );
+  }
+  lines.push('This usually points at the install or the renderer, not at your docs.');
+  return lines.join('\n');
 }
 
 /**

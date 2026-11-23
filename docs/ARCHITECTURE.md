@@ -22,7 +22,9 @@ LLMs + lazy-hydrated Preact islands + a fuzzy search index).
 - **`dwar.render()` is resilient** — a single page that fails to compile (e.g.
   MDX that won't parse) is skipped and reported in `RenderResult.errors` (with a
   line/column + code-frame when the error is positioned), never thrown. One bad
-  page can't abort the whole build; the bridge logs the skips. Non-fatal
+  page can't abort the whole build; the bridge logs the skips. If no content
+  page renders at all, render() sets `RenderResult.noContentRendered` and both
+  bridges fail the build before writing anything (#401). Non-fatal
   authoring slips that don't break the page — e.g. an unbalanced inline-code
   backtick — are surfaced separately in `RenderResult.warnings` (same located
   shape), so authors can clean up the source.
@@ -489,7 +491,9 @@ dwar/src/
 ├── index.ts              # render(manifest, opts) → RenderResult  (entry). Renders
 │                         #   each page in try/catch — a page that fails to compile
 │                         #   is skipped + reported in RenderResult.errors (codeFrame
-│                         #   snippet when positioned), not thrown. Also flags unbalanced
+│                         #   snippet when positioned), not thrown; sets
+│                         #   RenderResult.noContentRendered when no content page
+│                         #   rendered (the bridges then fail the build). Also flags unbalanced
 │                         #   inline-code backticks into RenderResult.warnings (non-fatal).
 │                         #   kind:'source' pages skip MDX and mount the code-viewer
 │                         #   island directly (code stays in the SSR <pre>, off the payload)
@@ -672,6 +676,8 @@ clean-jsdoc-theme/src/
 │                         #   (per-route sizes + gzip; node:zlib injected) after write,
 │                         #   plus any RenderResult.errors (skipped pages) +
 │                         #   RenderResult.warnings (e.g. unbalanced backticks).
+│                         #   Throws before cleaning/writing when no content page
+│                         #   rendered (renderFailureMessage).
 │                         #   Collects source files from doclet meta (gated by
 │                         #   templates.default.outputSourceFiles, default on) → setu;
 │                         #   templates.default.sourceLinkToComment toggles whether a

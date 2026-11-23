@@ -1058,7 +1058,8 @@ option なしで続行します。`strict: true` では、option の warning や
 影響しないもの — `strict` でも警告や通知のままです:
 
 - content の警告（comment 内の対になっていない backtick など）と、render に失敗
-  した pages;
+  した pages（すべての page が失敗した build は、`strict` の有無にかかわらず常に
+  失敗します）;
 - JSDoc では、`opts.title` や `opts.search` のような top-level の v4 option 名
   （別の JSDoc plugin のものかもしれないため）;
 - TypeDoc では、`colors` のような JSDoc 専用の option（`opts/unsupported-in-typedoc`
