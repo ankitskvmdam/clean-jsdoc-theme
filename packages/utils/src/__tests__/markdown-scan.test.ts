@@ -973,6 +973,31 @@ describe('mdxCodeRanges', () => {
     ],
     ['a span in a quote opened after a list marker', '* >`a\n  >{b}`\n', [['span', '`a\n  >{b}`']]],
     [
+      'an empty item with trailing spaces (content one past the marker)',
+      '-  \n  ```js\n  a = {b}\n\nafter {c}\n',
+      [['fence', '  ```js\n  a = {b}\n']],
+    ],
+    ['a quoted empty item with trailing spaces', '>+  \n>   ```\n>{x}\n', [['fence', '>   ```']]],
+    [
+      'an inner item reached by a line its outer item is not',
+      '- > - a\n>   ```js\n> const a = {b};\n>   ```\n',
+      [['fence', '>   ```js\n> const a = {b};\n>   ```']],
+    ],
+    [
+      'flow JSX after nested list markers',
+      '- - <X a="1" />\n    2. ```js\n       a = {b}\n       ```\n',
+      [
+        ['tag', '<X a="1" />'],
+        ['fence', '    2. ```js\n       a = {b}\n       ```'],
+      ],
+    ],
+    [
+      'a quote-only line after an empty item (not blank to it)',
+      '-\n  >\n  ```js\n  a = {b}\n\nout {c}\n',
+      [['fence', '  ```js\n  a = {b}\n']],
+    ],
+    ['a nested ordered marker other than 1 after a paragraph', 'e\n1. 2. ~~~\n{x}\n', []],
+    [
       'tilde fences between paragraphs',
       '~~~\ncode {a}\n~~~\n\ntext {b}\n\n~~~\ncode {c}\n~~~\n',
       [
@@ -996,6 +1021,14 @@ describe('mdxCodeRanges', () => {
     ['a span across a line starting with a tag', 'Use `<ul>\n<li>` here.\n', []],
     ['a marker-then-quote fence', '- > ```js\n  > a\n  > ```\n', []],
     ['a span across the next ordered item', '1. `a\n2. b` {c}\n', ['`', '`']],
+    [
+      'a span across a quote line left of the item (no lazy line)',
+      '- > Note: don`t\n> pass {x} when it`s set\n',
+      ['`', '`'],
+    ],
+    ['a span after a heading on a marker line', '- ## Don`t\nIt`s {x}\n', ['`', '`']],
+    ['a nested bullet-then-ordered marker after a paragraph', 'k\n- 7) ```\n{x}\n', ['```']],
+    ['an ordered marker in a new quote after a paragraph', 'k\n>- 7) ```\n{x}\n', ['```']],
   ])('reports the stray backticks of %s', (_name, src, want) => {
     expect(strays(src)).toEqual(want);
   });
@@ -1090,17 +1123,35 @@ describe('mdxCodeRanges', () => {
     });
   });
 
-  it('does not throw on a code span or a tag of 16M characters', () => {
-    const n = 16 * 1024 * 1024;
-    const span = '`' + 'x'.repeat(n) + '` {y}\n';
-    expect(code(span).map(([kind, text]) => [kind, text.length])).toEqual([['span', n + 2]]);
-    const tag = '<a ' + 'b="c" '.repeat(n / 6) + '/> {x}\n';
-    expect(mdxCodeRanges(tag).code).toEqual([
-      { start: 0, end: tag.indexOf('/>') + 2, kind: 'tag' },
-    ]);
-    const open = '<a ' + 'b '.repeat(n / 2) + '{x}\n';
-    expect(mdxCodeRanges(open).code).toEqual([]);
-  });
+  it(
+    'does not throw on a code span or a tag of 16M characters',
+    () => {
+      const n = 16 * 1024 * 1024;
+      const span = '`' + 'x'.repeat(n) + '` {y}\n';
+      expect(code(span).map(([kind, text]) => [kind, text.length])).toEqual([['span', n + 2]]);
+      const tag = '<a ' + 'b="c" '.repeat(n / 6) + '/> {x}\n';
+      expect(mdxCodeRanges(tag).code).toEqual([
+        { start: 0, end: tag.indexOf('/>') + 2, kind: 'tag' },
+      ]);
+      const open = '<a ' + 'b '.repeat(n / 2) + '{x}\n';
+      expect(mdxCodeRanges(open).code).toEqual([]);
+    },
+    PERF_TEST_TIMEOUT
+  );
+
+  it(
+    'does not throw on one line of 8M characters of list or quote markers',
+    () => {
+      const n = 8 * 1024 * 1024;
+      const items = '- '.repeat(n / 2) + 'x `y`\n';
+      expect(code(items)).toEqual([['span', '`y`']]);
+      const fence = '- '.repeat(n / 2) + '```\n{x}\n';
+      expect(code(fence).map(([kind]) => kind)).toEqual(['fence']);
+      const quotes = '>'.repeat(n) + ' ```\n{x}\n';
+      expect(code(quotes).map(([kind]) => kind)).toEqual(['fence']);
+    },
+    PERF_TEST_TIMEOUT
+  );
 });
 
 // Every page body goes through these scanners several times per build, so a
@@ -1231,6 +1282,8 @@ describe('markdown-scan performance', () => {
     ],
     ['one tag, then tilde fences', (n) => '<b>\n\n' + '~~~\nc\n~~~\n\nt\n\n'.repeat(n / 15)],
     ['marker-then-quote fences', (n) => '- > ```js\n  > {a}\n  > ```\n\n'.repeat(n / 28)],
+    ['one line of many list markers', (n) => '- '.repeat(n / 2) + 'x `y`\n'],
+    ['one line of many quote and list markers', (n) => '> - '.repeat(n / 4) + '```\n{x}\n'],
   ])(
     '%s scales linearly for mdxCodeRanges',
     (_name, makeInput) => {

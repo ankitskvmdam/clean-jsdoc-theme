@@ -38,9 +38,23 @@ export interface HtmlCommentRange extends TextRange {
 // Blockquote markers opening a line, each `>` with up to three spaces before
 // it and one optional space after. Its `>` count is the line's quote depth.
 const QUOTE_PREFIX = /^(?:[ \t]{0,3}>[ \t]?)*/;
-// The same in MDX, which has no indented code: a `>` after any indentation
-// is a blockquote marker (one inside a list item sits four or more columns in).
-const MDX_QUOTE_PREFIX = /^(?:[ \t]*>[ \t]?)*/;
+/**
+ * The same in MDX, which has no indented code: a `>` after any indentation is
+ * a blockquote marker (one inside a list item sits four or more columns in).
+ * `^(?:[ \t]*>[ \t]?)*` as a hand loop: as a regex it overflows the stack on
+ * a line of a few million `>`.
+ */
+function mdxQuotePrefix(line: string): string {
+  let end = 0;
+  for (;;) {
+    let j = end;
+    while (line[j] === ' ' || line[j] === '\t') j++;
+    if (line[j] !== '>') return line.slice(0, end);
+    j++;
+    if (line[j] === ' ' || line[j] === '\t') j++;
+    end = j;
+  }
+}
 
 // FENCE_OPEN and COMMENT_BLOCK both start with indentation and an optional
 // list marker plus its following space(s): `(?:[-*+]|\d{1,9}[.)])[ \t]+`.
@@ -200,7 +214,7 @@ interface FenceOpener {
   marker: boolean;
   /** MDX: the list items its markers open, outermost first. */
   items: OpenItem[];
-  /** MDX: an ordered marker other than `1.`/`1)` comes first (it can't interrupt a paragraph). */
+  /** MDX: an ordered marker other than `1.`/`1)` comes before any quote marker (it can't interrupt a paragraph). */
   ordered: boolean;
 }
 
@@ -216,8 +230,15 @@ interface Containers {
   items: OpenItem[];
   /** Whether a list marker follows the last quote marker. */
   marker: boolean;
-  /** An ordered marker other than `1.`/`1)` comes first. */
+  /** An ordered marker other than `1.`/`1)` is among the markers. */
   ordered: boolean;
+  /**
+   * The containers up to the first such marker: on a line that would
+   * otherwise continue a paragraph, that marker opens no item (an ordered
+   * list must start at 1 to interrupt one), so the line's content starts
+   * there.
+   */
+  beforeOrdered?: { end: number; col: number; depth: number; items: number };
 }
 
 /**
@@ -233,16 +254,18 @@ function mdxContainers(line: string): Containers {
   let depth = 0;
   const items: OpenItem[] = [];
   let pending = -1; // the depth of a marker whose content column is not known yet
+  let pendingCol = 0; // the column right after that marker
   let marker = false;
-  let ordered = false;
-  let first = true;
+  let beforeOrdered: Containers['beforeOrdered'];
   for (;;) {
     while (line[i] === ' ' || line[i] === '\t') {
       col = line[i] === '\t' ? col + 4 - (col % 4) : col + 1;
       i++;
     }
     if (pending !== -1) {
-      items.push({ col, depth: pending });
+      // Whitespace that runs to the end leaves the item empty: its content
+      // column is one past the marker.
+      items.push({ col: i === line.length ? pendingCol + 1 : col, depth: pending });
       pending = -1;
     }
     const c = line.charCodeAt(i);
@@ -253,7 +276,6 @@ function mdxContainers(line: string): Containers {
       if (line[i] === ' ' || line[i] === '\t') i++;
       col = 0;
       marker = false;
-      first = false;
       continue;
     }
     let j = i;
@@ -264,22 +286,24 @@ function mdxContainers(line: string): Containers {
       j = j > i && (line[j] === '.' || line[j] === ')') ? j + 1 : i;
     }
     if (j > i && (line[j] === ' ' || line[j] === '\t' || j === line.length)) {
-      if (first && c !== 45 && c !== 42 && c !== 43 && line.slice(i, j - 1) !== '1') ordered = true;
+      if (!beforeOrdered && c !== 45 && c !== 42 && c !== 43 && line.slice(i, j - 1) !== '1') {
+        beforeOrdered = { end: i, col, depth, items: items.length };
+      }
       col += j - i;
       i = j;
       marker = true;
-      first = false;
       if (j === line.length) {
         // An empty item: its content column is one past the marker.
         items.push({ col: col + 1, depth });
         break;
       }
       pending = depth;
+      pendingCol = col;
       continue;
     }
     break;
   }
-  return { end: i, col, depth, items, marker, ordered };
+  return { end: i, col, depth, items, marker, ordered: beforeOrdered !== undefined, beforeOrdered };
 }
 
 /**
@@ -313,7 +337,7 @@ interface LineParts {
 }
 
 function lineParts(line: string, mdx = false): LineParts {
-  const quote = (mdx ? MDX_QUOTE_PREFIX : QUOTE_PREFIX).exec(line)![0];
+  const quote = mdx ? mdxQuotePrefix(line) : QUOTE_PREFIX.exec(line)![0];
   let depth = 0;
   for (const ch of quote) if (ch === '>') depth++;
   const body = line.slice(quote.length);
@@ -713,7 +737,8 @@ export function inlineCodeSpans(source: string): CodeSpanRange[] {
  *     belongs to the innermost one. It ends with that item: at a line that
  *     does not reach the item's column (before its next quote marker, when
  *     the item sits outside a quote), a `>` alone included, or when a quote
- *     the item is in ends. An item opened empty ends at a blank line;
+ *     the item is in ends. An item opened empty ends at a blank line — a
+ *     line holding only quote markers inside the item is not blank to it;
  *   - a line holding only MDX JSX tags (flow JSX), or only the empty comment
  *     expressions dwar's comment pass leaves, interrupts a paragraph and
  *     ends the list items it is left of; the lines a multi-line tag covers
@@ -758,12 +783,23 @@ function scanBlocks(source: string, mdx = false): BlockScan {
    * quoted deeper) is narrower than the item's content column.
    */
   function leaveItems(depth: number, indent: number, gaps: readonly number[]): void {
-    while (items.length > 0) {
-      const top = items[items.length - 1];
-      const reach = top.depth === depth ? indent : top.depth < depth ? gaps[top.depth] : -1;
-      if (reach >= top.col) return;
-      items.pop();
+    const k = firstUnreached(depth, indent, gaps);
+    if (k !== -1) items.length = k;
+  }
+  /**
+   * MDX: the outermost open list item a line does not reach into (its
+   * indentation, after the quote prefix of the item's depth or before the
+   * next quote marker when it is quoted deeper, is narrower than the item's
+   * content column; an item quoted deeper than the line is never reached),
+   * or -1. The items inside it end with it.
+   */
+  function firstUnreached(depth: number, indent: number, gaps: readonly number[]): number {
+    for (let k = 0; k < items.length; k++) {
+      const it = items[k];
+      const reach = it.depth === depth ? indent : it.depth < depth ? gaps[it.depth] : -1;
+      if (reach < it.col) return k;
     }
+    return -1;
   }
   /** MDX: whether a line does not reach the innermost open list item's content. */
   function leftOfItem(depth: number, indent: number, gaps: readonly number[]): boolean {
@@ -864,7 +900,10 @@ function scanBlocks(source: string, mdx = false): BlockScan {
     if (rest === '') {
       // An item that opened empty ends at a blank line, and in MDX a `>`
       // alone outside an item's column leaves it.
-      if (justEmpty && items[items.length - 1] === justEmpty) items.pop();
+      // (A `>`-only line inside the item is not blank to it.)
+      if (justEmpty && items[items.length - 1] === justEmpty && depth <= justEmpty.depth) {
+        items.pop();
+      }
       while (mdx && items.length > 0) {
         const top = items[items.length - 1];
         if (top.depth >= depth || gaps[top.depth] >= top.col) break;
@@ -878,6 +917,15 @@ function scanBlocks(source: string, mdx = false): BlockScan {
     }
 
     if (mdx) {
+      // A quote marker left of an open item's content starts a new quote: it
+      // ends the paragraph, never continues it lazily.
+      if (para) {
+        const k = firstUnreached(depth, indent, gaps);
+        if (k !== -1 && items[k].depth < depth) {
+          breaks.push(pos);
+          para = undefined;
+        }
+      }
       // A lazy paragraph line stays in its item; any other outdented line leaves it.
       if (!para) leaveItems(depth, indent, gaps);
       // MDX flow JSX — one or more tags starting the line, then nothing else
@@ -919,8 +967,9 @@ function scanBlocks(source: string, mdx = false): BlockScan {
     const opensFence =
       opener !== null &&
       (mdx
-        ? // An ordered item other than 1 can't interrupt a paragraph.
-          !(opener.ordered && para && depth === para.depth && !leftOfItem(depth, indent, gaps))
+        ? // An ordered item other than 1 can't interrupt a paragraph — nor can
+          // one opening on the same line inside new containers (`- 2.`, `> 2.`).
+          !(opener.ordered && para && depth >= para.depth && !leftOfItem(depth, indent, gaps))
         : !(open![2][0] === '`' && open![3].includes('`')));
     // A comment starting the line: a comment block, unless MDX reads the line
     // as text — when dwar leaves text on it, after the `{/**/}` of a comment
@@ -985,7 +1034,7 @@ function scanBlocks(source: string, mdx = false): BlockScan {
       let item: OpenItem | undefined;
       if (mdx) {
         leaveItems(depth, indent, gaps);
-        items.push(...opener.items);
+        for (const it of opener.items) items.push(it);
         item = items[items.length - 1];
       } else if (opener.marker) item = { col: opener.indent, depth };
       fence = {
@@ -1048,6 +1097,9 @@ function scanBlocks(source: string, mdx = false): BlockScan {
         depth !== para.depth ||
         (mdx && leftOfItem(depth, indent, gaps)) ||
         (item[3].trim() !== '' && (/^[-*+]$/.test(item[1]) || /^1[.)]$/.test(item[1])));
+      // MDX: a paragraph this line would otherwise continue (see `beforeOrdered`).
+      const continuesPara =
+        mdx && para !== undefined && depth >= para.depth && !leftOfItem(depth, indent, gaps);
       if (interrupts) {
         const content = indent + item[1].length + columns(item[2]);
         breaks.push(pos);
@@ -1059,29 +1111,33 @@ function scanBlocks(source: string, mdx = false): BlockScan {
           // in the innermost one. An empty item's content column is one past
           // its marker.
           leaveItems(depth, indent, gaps);
-          const c = mdxContainers(line);
-          items.push(...c.items);
+          let c = mdxContainers(line);
+          if (continuesPara && c.beforeOrdered) {
+            const b = c.beforeOrdered;
+            c = { ...c, end: b.end, col: b.col, depth: b.depth, items: c.items.slice(0, b.items) };
+          }
+          for (const it of c.items) items.push(it);
           const text = line.slice(c.end);
           if (text.trim() === '') {
             para = undefined;
             if (c.items.length > 0 && c.depth === c.items[c.items.length - 1].depth) {
               emptyItem = items[items.length - 1];
             }
-          } else {
-            para = { indent: c.col, depth: c.depth, inItem: c.depth === depth };
-          }
-          paraText = text;
-        }
-        // MDX: a JSX tag after the marker that runs on past its line holds
-        // those lines as attribute text.
-        if (mdx && item[3].charCodeAt(0) === 60) {
-          const flowEnd = flowTagLineEnd(pos + line.length - item[3].length);
-          if (flowEnd !== -1) {
-            breaks.push(flowEnd);
-            next = flowEnd;
+          } else if (ATX_HEADING.test(text) || isThematicBreak(text)) {
+            // A one-line block after the markers: no paragraph follows it.
+            breaks.push(next);
             para = undefined;
-            paraText = undefined;
+          } else {
+            // Flow JSX after the markers: a tag that runs on past its line
+            // holds those lines as attribute text.
+            const flowEnd = text.charCodeAt(0) === 60 ? flowTagLineEnd(pos + c.end) : -1;
+            if (flowEnd !== -1) {
+              next = flowEnd;
+              breaks.push(next);
+              para = undefined;
+            } else para = { indent: c.col, depth: c.depth, inItem: c.depth === depth };
           }
+          paraText = para ? text : undefined;
         }
       }
     } else if (para && depth > para.depth) {
@@ -1216,12 +1272,18 @@ export interface MdxCodeScan {
  * span here, where MDX may read that line as a flow expression first. A GFM
  * table row's pipes split it into cells before code spans are read; here a
  * span may hold a pipe. Container lines are approximated, not parsed as a
- * full block parser would: a lazy paragraph line keeps its list items, a
- * quote marker's optional space is always taken whole (a tab after `>`
- * included, where MDX takes one column of it), columns restart after each
- * quote marker rather than following the line's tab stops, and a code span
- * after a thematic break may still cross a later `>` line that MDX reads as
- * paragraph text. And dwar's comment pass,
+ * full block parser would: a lazy paragraph line keeps its list items (a
+ * line that starts a block does not, nor does a quote marker left of an
+ * item's content, which starts a new quote), a quote marker's optional
+ * space is always taken whole (a tab after `>` included, where MDX takes one
+ * column of it), columns restart after each quote marker rather than
+ * following the line's tab stops, and a code span after a thematic break may
+ * still cross a later `>` line that MDX reads as paragraph text. Lines end at
+ * `\n` (a `\r` before it is dropped); a bare `\r` does not end a line here,
+ * where MDX ends one. A `>` indented four or more columns always continues a
+ * quote here, which MDX does not always do. A JSX attribute whose value is an
+ * expression (`n={1}`) is outside dwar's tag grammar, so that tag is prose
+ * here and its braces are escaped (as before #372). And dwar's comment pass,
  * which runs before the passes using this scanner, still finds comments with
  * {@link htmlCommentRanges} — the CommonMark dialect, and the regex `TOKEN`
  * for tags (a follow-up).
