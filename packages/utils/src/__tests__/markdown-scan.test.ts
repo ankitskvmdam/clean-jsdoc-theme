@@ -684,17 +684,24 @@ describe('htmlCommentRangesInHtml tag bodies match the regex scan they replaced 
     expect(slices(src, htmlCommentRangesInHtml(src))).toEqual(want);
   });
 
-  it('matches on every sequence of up to 5 pieces', () => {
-    const pieces = ['<a', '>', '=', '"', "'", ' ', '\n', 'x', '<!--', '-->', '<!', '</'];
-    const depth = 5;
-    function* sequences(prefix: string, left: number): Generator<string> {
-      yield prefix;
-      yield prefix + '<!-- z -->';
-      if (left === 0) return;
-      for (const p of pieces) yield* sequences(prefix + p, left - 1);
-    }
-    expectSame(sequences('', depth));
-  });
+  // The two corpus tests below run about half a million scans. That takes well
+  // under a second alone, but a loaded CI runner has pushed it past vitest's
+  // default 5 s, so they get the same budget as the scaling tests.
+  it(
+    'matches on every sequence of up to 5 pieces',
+    () => {
+      const pieces = ['<a', '>', '=', '"', "'", ' ', '\n', 'x', '<!--', '-->', '<!', '</'];
+      const depth = 5;
+      function* sequences(prefix: string, left: number): Generator<string> {
+        yield prefix;
+        yield prefix + '<!-- z -->';
+        if (left === 0) return;
+        for (const p of pieces) yield* sequences(prefix + p, left - 1);
+      }
+      expectSame(sequences('', depth));
+    },
+    PERF_TEST_TIMEOUT
+  );
 
   it('matches on seeded random sequences', () => {
     const pieces = [
@@ -739,7 +746,7 @@ describe('htmlCommentRangesInHtml tag bodies match the regex scan they replaced 
       }
     }
     expectSame(randomSources(40_000));
-  });
+  }, PERF_TEST_TIMEOUT);
 
   it('the oracle is the regex scan (it tells the cases apart)', () => {
     // Sanity: the oracle is not trivially empty, and it reads a tag body the

@@ -125,6 +125,7 @@ The rules, exactly as the code resolves them:
 | `group` | frontmatter `group` → humanized **directory** path → `defaultDocGroup`     |
 | `order` | frontmatter `order`                                                        |
 | `hidden`| frontmatter `hidden` (default `false`)                                     |
+| `description` | frontmatter `description` → first prose paragraph of the body (plain text, max 300 chars) |
 
 ### Slugs come from the path
 
@@ -159,6 +160,7 @@ needs. The recognized keys:
 ```markdown
 ---
 title: Advanced Setup
+description: How to configure advanced options.
 group: Guides
 order: 2
 slug: guides/advanced
@@ -170,6 +172,8 @@ hidden: false
 ```
 
 - **`title`** — the sidebar label and page `<title>`.
+- **`description`** — the page's `<meta name="description">`, search subtitle,
+  pager card and `llms.txt` entry. Defaults to the first paragraph of the body.
 - **`group`** — the sidebar group (overrides the directory). May be a `/`-path
   to nest.
 - **`order`** — the within-group sort key (ascending; unset sorts last, then

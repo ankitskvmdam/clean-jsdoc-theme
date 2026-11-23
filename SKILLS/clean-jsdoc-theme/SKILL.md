@@ -66,7 +66,8 @@ fuzzy index); and `_islands/‹name›.js`.
 
 Guarantees worth knowing: **setu does no disk I/O** (the bridge reads files),
 **dwar.render() is pure**, and **one page that fails to compile is skipped and
-reported, never aborts the build**.
+reported, never aborts the build** — unless no content page renders at all,
+which fails the build before anything is written.
 
 ---
 

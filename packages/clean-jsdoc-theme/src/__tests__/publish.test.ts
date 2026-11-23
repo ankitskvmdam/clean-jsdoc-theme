@@ -218,6 +218,21 @@ describe('publish: option problems (strict escalation, printed once)', () => {
     expect(process.exitCode).toBeUndefined();
   }, 60_000);
 
+  it('a nested templates.default.strict is not a strict switch (#368)', async () => {
+    const destination = join(dir, 'out');
+    await publish(emptyCollection, {
+      destination,
+      progress: false,
+      readme: '<p>Home</p>',
+      siteNme: 'Typo',
+      templates: { default: { strict: true } },
+    } as Parameters<typeof publish>[1]);
+    expect(existsSync(join(destination, 'index.html'))).toBe(true);
+    expect(printed.error).toEqual([]);
+    expect(printed.warn.some((m) => m.includes('siteNme'))).toBe(true);
+    expect(process.exitCode).toBeUndefined();
+  }, 60_000);
+
   it('localized build (one JSDoc process per locale): each option warning once', async () => {
     const destination = join(dir, 'out-fr');
     const specPath = join(dir, 'build-spec.json');

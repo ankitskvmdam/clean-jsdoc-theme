@@ -1,11 +1,13 @@
-import type { Link, Parents } from 'mdast';
+import type { Link, Paragraph, Parents } from 'mdast';
 import type { Root } from 'mdast';
-import { toMarkdown } from 'mdast-util-to-markdown';
-import type { Info, State } from 'mdast-util-to-markdown';
-import { mdxJsxToMarkdown } from 'mdast-util-mdx-jsx';
+import { defaultHandlers, toMarkdown } from 'mdast-util-to-markdown';
+import type { Handle, Info, State } from 'mdast-util-to-markdown';
+import { mdxJsxToMarkdown, type MdxJsxTextElement } from 'mdast-util-mdx-jsx';
 import { gfmToMarkdown } from 'mdast-util-gfm';
+import { JSX_PARAGRAPH_GUARD } from '@clean-jsdoc-theme/utils';
 import { ClassView } from './class-view';
 import { classViewToMdast, ClassViewToMdastOptions } from './mdast/class-view';
+import { isJsxOnlyParagraph } from './mdast/passthrough-html';
 
 /**
  * Link serializer that always emits the resource form `[label](url)`, never the
@@ -65,6 +67,51 @@ function resourceLink(node: Link, _parent: Parents | undefined, state: State, in
 // leading `[` if needed — always `[` since we never autolink.
 resourceLink.peek = (): string => '[';
 
+/**
+ * Paragraph serializer that ends a paragraph of only JSX elements and
+ * whitespace (`<mark>a</mark> <sub>b</sub>`) with {@link JSX_PARAGRAPH_GUARD}:
+ * MDX would otherwise unravel it, dropping the `<p>` and the spaces between the
+ * elements. Done at serialization so the mdast stays free of the character.
+ */
+function guardedParagraph(
+  node: Paragraph,
+  parent: Parents | undefined,
+  state: State,
+  info: Info
+): string {
+  const value = defaultHandlers.paragraph(node, parent, state, info);
+  return isJsxOnlyParagraph(node) ? value + JSX_PARAGRAPH_GUARD : value;
+}
+
+/** The MDX JSX serializer, shared by {@link toMdx} and {@link escapedJsxText}. */
+const mdxJsx = mdxJsxToMarkdown();
+const jsxText = mdxJsx.handlers!.mdxJsxTextElement as Handle;
+
+/**
+ * JSX text element serializer that always escapes its content as phrasing. The
+ * default one relies on its parent having entered the `phrasing` construct (a
+ * paragraph, heading, cell, …), where `<` and `{` are escaped. A `<summary>`
+ * sits directly among the flow children of its `<details>`, so without this a
+ * `&lt;script&gt;` in it reached MDX as a live tag, and a literal `Array<T>`
+ * failed the page.
+ */
+function escapedJsxText(
+  node: MdxJsxTextElement,
+  parent: Parents | undefined,
+  state: State,
+  info: Info
+): string {
+  if (state.stack.includes('phrasing')) return jsxText(node, parent, state, info);
+  const exit = state.enter('phrasing');
+  try {
+    return jsxText(node, parent, state, info);
+  } finally {
+    exit();
+  }
+}
+// A JSX element always opens with `<`.
+escapedJsxText.peek = (): string => '<';
+
 export interface ToMdxOptions {
   /** Optional YAML frontmatter object. Serialized at the top of the document. */
   frontmatter?: Record<string, unknown>;
@@ -85,9 +132,14 @@ export function toMdx(tree: Root, options: ToMdxOptions = {}): string {
     // nodes (tables, strikethrough, task lists) — produced when JSDoc HTML is
     // converted to mdast — back into the `| … |` Markdown that dwar's remark-gfm
     // re-parses and rang renders.
-    extensions: [mdxJsxToMarkdown(), gfmToMarkdown()],
-    // Force resource-form links so no `<url>` autolink reaches dwar's MDX compile.
-    handlers: { link: resourceLink },
+    extensions: [mdxJsx, gfmToMarkdown()],
+    // Force resource-form links so no `<url>` autolink reaches dwar's MDX compile,
+    // keep JSX-only paragraphs paragraphs, and escape JSX text content anywhere.
+    handlers: {
+      link: resourceLink,
+      paragraph: guardedParagraph,
+      mdxJsxTextElement: escapedJsxText,
+    },
   });
   return withFrontmatter(body, options.frontmatter);
 }

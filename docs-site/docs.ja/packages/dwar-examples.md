@@ -96,6 +96,7 @@ interface RenderResult {
   files: OutputFile[];        // { path, contents } — everything to write
   search?: SearchEntry[];     // per-page entries (the JSON index is already in `files`)
   errors?: RenderError[];     // { slug, message } — pages skipped, present only on failure
+  noContentRendered?: { failed: number; first: RenderError; sameMessage: number }; // set only when no content page rendered
   stats: {
     pageCount: number;        // pages rendered successfully (excludes errors)
     assetCount: number;       // non-HTML files (CSS + JS chunks + search index)
@@ -129,6 +130,8 @@ for (const file of result.files) {
 CSS/JS、doc images）と concatenate し、それらすべてを書きます:
 
 ```ts
+import { renderFailureMessage } from '@clean-jsdoc-theme/utils';
+
 const result = await render(manifest, {
   theme: { ...resolveTheme(opts, siteName, fonts, basePath), ...customAssets.theme },
   destination: absoluteDestination,
@@ -136,10 +139,14 @@ const result = await render(manifest, {
   inlineSvgs,
 });
 
+// No content page rendered: fail before anything is written (the old site stays).
+const renderFailure = renderFailureMessage(result);
+if (renderFailure) throw new Error(`clean-jsdoc-theme: ${renderFailure}`);
+
 const outputFiles = [...result.files, ...logoFiles, ...customAssets.files, ...docImageFiles];
 await writeOutputFiles(absoluteDestination, outputFiles);
 
-// Render failures are reported, never fatal.
+// A skipped page is reported, not fatal — unless none rendered (thrown above).
 if (result.errors && result.errors.length > 0) {
   for (const e of result.errors) console.warn(`  - ${e.slug}: ${e.message}`);
 }
@@ -148,7 +155,9 @@ if (result.errors && result.errors.length > 0) {
 TypeDoc bridge
 （[`write-site.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/typedoc/src/write-site.ts)）
 は ESM で同じことを行います: `render(manifest, { theme, destination, islandCacheDir })`、
-それから `writeOutputFiles`。どちらも `errors` array を warning として扱います。
+それから `writeOutputFiles`。どちらも `errors` array を warning として扱い、
+`renderFailureMessage(result)` が message を返したときは (書き込む前に) build を
+失敗させます。
 
 > write loop における分業に注目してください: **dwar の `result.files`** は HTML、
 > 付随する `.md`、stylesheet、island chunks、そして fuzzy-search JSON です。**logos、

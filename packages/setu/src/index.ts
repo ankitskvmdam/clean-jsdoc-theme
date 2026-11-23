@@ -31,6 +31,7 @@ import {
 import { buildSourceModel, type SourceFileInput } from './source-view';
 import { SlotCollector, makeSlotTranslator, type SlotResolver } from './slots';
 import { pruneHiddenDoclets } from './doclet';
+import { normalizeDocletLineEndings } from './line-endings';
 import type { NavNode, Page, PageKind, SiteManifest, TDoclet } from '@clean-jsdoc-theme/utils';
 
 /**
@@ -207,7 +208,10 @@ export function generateSite(rawCollection: unknown, opts?: GenerateSiteOptions)
   // llms.txt / `.md` outputs dwar derives from the pages) reads this pruned
   // collection, so no surface can resurrect a hidden symbol.
   const includePrivate = opts?.includePrivate ?? false;
-  const collection = pruneHiddenDoclets(rawCollection, { includePrivate });
+  // JSDoc's unwrap() turns `\r\n * ` into a lone `\r` (#369): normalise doclet text to `\n` first.
+  const collection = pruneHiddenDoclets(normalizeDocletLineEndings(rawCollection), {
+    includePrivate,
+  });
   const viewOptions = { includePrivate };
 
   // Document-model flavor. `'jsdoc'` (default) keeps the container/member model;

@@ -175,4 +175,20 @@ describe('prefixRootRelativeUrls', () => {
     const fm = '---\ntitle: Guide\nkind: guide\n---\n\n';
     expect(prefixRootRelativeUrls(`${fm}[a](/x)\n`, '/docs')).toBe(`${fm}[a](/docs/x)\n`);
   });
+
+  it('keeps a lone fence in a frontmatter value from hiding body links (forge case)', () => {
+    // It used to pair with a body fence, so the links between were not prefixed.
+    const fm = '---\ntitle: G\ndescription: Use ```iframe to embed.\n---\n\n';
+    const body = 'See [a](/x).\n\n```js\nc\n```\n';
+    expect(prefixRootRelativeUrls(fm + body, '/docs')).toBe(
+      `${fm}See [a](/docs/x).\n\n\`\`\`js\nc\n\`\`\`\n`
+    );
+  });
+
+  it('leaves URL-like text in frontmatter values alone (#370 plain-text description)', () => {
+    const fm = '---\ntitle: G\ndescription: Render <Link href="/x"> or [a](/y).\n---\n\n';
+    expect(prefixRootRelativeUrls(`${fm}[a](/x)\n`, '/docs')).toBe(`${fm}[a](/docs/x)\n`);
+    // An unterminated block is not frontmatter: the body is still rewritten.
+    expect(prefixRootRelativeUrls('---\n<a href="/x">', '/docs')).toBe('---\n<a href="/docs/x">');
+  });
 });

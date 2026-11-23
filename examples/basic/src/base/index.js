@@ -54,7 +54,6 @@ var Base = dcl(
      * own classes without having to call the superclass instance, however it is reccomended that you put
      * all disposal code in `destroy()`. You must be disciplined about calling this on your instances.
      * @see {base/chains#end}
-     * @see {base/chains#destroy}
      * @override
      */
     end: function () {
@@ -66,7 +65,6 @@ var Base = dcl(
      * define this method on your own classes without having to call the superclass instance. It is called by
      * `instance.end()` automatically
      * @see {base/chains#end}
-     * @see {base/chains#destroy}
      * @override
      */
     destroy: function () {},

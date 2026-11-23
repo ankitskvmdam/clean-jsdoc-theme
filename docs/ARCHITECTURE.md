@@ -22,7 +22,9 @@ LLMs + lazy-hydrated Preact islands + a fuzzy search index).
 - **`dwar.render()` is resilient** — a single page that fails to compile (e.g.
   MDX that won't parse) is skipped and reported in `RenderResult.errors` (with a
   line/column + code-frame when the error is positioned), never thrown. One bad
-  page can't abort the whole build; the bridge logs the skips. Non-fatal
+  page can't abort the whole build; the bridge logs the skips. If no content
+  page renders at all, render() sets `RenderResult.noContentRendered` and both
+  bridges fail the build before writing anything (#401). Non-fatal
   authoring slips that don't break the page — e.g. an unbalanced inline-code
   backtick — are surfaced separately in `RenderResult.warnings` (same located
   shape), so authors can clean up the source.
@@ -169,7 +171,14 @@ Markdown → HTML → the same converter). This is deliberate: raw Markdown is G
 not MDX, so passing it through verbatim lets MDX-hostile constructs — angle-bracket
 autolinks (`<https://…>`), void/unclosed raw HTML (`<img …>`) — abort the page
 compile in dwar. The HTML round-trip lowers everything to structured nodes (links,
-images, tables — no raw HTML), and `toMdx` serializes links in resource form
+images, tables — no raw HTML); inline HTML with no Markdown form (`<sub>`, `<sup>`,
+`<abbr>`, `<mark>`, … — the list is `PASSTHROUGH_INLINE_HTML` in utils) passes
+through as lowercase MDX JSX that keeps only allow-listed attributes (`title`,
+`lang`, `dir`, plus `datetime`/`value`/`cite` where they apply), always as plain
+strings; `<details>` likewise stays a `details` JSX block with its `<summary>`
+first (except inside a table cell, which is one line). A paragraph holding only
+such elements ends in an invisible U+2060 (`JSX_PARAGRAPH_GUARD`), or MDX would
+unravel it and drop its `<p>`. `toMdx` serializes links in resource form
 (`[text](url)`, never `<url>`) so nothing MDX-hostile survives. GFM (tables, task
 lists, strikethrough, footnotes) is preserved throughout.
 
@@ -195,7 +204,9 @@ the slug is the relative path with **no prefix** (`guides/advanced.md` →
 (`parseFrontmatter`, dependency-light) overrides per file — `title`, `group`,
 `order`, `slug`, `hidden` all win over the directory/humanized fallbacks; a
 file with no frontmatter falls back to its folder's group and a humanized
-filename title. A doc with no group at all lands in `opts.defaultDocGroup`. The
+filename title. A doc with no group at all lands in `opts.defaultDocGroup`. A
+frontmatter `description` (else the first prose paragraph, `deriveDocDescription`,
+max 300 chars) becomes the page description (#370). The
 root `index.md` (`path === 'index'`) becomes the **home page** (slug `''`,
 `kind: 'index'`), overriding the README home; otherwise the README still wins.
 Doc-group sidebar sections render in `opts.docGroups` order, after the API
@@ -341,8 +352,10 @@ setu/src/
                           #   normalization shared by README + tutorials; HTML
                           #   comments are dropped from the hast, an unterminated
                           #   `<!--` is escaped so it can't hide the rest of the
-                          #   fragment, and the container / playground-fence
-                          #   splitters skip commented-out text)
+                          #   fragment, and the container splitter skips
+                          #   commented-out text; a ```js playground fence is
+                          #   marked in the parsed tree, so it lowers in place
+                          #   inside lists / blockquotes)
 docs/                     # architecture.md, how-jsdoc-works.md, …
 ```
 
@@ -489,7 +502,9 @@ dwar/src/
 ├── index.ts              # render(manifest, opts) → RenderResult  (entry). Renders
 │                         #   each page in try/catch — a page that fails to compile
 │                         #   is skipped + reported in RenderResult.errors (codeFrame
-│                         #   snippet when positioned), not thrown. Also flags unbalanced
+│                         #   snippet when positioned), not thrown; sets
+│                         #   RenderResult.noContentRendered when no content page
+│                         #   rendered (the bridges then fail the build). Also flags unbalanced
 │                         #   inline-code backticks into RenderResult.warnings (non-fatal).
 │                         #   kind:'source' pages skip MDX and mount the code-viewer
 │                         #   island directly (code stays in the SSR <pre>, off the payload)
@@ -672,6 +687,8 @@ clean-jsdoc-theme/src/
 │                         #   (per-route sizes + gzip; node:zlib injected) after write,
 │                         #   plus any RenderResult.errors (skipped pages) +
 │                         #   RenderResult.warnings (e.g. unbalanced backticks).
+│                         #   Throws before cleaning/writing when no content page
+│                         #   rendered (renderFailureMessage).
 │                         #   Collects source files from doclet meta (gated by
 │                         #   templates.default.outputSourceFiles, default on) → setu;
 │                         #   templates.default.sourceLinkToComment toggles whether a

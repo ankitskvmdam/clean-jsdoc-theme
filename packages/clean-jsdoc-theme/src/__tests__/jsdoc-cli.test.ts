@@ -42,6 +42,7 @@ interface JSDocConf {
   plugins?: string[];
   source?: { include: string[] };
   opts?: Record<string, unknown>;
+  templates?: Record<string, unknown>;
 }
 
 const dirs: string[] = [];
@@ -178,13 +179,111 @@ const PROJECT: Record<string, string | Buffer> = {
     '  return name + sep;',
     '}'
   ),
+  // #360: inline HTML with no Markdown form in a module description.
+  'src/chem.js': lines(
+    '/**',
+    ' * Water is H<sub>2</sub>O and E = mc<sup>2</sup>.',
+    ' * @module chem',
+    ' */',
+    'export const water = 1;'
+  ),
+  // #360: escaped markup in a <summary> stays text.
+  'src/chem-details.js': lines(
+    '/**',
+    ' * Details.',
+    ' *',
+    ' * <details><summary>Generic Array&lt;T&gt; &lt;script&gt;alert(2)&lt;/script&gt;' +
+      ' &lt;img src="x" onerror="alert(2)" /&gt; &lt;a href="javascript:alert(2)"&gt;c&lt;/a&gt;' +
+      '</summary>body</details>',
+    ' * @module chemdetails',
+    ' */',
+    'export const details = 1;'
+  ),
+  // #359: the reporter's fenced block in a module description.
+  'src/plainjs.js': lines(
+    '/**',
+    ' * Plain:',
+    ' * ```js',
+    ' * console.log(4);',
+    ' * ```',
+    ' * @module plainjs',
+    ' */',
+    'export const plain = 1;'
+  ),
   // #333: a tutorial image outside the tutorials directory.
   'tutorials/io.md': lines('# IO', '', '![classes-io](../img/classes-io.png)'),
   'img/classes-io.png': PNG_1X1,
-  'README.md': lines('# Home', '', 'Welcome to the fixture home page.'),
+  // #359: a fenced block in the README keeps its language.
+  'README.md': lines(
+    '# Home',
+    '',
+    'Welcome to the fixture home page.',
+    '',
+    '```bash',
+    'npm i',
+    '```'
+  ),
   'custom.css': '.fixture-custom{color:red}\n',
   'custom.js': 'window.__fixtureCustom = true;\n',
 };
+
+describe('JSDoc CLI end to end: CRLF sources (#369)', () => {
+  let run: Run;
+
+  // JSDoc's unwrap() turns each `\r\n * ` of a CRLF comment into a lone `\r`.
+  beforeAll(async () => {
+    const src = [
+      '/**',
+      ' * Adds two numbers,',
+      ' * written on two lines.',
+      ' * @param {number} a The first number.',
+      ' * @example',
+      ' * const a = 1;',
+      ' * const b = 2;',
+      ' * @example',
+      ' * ```ts',
+      ' * const c = 3;',
+      ' * const d = 4;',
+      ' * ```',
+      ' */',
+      'export function add(a) {',
+      '  return a;',
+      '}',
+      '',
+    ].join('\r\n');
+    run = await runJsdoc(
+      { 'src/crlf.js': src },
+      {
+        plugins: ['plugins/markdown'],
+        opts: { siteUrl: 'https://example.com', llmsTxt: true },
+      }
+    );
+  }, SPAWN_TEST_TIMEOUT);
+
+  it('builds with exit 0', () => {
+    expect(run.status, run.output).toBe(0);
+  });
+
+  it('keeps the example lines in the .md page and llms-full.txt', () => {
+    const md = run.read('global/index.md');
+    expect(md).toContain('const a = 1;\nconst b = 2;');
+    expect(md).toContain('const c = 3;\nconst d = 4;');
+    expect(md).not.toContain('\r');
+    expect(md).not.toContain('````');
+    expect(run.read('llms-full.txt')).not.toContain('\r');
+  });
+
+  it('highlights the example as two lines in the HTML page', () => {
+    const html = run.read('global/index.html');
+    expect(html).not.toContain('\r');
+    // Shiki splits the code into token spans; match on the text with tags stripped.
+    const pre = (html.match(/<pre[\s>].*?<\/pre>/gsu) ?? []).find((p) =>
+      p.replace(/<[^>]+>/g, '').includes('const a = 1;')
+    );
+    expect(pre, 'no <pre> holding the example').toBeDefined();
+    expect(pre!.match(/class="line"/g)).toHaveLength(2);
+  });
+});
 
 describe('JSDoc CLI end to end: reported bugs stay fixed', () => {
   let run: Run;
@@ -324,6 +423,36 @@ describe('JSDoc CLI end to end: reported bugs stay fixed', () => {
     expect(mobile.currentSlug).toBe(desktop.currentSlug);
     expect(mobile.nav).toEqual(desktop.nav);
   });
+
+  it('keeps <sub> and <sup> in prose, and joins their text in the meta description (#360)', () => {
+    const html = run.read('module/chem/index.html');
+    expect(html).toContain('H<sub>2</sub>O');
+    expect(html).toContain('mc<sup>2</sup>');
+    expect(html).toContain('content="Water is H2O and E = mc2."');
+    expect(run.read('module/chem/index.md')).toContain('H<sub>2</sub>O');
+  });
+
+  it('keeps escaped markup in a <details> summary as text (#360)', () => {
+    const html = run.read('module/chemdetails/index.html');
+    expect(html).toContain('<details><summary>Generic Array&lt;T> &lt;script>alert(2)&lt;/script>');
+    expect(html).not.toContain('<script>alert');
+    expect(html).not.toMatch(/<img[^>]*onerror/);
+    expect(html).not.toContain('href="javascript:');
+  });
+
+  it('keeps the language of a fenced block in a description, and highlights it (#359)', () => {
+    expect(run.read('module/plainjs/index.md')).toContain('```js\nconsole.log(4);\n```');
+    // Highlighted: the block holding the code carries several token colours, not
+    // just the plain-text foreground/background pair.
+    const html = run.read('module/plainjs/index.html');
+    const pre = /<pre[^>]*>(?:(?!<\/pre>)[\s\S])*console(?:(?!<\/pre>)[\s\S])*<\/pre>/.exec(
+      html
+    )?.[0];
+    expect(pre, 'no code block holding console.log').toBeDefined();
+    const colours = new Set(pre!.match(/#[0-9a-f]{6}/gi)?.map((c) => c.toLowerCase()));
+    expect(colours.size).toBeGreaterThan(2);
+    expect(run.read('index.md')).toContain('```bash\nnpm i\n```');
+  });
 });
 
 describe('JSDoc CLI end to end: configuration problems (PR #356)', () => {
@@ -386,6 +515,21 @@ describe('JSDoc CLI end to end: configuration problems (PR #356)', () => {
       expect(run.status, run.output).toBe(1);
       expect(run.output).toContain('theme_opts');
       expect(run.has('global/index.html')).toBe(false);
+    },
+    SPAWN_TEST_TIMEOUT
+  );
+
+  it(
+    'templates.default.strict is not a strict switch: a typo still only warns (#368)',
+    async () => {
+      const run = await runJsdoc(MIN, {
+        plugins: ['plugins/markdown'],
+        templates: { default: { strict: true } },
+        opts: { siteNme: 'Typo' },
+      });
+      expect(run.status, run.output).toBe(0);
+      expect(run.output).toContain('siteNme');
+      expect(run.has('global/index.html')).toBe(true);
     },
     SPAWN_TEST_TIMEOUT
   );
