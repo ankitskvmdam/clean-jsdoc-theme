@@ -34,7 +34,17 @@ const ELEMENT_ATTRIBUTES: Readonly<Record<string, Readonly<Record<string, string
 const VALID: Readonly<Record<string, RegExp>> = {
   lang: /^[A-Za-z0-9-]+$/,
   dir: /^(?:ltr|rtl|auto)$/,
+  // http(s) or relative: a `javascript:` (or any other scheme) cite is dropped.
+  cite: /^(?:https?:|(?![a-z][a-z0-9+.-]*:))/i,
 };
+
+/**
+ * Write `&` and `|` in an attribute value as character references, which MDX
+ * decodes back. The serializer escapes only the quote: a raw `&lt;` would read
+ * back as `<`, and a raw `|` inside a GFM table row splits the cell mid-tag.
+ */
+const encodeAttribute = (value: string): string =>
+  value.replace(/&/g, '&#38;').replace(/\|/g, '&#124;');
 
 /**
  * One attribute value as a plain string: whitespace collapsed and trimmed, and a
@@ -65,7 +75,7 @@ export function passthroughAttributes(node: Element): MdxJsxAttribute[] {
     const value = attributeValue(node.properties[property]);
     if (value === undefined) continue;
     if (VALID[name] && !VALID[name].test(value)) continue;
-    out.push({ type: 'mdxJsxAttribute', name, value });
+    out.push({ type: 'mdxJsxAttribute', name, value: encodeAttribute(value) });
   }
   return out;
 }
@@ -118,23 +128,57 @@ const passthrough: Handle = (state: State, node: Element) => {
 };
 
 /**
- * How many table cells the conversion is inside. A GFM table cell is one line,
- * so a `<details>` there can't be a multi-line JSX block: it keeps the default
- * lowering (its text). `toMdast` is synchronous, so a counter is enough.
+ * How many one-line Markdown constructs (table cells, headings) the conversion
+ * is inside, at any depth. A `<details>` there can't be a multi-line JSX block:
+ * it keeps the default lowering (its text). `toMdast` is synchronous, so a
+ * counter is enough.
  */
-let cellDepth = 0;
+let lineDepth = 0;
 
-/** Wrap a default table-cell handler to track {@link cellDepth}. */
-function trackCell(handle: Handle): Handle {
+/** Wrap a default handler to track {@link lineDepth}. */
+function oneLine(handle: Handle): Handle {
   return (state, node, parent) => {
-    cellDepth++;
+    lineDepth++;
     try {
       return handle(state, node, parent);
     } finally {
-      cellDepth--;
+      lineDepth--;
     }
   };
 }
+
+/**
+ * Elements whose content lowers to flow, so a `<details>` directly inside one
+ * can stay a block. Inside anything else (`<em>`, `<a>`, `<p>`, …) it would
+ * land in phrasing content, so it keeps the default lowering.
+ */
+const FLOW_PARENTS = new Set<string>([
+  'address',
+  'article',
+  'aside',
+  'blockquote',
+  'body',
+  'center',
+  'dd',
+  'details',
+  'div',
+  'dt',
+  'fieldset',
+  'figcaption',
+  'figure',
+  'footer',
+  'form',
+  'header',
+  'html',
+  'li',
+  'main',
+  'nav',
+  'section',
+]);
+
+/** Whether `nodes` hold anything but whitespace text. */
+const hasContent = (nodes: Element['children']): boolean =>
+  nodes.some((c) => c.type !== 'comment' && (c.type !== 'text' || c.value.trim() !== ''));
 
 /**
  * Keep `<details>` collapsible (#360): a `details` flow element whose first
@@ -142,14 +186,19 @@ function trackCell(handle: Handle): Handle {
  * line with no inner paragraph — followed by the rest of its content as flow.
  * `hast-util-to-mdast` would flatten both into plain paragraphs. A `<summary>`
  * outside a `<details>` keeps the default lowering (a paragraph of its text),
- * as does a `<details>` inside a table cell.
+ * as does a `<details>` in a table cell, a heading or phrasing content.
  */
-const details: Handle = (state: State, node: Element) => {
-  if (cellDepth > 0) return state.all(node);
-  const summary = node.children.find(
-    (c): c is Element => c.type === 'element' && c.tagName === 'summary'
+const details: Handle = (state: State, node: Element, parent) => {
+  const inFlow = !parent || parent.type !== 'element' || FLOW_PARENTS.has(parent.tagName);
+  if (lineDepth > 0 || !inFlow) return state.all(node);
+  const at = node.children.findIndex((c) => c.type === 'element' && c.tagName === 'summary');
+  const summary = at === -1 ? undefined : (node.children[at] as Element);
+  // A summary between body text leaves a space, so the text around it isn't glued.
+  const gap =
+    summary && hasContent(node.children.slice(0, at)) && hasContent(node.children.slice(at + 1));
+  const rest = node.children.flatMap((c): Element['children'] =>
+    c !== summary ? [c] : gap ? [{ type: 'text', value: ' ' }] : []
   );
-  const rest = node.children.filter((c) => c !== summary);
   const children: FlowChildren = [];
   if (summary) {
     const label = state.all(summary) as RootContent[];
@@ -193,8 +242,12 @@ const details: Handle = (state: State, node: Element) => {
 export const passthroughHandlers: Record<string, Handle> = {
   ...Object.fromEntries(PASSTHROUGH_INLINE_HTML.map((name) => [name, passthrough])),
   details,
-  td: trackCell(defaultHandlers.td),
-  th: trackCell(defaultHandlers.th),
+  ...Object.fromEntries(
+    ['td', 'th', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'].map((name) => [
+      name,
+      oneLine(defaultHandlers[name as keyof typeof defaultHandlers]),
+    ])
+  ),
 };
 
 /**

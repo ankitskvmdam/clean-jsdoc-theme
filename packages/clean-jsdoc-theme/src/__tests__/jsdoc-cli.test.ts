@@ -186,6 +186,18 @@ const PROJECT: Record<string, string | Buffer> = {
     ' */',
     'export const water = 1;'
   ),
+  // #360: escaped markup in a <summary> stays text.
+  'src/chem-details.js': lines(
+    '/**',
+    ' * Details.',
+    ' *',
+    ' * <details><summary>Generic Array&lt;T&gt; &lt;script&gt;alert(2)&lt;/script&gt;' +
+      ' &lt;img src="x" onerror="alert(2)" /&gt; &lt;a href="javascript:alert(2)"&gt;c&lt;/a&gt;' +
+      '</summary>body</details>',
+    ' * @module chemdetails',
+    ' */',
+    'export const details = 1;'
+  ),
   // #333: a tutorial image outside the tutorials directory.
   'tutorials/io.md': lines('# IO', '', '![classes-io](../img/classes-io.png)'),
   'img/classes-io.png': PNG_1X1,
@@ -339,6 +351,14 @@ describe('JSDoc CLI end to end: reported bugs stay fixed', () => {
     expect(html).toContain('mc<sup>2</sup>');
     expect(html).toContain('content="Water is H2O and E = mc2."');
     expect(run.read('module/chem/index.md')).toContain('H<sub>2</sub>O');
+  });
+
+  it('keeps escaped markup in a <details> summary as text (#360)', () => {
+    const html = run.read('module/chemdetails/index.html');
+    expect(html).toContain('<details><summary>Generic Array&lt;T> &lt;script>alert(2)&lt;/script>');
+    expect(html).not.toContain('<script>alert');
+    expect(html).not.toMatch(/<img[^>]*onerror/);
+    expect(html).not.toContain('href="javascript:');
   });
 });
 

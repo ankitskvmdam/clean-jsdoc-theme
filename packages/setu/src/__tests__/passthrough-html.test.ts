@@ -291,3 +291,81 @@ describe('<details>/<summary> stay collapsible (#360)', () => {
     expect(JSON.stringify(inline)).toContain('"B"');
   });
 });
+
+describe('review follow-ups (#360)', () => {
+  /** The `<summary>` line of a converted `<details>`. */
+  const summaryLine = (html: string): string =>
+    body(`<details><summary>${html}</summary><p>b</p></details>`).split('\n')[1].trim();
+
+  it.each([
+    [
+      'a literal <',
+      'Generic Array&lt;T&gt; and a &lt; b',
+      '<summary>Generic Array\\<T> and a \\< b</summary>',
+    ],
+    [
+      'an escaped script tag',
+      '&lt;script&gt;alert(2)&lt;/script&gt;',
+      '<summary>\\<script>alert(2)\\</script></summary>',
+    ],
+    // Braces are left to dwar's stray-brace pass, as in any paragraph.
+    ['braces', '1 {two} three }', '<summary>1 {two} three }</summary>'],
+    ['entities', '&#123;x&#125; &amp;lt;', '<summary>{x} \\&lt;</summary>'],
+    [
+      'a component name',
+      '&lt;Callout type="danger"&gt;x&lt;/Callout&gt;',
+      '<summary>\\<Callout type="danger">x\\</Callout></summary>',
+    ],
+    [
+      'markup nested in strong and sub',
+      '<b>{y} &lt;b&gt;</b> <sub>&lt;T&gt;</sub>',
+      '<summary>**{y} \\<b>** <sub>\\<T></sub></summary>',
+    ],
+  ])('escapes %s in a <summary>', (_label, html, want) => {
+    expect(summaryLine(html)).toBe(want);
+    // Escaped exactly as the same content in a paragraph.
+    expect(want).toBe(`<summary>${body(`<p>${html}</p>`)}</summary>`);
+  });
+
+  it('writes | in an attribute value as a character reference', () => {
+    expect(body('<p>x <abbr title="p | q">y</abbr></p>')).toBe(
+      'x <abbr title="p &#124; q">y</abbr>'
+    );
+    const table = body(
+      '<table><thead><tr><th>A</th></tr></thead><tbody><tr><td><abbr title="p | q">y</abbr></td></tr></tbody></table>'
+    );
+    expect(table.split('\n')[2]).toMatch(/^\| <abbr title="p &#124; q">y<\/abbr> +\|$/);
+  });
+
+  it('writes & in an attribute value as a character reference', () => {
+    expect(body('<p>x <abbr title="a &amp;lt; b">y</abbr></p>')).toBe(
+      'x <abbr title="a &#38;lt; b">y</abbr>'
+    );
+  });
+
+  it.each([
+    ['in a heading', '<h2><details><summary>s</summary>x</details></h2>'],
+    ['in a span in a heading', '<h2>a <span><details><summary>s</summary>x</details></span></h2>'],
+    ['in a link', '<a href="u">a <details><summary>s</summary>x</details></a>'],
+  ])('flattens a <details> %s to its text', (_label, html) => {
+    const out = body(html);
+    expect(out).not.toContain('<details');
+    expect(out).toContain('s');
+    expect(out).toContain('x');
+  });
+
+  it('drops an <ins cite> that is not http(s) or relative', () => {
+    expect(body('<p>x <ins cite="javascript:alert(1)">i</ins></p>')).toBe('x <ins>i</ins>');
+    expect(body('<p>x <ins cite="JavaScript:x">i</ins></p>')).toBe('x <ins>i</ins>');
+    expect(body('<p>x <ins cite="/changes/1">i</ins></p>')).toBe(
+      'x <ins cite="/changes/1">i</ins>'
+    );
+    expect(body('<p>x <ins cite="a/b:c">i</ins></p>')).toBe('x <ins cite="a/b:c">i</ins>');
+  });
+
+  it('keeps a space where a late <summary> stood', () => {
+    expect(body('<details>before <summary>late</summary> after</details>')).toBe(
+      '<details>\n  <summary>late</summary>\n\n  before after\n</details>'
+    );
+  });
+});
