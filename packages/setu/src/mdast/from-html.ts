@@ -29,6 +29,7 @@ import {
   KNOWN_PROVIDERS,
   parsePlaygroundSpec,
   resolvePlaygroundOpts,
+  type PlaygroundOpts,
   type PlaygroundSpec,
 } from '../playground';
 
@@ -512,19 +513,15 @@ function lowerMarkdownTree(tree: Root, handlers: Record<string, Handle> = HANDLE
   return htmlBlocksPlain(html, handlers);
 }
 
-/** The fence run (```` ``` ```` / `~~~`) opening a fenced code block's source. */
-const FENCE_RUN = /^[ \t]*(`{3,}|~{3,})/;
-/** A closing fence line, after any list indent / blockquote `>` markers. */
-const FENCE_CLOSE = /^[ \t>]*(`+|~+)[ \t]*$/;
-
 /**
  * Find the ```` ```js playground … ```` fences in a parsed Markdown tree, at any
  * depth (list items, blockquotes, `<details>`), and mark each one's code node so
- * {@link playgroundPre} can wrap it after the HTML round-trip. That round-trip
- * drops a fence's `meta` (only the language survives as a `language-*` class),
- * so the mark is an attribute on the `<code>` element holding the index of the
- * fence's spec in `specs`. Marking the tree, rather than cutting the source at
- * each fence, keeps the fence where it was written (#362).
+ * {@link playgroundPre} can recognise it after the HTML round-trip. That
+ * round-trip drops a fence's `meta` (only the language survives as a
+ * `language-*` class), so the mark is an attribute on the `<code>` element
+ * holding the index of the fence's spec in `specs`. Marking the tree, rather
+ * than cutting the source at each fence, keeps the fence where it was written
+ * (#362).
  *
  * `playground` may be the FIRST info token (no language — ```` ```playground
  * … ````) or the SECOND (```` ```js playground … ````). Skipped: an unterminated
@@ -541,15 +538,17 @@ function markPlaygroundFences(tree: Root, md: string): { specs: string[]; prop: 
   const prop = `dataSetuPlayground${suffix}`;
   let comments: TextRange[] | undefined;
 
+  // A closed fence spans its opening line, the code lines and its closing line.
+  // An unclosed one ends with its last code line (or its opening line), one
+  // line short — so this follows CommonMark's closing rules exactly, where a
+  // look at the last line alone would take an over-indented ```` ``` ```` (code
+  // text) or one in a deeper blockquote for the closer.
   const terminated = (node: Code): boolean => {
     const start = node.position?.start.offset;
     const end = node.position?.end.offset;
     if (start === undefined || end === undefined) return false;
-    const lines = md.slice(start, end).split('\n');
-    if (lines.length < 2) return false;
-    const open = FENCE_RUN.exec(lines[0]);
-    const close = FENCE_CLOSE.exec(lines[lines.length - 1].replace(/\r$/, ''));
-    return !!open && !!close && close[1][0] === open[1][0] && close[1].length >= open[1].length;
+    const spanned = md.slice(start, end).split('\n').length;
+    return spanned === (node.value === '' ? 2 : node.value.split('\n').length + 2);
   };
   const commented = (node: Code): boolean => {
     const start = node.position?.start.offset;
@@ -579,11 +578,15 @@ function markPlaygroundFences(tree: Root, md: string): { specs: string[]; prop: 
   return { specs, prop };
 }
 
+/** The resolved `<Playground>` config {@link playgroundPre} leaves on a code node. */
+type PlaygroundCode = Code & { data?: Code['data'] & { setuPlayground?: PlaygroundOpts } };
+
 /**
  * The `<pre>` handler for a tree {@link markPlaygroundFences} marked: lower the
- * block as usual (keeping its language), then wrap a marked one in a
- * `<Playground>` built from its spec. A spec that resolves to nothing (`off`)
- * leaves bare code. Bare prose configs default to ALL providers.
+ * block as usual (keeping its language) and, for a marked one, leave its
+ * resolved config on the code node for {@link wrapPlaygrounds}. A spec that
+ * resolves to nothing (`off`) leaves bare code. Bare prose configs default to
+ * ALL providers.
  */
 function playgroundPre(specs: readonly string[], prop: string): Handle {
   return (state, node, parent) => {
@@ -597,23 +600,59 @@ function playgroundPre(specs: readonly string[], prop: string): Handle {
       return result;
     }
     const opts = resolvePlaygroundOpts(parsePlaygroundSpec(spec), KNOWN_PROVIDERS);
-    return opts ? playground(opts, result) : result;
+    if (opts) (result as PlaygroundCode).data = { ...result.data, setuPlayground: opts };
+    return result;
   };
+}
+
+/** Parents whose children are flow content, where a `<Playground>` may stand. */
+const FLOW_PARENTS = new Set([
+  'root',
+  'blockquote',
+  'listItem',
+  'footnoteDefinition',
+  'mdxJsxFlowElement',
+]);
+
+/**
+ * Wrap each code node {@link playgroundPre} configured in a `<Playground>` —
+ * when it stands in flow content (the root, a list item, a blockquote, a
+ * `<details>` or callout, …). Under a phrasing-only parent (a table cell, a
+ * heading, a link, emphasis — reachable through raw HTML) a flow element would
+ * break the page's MDX, so the code stays a plain highlighted block there.
+ */
+function wrapPlaygrounds(nodes: RootContent[], flow: boolean): RootContent[] {
+  return nodes.map((node) => {
+    if (node.type === 'code') {
+      const code = node as PlaygroundCode;
+      const opts = code.data?.setuPlayground;
+      if (!opts) return node;
+      delete code.data!.setuPlayground;
+      if (Object.keys(code.data!).length === 0) delete code.data;
+      return flow ? playground(opts, code) : code;
+    }
+    const parent = node as MaybeParent;
+    if (Array.isArray(parent.children)) {
+      parent.children = wrapPlaygrounds(parent.children, FLOW_PARENTS.has(node.type));
+    }
+    return node;
+  });
 }
 
 /**
  * Plain-Markdown converter with playground fences lowered in place: a
  * ```` ```js playground … ```` fence becomes a `<Playground>`-wrapped `code`
- * node wherever it sits — top level, list item, blockquote, `<details>` (see
- * {@link markPlaygroundFences}). With no playground fence this is exactly
- * {@link convertMarkdownSegment}.
+ * node wherever flow content may stand — top level, list item, blockquote,
+ * `<details>` (see {@link markPlaygroundFences}, {@link wrapPlaygrounds}). With
+ * no playground fence this is exactly {@link convertMarkdownSegment}.
  */
 function markdownBlocksPlain(md: string): RootContent[] {
   const tree = parseMarkdown(md);
   const { specs, prop } = markPlaygroundFences(tree, md);
-  return lowerMarkdownTree(
-    tree,
-    specs.length > 0 ? { ...HANDLERS, pre: playgroundPre(specs, prop) } : HANDLERS
+  if (specs.length === 0) return lowerMarkdownTree(tree);
+  return wrapPlaygrounds(
+    lowerMarkdownTree(tree, { ...HANDLERS, pre: playgroundPre(specs, prop) }),
+    true
   );
 }
 

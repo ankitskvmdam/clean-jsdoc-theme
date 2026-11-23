@@ -323,4 +323,59 @@ describe('playground fence inside containers (#362)', () => {
     ) as unknown as Node[];
     expect(walk(nodes).some(isPlayground)).toBe(false);
   });
+
+  it.each([
+    ['upper-case', '<pre><code DATA-SETU-PLAYGROUND="0">spoof();</code></pre>'],
+    [
+      'suffixed',
+      '<pre><code data-setu-playground="0" data-setu-playground1="0">spoof();</code></pre>',
+    ],
+  ])('does not let a %s raw attribute spoof a playground', (_name, raw) => {
+    const md = `${raw}\n\n\`\`\`js playground codepen\nrun();\n\`\`\`\n`;
+    const out = mdx(md);
+    expect(out.match(/<Playground\b/g)).toHaveLength(1);
+    expect(out).toContain('spoof();');
+    expect(walk(blocks(md)).find(isPlayground)!.children![0].value).toBe('run();');
+  });
+
+  it('lowers a fence in a CRLF document, with no stray carriage return', () => {
+    const md = 'a\r\n\r\n```js playground codepen\r\nrun();\r\nmore();\r\n```\r\n\r\nb\r\n';
+    const pg = walk(blocks(md)).find(isPlayground)!;
+    expect(pg).toBeTruthy();
+    expect(pg.children![0].value).toBe('run();\nmore();');
+  });
+
+  it.each([
+    ['an over-indented closer', '```js playground codepen\nrun();\n    ```\n'],
+    ['a closer in a deeper blockquote', '> ```js playground codepen\n> run();\n> > ```\n'],
+  ])('leaves a fence whose only "closer" is %s unlowered', (_name, md) => {
+    expect(walk(blocks(md)).some(isPlayground)).toBe(false);
+  });
+
+  // Raw HTML can put a fence under a phrasing-only parent (a table cell, a
+  // heading, emphasis). A <Playground> flow element there fails the page's MDX
+  // compile, so the fence stays code — as a plain ```js fence would. dwar's
+  // playground-nested test renders these exact bodies.
+  it.each([
+    [
+      'td',
+      '<table><tr><td>\n\n```js playground codepen\nrun();\n```\n\n</td></tr></table>\n',
+      '|                  |\n| ---------------- |\n| ```js\nrun();\n``` |\n',
+    ],
+    ['h2', '<h2>\n\n```js playground codepen\nrun();\n```\n\n</h2>\n', '## ```js\nrun();\n```\n'],
+    [
+      'strong',
+      '<strong>\n\n```js playground codepen\nrun();\n```\n\n</strong>\n',
+      '**```js\nrun();\n```**\n',
+    ],
+  ])('keeps a fence under <%s> as code, not a <Playground>', (_name, md, expected) => {
+    expect(mdx(md)).toBe(expected);
+  });
+
+  it('still lowers a fence under <a>, which the HTML lowering lifts to flow', () => {
+    const md = '<a href="x">\n\n```js playground codepen\nrun();\n```\n\n</a>\n';
+    expect(mdx(md)).toBe(
+      '<Playground providers="codepen">\n  ```js\n  run();\n  ```\n</Playground>\n'
+    );
+  });
 });

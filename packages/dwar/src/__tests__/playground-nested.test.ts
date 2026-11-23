@@ -19,6 +19,9 @@ const DETAILS_BODY =
   '<details>\n  <summary>More</summary>\n\n' +
   '  <Playground providers="codepen">\n    ```js\n    run();\n    ```\n  </Playground>\n</details>\n';
 
+const TIGHT_ORDERED_BODY =
+  '1. text\n   <Playground providers="codepen">\n     ```js\n     run();\n     ```\n   </Playground>\n1. next\n';
+
 const theme: ThemeConfig = { ...minimalTheme, playground: { enabled: true } };
 
 function asString(file: OutputFile): string {
@@ -67,6 +70,29 @@ describe('render() — playground nested in a container (#362)', () => {
     // The code's inner indentation survives.
     const text = html.replace(/<span style="[^"]*">|<\/span>/g, '');
     expect(text).toContain('\n<span class="line">  run();\n<span class="line">}');
+  });
+
+  it('renders the card inside a tight ordered item and keeps one list', async () => {
+    const html = content(await renderBody(TIGHT_ORDERED_BODY));
+    const island = html.indexOf('data-island="playground"');
+    const firstLi = html.indexOf('<li');
+    expect(firstLi).toBeGreaterThan(-1);
+    expect(firstLi).toBeLessThan(island);
+    expect(island).toBeLessThan(html.indexOf('</li>', firstLi));
+    expect(html.match(/<ol\b/g)).toHaveLength(1);
+    expect(html).toContain('next');
+  });
+
+  // A fence under a phrasing-only HTML parent stays code (setu's exact MDX, see
+  // setu's playground-prose test): the page must still render.
+  it.each([
+    ['td', '|                  |\n| ---------------- |\n| ```js\nrun();\n``` |\n'],
+    ['h2', '## ```js\nrun();\n```\n'],
+    ['strong', '**```js\nrun();\n```**\n'],
+    ['a', '<Playground providers="codepen">\n  ```js\n  run();\n  ```\n</Playground>\n'],
+  ])('renders the page for a fence that was under <%s>', async (_name, body) => {
+    const html = content(await renderBody(body));
+    expect(html).toContain('run');
   });
 
   it('renders the card inside the blockquote', async () => {
