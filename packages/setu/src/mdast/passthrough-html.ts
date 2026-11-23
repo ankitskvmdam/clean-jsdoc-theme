@@ -47,6 +47,13 @@ const encodeAttribute = (value: string): string =>
   value.replace(/&/g, '&#38;').replace(/\|/g, '&#124;');
 
 /**
+ * `value` without ASCII control characters and spaces, which a browser strips
+ * from (or ignores in) a URL's scheme: `&#1;javascript:` is still `javascript:`.
+ */
+const withoutControls = (value: string): string =>
+  [...value].filter((c) => c.charCodeAt(0) > 32 && c.charCodeAt(0) !== 127).join('');
+
+/**
  * One attribute value as a plain string: whitespace collapsed and trimmed, and a
  * backtick turned into `'` — inside an attribute it would still read as an
  * inline-code delimiter to dwar's unbalanced-backtick check. Empty → dropped.
@@ -74,7 +81,9 @@ export function passthroughAttributes(node: Element): MdxJsxAttribute[] {
     }
     const value = attributeValue(node.properties[property]);
     if (value === undefined) continue;
-    if (VALID[name] && !VALID[name].test(value)) continue;
+    if (VALID[name] && !VALID[name].test(name === 'cite' ? withoutControls(value) : value)) {
+      continue;
+    }
     out.push({ type: 'mdxJsxAttribute', name, value: encodeAttribute(value) });
   }
   return out;
@@ -104,19 +113,66 @@ function allPhrasing(nodes: readonly RootContent[]): boolean {
   );
 }
 
+/** Phrasing wrappers that serialize as bare markers (`__`, `**`, `~~`) when empty. */
+const MARKERS = new Set(['emphasis', 'strong', 'delete']);
+
+/** `nodes` without empty emphasis/strong/delete, at any depth. */
+function dropEmptyMarkers(nodes: readonly RootContent[]): RootContent[] {
+  return nodes.flatMap((n) => {
+    if (!('children' in n)) return [n];
+    const children = dropEmptyMarkers(n.children as RootContent[]);
+    if (MARKERS.has(n.type) && children.length === 0) return [];
+    return [{ ...n, children } as RootContent];
+  });
+}
+
+/** A `<br>`, or whitespace-only text. */
+const isBlank = (n: RootContent): boolean =>
+  n.type === 'break' || (n.type === 'text' && n.value.trim() === '');
+
+/** The content of a JSX text element, split for {@link tidyPhrasing}. */
+interface Tidied {
+  /** Breaks (and whitespace) that stood at the start. */
+  lead: RootContent[];
+  body: RootContent[];
+  /** Breaks (and whitespace) that stood at the end. */
+  trail: RootContent[];
+}
+
+/**
+ * The content of a JSX text element, made safe to serialize: empty markers
+ * dropped, and a run of breaks (and whitespace) at either edge split off. A
+ * break serializes as `\` + newline, so at the end it left the closing tag
+ * alone on its line, where MDX reads it as a flow tag and fails the page.
+ */
+function tidyPhrasing(nodes: readonly RootContent[]): Tidied {
+  const out = dropEmptyMarkers(nodes);
+  const hasBreak = (run: RootContent[]): boolean => run.some((n) => n.type === 'break');
+  let end = out.length;
+  while (end > 0 && isBlank(out[end - 1])) end--;
+  if (!hasBreak(out.slice(end))) end = out.length;
+  let start = 0;
+  while (start < end && isBlank(out[start])) start++;
+  if (!hasBreak(out.slice(0, start))) start = 0;
+  return { lead: out.slice(0, start), body: out.slice(start, end), trail: out.slice(end) };
+}
+
 /**
  * Keep an inline element with no Markdown form (`<sub>`, `<sup>`, `<abbr>`, …)
  * as a lowercase `mdxJsxTextElement` with its allow-listed attributes, where
  * `hast-util-to-mdast` would keep only its text (#360). Falls back to the
  * element's children, unwrapped, when it has none, when one of them is flow
  * content (`<ins><p>…</p></ins>`: a JSX text element can't hold a paragraph),
- * or for a `<span>` with no attribute left.
+ * or for a `<span>` with no attribute left. A `<br>` at its edge moves out of
+ * it, where it is the line break it was before.
  */
 const passthrough: Handle = (state: State, node: Element) => {
-  const children = state.all(node) as RootContent[];
+  const all = state.all(node) as RootContent[];
   const attributes = passthroughAttributes(node);
-  if (children.length === 0 || !allPhrasing(children)) return children;
-  if (node.tagName === 'span' && attributes.length === 0) return children;
+  if (!allPhrasing(all)) return all;
+  const { lead, body: children, trail } = tidyPhrasing(all);
+  if (children.length === 0) return [...lead, ...trail];
+  if (node.tagName === 'span' && attributes.length === 0) return all;
   const result: MdxJsxTextElement = {
     type: 'mdxJsxTextElement',
     name: node.tagName,
@@ -124,7 +180,7 @@ const passthrough: Handle = (state: State, node: Element) => {
     children: children as PhrasingContent[],
   };
   state.patch(node, result);
-  return result;
+  return [...lead, result, ...trail];
 };
 
 /**
@@ -209,7 +265,8 @@ const details: Handle = (state: State, node: Element, parent) => {
           type: 'mdxJsxTextElement',
           name: 'summary',
           attributes: passthroughAttributes(summary),
-          children: label as PhrasingContent[],
+          // An edge `<br>` in a summary has nothing to break: dropped.
+          children: tidyPhrasing(label).body as PhrasingContent[],
         }
       : {
           type: 'mdxJsxFlowElement',

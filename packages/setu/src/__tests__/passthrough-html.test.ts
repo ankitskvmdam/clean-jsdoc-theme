@@ -369,3 +369,49 @@ describe('review follow-ups (#360)', () => {
     );
   });
 });
+
+describe('second review follow-ups (#360)', () => {
+  // A `<br>` serializes as `\` + newline: at an element's edge it left the
+  // closing tag alone on its line, which MDX reads as a flow tag. It moves out
+  // of the element, where it breaks the line as it did when the tag was dropped.
+  it.each([
+    ['trailing', '<p>x <sub>a<br></sub> y</p>', 'x <sub>a</sub>\\\ny'],
+    ['trailing, at paragraph end', '<p>x <sub>a<br></sub></p>', 'x <sub>a</sub>'],
+    ['leading', '<p>x <sub><br>a</sub> y</p>', 'x\\\n<sub>a</sub> y'],
+    ['trailing, then whitespace', '<p>x <sub>a<br> </sub> y</p>', 'x <sub>a</sub>\\\ny'],
+    ['in a list item', '<ul><li>x <sub>a<br></sub></li></ul>', '- x <sub>a</sub>'],
+    ['in the middle (kept)', '<p>x <sub>a<br>b</sub> y</p>', 'x <sub>a\\\nb</sub> y'],
+  ])('moves a %s <br> out of the element', (_label, html, want) => {
+    expect(body(html)).toBe(want);
+  });
+
+  it('leaves an element holding only a <br> out, keeping the break', () => {
+    expect(body('<p>x <sub><br></sub> y</p>')).toBe('x\\\ny');
+  });
+
+  it('drops an edge <br> in Markdown input', () => {
+    expect(mdx(markdownToMdastBlocks('Text <sub>small<br></sub>')).trim()).toBe(
+      'Text <sub>small</sub>'
+    );
+  });
+
+  it('drops an edge <br> in a <summary>', () => {
+    expect(body('<details><summary>Title<br></summary><p>b</p></details>')).toBe(
+      '<details>\n  <summary>Title</summary>\n\n  b\n</details>'
+    );
+  });
+
+  it('checks the cite scheme with control characters and spaces removed', () => {
+    expect(body('<p>x <ins cite="&#1;javascript:alert(1)">i</ins></p>')).toBe('x <ins>i</ins>');
+    expect(body('<p>x <ins cite=" java&#1;script:alert(1)">i</ins></p>')).toBe('x <ins>i</ins>');
+    expect(body('<p>x <ins cite="https://x.y">i</ins></p>')).toBe(
+      'x <ins cite="https://x.y">i</ins>'
+    );
+  });
+
+  it('drops empty emphasis inside an element', () => {
+    const out = mdx(markdownToMdastBlocks('Free<sup>*</sup> for now; <sup>*</sup>Terms apply.'));
+    expect(out).not.toContain('__');
+    expect(out).not.toContain('<sup></sup>');
+  });
+});
