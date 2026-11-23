@@ -81,7 +81,9 @@ const COMMON_LANGS: readonly string[] = [
 /**
  * Report the language of every fence opener in `body` to `add`, lowercased:
  * the first word of the info string after a run of three or more backticks or
- * tildes. One pass over the body, linear in its length.
+ * tildes. One pass over the body, linear in its length. A line ends at `\n`,
+ * `\r\n` or a lone `\r` (JSDoc `@example` text from CRLF sources can keep one),
+ * and a leading byte-order mark on the body is skipped.
  *
  * Each line first loses its container prefixes, in any order and nesting:
  * spaces/tabs, `>` (blockquote), a bullet `-`/`*`/`+` or an ordered marker of
@@ -93,15 +95,21 @@ const COMMON_LANGS: readonly string[] = [
  * Over-approximates on purpose: there is no open/close state, so a fence line
  * inside another block (an outer ````md fence) still counts, as do fences in
  * `{/* *\/}` or HTML comments; an extra grammar only costs its load time. Not
- * handled: backslash escapes and character references in the info string, and
- * bare `\r` line endings.
+ * handled: backslash escapes and character references in the info string.
  */
 function scanFenceLangs(body: string, add: (lang: string) => void): void {
   if (!body.includes('```') && !body.includes('~~~')) return;
   const n = body.length;
-  for (let start = 0; start < n; ) {
-    let end = body.indexOf('\n', start);
-    if (end === -1) end = n;
+  const bom = body.charCodeAt(0) === 0xfeff ? 1 : 0;
+  for (let start = bom; start < n; ) {
+    // The line is [start, end); `next` is past its \n, \r\n or lone \r.
+    let end = start;
+    while (end < n) {
+      const e = body.charCodeAt(end);
+      if (e === 10 || e === 13) break;
+      end++;
+    }
+    const next = body.charCodeAt(end) === 13 && body.charCodeAt(end + 1) === 10 ? end + 2 : end + 1;
     let i = start;
     // Container prefixes: indent, `>`, list markers, footnote labels.
     for (;;) {
@@ -155,7 +163,7 @@ function scanFenceLangs(body: string, add: (lang: string) => void): void {
         if (ok) add(body.slice(j, k).toLowerCase());
       }
     }
-    start = end + 1;
+    start = next;
   }
 }
 
