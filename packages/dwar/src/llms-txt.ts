@@ -23,6 +23,7 @@ import type {
   SiteManifest,
   SiteName,
 } from '@clean-jsdoc-theme/utils';
+import { frontmatterLength } from './frontmatter';
 import { mdPathFor } from './html';
 import { prefixRootRelativeUrls } from './md-base-path';
 import { pageUrl } from './sitemap';
@@ -88,8 +89,8 @@ export function navSections(nav: readonly NavNode[]): Array<{ label: string; slu
 
 /** Strip a leading `---\n…\n---` YAML block (page bodies carry frontmatter). */
 export function stripFrontmatter(body: string): string {
-  const match = /^---\r?\n[\s\S]*?\r?\n---[ \t]*(?:\r?\n|$)/.exec(body);
-  return match ? body.slice(match[0].length).replace(/^\s+/, '') : body;
+  const length = frontmatterLength(body);
+  return length ? body.slice(length).replace(/^\s+/, '') : body;
 }
 
 /** Strip a leading `# Heading` line (the title is already the section header). */

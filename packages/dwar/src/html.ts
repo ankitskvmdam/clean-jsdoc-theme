@@ -22,6 +22,7 @@ import {
 } from '@clean-jsdoc-theme/utils';
 import type { Page, IslandName, MetaTag, ScrollbarMode } from '@clean-jsdoc-theme/utils';
 import type { IslandRecord } from './layout';
+import { frontmatterLength } from './frontmatter';
 import { pageCommentRanges } from './mdx';
 import { getPreHydrationThemeScript } from './theme-script';
 import { getIslandsLoaderScript } from './islands-loader';
@@ -496,8 +497,9 @@ export function extractExcerpt(
   max = 200,
   comments: readonly HtmlCommentRange[] = pageCommentRanges(mdxBody)
 ): string {
-  const prose = dropHtmlComments(mdxBody, comments)
-    .replace(/^---[\s\S]*?---\s*/u, '') // frontmatter
+  const visible = dropHtmlComments(mdxBody, comments);
+  const prose = visible
+    .slice(frontmatterLength(visible)) // frontmatter
     .replace(/```[\s\S]*?```/g, ' '); // fenced code
   const stripped = parkEscapes(prose, 'drop') // inline code → a space
     .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ') // images
@@ -528,8 +530,9 @@ export function extractSearchText(
   max = 20000,
   comments: readonly HtmlCommentRange[] = pageCommentRanges(mdxBody)
 ): string {
-  const prose = dropHtmlComments(mdxBody, comments)
-    .replace(/^---[\s\S]*?---\s*/u, '') // frontmatter
+  const visible = dropHtmlComments(mdxBody, comments);
+  const prose = visible
+    .slice(frontmatterLength(visible)) // frontmatter
     .replace(/```[\s\S]*?```/g, ' '); // fenced code (noisy/large)
   // Inline code → keep the identifier; its punctuation is parked, so a
   // generic (`Array<Map<K, V>>`) is a type, not a tag, to the strip below.

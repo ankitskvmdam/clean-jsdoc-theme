@@ -140,6 +140,11 @@ describe('stripFrontmatter / stripLeadingHeading', () => {
     expect(stripFrontmatter('# X\n')).toBe('# X\n');
     expect(stripLeadingHeading('Body only.\n')).toBe('Body only.\n');
   });
+
+  it('ends the YAML block at a fence on its own line (#393)', () => {
+    expect(stripFrontmatter('---\ntitle: a --- b\n---\nBody\n')).toBe('Body\n');
+    expect(stripFrontmatter('---\n---\n# X\n')).toBe('# X\n');
+  });
 });
 
 describe('buildLlmsTxt', () => {
