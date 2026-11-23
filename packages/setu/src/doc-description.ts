@@ -40,7 +40,7 @@ function stripInlineTags(text: string): string {
 }
 
 /** A footnote marker: the footnote ref arrives as a link to its definition. */
-const FOOTNOTE_REF_URL = /^#user-content-fn-/;
+export const FOOTNOTE_REF_URL = /^#user-content-fn-/;
 /** A letter or digit: text outside links that has one makes the paragraph prose. */
 const WORD_CHAR = /[\p{L}\p{N}]/u;
 

@@ -91,6 +91,20 @@ describe('buildDocPages — slug from path', () => {
   });
 });
 
+describe('buildDocPages — footnote references in headings (#357)', () => {
+  it('lists the heading label without the footnote number but keeps it in the id', () => {
+    const docs: DocInput[] = [
+      { path: 'notes', content: '## Intro[^1]\n\n### Detail[^1]\n\n[^1]: note', type: 'markdown' },
+    ];
+    const { pages } = buildDocPages(docs);
+    expect(pages[0].headings).toEqual([
+      { depth: 2, text: 'Intro', id: 'intro1' },
+      { depth: 3, text: 'Detail', id: 'detail1' },
+      { depth: 2, text: 'Footnotes', id: 'footnotes' },
+    ]);
+  });
+});
+
 describe('buildDocPages — inputs', () => {
   it('maps each page back to the input it was built from', () => {
     const docs: DocInput[] = [
