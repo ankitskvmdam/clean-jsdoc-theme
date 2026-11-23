@@ -125,6 +125,7 @@ npx jsdoc -c jsdoc.json
 | `group` | frontmatter `group` → humanized 的 **directory** path → `defaultDocGroup`     |
 | `order` | frontmatter `order`                                                        |
 | `hidden`| frontmatter `hidden`（default `false`）                                     |
+| `description` | frontmatter `description` → body 的第一个 prose paragraph（plain text，最多 300 个字符） |
 
 ### Slug 来自 path
 
@@ -159,6 +160,7 @@ Frontmatter 是文件开头的一个 `---` block。parser 刻意做得很小—�
 ```markdown
 ---
 title: Advanced Setup
+description: How to configure advanced options.
 group: Guides
 order: 2
 slug: guides/advanced
@@ -170,6 +172,8 @@ hidden: false
 ```
 
 - **`title`**——sidebar 标签以及 page 的 `<title>`。
+- **`description`**——page 的 `<meta name="description">`、search subtitle、pager
+  card 和 `llms.txt` 条目。未设置时默认取 body 的第一个 paragraph。
 - **`group`**——sidebar group（override directory）。可以是一个 `/`-path 以进行
   嵌套。
 - **`order`**——group 内的排序键（升序；未设置者排在最后，然后按字母顺序）。参阅

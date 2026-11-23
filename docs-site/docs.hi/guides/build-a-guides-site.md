@@ -129,6 +129,7 @@ npx jsdoc -c jsdoc.json
 | `group` | frontmatter `group` → humanized **directory** path → `defaultDocGroup`     |
 | `order` | frontmatter `order`                                                        |
 | `hidden`| frontmatter `hidden` (default `false`)                                     |
+| `description` | frontmatter `description` → body का पहला prose paragraph (plain text, अधिकतम 300 वर्ण) |
 
 ### Slugs path से आते हैं
 
@@ -166,6 +167,7 @@ Frontmatter एक प्रारंभिक `---` block है। parser ज�
 ```markdown
 ---
 title: Advanced Setup
+description: How to configure advanced options.
 group: Guides
 order: 2
 slug: guides/advanced
@@ -177,6 +179,8 @@ hidden: false
 ```
 
 - **`title`** — sidebar label और page `<title>`।
+- **`description`** — page का `<meta name="description">`, search subtitle, pager
+  card और `llms.txt` entry। default रूप से body का पहला paragraph।
 - **`group`** — sidebar group (directory को override करता है)। nest करने के लिए
   यह एक `/`-path हो सकता है।
 - **`order`** — group-के-भीतर sort key (आरोही; unset सबसे अंत में, फिर

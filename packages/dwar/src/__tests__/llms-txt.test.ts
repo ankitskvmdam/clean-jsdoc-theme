@@ -233,6 +233,20 @@ describe('buildLlmsTxt', () => {
     expect(build('/').full).toContain('See [a](/guide/intro) and ![d](/_assets/d.png).');
   });
 
+  it('prefixes a body whose content opens with a thematic break (#370 review)', () => {
+    const manifest = manifestWithApi();
+    const widget = manifest.pages.find((p) => p.slug === 'Widget')!;
+    widget.body = '---\ntitle: Widget\n---\n\n# T\n\n---\n\nSee [a](/x).\n\n---\n\nEnd [b](/y).\n';
+    const out = buildLlmsTxt({
+      manifest,
+      siteUrl: 'https://x.com',
+      basePath: '/base',
+      config: FULL,
+    })!;
+    expect(out.full).toContain('See [a](/base/x).');
+    expect(out.full).toContain('End [b](/base/y).');
+  });
+
   it('api: "index" drops API descriptions and API bodies from llms-full.txt', () => {
     const out = buildLlmsTxt({
       manifest: manifestWithApi(),
