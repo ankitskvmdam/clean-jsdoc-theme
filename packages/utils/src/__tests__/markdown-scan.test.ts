@@ -6,6 +6,7 @@ import {
   htmlCommentRangesInHtml,
   inlineCodeSpans,
   maskHtmlComments,
+  mdxCodeRanges,
   replaceHtmlComments,
 } from '../site/markdown-scan';
 import { expectLinearScaling, PERF_TEST_TIMEOUT } from './linear-scaling';
@@ -783,6 +784,432 @@ describe('inlineCodeSpans', () => {
   });
 });
 
+// dwar's brace, ESM and backtick pre-passes read an MDX body's code with this
+// scanner (#372): fences the way MDX reads them, then code spans and JSX tags.
+describe('mdxCodeRanges', () => {
+  /** Each code range as `[kind, text]`. */
+  const code = (src: string): [string, string][] =>
+    mdxCodeRanges(src).code.map((c) => [c.kind, src.slice(c.start, c.end)]);
+  /** The text of each stray backtick run. */
+  const strays = (src: string): string[] => slices(src, mdxCodeRanges(src).strayTicks);
+
+  it.each<[string, string, [string, string][]]>([
+    [
+      'a ```` fence around ``` lines (#372)',
+      '````md\n```js\n{a}\n```\n````\n\nafter `x`',
+      [
+        ['fence', '````md\n```js\n{a}\n```\n````'],
+        ['span', '`x`'],
+      ],
+    ],
+    [
+      'an odd number of ``` lines inside a ```` fence',
+      '````md\n```\none {a}\n````\n\n{b}',
+      [['fence', '````md\n```\none {a}\n````']],
+    ],
+    [
+      'a ~~~ fence around a ``` line',
+      '~~~md\n```\n{a}\n~~~\n\n{b}',
+      [['fence', '~~~md\n```\n{a}\n~~~']],
+    ],
+    ['a longer closer', '```\n{a}\n`````\n\n{b}', [['fence', '```\n{a}\n`````']]],
+    ['an unclosed fence, to the end', '```js\n{a}\n', [['fence', '```js\n{a}\n']]],
+    [
+      'a closer indented eight columns (MDX closes on it)',
+      '```\n{x}\n        ```\n\n{z}',
+      [['fence', '```\n{x}\n        ```']],
+    ],
+    [
+      'an opener indented four columns after a paragraph (MDX has no indented code)',
+      'para\n    ```\n{x}\n    ```\n\n{z}',
+      [['fence', '    ```\n{x}\n    ```']],
+    ],
+    ['an indented line without a fence (prose)', 'para\n\n    {x} `y`\n', [['span', '`y`']]],
+    [
+      'a fence on a list marker line',
+      '- ```\n  {a}\n  ```\n\n{b}',
+      [['fence', '- ```\n  {a}\n  ```']],
+    ],
+    [
+      "a fence on a list item's continuation line, closed",
+      '1. a\n   ```js\n   {x}\n   ```\n   more {y}',
+      [['fence', '   ```js\n   {x}\n   ```']],
+    ],
+    [
+      'a list-item fence ended by an outdented line',
+      '- a\n\n  ```js\n  {l: 1}\nout {m}\n',
+      [['fence', '  ```js\n  {l: 1}']],
+    ],
+    [
+      'a list-item fence ended by a > line',
+      '- ```\n  {a}\n> {x: 1} q\n',
+      [['fence', '- ```\n  {a}']],
+    ],
+    [
+      'a list-item fence holding an indented > line',
+      '- ```\n  {a}\n  > {b}\n  ```\n\n{c}',
+      [['fence', '- ```\n  {a}\n  > {b}\n  ```']],
+    ],
+    [
+      'a fence in a nested list, ended by an outdented line',
+      '- a\n  - b\n\n    ```\n    {x}\n  back {y}\n',
+      [['fence', '    ```\n    {x}']],
+    ],
+    [
+      'a fence after a lazy line, still in its item',
+      '- a\nlazy\n  ```\n  {x}\nout {y}\n',
+      [['fence', '  ```\n  {x}']],
+    ],
+    [
+      "a quoted fence ended by the quote's end",
+      '> ```js\n> {l: 1}\n\nout {m} `t`\n',
+      [
+        ['fence', '> ```js\n> {l: 1}'],
+        ['span', '`t`'],
+      ],
+    ],
+    ['```js `x` (inline, not a fence)', '```js `x` {a}\n', [['span', '`x`']]],
+    [
+      'a multi-line flow JSX tag holding a fence-like line',
+      '<X a="p\n```\n{b}" />\n\ntail {c}\n',
+      [['tag', '<X a="p\n```\n{b}" />']],
+    ],
+    [
+      'tags and a span on one line',
+      'a <b> c </b> <X a="{y}" /> `<Y>`',
+      [
+        ['tag', '<b>'],
+        ['tag', '</b>'],
+        ['tag', '<X a="{y}" />'],
+        ['span', '`<Y>`'],
+      ],
+    ],
+    ['a span across one line break', 'a `b\nc` d', [['span', '`b\nc`']]],
+    ['an escaped backtick', 'a \\` b', []],
+    ['an escaped backslash, then a span', 'a \\\\`x` b', [['span', '`x`']]],
+    ['an escaped tag', '\\<Foo a="{x}">', []],
+    ['an escaped backslash, then a tag', '\\\\<Foo a="{x}">', [['tag', '<Foo a="{x}">']]],
+    ['a span closing after a backslash', '`a\\` {x}` tail', [['span', '`a\\`']]],
+    [
+      'CRLF line endings',
+      '````md\r\n```js\r\n{a}\r\n````\r\n\r\nprose {b}\r\n',
+      [['fence', '````md\r\n```js\r\n{a}\r\n````\r']],
+    ],
+    ['no code', 'no code at all {x}', []],
+    // MDX has no HTML blocks: a tag line does not end the paragraph.
+    [
+      'a span across a line starting with a tag',
+      'Wrap items in `<ul>\n<li>` tags, pass {x} or `y`.\n',
+      [
+        ['span', '`<ul>\n<li>`'],
+        ['span', '`y`'],
+      ],
+    ],
+    [
+      'a span across a line starting with a block-level tag',
+      'The `{children}\n<div>` wrapper.\n',
+      [['span', '`{children}\n<div>`']],
+    ],
+    // Quote and list markers in any order before the fence run.
+    [
+      'a list marker, then a quoted fence',
+      '- > ```js\n  > const a = {b};\n  > ```\n\nafter {c}\n',
+      [['fence', '- > ```js\n  > const a = {b};\n  > ```']],
+    ],
+    [
+      'an ordered marker, then a quoted fence',
+      '1. > ```js\n   > const a = {b};\n   > ```\n\nafter {c}\n',
+      [['fence', '1. > ```js\n   > const a = {b};\n   > ```']],
+    ],
+    [
+      'two list markers, then a fence holding a blank line',
+      '- - ```js\n    a = {b};\n\n    c = {d};\n    ```\n',
+      [['fence', '- - ```js\n    a = {b};\n\n    c = {d};\n    ```']],
+    ],
+    [
+      'a quoted fence indented four columns in a list item',
+      '1.  Step\n\n    > ~~~js\n    > const a = {b};\n    > ~~~\n',
+      [['fence', '    > ~~~js\n    > const a = {b};\n    > ~~~']],
+    ],
+    [
+      'a marker-then-quote fence ended by a quote line outside the item',
+      '- > ```js\n  > {a}\n> {b}\n',
+      [['fence', '- > ```js\n  > {a}']],
+    ],
+    ['a > alone outside a list-item fence', '- ```\n>\n  {y}\n', [['fence', '- ```']]],
+    // A tab after a list marker reaches the next tab stop.
+    [
+      'a fence in a tab-marker item, ended by the item',
+      '-\tStep\n\n\t```js\n\tconst a = {b};\n\nNext {para}\n',
+      [['fence', '\t```js\n\tconst a = {b};\n']],
+    ],
+    [
+      'a fence in an ordered tab-marker item, ended by the next item',
+      '1.\tStep\n\t```js\n\tconst a = {b};\n2.\tNext {c}\n',
+      [['fence', '\t```js\n\tconst a = {b};']],
+    ],
+    [
+      "a line holding only the comment pass's placeholder (ends the list)",
+      '- item\n{/**/}\n  ```js\nconst a = {b};\n  ```\n',
+      [['fence', '  ```js\nconst a = {b};\n  ```']],
+    ],
+    [
+      'an empty item followed by a blank line (the item ends)',
+      '-\n\n  ```\n```\n{x}\n',
+      [['fence', '  ```\n```']],
+    ],
+    [
+      'a quote inside a list item, then a fence in the item',
+      '- a\n  > q\n\n  ```\n  {x}\n\nout {y}\n',
+      [['fence', '  ```\n  {x}\n']],
+    ],
+    [
+      'a multi-line JSX tag after a list marker',
+      '- <X a="p\n  ```\n  q" />\n\n  text {u}\n',
+      [['tag', '<X a="p\n  ```\n  q" />']],
+    ],
+    [
+      'a list item indented four columns past a paragraph (MDX: an item)',
+      '- a\n  text\n      - deep\n        ```\n        {x}\n      out {y}\n',
+      [['fence', '        ```\n        {x}']],
+    ],
+    [
+      'a fence in a nested item opened on one line, ended by that item',
+      '- - a\n\n    ```\n    {x}\n   out {y}\n',
+      [['fence', '    ```\n    {x}']],
+    ],
+    ['a span in a quote opened after a list marker', '* >`a\n  >{b}`\n', [['span', '`a\n  >{b}`']]],
+    [
+      'an empty item with trailing spaces (content one past the marker)',
+      '-  \n  ```js\n  a = {b}\n\nafter {c}\n',
+      [['fence', '  ```js\n  a = {b}\n']],
+    ],
+    ['a quoted empty item with trailing spaces', '>+  \n>   ```\n>{x}\n', [['fence', '>   ```']]],
+    [
+      'an inner item reached by a line its outer item is not',
+      '- > - a\n>   ```js\n> const a = {b};\n>   ```\n',
+      [['fence', '>   ```js\n> const a = {b};\n>   ```']],
+    ],
+    [
+      'flow JSX after nested list markers',
+      '- - <X a="1" />\n    2. ```js\n       a = {b}\n       ```\n',
+      [
+        ['tag', '<X a="1" />'],
+        ['fence', '    2. ```js\n       a = {b}\n       ```'],
+      ],
+    ],
+    [
+      'a quote-only line after an empty item (not blank to it)',
+      '-\n  >\n  ```js\n  a = {b}\n\nout {c}\n',
+      [['fence', '  ```js\n  a = {b}\n']],
+    ],
+    ['a nested ordered marker other than 1 after a paragraph', 'e\n1. 2. ~~~\n{x}\n', []],
+    [
+      'tilde fences between paragraphs',
+      '~~~\ncode {a}\n~~~\n\ntext {b}\n\n~~~\ncode {c}\n~~~\n',
+      [
+        ['fence', '~~~\ncode {a}\n~~~'],
+        ['fence', '~~~\ncode {c}\n~~~'],
+      ],
+    ],
+  ])('finds the code in %s', (_name, src, want) => {
+    expect(code(src)).toEqual(want);
+  });
+
+  it.each<[string, string, string[]]>([
+    ['a span across a blank line', 'a `b\n\nc` d', ['`', '`']],
+    ['a span across a heading', '# a `b\n{x}` c', ['`', '`']],
+    ['a span across a list item', '- a `b\n- c` {d}', ['`', '`']],
+    ['a span across table rows', '| a `b | c |\n|---|---|\n| d` {e} | f |', ['`', '`']],
+    ['a span across a flow JSX line', 'a `b\n<X />\nc` d', ['`', '`']],
+    ['an info string holding a backtick', '```js `x` {a}\n', ['```']],
+    ['the run after a span that closed after a backslash', '`a\\` {x}` tail', ['`']],
+    ['a ```` fence around ``` lines', '````md\n```js\n{a}\n```\n````\n\nafter `x`', []],
+    ['a span across a line starting with a tag', 'Use `<ul>\n<li>` here.\n', []],
+    ['a marker-then-quote fence', '- > ```js\n  > a\n  > ```\n', []],
+    ['a span across the next ordered item', '1. `a\n2. b` {c}\n', ['`', '`']],
+    [
+      'a span across a quote line left of the item (no lazy line)',
+      '- > Note: don`t\n> pass {x} when it`s set\n',
+      ['`', '`'],
+    ],
+    ['a span after a heading on a marker line', '- ## Don`t\nIt`s {x}\n', ['`', '`']],
+    ['a nested bullet-then-ordered marker after a paragraph', 'k\n- 7) ```\n{x}\n', ['```']],
+    ['an ordered marker in a new quote after a paragraph', 'k\n>- 7) ```\n{x}\n', ['```']],
+  ])('reports the stray backticks of %s', (_name, src, want) => {
+    expect(strays(src)).toEqual(want);
+  });
+
+  // GFM splits a table row into cells at its unescaped pipes before it reads
+  // any code span, so a span cannot cross a cell boundary (#363).
+  describe('a code span ends at a table cell boundary (#363)', () => {
+    it.each<[string, string]>([
+      ['a header row', '| a `b | c` |\n|---|---|\n'],
+      ['a body row', '| h | i |\n|---|---|\n| a `b | c` |\n'],
+      ['a header row without outer pipes', 'a `b | c` d\n-|-\n'],
+      ['a header row in a list item', '- | a `b | c` |\n  |---|---|\n'],
+      ['a body row in a list item', '- | h | i |\n  |---|---|\n  | a `b | c` |\n'],
+      ['a header row in a quote', '> | a `b | c` |\n> |---|---|\n'],
+      ['a body row in a quote', '> | h | i |\n> |---|---|\n> | a `b | c` |\n'],
+    ])('reads the backticks of a pipe-crossing pair in %s as stray', (_name, src) => {
+      expect(code(src)).toEqual([]);
+      expect(strays(src)).toEqual(['`', '`']);
+    });
+
+    it.each<[string, string, [string, string][]]>([
+      ['an escaped pipe inside the span', '| a `b \\| c` |\n|---|\n', [['span', '`b \\| c`']]],
+      ['an escaped pipe in a body row', '| h |\n|---|\n| a `b \\| c` |\n', [['span', '`b \\| c`']]],
+      [
+        'two spans in separate cells',
+        '| `a` | `b` |\n|---|---|\n| `c` | `d` |\n',
+        [
+          ['span', '`a`'],
+          ['span', '`b`'],
+          ['span', '`c`'],
+          ['span', '`d`'],
+        ],
+      ],
+      ['the same line outside a table', 'a `b | c` d\n', [['span', '`b | c`']]],
+      ['a paragraph after the table', '| h |\n|---|\n\na `b | c` d\n', [['span', '`b | c`']]],
+    ])('keeps a span for %s', (_name, src, want) => {
+      expect(code(src)).toEqual(want);
+    });
+
+    it('pairs the backticks of a later cell among themselves', () => {
+      const src = '| `a | b` | `c` |\n|---|---|---|\n';
+      expect(code(src)).toEqual([['span', '`c`']]);
+      expect(strays(src)).toEqual(['`', '`']);
+    });
+
+    // The comment scanners read the CommonMark dialect, which this rule leaves alone.
+    it('leaves the comment ranges of a table row as they were', () => {
+      const src = '| a `b | c` <!-- d --> |\n|---|---|\n| e `f | <!-- g --> h` |\n';
+      expect(htmlCommentRanges(src)).toEqual([{ start: 12, end: 22, closed: true }]);
+      expect(htmlCommentRanges('| a `b | <!-- c --> |` |\n|---|---|---|\n')).toEqual([]);
+    });
+  });
+
+  it('leaves fencedCodeRanges on the CommonMark closer rule', () => {
+    // MDX closes this fence on the indented closer; CommonMark (and the
+    // comment scanner, whose ranges must not change) reads it as content.
+    const src = '```\n{x}\n        ```\n\n{z}';
+    expect(slices(src, fencedCodeRanges(src))).toEqual([src]);
+    expect(code(src)).toEqual([['fence', '```\n{x}\n        ```']]);
+  });
+
+  // The JSX tag reader is the regex dwar used before, written out by hand so it
+  // cannot overflow the stack. The reference walks the same tokens (a backslash
+  // escape, a `<`) and asks the regex at each `<`; with no backtick or tilde in
+  // the source there are no fences or spans, so every tag is the reader's.
+  describe('reads JSX tags like the regex it replaced', () => {
+    const REF_TAG = /<\/?[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][\w-]*(?:="[^"]*"|='[^']*')?)*\s*\/?>/y;
+    const referenceTags = (source: string): string[] => {
+      const out: string[] = [];
+      const token = /\\[^\n]|</g;
+      let m: RegExpExecArray | null;
+      while ((m = token.exec(source)) !== null) {
+        if (m[0] !== '<') continue;
+        REF_TAG.lastIndex = m.index;
+        if (REF_TAG.test(source)) {
+          out.push(source.slice(m.index, REF_TAG.lastIndex));
+          token.lastIndex = REF_TAG.lastIndex;
+        }
+      }
+      return out;
+    };
+    const tags = (source: string): string[] =>
+      mdxCodeRanges(source)
+        .code.filter((c) => c.kind === 'tag')
+        .map((c) => source.slice(c.start, c.end));
+
+    it('matches on seeded random sequences', () => {
+      const pieces = [
+        '<',
+        '<',
+        '</',
+        '>',
+        '/>',
+        'a',
+        'B',
+        '1',
+        '-',
+        '_',
+        '=',
+        '="',
+        "='",
+        '"',
+        "'",
+        ' ',
+        '\n',
+        '\t',
+        '\v',
+        ' ',
+        ' ',
+        '{',
+        '\\',
+        '=""',
+        '<X a="{q}" />',
+      ];
+      let seed = 372;
+      const next = (k: number): number => {
+        seed = (Math.imul(seed, 1_664_525) + 1_013_904_223) >>> 0;
+        return seed % k;
+      };
+      let mismatches = 0;
+      let first: string | undefined;
+      for (let n = 0; n < 40_000; n++) {
+        let s = '';
+        for (let len = 1 + next(16); len > 0; len--) s += pieces[next(pieces.length)];
+        if (JSON.stringify(tags(s)) !== JSON.stringify(referenceTags(s))) {
+          mismatches++;
+          first ??= s;
+        }
+      }
+      if (first !== undefined)
+        expect(tags(first), JSON.stringify(first)).toEqual(referenceTags(first));
+      expect(mismatches).toBe(0);
+    });
+
+    it('the reference tells the cases apart', () => {
+      expect(referenceTags('<a b="x"> <a b="x> <a b> \\<c> <d/>')).toEqual([
+        '<a b="x">',
+        '<a b>',
+        '<d/>',
+      ]);
+    });
+  });
+
+  it(
+    'does not throw on a code span or a tag of 16M characters',
+    () => {
+      const n = 16 * 1024 * 1024;
+      const span = '`' + 'x'.repeat(n) + '` {y}\n';
+      expect(code(span).map(([kind, text]) => [kind, text.length])).toEqual([['span', n + 2]]);
+      const tag = '<a ' + 'b="c" '.repeat(n / 6) + '/> {x}\n';
+      expect(mdxCodeRanges(tag).code).toEqual([
+        { start: 0, end: tag.indexOf('/>') + 2, kind: 'tag' },
+      ]);
+      const open = '<a ' + 'b '.repeat(n / 2) + '{x}\n';
+      expect(mdxCodeRanges(open).code).toEqual([]);
+    },
+    PERF_TEST_TIMEOUT
+  );
+
+  it(
+    'does not throw on one line of 8M characters of list or quote markers',
+    () => {
+      const n = 8 * 1024 * 1024;
+      const items = '- '.repeat(n / 2) + 'x `y`\n';
+      expect(code(items)).toEqual([['span', '`y`']]);
+      const fence = '- '.repeat(n / 2) + '```\n{x}\n';
+      expect(code(fence).map(([kind]) => kind)).toEqual(['fence']);
+      const quotes = '>'.repeat(n) + ' ```\n{x}\n';
+      expect(code(quotes).map(([kind]) => kind)).toEqual(['fence']);
+    },
+    PERF_TEST_TIMEOUT
+  );
+});
+
 // Every page body goes through these scanners several times per build, so a
 // pathological one must not stall it: each adversarial input must scale
 // linearly (see linear-scaling.ts). The quadratic versions took seconds to
@@ -872,6 +1299,62 @@ describe('markdown-scan performance', () => {
     '%s scales linearly for inlineCodeSpans',
     (_name, makeInput) => {
       expectLinearScaling(inlineCodeSpans, makeInput);
+    },
+    PERF_TEST_TIMEOUT
+  );
+
+  it.each<[string, (n: number) => string]>([
+    [
+      'fences, spans and tags',
+      (n) =>
+        '````md\n```js\n{a}\n````\n\nSee `a{b}` <X a="{c}" /> {d}.\n\nimport it\n\n'.repeat(n / 58),
+    ],
+    ['one code span over many lines', (n) => '`' + 'word {x}\n'.repeat(n / 9) + '` {y}\n'],
+    ['an unclosed backtick then a long paragraph', (n) => '`' + 'word {x}\n'.repeat(n / 9)],
+    ['stray backticks of mixed lengths', (n) => '` a `` b ``` c {x}\n\n'.repeat(n / 20)],
+    [
+      'unclosed backtick runs of distinct lengths',
+      (n) => {
+        let s = '';
+        for (let k = 1; s.length < n / 2; k++) s += '`'.repeat(k) + ' ';
+        return s + 'word {x} '.repeat(n / 18);
+      },
+    ],
+    ['one tag with many attributes', (n) => '<a ' + 'b="c" '.repeat(n / 6) + '/> {x}\n'],
+    ['one unclosed tag with many attributes', (n) => '<a ' + 'b="c" '.repeat(n / 6) + '{x}\n'],
+    ['unterminated tag attributes', (n) => '<a b="x '.repeat(n / 8)],
+    ['unterminated tags by line', (n) => "<a b='x\n".repeat(n / 8)],
+    ['list-item fences', (n) => '- a\n\n  ```\n  {x}\n  ```\n'.repeat(n / 24)],
+    ['flow JSX lines among fences', (n) => '<X a="p\n```\n{b}" />\n\n```\nc\n```\n'.repeat(n / 30)],
+    // No backtick, `<` or backslash between the fences: one token search
+    // must not be restarted from every fence.
+    [
+      'tilde fences between plain paragraphs',
+      (n) => '~~~\ncode {a}\n~~~\n\ntext {b}\n\n'.repeat(n / 27),
+    ],
+    [
+      'backtick fences between plain paragraphs',
+      (n) => '```\ncode {a}\n```\n\ntext {b}\n\n'.repeat(n / 27),
+    ],
+    ['one tag, then tilde fences', (n) => '<b>\n\n' + '~~~\nc\n~~~\n\nt\n\n'.repeat(n / 15)],
+    ['marker-then-quote fences', (n) => '- > ```js\n  > {a}\n  > ```\n\n'.repeat(n / 28)],
+    ['one line of many list markers', (n) => '- '.repeat(n / 2) + 'x `y`\n'],
+    ['one line of many quote and list markers', (n) => '> - '.repeat(n / 4) + '```\n{x}\n'],
+    [
+      'a table of backtick pairs holding pipes',
+      (n) => '| h | i |\n|---|---|\n' + '| a `b | c` d |\n'.repeat(n / 16),
+    ],
+    [
+      'one table row of backtick pairs holding pipes',
+      (n) => {
+        const k = Math.floor(n / 12);
+        return '| a `b | c` '.repeat(k) + '|\n' + '|---'.repeat(2 * k) + '|\n';
+      },
+    ],
+  ])(
+    '%s scales linearly for mdxCodeRanges',
+    (_name, makeInput) => {
+      expectLinearScaling(mdxCodeRanges, makeInput);
     },
     PERF_TEST_TIMEOUT
   );

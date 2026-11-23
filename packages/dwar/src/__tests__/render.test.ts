@@ -1300,6 +1300,46 @@ describe('render() — issue #333: render-error diagnostics', () => {
     const result = await render(makeManifest(), { theme: minimalTheme });
     expect(result.warnings).toBeUndefined();
   });
+
+  // issue #372: a ```` fence around ``` lines (a README showing Markdown)
+  // desynced the pre-passes, which paired fence runs regardless of length.
+  async function renderPage(slug: string, body: string) {
+    const m = makeManifest();
+    m.pages.push({
+      slug,
+      frontmatter: { title: 'Fences', kind: 'guide', description: 'Nested fences.' },
+      body,
+      headings: [],
+    });
+    const result = await render(m, { theme: minimalTheme });
+    const file = result.files.find((f) => f.path === `${slug}/index.html`);
+    // The visible text, with Shiki's token spans gone.
+    const text = file ? asString(file).replace(/<[^>]*>/g, '') : undefined;
+    return { result, text };
+  }
+
+  it('renders a ```` fence around ``` lines without a warning or a visible \\{ (#372)', async () => {
+    const { result, text } = await renderPage(
+      'nested',
+      "# T\n\n````md\n```js\nconst a = {x: 1};\n```\nimport x from 'y'\n```\n````\n\nAfter {y: 2} and `code`.\n"
+    );
+    expect(result.errors?.find((e) => e.slug === 'nested')?.message).toBeUndefined();
+    expect((result.warnings ?? []).filter((w) => w.slug === 'nested')).toEqual([]);
+    expect(text).toContain('const a = {x: 1};');
+    expect(text).toContain('After {y: 2} and');
+    expect(text).not.toContain('\\{');
+  });
+
+  it('renders the prose after a ```` fence holding one ``` line (#372)', async () => {
+    const { result, text } = await renderPage(
+      'lost',
+      '````md\n```js\ncode\n````\n\nprose {b: 1} here\n\nimport this module first.\n\n```js\nx\n```\n'
+    );
+    expect(result.errors?.find((e) => e.slug === 'lost')?.message).toBeUndefined();
+    expect((result.warnings ?? []).filter((w) => w.slug === 'lost')).toEqual([]);
+    expect(text).toContain('prose {b: 1} here');
+    expect(text).toContain('import this module first.');
+  });
 });
 
 describe('render() — heading ids for punctuation/emoji-only headings', () => {
@@ -1375,6 +1415,244 @@ describe('render() — literal angle-bracket words with braces', () => {
     expect(err, err?.message).toBeUndefined();
     const file = result.files.find((f) => f.path === 'module/lit/index.html');
     expect(file && asString(file)).toContain('a &lt;Foo bar=&quot;{x}&quot;>c&lt;/Foo> d');
+  });
+});
+
+describe('render() — braces in page text always render as written (#363)', () => {
+  async function renderBody(body: string): Promise<string> {
+    const m = makeManifest();
+    m.pages.push({
+      slug: 'module/braces',
+      frontmatter: { title: 'braces', kind: 'module', description: 'A page.' },
+      body: `# braces\n\n${body}`,
+      headings: [],
+    });
+    m.nav.push({ label: 'braces', slug: 'module/braces' });
+    const result = await render(m, { theme: minimalTheme });
+    const err = result.errors?.find((e) => e.slug === 'module/braces');
+    expect(err, err?.message).toBeUndefined();
+    const file = result.files.find((f) => f.path === 'module/braces/index.html');
+    expect(file).toBeDefined();
+    return asString(file!);
+  }
+  /** The page's main text, markup removed. */
+  const textOf = (html: string): string =>
+    (/<main[\s\S]*<\/main>/.exec(html)?.[0] ?? html).replace(/<[^>]+>/g, '');
+
+  // Each shape holds a backtick the pre-passes and MDX read differently, so the
+  // braces after it reach MDX unescaped; they must still render as text.
+  it.each<[string, string]>([
+    ['a backtick in a link title', "[t](u '`') {1+2} `"],
+    ['a backtick in an image title', '![t](u "`") {1+2} `'],
+    ['a backtick in a reference label', '[t][b`c] {1+2} `\n\n[b`c]: u'],
+    ['a backtick in a spaced attribute', '<a href = "`">x</a> {1+2} `'],
+    ['a backtick in a hyphenated tag', '<x-y a="`"></x-y> {1+2} `'],
+    ['a backtick in a namespaced tag', '<a:b c="`"></a:b> {1+2} `'],
+    ['a backtick after a namespaced attribute', '<p a:b="`"></p> {1+2} `'],
+    ['a backtick after a `$` attribute', '<p $a="`"></p> {1+2} `'],
+    ['a backtick after a `_` attribute', '<p _a="`"></p> {1+2} `'],
+    ['a backtick after unspaced attributes', '<p a="1"b="`"></p> {1+2} `'],
+    ['a backtick at the end of a bare URL', 'see http://a.b/e` {1+2} ` end'],
+    ['a braces line inside a backtick pair', 'a `b\n{1+2}\nc` d'],
+    ['a footnote definition inside a backtick pair', 'a `b [^1] {1+2}\n[^1]: c` d'],
+    ['lone carriage returns inside a backtick pair', 'a `b\r{1+2}\rc` d'],
+  ])('with %s', async (_name, body) => {
+    expect(textOf(await renderBody(body))).toContain('{1+2}');
+  });
+
+  it('renders an attribute written with braces as a string attribute', async () => {
+    const html = await renderBody("[t](u '`') <x1 a={1+2}>z</x1> `");
+    expect(html).toContain('<x1 a="{1+2}">z</x1>');
+  });
+
+  it('drops a spread attribute', async () => {
+    const html = await renderBody("[t](u '`') <x1 {...{ a: 1 }}>z</x1> `");
+    expect(html).toContain('<x1>z</x1>');
+  });
+
+  it('still renders nothing for an HTML comment', async () => {
+    const html = await renderBody('a <!-- note --> b\n\n- <!-- x -->\n- y\n');
+    expect(textOf(html)).toContain('a  b');
+    expect(html).not.toContain('note');
+    expect(html).not.toContain('/**/');
+  });
+});
+
+describe('render() — inline tags inside code (#363)', () => {
+  async function renderBody(body: string): Promise<string> {
+    const m = makeManifest();
+    m.pages.push({
+      slug: 'module/tags',
+      frontmatter: { title: 'tags', kind: 'module', description: 'A page.' },
+      body: `# tags\n\n${body}`,
+      headings: [],
+    });
+    m.nav.push({ label: 'tags', slug: 'module/tags' });
+    const result = await render(m, { theme: minimalTheme });
+    const err = result.errors?.find((e) => e.slug === 'module/tags');
+    expect(err, err?.message).toBeUndefined();
+    const file = result.files.find((f) => f.path === 'module/tags/index.html');
+    expect(file).toBeDefined();
+    return asString(file!);
+  }
+  /** The text of each `<code>` element (inline code only: no nested markup). */
+  const codeTexts = (html: string): string[] =>
+    [...html.matchAll(/<code(?: [^>]*)?>([^<]*)<\/code>/g)].map((m) => m[1]);
+
+  it('a tag inside a code span stays inside the code span', async () => {
+    const html = await renderBody('a `b {@link Foo <x1/>} c` d\n');
+    expect(codeTexts(html)).toContain('b {@link Foo &lt;x1/>} c');
+    expect(html).not.toContain('<x1');
+  });
+
+  it('a component written inside a code span stays code text', async () => {
+    const html = await renderBody('a `b {@link Foo <Callout>x</Callout>} c` d\n');
+    expect(codeTexts(html)).toContain('b {@link Foo &lt;Callout>x&lt;/Callout>} c');
+    expect(html).not.toContain('role="note"');
+  });
+
+  it('a prose tag whose text holds backtick runs is one code span', async () => {
+    const html = await renderBody('see {@link a `` <x1/> ` b} here\n');
+    expect(codeTexts(html)).toContain('@link a `` &lt;x1/> ` b');
+    expect(html).not.toContain('<x1');
+  });
+
+  it('a prose tag right after a code span stays apart from it', async () => {
+    const html = await renderBody('see `<x1/>`{@link a``b} here\n');
+    expect(codeTexts(html)).toEqual(expect.arrayContaining(['&lt;x1/>', '@link a``b']));
+    expect(html).not.toContain('<x1');
+  });
+
+  it('shows a tag in an @example, a fenced block and a code span as written', async () => {
+    const html = await renderBody(
+      '```js\n// shows a tag: {@link Foo}\nconst doc = "{@link Foo}";\n```\n\nInline `{@link Foo}` here.\n'
+    );
+    const text = html.replace(/<[^>]+>/g, '');
+    expect(text).toContain('// shows a tag: {@link Foo}');
+    expect(text).toMatch(/const doc = (?:"|&quot;|&#34;)\{@link Foo\}(?:"|&quot;|&#34;);/);
+    expect(codeTexts(html)).toContain('{@link Foo}');
+    expect(html).not.toContain('`@link Foo`');
+  });
+
+  it('a code span in a table cell ends at the cell boundary', async () => {
+    const html = await renderBody('| a | b |\n|---|---|\n| `x | {1+2}` | c |\n');
+    const text = html.replace(/<[^>]+>/g, '');
+    expect(text).toContain('`x');
+    expect(text).toContain('{1+2}`');
+  });
+
+  /** The page's main content. */
+  const mainOf = (html: string): string => /<main[\s\S]*<\/main>/.exec(html)?.[0] ?? html;
+
+  it('shows prose tags as inline code, as before', async () => {
+    const html = mainOf(
+      await renderBody(
+        'see {@link Foo} and {@link Bar|label}.\n\n' +
+          '- a {@tutorial x} in a list\n\n' +
+          '> a {@link https://a.b/c|site} in a quote\n\n' +
+          'a {@link Foo|*b*} and {@link a\\*b &amp; c} and {@link `Foo` label}\n\n' +
+          'see {@link Foo\nBar} end\n'
+      )
+    );
+    expect(codeTexts(html)).toEqual([
+      '@link Foo',
+      '@link Bar|label',
+      '@tutorial x',
+      '@link https://a.b/c|site',
+      '@link Foo|*b*',
+      '@link a\\*b &amp;amp; c',
+      '@link `Foo` label',
+      '@link Foo Bar',
+    ]);
+    expect(html.replace(/<code [^>]*>/g, '<code>')).toContain(
+      'see <code>@link Foo</code> and <code>@link Bar|label</code>.'
+    );
+  });
+
+  it('keeps the braces of a tag in a fence, a code span, an attribute and an image', async () => {
+    const html = mainOf(
+      await renderBody(
+        '```\n{@link A}\n```\n\n' +
+          'a `{@link B}` b\n\n' +
+          '<span title="{@link C}">s</span>\n\n' +
+          '![see {@link D}](d.png)\n\n' +
+          '[e](u "{@link F}")\n'
+      )
+    );
+    const text = html.replace(/<[^>]+>/g, '');
+    expect(text).toContain('{@link A}');
+    expect(codeTexts(html)).toContain('{@link B}');
+    expect(html).toContain('title="{@link C}"');
+    expect(html).toContain('alt="see @link D"');
+    expect(html).toContain('title="{@link F}"');
+    expect(html).not.toMatch(/[\uE000-\uE002]/);
+  });
+
+  it('shows a tag split across blocks or table cells as written', async () => {
+    const text = mainOf(
+      await renderBody('a {@link Foo\n\nBar} b\n\n| a | b |\n|---|---|\n| {@link x|y} | c |\n')
+    ).replace(/<[^>]+>/g, '');
+    expect(text).toContain('a {@link Foo');
+    expect(text).toContain('Bar} b');
+    expect(text).toContain('{@link x');
+    expect(text).toContain('y}');
+  });
+
+  it('keeps private-use characters already in the text', async () => {
+    const text = mainOf(
+      await renderBody('a \uE000 b \uE001 c \uE002\uE010 {@link Foo} d\n')
+    ).replace(/<[^>]+>/g, '');
+    expect(text).toContain('a \uE000 b \uE001 c \uE002\uE010 @link Foo d');
+  });
+
+  it('a character reference for a private-use character stays as written', async () => {
+    const open = String.fromCharCode(0xe000);
+    const close = String.fromCharCode(0xe001);
+    const html = mainOf(
+      await renderBody(
+        'ref &#xE000;@a x&#xE001; y, &#57344;@b&#57345; and {@link Foo}\n\n' +
+          'see {@link a &#xE001; b} end\n'
+      )
+    );
+    expect(codeTexts(html)).toEqual(['@link Foo', '@link a &amp;#xE001; b']);
+    expect(html.replace(/<[^>]+>/g, '')).toContain(
+      `ref ${open}@a x${close} y, ${open}@b${close} and @link Foo`
+    );
+  });
+
+  // A backtick MDX reads as part of a link, an attribute or a URL must not turn
+  // the code span after it into markup.
+  it.each<[string, string]>([
+    ['a link title', "[t](u '`') `a {@link <x1/>} c` y `"],
+    ['an image title', '![t](u "`") `a {@link Foo} <x1/>` y `'],
+    ['a hyphenated tag', '<x-y a="`"/> `a {@link <x1/>} c` y `'],
+    ['a footnote definition', 'p ` q[^1]\n[^1]: `a {@link <x1/>} c` y `'],
+    ['lone carriage returns', 'p ` q\r\r`a {@link <x1/>} c` y `'],
+    ['a reference label', '[t][b`c] `a {@link <x1/>} c` y `\n\n[b`c]: u'],
+    ['a bare URL', 'http://a.b/c` `a {@link <x1/>} c` y `'],
+    ['a braces line', 'p ` q\n{1}\n`a {@link <x1/>} c` y `'],
+  ])('a tag inside a code span stays code after %s', async (_name, body) => {
+    const html = mainOf(await renderBody(body));
+    expect(html).not.toContain('<x1');
+    expect(html.replace(/<[^>]+>/g, '')).toContain('&lt;x1/>');
+  });
+
+  it.each<[string, string]>([
+    ['a bare URL', 'see http://a.b/c{@link Foo} and `<x1/>` end'],
+    ['a bare URL in parentheses', '(see https://a.b/c){@link Foo} and `<x1/>` end'],
+    ['a www. link', 'www.a.b{@link Foo} and `<x1/>` end'],
+    ['an email address', 'a@b.co{@link Foo} and `<x1/>` end'],
+    ['a URL and two tags', 'see http://a.b/c{@link Foo}{@link Bar} and `<x1/>` end'],
+  ])('a tag glued to %s leaves the code span after it code', async (_name, body) => {
+    const html = mainOf(await renderBody(body));
+    expect(html).not.toContain('<x1');
+    expect(codeTexts(html)).toContain('&lt;x1/>');
+  });
+
+  it('turns a tag holding markup into one code span', async () => {
+    const html = mainOf(await renderBody('see {@link a <x1/> *b* c} here\n'));
+    expect(html).not.toContain('<x1');
+    expect(codeTexts(html)).toContain('@link a &lt;x1/> *b* c');
   });
 });
 

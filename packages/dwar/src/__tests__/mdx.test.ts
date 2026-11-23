@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
+import { h } from 'preact';
+import { renderToString } from 'preact-render-to-string';
 import {
   collectUsedLangs,
+  compileMdxToComponent,
   escapeEsmLookalikes,
   escapeStrayBraces,
   findStrayBackticks,
@@ -9,6 +12,7 @@ import {
   signatureParamRanges,
   stripHtmlComments,
 } from '../mdx';
+import { expectLinearScaling, PERF_TEST_TIMEOUT } from './linear-scaling';
 
 describe('signatureParamRanges', () => {
   /** Slice each returned range out of the source — easier to assert on. */
@@ -111,10 +115,10 @@ describe('escapeStrayBraces', () => {
     expect(out).toContain('body \\{z\\}');
   });
 
-  it('protects the code spans that the inline-tag pass produces', () => {
-    // `{@link base#x}` → inline code, then a bare `{base#y}` gets escaped.
+  it('leaves the placeholders of the inline-tag pass alone', () => {
+    // `{@link base#x}` → placeholders (no braces left), then a bare `{base#y}` gets escaped.
     const out = escapeStrayBraces(preprocessJsdocInlineTags('{@link base#x} and {base#y}'));
-    expect(out).toBe('`@link base#x` and \\{base#y\\}');
+    expect(out).toBe('\uE000@link base#x\uE001 and \\{base#y\\}');
   });
 
   it('allows a code span to cross a single line break', () => {
@@ -184,6 +188,134 @@ describe('escapeStrayBraces', () => {
     // After the empty fragment that ends a bare URL.
     expect(escapeStrayBraces('https://x<></>{/**/}')).toBe('https://x<></>{}');
   });
+});
+
+describe('preprocessJsdocInlineTags (#363)', () => {
+  const p = preprocessJsdocInlineTags;
+  /** The placeholders shown as `«` and `»`, so the expectations read. */
+  const shown = (s: string): string => s.replace(/\uE000/g, '«').replace(/\uE001/g, '»');
+
+  it('stands a placeholder for each brace of a tag', () => {
+    expect(shown(p('see {@link Foo} and {@link Bar|label}'))).toBe(
+      'see «@link Foo» and «@link Bar|label»'
+    );
+    expect(shown(p('see {@link Foo\nBar} end'))).toBe('see «@link Foo\nBar» end');
+    expect(shown(p('- {@a}{@b}\n> {@link `x` y}'))).toBe('- «@a»«@b»\n> «@link `x` y»');
+  });
+
+  it('marks a tag in code too: the tree pass restores its braces there', () => {
+    expect(shown(p('a `b {@link Foo} c`\n\n```js\n{@link Bar}\n```\n'))).toBe(
+      'a `b «@link Foo» c`\n\n```js\n«@link Bar»\n```\n'
+    );
+  });
+
+  it('changes nothing else: every other character, offset and line stays', () => {
+    const src = 'a `{@link a`b}` {@x}\n- {@link `c` d}\n> {@y\nz} {@ {x} {@1} @link{a} {@a {b}}';
+    const out = p(src);
+    expect(out.length).toBe(src.length);
+    expect(out.replace(/\uE000/g, '{').replace(/\uE001/g, '}')).toBe(src);
+    expect(shown(out)).toBe(
+      'a `«@link a`b»` «@x»\n- «@link `c` d»\n> «@y\nz» {@ {x} {@1} @link{a} {@a {b}}'
+    );
+  });
+
+  it.each<[string, string]>([
+    ['a backslash-escaped tag', 'see \\{@link Foo} here'],
+    ['braces that are not a tag', '{@ x} {@1} {x} {@link {x}}'],
+    ['a page without tags', 'a `b` {c}\n'],
+  ])('leaves %s as written', (_name, src) => {
+    expect(p(src)).toBe(src);
+  });
+
+  it('leaves the frontmatter as written', () => {
+    expect(shown(p('---\ntitle: "{@link Foo}"\n---\n\nsee {@link Bar}\n'))).toBe(
+      '---\ntitle: "{@link Foo}"\n---\n\nsee «@link Bar»\n'
+    );
+  });
+
+  it('guards the private-use characters already in the text', () => {
+    const out = p('a \uE000 b \uE001 c \uE002\uE010 {@link Foo}');
+    expect([...out].filter((c) => c === '\uE000')).toHaveLength(1);
+    expect([...out].filter((c) => c === '\uE001')).toHaveLength(1);
+    expect(out.endsWith('\uE000@link Foo\uE001')).toBe(true);
+  });
+
+  // An ordinary tag in prose renders exactly as the code span the pass used to
+  // write in its place (`` `@link Foo` ``) did.
+  it('renders ordinary prose tags as before (seeded)', async () => {
+    const legacy = (s: string): string =>
+      s.replace(/\{@([a-zA-Z][a-zA-Z0-9]*)([^{}]*)\}/g, (_m, tag: string, rest: string) => {
+        const text = `@${tag}${rest}`.trim();
+        const ticks = text.includes('`') ? '``' : '`';
+        return ticks + text + ticks;
+      });
+    const html = async (s: string): Promise<string> => {
+      const shiki = { light: 'github-light', dark: 'github-dark' };
+      const { Component } = await compileMdxToComponent(s, {}, shiki, ['js']);
+      return renderToString(h(Component, {}));
+    };
+    const tags = [
+      ' {@link Foo} ',
+      ' {@link Foo|bar} ',
+      ' {@link Foo bar baz} ',
+      ' {@tutorial x} ',
+      ' {@link  Foo  } ',
+      ' {@link\nFoo} ',
+      ' {@link Foo \n bar} ',
+      ' {@link Foo\n  Bar} ',
+      ' {@link Foo\n\tbar} ',
+      ' {@link Foo  \nbar} ',
+      ' {@link https://a.b/c} ',
+      ' {@link https://a.b/c|label} ',
+      ' {@link www.a.b} ',
+      ' {@link a@b.co} ',
+      ' {@link Foo|*bar*} ',
+      ' {@link Foo_bar_baz} ',
+      ' {@link a~b~} ',
+      ' {@link a\\*b} ',
+      ' {@link a &amp; b} ',
+      ' {@link Foo#bar} ',
+    ];
+    const other = [
+      'word ',
+      ' ',
+      '\n',
+      '\n\n',
+      '- ',
+      '-\t',
+      '1. ',
+      '> ',
+      '- > ',
+      '# ',
+      '\n  ',
+      '\n> ',
+      '.',
+      '(',
+      '*',
+      '_',
+      '**',
+      '[a](b)',
+    ];
+    const pieces = [...tags, ...tags, ...other];
+    let seed = 363;
+    const next = (k: number): number => {
+      seed = (Math.imul(seed, 1_664_525) + 1_013_904_223) >>> 0;
+      return (seed >>> 8) % k;
+    };
+    let compared = 0;
+    for (let n = 0; n < 300; n++) {
+      let s = '';
+      for (let len = 1 + next(12); len > 0; len--) s += pieces[next(pieces.length)];
+      if (!s.includes('{@')) continue;
+      const now = await html(s);
+      // A tag whose text runs into another block (past a heading's line, say)
+      // shows as written; its code span used to break the text around it.
+      if (now.includes('{@')) continue;
+      expect(now, JSON.stringify(s)).toBe(await html(legacy(s)));
+      compared++;
+    }
+    expect(compared).toBeGreaterThan(250);
+  }, 60_000);
 });
 
 describe('findStrayBackticks', () => {
@@ -693,5 +825,466 @@ describe('stripHtmlComments', () => {
   it('accepts precomputed ranges', () => {
     const src = '---\ntitle: x\n---\na <!-- b --> c\n';
     expect(stripHtmlComments(src, pageCommentRanges(src))).toBe('---\ntitle: x\n---\na {/**/} c\n');
+  });
+});
+
+// #372: the brace, ESM and backtick passes found code with an unanchored,
+// length-blind regex, so a ```` fence around ``` lines (or an odd number of
+// fence lines) desynced them: a false backtick warning, a visible `\{` in code,
+// or prose read as code and left for MDX to reject. They now read fences the
+// way MDX does, through the shared `mdxCodeRanges` scanner.
+describe('the pre-passes read fenced code the way MDX does (#372)', () => {
+  const README =
+    "# T\n\n````md\n```js\nconst a = {x: 1};\n```\nimport x from 'y'\n```\n````\n\nAfter {y: 2} and `code`.\n";
+  const LOST = '````md\n```js\ncode\n````\n\nprose {b: 1} here\n\n```js\nx\n```\n';
+  const LOST_ESM = '````md\n```js\ncode\n````\n\nimport this module first.\n\n```js\nx\n```\n';
+
+  describe('escapeStrayBraces', () => {
+    it('leaves a ```` fence around ``` lines alone and escapes the prose after it', () => {
+      expect(escapeStrayBraces(README)).toBe(README.replace('{y: 2}', '\\{y: 2\\}'));
+    });
+
+    it('escapes prose after a ```` fence holding one ``` line (the page was lost)', () => {
+      expect(escapeStrayBraces(LOST)).toBe(LOST.replace('{b: 1}', '\\{b: 1\\}'));
+    });
+
+    it.each<[string, string, string]>([
+      [
+        'a ~~~ fence around a ``` line',
+        '~~~md\n```\n{c}\n~~~\n\n{d}\n',
+        '~~~md\n```\n{c}\n~~~\n\n\\{d\\}\n',
+      ],
+      [
+        'a list-item fence',
+        '- item\n\n  ```js\n  const o = {l: 1};\n  ```\n\ntail {n}\n',
+        '- item\n\n  ```js\n  const o = {l: 1};\n  ```\n\ntail \\{n\\}\n',
+      ],
+      [
+        'a list-item fence ended by an outdented line',
+        '- a\n\n  ```js\n  {l: 1}\nout {m}\n',
+        '- a\n\n  ```js\n  {l: 1}\nout \\{m\\}\n',
+      ],
+      [
+        "a quoted fence ended by the quote's end",
+        '> ```js\n> {l: 1}\n\nout {m}\n',
+        '> ```js\n> {l: 1}\n\nout \\{m\\}\n',
+      ],
+      [
+        'an unclosed fence',
+        'text {j}\n\n```js\nconst o = {k: 1};\n',
+        'text \\{j\\}\n\n```js\nconst o = {k: 1};\n',
+      ],
+      [
+        'an indented closer',
+        '```\n{x}\n        ```\n\n{z}\n',
+        '```\n{x}\n        ```\n\n\\{z\\}\n',
+      ],
+      [
+        'an indented opener after a paragraph',
+        'para\n    ```\n{x}\n    ```\n\n{z}\n',
+        'para\n    ```\n{x}\n    ```\n\n\\{z\\}\n',
+      ],
+      ['an indented line (MDX has no indented code)', 'para\n\n    {x}\n', 'para\n\n    \\{x\\}\n'],
+      ["an author's escaped braces", 'a \\{x\\} b\n', 'a \\{x\\} b\n'],
+      [
+        'a comment placeholder inside a ```` fence',
+        '````md\n```\n{/**/}\n````\n\n{/**/}\n',
+        '````md\n```\n{/**/}\n````\n\n{}\n',
+      ],
+      // Review follow-ups: MDX has no HTML blocks, so a span crosses a line
+      // that starts with a tag (the page was lost on `{x}`).
+      [
+        'a span across a line starting with a tag',
+        'Wrap items in `<ul>\n<li>` tags, pass {x} or `y`.\n',
+        'Wrap items in `<ul>\n<li>` tags, pass \\{x\\} or `y`.\n',
+      ],
+      [
+        'a span across a line starting with a block-level tag',
+        'The `{children}\n<div>` wrapper.\n',
+        'The `{children}\n<div>` wrapper.\n',
+      ],
+      [
+        'a list marker, then a quoted fence',
+        '- > ```js\n  > const a = {b};\n  > ```\n\nafter {c}\n',
+        '- > ```js\n  > const a = {b};\n  > ```\n\nafter \\{c\\}\n',
+      ],
+      [
+        'two list markers, then a fence',
+        '- - ```js\n    a = {b};\n\n    c = {d};\n    ```\n',
+        '- - ```js\n    a = {b};\n\n    c = {d};\n    ```\n',
+      ],
+      [
+        'a quoted fence four columns into a list item',
+        '1.  Step\n\n    > ~~~js\n    > const a = {b};\n    > ~~~\n',
+        '1.  Step\n\n    > ~~~js\n    > const a = {b};\n    > ~~~\n',
+      ],
+      [
+        'a fence in a tab-marker item, ended by the item',
+        '-\tStep\n\n\t```js\n\tconst a = {b};\n\nNext {para}\n',
+        '-\tStep\n\n\t```js\n\tconst a = {b};\n\nNext \\{para\\}\n',
+      ],
+      [
+        "a fence after the comment pass's placeholder line",
+        '- item\n{/**/}\n  ```js\nconst a = {b};\n  ```\n',
+        '- item\n{}\n  ```js\nconst a = {b};\n  ```\n',
+      ],
+    ])('handles %s', (_name, src, want) => {
+      expect(escapeStrayBraces(src)).toBe(want);
+    });
+  });
+
+  describe('escapeEsmLookalikes', () => {
+    it('leaves an import inside a nested fence alone and escapes the prose import after it', () => {
+      expect(escapeEsmLookalikes(README)).toBe(README);
+      expect(escapeEsmLookalikes(LOST_ESM)).toBe(
+        LOST_ESM.replace('import this', '&#x69;mport this')
+      );
+    });
+
+    it.each<[string, string, string]>([
+      [
+        'a ~~~ fence around a ``` line',
+        '~~~md\n```\nimport a from "b"\n~~~\n\nimport this later.\n',
+        '~~~md\n```\nimport a from "b"\n~~~\n\n&#x69;mport this later.\n',
+      ],
+      [
+        'a list-item fence ended by an outdented line',
+        '- a\n\n  ```js\n  x\nimport out\n',
+        '- a\n\n  ```js\n  x\n&#x69;mport out\n',
+      ],
+      [
+        "a quoted fence ended by the quote's end",
+        '> ```js\n> x\n\nimport out\n',
+        '> ```js\n> x\n\n&#x69;mport out\n',
+      ],
+      [
+        'an unclosed fence',
+        "text\n\n```js\nimport z from 'z'\n",
+        "text\n\n```js\nimport z from 'z'\n",
+      ],
+      [
+        'an indented closer',
+        '```\nimport y\n        ```\n\nimport z\n',
+        '```\nimport y\n        ```\n\n&#x69;mport z\n',
+      ],
+      [
+        'an indented opener after a paragraph',
+        'para\n    ```\nimport y\n    ```\n\nexport z\n',
+        'para\n    ```\nimport y\n    ```\n\n&#x65;xport z\n',
+      ],
+    ])('handles %s', (_name, src, want) => {
+      expect(escapeEsmLookalikes(src)).toBe(want);
+    });
+  });
+
+  describe('findStrayBackticks', () => {
+    it('reports nothing for a ```` fence around ``` lines', () => {
+      expect(findStrayBackticks(README)).toEqual([]);
+      expect(findStrayBackticks(LOST)).toEqual([]);
+    });
+
+    it.each<[string, string]>([
+      ['a ~~~ fence around a ``` line', '~~~md\n```\n~~~\n\n`a`\n'],
+      ['a list-item fence', '- a\n\n  ```js\n  x\n  ```\n\n`b`\n'],
+      ['a quoted fence', '> ```js\n> x\n\n`c`\n'],
+      ['an unclosed fence', '```js\nx `\n'],
+      ['an indented closer', '```\nx\n        ```\n\n`d`\n'],
+      ['a span across a line starting with a tag', 'Use `<ul>\n<li>` here.\n'],
+      ['a list marker, then a quoted fence', '- > ```js\n  > x\n  > ```\n'],
+      ['two list markers, then a fence', '- - ```js\n    x\n    ```\n'],
+    ])('reports nothing for %s', (_name, src) => {
+      expect(findStrayBackticks(src)).toEqual([]);
+    });
+
+    it('reports the line and column of a stray backtick after the frontmatter', () => {
+      expect(findStrayBackticks('---\na: `1\n---\n\nx `y\n\nz\n')).toEqual([
+        { line: 5, column: 3, lineText: 'x `y' },
+      ]);
+    });
+
+    it('reports a stray backtick on a line past many others', () => {
+      const src = 'a\n'.repeat(1000) + 'b `c\n\n`d` `\n';
+      expect(findStrayBackticks(src)).toEqual([
+        { line: 1001, column: 3, lineText: 'b `c' },
+        { line: 1003, column: 5, lineText: '`d` `' },
+      ]);
+    });
+  });
+
+  // The three regex implementations these passes replaced, kept as oracles:
+  // on prose without backticks, tildes or backslashes (no fence, no span, no
+  // escape) the rewrite must give the same output.
+  describe('prose reads as before', () => {
+    const REF_FRONTMATTER = /^---\n[\s\S]*?\n---\n/;
+    const referenceBraces = (source: string): string => {
+      const fm = REF_FRONTMATTER.exec(source);
+      const prefix = fm ? fm[0] : '';
+      const body = fm ? source.slice(fm[0].length) : source;
+      const re =
+        /(```[\s\S]*?```|~~~[\s\S]*?~~~)|((?<!\\)<\/?[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][\w-]*(?:="[^"]*"|='[^']*')?)*\s*\/?>)|(?<![`\\])(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`)|(\{\/\*(\n[ \t>]*)?\*\/\})|([{}])/g;
+      return (
+        prefix +
+        body.replace(
+          re,
+          (
+            m,
+            _fence,
+            _jsx,
+            _ticks,
+            placeholder: string | undefined,
+            gap: string | undefined,
+            brace: string | undefined
+          ) => (placeholder ? `{${gap ?? ''}}` : brace ? `\\${brace}` : m)
+        )
+      );
+    };
+    const referenceEsm = (source: string): string => {
+      const fm = REF_FRONTMATTER.exec(source);
+      const prefix = fm ? fm[0] : '';
+      const body = fm ? source.slice(fm[0].length) : source;
+      const re =
+        /(```[\s\S]*?```|~~~[\s\S]*?~~~)|((?<!\\)<\/?[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][\w-]*(?:="[^"]*"|='[^']*')?)*\s*\/?>)|(?<![`\\])(`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`)|^(import|export)(?=\s)/gm;
+      return (
+        prefix +
+        body.replace(re, (m, _fence, _jsx, _ticks, keyword: string | undefined) =>
+          keyword ? `&#x${keyword.charCodeAt(0).toString(16)};${keyword.slice(1)}` : m
+        )
+      );
+    };
+    // Comments are not masked: the inputs hold none.
+    const referenceStrays = (
+      source: string
+    ): { line: number; column: number; lineText: string }[] => {
+      const out: { line: number; column: number; lineText: string }[] = [];
+      const fm = REF_FRONTMATTER.exec(source);
+      const re =
+        /(```[\s\S]*?```|~~~[\s\S]*?~~~)|(?<![`\\])((`+)(?:[^\n]|\n(?![ \t\r]*\n))*?(?<![`\\])\3(?!`))|(?<![`\\])(`+)/g;
+      re.lastIndex = fm ? fm[0].length : 0;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(source)) !== null) {
+        if (m[4] === undefined) continue;
+        const idx = m.index;
+        const lastNl = source.lastIndexOf('\n', idx - 1);
+        const nextNl = source.indexOf('\n', idx);
+        out.push({
+          line: source.slice(0, idx).split('\n').length,
+          column: idx - lastNl,
+          lineText: source.slice(lastNl + 1, nextNl === -1 ? source.length : nextNl),
+        });
+      }
+      return out;
+    };
+
+    it('the references tell the cases apart', () => {
+      expect(referenceBraces('a {b} <X a="{c}" /> {/**/}')).toBe('a \\{b\\} <X a="{c}" /> {}');
+      expect(referenceEsm('import a\n<X a="\nimport b" />\n')).toBe(
+        '&#x69;mport a\n<X a="\nimport b" />\n'
+      );
+      expect(referenceStrays('a `b\n\nc')).toEqual([{ line: 1, column: 3, lineText: 'a `b' }]);
+    });
+
+    it('gives the same output on seeded random prose', () => {
+      const pieces = [
+        'word ',
+        'a',
+        ' ',
+        ' ',
+        '\n',
+        '\n',
+        '\n\n',
+        '{',
+        '}',
+        '{x}',
+        '{/**/}',
+        '{/*\n> */}',
+        '{/*\n*/}',
+        'import ',
+        'export ',
+        '\nimport x\n',
+        '> ',
+        '- ',
+        '# ',
+        '1. ',
+        '<',
+        '>',
+        '<X a="{q}" />',
+        "<img alt='{x}\n\nimport y'>",
+        '</b>',
+        '<b>',
+        '"',
+        "'",
+        '=',
+        '    ',
+        '\t',
+        '|',
+        '---',
+        '***',
+        '<></>',
+        'https://x',
+        '\r\n',
+      ];
+      expectSameAsReferences(pieces, 30_000, ['braces', 'esm']);
+    });
+
+    // Code spans in plain paragraphs (no fence, heading, list, quote, table,
+    // tag or backslash): spans pair, and a run with no partner before a blank
+    // line is stray, exactly as before.
+    it('reads code spans in plain paragraphs as before', () => {
+      const pieces = [
+        'word ',
+        'a',
+        ' ',
+        ' ',
+        '\n',
+        '\n',
+        '\n\n',
+        '\n  \n',
+        '`',
+        '`',
+        '``',
+        '{x}',
+        '}',
+        'import ',
+        '\nimport x\n',
+        '\t',
+      ];
+      expectSameAsReferences(pieces, 30_000, ['braces', 'esm', 'strays']);
+    });
+
+    /** Seeded random bodies from `pieces` give the references' output for each pass named. */
+    function expectSameAsReferences(
+      pieces: readonly string[],
+      count: number,
+      passes: readonly ('braces' | 'esm' | 'strays')[]
+    ): void {
+      const same = {
+        braces: (s: string) => escapeStrayBraces(s) === referenceBraces(s),
+        esm: (s: string) => escapeEsmLookalikes(s) === referenceEsm(s),
+        strays: (s: string) =>
+          JSON.stringify(findStrayBackticks(s)) === JSON.stringify(referenceStrays(s)),
+      };
+      let seed = 372;
+      const next = (k: number): number => {
+        seed = (Math.imul(seed, 1_664_525) + 1_013_904_223) >>> 0;
+        return seed % k;
+      };
+      const mismatches = { braces: 0, esm: 0, strays: 0 };
+      let strayRuns = 0;
+      let first: string | undefined;
+      for (let n = 0; n < count; n++) {
+        let s = next(10) === 0 ? '---\na: {b}\nimport: c\n---\n' : '';
+        for (let len = 1 + next(25); len > 0; len--) s += pieces[next(pieces.length)];
+        if (passes.includes('strays')) strayRuns += referenceStrays(s).length;
+        for (const k of passes) {
+          if (!same[k](s)) {
+            mismatches[k]++;
+            first ??= s;
+          }
+        }
+      }
+      if (first !== undefined) {
+        if (passes.includes('braces')) {
+          expect(escapeStrayBraces(first), JSON.stringify(first)).toBe(referenceBraces(first));
+        }
+        if (passes.includes('esm')) {
+          expect(escapeEsmLookalikes(first), JSON.stringify(first)).toBe(referenceEsm(first));
+        }
+        if (passes.includes('strays')) {
+          expect(findStrayBackticks(first), JSON.stringify(first)).toEqual(referenceStrays(first));
+        }
+      }
+      expect(mismatches).toEqual({ braces: 0, esm: 0, strays: 0 });
+      // The stray leg is not vacuous: the inputs hold plenty of stray runs.
+      if (passes.includes('strays')) expect(strayRuns).toBeGreaterThan(count / 10);
+    }
+  });
+
+  // A page body passes through each of these once per build; none may go
+  // quadratic or overflow the stack (they did on a code span of 8M characters).
+  describe('performance', () => {
+    const passes = {
+      escapeStrayBraces,
+      escapeEsmLookalikes,
+      findStrayBackticks: (s: string) => findStrayBackticks(s, []),
+      preprocessJsdocInlineTags,
+    };
+    const shapes: [string, (n: number) => string][] = [
+      [
+        'fences, spans and tags',
+        (n) =>
+          '````md\n```js\n{a}\n````\n\nSee `a{b}` <X a="{c}" /> {d}.\n\nimport it\n\n'.repeat(
+            n / 58
+          ),
+      ],
+      ['one code span over many lines', (n) => '`' + 'word {x}\n'.repeat(n / 9) + '` {y}\n'],
+      ['an unclosed backtick then a long paragraph', (n) => '`' + 'word {x}\n'.repeat(n / 9)],
+      ['many stray backticks', (n) => '` a `` b ``` c {x}\n\n'.repeat(n / 20)],
+      [
+        'unclosed backtick runs of distinct lengths',
+        (n) => {
+          let s = '';
+          for (let k = 1; s.length < n / 2; k++) s += '`'.repeat(k) + ' ';
+          return s + 'word {x} '.repeat(n / 18);
+        },
+      ],
+      ['one tag with many attributes', (n) => '<a ' + 'b="c" '.repeat(n / 6) + '/> {x}\n'],
+      ['one unclosed tag with many attributes', (n) => '<a ' + 'b="c" '.repeat(n / 6) + '{x}\n'],
+      ['import lines', (n) => 'import it now\n\n'.repeat(n / 15)],
+      ['list-item fences', (n) => '- a\n\n  ```\n  {x}\n  ```\n'.repeat(n / 24)],
+      [
+        'tilde fences between plain paragraphs',
+        (n) => '~~~\ncode {a}\n~~~\n\ntext {b}\n\n'.repeat(n / 27),
+      ],
+      ['marker-then-quote fences', (n) => '- > ```js\n  > {a}\n  > ```\n\n'.repeat(n / 28)],
+      ['a page of prose tags', (n) => 'see {@link Foo} and `x` {@b c`d}.\n\n'.repeat(n / 35)],
+      ['tags inside code spans', (n) => 'a `b {@link c} d` e\n'.repeat(n / 20)],
+      ['unclosed tag openers', (n) => '{@a '.repeat(n / 4)],
+      ['a tag opener with a long name and no close', (n) => '{@' + 'a'.repeat(n)],
+      [
+        'tag openers with long names and no close',
+        (n) => ('{@' + 'a'.repeat(2000) + ' x ').repeat(n / 2005),
+      ],
+    ];
+    const cases = Object.entries(passes).flatMap(([pass, fn]) =>
+      shapes.map(([shape, make]) => [pass, shape, fn, make] as const)
+    );
+
+    it.each(cases)(
+      '%s: %s scales linearly',
+      (_pass, _shape, fn, makeInput) => {
+        expectLinearScaling(fn, makeInput);
+      },
+      PERF_TEST_TIMEOUT
+    );
+
+    // One global replace over a gap full of braces slows down past several
+    // hundred thousand matches (a V8 cliff, see linear-scaling.ts): the window
+    // stays below it.
+    it(
+      'escapeStrayBraces: a page of braces scales linearly',
+      () => {
+        expectLinearScaling(escapeStrayBraces, (n) => 'a {b} c\n'.repeat(n / 8), {
+          maxSize: 32_768,
+        });
+      },
+      PERF_TEST_TIMEOUT
+    );
+
+    it('none throws on a code span or a tag of 16M characters', () => {
+      const n = 16 * 1024 * 1024;
+      const span = '`' + 'x'.repeat(n) + '` {y}\nimport z\n';
+      expect(escapeStrayBraces(span).endsWith('` \\{y\\}\nimport z\n')).toBe(true);
+      expect(escapeEsmLookalikes(span).endsWith('` {y}\n&#x69;mport z\n')).toBe(true);
+      expect(findStrayBackticks(span, [])).toEqual([]);
+      const tag = '<a ' + 'b="c" '.repeat(n / 6) + '/> {x}\n';
+      expect(escapeStrayBraces(tag).endsWith('/> \\{x\\}\n')).toBe(true);
+      expect(escapeEsmLookalikes(tag)).toBe(tag);
+      const open = '`' + 'x'.repeat(n) + ' {y}\n';
+      expect(findStrayBackticks(open, [])).toHaveLength(1);
+      expect(preprocessJsdocInlineTags(span + '{@link y}\n')).toBe(span + '\uE000@link y\uE001\n');
+      expect(preprocessJsdocInlineTags(tag + '{@link y}\n')).toBe(tag + '\uE000@link y\uE001\n');
+      const long = '{@link ' + 'x'.repeat(n) + '}\n';
+      expect(preprocessJsdocInlineTags(long)).toBe('\uE000@link ' + 'x'.repeat(n) + '\uE001\n');
+    });
   });
 });
