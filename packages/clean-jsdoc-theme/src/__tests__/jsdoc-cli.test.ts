@@ -448,3 +448,180 @@ describe('JSDoc CLI end to end: configuration problems (PR #356)', () => {
     SPAWN_TEST_TIMEOUT
   );
 });
+
+describe('JSDoc CLI end to end: inline tags in descriptions (#366)', () => {
+  let run: Run;
+
+  beforeAll(async () => {
+    run = await runJsdoc(
+      {
+        'src/jobs.js': lines(
+          '/**',
+          ' * Runs {@link Other}, {@link Other#run}, {@link Other|the other}, [lbl]{@link Other},',
+          ' * {@linkcode Other} and {@tutorial intro}.',
+          ' * @module jobs',
+          ' */',
+          '',
+          '/** Another class. */',
+          'export class Other {',
+          '  /** Runs it. */',
+          '  run() {}',
+          '}'
+        ),
+        'tutorials/intro.md': lines('# Intro', '', 'Hello.'),
+        'tutorials/intro.json': JSON.stringify({ title: 'Introduction' }),
+      },
+      {
+        plugins: ['plugins/markdown'],
+        opts: { tutorials: 'tutorials', siteUrl: 'https://example.com', llmsTxt: true },
+      }
+    );
+  }, SPAWN_TEST_TIMEOUT);
+
+  it('builds with exit 0', () => {
+    expect(run.status, run.output).toBe(0);
+  });
+
+  it('writes the text the body shows into the .md description', () => {
+    const description = /^description: (.*)$/m.exec(run.read('module/jobs/index.md'))?.[1];
+    expect(description).toBeDefined();
+    expect(description).not.toContain('{@');
+    expect(description).toContain('Runs Other, Other#run, the other, lbl, Other and Introduction.');
+  });
+
+  it('keeps inline tags out of every search description and excerpt, and llms.txt', () => {
+    const searchIndex = run.list('_assets').find((f) => f.startsWith('search-index.'))!;
+    const fields: Record<'description' | 'excerpt', string[]> = { description: [], excerpt: [] };
+    const walk = (v: unknown): void => {
+      if (Array.isArray(v)) v.forEach(walk);
+      else if (v && typeof v === 'object') {
+        for (const [k, x] of Object.entries(v)) {
+          if ((k === 'description' || k === 'excerpt') && typeof x === 'string') fields[k].push(x);
+          else walk(x);
+        }
+      }
+    };
+    walk(JSON.parse(run.read(`_assets/${searchIndex}`)));
+    expect(fields.description.some((f) => f.includes('Introduction'))).toBe(true);
+    for (const f of fields.description) expect(f).not.toContain('{@');
+    // The excerpt comes from the body, which still shows a raw `{@tutorial}`
+    // (a separate gap in the body's tag resolution); the link family is resolved.
+    for (const f of fields.excerpt) expect(f).not.toMatch(/\{@link/);
+    expect(run.read('llms.txt')).not.toContain('{@');
+  });
+});
+
+describe('JSDoc CLI end to end: image names with a space (#396)', () => {
+  let run: Run;
+  let subRun: Run;
+  const IMG_SRC = /<img src="(\/_assets\/my%20pic\.[0-9a-f]{8}\.png)"/;
+
+  const FILES: Record<string, string | Buffer> = {
+    'img/my pic.png': PNG_1X1,
+    "img/it's (1).png": PNG_1X1,
+    'img/my logo.svg':
+      '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10"/></svg>\n',
+    'README.md': lines('# Home', '', '![Home pic](./img/my%20pic.png)'),
+    'docs/gallery.md': lines(
+      '# Gallery',
+      '',
+      '<img src="../img/my pic.png" alt="Docs raw">',
+      '',
+      '![Docs md](../img/my%20pic.png)',
+      '',
+      '<img src="../img/my logo.svg" alt="Spaced logo">',
+      '',
+      `<img src="../img/it's (1).png" alt="Quoted">`
+    ),
+    'tutorials/tour.md': lines('# Tour', '', '![Tour](../img/my%20pic.png)'),
+    'src/pic.js': lines(
+      '/**',
+      ' * Shows a picture.',
+      ' *',
+      ' * ![Doc pic](../img/my%20pic.png)',
+      ' */',
+      'export function pic() {}'
+    ),
+  };
+  const conf = (extra: Record<string, unknown> = {}): JSDocConf => ({
+    plugins: ['plugins/markdown'],
+    source: { include: ['src', 'README.md'] },
+    opts: {
+      docs: 'docs',
+      tutorials: 'tutorials',
+      siteUrl: 'https://example.com',
+      llmsTxt: true,
+      ...extra,
+    },
+  });
+
+  beforeAll(async () => {
+    [run, subRun] = await Promise.all([
+      runJsdoc(FILES, conf()),
+      runJsdoc(FILES, conf({ basePath: '/sub' })),
+    ]);
+  }, SPAWN_TEST_TIMEOUT);
+
+  it('builds with exit 0 and finds every image', () => {
+    expect(run.status, run.output).toBe(0);
+    expect(run.output).not.toContain('could not read image');
+    expect(subRun.status, subRun.output).toBe(0);
+  });
+
+  it('gives every page the same percent-encoded src, backed by one file with the real name', () => {
+    const pages = [
+      'index.html',
+      'gallery/index.html',
+      'tutorials/tour/index.html',
+      'global/index.html',
+    ];
+    const srcs = pages.map((page) => {
+      const src = IMG_SRC.exec(run.read(page))?.[1];
+      expect(src, `no encoded <img> in ${page}`).toBeDefined();
+      return src!;
+    });
+    expect(new Set(srcs).size).toBe(1);
+    expect(run.has(decodeURIComponent(srcs[0]).slice(1))).toBe(true);
+    expect(run.list('_assets').filter((f) => f.startsWith('my pic.'))).toHaveLength(1);
+    for (const page of pages) expect(run.read(page)).not.toContain('_assets/my pic');
+  });
+
+  it('rewrites a double-quoted <img> src that contains an apostrophe', () => {
+    const src = /<img src="(\/_assets\/it%27s%20%281%29\.[0-9a-f]{8}\.png)"/.exec(
+      run.read('gallery/index.html')
+    )?.[1];
+    expect(src).toBeDefined();
+    expect(run.has(decodeURIComponent(src!).slice(1))).toBe(true);
+  });
+
+  it('writes the encoded src into the .md companions and llms-full.txt', () => {
+    const src = IMG_SRC.exec(run.read('index.html'))![1];
+    for (const page of ['index.md', 'gallery/index.md', 'global/index.md', 'llms-full.txt']) {
+      const text = run.read(page);
+      expect(text, page).toContain(`](${src})`);
+      expect(text, page).not.toContain('_assets/my pic');
+    }
+  });
+
+  it('prefixes basePath once and never double-encodes', () => {
+    const src = /<img src="(\/sub\/_assets\/my%20pic\.[0-9a-f]{8}\.png)"/.exec(
+      subRun.read('index.html')
+    )?.[1];
+    expect(src).toBeDefined();
+    for (const page of ['index.md', 'gallery/index.md', 'global/index.md', 'llms-full.txt']) {
+      expect(subRun.read(page), page).toContain(`](${src})`);
+    }
+    for (const page of ['index.html', 'index.md', 'llms-full.txt']) {
+      expect(subRun.read(page), page).not.toContain('%2520');
+    }
+  });
+
+  it('inlines a spaced SVG and links its encoded src from the .md', () => {
+    const html = run.read('gallery/index.html');
+    expect(html).toContain('role="img" aria-label="Spaced logo"');
+    expect(html).not.toMatch(/<img[^>]*my%20logo/);
+    expect(run.read('gallery/index.md')).toMatch(/\/_assets\/my%20logo\.[0-9a-f]{8}\.svg/);
+    const logos = run.list('_assets').filter((f) => /^my logo\.[0-9a-f]{8}\.svg$/.test(f));
+    expect(logos).toHaveLength(1);
+  });
+});

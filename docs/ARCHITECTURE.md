@@ -703,7 +703,10 @@ clean-jsdoc-theme/src/
 │                         #   doclets IN PLACE — salty hands out live refs — base =
 │                         #   each doclet's meta.path) through the content-hashed
 │                         #   _assets/ pipeline (copy + rewrite src to /_assets/…,
-│                         #   deduped across all sources), and collects each .svg's
+│                         #   deduped across all sources; the src's file name is
+│                         #   percent-encoded like the TypeDoc twin's, and a %20-
+│                         #   style src is also tried decoded, #396), and collects
+│                         #   each .svg's
 │                         #   markup into render()'s inlineSvgs map so it's inlined
 │                         #   (theme-toggle-aware) rather than <img>-ed. Image
 │                         #   syntax inside code spans / fenced blocks / <pre>/<code>

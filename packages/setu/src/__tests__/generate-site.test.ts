@@ -642,6 +642,87 @@ describe('generateSite', () => {
     expect(page?.frontmatter.description).toBe('L Promise<User> end');
   });
 
+  describe('inline tags in the frontmatter description (#366)', () => {
+    const doclets = [
+      {
+        kind: 'class',
+        name: 'Worker',
+        longname: 'Worker',
+        scope: 'global',
+        comment: '/** c */',
+        description:
+          '<p>Tracks the {@link JobState} via the {@link AbstractJob#execute} hook; see ' +
+          '{@link module:queue/types|type definitions} and {@tutorial getting-started}.</p>',
+      },
+      {
+        kind: 'class',
+        name: 'JobState',
+        longname: 'JobState',
+        scope: 'global',
+        comment: '/** s */',
+      },
+      {
+        kind: 'class',
+        name: 'AbstractJob',
+        longname: 'AbstractJob',
+        scope: 'global',
+        comment: '/** a */',
+      },
+      {
+        kind: 'function',
+        name: 'execute',
+        longname: 'AbstractJob#execute',
+        memberof: 'AbstractJob',
+        scope: 'instance',
+        comment: '/** e */',
+      },
+    ];
+
+    it('reduces each tag to the text the body shows, with the tutorial title', () => {
+      const manifest = generateSite(makeCollection(doclets), {
+        tutorials: [
+          {
+            name: 'getting-started',
+            title: 'Getting Started',
+            type: 'markdown',
+            content: '# Getting Started',
+          },
+        ],
+      });
+      const page = manifest.pages.find((p) => p.frontmatter.longname === 'Worker');
+      expect(page?.frontmatter.description).toBe(
+        'Tracks the JobState via the AbstractJob#execute hook; see type definitions and Getting Started.'
+      );
+      // The body keeps its resolved links.
+      expect(page?.body).toMatch(/\[JobState\]\([^)]+\)/);
+    });
+
+    it('falls back to the tutorial name without a tutorial resolver', () => {
+      const page = generateSite(makeCollection(doclets)).pages.find(
+        (p) => p.frontmatter.longname === 'Worker'
+      );
+      expect(page?.frontmatter.description).toBe(
+        'Tracks the JobState via the AbstractJob#execute hook; see type definitions and getting-started.'
+      );
+    });
+
+    it('reduces a tag holding an autolinked URL (markdown plugin) to the URL', () => {
+      const page = generateSite(
+        makeCollection([
+          {
+            kind: 'namespace',
+            name: 'Widget',
+            longname: 'Widget',
+            scope: 'global',
+            comment: '/** ns */',
+            description: '<p>See {@link <a href="https://x.y">https://x.y</a>}.</p>',
+          },
+        ])
+      ).pages.find((p) => p.slug === 'widget');
+      expect(page?.frontmatter.description).toBe('See https://x.y.');
+    });
+  });
+
   it('headings on at least one page are non-empty with slug-cased ids', () => {
     const manifest = generateSite(getJSDocTaffyData());
     const pageWithHeadings = manifest.pages.find((p) => (p.headings?.length ?? 0) > 0);
