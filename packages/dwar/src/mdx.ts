@@ -127,11 +127,7 @@ export function preprocessJsdocInlineTags(source: string): string {
 }
 
 /** Leading YAML frontmatter (setu prepends it); every pre-pass keeps it verbatim. */
-const FRONTMATTER = /^---\n[\s\S]*?\n---\n/;
-function frontmatterLength(source: string): number {
-  const fm = FRONTMATTER.exec(source);
-  return fm ? fm[0].length : 0;
-}
+import { frontmatterLength } from './frontmatter';
 
 /**
  * Backslash-escape stray `{` / `}` so MDX doesn't treat them as JS expression
@@ -555,6 +551,34 @@ function rehypeSlugHeadings() {
   };
 }
 
+/**
+ * Lower-case the `language-*` class of fenced code blocks shiki knows (#415).
+ * rehype-shiki matches the class against the loaded languages case-sensitively,
+ * so ```JS / ~~~TS / ```C# would fall back to plain text even though
+ * `collectUsedLangs` loaded `js` / `ts` / `c#`. Aliases need no mapping — shiki
+ * resolves `c#` → csharp itself. Unknown languages are left as written (plain
+ * text, as before). Only the hast is touched; the `.md` info string is not.
+ */
+function rehypeNormalizeCodeLang() {
+  const prefix = 'language-';
+  const walk = (node: HastNode): void => {
+    if (node.type === 'element' && node.tagName === 'pre') {
+      const code = node.children?.find((c) => c.type === 'element' && c.tagName === 'code');
+      const classes = code?.properties?.className;
+      if (code?.properties && Array.isArray(classes)) {
+        code.properties.className = classes.map((c: unknown) => {
+          if (typeof c !== 'string' || !c.startsWith(prefix)) return c;
+          const lower = c.slice(prefix.length).toLowerCase();
+          return KNOWN_SHIKI_LANGS.has(lower) ? prefix + lower : c;
+        });
+      }
+      return;
+    }
+    for (const child of node.children ?? []) walk(child);
+  };
+  return (tree: HastNode): void => walk(tree);
+}
+
 export async function compileMdxToComponent(
   source: string,
   components: MdxComponentMap,
@@ -611,6 +635,8 @@ export async function compileMdxToComponent(
       // Heading ids first, so they're set before Shiki rewrites code subtrees
       // (headings carry no code, but order keeps the pass independent).
       rehypeSlugHeadings,
+      // Before Shiki: its language lookup is case-sensitive (#415).
+      rehypeNormalizeCodeLang,
       [
         rehypeShiki,
         {

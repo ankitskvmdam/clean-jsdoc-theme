@@ -114,6 +114,11 @@ capture किया जाता है, और बाक़ी site फिर 
 [`publish.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/clean-jsdoc-theme/src/publish.ts)
 उन्हें surface करता है)।
 
+एकमात्र अपवाद वह build है जिसमें **एक भी** content page render नहीं हुआ (हर page
+fail हुआ, जैसे टूटे install में)। `render()` तब भी throw नहीं करता, पर
+`result.noContentRendered` set करता है, और दोनों bridges कुछ भी लिखने से पहले build
+को fail कर देते हैं, ताकि पिछला output जस का तस रहे।
+
 ## `render()` क्या उत्सर्जित करता है
 
 सब कुछ `result.files` के अंदर वापस आता है (एक `OutputFile[]`, हर एक

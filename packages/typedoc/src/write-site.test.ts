@@ -51,12 +51,22 @@ beforeAll(async () => {
   await writeFile(
     join(tmp, 'documents', 'gallery.md'),
     '# Gallery\n\n![Shot](./shot.png)\n\n<img src="./shot.png" alt="raw">\n\n![Solo](./solo.png)\n\n' +
-      '<img src="./my shot.png" alt="spaced">\n',
+      '<img src="./my shot.png" alt="spaced">\n\n![Gone](./gone.png)\n',
     'utf8'
   );
   await writeFile(join(tmp, 'documents', 'shot.png'), PNG_1X1);
   await writeFile(join(tmp, 'documents', 'my shot.png'), PNG_1X1);
   await writeFile(join(tmp, 'documents', 'solo.png'), Buffer.concat([PNG_1X1, Buffer.from([0])]));
+  // Percent signs and anchors (#397): TypeDoc decodes a link before checking it.
+  await writeFile(
+    join(tmp, 'documents', 'encoded.md'),
+    '# Encoded\n\n![Lit](./lit%20shot.png) ![Enc](./my%20shot.png) ![Frag](./shot.png#frag)\n',
+    'utf8'
+  );
+  await writeFile(
+    join(tmp, 'documents', 'lit%20shot.png'),
+    Buffer.concat([PNG_1X1, Buffer.from([3])])
+  );
   await mkdir(join(tmp, 'notes'), { recursive: true });
   await writeFile(
     join(tmp, 'notes', 'api-notes.md'),
@@ -85,6 +95,7 @@ beforeAll(async () => {
       projectDocuments: [
         posix(join(tmp, 'documents', 'guide.md')),
         posix(join(tmp, 'documents', 'gallery.md')),
+        posix(join(tmp, 'documents', 'encoded.md')),
       ],
       skipErrorChecking: true,
       logLevel: 'Error',
@@ -182,8 +193,8 @@ describe('writeSite — strict mode', () => {
         withBlock(
           {
             strict: true,
-            colors: { accent: 'red' },
-            customCss: 'body{}',
+            readme: './README.md',
+            progress: false,
             siteUrl: 'https://docs.example.com',
           },
           { hostedBaseUrl: 'https://example.com' }
@@ -191,7 +202,7 @@ describe('writeSite — strict mode', () => {
       );
       expect(readdirSync(out).length).toBeGreaterThan(0);
       const said = [...warn.mock.calls, ...info.mock.calls].map((c) => String(c[0])).join('\n');
-      expect(said).toContain(`"colors" isn't supported by the TypeDoc flavor yet; it's ignored.`);
+      expect(said).toContain(`"readme" isn't used by the TypeDoc flavor; it's ignored.`);
       expect(said).toContain('[opts/unsupported-in-typedoc]');
       expect(said).toContain('using `cleanJsdocTheme.siteUrl`');
     } finally {
@@ -205,22 +216,54 @@ describe('writeSite — strict mode', () => {
     const warn = vi.spyOn(app.logger, 'warn').mockImplementation(() => {});
     const info = vi.spyOn(app.logger, 'info').mockImplementation(() => {});
     try {
-      await writeSite(out, project, withBlock({ readme: './README.md', colors: {} }));
+      await writeSite(out, project, withBlock({ readme: './README.md', tutorials: './t' }));
       const warned = warn.mock.calls.map((c) => String(c[0]));
       const informed = info.mock.calls.map((c) => String(c[0]));
       // Each option diagnostic is printed exactly once, at warn level.
       const prints = warned.filter((m) => m.includes('opts/unsupported-in-typedoc'));
       expect(prints).toHaveLength(1);
       expect(prints[0]).toContain(`"readme" isn't used by the TypeDoc flavor; it's ignored.`);
-      expect(prints[0]).toContain(
-        `"colors" isn't supported by the TypeDoc flavor yet; it's ignored.`
-      );
-      expect(prints[0]).toContain('issues/352');
+      expect(prints[0]).toContain(`"tutorials" isn't used by the TypeDoc flavor; it's ignored.`);
+      expect(prints[0]).not.toContain('yet');
       expect(prints[0].match(/"readme" isn't used/g)).toHaveLength(1);
       expect(informed.some((m) => m.includes('opts/unsupported-in-typedoc'))).toBe(false);
     } finally {
       warn.mockRestore();
       info.mockRestore();
+    }
+  }, 60_000);
+
+  it('fails on an unreadable customCssFile before writing anything (#352)', async () => {
+    const out = join(tmp, 'out-strict-custom-css');
+    const error = vi.spyOn(app.logger, 'error').mockImplementation(() => {});
+    try {
+      await expect(
+        writeSite(out, project, withBlock({ strict: true, customCssFile: './no/such.css' }))
+      ).rejects.toThrow(/1 option problem\(s\) in strict mode/);
+      expect(error).toHaveBeenCalledWith(expect.stringContaining('could not read customCssFile'));
+      expect(existsSync(out)).toBe(false);
+    } finally {
+      error.mockRestore();
+    }
+  });
+
+  it('builds with colors and customCss under strict, with no option warning (#352)', async () => {
+    const out = join(tmp, 'out-strict-appearance');
+    const warn = vi.spyOn(app.logger, 'warn').mockImplementation(() => {});
+    const error = vi.spyOn(app.logger, 'error').mockImplementation(() => {});
+    try {
+      await writeSite(
+        out,
+        project,
+        withBlock({ strict: true, colors: { accent: 'red' }, customCss: 'body{}' })
+      );
+      expect(readdirSync(out).length).toBeGreaterThan(0);
+      const said = [...warn.mock.calls, ...error.mock.calls].map((c) => String(c[0])).join('\n');
+      expect(said).not.toContain('opts/unsupported-in-typedoc');
+      expect(said).not.toContain('opts/unknown-key');
+    } finally {
+      warn.mockRestore();
+      error.mockRestore();
     }
   }, 60_000);
 
@@ -359,6 +402,14 @@ describe('writeSite — projectDocuments local images (#378)', () => {
     const onDisk = decodeURIComponent(spaced![1]).slice(1).split('/');
     expect(existsSync(join(out, ...onDisk))).toBe(true);
     expect(read(out, 'gallery/index.md')).toContain(`![spaced](${spaced![1]})`);
+    // A missing image: TypeDoc warned at convert time; the page keeps the src (#397).
+    expect(read(out, 'gallery/index.md')).toContain('![Gone](./gone.png)');
+    // A literal `%20` file name, an encoded space, and an anchor all resolve (#397).
+    const encoded = read(out, 'encoded/index.md');
+    expect(encoded).toMatch(/!\[Lit\]\(\/_assets\/lit%2520shot\.[0-9a-f]{8}\.png\)/);
+    expect(encoded).toContain(`![Enc](${spaced![1]})`);
+    expect(encoded).toContain(`![Frag](${srcs[0]})`);
+    expect(warned.some((m) => m.includes('could not read image'))).toBe(false);
   }, 60_000);
 
   it('sub-path: the src carries basePath exactly once, in the HTML, the .md and llms-full.txt', async () => {
@@ -388,6 +439,31 @@ describe('writeSite — projectDocuments local images (#378)', () => {
     expect(assets.some((f) => /^solo\./.test(f))).toBe(false);
     expect(shots(out)).toHaveLength(1); // still used by the @document page
     expect(warned.some((m) => m.includes('could not read image'))).toBe(false);
+  }, 60_000);
+
+  it('a nested document name with Windows separators still loses to the docs-directory page (#397)', async () => {
+    // TypeDoc names a document spanning directories by its OS-native relative
+    // path (`nested\gallery` on Windows); simulate that on every OS.
+    const gallery = project
+      .getReflectionsByKind(ReflectionKind.Document)
+      .find((r) => r.name === 'gallery')!;
+    const docsDir = join(tmp, 'collide-nested-docs');
+    await mkdir(join(docsDir, 'nested'), { recursive: true });
+    await writeFile(
+      join(docsDir, 'nested', 'gallery.md'),
+      '# Gallery\n\nPlain opts page.\n',
+      'utf8'
+    );
+    const out = join(tmp, 'out-pdocs-collide-nested');
+    gallery.name = 'nested\\gallery';
+    try {
+      await build(out, { docs: posix(docsDir) });
+    } finally {
+      gallery.name = 'gallery';
+    }
+    expect(read(out, 'nested/gallery/index.html')).toContain('Plain opts page.');
+    const assets = readdirSync(join(out, '_assets'));
+    expect(assets.some((f) => /^solo\./.test(f))).toBe(false);
   }, 60_000);
 });
 
@@ -424,5 +500,33 @@ describe('locateProjectDocuments', () => {
     expect(located.files?.get('./pic.png')).toBe(abs);
     expect(located.files?.has('./other.md')).toBe(false);
     expect(located.doc.content).toContain('![P](./pic.png)');
+  });
+
+  it('POSIX-normalises a nested name and records the srcs TypeDoc found no file for (#397)', () => {
+    const abs = join(tmp, 'pdocs', 'my pic.png');
+    const doc = {
+      name: 'pdocs\\intro',
+      content: [
+        { kind: 'text', text: '# Intro\n\n![G](' },
+        { kind: 'relative-link', text: './gone.png', target: undefined },
+        { kind: 'text', text: ') ![S](' },
+        { kind: 'relative-link', text: './my%20pic.png', target: 7 },
+        { kind: 'text', text: ')' },
+      ],
+    };
+    const stub = {
+      getReflectionsByKind: () => [doc],
+      files: {
+        getReflectionPath: () => join(tmp, 'pdocs', 'intro.md'),
+        resolve: (id: number) => (id === 7 ? abs : undefined),
+      },
+    } as unknown as ProjectReflection;
+    const [located] = locateProjectDocuments(stub);
+    expect(located.doc.path).toBe('pdocs/intro');
+    expect(located.baseDir).toBe(join(tmp, 'pdocs'));
+    expect(located.missing?.has('./gone.png')).toBe(true);
+    expect(located.missing?.has('./my%20pic.png')).toBe(false);
+    // TypeDoc's resolved file, the fallback when the literal path isn't a file.
+    expect(located.files?.get('./my%20pic.png')).toBe(abs);
   });
 });

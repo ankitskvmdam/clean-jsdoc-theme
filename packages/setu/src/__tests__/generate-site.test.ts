@@ -303,6 +303,71 @@ describe('extractHeadings', () => {
     };
     expect(extractHeadings(tree).map((h) => h.id)).toEqual(['dup', 'dup-1']);
   });
+
+  describe('footnote references (#357)', () => {
+    // How `[^n]` reaches setu's tree: a link to `#user-content-fn-n` whose text is the number.
+    const ref = (n: number) => ({
+      type: 'link',
+      url: `#user-content-fn-${n}`,
+      children: [{ type: 'text', value: String(n) }],
+    });
+    const text = (value: string) => ({ type: 'text', value });
+    const h2 = (...children: unknown[]) => ({ type: 'heading', depth: 2, children });
+    const run = (...headings: unknown[]) =>
+      extractHeadings({ type: 'root', children: headings } as unknown as Parameters<
+        typeof extractHeadings
+      >[0]).map((h) => ({
+        text: h.text,
+        id: h.id,
+      }));
+
+    it('leaves the footnote number out of the label but keeps it in the id', () => {
+      expect(run(h2(text('Intro'), ref(1)))).toEqual([{ text: 'Intro', id: 'intro1' }]);
+    });
+
+    it('trims the space before a trailing footnote reference', () => {
+      expect(run(h2(text('Intro '), ref(1)))).toEqual([{ text: 'Intro', id: 'intro-1' }]);
+    });
+
+    it('collapses the spaces left by a footnote reference mid-heading', () => {
+      expect(run(h2(text('A'), ref(1), text(' B'), ref(2)))).toEqual([
+        { text: 'A B', id: 'a1-b2' },
+      ]);
+      expect(run(h2(text('A '), ref(1), text(' B')))).toEqual([{ text: 'A B', id: 'a-1-b' }]);
+    });
+
+    it('skips footnote references nested in emphasis or strong', () => {
+      expect(run(h2({ type: 'emphasis', children: [text('Intro'), ref(1)] }))).toEqual([
+        { text: 'Intro', id: 'intro1' },
+      ]);
+      expect(run(h2({ type: 'strong', children: [text('Intro'), ref(1)] }))).toEqual([
+        { text: 'Intro', id: 'intro1' },
+      ]);
+    });
+
+    it('keeps a heading that is only a footnote reference, labelled by its number', () => {
+      expect(run(h2(ref(1)))).toEqual([{ text: '1', id: '1' }]);
+    });
+
+    it('keeps the text of ordinary links', () => {
+      expect(
+        run(
+          h2({ type: 'link', url: '#intro', children: [text('Intro')] }),
+          h2({ type: 'link', url: '#user-content-other', children: [text('x')] })
+        )
+      ).toEqual([
+        { text: 'Intro', id: 'intro' },
+        { text: 'x', id: 'x' },
+      ]);
+    });
+
+    it('dedupes ids from the footnote-bearing text', () => {
+      expect(run(h2(text('Intro'), ref(1)), h2(text('Intro1'))).map((h) => h.id)).toEqual([
+        'intro1',
+        'intro1-1',
+      ]);
+    });
+  });
 });
 
 describe('buildClassPage', () => {

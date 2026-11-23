@@ -7,7 +7,7 @@ island), and emits CSS.
 
 ## Public API
 
-- `render(manifest, opts): Promise<RenderResult>` — the package's only export: a pure async function returning an in-memory `RenderResult` (`OutputFile[]`, `SearchEntry[]`, `errors`, `stats`). Callers persist the files themselves. A page that fails to compile is skipped and reported in `RenderResult.errors`, never thrown.
+- `render(manifest, opts): Promise<RenderResult>` — the package's only export: a pure async function returning an in-memory `RenderResult` (`OutputFile[]`, `SearchEntry[]`, `errors`, `stats`). Callers persist the files themselves. A page that fails to compile is skipped and reported in `RenderResult.errors`, never thrown. When no content page renders at all, `RenderResult.noContentRendered` is set and both bridges fail the build before writing.
 
 ## Usage
 

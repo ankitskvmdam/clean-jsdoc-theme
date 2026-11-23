@@ -469,6 +469,17 @@ cleanJsdocTheme: { sectionOrder: ["Getting Started", "Guides", "Classes", "Modul
 > は `sectionOrder` ではなく [`docGroups`](#docgroups) で順序付けられます。
 > [TypeDoc flavor](/guides/structure-your-sidebar#typedoc-flavor) を参照してください。
 
+labels は書かれたとおりに完全一致で照合されます — 大文字と小文字を区別し、英語の
+ままです（section labels は翻訳されません）。**JSDoc** では、どの section も指さない
+label — built-in の kind label でも、この build の `@category` や doc group でもない
+もの — が報告され、近い名前があれば "did you mean" のヒントが付きます
+（`Clases` → `Classes`）。この build に pages がない built-in labels（`Events` や
+`Externals` など）は問題なく、v4 の `Global` も引き続き `Globals` として読まれます。
+[`strict`](#strict) ではこの報告で build が失敗します。TypeDoc ではこの option が
+効果を持たないため、何も検査されません。localized build では、各 doc の `group` を
+すべての locale で同じに保ってください（[docs を localize する](/guides/localize-your-docs)）。
+overlay で group 名を変えた locale では、指定した label が一致しないものとして報告されます。
+
 ### `clubSidebarItems`
 
 関連する entries（たとえば module とその members）を、共有の collapsible parent の
@@ -705,8 +716,10 @@ opts: {
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-// JSDoc 専用です — TypeDoc flavor はまだ `colors` / `darkColors` に対応していません。
-// `cleanJsdocTheme` 内では `opts/unsupported-in-typedoc` の警告とともに無視されます。
+cleanJsdocTheme: {
+  colors: { bg: "oklch(0.99 0.01 95)", accent: "oklch(0.55 0.2 250)" },
+  darkColors: { bg: "oklch(0.18 0.01 250)", accent: "oklch(0.7 0.16 250)" },
+}
 ```
 
 </tab>
@@ -782,8 +795,7 @@ opts: { customCss: ".my-banner { color: rebeccapurple; }" }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-// JSDoc 専用です — TypeDoc flavor はまだ `customCss` / `customJs` に対応していません。
-// `cleanJsdocTheme` 内では `opts/unsupported-in-typedoc` の警告とともに無視されます。
+cleanJsdocTheme: { customCss: ".my-banner { color: rebeccapurple; }" }
 ```
 
 </tab>
@@ -796,6 +808,7 @@ opts: { customCss: ".my-banner { color: rebeccapurple; }" }
 content-hashed な asset に copy して link します。
 
 **期待される値:** path の string。
+1 つの path でも path の配列でも渡せ、各 path は build を実行する directory からの相対 path として解決されます。
 
 <tabs group="tool">
 
@@ -810,8 +823,7 @@ opts: { customCssFile: "./extra.css", customJsFile: "./extra.js" }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-// JSDoc 専用です — TypeDoc flavor はまだ `customCssFile` / `customJsFile` に対応していません。
-// `cleanJsdocTheme` 内では `opts/unsupported-in-typedoc` の警告とともに無視されます。
+cleanJsdocTheme: { customCssFile: "./extra.css", customJsFile: "./extra.js" }
 ```
 
 </tab>
@@ -838,9 +850,7 @@ opts: { hashCustomAssets: false }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-// JSDoc 専用です — TypeDoc flavor はまだ custom asset files（`hashCustomAssets`）に
-// 対応していません。`cleanJsdocTheme` 内では `opts/unsupported-in-typedoc` の警告
-// とともに無視されます。
+cleanJsdocTheme: { hashCustomAssets: false }
 ```
 
 </tab>
@@ -1053,15 +1063,17 @@ option なしで続行します。`strict: true` では、option の warning や
   使われる `hostedBaseUrl` も対象で、これはよく sub-path を含みます;
 - 読み込めない `footer` / `favicon` / logo / custom CSS や JS file、または skip
   せざるを得ない `meta` / `customCssFile` / `customJsFile` の entry;
+- どの sidebar section にも一致しない `sectionOrder` の label（JSDoc）;
 - 残っている v4 の `theme_opts` block。
 
 影響しないもの — `strict` でも警告や通知のままです:
 
 - content の警告（comment 内の対になっていない backtick など）と、render に失敗
-  した pages;
+  した pages（すべての page が失敗した build は、`strict` の有無にかかわらず常に
+  失敗します）;
 - JSDoc では、`opts.title` や `opts.search` のような top-level の v4 option 名
   （別の JSDoc plugin のものかもしれないため）;
-- TypeDoc では、`colors` のような JSDoc 専用の option（`opts/unsupported-in-typedoc`
+- TypeDoc では、`readme` のような JSDoc 専用の option（`opts/unsupported-in-typedoc`
   の警告とともに無視されます）と、`cleanJsdocTheme.siteUrl` と `hostedBaseUrl` に
   異なる値を設定すること — これは文書化された override で、build はどちらが使われる
   かを知らせるだけです。

@@ -148,12 +148,14 @@ const loadUtils = (): Promise<typeof import('@clean-jsdoc-theme/utils')> =>
     'DiagnosticBag',
     'formatBuildReport',
     'formatRenderError',
+    'renderFailureMessage',
     'normalizeBasePath',
     'withBase',
     'toExtractManifest',
     'normalizeCollapsibleSidebarSections',
     'unmatchedCollapsibleSections',
     'topLevelSectionLabels',
+    'unknownSectionOrderLabels',
     'normalizeScrollbar',
   ]);
 
@@ -2251,7 +2253,7 @@ async function runPublish(
   const progress = createBuildProgress(ora);
 
   const [
-    { generateSite, stampSite },
+    { generateSite, stampSite, DEFAULT_SECTION_ORDER, DOCS_SECTION },
     { render },
     {
       validateThemeOpts,
@@ -2260,12 +2262,14 @@ async function runPublish(
       DiagnosticBag,
       formatBuildReport,
       formatRenderError,
+      renderFailureMessage,
       normalizeBasePath,
       withBase,
       toExtractManifest,
       normalizeCollapsibleSidebarSections,
       unmatchedCollapsibleSections,
       topLevelSectionLabels,
+      unknownSectionOrderLabels,
       normalizeScrollbar,
     },
     // Loaded sequentially (not Promise.all) so the spinner can step its label
@@ -2296,12 +2300,11 @@ async function runPublish(
   // v4 options (`theme_opts`, `base_url`, …) are the exception: they're known to
   // be ours, so they always warn with a migration hint (errors under strict).
   //
-  // Strict mode: `opts.strict` (or nested `templates.default.strict`). When on
+  // Strict mode: `opts.strict` only. (JSDoc's `templates` block is not part of
+  // `env.opts`, and `strict` is not a `templates.default` option.) When on
   // AND there are errors, log + throw to fail the build. Otherwise (the
   // resilient default) log and continue — a bad font/typo never breaks a build.
-  const strict =
-    opts.strict === true ||
-    (opts.templates as { default?: { strict?: unknown } } | undefined)?.default?.strict === true;
+  const strict = opts.strict === true;
   // Option problems found past validation — an unreadable footer/favicon/logo/
   // custom file, a dropped meta or customCssFile entry, a bad scrollbar or
   // collapsibleSidebarSections value. Resilient by default: warn and carry on.
@@ -2507,6 +2510,29 @@ async function runPublish(
     }
   }
 
+  // A `sectionOrder` label that names no section (#352): a built-in kind label
+  // (even with no pages), the docs section, or a @category / doc group in this
+  // build. v4's `Global` is accepted (read as `Globals`) but never suggested.
+  if (sectionOrder) {
+    const known = [
+      ...new Set([...topLevelSectionLabels(manifest.nav), ...DEFAULT_SECTION_ORDER, DOCS_SECTION]),
+    ];
+    const unknown = unknownSectionOrderLabels(sectionOrder, known, ['Global']);
+    if (unknown.length > 0) {
+      warnOption(
+        `clean-jsdoc-theme: sectionOrder — no sidebar section matches ` +
+          unknown
+            .map(
+              (u) =>
+                `'${u.label}'` +
+                (u.hint ? ` (${u.hint})` : u.suggestion ? ` (did you mean '${u.suggestion}'?)` : '')
+            )
+            .join(', ') +
+          `. Known sections: ${known.join(', ')}.`
+      );
+    }
+  }
+
   // Localization extract mode (aadesh, Phase 3): when CLEAN_JSDOC_THEME_EXTRACT
   // names a path, write the translatable slot template there and STOP — skipping
   // the expensive render/island-bundle. aadesh spawns jsdoc with this
@@ -2628,6 +2654,12 @@ async function runPublish(
     })
   );
 
+  // #401: no content page rendered (e.g. a systemic MDX/Preact failure). Fail
+  // here, before the destination is cleaned or written, so the previous build
+  // survives; publish()'s catch reports it and exits non-zero.
+  const renderFailure = renderFailureMessage(result);
+  if (renderFailure) throw new Error(`clean-jsdoc-theme: ${renderFailure}`);
+
   const generatedFiles = [
     ...result.files,
     ...logoFiles,
@@ -2703,7 +2735,8 @@ async function runPublish(
   report.optionProblems();
 
   // Skipped pages (render failures) are folded in right after the report so the
-  // count is visible alongside the successful totals — never fatal.
+  // count is visible alongside the successful totals — not fatal (the case where
+  // no content page rendered already threw above, before anything was written).
   if (result.errors && result.errors.length > 0) {
     console.warn(
       `clean-jsdoc-theme: ${result.errors.length} page(s) failed to render and were skipped:`

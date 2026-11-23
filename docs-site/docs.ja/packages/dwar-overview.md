@@ -115,6 +115,11 @@ capture され、残りの site はそのまま render されます。error は 
 [`publish.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/clean-jsdoc-theme/src/publish.ts)
 がそれらを surface します)。
 
+唯一の例外は、content page が **1 つも** render されなかった build です (壊れた
+install のように、すべての page が失敗した場合)。`render()` はそれでも throw
+しませんが `result.noContentRendered` を設定し、両方の bridges は何かを書き込む前に
+build を失敗させるので、前回の output はそのまま残ります。
+
 ## `render()` は何を emit するか
 
 すべては `result.files` の中に返ってきます (`OutputFile[]` で、各々が

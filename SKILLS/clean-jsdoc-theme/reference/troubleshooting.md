@@ -25,7 +25,8 @@
   left literal inside a code span/fence. See [images.md](images.md).
 - **A page silently missing:** a page that fails to MDX-compile is skipped and
   reported in `RenderResult.errors` (the bridge logs it) — check the build output;
-  it never aborts the whole build.
+  it never aborts the whole build (only a build where no content page renders
+  fails, and then nothing is written).
 - **A bad font name or unknown option only warned:** that's the default
   (resilient). Use `strict: true` to fail the build instead.
 - **A doc's slug collides with an API/home/tutorial slug:** the doc is skipped and

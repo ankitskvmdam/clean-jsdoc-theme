@@ -107,6 +107,11 @@ the `task` closure;
 [`publish.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/clean-jsdoc-theme/src/publish.ts)
 surfaces them).
 
+The one exception is a build where **no** content page rendered (every page
+failed, as with a broken install). `render()` still doesn't throw, but it sets
+`result.noContentRendered`, and both bridges then fail the build before writing
+anything, so the previous output stays in place.
+
 ## What `render()` emits
 
 Everything comes back inside `result.files` (a `OutputFile[]`, each

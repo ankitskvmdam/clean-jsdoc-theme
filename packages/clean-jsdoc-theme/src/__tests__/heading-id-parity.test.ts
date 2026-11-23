@@ -134,6 +134,11 @@ describe('heading ids: setu TOC === dwar rendered', { timeout: 60_000 }, () => {
       inline: ['intro1', 'a-b', 'logo', 'old-new', 'see-foo', 'footnotes'],
       raw: ['a-b', 'intro1'],
     };
+    // The TOC label drops the footnote number; the id keeps it (#357).
+    expect(pages.find((p) => p.slug === 'inline')?.headings?.[0]).toMatchObject({
+      text: 'Intro',
+      id: 'intro1',
+    });
 
     const manifest: SiteManifest = { pages, nav: [], buildId: 'inline' };
     const result = await render(manifest, { theme });

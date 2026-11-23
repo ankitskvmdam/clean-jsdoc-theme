@@ -31,6 +31,7 @@ import {
 import { buildSourceModel, type SourceFileInput } from './source-view';
 import { SlotCollector, makeSlotTranslator, type SlotResolver } from './slots';
 import { pruneHiddenDoclets, rehomeAliasedMembers, type RehomedAliases } from './doclet';
+import { normalizeDocletLineEndings } from './line-endings';
 import type { NavNode, Page, PageKind, SiteManifest, TDoclet } from '@clean-jsdoc-theme/utils';
 
 /**
@@ -214,14 +215,16 @@ export function generateSite(rawCollection: unknown, opts?: GenerateSiteOptions)
   // labels. Gated everywhere below, so the JSDoc path is byte-identical.
   const flavor = opts?.flavor ?? 'jsdoc';
   const includePrivate = opts?.includePrivate ?? false;
+  // JSDoc's unwrap() turns `\r\n * ` into a lone `\r` (#369): normalise doclet text to `\n` first.
+  const normalized = normalizeDocletLineEndings(rawCollection);
   // Before pruning, move the members JSDoc leaves under an `@alias`ed class's
   // original name onto the alias (#374), so they reach the alias page and are
   // pruned with it. JSDoc flavor only: TypeDoc never sets `alias`. `renamed`
   // feeds the registry aliases below.
   const rehomed: RehomedAliases =
     flavor === 'typedoc'
-      ? { collection: rawCollection, renamed: new Map<string, string>() }
-      : rehomeAliasedMembers(rawCollection);
+      ? { collection: normalized, renamed: new Map<string, string>() }
+      : rehomeAliasedMembers(normalized);
   const collection = pruneHiddenDoclets(rehomed.collection, { includePrivate });
   const viewOptions = { includePrivate };
 

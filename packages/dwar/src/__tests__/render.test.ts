@@ -1432,3 +1432,150 @@ describe('render() — locale links to a page whose slug is index (#333)', () =>
     expect(switcher.locales.map((l) => l.href)).toEqual(['/index/', '/fr/index/']);
   });
 });
+
+// rehype-shiki matches a fence's `language-*` class against the loaded languages
+// case-sensitively, so ```JS / ~~~TS / ```C# rendered as plain text even though
+// the lower-cased grammar was loaded.
+describe('render() — fence language case (#415)', () => {
+  function manifestWith(slug: string, body: string): SiteManifest {
+    const m = makeManifest();
+    m.pages.push({
+      slug,
+      frontmatter: { title: slug, kind: 'guide', description: 'A page.' },
+      body,
+      headings: [],
+    });
+    m.nav.push({ label: slug, slug });
+    return m;
+  }
+
+  async function renderOne(slug: string, body: string) {
+    const manifest = manifestWith(slug, body);
+    const result = await render(manifest, { theme: minimalTheme });
+    const err = result.errors?.find((e) => e.slug === slug);
+    const file = result.files.find((f) => f.path === `${slug}/index.html`);
+    const html = file ? asString(file) : undefined;
+    const pre = html?.match(/<pre[^>]*\bshiki\b[\s\S]*?<\/pre>/)?.[0];
+    return { manifest, err, html, pre };
+  }
+
+  /** A Shiki token span carries both palettes (light inline + `--shiki-dark`). */
+  const TOKEN = /<span style="[^"]*--shiki-dark/;
+
+  it.each([
+    ['JS', '```', 'const x = 1;'],
+    ['TS', '~~~', 'const x: number = 1;'],
+    ['C#', '```', 'public class Foo { }'],
+    ['C++', '```', 'int main() { return 0; }'],
+    ['Python', '```', 'def foo():\n    return 1'],
+  ])('highlights a %s fence', async (lang, fence, code) => {
+    const slug = `fence-${lang.toLowerCase().replace(/[^a-z]/g, 'x')}`;
+    const body = `# Page\n\n${fence}${lang}\n${code}\n${fence}\n`;
+    const { err, pre } = await renderOne(slug, body);
+    expect(err, err?.message).toBeUndefined();
+    expect(pre).toBeDefined();
+    expect(pre).toMatch(TOKEN);
+    if (lang === 'JS') expect(pre).toMatch(/<span[^>]*>const<\/span>/);
+  });
+
+  it('leaves an unknown language as plain text', async () => {
+    const { err, html, pre } = await renderOne('nope', '# Page\n\n```NotALang\nfoo bar\n```\n');
+    expect(err, err?.message).toBeUndefined();
+    expect(html).toContain('foo bar');
+    expect(pre ?? '').not.toMatch(TOKEN);
+  });
+
+  it('renders ```JS exactly like ```js', async () => {
+    const code = 'const x = 1;\nexport default x;';
+    const lower = await renderOne('same', `# Page\n\n\`\`\`js\n${code}\n\`\`\`\n`);
+    const upper = await renderOne('same', `# Page\n\n\`\`\`JS\n${code}\n\`\`\`\n`);
+    expect(lower.pre).toBeDefined();
+    expect(upper.pre).toBe(lower.pre);
+  });
+
+  it('highlights an upper-case fence inside a Playground', async () => {
+    const body = [
+      '# Demo',
+      '',
+      '<Playground providers="codepen" filename="resize.js">',
+      '',
+      '```JS',
+      'const a = 1;',
+      '```',
+      '',
+      '</Playground>',
+      '',
+    ].join('\n');
+    const { err, html, pre } = await renderOne('pg', body);
+    expect(err, err?.message).toBeUndefined();
+    expect(html).toContain('data-island="playground"');
+    expect(html).toContain('resize.js');
+    expect(pre).toMatch(TOKEN);
+  });
+
+  it('keeps the info string as written in the page body', async () => {
+    const { manifest } = await renderOne('body', '# Page\n\n```JS\nconst x = 1;\n```\n');
+    expect(manifest.pages.find((p) => p.slug === 'body')?.body).toContain('```JS');
+  });
+});
+
+describe('render() — every page fails (#401)', () => {
+  // An angle-bracket autolink is MDX-hostile (see the #333 describe above), so a
+  // page with this body always fails to compile.
+  const BAD_BODY = `# Bad\n\nSee <https://example.com> for more.\n`;
+
+  function allBad(): SiteManifest {
+    const m = makeManifest();
+    for (const page of m.pages) page.body = BAD_BODY;
+    return m;
+  }
+
+  it('resolves (never throws) and flags that no content page rendered', async () => {
+    const result = await render(allBad(), { theme: minimalTheme });
+    expect(result.stats.pageCount).toBe(0);
+    expect(result.errors).toHaveLength(2);
+    expect(result.noContentRendered).toBeDefined();
+    expect(result.noContentRendered!.failed).toBe(2);
+    expect(result.noContentRendered!.sameMessage).toBe(2);
+    // The first failure in page order: the home page.
+    expect(result.noContentRendered!.first).toMatchObject({ slug: '' });
+    expect(result.noContentRendered!.first.snippet).toContain('See <https://example.com>');
+  });
+
+  it('leaves the flag unset when at least one content page rendered', async () => {
+    const m = makeManifest();
+    m.pages[1].body = BAD_BODY;
+    const result = await render(m, { theme: minimalTheme });
+    expect(result.stats.pageCount).toBe(1);
+    expect(result.errors).toHaveLength(1);
+    expect(result.noContentRendered).toBeUndefined();
+  });
+
+  it('still flags it when only source-viewer pages rendered', async () => {
+    const m = allBad();
+    m.pages.push({
+      slug: 'source/lib/queue-js',
+      frontmatter: { title: 'queue.js', kind: 'source', hidden: true },
+      body: '',
+      source: { code: 'export const x = 1;\n', language: 'js', filename: 'queue.js' },
+    });
+    const result = await render(m, { theme: minimalTheme });
+    expect(result.stats.pageCount).toBe(1); // the source viewer
+    // The rendered source viewer doesn't count; the two content failures do.
+    expect(result.noContentRendered).toMatchObject({
+      failed: 2,
+      sameMessage: 2,
+      first: { slug: '' },
+    });
+  });
+
+  it('does not flag an empty manifest', async () => {
+    const m = makeManifest();
+    m.pages = [];
+    m.nav = [];
+    const result = await render(m, { theme: minimalTheme });
+    expect(result.stats.pageCount).toBe(0);
+    expect(result.errors).toBeUndefined();
+    expect(result.noContentRendered).toBeUndefined();
+  });
+});

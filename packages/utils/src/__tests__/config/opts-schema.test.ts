@@ -67,4 +67,8 @@ describe('footer in the theme-option surface', () => {
     expect(diagnostics.list.find((d) => d.code === 'opts/unknown-key')).toBeUndefined();
     expect(THEME_OPT_KEYS).toContain('meta');
   });
+  it('lists the palette overrides `colors` and `darkColors` (#352)', () => {
+    expect(THEME_OPT_KEYS).toContain('colors');
+    expect(THEME_OPT_KEYS).toContain('darkColors');
+  });
 });

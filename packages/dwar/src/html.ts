@@ -17,11 +17,14 @@
 import {
   collapseWhitespace,
   inlineCodeSpans,
+  JSX_PARAGRAPH_GUARD,
+  PASSTHROUGH_INLINE_HTML,
   replaceHtmlComments,
   type HtmlCommentRange,
 } from '@clean-jsdoc-theme/utils';
 import type { Page, IslandName, MetaTag, ScrollbarMode } from '@clean-jsdoc-theme/utils';
 import type { IslandRecord } from './layout';
+import { frontmatterLength } from './frontmatter';
 import { pageCommentRanges } from './mdx';
 import { getPreHydrationThemeScript } from './theme-script';
 import { getIslandsLoaderScript } from './islands-loader';
@@ -482,9 +485,19 @@ function dropHtmlComments(body: string, comments: readonly HtmlCommentRange[]): 
  * hold `>` or `<` (setu's `sig="fn(): Promise<T>"`), so they are matched whole;
  * outside quotes a `<` ends the attempt. That keeps the strip linear: the old
  * `/<[^>]+>/` rescanned to the end of the page from every `<` with no `>` after
- * it, so a page full of stray `<` (or an unclosed `<!--`) took minutes.
+ * it, so a page full of stray `<` (or an unclosed `<!--`) took minutes. Also
+ * matches setu's {@link JSX_PARAGRAPH_GUARD}, so it is stripped with the tags.
  */
-const TAG = /<(?:"[^"]*"|'[^']*'|[^"'<>])+>/g;
+const TAG = /<(?:"[^"]*"|'[^']*'|[^"'<>])+>|\u2060/g;
+
+/** An open/close tag of an inline element setu passes through (`<sub>`, `</abbr>`). */
+const INLINE_TAG = new RegExp(`^</?(?:${PASSTHROUGH_INLINE_HTML.join('|')})(?=[\\s/>])`);
+
+/**
+ * What a stripped {@link TAG} leaves behind: nothing for an inline passthrough
+ * tag or the guard (`H<sub>2</sub>O` → `H2O`), a space for anything else.
+ */
+const tagGap = (m: string): string => (m === JSX_PARAGRAPH_GUARD || INLINE_TAG.test(m) ? '' : ' ');
 
 /**
  * Strip an MDX/HTML body to a plain-text excerpt for search snippets.
@@ -496,13 +509,14 @@ export function extractExcerpt(
   max = 200,
   comments: readonly HtmlCommentRange[] = pageCommentRanges(mdxBody)
 ): string {
-  const prose = dropHtmlComments(mdxBody, comments)
-    .replace(/^---[\s\S]*?---\s*/u, '') // frontmatter
+  const visible = dropHtmlComments(mdxBody, comments);
+  const prose = visible
+    .slice(frontmatterLength(visible)) // frontmatter
     .replace(/```[\s\S]*?```/g, ' '); // fenced code
   const stripped = parkEscapes(prose, 'drop') // inline code → a space
     .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ') // images
     .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1') // links → label
-    .replace(TAG, ' ') // raw HTML / JSX
+    .replace(TAG, tagGap) // raw HTML / JSX
     .replace(/^#{1,6}\s+/gm, '') // ATX headings
     .replace(/[*_~>#]+/g, ' '); // emphasis & blockquotes
   // One character past `max` is enough to tell whether the text was cut.
@@ -528,15 +542,16 @@ export function extractSearchText(
   max = 20000,
   comments: readonly HtmlCommentRange[] = pageCommentRanges(mdxBody)
 ): string {
-  const prose = dropHtmlComments(mdxBody, comments)
-    .replace(/^---[\s\S]*?---\s*/u, '') // frontmatter
+  const visible = dropHtmlComments(mdxBody, comments);
+  const prose = visible
+    .slice(frontmatterLength(visible)) // frontmatter
     .replace(/```[\s\S]*?```/g, ' '); // fenced code (noisy/large)
   // Inline code → keep the identifier; its punctuation is parked, so a
   // generic (`Array<Map<K, V>>`) is a type, not a tag, to the strip below.
   const stripped = parkEscapes(prose, 'keep')
     .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ') // images
     .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1') // links → label
-    .replace(TAG, ' ') // raw HTML / JSX
+    .replace(TAG, tagGap) // raw HTML / JSX
     .replace(/^#{1,6}\s+/gm, '') // ATX heading markers (keep the text)
     .replace(/[*_~>#|]+/g, ' '); // emphasis / blockquote / table marks
   return collapseWhitespace(unparkAll(stripped), max);
