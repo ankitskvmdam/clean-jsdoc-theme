@@ -214,6 +214,40 @@ describe('resolveLocatedDocImages', () => {
     expect(String(warn.mock.calls[0][0])).not.toContain("'./missing.png'");
   });
 
+  it("with a baseDir, tries the literal file first, then TypeDoc's resolved file (#397)", async () => {
+    const enc = join(dir, 'enc');
+    await mkdir(enc, { recursive: true });
+    await writeFile(join(enc, 'lit%20pic.png'), PNG_1X1);
+    await writeFile(join(enc, 'my pic.png'), Buffer.concat([PNG_1X1, Buffer.from([1])]));
+    await writeFile(join(enc, 'pic.png'), Buffer.concat([PNG_1X1, Buffer.from([2])]));
+    const warn = vi.fn();
+    const collector = createImageCollector(warn);
+    const content =
+      '![l](./lit%20pic.png) ![s](./my%20pic.png) ![h](./pic.png#frag) ![p](./pic.png) ![n](./nope.png)';
+    const [doc] = await resolveLocatedDocImages(
+      [
+        {
+          doc: { path: 'x', type: 'markdown', content },
+          baseDir: enc,
+          // What TypeDoc reports: it decodes before checking, so the literal
+          // `lit%20pic.png` reads as missing and `my%20pic.png` as `my pic.png`.
+          missing: new Set(['./lit%20pic.png', './nope.png']),
+          files: new Map([
+            ['./my%20pic.png', join(enc, 'my pic.png')],
+            ['./pic.png#frag', join(enc, 'pic.png')],
+            ['./pic.png', join(enc, 'pic.png')],
+          ]),
+        },
+      ],
+      collector
+    );
+    expect(doc.content).toMatch(
+      /^!\[l\]\(\/_assets\/lit%2520pic\.[0-9a-f]{8}\.png\) !\[s\]\(\/_assets\/my%20pic\.[0-9a-f]{8}\.png\) !\[h\]\((\/_assets\/pic\.[0-9a-f]{8}\.png)\) !\[p\]\(\1\) !\[n\]\(\.\/nope\.png\)$/
+    );
+    expect(collector.files).toHaveLength(3);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
   it('without a baseDir, rewrites only the srcs listed in `files` (no warning for the rest)', async () => {
     const warn = vi.fn();
     const collector = createImageCollector(warn);
