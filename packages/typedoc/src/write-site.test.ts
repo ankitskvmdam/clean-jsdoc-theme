@@ -51,7 +51,7 @@ beforeAll(async () => {
   await writeFile(
     join(tmp, 'documents', 'gallery.md'),
     '# Gallery\n\n![Shot](./shot.png)\n\n<img src="./shot.png" alt="raw">\n\n![Solo](./solo.png)\n\n' +
-      '<img src="./my shot.png" alt="spaced">\n',
+      '<img src="./my shot.png" alt="spaced">\n\n![Gone](./gone.png)\n',
     'utf8'
   );
   await writeFile(join(tmp, 'documents', 'shot.png'), PNG_1X1);
@@ -359,6 +359,8 @@ describe('writeSite — projectDocuments local images (#378)', () => {
     const onDisk = decodeURIComponent(spaced![1]).slice(1).split('/');
     expect(existsSync(join(out, ...onDisk))).toBe(true);
     expect(read(out, 'gallery/index.md')).toContain(`![spaced](${spaced![1]})`);
+    // A missing image: TypeDoc warned at convert time; the page keeps the src (#397).
+    expect(read(out, 'gallery/index.md')).toContain('![Gone](./gone.png)');
   }, 60_000);
 
   it('sub-path: the src carries basePath exactly once, in the HTML, the .md and llms-full.txt', async () => {
@@ -388,6 +390,31 @@ describe('writeSite — projectDocuments local images (#378)', () => {
     expect(assets.some((f) => /^solo\./.test(f))).toBe(false);
     expect(shots(out)).toHaveLength(1); // still used by the @document page
     expect(warned.some((m) => m.includes('could not read image'))).toBe(false);
+  }, 60_000);
+
+  it('a nested document name with Windows separators still loses to the docs-directory page (#397)', async () => {
+    // TypeDoc names a document spanning directories by its OS-native relative
+    // path (`nested\gallery` on Windows); simulate that on every OS.
+    const gallery = project
+      .getReflectionsByKind(ReflectionKind.Document)
+      .find((r) => r.name === 'gallery')!;
+    const docsDir = join(tmp, 'collide-nested-docs');
+    await mkdir(join(docsDir, 'nested'), { recursive: true });
+    await writeFile(
+      join(docsDir, 'nested', 'gallery.md'),
+      '# Gallery\n\nPlain opts page.\n',
+      'utf8'
+    );
+    const out = join(tmp, 'out-pdocs-collide-nested');
+    gallery.name = 'nested\\gallery';
+    try {
+      await build(out, { docs: posix(docsDir) });
+    } finally {
+      gallery.name = 'gallery';
+    }
+    expect(read(out, 'nested/gallery/index.html')).toContain('Plain opts page.');
+    const assets = readdirSync(join(out, '_assets'));
+    expect(assets.some((f) => /^solo\./.test(f))).toBe(false);
   }, 60_000);
 });
 
@@ -424,5 +451,27 @@ describe('locateProjectDocuments', () => {
     expect(located.files?.get('./pic.png')).toBe(abs);
     expect(located.files?.has('./other.md')).toBe(false);
     expect(located.doc.content).toContain('![P](./pic.png)');
+  });
+
+  it('POSIX-normalises a nested name and records the srcs TypeDoc found no file for (#397)', () => {
+    const doc = {
+      name: 'pdocs\\intro',
+      content: [
+        { kind: 'text', text: '# Intro\n\n![G](' },
+        { kind: 'relative-link', text: './gone.png', target: undefined },
+        { kind: 'text', text: ')' },
+      ],
+    };
+    const stub = {
+      getReflectionsByKind: () => [doc],
+      files: {
+        getReflectionPath: () => join(tmp, 'pdocs', 'intro.md'),
+        resolve: () => undefined,
+      },
+    } as unknown as ProjectReflection;
+    const [located] = locateProjectDocuments(stub);
+    expect(located.doc.path).toBe('pdocs/intro');
+    expect(located.baseDir).toBe(join(tmp, 'pdocs'));
+    expect(located.missing?.has('./gone.png')).toBe(true);
   });
 });

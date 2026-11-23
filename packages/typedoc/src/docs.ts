@@ -324,6 +324,8 @@ export interface LocatedDoc {
   baseDir?: string;
   /** Used only when `baseDir` is unknown: raw src text → absolute file path. */
   files?: ReadonlyMap<string, string>;
+  /** Srcs TypeDoc found no file for at convert time and already warned about. */
+  missing?: ReadonlySet<string>;
 }
 
 /**
@@ -350,22 +352,42 @@ function knownFilesOnly(
 }
 
 /**
+ * A view of `collector` that yields `null` (no warning) for the srcs in
+ * `missing` and delegates the rest. Shares the real collector's `files` /
+ * `inlineSvgs`.
+ */
+function withoutMissing(collector: ImageCollector, missing: ReadonlySet<string>): ImageCollector {
+  return {
+    files: collector.files,
+    inlineSvgs: collector.inlineSvgs,
+    resolve: async (rawSrc, baseDir) =>
+      missing.has(rawSrc) ? null : collector.resolve(rawSrc, baseDir),
+  };
+}
+
+/**
  * Route the local images of docs that each carry their own base (TypeDoc
  * `projectDocuments` / `@document` pages, #378) through `collector`, the same
  * way {@link resolveDocImages} does for a docs directory. A doc with `baseDir`
  * resolves relative srcs against it; one without (a package-level document in
  * `entryPointStrategy: "packages"`, whose source path TypeDoc doesn't keep)
- * rewrites only the srcs listed in `files`. An unchanged doc is returned as-is.
+ * rewrites only the srcs listed in `files`. Srcs in `missing` are left as-is
+ * without a second warning (TypeDoc's own carries the file/line, #397). An
+ * unchanged doc is returned as-is.
  */
 export async function resolveLocatedDocImages(
   docs: readonly LocatedDoc[],
   collector: ImageCollector
 ): Promise<DocInput[]> {
   const out: DocInput[] = [];
-  for (const { doc, baseDir, files } of docs) {
+  for (const { doc, baseDir, files, missing } of docs) {
     const content =
       baseDir !== undefined
-        ? await rewriteImageRefs(doc.content, baseDir, collector)
+        ? await rewriteImageRefs(
+            doc.content,
+            baseDir,
+            missing?.size ? withoutMissing(collector, missing) : collector
+          )
         : await rewriteImageRefs(
             doc.content,
             process.cwd(),

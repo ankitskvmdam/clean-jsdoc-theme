@@ -195,6 +195,25 @@ describe('resolveLocatedDocImages', () => {
     expect(String(warn.mock.calls[0][0])).toContain("could not read image './missing.png'");
   });
 
+  it('skips the srcs TypeDoc already reported missing, still warning for the rest (#397)', async () => {
+    const warn = vi.fn();
+    const content = '![m](./missing.png) ![o](./other-missing.png)';
+    const [doc] = await resolveLocatedDocImages(
+      [
+        {
+          doc: { path: 'x', type: 'markdown', content },
+          baseDir: join(dir, 'guides'),
+          missing: new Set(['./missing.png']),
+        },
+      ],
+      createImageCollector(warn)
+    );
+    expect(doc.content).toBe(content);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0][0])).toContain("'./other-missing.png'");
+    expect(String(warn.mock.calls[0][0])).not.toContain("'./missing.png'");
+  });
+
   it('without a baseDir, rewrites only the srcs listed in `files` (no warning for the rest)', async () => {
     const warn = vi.fn();
     const collector = createImageCollector(warn);

@@ -466,7 +466,9 @@ function renderReadme(project: ProjectReflection): string | undefined {
  * identical docs pipeline — no new renderer. Each `DocumentReflection` (surfaced
  * as `ReflectionKind.Document` on the project tree) becomes one `DocInput`:
  * `path` is the document's `name` (TypeDoc derives it from the source file's
- * basename, extension-stripped — matching `collectDocs`'s own slugs), `content`
+ * basename, extension-stripped — or, when `projectDocuments` span directories,
+ * its path relative to their common directory, POSIX-normalised here (#397) —
+ * matching `collectDocs`'s own slugs), `content`
  * is its `content: CommentDisplayPart[]` rendered to markdown via the SAME
  * `partsToMarkdown` helper the README/comment prose use, and `type` is
  * `'markdown'` (TypeDoc documents are always Markdown-sourced). A reflection
@@ -490,10 +492,17 @@ export function locateProjectDocuments(project: ProjectReflection): LocatedDoc[]
     const doc = reflection as DocumentReflection;
     const md = partsToMarkdown(doc.content ?? []);
     if (!md.trim()) continue;
-    const input: DocInput = { path: doc.name, content: md, type: 'markdown' };
+    // TypeDoc names a document from projectDocuments spanning directories by
+    // its OS-native relative path (`pdocs\intro` on Windows); slugs are POSIX (#397).
+    const input: DocInput = { path: doc.name.replace(/\\/g, '/'), content: md, type: 'markdown' };
     const file = project.files.getReflectionPath(doc);
     if (file) {
-      located.push({ doc: input, baseDir: dirname(resolvePath(file)) });
+      // A relative link TypeDoc found no file for: it already warned, so we don't (#397).
+      const missing = new Set<string>();
+      for (const part of doc.content ?? []) {
+        if (part.kind === 'relative-link' && part.target === undefined) missing.add(part.text);
+      }
+      located.push({ doc: input, baseDir: dirname(resolvePath(file)), missing });
       continue;
     }
     const files = new Map<string, string>();
