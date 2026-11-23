@@ -10,6 +10,8 @@ import { describe, it, expect } from 'vitest';
 import { default as salty } from '@jsdoc/salty';
 import type { NavNode, TDoclet, TJSDocSaltyCollection } from '@clean-jsdoc-theme/utils';
 import { generateSite } from '../index';
+import { bucketClassMembers, type ContainerView } from '../class-view';
+import { containerViewToMdast } from '../mdast/class-view';
 
 function makeCollection(items: unknown[]): TJSDocSaltyCollection<TDoclet> {
   return salty.taffy(items) as unknown as TJSDocSaltyCollection<TDoclet>;
@@ -163,6 +165,29 @@ describe('flavor: typedoc — class sections + module index', () => {
     const body = pageByLongname(m, 'module:lib.Widget')!.body;
     expect(body).toContain('## Accessors');
     expect(body).toContain('## Methods');
+  });
+
+  it('keeps TypeDoc labels on a Globals view (the jsdoc "Functions" relabel does not apply)', () => {
+    // Guard for #375: the jsdoc flavor heads Globals functions "Functions"; the
+    // typedoc flavor routes kind 'global' through typedocClassSections, so a
+    // global function stays under "Methods" and a global variable under
+    // "Properties" — unchanged.
+    const view: ContainerView = {
+      doclet: { kind: 'global', name: 'Globals' } as unknown as TDoclet,
+      kind: 'global',
+      augments: [],
+      constructorParams: [],
+      constructorParamNames: [],
+      ...bucketClassMembers([
+        { kind: 'function', scope: 'global', name: 'fn', longname: 'fn' },
+        { kind: 'member', scope: 'global', name: 'v', longname: 'v' },
+      ]),
+    };
+    const json = JSON.stringify(containerViewToMdast(view, { flavor: 'typedoc' }));
+    expect(json).toContain('"Methods"');
+    expect(json).toContain('"Properties"');
+    expect(json).not.toContain('"Functions"');
+    expect(json).not.toContain('"Members"');
   });
 
   it('renders the module page as a kind-grouped index of links', () => {
@@ -932,5 +957,42 @@ describe('flavor: jsdoc (default) — nav stays kind-bucketed (guard)', () => {
     // The typedoc-only module-hierarchy top nodes must NOT appear as groups.
     expect(labels).not.toContain('parity');
     expect(labels).not.toContain('components');
+  });
+});
+
+describe('flavor: typedoc — @alias member re-homing is JSDoc-only (#374)', () => {
+  // TypeDoc never sets `alias`; a JSDoc-looking aliased class must not be touched.
+  const items = () => [
+    { kind: 'namespace', name: 'Ns', longname: 'Ns', scope: 'global', comment: '/** Ns. */' },
+    {
+      kind: 'class',
+      name: 'Other',
+      longname: 'Other',
+      memberof: 'Ns',
+      scope: 'global',
+      alias: 'Other',
+      comment: '/** Other. */',
+      meta: { filename: 'a.ts', path: '/src', lineno: 1, columnno: 0, code: { name: 'Ns.Foo' } },
+    },
+    {
+      kind: 'function',
+      name: 'm',
+      longname: 'Ns.Foo#m',
+      memberof: 'Ns.Foo',
+      scope: 'instance',
+      comment: '/** m. */',
+      meta: { filename: 'a.ts', path: '/src', lineno: 3, columnno: 2, code: { name: 'Ns.Foo#m' } },
+    },
+  ];
+
+  const otherBody = (flavor: 'jsdoc' | 'typedoc') =>
+    generateSite(makeCollection(items()), { flavor }).pages.find(
+      (p) => p.frontmatter.longname === 'Other'
+    )!.body;
+
+  it('leaves the members where they are under the typedoc flavor', () => {
+    expect(otherBody('typedoc')).not.toContain('name="m"');
+    // The same collection under the JSDoc flavor IS re-homed.
+    expect(otherBody('jsdoc')).toContain('name="m"');
   });
 });

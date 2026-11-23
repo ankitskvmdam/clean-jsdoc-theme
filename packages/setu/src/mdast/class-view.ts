@@ -50,6 +50,32 @@ export function defaultSections(buckets: MemberBuckets): SectionSpec[] {
 }
 
 /**
+ * Globals page: its symbols are free functions and variables, not class
+ * members. `getGlobalDoclets` only returns scope `'global'` doclets, which
+ * `bucketClassMembers` files under the instance (non-static) buckets, so the
+ * class page's "Instance Methods"/"Instance Fields" titles would be wrong here.
+ * This also covers methods of a class expression passed as an argument or used
+ * as an object property value, which JSDoc emits as global functions (#375).
+ * Global `const`s (kind `'constant'`, which `bucketClassMembers` files under
+ * `other`) join the variables under Members, after the fields; each bucket
+ * keeps its own (source) order.
+ */
+export function globalSections(buckets: MemberBuckets): SectionSpec[] {
+  const constants = buckets.other.filter((m) => m.kind === 'constant');
+  const other = buckets.other.filter((m) => m.kind !== 'constant');
+  return [
+    { title: 'Functions', members: [...buckets.instanceMethods, ...buckets.staticMethods] },
+    {
+      title: 'Members',
+      members: [...buckets.instanceFields, ...buckets.staticFields, ...constants],
+    },
+    { title: 'Enums', members: buckets.enums },
+    { title: 'Events', members: buckets.events },
+    { title: 'Other', members: other },
+  ];
+}
+
+/**
  * TypeDoc-flavored member sections for a class/interface/mixin — TypeDoc's
  * labels (Properties / Accessors / Methods, plus static variants + Events). The
  * Constructor(s) section is emitted separately by {@link containerViewToMdast}.
@@ -958,11 +984,12 @@ export function containerViewToMdast(
 
   // Members. Under the typedoc flavor the layout is kind-specific (a links index
   // for modules/namespaces, "Enumeration Members" for enums, TypeDoc labels for
-  // classes); the jsdoc default keeps the original bucketed sections.
+  // classes); the jsdoc default keeps the original bucketed sections, except the
+  // Globals page, which heads its free functions/variables "Functions"/"Members".
   if (options.flavor === 'typedoc') {
     blocks.push(...typedocMemberBlocks(view, options));
   } else {
-    const sections = defaultSections(view);
+    const sections = view.kind === 'global' ? globalSections(view) : defaultSections(view);
     if (sections.some((s) => s.members.length > 0)) blocks.push(hr());
     blocks.push(...memberSections(sections, options));
   }

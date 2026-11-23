@@ -136,9 +136,13 @@ function sameTarget(a: RegistryEntry, b: RegistryEntry): boolean {
  * For each `[longname, entry]` we record the entry under its short name and
  * under its prefix-stripped longname. A key that maps to two *different*
  * targets is marked ambiguous (`null`) so the resolver refuses to guess; the
- * same target seen twice is not a conflict. Empty keys are skipped.
+ * same target seen twice is not a conflict. Empty keys are skipped, and so are
+ * `exactOnly` keys.
  */
-function buildNameIndex(registry: LinkRegistry): Map<string, RegistryEntry | null> {
+function buildNameIndex(
+  registry: LinkRegistry,
+  exactOnly?: ReadonlySet<string>
+): Map<string, RegistryEntry | null> {
   const index = new Map<string, RegistryEntry | null>();
 
   const add = (key: string, entry: RegistryEntry): void => {
@@ -153,6 +157,7 @@ function buildNameIndex(registry: LinkRegistry): Map<string, RegistryEntry | nul
   };
 
   for (const [longname, entry] of registry) {
+    if (exactOnly?.has(longname)) continue;
     add(shortName(longname), entry);
     add(stripNamespacePrefix(longname), entry);
   }
@@ -176,10 +181,15 @@ function buildNameIndex(registry: LinkRegistry): Map<string, RegistryEntry | nul
  *
  * The short-name index is derived once when the resolver is built; it never
  * changes any resolution the exact/`module:` lookups already made — it only adds
- * resolutions for keys that would otherwise have been `null`.
+ * resolutions for keys that would otherwise have been `null`. `exactOnly` keys
+ * (e.g. the original names of `@alias`ed members) resolve by exact lookup only
+ * and stay out of the short-name index, so they never make a short name ambiguous.
  */
-export function makeLinkResolver(registry: LinkRegistry): (target: string) => ResolvedLink | null {
-  const nameIndex = buildNameIndex(registry);
+export function makeLinkResolver(
+  registry: LinkRegistry,
+  exactOnly?: ReadonlySet<string>
+): (target: string) => ResolvedLink | null {
+  const nameIndex = buildNameIndex(registry, exactOnly);
 
   return function resolveLink(target: string): ResolvedLink | null {
     const t = target.trim();

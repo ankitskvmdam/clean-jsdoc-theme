@@ -62,8 +62,10 @@ function isOwnHidden(d: TDoclet, includePrivate: boolean): boolean {
  *
  * A class whose only private part is its CONSTRUCTOR stays: JSDoc merges an ES6
  * `constructor` comment into the class doclet, so `/** @private *\/ constructor`
- * makes the whole class read `access: 'private'` (see {@link ctorOnlyPrivate}).
- * Its page and public members are kept; the copy that replaces the doclet drops
+ * makes the whole class read `access: 'private'` — or, under a class comment
+ * tagged `@public`/`@protected`/`@package`, keeps that access but takes the
+ * constructor's description, params and other tags (see {@link ctorOnlyPrivate}).
+ * Its page, access and public members are kept; the copy that replaces the doclet drops
  * everything merged in from the constructor comment and hides the Constructor
  * section instead.
  *
@@ -143,6 +145,11 @@ function startsAtOrAfter(a: TDoclet, b: TDoclet): boolean {
   return al > bl || (al === bl && (a.meta?.columnno ?? 0) >= (b.meta?.columnno ?? 0));
 }
 
+/** True when `a` and `b` start at the same line and column. */
+function sameStart(a: TDoclet, b: TDoclet): boolean {
+  return a.meta?.lineno === b.meta?.lineno && a.meta?.columnno === b.meta?.columnno;
+}
+
 /** The records a constructor-only-private class is rebuilt from. */
 interface CtorOnlyPrivate {
   /** The record holding the constructor comment's own tags. */
@@ -153,7 +160,8 @@ interface CtorOnlyPrivate {
 
 /**
  * Documented class doclets whose `access: 'private'` came from a `@private`
- * ES6 constructor, not from the class comment. For
+ * ES6 constructor, not from the class comment (or that merged such a
+ * constructor under an explicit class access tag; see the end). For
  * `/** Foo. *\/ class Foo { /** @private *\/ constructor() {} }`, JSDoc 4
  * emits (besides the merged, documented `Foo` that reads `access: 'private'`):
  * - the constructor-comment record: undocumented `kind: 'class'`,
@@ -187,41 +195,77 @@ interface CtorOnlyPrivate {
  * Only a merged doclet whose code is a class node qualifies: an ES5 `@class`
  * function never has a constructor record of its own, so one that shares a
  * longname with an ES6 class in the same file can't borrow that class's.
+ *
+ * A class comment with an explicit access tag (`@public`, `@protected`,
+ * `@package`, `@access …`) wins the merge, so the merged doclet keeps that
+ * access while still taking the private constructor's description, params and
+ * other tags (#373). Such a doclet qualifies only when all of these hold:
+ * - it has a class-comment record starting at its own line and column (it is
+ *   the merge of an explicit constructor, not a class without one);
+ * - that record carries the same access (it came from the class comment, not
+ *   from a `@protected` constructor);
+ * - the first constructor record of ANY access at or after the class start is
+ *   private (a same-named class nested in a public constructor's body, whose
+ *   private constructor comes later, doesn't count);
+ * - the class comment has its own description, or the constructor record's
+ *   description is the merged one (JSDoc copies it in when the class comment
+ *   has none; a mismatch means a same-named class nested ahead of the outer
+ *   public constructor owns that record).
+ * The class-comment record at the same start is then the one restored from.
+ * Known limit: a nested same-named class ahead of the outer public constructor
+ * whose private constructor has the identical (usually absent) description is
+ * still taken for the outer class's.
  */
 function ctorOnlyPrivate(all: readonly TDoclet[]): Map<TDoclet, CtorOnlyPrivate> {
-  const privateCtors = new Map<string, TDoclet[]>();
+  const ctors = new Map<string, TDoclet[]>();
   const classRecords = new Map<string, TDoclet[]>();
+  let anyPrivate = false;
   for (const d of all) {
     if (!d.undocumented || d.kind !== 'class' || !d.longname) continue;
     const codeType = d.meta?.code?.type;
-    if (codeType === 'MethodDefinition' && d.access === 'private') {
-      const key = ctorKey(d);
-      const list = privateCtors.get(key) ?? [];
-      list.push(d);
-      privateCtors.set(key, list);
+    if (codeType === 'MethodDefinition') {
+      pushTo(ctors, ctorKey(d), d);
+      if (d.access === 'private') anyPrivate = true;
     } else if (codeType && CLASS_CODE_TYPES.has(codeType)) {
-      const key = sourceKey(d, d.longname);
-      const list = classRecords.get(key) ?? [];
-      list.push(d);
-      classRecords.set(key, list);
+      pushTo(classRecords, sourceKey(d, d.longname), d);
     }
   }
   const out = new Map<TDoclet, CtorOnlyPrivate>();
-  if (privateCtors.size === 0) return out;
+  if (!anyPrivate) return out;
   for (const d of all) {
-    if (d.undocumented || d.kind !== 'class' || d.access !== 'private' || !d.longname) continue;
+    if (d.undocumented || d.kind !== 'class' || d.access === undefined || !d.longname) continue;
     const codeType = d.meta?.code?.type;
     if (!codeType || !CLASS_CODE_TYPES.has(codeType)) continue;
-    let ctor: TDoclet | undefined;
-    for (const c of privateCtors.get(ctorKey(d)) ?? []) {
-      if (startsAtOrAfter(c, d) && (!ctor || !startsAtOrAfter(c, ctor))) ctor = c;
-    }
-    if (!ctor) continue;
+    const candidates = ctors.get(ctorKey(d)) ?? [];
     const records = classRecords.get(sourceKey(d, d.longname)) ?? [];
-    if (records.some((r) => r.access === 'private')) continue; // the class itself is private
-    out.set(d, { ctor, cls: records.find((r) => r.classdesc !== undefined) ?? records[0] });
+    if (d.access === 'private') {
+      const ctor = firstAtOrAfter(
+        candidates.filter((c) => c.access === 'private'),
+        d
+      );
+      if (!ctor) continue;
+      if (records.some((r) => r.access === 'private')) continue; // the class itself is private
+      out.set(d, { ctor, cls: records.find((r) => r.classdesc !== undefined) ?? records[0] });
+      continue;
+    }
+    // An explicit `@protected`/`@public`/`@package` class comment (#373).
+    const own = records.find((r) => sameStart(r, d));
+    if (!own || own.access !== d.access) continue;
+    const ctor = firstAtOrAfter(candidates, d);
+    if (!ctor || ctor.access !== 'private') continue;
+    if (own.description === undefined && ctor.description !== d.description) continue;
+    out.set(d, { ctor, cls: own });
   }
   return out;
+}
+
+/** The earliest of `candidates` starting at or after `d`. */
+function firstAtOrAfter(candidates: readonly TDoclet[], d: TDoclet): TDoclet | undefined {
+  let first: TDoclet | undefined;
+  for (const c of candidates) {
+    if (startsAtOrAfter(c, d) && (!first || !startsAtOrAfter(c, first))) first = c;
+  }
+  return first;
 }
 
 /** Fields that identify the merged doclet rather than come from either comment. */
@@ -238,8 +282,9 @@ const IDENTITY_KEYS = new Set([
 /**
  * A copy of a class doclet whose constructor is private, with everything JSDoc
  * merged in from the constructor comment taken back out: every field the
- * constructor record carries reverts to the class-comment record's value, or
- * is dropped when the class comment has none. That covers `access`, `params`,
+ * constructor record carries reverts to the class-comment record's value
+ * (including an explicit `@public`/`@protected`/`@package` access), or is
+ * dropped when the class comment has none. That covers `access`, `params`,
  * `description` (the constructor text), and any other tag on the constructor
  * (`@since`, `@see`, `@throws`, `@example`, `@deprecated`, …), so none of the
  * private constructor's comment surfaces on the public class page.
@@ -254,6 +299,243 @@ function withoutPrivateConstructor(d: TDoclet, { ctor, cls }: CtorOnlyPrivate): 
     else delete copy[key];
   }
   return copy as TDoclet;
+}
+
+/** A key for "this source file" (path and filename may be absent). */
+function fileKey(d: TDoclet): string {
+  return JSON.stringify([d.meta?.path ?? '', d.meta?.filename ?? '']);
+}
+
+/** `exports.Foo` / `module.exports.Foo`: the code name of a class exported from a module. */
+const EXPORTS_CODE_NAME = /^(?:module\.)?exports\.(.+)$/;
+
+/**
+ * Original names that mean something different in every file (`module.exports`,
+ * `exports.x`, `this.x`): only members in the owner's own file move to it.
+ */
+const FILE_LOCAL_ORIGINAL = /^(?:module\.exports|exports|this)(?:[.#~]|$)/;
+
+/** `meta.code.type`s of an (uncommented) assignment that replaces a class. */
+const REPLACEMENT_CODE_TYPES = new Set([
+  ...CLASS_CODE_TYPES,
+  'FunctionExpression',
+  'FunctionDeclaration',
+]);
+
+/**
+ * An undocumented class/function record reassigning an aliased original, e.g. a
+ * later uncommented `Ns.Foo = class {…}`. A record on the same line as an owner
+ * of that name in the same file is the owner's own (`export class Foo` also
+ * emits an undocumented `module:m.Foo`), so it doesn't count.
+ */
+function isReplacementRecord(d: TDoclet, owners: readonly TDoclet[]): boolean {
+  if (d.kind !== 'class' && d.kind !== 'function') return false;
+  const codeType = d.meta?.code?.type;
+  if (!codeType || !REPLACEMENT_CODE_TYPES.has(codeType)) return false;
+  const file = fileKey(d);
+  return !owners.some((o) => fileKey(o) === file && o.meta?.lineno === d.meta?.lineno);
+}
+
+/** Index of the last `.`, `#` or `~` before `end` in `name` (-1 if none). */
+function lastSeparator(name: string, end: number): number {
+  for (let i = end - 1; i >= 0; i--) {
+    const c = name.charAt(i);
+    if (c === '.' || c === '#' || c === '~') return i;
+  }
+  return -1;
+}
+
+/** The result of {@link rehomeAliasedMembers}. */
+export interface RehomedAliases {
+  /** The collection with the members moved (the input itself when nothing moved). */
+  collection: TJSDocSaltyCollection<TDoclet>;
+  /**
+   * Original longname → re-homed longname, for every moved documented doclet,
+   * plus each aliased owner's own original name when no other class claims it
+   * and it means the same in every file.
+   * The link registry aliases these so `{@link Ns.Foo#m}` still resolves.
+   */
+  renamed: Map<string, string>;
+}
+
+/** Push onto a list-valued map entry. */
+function pushTo<K, V>(map: Map<K, V[]>, key: K, value: V): void {
+  const list = map.get(key);
+  if (list) list.push(value);
+  else map.set(key, [value]);
+}
+
+/**
+ * Move the members JSDoc leaves under an `@alias`ed symbol's ORIGINAL name onto
+ * the alias (#374). Run on the raw collection, before {@link pruneHiddenDoclets},
+ * so a hidden aliased class takes its members with it. JSDoc flavor only.
+ *
+ * For `/** @alias Other *\/ Ns.Foo = class { m() {} static s() {} }`, JSDoc 4
+ * names the merged class doclet `Other` (`alias: 'Other'`, `meta.code.name:
+ * 'Ns.Foo'`), but every method, getter, static, later `Ns.Foo.x = …`
+ * assignment, nested `Ns.Foo.Inner` class (and ITS members), and
+ * `@event Ns.Foo#ev` / `@typedef Ns.Foo.T` comment keeps `memberof: 'Ns.Foo'`
+ * and a `Ns.Foo…` longname — so the alias page showed only its constructor and
+ * `this.x` fields (those do follow the alias). The same holds for an ES5
+ * `/** @class @alias Es *\/ Ns.Old = function` (`Ns.Old#pm`, `Ns.Old.sm`), and
+ * for `exports.Foo = class` / `export class Foo` in a `@module m` file with
+ * `@alias module:m.Bar`, whose code name is `exports.Foo` and whose members
+ * are `module:m.Foo#m`. A global-scope alias also keeps a stale `memberof:
+ * 'Ns'` from the constructor comment, listing it as a member of `Ns`.
+ * Not affected: `class Foo {}` / `const Foo = class` / `function Foo` with
+ * `@alias` (JSDoc renames their members), and `@exports` (JSDoc re-homes it).
+ * For a namespace object literal with `@alias`, JSDoc renames only the
+ * literal's own properties; later `Ns.Foo.x = …` assignments stay under the
+ * original and are moved like a class's.
+ *
+ * An aliased owner is a documented doclet with `alias === longname` whose
+ * `meta.code.name` is DOTTED and differs from the longname. The dot rules out
+ * the other tags that set `alias` (`@constructs` gives `meta.code.name:
+ * 'initialize'`) and the shapes above that JSDoc already handles. Its original
+ * name is the code name, or `<module>.Foo` for each `@module` in the same file
+ * when the code name is `exports.Foo`.
+ *
+ * Every doclet (documented or not) whose `memberof` is an original name, or
+ * starts with it followed by `.`, `#` or `~`, is copied with that prefix of its
+ * `memberof` and `longname` replaced by the alias; `name`, `scope` and `meta`
+ * are kept. Several classes can claim one original name (two `@alias`es of
+ * `Ns.Foo`, or an aliased and a real `Ns.Foo`): a member goes to the latest
+ * claimant starting at or before it in its own file, and stays put when that is
+ * the real class. An uncommented reassignment (`Ns.Foo = class {…}` with no
+ * comment, which JSDoc records as an undocumented class/function) counts as a
+ * real claimant there too. A member in a file with no such claimant moves only
+ * when the name has exactly one aliased owner and no documented real class;
+ * undocumented reassignments elsewhere don't block that, since JSDoc emits such
+ * records for any uncommented assignment and the owner's members would be lost
+ * to one stray line. Originals that differ per file (`module.exports`,
+ * `exports.x`, `this.x`) never move members across files and are not aliased
+ * in `renamed`. The record JSDoc names after the original itself (the
+ * constructor `MethodDefinition` record) is never renamed. Links and types
+ * naming the original are resolved through `renamed` instead of rewriting
+ * `augments`/`fires`/`see`; an original two owners would map differently is
+ * left out of it. Does not mutate.
+ *
+ * Known gaps, not handled specially: an aliased class whose original lies under
+ * another aliased original (`@alias X` on `Ns.Foo.Inner` inside an aliased
+ * `Ns.Foo`), and inner (`~`) aliases inside a `@module`.
+ */
+export function rehomeAliasedMembers(collection: TJSDocSaltyCollection<TDoclet>): RehomedAliases {
+  const renamed = new Map<string, string>();
+  const unchanged = { collection, renamed };
+  const all = collection().get();
+  if (!all.some((d) => d.alias !== undefined)) return unchanged;
+
+  const modulesByFile = new Map<string, string[]>();
+  for (const d of all) {
+    if (d.kind === 'module' && d.longname) pushTo(modulesByFile, fileKey(d), d.longname);
+  }
+
+  // Original name → the aliased owners / real doclets claiming it.
+  const ownersOf = new Map<string, TDoclet[]>();
+  const owners = new Set<TDoclet>();
+  for (const d of all) {
+    if (d.undocumented || !d.longname || d.alias !== d.longname) continue;
+    const code = d.meta?.code?.name;
+    if (typeof code !== 'string' || !code.includes('.') || code === d.longname) continue;
+    const exported = EXPORTS_CODE_NAME.exec(code);
+    const originals = exported
+      ? (modulesByFile.get(fileKey(d)) ?? []).map((mod) => `${mod}.${exported[1]}`)
+      : [code];
+    for (const original of originals) {
+      if (original === d.longname) continue;
+      pushTo(ownersOf, original, d);
+      owners.add(d);
+    }
+  }
+  if (ownersOf.size === 0) return unchanged;
+
+  // Real claimants: documented doclets named after the original (they count
+  // everywhere), and undocumented class/function records reassigning it (they
+  // count only for members after them in their own file; see the doc comment).
+  const realOf = new Map<string, TDoclet[]>();
+  const replacementsOf = new Map<string, TDoclet[]>();
+  for (const d of all) {
+    if (owners.has(d) || !d.longname || !ownersOf.has(d.longname)) continue;
+    if (!d.undocumented) pushTo(realOf, d.longname, d);
+    else if (isReplacementRecord(d, ownersOf.get(d.longname)!)) {
+      pushTo(replacementsOf, d.longname, d);
+    }
+  }
+  const soleOwner = (original: string): TDoclet | undefined => {
+    if (FILE_LOCAL_ORIGINAL.test(original)) return undefined;
+    const own = ownersOf.get(original) ?? [];
+    return own.length === 1 && !realOf.has(original) ? own[0] : undefined;
+  };
+  for (const original of ownersOf.keys()) {
+    const owner = soleOwner(original);
+    if (owner) renamed.set(original, owner.longname!);
+  }
+  // An original longname two owners would map differently is left unlinked.
+  const conflicted = new Set<string>();
+  const rename = (from: string, to: string) => {
+    if (conflicted.has(from)) return;
+    const prev = renamed.get(from);
+    if (prev === undefined) renamed.set(from, to);
+    else if (prev !== to) {
+      renamed.delete(from);
+      conflicted.add(from);
+    }
+  };
+
+  /** Whether `name` is `original` or lies under it. */
+  const under = (name: string, original: string) =>
+    name === original ||
+    (name.startsWith(original) && '.#~'.includes(name.charAt(original.length)));
+
+  // (original, file) → every claimant there, so a member scans only its own
+  // file's (many files can alias `module.exports`).
+  const claimantsIn = new Map<string, TDoclet[]>();
+  for (const map of [ownersOf, realOf, replacementsOf]) {
+    for (const [original, list] of map) {
+      for (const c of list) pushTo(claimantsIn, JSON.stringify([original, fileKey(c)]), c);
+    }
+  }
+
+  /** The aliased owner `d` belongs to under `original`, if any. */
+  const ownerFor = (d: TDoclet, original: string): TDoclet | undefined => {
+    let latest: TDoclet | undefined;
+    for (const c of claimantsIn.get(JSON.stringify([original, fileKey(d)])) ?? []) {
+      if (!startsAtOrAfter(d, c)) continue;
+      if (!latest || startsAtOrAfter(c, latest)) latest = c;
+    }
+    if (latest) return owners.has(latest) ? latest : undefined;
+    return soleOwner(original);
+  };
+
+  let changed = false;
+  const out = all.map((d) => {
+    if (owners.has(d)) {
+      // A global alias keeps the stale `memberof` of its original name.
+      if (d.scope !== 'global' || d.memberof === undefined) return d;
+      changed = true;
+      const copy: TDoclet = { ...d };
+      delete copy.memberof;
+      return copy;
+    }
+    const memberof = d.memberof;
+    if (!memberof) return d;
+    // `memberof` and its prefixes at `.`/`#`/`~`, longest first, so a nested
+    // original (`Ns.Foo.Inner`) is tried before its parent's.
+    for (let end = memberof.length; end > 0; end = lastSeparator(memberof, end)) {
+      const original = memberof.slice(0, end);
+      if (!ownersOf.has(original) || d.longname === original) continue;
+      const owner = ownerFor(d, original);
+      if (!owner) continue;
+      const swap = (name: string) => owner.longname! + name.slice(original.length);
+      const longname = d.longname && under(d.longname, original) ? swap(d.longname) : d.longname;
+      if (!d.undocumented && d.longname && longname) rename(d.longname, longname);
+      changed = true;
+      return { ...d, memberof: swap(memberof), longname };
+    }
+    return d;
+  });
+  if (!changed) return unchanged;
+  return { collection: salty.taffy<TDoclet>(out), renamed };
 }
 
 /** A doclet with a non-empty `name`: the only kind that can become a member. */

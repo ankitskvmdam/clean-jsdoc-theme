@@ -100,6 +100,11 @@ setu आपके documented symbols की गणना करता है औ
 `@property` list, और (function-signature typedefs के लिए) `@param`/`@returns` सब
 उसके page पर render होते हैं।
 
+`@alias` से नया नाम दी गई class या namespace अपने members के साथ alias के नाम से
+document होती है। JSDoc एक aliased `Ns.Foo = class {…}` के members को मूल नाम के
+नीचे छोड़ देता है; theme उन्हें alias के page पर ले जाती है, और `{@link Ns.Foo#m}`
+तब भी वहीं resolve होता है।
+
 > [!NOTE]
 > ऊपर का क्रम **slug-collision precedence** भी है: जब दो symbols एक ही slug का
 > दावा करें, तब पहले वाला kind जीतता है (तो एक `module` बाद के `class` को हरा
@@ -117,9 +122,16 @@ members, constants, enums, events — एक एकल synthetic **Globals** pag
 [`generate-site.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/generate-site.ts)
 में `buildGlobalsView`।
 
+Functions **Functions** के अंतर्गत, और variables तथा constants **Members** के
+अंतर्गत सूचीबद्ध होते हैं। argument के रूप में पास की गई या object property के रूप
+में उपयोग की गई class expression के methods को JSDoc global functions के रूप में
+report करता है, इसलिए वे भी यहीं दिखते हैं; उन्हें class page देने के लिए class पर
+`@class Name`, उसके instance methods पर `@memberof Name#` और static methods पर
+`@memberof Name` जोड़ें।
+
 जिस symbol kind का कोई section mapping नहीं है, वह एक catch-all **Other** section
-में आता है, जो सबसे अंत में जोड़ा जाता है — एक सुरक्षा-जाल जो व्यवहार में खाली
-रहता है।
+में आता है, जो सबसे अंत में जोड़ा जाता है। Globals page पर यह एक सुरक्षा-जाल है जो
+व्यवहार में खाली रहता है, क्योंकि constants **Members** के अंतर्गत जाते हैं।
 
 ### Private और ignored symbols
 

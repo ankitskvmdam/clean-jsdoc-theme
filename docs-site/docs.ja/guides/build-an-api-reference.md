@@ -100,6 +100,11 @@ section に振り分けられます。**Typedefs は first-class です** — �
 （function-signature typedefs の場合）`@param`/`@returns` がすべてその page に render
 されます。
 
+`@alias` で名前を変えた class や namespace は、その members とともに alias の名前で
+document されます。JSDoc は alias を付けた `Ns.Foo = class {…}` の members を元の名前の
+下に残しますが、theme はそれらを alias の page に移し、`{@link Ns.Foo#m}` も引き続き
+そこへ resolve されます。
+
 > [!NOTE]
 > 上記の順序は **slug-collision precedence** でもあります: 2 つの symbol が同じ slug
 > を要求するとき、先の kind が勝ちます（つまり `module` は後の `class` を破ります）。
@@ -117,8 +122,16 @@ members、constants、enums、events — は、1 つの synthetic な **Globals*
 [`generate-site.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/generate-site.ts)
 の `buildGlobalsView` を参照してください。
 
+functions は **Functions** の下に、variables と constants は **Members** の下に
+一覧されます。引数として渡された、または object property として使われた class
+expression の methods を JSDoc は global functions として報告するため、それらも
+ここに表示されます。それらに class page を与えるには、class に `@class Name` を、
+instance methods に `@memberof Name#` を、static methods に `@memberof Name` を
+追加してください。
+
 section mapping のない symbol kind は catch-all の **Other** section に入り、最後に
-追加されます — 実際には空のままのセーフティネットです。
+追加されます。Globals page では constants が **Members** に入るため、これは実際には
+空のままのセーフティネットです。
 
 ### private と ignored な symbol
 

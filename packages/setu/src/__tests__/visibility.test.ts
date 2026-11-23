@@ -13,10 +13,12 @@ import { pruneHiddenDoclets } from '../doclet';
 import { getJSDocTaffyData } from './factory';
 import {
   PRIVATE_CTOR_ANON_DOCLETS,
+  PRIVATE_CTOR_CLASS_ACCESS_DOCLETS,
   PRIVATE_CTOR_DOCLETS,
   PRIVATE_CTOR_ES5_ES6_DOCLETS,
   PRIVATE_CTOR_SAME_NAME_DOCLETS,
 } from './private-ctor-fixture';
+import { ALIAS_DOCLETS } from './alias-fixture';
 
 function makeCollection(items: unknown[]): TJSDocSaltyCollection<TDoclet> {
   return salty.taffy(items) as unknown as TJSDocSaltyCollection<TDoclet>;
@@ -351,6 +353,34 @@ describe('generateSite — `module.exports = class` with a @private constructor,
   });
 });
 
+describe('generateSite — @alias on a nested class expression (real JSDoc output, #374)', () => {
+  const site = (opts?: { includePrivate?: boolean }) =>
+    generateSite(makeCollection(ALIAS_DOCLETS), opts);
+  const page = (m: ReturnType<typeof generateSite>, slug: string) =>
+    m.pages.find((p) => p.slug === slug);
+
+  it('a @private constructor hides only the Constructor; the moved members stay', () => {
+    const body = page(site(), 'pc')!.body;
+    expect(body).toContain('Pc class.');
+    expect(body).toContain('name="pcm"');
+    expect(body).not.toContain('## Constructor');
+    expect(body).not.toContain('Secret ctor.');
+  });
+
+  it('a @private aliased class takes its moved members with it', () => {
+    const m = site();
+    expect(page(m, 'hid')).toBeUndefined();
+    expect(navSlugs(m.nav)).not.toContain('hid');
+    for (const p of m.pages) expect(p.body).not.toContain('name="hm"');
+  });
+
+  it('includePrivate shows the private aliased class with its members', () => {
+    const m = site({ includePrivate: true });
+    expect(page(m, 'hid')!.body).toContain('name="hm"');
+    expect(page(m, 'pc')!.body).toContain('## Constructor');
+  });
+});
+
 describe('generateSite — @private constructors of classes JSDoc gives one longname', () => {
   const page = (doclets: unknown[], slug: string) =>
     generateSite(makeCollection(doclets)).pages.find((p) => p.slug === slug);
@@ -380,5 +410,188 @@ describe('generateSite — @private constructors of classes JSDoc gives one long
     const mixed = page(PRIVATE_CTOR_ES5_ES6_DOCLETS, 'mixed')!.body;
     expect(mixed).toContain('name="m"');
     expect(mixed).not.toContain('Mixed ctor.');
+  });
+});
+
+describe('generateSite — a @private constructor on a class with an explicit access tag (#373)', () => {
+  const site = (opts?: { includePrivate?: boolean }) =>
+    generateSite(makeCollection(PRIVATE_CTOR_CLASS_ACCESS_DOCLETS), opts);
+  const page = (m: ReturnType<typeof generateSite>, slug: string) =>
+    m.pages.find((p) => p.slug === slug);
+
+  // `@protected` / `@public` / `@package` / `@access protected` on the class
+  // comment, a bare `/** @private */` constructor, and the `export class`,
+  // class-expression, namespaced and `@alias`'d shapes.
+  it.each([
+    ['prot', 'Prot class desc.', 'protected', 'm', 'Prot ctor.'],
+    ['pub', 'Pub class desc.', 'public', 'm', 'Pub ctor.'],
+    ['pkg', 'Pkg class desc.', 'package', 'm', 'Pkg ctor.'],
+    ['acctag', 'AccTag class desc.', 'protected', 'm', 'AccTag ctor.'],
+    ['protnodesc', 'ProtNoDesc class desc.', 'protected', 'm', null],
+    ['expprot', 'ExpProt class desc.', 'protected', 'm', 'ExpProt ctor.'],
+    ['exprprot', 'ExprProt class desc.', 'protected', 'm', 'ExprProt ctor.'],
+    ['ns/nsprot', 'NsProt class desc.', 'protected', 'm', 'NsProt ctor.'],
+    ['other', 'Other class desc.', 'protected', 'am', 'Other ctor.'],
+  ])(
+    '%s: keeps the class, its access and members; hides only the constructor',
+    (slug, desc, access, member, ctor) => {
+      const m = site();
+      const body = page(m, slug)!.body;
+      expect(navSlugs(m.nav)).toContain(slug);
+      expect(body).toContain(desc);
+      expect(body).toContain(`**Modifiers:** \`${access}\``);
+      expect(body).toContain(`name="${member}"`);
+      expect(body).not.toContain('## Constructor');
+      if (ctor) expect(body).not.toContain(ctor);
+    }
+  );
+
+  it('none of the private constructor comment leaks onto the class page', () => {
+    const body = page(site(), 'prot')!.body;
+    expect(body).not.toContain('9.9.9');
+    expect(body).not.toContain('SecretSee');
+    expect(body).not.toContain('the x');
+  });
+
+  it('controls: a public or @protected constructor stays; a @private class stays hidden', () => {
+    const m = site();
+    const protPubCtor = page(m, 'protpubctor')!.body;
+    expect(protPubCtor).toContain('## Constructor');
+    expect(protPubCtor).toContain('ProtPubCtor ctor.');
+    expect(protPubCtor).toContain('the y');
+    const ctorProt = page(m, 'ctorprot')!.body;
+    expect(ctorProt).toContain('## Constructor');
+    expect(ctorProt).toContain('CtorProt ctor.');
+    expect(page(m, 'privboth')).toBeUndefined();
+    expect(navSlugs(m.nav)).not.toContain('privboth');
+    const protHide = page(m, 'prothide')!.body;
+    expect(protHide).toContain('**Modifiers:** `protected`');
+    expect(protHide).not.toContain('## Constructor');
+    expect(protHide).not.toContain('ProtHide ctor.');
+    // `@since` on the private constructor of a `@hideconstructor` class.
+    expect(protHide).not.toContain('7.7.7');
+  });
+
+  it("a same-named nested class's private constructor does not hide the outer one", () => {
+    const m = site();
+    const trap = page(m, 'trap')!.body;
+    expect(trap).toContain('## Constructor');
+    expect(trap).toContain('Trap public ctor.');
+    expect(trap).toContain('the a');
+    // The outer constructor has no comment, or the outer class has none.
+    for (const slug of ['trap2', 'trap3']) {
+      const body = page(m, slug)!.body;
+      expect(body).toContain('## Constructor');
+      expect(body).toContain('**Modifiers:** `protected`');
+    }
+  });
+
+  it('includePrivate shows the constructor again', () => {
+    const body = page(site({ includePrivate: true }), 'prot')!.body;
+    expect(body).toContain('## Constructor');
+    expect(body).toContain('Prot ctor.');
+    expect(body).toContain('9.9.9');
+    expect(body).toContain('the x');
+  });
+
+  it('does not mutate the input doclets', () => {
+    const c = makeCollection(PRIVATE_CTOR_CLASS_ACCESS_DOCLETS);
+    generateSite(c);
+    const prot = c({ longname: 'Prot', kind: 'class' })
+      .get()
+      .find((d) => !d.undocumented)!;
+    expect(prot.description).toBe('<p>Prot ctor.</p>');
+    expect(prot.hideconstructor).toBeUndefined();
+  });
+});
+
+describe('pruneHiddenDoclets — a @private constructor on a class with an access tag (#373)', () => {
+  const documented = (c: TJSDocSaltyCollection<TDoclet>, longname: string, lineno?: number) =>
+    c({ longname, kind: 'class' })
+      .get()
+      .find((d) => !d.undocumented && (lineno === undefined || d.meta?.lineno === lineno))!;
+
+  it('strips the constructor comment and keeps the class access', () => {
+    const pruned = documented(
+      pruneHiddenDoclets(makeCollection(PRIVATE_CTOR_CLASS_ACCESS_DOCLETS)),
+      'Prot'
+    );
+    expect(pruned.access).toBe('protected');
+    expect(pruned.hideconstructor).toBe(true);
+    expect(pruned.description).toBeUndefined();
+    expect(pruned.classdesc).toBe('<p>Prot class desc.</p>');
+    expect(pruned.params).toBeUndefined();
+    expect(pruned.since).toBeUndefined();
+  });
+
+  it('leaves an outer class alone when a nested same-named class precedes its public constructor', () => {
+    // Checked here, not on the page: the method-local inner Trap4 (private only
+    // via its constructor) shares the outer longname, is emitted first, and so
+    // owns the shared `trap4` page — pre-existing behaviour, not fixed here.
+    const c = makeCollection(PRIVATE_CTOR_CLASS_ACCESS_DOCLETS);
+    const outer = documented(c, 'Trap4', 42);
+    const pruned = documented(pruneHiddenDoclets(c), 'Trap4', 42);
+    expect(pruned).toBe(outer);
+    expect(pruned.hideconstructor).toBeUndefined();
+  });
+
+  /** A hand-built class-comment record, merged doclet and constructor record. */
+  const triple = (
+    own: Partial<TDoclet> | null,
+    merged: Partial<TDoclet>,
+    ctor: Partial<TDoclet>
+  ): unknown[] => {
+    const meta = (lineno: number, columnno: number, type: string) => ({
+      filename: 'x.js',
+      path: '/src',
+      lineno,
+      columnno,
+      code: { name: 'K', type },
+    });
+    const base = { name: 'K', longname: 'K', kind: 'class', scope: 'global' };
+    return [
+      ...(own
+        ? [{ ...base, meta: meta(1, 0, 'ClassDeclaration'), undocumented: true, ...own }]
+        : []),
+      { ...base, meta: meta(3, 2, 'MethodDefinition'), undocumented: true, ...ctor },
+      { ...base, meta: meta(1, 0, 'ClassDeclaration'), ...merged },
+    ];
+  };
+  const privateCtor = { access: 'private', description: '<p>ctor</p>' } as Partial<TDoclet>;
+  const merged = {
+    access: 'protected',
+    classdesc: '<p>K</p>',
+    description: '<p>ctor</p>',
+  } as Partial<TDoclet>;
+
+  it('control: the hand-built triple is rewritten', () => {
+    const c = makeCollection(
+      triple({ access: 'protected', classdesc: '<p>K</p>' }, merged, privateCtor)
+    );
+    expect(documented(pruneHiddenDoclets(c), 'K').hideconstructor).toBe(true);
+  });
+
+  it.each([
+    ['the class comment has no access tag', { classdesc: '<p>K</p>' }, privateCtor],
+    ['no class-comment record at the merged position', null, privateCtor],
+    [
+      "the constructor's description is not the merged one",
+      { access: 'protected', classdesc: '<p>K</p>' },
+      { access: 'private', description: '<p>other</p>' },
+    ],
+  ] as [string, Partial<TDoclet> | null, Partial<TDoclet>][])(
+    'leaves the class alone when %s',
+    (_why, own, ctor) => {
+      const c = makeCollection(triple(own, merged, ctor));
+      const before = documented(c, 'K');
+      expect(documented(pruneHiddenDoclets(c), 'K')).toBe(before);
+    }
+  );
+
+  it('returns the input itself when no constructor record is private', () => {
+    const c = makeCollection(
+      triple({ access: 'protected', classdesc: '<p>K</p>' }, merged, { description: '<p>ctor</p>' })
+    );
+    expect(pruneHiddenDoclets(c)).toBe(c);
   });
 });

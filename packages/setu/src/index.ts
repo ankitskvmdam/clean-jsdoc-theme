@@ -30,7 +30,7 @@ import {
 } from './guide-view';
 import { buildSourceModel, type SourceFileInput } from './source-view';
 import { SlotCollector, makeSlotTranslator, type SlotResolver } from './slots';
-import { pruneHiddenDoclets } from './doclet';
+import { pruneHiddenDoclets, rehomeAliasedMembers, type RehomedAliases } from './doclet';
 import { normalizeDocletLineEndings } from './line-endings';
 import type { NavNode, Page, PageKind, SiteManifest, TDoclet } from '@clean-jsdoc-theme/utils';
 
@@ -197,7 +197,9 @@ export interface GenerateSiteOptions {
  * {@link CONTAINER_KINDS} (module/namespace/class/interface/mixin/typedef) plus
  * one aggregated "Globals" page for global-scope symbols that don't get their
  * own page; the README (home page) and tutorials are rendered when supplied via
- * {@link GenerateSiteOptions}.
+ * {@link GenerateSiteOptions}. Under the JSDoc flavor, members JSDoc leaves
+ * under an `@alias`ed class's original name are moved onto the alias first (see
+ * {@link rehomeAliasedMembers}), and links by the original name resolve there.
  */
 export function generateSite(rawCollection: unknown, opts?: GenerateSiteOptions): SiteManifest {
   validateCollectionOrThrow(rawCollection);
@@ -207,17 +209,24 @@ export function generateSite(rawCollection: unknown, opts?: GenerateSiteOptions)
   // (page enumeration, globals, link registry → type links, nav, and the search /
   // llms.txt / `.md` outputs dwar derives from the pages) reads this pruned
   // collection, so no surface can resurrect a hidden symbol.
-  const includePrivate = opts?.includePrivate ?? false;
-  // JSDoc's unwrap() turns `\r\n * ` into a lone `\r` (#369): normalise doclet text to `\n` first.
-  const collection = pruneHiddenDoclets(normalizeDocletLineEndings(rawCollection), {
-    includePrivate,
-  });
-  const viewOptions = { includePrivate };
-
+  //
   // Document-model flavor. `'jsdoc'` (default) keeps the container/member model;
   // `'typedoc'` gives enums/functions/variables their own pages with TypeDoc
   // labels. Gated everywhere below, so the JSDoc path is byte-identical.
   const flavor = opts?.flavor ?? 'jsdoc';
+  const includePrivate = opts?.includePrivate ?? false;
+  // JSDoc's unwrap() turns `\r\n * ` into a lone `\r` (#369): normalise doclet text to `\n` first.
+  const normalized = normalizeDocletLineEndings(rawCollection);
+  // Before pruning, move the members JSDoc leaves under an `@alias`ed class's
+  // original name onto the alias (#374), so they reach the alias page and are
+  // pruned with it. JSDoc flavor only: TypeDoc never sets `alias`. `renamed`
+  // feeds the registry aliases below.
+  const rehomed: RehomedAliases =
+    flavor === 'typedoc'
+      ? { collection: normalized, renamed: new Map<string, string>() }
+      : rehomeAliasedMembers(normalized);
+  const collection = pruneHiddenDoclets(rehomed.collection, { includePrivate });
+  const viewOptions = { includePrivate };
 
   // Source viewer model (pages + nav + the doclet→source link resolver). Built
   // first so its `resolve` can be threaded into each class page's mdast.
@@ -334,7 +343,20 @@ export function generateSite(rawCollection: unknown, opts?: GenerateSiteOptions)
     // Merged-away longnames resolve to the surviving page (first-wins guard).
     for (const alias of s.aliases) if (!registry.has(alias)) registry.set(alias, { slug: s.slug });
   }
-  const resolveLink = makeLinkResolver(registry);
+  // Names a re-homed `@alias` member had before the move (`Ns.Foo#m`, `Ns.Foo`)
+  // resolve where it now lives — only when it was registered (a hidden symbol
+  // stays unlinked) and the old name is unclaimed (a real `Ns.Foo` keeps its own).
+  // They stay out of the short-name index: `Ns.Foo` must not make `{@link Foo}`
+  // ambiguous with an unrelated `Lib.Foo`.
+  const exactOnly = new Set<string>();
+  for (const [original, current] of rehomed.renamed) {
+    const entry = registry.get(current);
+    if (entry && !registry.has(original)) {
+      registry.set(original, entry);
+      exactOnly.add(original);
+    }
+  }
+  const resolveLink = makeLinkResolver(registry, exactOnly);
 
   // `@tutorial <name>` resolver. Tutorials resolve by their tutorial name; docs
   // resolve by their slug (e.g. `@tutorial guides/advanced`). Both are derived

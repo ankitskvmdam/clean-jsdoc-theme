@@ -96,6 +96,11 @@ bucketed into sections. **Typedefs are first-class** — they go through the
 identical `buildContainerPage` path, so a typedef's `@type`, `@property` list,
 and (for function-signature typedefs) `@param`/`@returns` all render on its page.
 
+A class or namespace renamed with `@alias` is documented under the alias,
+together with its members. JSDoc leaves the members of an aliased
+`Ns.Foo = class {…}` under the original name; the theme moves them to the alias
+page, and `{@link Ns.Foo#m}` still resolves there.
+
 > [!NOTE]
 > The order above is also the **slug-collision precedence**: when two symbols
 > would claim the same slug, the earlier kind wins (so a `module` beats a later
@@ -112,8 +117,15 @@ there are no qualifying globals, no Globals page is emitted. See
 `buildGlobalsView` in
 [`generate-site.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/setu/src/generate-site.ts).
 
+Functions are listed under **Functions**, and variables and constants under
+**Members**. JSDoc reports methods of a class expression passed as an argument
+or used as an object property as global functions, so they appear here too; add
+`@class Name` to the class, `@memberof Name#` to its instance methods and
+`@memberof Name` to its static methods to give them a class page.
+
 A symbol kind with no section mapping falls into a catch-all **Other** section,
-appended last — a safety net that's empty in practice.
+appended last. On the Globals page that is a safety net that's empty in
+practice, since constants go under **Members**.
 
 ### Private and ignored symbols
 
