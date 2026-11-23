@@ -486,6 +486,11 @@ interface BlockScan {
   lineComments: HtmlCommentRange[];
   /** Sorted start offsets of lines that end the paragraph before them. */
   breaks: number[];
+  /**
+   * Sorted offsets of the unescaped pipes in GFM table rows (`mdx` dialect
+   * only): a cell boundary, which a code span cannot cross.
+   */
+  cellBreaks: number[];
 }
 
 /**
@@ -751,7 +756,20 @@ function scanBlocks(source: string, mdx = false): BlockScan {
   const blockComments: HtmlCommentRange[] = [];
   const lineComments: HtmlCommentRange[] = [];
   const breaks: number[] = [];
+  const cellBreaks: number[] = [];
   const nextCloser = closerFinder(source);
+  /**
+   * MDX: record the unescaped pipes of the table row in `[from, to)` — GFM
+   * splits the row into cells there before it reads any code span.
+   */
+  function addCellBreaks(from: number, to: number): void {
+    for (let i = from; i < to; i++) {
+      // A backslash escapes the character after it; a `|` is a boundary.
+      const c = source.charCodeAt(i);
+      if (c === 92) i++;
+      else if (c === 124) cellBreaks.push(i);
+    }
+  }
 
   let fence:
     | {
@@ -1007,6 +1025,7 @@ function scanBlocks(source: string, mdx = false): BlockScan {
       breaks.push(pos);
       para = undefined;
       if (row) {
+        if (mdx && pos !== table.delim) addCellBreaks(pos, lineEnd);
         pos = next;
         continue;
       }
@@ -1174,6 +1193,9 @@ function scanBlocks(source: string, mdx = false): BlockScan {
         isTableHeader(paraText, tableCells(delim))
       ) {
         breaks.push(pos);
+        // The header row is the line just before the delimiter row (after a
+        // comment block, the line holding its `-->`).
+        if (mdx) addCellBreaks(source.lastIndexOf('\n', next - 2) + 1, next - 1);
         table = {
           depth: para.depth,
           indent: para.inItem ? para.indent : 0,
@@ -1186,7 +1208,7 @@ function scanBlocks(source: string, mdx = false): BlockScan {
     pos = next;
   }
   if (fence) fences.push({ start: fence.start, end: source.length });
-  return { fences, blockComments, lineComments, breaks };
+  return { fences, blockComments, lineComments, breaks, cellBreaks };
 }
 
 /** First value in sorted `arr` strictly greater than `x`, or `Infinity`. */
@@ -1261,7 +1283,9 @@ export interface MdxCodeScan {
  * `\\<Foo>` is an escaped backslash then a real tag); a backtick run opens a
  * span by CommonMark's rules (see {@link inlineCodeSpans}) unless its closer
  * lies past a line that ends the paragraph — a blank line, a heading, a list
- * item, a table row, a flow JSX line; a run that opens none is a stray tick. A
+ * item, a table row, a flow JSX line — or past an unescaped pipe of a table
+ * row, which GFM splits into cells before it reads code spans (a `\|` inside
+ * a span is still code, #363); a run that opens none is a stray tick. A
  * `<` opens a JSX tag in dwar's tag grammar (see `jsxTagEndFinder`), which may
  * cross lines, blank ones included, but not into a fence.
  *
@@ -1269,10 +1293,9 @@ export interface MdxCodeScan {
  * masked the HTML comments and removed the YAML frontmatter.
  *
  * Known limits: a code span that crosses a line starting with `{` is still a
- * span here, where MDX may read that line as a flow expression first. A GFM
- * table row's pipes split it into cells before code spans are read; here a
- * span may hold a pipe. Container lines are approximated, not parsed as a
- * full block parser would: a lazy paragraph line keeps its list items (a
+ * span here, where MDX may read that line as a flow expression first.
+ * Container lines are approximated, not parsed as a full block parser would:
+ * a lazy paragraph line keeps its list items (a
  * line that starts a block does not, nor does a quote marker left of an
  * item's content, which starts a new quote), a quote marker's optional
  * space is always taken whole (a tab after `>` included, where MDX takes one
@@ -1298,11 +1321,12 @@ export function mdxCodeRanges(source: string): MdxCodeScan {
   const ticks = source.includes('`');
   const tildes = source.includes('~');
   if (!ticks && !tildes && !source.includes('<')) return { code, strayTicks };
-  const { fences, breaks } =
-    ticks || tildes ? scanBlocks(source, true) : { fences: [], breaks: [] };
+  const { fences, breaks, cellBreaks } =
+    ticks || tildes ? scanBlocks(source, true) : { fences: [], breaks: [], cellBreaks: [] };
   const spanEnd = codeSpanFinder(source);
   const tagEnd = jsxTagEndFinder(source);
   let b = 0; // the first break after the current backtick run
+  let cb = 0; // the first table cell boundary after it
   const token = /\\[^\n]|`+|</g;
   // The next token, kept across fences: a search that ran past a gap into a
   // fence (or beyond) is reused, and only one that landed inside the fence is
@@ -1318,13 +1342,19 @@ export function mdxCodeRanges(source: string): MdxCodeScan {
       if (c === 92) continue; // a backslash escape
       if (c === 96) {
         // A backtick run: a span, unless it has no closer or the closer lies
-        // past a paragraph break.
+        // past a paragraph break or a table cell boundary.
         const runEnd = start + m[0].length;
         const end = spanEnd(start, runEnd);
         while (b < breaks.length && breaks[b] <= start) b++;
+        while (cb < cellBreaks.length && cellBreaks[cb] <= start) cb++;
         // (A fence opener is a break, so `end > gapEnd` is caught there too;
         // the explicit test keeps the ranges disjoint whatever the breaks say.)
-        if (end === -1 || end > gapEnd || (b < breaks.length && breaks[b] < end)) {
+        if (
+          end === -1 ||
+          end > gapEnd ||
+          (b < breaks.length && breaks[b] < end) ||
+          (cb < cellBreaks.length && cellBreaks[cb] < end)
+        ) {
           strayTicks.push({ start, end: runEnd });
         } else {
           code.push({ start, end, kind: 'span' });

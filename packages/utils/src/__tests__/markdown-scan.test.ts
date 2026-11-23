@@ -1033,6 +1033,55 @@ describe('mdxCodeRanges', () => {
     expect(strays(src)).toEqual(want);
   });
 
+  // GFM splits a table row into cells at its unescaped pipes before it reads
+  // any code span, so a span cannot cross a cell boundary (#363).
+  describe('a code span ends at a table cell boundary (#363)', () => {
+    it.each<[string, string]>([
+      ['a header row', '| a `b | c` |\n|---|---|\n'],
+      ['a body row', '| h | i |\n|---|---|\n| a `b | c` |\n'],
+      ['a header row without outer pipes', 'a `b | c` d\n-|-\n'],
+      ['a header row in a list item', '- | a `b | c` |\n  |---|---|\n'],
+      ['a body row in a list item', '- | h | i |\n  |---|---|\n  | a `b | c` |\n'],
+      ['a header row in a quote', '> | a `b | c` |\n> |---|---|\n'],
+      ['a body row in a quote', '> | h | i |\n> |---|---|\n> | a `b | c` |\n'],
+    ])('reads the backticks of a pipe-crossing pair in %s as stray', (_name, src) => {
+      expect(code(src)).toEqual([]);
+      expect(strays(src)).toEqual(['`', '`']);
+    });
+
+    it.each<[string, string, [string, string][]]>([
+      ['an escaped pipe inside the span', '| a `b \\| c` |\n|---|\n', [['span', '`b \\| c`']]],
+      ['an escaped pipe in a body row', '| h |\n|---|\n| a `b \\| c` |\n', [['span', '`b \\| c`']]],
+      [
+        'two spans in separate cells',
+        '| `a` | `b` |\n|---|---|\n| `c` | `d` |\n',
+        [
+          ['span', '`a`'],
+          ['span', '`b`'],
+          ['span', '`c`'],
+          ['span', '`d`'],
+        ],
+      ],
+      ['the same line outside a table', 'a `b | c` d\n', [['span', '`b | c`']]],
+      ['a paragraph after the table', '| h |\n|---|\n\na `b | c` d\n', [['span', '`b | c`']]],
+    ])('keeps a span for %s', (_name, src, want) => {
+      expect(code(src)).toEqual(want);
+    });
+
+    it('pairs the backticks of a later cell among themselves', () => {
+      const src = '| `a | b` | `c` |\n|---|---|---|\n';
+      expect(code(src)).toEqual([['span', '`c`']]);
+      expect(strays(src)).toEqual(['`', '`']);
+    });
+
+    // The comment scanners read the CommonMark dialect, which this rule leaves alone.
+    it('leaves the comment ranges of a table row as they were', () => {
+      const src = '| a `b | c` <!-- d --> |\n|---|---|\n| e `f | <!-- g --> h` |\n';
+      expect(htmlCommentRanges(src)).toEqual([{ start: 12, end: 22, closed: true }]);
+      expect(htmlCommentRanges('| a `b | <!-- c --> |` |\n|---|---|---|\n')).toEqual([]);
+    });
+  });
+
   it('leaves fencedCodeRanges on the CommonMark closer rule', () => {
     // MDX closes this fence on the indented closer; CommonMark (and the
     // comment scanner, whose ranges must not change) reads it as content.
@@ -1284,6 +1333,17 @@ describe('markdown-scan performance', () => {
     ['marker-then-quote fences', (n) => '- > ```js\n  > {a}\n  > ```\n\n'.repeat(n / 28)],
     ['one line of many list markers', (n) => '- '.repeat(n / 2) + 'x `y`\n'],
     ['one line of many quote and list markers', (n) => '> - '.repeat(n / 4) + '```\n{x}\n'],
+    [
+      'a table of backtick pairs holding pipes',
+      (n) => '| h | i |\n|---|---|\n' + '| a `b | c` d |\n'.repeat(n / 16),
+    ],
+    [
+      'one table row of backtick pairs holding pipes',
+      (n) => {
+        const k = Math.floor(n / 12);
+        return '| a `b | c` '.repeat(k) + '|\n' + '|---'.repeat(2 * k) + '|\n';
+      },
+    ],
   ])(
     '%s scales linearly for mdxCodeRanges',
     (_name, makeInput) => {
