@@ -1433,6 +1433,67 @@ describe('render() — locale links to a page whose slug is index (#333)', () =>
   });
 });
 
+// The grammar set is chosen by scanning page bodies for fence languages; a fence
+// the scan missed rendered as plain text unless another fence on the site used
+// that language. Shiki's highlighter is a process-wide singleton whose grammars
+// accumulate, so each case uses a language no other test in this file loads.
+describe('render() — issue #420: fence languages in every fence form', () => {
+  function manifestWith(slug: string, body: string): SiteManifest {
+    const m = makeManifest();
+    m.pages.push({
+      slug,
+      frontmatter: { title: slug, kind: 'guide', description: 'A page.' },
+      body,
+      headings: [],
+    });
+    m.nav.push({ label: slug, slug });
+    return m;
+  }
+
+  async function renderOne(slug: string, body: string) {
+    const result = await render(manifestWith(slug, body), { theme: minimalTheme });
+    const err = result.errors?.find((e) => e.slug === slug);
+    const file = result.files.find((f) => f.path === `${slug}/index.html`);
+    return { err, html: file ? asString(file) : undefined };
+  }
+
+  /** The first `<pre>…</pre>` of the page. */
+  function preOf(html: string | undefined): string {
+    const start = html?.indexOf('<pre') ?? -1;
+    expect(start, 'expected a <pre> block').toBeGreaterThanOrEqual(0);
+    return html!.slice(start, html!.indexOf('</pre>', start) + 6);
+  }
+
+  it.each<[string, string, string]>([
+    ['a blockquote', 'quote', '# Page\n\n> ```swift\n> let a = 1\n> ```\n'],
+    ['a four-backtick fence', 'long', '# Page\n\n````kotlin\nval a = 1\n````\n'],
+    ['a space before the language', 'space', '# Page\n\n``` go\nvar a = 1\n```\n'],
+    ['a list item first line', 'item', '# Page\n\n- ```rust\n  let a = 1;\n  ```\n'],
+    // Regression guards: these forms were already found before #420.
+    [
+      'a list item indented under a paragraph',
+      'under',
+      '# Page\n\n- Item:\n\n  ```scala\n  val a = 1\n  ```\n',
+    ],
+    ['a tilde fence', 'tilde', '# Page\n\n~~~zig\nconst a = 1;\n~~~\n'],
+    ['a fence indented four spaces', 'indent', '# Page\n\n    ```haskell\n    a = 1\n    ```\n'],
+  ])('highlights a fence in %s', async (_name, slug, body) => {
+    const { err, html } = await renderOne(slug, body);
+    expect(err, err?.message).toBeUndefined();
+    const pre = preOf(html);
+    expect(pre).toMatch(/\bshiki\b/);
+    // A highlighted token carries an inline color; the plain fallback is a bare <span>.
+    expect(pre).toMatch(/<span style="color:/);
+  });
+
+  it('leaves a triple-backtick span mid-line as inline code', async () => {
+    const { err, html } = await renderOne('inline', '# Page\n\ntext ```toml x = 1``` more\n');
+    expect(err, err?.message).toBeUndefined();
+    expect(html).not.toContain('<pre');
+    expect(html).toMatch(/<code[^>]*>toml x = 1<\/code>/);
+  });
+});
+
 describe('render() — every page fails (#401)', () => {
   // An angle-bracket autolink is MDX-hostile (see the #333 describe above), so a
   // page with this body always fails to compile.

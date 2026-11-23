@@ -79,8 +79,99 @@ const COMMON_LANGS: readonly string[] = [
 ];
 
 /**
+ * Report the language of every fence opener in `body` to `add`, lowercased:
+ * the first word of the info string after a run of three or more backticks or
+ * tildes. One pass over the body, linear in its length. A line ends at `\n`,
+ * `\r\n` or a lone `\r` (JSDoc `@example` text from CRLF sources can keep one),
+ * and a leading byte-order mark on the body is skipped.
+ *
+ * Each line first loses its container prefixes, in any order and nesting:
+ * spaces/tabs, `>` (blockquote), a bullet `-`/`*`/`+` or an ordered marker of
+ * 1-9 digits and `.`/`)` followed by a space or tab (list item), and a footnote
+ * label `[^…]:`. MDX turns off indented code, so a fence indented four or more
+ * spaces is still a fence and no indent limit applies. A backtick run followed
+ * by another backtick on the line is inline code, not a fence (CommonMark).
+ *
+ * Over-approximates on purpose: there is no open/close state, so a fence line
+ * inside another block (an outer ````md fence) still counts, as do fences in
+ * `{/* *\/}` or HTML comments; an extra grammar only costs its load time. Not
+ * handled: backslash escapes and character references in the info string.
+ */
+function scanFenceLangs(body: string, add: (lang: string) => void): void {
+  if (!body.includes('```') && !body.includes('~~~')) return;
+  const n = body.length;
+  const bom = body.charCodeAt(0) === 0xfeff ? 1 : 0;
+  for (let start = bom; start < n; ) {
+    // The line is [start, end); `next` is past its \n, \r\n or lone \r.
+    let end = start;
+    while (end < n) {
+      const e = body.charCodeAt(end);
+      if (e === 10 || e === 13) break;
+      end++;
+    }
+    const next = body.charCodeAt(end) === 13 && body.charCodeAt(end + 1) === 10 ? end + 2 : end + 1;
+    let i = start;
+    // Container prefixes: indent, `>`, list markers, footnote labels.
+    for (;;) {
+      let c = body.charCodeAt(i);
+      while (i < end && (c === 32 || c === 9 || c === 62)) c = body.charCodeAt(++i);
+      if (i >= end) break;
+      let j = i;
+      if (c === 45 || c === 42 || c === 43) {
+        j++; // - * +
+      } else if (c >= 48 && c <= 57) {
+        while (j < end && j - i < 9 && body.charCodeAt(j) >= 48 && body.charCodeAt(j) <= 57) j++;
+        const d = body.charCodeAt(j);
+        if (d !== 46 && d !== 41) break; // . )
+        j++;
+      } else if (c === 91 && body.charCodeAt(i + 1) === 94) {
+        // [^label]:
+        j = i + 2;
+        while (j < end && body.charCodeAt(j) !== 93) j++;
+        if (j + 1 >= end || body.charCodeAt(j + 1) !== 58) break;
+        i = j + 2;
+        continue;
+      } else {
+        break;
+      }
+      if (j >= end) break;
+      const s = body.charCodeAt(j);
+      if (s !== 32 && s !== 9) break;
+      i = j + 1;
+    }
+    const f = body.charCodeAt(i);
+    if (i < end && (f === 96 || f === 126)) {
+      let j = i;
+      while (j < end && body.charCodeAt(j) === f) j++;
+      if (j - i >= 3) {
+        while (j < end && (body.charCodeAt(j) === 32 || body.charCodeAt(j) === 9)) j++;
+        let k = j;
+        for (; k < end; k++) {
+          const c = body.charCodeAt(k);
+          if (c === 32 || c === 9 || c === 13) break;
+        }
+        let ok = k > j;
+        // A backtick fence's info string cannot hold a backtick (else it is inline code).
+        if (ok && f === 96) {
+          for (let m = j; m < end; m++) {
+            if (body.charCodeAt(m) === 96) {
+              ok = false;
+              break;
+            }
+          }
+        }
+        if (ok) add(body.slice(j, k).toLowerCase());
+      }
+    }
+    start = next;
+  }
+}
+
+/**
  * The shiki language set for a build: the {@link COMMON_LANGS} baseline plus any
- * additional languages found by scanning the page bodies' fenced code blocks.
+ * additional languages found by scanning the page bodies' fenced code blocks
+ * ({@link scanFenceLangs}: every fence form, including fences in blockquotes and
+ * list items, longer fences, and a space before the language — #420).
  * This loads only this curated set (~a dozen-plus grammars) instead of eagerly
  * loading all 235 bundled languages (~4.3s) on the first highlight, while still
  * guaranteeing the common languages always work. Unknown/`text` fences are
@@ -98,12 +189,8 @@ export function collectUsedLangs(bodies: readonly string[]): string[] {
   // Always include the common documentation languages.
   for (const lang of COMMON_LANGS) add(lang);
 
-  // Then any other language a fence actually uses. Capture the first info-string
-  // token after a ``` or ~~~ fence; the rest (e.g. `title="x"` or `{1,3}`) is ignored.
-  const fenceRe = /^[ \t]*(?:```|~~~)([A-Za-z0-9_+#-]+)/gm;
-  for (const body of bodies) {
-    for (const match of body.matchAll(fenceRe)) add(match[1].toLowerCase());
-  }
+  // Then any other language a fence actually uses (see scanFenceLangs).
+  for (const body of bodies) scanFenceLangs(body, add);
   return out;
 }
 
