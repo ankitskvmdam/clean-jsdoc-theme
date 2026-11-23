@@ -7,6 +7,9 @@
  * per output. Identity when `basePath` is the root (`'/'`, `''`, `undefined`),
  * so a root build's Markdown is byte-identical. Pure; see #377.
  *
+ * A leading frontmatter block passes through unchanged: its values are plain
+ * text (a page `description` may quote a tag such as `<Link href="/x">`, #370).
+ *
  * Rewrites, outside code regions only (fences, `<pre>`/`<code>`, inline code —
  * example syntax must stay verbatim):
  *  - Markdown link/image destinations `](/x` (incl. `](</x`), not `](//host`;
@@ -19,16 +22,21 @@
 export function prefixRootRelativeUrls(body: string, basePath: string | undefined): string {
   const prefix = (basePath ?? '/').replace(/\/+$/, '');
   if (!prefix || !body) return body;
-  const out: string[] = [];
+  const frontmatter = FRONTMATTER_RE.exec(body)?.[0] ?? '';
+  const out: string[] = [frontmatter];
+  const rest = body.slice(frontmatter.length);
   let last = 0;
-  for (const m of body.matchAll(CODE_REGION_RE)) {
+  for (const m of rest.matchAll(CODE_REGION_RE)) {
     const start = m.index ?? 0;
-    out.push(rewrite(body.slice(last, start), prefix), m[0]);
+    out.push(rewrite(rest.slice(last, start), prefix), m[0]);
     last = start + m[0].length;
   }
-  out.push(rewrite(body.slice(last), prefix));
+  out.push(rewrite(rest.slice(last), prefix));
   return out.join('');
 }
+
+/** A leading `---` … `---` frontmatter block (as llms-txt's `stripFrontmatter` finds it). */
+const FRONTMATTER_RE = /^---\r?\n[\s\S]*?\r?\n---[ \t]*(?:\r?\n|$)/;
 
 /** Same code-region regex as the bridges' `CODE_REGION_RE` (publish.ts / docs.ts). */
 const CODE_REGION_RE =

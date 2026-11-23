@@ -127,6 +127,7 @@ npx jsdoc -c jsdoc.json
 | `group` | frontmatter `group` → humanized **directory** path → `defaultDocGroup`     |
 | `order` | frontmatter `order`                                                        |
 | `hidden`| frontmatter `hidden`（default `false`）                                     |
+| `description` | frontmatter `description` → body の最初の prose paragraph（plain text、最大 300 文字） |
 
 ### Slug は path から決まる
 
@@ -163,6 +164,7 @@ Frontmatter は先頭の `---` block です。parser は意図的に小さく作
 ```markdown
 ---
 title: Advanced Setup
+description: How to configure advanced options.
 group: Guides
 order: 2
 slug: guides/advanced
@@ -174,6 +176,8 @@ hidden: false
 ```
 
 - **`title`** — sidebar label と page の `<title>`。
+- **`description`** — page の `<meta name="description">`、search の subtitle、pager
+  card、`llms.txt` の entry。省略時は body の最初の paragraph。
 - **`group`** — sidebar group（directory を override します）。入れ子にするには
   `/`-path にできます。
 - **`order`** — group 内の sort key（昇順; 未設定は最後、その後アルファベット順）。

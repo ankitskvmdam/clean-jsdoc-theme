@@ -17,11 +17,20 @@
  * still embedded), while the tutorial front-end adapts the existing
  * {@link TutorialInput} tree via {@link tutorialsToDocInputs}. The adapter path
  * supplies metadata explicitly and disables frontmatter parsing, so legacy
- * tutorial output stays byte-identical.
+ * tutorial output stays identical except for the derived description.
+ *
+ * Every page gets a `description` (#370): the frontmatter value when there is
+ * one, else the first prose paragraph ({@link deriveDocDescription}).
  */
 
 import type { PhrasingContent, Root, RootContent } from 'mdast';
-import { slugifyPath, type Frontmatter, type NavNode, type Page } from '@clean-jsdoc-theme/utils';
+import {
+  collapseWhitespace,
+  slugifyPath,
+  type Frontmatter,
+  type NavNode,
+  type Page,
+} from '@clean-jsdoc-theme/utils';
 import { htmlToMdastBlocks, markdownToMdastBlocks } from './mdast/from-html';
 import { resolveLinkTags } from './mdast/link-tags';
 import { embed } from './mdast/builders';
@@ -29,6 +38,7 @@ import { parseEmbedConfig } from './embed';
 import { hrefFor, type ResolvedLink } from './link-registry';
 import { toMdx } from './mdx';
 import { extractHeadings } from './generate-site';
+import { deriveDocDescription } from './doc-description';
 
 /**
  * A tutorial, normalized away from JSDoc's `Tutorial` class so setu doesn't
@@ -288,7 +298,12 @@ export function buildReadmePage(
   resolveEmbedFences(tree);
 
   const title = pkg?.name ?? 'Home';
-  const frontmatter: Frontmatter = { title, kind: 'index' };
+  const description = deriveDocDescription(tree);
+  const frontmatter: Frontmatter = {
+    title,
+    kind: 'index',
+    ...(description ? { description } : {}),
+  };
   // README arrives as HTML, so serialize the converted tree (no raw Markdown to
   // preserve). dwar compiles the resulting MDX exactly like any other page.
   const body = toMdx(tree, { frontmatter });
@@ -415,6 +430,9 @@ export interface BuiltDocPages {
  * - `order` = `data.order` ?? `input.order`.
  * - `kind: 'guide'`; `hidden` honored. A root `index` path → slug `''`,
  *   `kind: 'index'` (the home page).
+ * - `description` = `data.description` ?? the first prose paragraph of the body
+ *   (plain text, capped; see {@link deriveDocDescription}). Omitted when neither
+ *   exists. Set for tutorials and hidden pages too.
  *
  * A `NavNode` is emitted per page carrying `label`/`slug`/`group`/`order`; nav
  * is skipped for `hidden` pages and for the home page (whose nav entry is added
@@ -439,10 +457,13 @@ export function buildDocPages(
   const navOf = new Map<Page, NavNode>();
 
   for (const input of docs) {
-    const { slug, title, group, order, hidden, isHome, kind, body } = deriveDocMeta(input, {
-      defaultDocGroup,
-      parseFrontmatter: doParse,
-    });
+    const { slug, title, description, group, order, hidden, isHome, kind, body } = deriveDocMeta(
+      input,
+      {
+        defaultDocGroup,
+        parseFrontmatter: doParse,
+      }
+    );
 
     const tree = contentToMdast(body, input.type);
     if (tree.children.length === 0) continue;
@@ -450,9 +471,11 @@ export function buildDocPages(
     // Prose `iframe` fences → <Embed/> (after normalization, before toMdx).
     resolveEmbedFences(tree);
 
-    const frontmatter: Frontmatter = { title, kind };
+    const desc = description ?? deriveDocDescription(tree);
+    const frontmatter: Frontmatter = { title, kind, ...(desc ? { description: desc } : {}) };
     // Tutorials carry group/order on the NAV node only (today's behavior), never
-    // in page frontmatter — so the legacy tutorial output stays byte-identical.
+    // in page frontmatter — so the legacy tutorial output stays identical (bar
+    // the description above).
     // The docs front-end (which parses frontmatter) does surface them on the
     // page, where the sidebar plan reads `frontmatter.group`/`order`.
     if (doParse) {
@@ -493,6 +516,8 @@ export function buildDocPages(
 interface DocMeta {
   slug: string;
   title: string;
+  /** Frontmatter `description`, whitespace-collapsed (never derived here). */
+  description: string | undefined;
   group: string | undefined;
   order: number | undefined;
   hidden: boolean;
@@ -510,6 +535,7 @@ interface DocMeta {
  *
  * - `slug` = frontmatter `slug` ?? slugified `path` (no prefix); `index` → `''`.
  * - `title` = frontmatter → input → humanized basename.
+ * - `description` = frontmatter only (the body fallback needs the mdast).
  * - `group` = frontmatter → input → humanized directory path → default.
  * - `order`/`hidden` from frontmatter (or `input.order`).
  */
@@ -533,6 +559,10 @@ function deriveDocMeta(
   // title: frontmatter → input → humanized basename.
   const title = asString(data.title) ?? (input.title?.trim() || undefined) ?? humanize(basename);
 
+  // description: frontmatter only; buildDocPages falls back to the body.
+  const fmDescription = asString(data.description);
+  const description = fmDescription === undefined ? undefined : collapseWhitespace(fmDescription);
+
   // group: frontmatter → input → directory path (humanized) → default.
   const dirSegments = segments.slice(0, -1);
   const dirGroup = dirSegments.length > 0 ? dirSegments.map(humanize).join('/') : undefined;
@@ -543,7 +573,7 @@ function deriveDocMeta(
   const hidden = asBoolean(data.hidden) ?? false;
   const kind = isHome ? 'index' : 'guide';
 
-  return { slug, title, group, order, hidden, isHome, kind, body };
+  return { slug, title, description, group, order, hidden, isHome, kind, body };
 }
 
 /**

@@ -3,6 +3,7 @@ import type { Root } from 'mdast';
 import { slugifyPath, type NavNode, type Page } from '@clean-jsdoc-theme/utils';
 import {
   buildDocPages,
+  buildReadmePage,
   buildTutorialPages,
   composeResolvers,
   makeDocResolver,
@@ -15,6 +16,7 @@ import {
 import { htmlToMdastBlocks, markdownToMdastBlocks } from '../mdast/from-html';
 import { toMdx } from '../mdx';
 import { extractHeadings } from '../generate-site';
+import { deriveDocDescription } from '../doc-description';
 
 describe('parseFrontmatter', () => {
   it('parses a valid block and strips it from the body', () => {
@@ -244,8 +246,9 @@ describe('buildDocPages — frontmatter gating', () => {
 });
 
 /**
- * The pre-refactor `buildTutorialPages` behavior, reproduced verbatim, to assert
- * the adapter + builder remain byte-identical to it.
+ * The pre-refactor `buildTutorialPages` behavior, reproduced verbatim except for
+ * the derived `description` (#370), to assert the adapter + builder remain
+ * identical to it.
  */
 function legacyBuildTutorialPages(tutorials: readonly TutorialInput[]): {
   pages: Page[];
@@ -265,7 +268,12 @@ function legacyBuildTutorialPages(tutorials: readonly TutorialInput[]): {
     if (tree.children.length === 0) return null;
     const title = t.title?.trim() || t.name;
     const slug = `${TUTORIAL_SLUG_PREFIX}/${slugifyPath([t.name])}`;
-    const frontmatter = { title, kind: 'guide' as const };
+    const description = deriveDocDescription(tree);
+    const frontmatter = {
+      title,
+      kind: 'guide' as const,
+      ...(description ? { description } : {}),
+    };
     const body = toMdx(tree, { frontmatter });
     const headings = extractHeadings(tree);
     return { slug, frontmatter, body, mdast: tree, headings };
@@ -287,7 +295,7 @@ function legacyBuildTutorialPages(tutorials: readonly TutorialInput[]): {
   return { pages, nav };
 }
 
-describe('tutorialsToDocInputs + buildTutorialPages — byte-identical to legacy', () => {
+describe('tutorialsToDocInputs + buildTutorialPages — identical to legacy except the derived description', () => {
   const TUTORIALS: TutorialInput[] = [
     {
       name: 'getting-started',
@@ -355,10 +363,19 @@ describe('tutorialsToDocInputs + buildTutorialPages — byte-identical to legacy
     expect(tutorialsToDocInputs(flat).every((d) => d.group === 'Tutorials')).toBe(true);
   });
 
-  it('keeps tutorial page frontmatter to { title, kind } only (no group/order)', () => {
+  it('keeps tutorial page frontmatter to { title, kind, description? } only (no group/order)', () => {
     const { pages } = buildTutorialPages(TUTORIALS);
+    expect(pages.map((p) => p.frontmatter.description)).toEqual([
+      'Welcome.',
+      undefined,
+      'Deep dive with a link.',
+    ]);
     for (const p of pages) {
-      expect(Object.keys(p.frontmatter).sort()).toEqual(['kind', 'title']);
+      expect(
+        Object.keys(p.frontmatter)
+          .filter((k) => k !== 'description')
+          .sort()
+      ).toEqual(['kind', 'title']);
       expect(p.frontmatter.kind).toBe('guide');
     }
   });
@@ -482,5 +499,88 @@ describe('composeResolvers', () => {
     const resolve = composeResolvers(tutorials, docs)!;
     expect(resolve('guides/only-doc')).toEqual({ href: '/guides/only-doc', title: 'Only Doc' });
     expect(resolve('neither')).toBeNull();
+  });
+});
+
+describe('buildDocPages — description (#370)', () => {
+  const one = (
+    content: string,
+    path = 'guides/faq',
+    opts = {},
+    resolve?: Parameters<typeof buildDocPages>[2]
+  ) => buildDocPages([{ path, content, type: 'markdown' }], opts, resolve).pages;
+
+  it('carries an explicit frontmatter description over the body', () => {
+    const [page] = one('---\ntitle: FAQ\ndescription:   Explicit   one\n---\nBody paragraph.');
+    expect(page.frontmatter.description).toBe('Explicit one');
+    expect(page.body).toContain('description:');
+  });
+
+  it('puts description right after title/kind (before group/order/hidden)', () => {
+    const [page] = one('---\ndescription: D\norder: 2\n---\nBody.');
+    expect(Object.keys(page.frontmatter)).toEqual([
+      'title',
+      'kind',
+      'description',
+      'group',
+      'order',
+    ]);
+  });
+
+  it('derives one from the first paragraph when absent', () => {
+    const [page] = one('# FAQ\n\nAnswers to *common* questions.\n\nMore.');
+    expect(page.frontmatter.description).toBe('Answers to common questions.');
+  });
+
+  it('reduces {@link} to plain text with and without a resolver', () => {
+    const content = 'See {@link Known} and {@link Unknown|the label}.';
+    const resolve = (t: string) => (t === 'Known' ? { href: '/known/', external: false } : null);
+    expect(one(content, 'a', {}, resolve)[0].frontmatter.description).toBe(
+      'See Known and the label.'
+    );
+    expect(one(content)[0].frontmatter.description).toBe('See Known and the label.');
+  });
+
+  it('still yields no page for an empty body', () => {
+    expect(one('---\ndescription: X\n---\n')).toHaveLength(0);
+  });
+
+  it('leaves out the key when the body has no prose paragraph', () => {
+    const [page] = one('# Only a heading');
+    expect('description' in page.frontmatter).toBe(false);
+  });
+
+  it('ignores a description line when frontmatter parsing is off', () => {
+    const [page] = one('---\ndescription: Nope\n---\n\nReal prose.', 'x', {
+      parseFrontmatter: false,
+    });
+    expect(page.frontmatter.description).toBe('Real prose.');
+  });
+
+  it('derives one for hidden pages too', () => {
+    const [page] = one('---\nhidden: true\n---\nSecret intro.');
+    expect(page.frontmatter.description).toBe('Secret intro.');
+  });
+
+  it('derives one for tutorials', () => {
+    const { pages } = buildTutorialPages([
+      { name: 't', title: 'T', type: 'markdown', content: '# T\n\nTutorial intro.' },
+    ]);
+    expect(pages[0].frontmatter.description).toBe('Tutorial intro.');
+  });
+
+  it('derives one for the README home page, skipping a badge row', () => {
+    const page = buildReadmePage(
+      '<h1>pkg</h1><p><a href="https://npm.im/x"><img src="b.svg" alt="npm"></a></p><p>A clean theme.</p>',
+      { name: 'pkg' }
+    )!;
+    expect(page.frontmatter.description).toBe('A clean theme.');
+  });
+
+  it('gives each localized copy its own description', () => {
+    const en = one('---\ndescription: English text\n---\nBody.', 'guides/faq')[0];
+    const hi = one('पहला अनुच्छेद।', 'guides/faq')[0];
+    expect(en.frontmatter.description).toBe('English text');
+    expect(hi.frontmatter.description).toBe('पहला अनुच्छेद।');
   });
 });

@@ -175,4 +175,11 @@ describe('prefixRootRelativeUrls', () => {
     const fm = '---\ntitle: Guide\nkind: guide\n---\n\n';
     expect(prefixRootRelativeUrls(`${fm}[a](/x)\n`, '/docs')).toBe(`${fm}[a](/docs/x)\n`);
   });
+
+  it('leaves URL-like text in frontmatter values alone (#370 plain-text description)', () => {
+    const fm = '---\ntitle: G\ndescription: Render <Link href="/x"> or [a](/y).\n---\n\n';
+    expect(prefixRootRelativeUrls(`${fm}[a](/x)\n`, '/docs')).toBe(`${fm}[a](/docs/x)\n`);
+    // An unterminated block is not frontmatter: the body is still rewritten.
+    expect(prefixRootRelativeUrls('---\n<a href="/x">', '/docs')).toBe('---\n<a href="/docs/x">');
+  });
 });

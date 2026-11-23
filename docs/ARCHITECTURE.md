@@ -195,7 +195,9 @@ the slug is the relative path with **no prefix** (`guides/advanced.md` →
 (`parseFrontmatter`, dependency-light) overrides per file — `title`, `group`,
 `order`, `slug`, `hidden` all win over the directory/humanized fallbacks; a
 file with no frontmatter falls back to its folder's group and a humanized
-filename title. A doc with no group at all lands in `opts.defaultDocGroup`. The
+filename title. A doc with no group at all lands in `opts.defaultDocGroup`. A
+frontmatter `description` (else the first prose paragraph, `deriveDocDescription`,
+max 300 chars) becomes the page description (#370). The
 root `index.md` (`path === 'index'`) becomes the **home page** (slug `''`,
 `kind: 'index'`), overriding the README home; otherwise the README still wins.
 Doc-group sidebar sections render in `opts.docGroups` order, after the API

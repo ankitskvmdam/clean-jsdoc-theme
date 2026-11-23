@@ -134,6 +134,18 @@ describe('renderHtmlDocument — custom <meta> tags', () => {
     expect(html).not.toContain('onmouseover');
   });
 
+  it('emits a guide page frontmatter description as <meta name="description"> (#370)', () => {
+    const page: Page = {
+      slug: 'guides/faq',
+      frontmatter: { title: 'FAQ', kind: 'guide', description: 'Answers & tips' },
+      body: '',
+      headings: [],
+    };
+    const html = doc({ page });
+    expect(html.match(/name="description"/g)).toHaveLength(1);
+    expect(html).toContain('<meta name="description" content="Answers &amp; tips" />');
+  });
+
   it('lets an author description replace the theme default (exactly one)', () => {
     const page: Page = {
       slug: 'x',
