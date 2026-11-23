@@ -22,6 +22,7 @@ import {
   type TextRange,
 } from '@clean-jsdoc-theme/utils';
 import { callout, code, playground, step, steps, tab, tabs } from './builders';
+import { codeLanguageHandlers } from './code-language';
 import { escapeLiteralTags } from './literal-tags';
 import { passthroughHandlers } from './passthrough-html';
 import {
@@ -362,6 +363,9 @@ function dropComments(node: { children?: unknown[] }): void {
   for (const child of node.children) dropComments(child as { children?: unknown[] });
 }
 
+/** The `toMdast` handlers {@link htmlBlocksPlain} lowers with. */
+const HANDLERS = { ...passthroughHandlers, ...codeLanguageHandlers };
+
 /**
  * Convert an HTML fragment (as emitted by JSDoc into `description`, `classdesc`,
  * param descriptions, etc.) into block-level mdast nodes. Empty/blank input
@@ -392,7 +396,8 @@ function htmlBlocksPlain(html: string): RootContent[] {
   });
   dropComments(hast);
   // Inline HTML with no Markdown form (`<sub>`, `<sup>`, …) stays markup (#360).
-  const mdast = toMdast(hast, { handlers: passthroughHandlers }) as Root;
+  // A fenced block from JSDoc's markdown plugin keeps its language (#359).
+  const mdast = toMdast(hast, { handlers: HANDLERS }) as Root;
   // Promote GitHub-style alert blockquotes (`> [!INFO]`) to typed callouts,
   // recursively so an alert nested in a list item is promoted too. Done here,
   // after the HTML normalization, so it applies uniformly to every prose source
