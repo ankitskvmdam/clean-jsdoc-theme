@@ -2296,12 +2296,11 @@ async function runPublish(
   // v4 options (`theme_opts`, `base_url`, …) are the exception: they're known to
   // be ours, so they always warn with a migration hint (errors under strict).
   //
-  // Strict mode: `opts.strict` (or nested `templates.default.strict`). When on
+  // Strict mode: `opts.strict` only. (JSDoc's `templates` block is not part of
+  // `env.opts`, and `strict` is not a `templates.default` option.) When on
   // AND there are errors, log + throw to fail the build. Otherwise (the
   // resilient default) log and continue — a bad font/typo never breaks a build.
-  const strict =
-    opts.strict === true ||
-    (opts.templates as { default?: { strict?: unknown } } | undefined)?.default?.strict === true;
+  const strict = opts.strict === true;
   // Option problems found past validation — an unreadable footer/favicon/logo/
   // custom file, a dropped meta or customCssFile entry, a bad scrollbar or
   // collapsibleSidebarSections value. Resilient by default: warn and carry on.

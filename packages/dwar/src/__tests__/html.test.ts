@@ -272,6 +272,54 @@ describe('search text — HTML comments', () => {
     expect(extractSearchText(src)).toContain('Visible');
     expect(extractExcerpt(src)).toContain('Visible');
   });
+
+  it('skips a CRLF frontmatter holding `<!--` in a value', () => {
+    const src = '---\r\nnote: |\r\n  <!-- a\r\n---\r\nVisible -->text.\r\n';
+    expect(extractSearchText(src)).toContain('Visible');
+  });
+});
+
+describe('search text — frontmatter strip (#393)', () => {
+  const extractors = [
+    ['extractSearchText', (src: string) => extractSearchText(src)],
+    ['extractExcerpt', (src: string) => extractExcerpt(src)],
+  ] as const;
+
+  describe.each(extractors)('%s', (_name, extract) => {
+    it('ends the frontmatter at a fence on its own line, not at `---` in a value', () => {
+      expect(extract('---\ntitle: a --- b\ndescription: Something\n---\nBody\n')).toBe('Body');
+    });
+
+    it('handles CRLF line endings', () => {
+      expect(extract('---\r\ntitle: a --- b\r\n---\r\nBody')).toBe('Body');
+    });
+
+    it('keeps the text after a thematic break in the body', () => {
+      const text = extract('---\ndescription: "x --- y"\n---\nIntro\n\n---\n\nAfter break\n');
+      expect(text).not.toContain('description');
+      expect(text).not.toContain('x --- y');
+      expect(text).toContain('Intro');
+      expect(text).toContain('After break');
+    });
+
+    it('leaves nothing for a body-less page', () => {
+      expect(extract('---\ntitle: a --- b\n---\n')).toBe('');
+      expect(extract('---\ntitle: x\n---')).toBe('');
+    });
+
+    it('keeps an unclosed block (it is not frontmatter)', () => {
+      const text = extract('---\ntitle: a\nBody');
+      expect(text).toContain('title: a');
+      expect(text).toContain('Body');
+    });
+
+    it('strips nothing when `---` is not at the start', () => {
+      const text = extract('Intro\n\n---\nx\n---\nBody');
+      expect(text).toContain('Intro');
+      expect(text).toContain('x');
+      expect(text).toContain('Body');
+    });
+  });
 });
 
 describe('search text — tag strip', () => {
@@ -303,6 +351,7 @@ describe('search text — tag strip', () => {
     // Exercises an escaped `<` waiting for its `>` (#383); its time is mostly
     // other passes, so it cannot tell the old copy from the new one.
     ['escaped generics', (n) => 'Promise\\<User> and `a<b>` x > y\n'.repeat(n / 32)],
+    ['huge unclosed frontmatter', (n) => '---\n' + 'title: a --- b\n'.repeat(n / 15)],
   ])(
     'scales linearly on %s',
     (_name, makeInput) => {
