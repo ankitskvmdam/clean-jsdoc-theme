@@ -1439,9 +1439,10 @@ const DOC_IMAGE_RE = /(!\[[^\]]*\]\()([^)\s]+)((?:\s+"[^"]*")?\))/g;
  * quote char, the src value, and the closing quote (a backreference to the
  * opener). JSDoc's `plugins/markdown` renders a comment's `![alt](src)` to
  * `<img src="…" alt="…">`, and prose can embed raw `<img>`; this matches both
- * quote styles wherever `src` sits in the tag.
+ * quote styles wherever `src` sits in the tag. The value runs to the matching
+ * quote only, so `src="it's.png"` keeps its apostrophe (#396).
  */
-const HTML_IMAGE_RE = /(<img\b[^>]*?\bsrc\s*=\s*(["']))([^"']*)(\2)/gi;
+const HTML_IMAGE_RE = /(<img\b[^>]*?\bsrc\s*=\s*(["']))((?:(?!\2)[^\n])*)(\2)/gi;
 
 /**
  * Percent-encode an asset file name for use in a URL: `encodeURIComponent`,

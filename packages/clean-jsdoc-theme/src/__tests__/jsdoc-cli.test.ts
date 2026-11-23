@@ -513,59 +513,69 @@ describe('JSDoc CLI end to end: inline tags in descriptions (#366)', () => {
 
 describe('JSDoc CLI end to end: image names with a space (#396)', () => {
   let run: Run;
+  let subRun: Run;
   const IMG_SRC = /<img src="(\/_assets\/my%20pic\.[0-9a-f]{8}\.png)"/;
 
+  const FILES: Record<string, string | Buffer> = {
+    'img/my pic.png': PNG_1X1,
+    "img/it's (1).png": PNG_1X1,
+    'img/my logo.svg':
+      '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10"/></svg>\n',
+    'README.md': lines('# Home', '', '![Home pic](./img/my%20pic.png)'),
+    'docs/gallery.md': lines(
+      '# Gallery',
+      '',
+      '<img src="../img/my pic.png" alt="Docs raw">',
+      '',
+      '![Docs md](../img/my%20pic.png)',
+      '',
+      '<img src="../img/my logo.svg" alt="Spaced logo">',
+      '',
+      `<img src="../img/it's (1).png" alt="Quoted">`
+    ),
+    'tutorials/tour.md': lines('# Tour', '', '![Tour](../img/my%20pic.png)'),
+    'src/pic.js': lines(
+      '/**',
+      ' * Shows a picture.',
+      ' *',
+      ' * ![Doc pic](../img/my%20pic.png)',
+      ' */',
+      'export function pic() {}'
+    ),
+  };
+  const conf = (extra: Record<string, unknown> = {}): JSDocConf => ({
+    plugins: ['plugins/markdown'],
+    source: { include: ['src', 'README.md'] },
+    opts: {
+      docs: 'docs',
+      tutorials: 'tutorials',
+      siteUrl: 'https://example.com',
+      llmsTxt: true,
+      ...extra,
+    },
+  });
+
   beforeAll(async () => {
-    run = await runJsdoc(
-      {
-        'img/my pic.png': PNG_1X1,
-        'img/my logo.svg':
-          '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10"/></svg>\n',
-        'README.md': lines('# Home', '', '![Home pic](./img/my%20pic.png)'),
-        'docs/gallery.md': lines(
-          '# Gallery',
-          '',
-          '<img src="../img/my pic.png" alt="Docs raw">',
-          '',
-          '![Docs md](../img/my%20pic.png)',
-          '',
-          '<img src="../img/my logo.svg" alt="Spaced logo">'
-        ),
-        'tutorials/tour.md': lines('# Tour', '', '![Tour](../img/my%20pic.png)'),
-        'src/pic.js': lines(
-          '/**',
-          ' * Shows a picture.',
-          ' *',
-          ' * ![Doc pic](../img/my%20pic.png)',
-          ' */',
-          'export function pic() {}'
-        ),
-      },
-      {
-        plugins: ['plugins/markdown'],
-        source: { include: ['src', 'README.md'] },
-        opts: {
-          docs: 'docs',
-          tutorials: 'tutorials',
-          siteUrl: 'https://example.com',
-          llmsTxt: true,
-        },
-      }
-    );
+    [run, subRun] = await Promise.all([
+      runJsdoc(FILES, conf()),
+      runJsdoc(FILES, conf({ basePath: '/sub' })),
+    ]);
   }, SPAWN_TEST_TIMEOUT);
 
   it('builds with exit 0 and finds every image', () => {
     expect(run.status, run.output).toBe(0);
     expect(run.output).not.toContain('could not read image');
+    expect(subRun.status, subRun.output).toBe(0);
   });
 
   it('gives every page the same percent-encoded src, backed by one file with the real name', () => {
-    const srcs = [
+    const pages = [
       'index.html',
       'gallery/index.html',
       'tutorials/tour/index.html',
       'global/index.html',
-    ].map((page) => {
+    ];
+    const srcs = pages.map((page) => {
       const src = IMG_SRC.exec(run.read(page))?.[1];
       expect(src, `no encoded <img> in ${page}`).toBeDefined();
       return src!;
@@ -573,9 +583,15 @@ describe('JSDoc CLI end to end: image names with a space (#396)', () => {
     expect(new Set(srcs).size).toBe(1);
     expect(run.has(decodeURIComponent(srcs[0]).slice(1))).toBe(true);
     expect(run.list('_assets').filter((f) => f.startsWith('my pic.'))).toHaveLength(1);
-    for (const page of ['index.html', 'gallery/index.html', 'global/index.html']) {
-      expect(run.read(page)).not.toContain('_assets/my pic');
-    }
+    for (const page of pages) expect(run.read(page)).not.toContain('_assets/my pic');
+  });
+
+  it('rewrites a double-quoted <img> src that contains an apostrophe', () => {
+    const src = /<img src="(\/_assets\/it%27s%20%281%29\.[0-9a-f]{8}\.png)"/.exec(
+      run.read('gallery/index.html')
+    )?.[1];
+    expect(src).toBeDefined();
+    expect(run.has(decodeURIComponent(src!).slice(1))).toBe(true);
   });
 
   it('writes the encoded src into the .md companions and llms-full.txt', () => {
@@ -584,6 +600,19 @@ describe('JSDoc CLI end to end: image names with a space (#396)', () => {
       const text = run.read(page);
       expect(text, page).toContain(`](${src})`);
       expect(text, page).not.toContain('_assets/my pic');
+    }
+  });
+
+  it('prefixes basePath once and never double-encodes', () => {
+    const src = /<img src="(\/sub\/_assets\/my%20pic\.[0-9a-f]{8}\.png)"/.exec(
+      subRun.read('index.html')
+    )?.[1];
+    expect(src).toBeDefined();
+    for (const page of ['index.md', 'gallery/index.md', 'global/index.md', 'llms-full.txt']) {
+      expect(subRun.read(page), page).toContain(`](${src})`);
+    }
+    for (const page of ['index.html', 'index.md', 'llms-full.txt']) {
+      expect(subRun.read(page), page).not.toContain('%2520');
     }
   });
 

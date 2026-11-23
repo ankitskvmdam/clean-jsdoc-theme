@@ -914,6 +914,7 @@ describe('image file names that need URL encoding (#396)', () => {
     await writeFile(join(dir, "it's (1).svg"), '<svg/>', 'utf8');
     await writeFile(join(dir, 'a%20b.png'), 'LITERAL', 'utf8');
     await writeFile(join(dir, '100%.png'), 'PERCENT', 'utf8');
+    await writeFile(join(dir, 'a#b.png'), 'HASH', 'utf8');
     await writeFile(join(dir, 'img', 'my pic.png'), 'DOCLET', 'utf8');
   });
 
@@ -949,6 +950,27 @@ describe('image file names that need URL encoding (#396)', () => {
     expect(href).toMatch(/^\/_assets\/it%27s%20%281%29\.[0-9a-f]{8}\.svg$/);
     expect(collector.inlineSvgs[href!]).toContain('<svg style=');
     expect(collector.inlineSvgs['/' + collector.files[0].path]).toBeUndefined();
+  });
+
+  it('rewrites a double-quoted <img> src that contains an apostrophe', async () => {
+    const docs = [
+      { path: 'page', type: 'html' as const, content: `<img src="./it's (1).svg" alt="q">` },
+    ];
+    const { docs: out } = await resolveDocImages(docs, dir, createImageCollector());
+    expect(out[0].content).toMatch(
+      /^<img src="\/_assets\/it%27s%20%281%29\.[0-9a-f]{8}\.svg" alt="q">$/
+    );
+  });
+
+  it('encodes # in the src, from a literal or a %23 reference', async () => {
+    const collector = createImageCollector();
+    const direct = await collector.resolve('./a#b.png', dir);
+    expect(direct).toMatch(/^\/_assets\/a%23b\.[0-9a-f]{8}\.png$/);
+    const docs = [{ path: 'page', type: 'markdown' as const, content: '![x](./a%23b.png)\n' }];
+    const { docs: out } = await resolveDocImages(docs, dir, collector);
+    expect(out[0].content).toBe(`![x](${direct})\n`);
+    expect(collector.files).toHaveLength(1);
+    expect(collector.files[0].path).toMatch(/^_assets\/a#b\.[0-9a-f]{8}\.png$/);
   });
 
   it('prefers a file literally named with %20 over the decoded name', async () => {
