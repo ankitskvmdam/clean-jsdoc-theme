@@ -1418,6 +1418,70 @@ describe('render() — literal angle-bracket words with braces', () => {
   });
 });
 
+describe('render() — inline tags inside code (#363)', () => {
+  async function renderBody(body: string): Promise<string> {
+    const m = makeManifest();
+    m.pages.push({
+      slug: 'module/tags',
+      frontmatter: { title: 'tags', kind: 'module', description: 'A page.' },
+      body: `# tags\n\n${body}`,
+      headings: [],
+    });
+    m.nav.push({ label: 'tags', slug: 'module/tags' });
+    const result = await render(m, { theme: minimalTheme });
+    const err = result.errors?.find((e) => e.slug === 'module/tags');
+    expect(err, err?.message).toBeUndefined();
+    const file = result.files.find((f) => f.path === 'module/tags/index.html');
+    expect(file).toBeDefined();
+    return asString(file!);
+  }
+  /** The text of each `<code>` element (inline code only: no nested markup). */
+  const codeTexts = (html: string): string[] =>
+    [...html.matchAll(/<code(?: [^>]*)?>([^<]*)<\/code>/g)].map((m) => m[1]);
+
+  it('a tag inside a code span stays inside the code span', async () => {
+    const html = await renderBody('a `b {@link Foo <x1/>} c` d\n');
+    expect(codeTexts(html)).toContain('b {@link Foo &lt;x1/>} c');
+    expect(html).not.toContain('<x1');
+  });
+
+  it('a component written inside a code span stays code text', async () => {
+    const html = await renderBody('a `b {@link Foo <Callout>x</Callout>} c` d\n');
+    expect(codeTexts(html)).toContain('b {@link Foo &lt;Callout>x&lt;/Callout>} c');
+    expect(html).not.toContain('role="note"');
+  });
+
+  it('a prose tag whose text holds backtick runs is one code span', async () => {
+    const html = await renderBody('see {@link a `` <x1/> ` b} here\n');
+    expect(codeTexts(html)).toContain('@link a `` &lt;x1/> ` b');
+    expect(html).not.toContain('<x1');
+  });
+
+  it('a prose tag right after a code span stays apart from it', async () => {
+    const html = await renderBody('see `<x1/>`{@link a``b} here\n');
+    expect(codeTexts(html)).toEqual(expect.arrayContaining(['&lt;x1/>', '@link a``b']));
+    expect(html).not.toContain('<x1');
+  });
+
+  it('shows a tag in an @example, a fenced block and a code span as written', async () => {
+    const html = await renderBody(
+      '```js\n// shows a tag: {@link Foo}\nconst doc = "{@link Foo}";\n```\n\nInline `{@link Foo}` here.\n'
+    );
+    const text = html.replace(/<[^>]+>/g, '');
+    expect(text).toContain('// shows a tag: {@link Foo}');
+    expect(text).toMatch(/const doc = (?:"|&quot;|&#34;)\{@link Foo\}(?:"|&quot;|&#34;);/);
+    expect(codeTexts(html)).toContain('{@link Foo}');
+    expect(html).not.toContain('`@link Foo`');
+  });
+
+  it('a code span in a table cell ends at the cell boundary', async () => {
+    const html = await renderBody('| a | b |\n|---|---|\n| `x | {42000+363}` | c |\n');
+    const text = html.replace(/<[^>]+>/g, '');
+    expect(text).toContain('{42000+363}`');
+    expect(text).not.toContain('42363');
+  });
+});
+
 /** The props a page hands to the island called `name` (via its data-island-id). */
 function islandProps(html: string, name: string): Record<string, unknown> {
   const id = new RegExp(`data-island="${name}" data-island-id="([^"]+)"`).exec(html)?.[1];

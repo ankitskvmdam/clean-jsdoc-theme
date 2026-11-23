@@ -2,8 +2,9 @@
  * Inline `{@link}` / `{@linkcode}` / `{@linkplain}` rewriting over an mdast tree.
  *
  * JSDoc inline link tags survive into the mdast as plain `text` runs (dwar's
- * `preprocessJsdocInlineTags` only wraps them in code spans so MDX doesn't choke
- * on the `{`). This pass turns each tag into a real `link` node when its target
+ * `preprocessJsdocInlineTags` only wraps the ones left in prose in code spans so
+ * MDX doesn't choke on the `{`; like this pass, it leaves a tag in code as
+ * written). This pass turns each tag into a real `link` node when its target
  * resolves, and into an inert `inlineCode` span when it doesn't — mirroring the
  * dwar safety net so an unresolved reference still reads as today's code span
  * rather than a broken anchor.

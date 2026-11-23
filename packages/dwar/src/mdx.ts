@@ -19,8 +19,11 @@ import {
   htmlCommentRanges,
   maskHtmlComments,
   mdxCodeRanges,
+  rangeContaining,
   slugifyHeading,
+  type CodeRange,
   type HtmlCommentRange,
+  type MdxCodeScan,
   type TextRange,
 } from '@clean-jsdoc-theme/utils';
 
@@ -110,22 +113,151 @@ export function collectUsedLangs(bodies: readonly string[]): string[] {
 }
 
 /**
- * Pre-process a setu-emitted MDX string so MDX's expression parser doesn't
- * choke on JSDoc inline tags. Setu's TODO lists `{@link Foo}` URL resolution
- * as a deferred pass — meanwhile, the literal text `{@link Foo}` inside MDX
- * looks like a JS expression starting with `@`, which acorn rejects.
+ * A backslash escape (skipped), or a JSDoc inline tag: its name in group 1,
+ * the rest of its text in group 2.
+ */
+const INLINE_TAG = /\\[^\n]|\{@([a-zA-Z][a-zA-Z0-9]*)([^{}]*)\}/g;
+
+/** A prose inline tag `[start, end)` and the code span that replaces it. */
+interface TagRewrite {
+  start: number;
+  end: number;
+  span: string;
+}
+
+/**
+ * Show the JSDoc inline tags left in a page's prose (`{@link Foo}`, from a
+ * body setu did not resolve) as inline code (`` `@link Foo` ``). Left raw, MDX
+ * reads `{@link Foo}` as a JS expression starting with `@`, which acorn
+ * rejects, and the page is skipped.
  *
- * Cheapest robust fix: convert `{@tag arg}` segments into inline code spans
- * (` `@tag arg` `). Round-trips visually until the real link pass lands.
+ * Only a tag wholly in prose is rewritten. A tag in code — a fenced block (an
+ * `@example`), an inline code span, an MDX JSX tag's attribute — or in the YAML
+ * frontmatter is the author's text and stays as written (#363); code is what
+ * the shared `mdxCodeRanges` scanner (utils) finds. So is a backslash-escaped
+ * `\{@link Foo}`, and a tag that runs into a code span it does not hold whole.
+ *
+ * The span's delimiter is one backtick longer than the longest backtick run in
+ * the tag's text and the longest unpaired run on the page, so neither can close
+ * it early; text ending in a backtick is padded with a space on each side. A
+ * tag right next to a backtick (a code span, or another rewritten tag) gets an
+ * empty comment expression, `{/**\/}`, between them, so the two runs don't
+ * merge ({@link escapeStrayBraces} empties it to `{}`).
+ *
+ * Each rewrite must leave exactly one code span where the tag stood and every
+ * other code range of the page as it was; the output is scanned again to check.
+ * A tag whose span MDX would not read that way (one crossing a blank line or a
+ * table cell boundary, say) is left as written — its braces are then escaped by
+ * {@link escapeStrayBraces} and it shows as literal text — and if the check
+ * still fails, the page is returned unchanged.
  */
 export function preprocessJsdocInlineTags(source: string): string {
-  return source.replace(/\{@([a-zA-Z][a-zA-Z0-9]*)([^{}]*)\}/g, (_m, tag, rest) => {
-    const text = `@${tag}${rest}`.trim();
-    // Use a markdown inline code span; escape backticks inside the text by
-    // bumping the fence width.
-    const ticks = text.includes('`') ? '``' : '`';
-    return `${ticks}${text}${ticks}`;
-  });
+  if (!source.includes('{@')) return source;
+  const bodyStart = frontmatterLength(source);
+  const body = bodyStart ? source.slice(bodyStart) : source;
+  const scan = mdxCodeRanges(body);
+  let tags = proseInlineTags(body, scan);
+  for (let round = 0; round < 2 && tags.length > 0; round++) {
+    const { out, expected, spans } = applyTagRewrites(body, scan.code, tags);
+    const got = mdxCodeRanges(out).code;
+    if (sameRanges(got, expected)) return bodyStart ? source.slice(0, bodyStart) + out : out;
+    const kept = tags.filter((_t, k) => {
+      const hit = rangeContaining(got, spans[k].start);
+      return hit?.kind === 'span' && hit.start === spans[k].start && hit.end === spans[k].end;
+    });
+    if (kept.length === tags.length) break;
+    tags = kept;
+  }
+  return source;
+}
+
+/**
+ * The inline tags of `body` that lie wholly in prose, each with the code span
+ * that shows it: none starts inside a code range, holds a fence, or reaches
+ * into a code range that does not end before its closing `}`.
+ */
+function proseInlineTags(body: string, { code, strayTicks }: MdxCodeScan): TagRewrite[] {
+  let minTicks = 1;
+  for (const t of strayTicks) minTicks = Math.max(minTicks, t.end - t.start + 1);
+  const tags: TagRewrite[] = [];
+  INLINE_TAG.lastIndex = 0;
+  // Code ranges are sorted and the matches come in order: one pointer serves.
+  let c = 0;
+  for (let m = INLINE_TAG.exec(body); m !== null; m = INLINE_TAG.exec(body)) {
+    const start = m.index;
+    while (c < code.length && code[c].end <= start) c++;
+    if (c < code.length && code[c].start <= start) {
+      // Inside code: resume after it.
+      INLINE_TAG.lastIndex = Math.max(code[c].end, start + 1);
+      continue;
+    }
+    if (m[1] === undefined) continue; // a backslash escape
+    const end = start + m[0].length;
+    let whole = true;
+    for (let k = c; k < code.length && code[k].start < end; k++) {
+      if (code[k].kind === 'fence' || code[k].end >= end) {
+        whole = false;
+        break;
+      }
+    }
+    if (!whole) continue;
+    const text = `@${m[1]}${m[2]}`.trim();
+    let n = minTicks;
+    for (const run of text.match(/`+/g) ?? []) n = Math.max(n, run.length + 1);
+    const ticks = '`'.repeat(n);
+    const pad = text.endsWith('`') ? ' ' : '';
+    tags.push({ start, end, span: ticks + pad + text + pad + ticks });
+  }
+  return tags;
+}
+
+/**
+ * `body` with each tag replaced by its span; the code ranges the scanner should
+ * find in it (`code` shifted, less those inside a tag, plus each tag's span);
+ * and where each span landed.
+ */
+function applyTagRewrites(
+  body: string,
+  code: readonly CodeRange[],
+  tags: readonly TagRewrite[]
+): { out: string; expected: CodeRange[]; spans: TextRange[] } {
+  const parts: string[] = [];
+  const expected: CodeRange[] = [];
+  const spans: TextRange[] = [];
+  let cursor = 0;
+  let delta = 0; // output offset minus input offset, after the tags so far
+  let c = 0;
+  let prevEnd = -1;
+  for (const t of tags) {
+    for (; c < code.length && code[c].start < t.start; c++) {
+      expected.push({ start: code[c].start + delta, end: code[c].end + delta, kind: code[c].kind });
+    }
+    while (c < code.length && code[c].start < t.end) c++; // inside the tag
+    const before = body[t.start - 1] === '`' || prevEnd === t.start ? EMPTY_COMMENT : '';
+    const after = body[t.end] === '`' ? EMPTY_COMMENT : '';
+    parts.push(body.slice(cursor, t.start), before, t.span, after);
+    const start = t.start + delta + before.length;
+    const span = { start, end: start + t.span.length };
+    spans.push(span);
+    expected.push({ ...span, kind: 'span' });
+    delta += before.length + t.span.length + after.length - (t.end - t.start);
+    cursor = t.end;
+    prevEnd = t.end;
+  }
+  for (; c < code.length; c++) {
+    expected.push({ start: code[c].start + delta, end: code[c].end + delta, kind: code[c].kind });
+  }
+  parts.push(body.slice(cursor));
+  return { out: parts.join(''), expected, spans };
+}
+
+/** Whether two lists of code ranges are the same. */
+function sameRanges(a: readonly CodeRange[], b: readonly CodeRange[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let k = 0; k < a.length; k++) {
+    if (a[k].start !== b[k].start || a[k].end !== b[k].end || a[k].kind !== b[k].kind) return false;
+  }
+  return true;
 }
 
 /** Leading YAML frontmatter (setu prepends it); every pre-pass keeps it verbatim. */
@@ -150,7 +282,8 @@ function frontmatterLength(source: string): number {
  * the way MDX reads them (a ```` fence around ``` lines is one block, #372),
  * inline code spans and MDX JSX tags. Run this AFTER
  * {@link preprocessJsdocInlineTags} so the inline-code spans it produces for
- * `{@link}` are protected here.
+ * prose `{@link}` tags are protected here, and the braces of a tag it left as
+ * written are escaped (it then shows as literal text).
  *
  * The JSX tags protect braces inside an attribute value — setu emits
  * signatures as `<MemberHeading sig="fn(): { x: T }" />` / `<Signature
@@ -586,8 +719,9 @@ export async function compileMdxToComponent(
 ): Promise<CompiledMdx> {
   // `comments`: the page's HTML-comment ranges when the caller already has them
   // (`render()` computes them once per page; see `pageCommentRanges`).
-  // Pre-passes, in order: HTML comments dropped, `{@tag}` → code spans (so the
-  // braces that follow are protected), ESM look-alike prose lines → character
+  // Pre-passes, in order: HTML comments dropped, `{@tag}` in prose → code spans
+  // (so the braces that follow are protected; a tag in code stays as written),
+  // ESM look-alike prose lines → character
   // references (issue #347), then stray-brace escaping. Comments go first so no
   // later pass sees their (unrendered) contents — a backtick inside one can't
   // pair with a real code span — and so a line left starting with
