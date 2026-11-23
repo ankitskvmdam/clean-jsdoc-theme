@@ -1605,6 +1605,21 @@ describe('render() — inline tags inside code (#363)', () => {
     expect(text).toContain('a \uE000 b \uE001 c \uE002\uE010 @link Foo d');
   });
 
+  it('a character reference for a private-use character stays as written', async () => {
+    const open = String.fromCharCode(0xe000);
+    const close = String.fromCharCode(0xe001);
+    const html = mainOf(
+      await renderBody(
+        'ref &#xE000;@a x&#xE001; y, &#57344;@b&#57345; and {@link Foo}\n\n' +
+          'see {@link a &#xE001; b} end\n'
+      )
+    );
+    expect(codeTexts(html)).toEqual(['@link Foo', '@link a &amp;#xE001; b']);
+    expect(html.replace(/<[^>]+>/g, '')).toContain(
+      `ref ${open}@a x${close} y, ${open}@b${close} and @link Foo`
+    );
+  });
+
   // A backtick MDX reads as part of a link, an attribute or a URL must not turn
   // the code span after it into markup.
   it.each<[string, string]>([

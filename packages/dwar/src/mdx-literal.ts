@@ -213,9 +213,6 @@ function pairTags(
   if (!children.some(hasTextPlaceholder)) return children as MdxNode[];
   const list = children.slice();
   const out: MdxNode[] = [];
-  const pushText = (text: string): void => {
-    if (text) out.push({ type: 'text', value: restoreBraces(text) });
-  };
   let i = 0;
   let from = 0; // where to start in list[i]'s value
   while (i < list.length) {
@@ -227,30 +224,38 @@ function pairTags(
       continue;
     }
     const value = node.value as string;
-    const marks = placeholderMarks(value);
-    const raw = sourceMarks(node, value, marks, source);
+    const all = placeholderMarks(value);
+    const offsets = sourceMarks(node, value, all, source);
+    // A mark with no source offset is the author's character (a reference to
+    // it): it stays as it is and takes no part in pairing.
+    const authored = new Set(
+      all.filter((_m, k) => offsets !== undefined && offsets[k] === undefined)
+    );
+    const marks = all.filter((m) => !authored.has(m));
+    const raw = offsets?.filter((o): o is number => o !== undefined);
+    const pushText = (start: number, stop: number): void => {
+      const text = restoreBetween(value, start, stop, authored);
+      if (text) out.push({ type: 'text', value: text });
+    };
     const page = { source, containers };
     let cursor = from;
     let end: TagEnd | undefined;
-    for (let k = 0; k < marks.length; k++) {
+    for (let k = 0; raw && k < marks.length; k++) {
       const at = marks[k];
       if (at < from || value[at] !== TAG_OPEN) continue;
       if (k + 1 < marks.length) {
-        const close = marks[k + 1];
-        if (value[close] !== TAG_CLOSE) continue; // another tag starts first: this one is unpaired
-        pushText(value.slice(cursor, at));
-        const text = raw
-          ? tagText(source.slice(raw[k] + 1, raw[k + 1]), page)
-          : tagText(value.slice(at + 1, close));
+        if (value[marks[k + 1]] !== TAG_CLOSE) continue; // another tag starts first: this one is unpaired
+        pushText(cursor, at);
+        const text = tagText(source.slice(raw[k] + 1, raw[k + 1]), page);
         out.push({ type: 'inlineCode', value: text });
-        cursor = close + 1;
+        cursor = marks[k + 1] + 1;
         k++;
         continue;
       }
       // The last placeholder here opens a tag: it may close in a later sibling.
-      end = raw ? findTagEnd(list, i + 1, source) : undefined;
-      if (end && raw) {
-        pushText(value.slice(cursor, at));
+      end = findTagEnd(list, i + 1, source);
+      if (end) {
+        pushText(cursor, at);
         out.push({
           type: 'inlineCode',
           value: tagText(source.slice(raw[k] + 1, end.offset), page),
@@ -258,7 +263,7 @@ function pairTags(
         cursor = value.length;
       }
     }
-    pushText(value.slice(cursor));
+    pushText(cursor, value.length);
     if (!end) {
       i++;
       from = 0;
@@ -280,35 +285,83 @@ function hasTextPlaceholder(node: MdxNode): boolean {
   return node.type === 'text' && typeof node.value === 'string' && HAS_PLACEHOLDER.test(node.value);
 }
 
-/** The offsets of the placeholders (not the guarded characters) in `value`. */
+/** Whether `text[p]` is a guard set by {@link guardTagPlaceholders}. */
+function isGuard(text: string, p: number): boolean {
+  const next = text.charCodeAt(p + 1);
+  return text.charCodeAt(p) === 0xe002 && next >= 0xe010 && next <= 0xe012;
+}
+
+/** The offsets of the U+E000 and U+E001 characters in `value`, guarded ones aside. */
 function placeholderMarks(value: string): number[] {
   const marks: number[] = [];
   for (let p = 0; p < value.length; p++) {
     const c = value.charCodeAt(p);
     if (c === 0xe000 || c === 0xe001) marks.push(p);
-    else if (c === 0xe002) p++; // a guard: the character after it is the author's
+    else if (isGuard(value, p)) p++; // the character after a guard is the author's
   }
   return marks;
 }
 
+/** A numeric character reference, its code point in group 1 (hex) or 2 (decimal). */
+const CHAR_REFERENCE = /&#(?:[xX]([0-9a-fA-F]{1,6})|([0-9]{1,7}));/y;
+
 /**
- * The page-source offsets of a text node's placeholders, in order, when its
- * position is known and its source holds the same ones (a character reference
- * can decode to a private-use character, which then is not one of them).
+ * For each of `marks` in a text node's value, the page-source offset of the
+ * placeholder it is, or undefined when the source has a character reference
+ * there instead (the author's own U+E000 or U+E001, decoded by the parser).
+ * Undefined as a whole when the node has no position or its source does not
+ * line up with its value.
  */
 function sourceMarks(
   node: MdxNode,
   value: string,
   marks: readonly number[],
   source: string
-): number[] | undefined {
+): (number | undefined)[] | undefined {
   const start = node.position?.start?.offset;
   const end = node.position?.end?.offset;
   if (typeof start !== 'number' || typeof end !== 'number') return undefined;
-  const raw = placeholderMarks(source.slice(start, end)).map((p) => p + start);
-  if (raw.length !== marks.length) return undefined;
-  for (let k = 0; k < raw.length; k++) if (source[raw[k]] !== value[marks[k]]) return undefined;
-  return raw;
+  const found: { offset: number | undefined; char: string }[] = [];
+  for (let p = start; p < end; p++) {
+    const c = source.charCodeAt(p);
+    if (c === 0xe000 || c === 0xe001) {
+      found.push({ offset: p, char: source[p] });
+    } else if (isGuard(source, p)) {
+      p++;
+    } else if (c === 0x26) {
+      CHAR_REFERENCE.lastIndex = p;
+      const m = CHAR_REFERENCE.exec(source);
+      if (!m) continue;
+      const code = m[1] !== undefined ? parseInt(m[1], 16) : parseInt(m[2], 10);
+      if (code === 0xe000 || code === 0xe001) {
+        found.push({ offset: undefined, char: String.fromCharCode(code) });
+      }
+      p += m[0].length - 1;
+    }
+  }
+  if (found.length !== marks.length) return undefined;
+  for (let k = 0; k < found.length; k++) if (found[k].char !== value[marks[k]]) return undefined;
+  return found.map((f) => f.offset);
+}
+
+/**
+ * `value[start, stop)` with its placeholders back to braces, except the
+ * characters at the offsets in `authored`, which stay as they are.
+ */
+function restoreBetween(
+  value: string,
+  start: number,
+  stop: number,
+  authored: ReadonlySet<number>
+): string {
+  let text = '';
+  let from = start;
+  for (const at of authored) {
+    if (at < start || at >= stop) continue;
+    text += restoreBraces(value.slice(from, at)) + value[at];
+    from = at + 1;
+  }
+  return text + restoreBraces(value.slice(from, stop));
 }
 
 /**
@@ -324,20 +377,46 @@ function findTagEnd(list: readonly MdxNode[], from: number, source: string): Tag
       const value = String(node.value ?? '');
       const marks = placeholderMarks(value);
       if (marks.length === 0) continue;
-      const raw = sourceMarks(node, value, marks, source);
-      if (!raw || value[marks[0]] !== TAG_CLOSE) return undefined;
-      return { index: j, offset: raw[0], next: marks[0] + 1 };
+      const first = firstPlaceholder(node, value, marks, source);
+      if (first === null) continue; // only the author's own characters
+      if (!first || value[first.at] !== TAG_CLOSE) return undefined;
+      return { index: j, offset: first.offset, next: first.at + 1 };
     }
     if (!holdsPlaceholder(node)) continue;
     const text = node.type === 'link' && node.children?.length === 1 ? node.children[0] : undefined;
     if (!text || text.type !== 'text') return undefined;
     const value = String(text.value ?? '');
-    const marks = placeholderMarks(value);
-    const raw = sourceMarks(text, value, marks, source);
-    if (!raw || value[marks[0]] !== TAG_CLOSE) return undefined;
-    return { index: j, offset: raw[0], next: { type: 'text', value: value.slice(marks[0] + 1) } };
+    const first = firstPlaceholder(text, value, placeholderMarks(value), source);
+    if (!first || value[first.at] !== TAG_CLOSE) return undefined;
+    // The link's text after the tag, placed in the source so its own tags pair too.
+    const rest: MdxNode = {
+      type: 'text',
+      value: value.slice(first.at + 1),
+      position: {
+        start: { offset: first.offset + 1 },
+        end: { offset: text.position?.end?.offset },
+      },
+    };
+    return { index: j, offset: first.offset, next: rest };
   }
   return undefined;
+}
+
+/**
+ * The first of a text node's `marks` that is a placeholder (not the author's
+ * character), with its source offset: null when there is none, undefined when
+ * the node's source cannot be lined up with its value.
+ */
+function firstPlaceholder(
+  node: MdxNode,
+  value: string,
+  marks: readonly number[],
+  source: string
+): { at: number; offset: number } | null | undefined {
+  const offsets = sourceMarks(node, value, marks, source);
+  if (!offsets) return undefined;
+  const k = offsets.findIndex((o) => o !== undefined);
+  return k === -1 ? null : { at: marks[k], offset: offsets[k]! };
 }
 
 /** Whether a node, its attributes or its descendants hold a placeholder. */
