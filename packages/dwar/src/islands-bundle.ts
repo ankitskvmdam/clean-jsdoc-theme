@@ -20,11 +20,21 @@
  * With `cacheDir`, the result is cached on disk and reused only while the
  * files it was built from are unchanged and its package imports still resolve
  * to the same directories — see `islands-cache.ts`.
+ *
+ * If esbuild fails — it can't start (its platform binary is missing or
+ * blocked) or the build itself errors — the returned promise rejects with an
+ * error that names this step and keeps esbuild's error as its `cause` (#371).
  */
 
 import { fileURLToPath } from 'node:url';
 import { dirname, basename, join, resolve } from 'node:path';
-import { build, version as esbuildVersion, type BuildOptions, type Plugin } from 'esbuild';
+import {
+  build,
+  version as esbuildVersion,
+  type BuildOptions,
+  type BuildResult,
+  type Plugin,
+} from 'esbuild';
 import type { IslandName } from '@clean-jsdoc-theme/utils';
 import { getIslandChunkEntrySource } from './islands-loader';
 import {
@@ -172,19 +182,24 @@ export async function bundleIslands(opts: BundleIslandsOptions = {}): Promise<Bu
     },
   };
 
-  const buildResult = await build({
-    // Object entry points let us pin each output's `[name]` to the bare island
-    // name (`sidebar`), instead of esbuild deriving it from the virtual
-    // `island:sidebar` specifier (which would yield `island_sidebar`).
-    entryPoints: names.map((n) => ({ in: `island:${n}`, out: n })),
-    ...STATIC_BUILD_OPTIONS,
-    absWorkingDir,
-    logLevel: 'silent',
-    write: false,
-    outdir: outDir,
-    metafile: true,
-    plugins: [plugin],
-  });
+  let buildResult: BuildResult<{ write: false; metafile: true }>;
+  try {
+    buildResult = await build({
+      // Object entry points let us pin each output's `[name]` to the bare island
+      // name (`sidebar`), instead of esbuild deriving it from the virtual
+      // `island:sidebar` specifier (which would yield `island_sidebar`).
+      entryPoints: names.map((n) => ({ in: `island:${n}`, out: n })),
+      ...STATIC_BUILD_OPTIONS,
+      absWorkingDir,
+      logLevel: 'silent',
+      write: false,
+      outdir: outDir,
+      metafile: true,
+      plugins: [plugin],
+    });
+  } catch (err) {
+    throw islandBundleError(err);
+  }
 
   // outputFile.path is OS-absolute (and back-slashed on Windows), so re-derive
   // the forward-slash relative path from the basename. file.contents is a
@@ -221,6 +236,28 @@ export async function bundleIslands(opts: BundleIslandsOptions = {}): Promise<Bu
   }
 
   return result;
+}
+
+/**
+ * The error a failed esbuild run turns into: it names the step, so a build log
+ * doesn't end in a bare `spawn UNKNOWN` or `The service was stopped`, and
+ * keeps esbuild's error as `cause`. A build failure (esbuild ran and reported
+ * errors) carries an `errors` array; anything else means esbuild itself could
+ * not run, so add the usual fix.
+ */
+function islandBundleError(err: unknown): Error {
+  const original = err instanceof Error ? err.message : String(err);
+  const ran =
+    typeof err === 'object' && err !== null && Array.isArray((err as { errors?: unknown }).errors);
+  const hint = ran
+    ? ''
+    : ' (esbuild itself could not run: its platform binary, the optional dependency ' +
+      `\`@esbuild/${process.platform}-${process.arch}\`, may be missing or blocked; ` +
+      'reinstall dependencies with optional dependencies enabled)';
+  return new Error(
+    `clean-jsdoc-theme: could not bundle the interactive components (islands) with esbuild: ${original}${hint}`,
+    { cause: err }
+  );
 }
 
 export { ALL_ISLANDS };

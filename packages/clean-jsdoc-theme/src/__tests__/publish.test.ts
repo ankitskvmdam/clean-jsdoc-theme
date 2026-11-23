@@ -125,6 +125,29 @@ describe('publish failure handling', () => {
       resetExitCode();
     }
   });
+
+  it('adds the underlying cause with the stack trace (#371)', () => {
+    const logged: string[] = [];
+    try {
+      const err = new Error('outer', { cause: new Error('inner') });
+      reportBuildFailure(err, true, () => ({ error: (m) => logged.push(m) }));
+      expect(logged).toHaveLength(1);
+      expect(logged[0]).toMatch(/^outer\n.*Error: outer.*\nCaused by: Error: inner/s);
+    } finally {
+      resetExitCode();
+    }
+  });
+
+  it('leaves the cause out without the stack trace (#371)', () => {
+    const logged: string[] = [];
+    try {
+      const err = new Error('outer', { cause: new Error('inner') });
+      reportBuildFailure(err, false, () => ({ error: (m) => logged.push(m) }));
+      expect(logged).toEqual(['outer']);
+    } finally {
+      resetExitCode();
+    }
+  });
 });
 
 describe('publish: option problems (strict escalation, printed once)', () => {

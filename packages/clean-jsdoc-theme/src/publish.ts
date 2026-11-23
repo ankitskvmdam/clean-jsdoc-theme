@@ -2176,8 +2176,8 @@ function loadJSDocLogger(): JSDocLogger {
  * programmatic call, unit tests) rethrow, so the caller still gets the
  * rejection, and leave `process.exitCode` alone: the caller decides whether
  * the failure fails its process. `withStack` (JSDoc's `--debug`/`--verbose`)
- * adds the stack trace for bug reports. Exported for testing (`loadLogger` is
- * injectable).
+ * adds the stack trace, and the stack of the error's `cause` if any, for bug
+ * reports. Exported for testing (`loadLogger` is injectable).
  */
 export function reportBuildFailure(
   err: unknown,
@@ -2194,7 +2194,12 @@ export function reportBuildFailure(
   process.exitCode = 1;
   const message = err instanceof Error ? err.message : String(err);
   const stack = withStack && err instanceof Error && err.stack ? `\n${err.stack}` : '';
-  logger.error(`${message}${stack}`);
+  // The underlying error (e.g. esbuild's own, under a "could not bundle the
+  // interactive components" error — #371) goes with the stack trace.
+  const cause = err instanceof Error ? err.cause : undefined;
+  const causedBy =
+    withStack && cause instanceof Error && cause.stack ? `\nCaused by: ${cause.stack}` : '';
+  logger.error(`${message}${stack}${causedBy}`);
 }
 
 async function runPublish(
