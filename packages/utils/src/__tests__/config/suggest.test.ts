@@ -26,6 +26,7 @@ describe('suggestKey', () => {
     expect(suggestKey('siteNme', THEME_OPT_KEYS)).toBe('siteName');
     expect(suggestKey('font', THEME_OPT_KEYS)).toBe('fonts');
     expect(suggestKey('copypage', THEME_OPT_KEYS)).toBe('copyPage'); // case-insensitive
+    expect(suggestKey('colours', THEME_OPT_KEYS)).toBe('colors');
   });
 
   it('returns undefined for a far-off key (no candidate within threshold)', () => {

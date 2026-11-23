@@ -639,7 +639,8 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
    * single-threaded post-map assembly below does the appends in page order, so
    * the output stays byte-identical and deterministic regardless of completion
    * order. A page that fails to compile (e.g. unparseable MDX) is captured as an
-   * error and the rest of the site still renders; the caller surfaces them.
+   * error and the rest of the site still renders; the caller surfaces them —
+   * and fails the build when no content page rendered at all (#401).
    */
   type PageResult =
     | {
@@ -727,17 +728,45 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
   // former sequential loop — html before its companion .md, page search entries
   // before member deep-links — so `files`, `search`, and `memberEntries` (and
   // thus the `[...search, ...memberEntries]` index JSON) are identical to before.
-  for (const result of results) {
+  // `mapWithConcurrency` keeps results[i] aligned with manifest.pages[i], so the
+  // page's kind is available here. A content page is any non-`source` page:
+  // source viewers skip MDX, so they can still render when every content page
+  // fails systemically (#401) — counting them would hide that failure.
+  let renderedContent = 0;
+  const contentErrors: RenderError[] = [];
+  for (let i = 0; i < results.length; i++) {
+    const result = results[i];
+    const isContent = manifest.pages[i].frontmatter.kind !== 'source';
     if (result.ok) {
       files.push(result.file);
       renderedPageCount++;
+      if (isContent) renderedContent++;
       if (result.mdFile) files.push(result.mdFile);
       if (result.entry) search.push(result.entry);
       if (result.members) memberEntries.push(...result.members);
       if (result.warnings) warnings.push(...result.warnings);
     } else {
       errors.push(result.error);
+      if (isContent) contentErrors.push(result.error);
     }
+  }
+
+  // #401: no content page rendered and at least one page failed — the bridges
+  // fail the build on this. Counts the content failures, or every failure when
+  // the manifest had no content pages. An empty manifest (no errors) is fine.
+  let noContentRendered: RenderResult['noContentRendered'];
+  if (
+    errors.length > 0 &&
+    renderedContent === 0 &&
+    (contentErrors.length > 0 || renderedPageCount === 0)
+  ) {
+    const counted = contentErrors.length > 0 ? contentErrors : errors;
+    const first = counted[0];
+    noContentRendered = {
+      failed: counted.length,
+      first,
+      sameMessage: counted.filter((e) => e.message === first.message).length,
+    };
   }
 
   // CSS file.
@@ -795,6 +824,7 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
     search,
     ...(errors.length > 0 ? { errors } : {}),
     ...(warnings.length > 0 ? { warnings } : {}),
+    ...(noContentRendered ? { noContentRendered } : {}),
     stats: {
       pageCount: renderedPageCount,
       assetCount,

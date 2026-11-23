@@ -12,10 +12,9 @@ differs: **`opts.*`** (JSDoc) vs **`cleanJsdocTheme.*`** (TypeDoc).
 > **TypeDoc caveat.** The names are shared, but a few options behave differently
 > or aren't wired under TypeDoc: `sectionOrder` / `clubSidebarItems` / `@category`
 > / `@order` do **not** shape the TypeDoc API sidebar (it's a fixed module/folder
-> hierarchy — order prose with `docGroups` / `menu` instead), and `colors` /
-> `darkColors` / `customCss` / `customJs` / `customCssFile` / `customJsFile` /
-> `hashCustomAssets` / `progress` / `readme` / `tutorials` are JSDoc-only for now
-> (ignored with an `opts/unsupported-in-typedoc` warning that `strict` doesn't
+> hierarchy — order prose with `docGroups` / `menu` instead), and `progress` /
+> `readme` / `tutorials` are JSDoc-only (TypeDoc has its own way to do each;
+> ignored with an `opts/unsupported-in-typedoc` warning that `strict` doesn't
 > escalate). See the **`typedoc`** skill for the authoritative wired / not-wired list.
 
 Contents: [Site & identity](#site--identity) · [Content sources](#content-sources) ·

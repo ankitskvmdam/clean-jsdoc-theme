@@ -9,7 +9,7 @@ import type {
 } from 'mdast';
 import { fromHtml } from 'hast-util-from-html';
 import { toHtml } from 'hast-util-to-html';
-import { toMdast } from 'hast-util-to-mdast';
+import { toMdast, type Options } from 'hast-util-to-mdast';
 import { fromMarkdown } from 'mdast-util-from-markdown';
 import { gfmFromMarkdown } from 'mdast-util-gfm';
 import { toHast } from 'mdast-util-to-hast';
@@ -21,12 +21,15 @@ import {
   replaceHtmlComments,
   type TextRange,
 } from '@clean-jsdoc-theme/utils';
-import { callout, code, playground, step, steps, tab, tabs } from './builders';
+import { callout, playground, step, steps, tab, tabs } from './builders';
+import { codeLanguageHandlers } from './code-language';
 import { escapeLiteralTags } from './literal-tags';
+import { passthroughHandlers } from './passthrough-html';
 import {
   KNOWN_PROVIDERS,
   parsePlaygroundSpec,
   resolvePlaygroundOpts,
+  type PlaygroundOpts,
   type PlaygroundSpec,
 } from '../playground';
 
@@ -133,15 +136,16 @@ type ProseFormat = 'markdown' | 'html';
 
 /**
  * A copy of `raw` with its comments blanked out (same length, same line
- * breaks) for the container and playground-fence splitters to scan. They run
- * on RAW text before the HTML round-trip, so scanning `raw` itself would lift a
- * `<steps>`, a `</step>` or a ```` ```js playground ```` out of a commented-out
- * region and publish what the author hid. Offsets found in the mask are sliced
- * from `raw`, so the comments travel on inside the item text, where the HTML
- * normalization drops them ({@link dropComments}). Markdown needs the shared
- * code-aware scanner dwar also uses; in HTML (JSDoc descriptions) code is
- * already entity-escaped, so the scanner has only tags to skip — a `<!--` in an
- * attribute value is not a comment.
+ * breaks) for the container splitter to scan. It runs on RAW text before the
+ * HTML round-trip, so scanning `raw` itself would lift a `<steps>`, a `</step>`
+ * or a `<playground>` out of a commented-out region and publish what the author
+ * hid. (A ```` ```js playground ```` fence is found in the parsed tree instead,
+ * where {@link markPlaygroundFences} skips commented-out text.) Offsets found
+ * in the mask are sliced from `raw`, so the comments travel on inside the item
+ * text, where the HTML normalization drops them ({@link dropComments}).
+ * Markdown needs the shared code-aware scanner dwar also uses; in HTML (JSDoc
+ * descriptions) code is already entity-escaped, so the scanner has only tags to
+ * skip — a `<!--` in an attribute value is not a comment.
  */
 function maskComments(raw: string, format: ProseFormat): string {
   return maskHtmlComments(
@@ -361,6 +365,14 @@ function dropComments(node: { children?: unknown[] }): void {
   for (const child of node.children) dropComments(child as { children?: unknown[] });
 }
 
+/** A `hast-util-to-mdast` element handler. */
+type Handle = NonNullable<NonNullable<Options['handlers']>[string]>;
+/** A hast element (typed through the handler, as setu has no direct `hast` dependency). */
+type Element = Parameters<Handle>[1];
+
+/** The `toMdast` handlers {@link htmlBlocksPlain} lowers with. */
+const HANDLERS = { ...passthroughHandlers, ...codeLanguageHandlers };
+
 /**
  * Convert an HTML fragment (as emitted by JSDoc into `description`, `classdesc`,
  * param descriptions, etc.) into block-level mdast nodes. Empty/blank input
@@ -380,7 +392,7 @@ function dropComments(node: { children?: unknown[] }): void {
  * in the PUBLIC {@link htmlToMdastBlocks} wrapper; this is the plain conversion
  * for a segment with no containers.
  */
-function htmlBlocksPlain(html: string): RootContent[] {
+function htmlBlocksPlain(html: string, handlers: Record<string, Handle> = HANDLERS): RootContent[] {
   // `Promise<User>` / a generic `<T>` reach here as raw tags; left to the HTML
   // parser they'd be unwrapped (or worse) and vanish from the page. Escape the
   // ones that aren't real markup first, while their casing is still visible —
@@ -390,7 +402,9 @@ function htmlBlocksPlain(html: string): RootContent[] {
     fragment: true,
   });
   dropComments(hast);
-  const mdast = toMdast(hast) as Root;
+  // Inline HTML with no Markdown form (`<sub>`, `<sup>`, …) stays markup (#360).
+  // A fenced block from JSDoc's markdown plugin keeps its language (#359).
+  const mdast = toMdast(hast, { handlers }) as Root;
   // Promote GitHub-style alert blockquotes (`> [!INFO]`) to typed callouts,
   // recursively so an alert nested in a list item is promoted too. Done here,
   // after the HTML normalization, so it applies uniformly to every prose source
@@ -459,7 +473,9 @@ export function htmlToMdastBlocks(html: string | null | undefined): RootContent[
  * autolinks (`<https://…>`), void/unclosed raw HTML (`<img …>`), and inline HTML
  * MDX would otherwise parse as JSX and reject. Re-parsing the rendered HTML with
  * a lenient HTML parser (`fromHtml`) and lowering it through `hast-util-to-mdast`
- * yields only structured mdast nodes (links, images, tables, …) — no raw HTML —
+ * yields only structured mdast nodes (links, images, tables, …) — no raw HTML;
+ * inline HTML with no Markdown form (`<sub>`, `<abbr>`) becomes lowercase MDX
+ * JSX with allow-listed attributes (see `./passthrough-html`) —
  * which {@link import('../mdx').toMdx} can serialize into MDX-safe Markdown. This
  * mirrors the README path exactly, so tutorials and the README render identically.
  *
@@ -474,138 +490,170 @@ export function htmlToMdastBlocks(html: string | null | undefined): RootContent[
  * for containers.
  */
 function convertMarkdownSegment(md: string): RootContent[] {
-  const mdast = fromMarkdown(md, {
+  return lowerMarkdownTree(parseMarkdown(md));
+}
+
+/** Parse Markdown (with GFM) into an mdast tree. */
+function parseMarkdown(md: string): Root {
+  return fromMarkdown(md, {
     extensions: [gfm()],
     mdastExtensions: [gfmFromMarkdown()],
   }) as Root;
+}
+
+/**
+ * Lower a parsed Markdown tree through the HTML round-trip (see
+ * {@link convertMarkdownSegment}), with `handlers` for the HTML → mdast step.
+ */
+function lowerMarkdownTree(tree: Root, handlers: Record<string, Handle> = HANDLERS): RootContent[] {
   // `allowDangerousHtml` keeps embedded raw HTML in the tree so the HTML parser
   // downstream can normalize it (e.g. self-close `<img>`), rather than dropping it.
-  const hast = toHast(mdast, { allowDangerousHtml: true });
+  const hast = toHast(tree, { allowDangerousHtml: true });
   const html = toHtml(hast, { allowDangerousHtml: true });
-  return htmlBlocksPlain(html);
+  return htmlBlocksPlain(html, handlers);
 }
 
-/** Matches a fenced-code OPEN line: optional ≤3-space indent + ``` / ~~~ run + info. */
-const FENCE_OPEN = /^([ \t]{0,3})(`{3,}|~{3,})[ \t]*([^\n]*)$/;
-
 /**
- * One slice of a raw Markdown segment: a `plain` run handed to the normal
- * converter, or a `fence` whose info string carried a `playground` meta token.
+ * Find the ```` ```js playground … ```` fences in a parsed Markdown tree, at any
+ * depth (list items, blockquotes, `<details>`), and mark each one's code node so
+ * {@link playgroundPre} can recognise it after the HTML round-trip. That
+ * round-trip drops a fence's `meta` (only the language survives as a
+ * `language-*` class), so the mark is an attribute on the `<code>` element
+ * holding the index of the fence's spec in `specs`. Marking the tree, rather
+ * than cutting the source at each fence, keeps the fence where it was written
+ * (#362).
+ *
+ * `playground` may be the FIRST info token (no language — ```` ```playground
+ * … ````) or the SECOND (```` ```js playground … ````). Skipped: an unterminated
+ * fence (it stays plain code) and a fence inside an HTML comment. A fence merely
+ * displayed inside an outer fence is text, not a code node, so it is never seen.
+ * The attribute is renamed until the source does not contain it, so raw HTML in
+ * the page can't pose as a marked fence.
  */
-type FenceSegment =
-  | { kind: 'plain'; raw: string }
-  | { kind: 'fence'; lang: string; spec: PlaygroundSpec; body: string };
+function markPlaygroundFences(tree: Root, md: string): { specs: string[]; prop: string } {
+  const specs: string[] = [];
+  const lower = md.toLowerCase();
+  let suffix = '';
+  for (let n = 1; lower.includes(`data-setu-playground${suffix}`); n++) suffix = String(n);
+  const prop = `dataSetuPlayground${suffix}`;
+  let comments: TextRange[] | undefined;
 
-/**
- * Scan a raw Markdown string for fenced code blocks whose info string is
- * `<lang> playground …` and split it into `plain` runs + `fence` segments. This
- * runs on the RAW Markdown (docs + Markdown tutorials) BEFORE the HTML round-trip
- * in {@link convertMarkdownSegment}, because that round-trip drops a fence's
- * `meta` (only the language survives as a `language-*` class). A string with no
- * playground fence returns a single `plain` segment, so the common path stays
- * byte-identical. Unterminated fences are left in the plain run.
- */
-function splitPlaygroundFences(md: string): FenceSegment[] {
-  const lines = md.split('\n');
-  const segments: FenceSegment[] = [];
-  let plain: string[] = [];
-  const flush = (): void => {
-    if (plain.length > 0) {
-      segments.push({ kind: 'plain', raw: plain.join('\n') });
-      plain = [];
-    }
+  // A closed fence spans its opening line, the code lines and its closing line.
+  // An unclosed one ends with its last code line (or its opening line), one
+  // line short — so this follows CommonMark's closing rules exactly, where a
+  // look at the last line alone would take an over-indented ```` ``` ```` (code
+  // text) or one in a deeper blockquote for the closer.
+  const terminated = (node: Code): boolean => {
+    const start = node.position?.start.offset;
+    const end = node.position?.end.offset;
+    if (start === undefined || end === undefined) return false;
+    const spanned = md.slice(start, end).split('\n').length;
+    return spanned === (node.value === '' ? 2 : node.value.split('\n').length + 2);
+  };
+  const commented = (node: Code): boolean => {
+    const start = node.position?.start.offset;
+    if (start === undefined) return false;
+    comments ??= htmlCommentRanges(md);
+    return comments.some((r) => start >= r.start && start < r.end);
   };
 
-  // Scan a copy with the comments blanked out (same lines), so a fence inside a
-  // commented-out region is never a fence: it stays in the plain run, untouched,
-  // and the comment survives whole (rendering as nothing). The content comes
-  // from `lines`.
-  const scan = maskHtmlComments(md, htmlCommentRanges(md)).split('\n');
-
-  let i = 0;
-  while (i < lines.length) {
-    const open = FENCE_OPEN.exec(scan[i]);
-    if (!open) {
-      plain.push(lines[i]);
-      i++;
-      continue;
-    }
-
-    const tokens = open[3].trim().split(/\s+/).filter(Boolean);
-    // `playground` may be the FIRST token (no language — ```` ```playground … ````)
-    // or the SECOND (language-prefixed — ```` ```js playground … ````). Anything
-    // else is a normal fence.
-    const pgIdx = tokens[0] === 'playground' ? 0 : tokens[1] === 'playground' ? 1 : -1;
-    const indent = open[1];
-    const fenceChar = open[2][0];
-    const fenceLen = open[2].length;
-    // A closing fence is the same char, at least as long (CommonMark), ≤3 indent.
-    const closeRe = new RegExp(`^[ \\t]{0,3}\\${fenceChar}{${fenceLen},}[ \\t]*$`);
-    let closeIdx = -1;
-    for (let j = i + 1; j < lines.length; j++) {
-      if (closeRe.test(scan[j])) {
-        closeIdx = j;
-        break;
+  const visit = (nodes: readonly RootContent[]): void => {
+    for (const node of nodes) {
+      if (node.type === 'code') {
+        let spec: string | undefined;
+        if (node.lang === 'playground') spec = node.meta ?? '';
+        else if (node.lang && node.meta && /^playground(?=\s|$)/.test(node.meta)) {
+          spec = node.meta.slice('playground'.length);
+        }
+        if (spec === undefined || !terminated(node) || commented(node)) continue;
+        if (node.lang === 'playground') node.lang = null;
+        node.data = { ...node.data, hProperties: { [prop]: String(specs.length) } };
+        specs.push(spec.trim());
+      } else if ('children' in node) {
+        visit(node.children as RootContent[]);
       }
     }
+  };
+  visit(tree.children);
+  return { specs, prop };
+}
 
-    // Unterminated fence: treat just the open line as plain and keep scanning
-    // (later lines may still be valid markdown / a real playground fence).
-    if (closeIdx === -1) {
-      plain.push(lines[i]);
-      i++;
-      continue;
-    }
+/** The resolved `<Playground>` config {@link playgroundPre} leaves on a code node. */
+type PlaygroundCode = Code & { data?: Code['data'] & { setuPlayground?: PlaygroundOpts } };
 
-    if (pgIdx !== -1) {
-      // Markdown strips the opening fence's indent from each body line.
-      const bodyLines = lines
-        .slice(i + 1, closeIdx)
-        .map((l) => (indent && l.startsWith(indent) ? l.slice(indent.length) : l));
-      flush();
-      segments.push({
-        kind: 'fence',
-        // A first-token `playground` carries no language; otherwise the first
-        // token is the language and `playground` + spec follow it.
-        lang: pgIdx === 1 ? tokens[0] : '',
-        spec: parsePlaygroundSpec(tokens.slice(pgIdx + 1).join(' ')),
-        body: bodyLines.join('\n'),
-      });
-    } else {
-      // A NORMAL fenced code block — keep the WHOLE block (open…close) as plain,
-      // verbatim. Crucially we do NOT scan inside it, so a `playground` fence that
-      // is merely being *displayed* inside an outer fence (e.g. a ```` ```` md
-      // example block on a docs page) is left as literal text, not lowered.
-      for (let k = i; k <= closeIdx; k++) plain.push(lines[k]);
+/**
+ * The `<pre>` handler for a tree {@link markPlaygroundFences} marked: lower the
+ * block as usual (keeping its language) and, for a marked one, leave its
+ * resolved config on the code node for {@link wrapPlaygrounds}. A spec that
+ * resolves to nothing (`off`) leaves bare code. Bare prose configs default to
+ * ALL providers.
+ */
+function playgroundPre(specs: readonly string[], prop: string): Handle {
+  return (state, node, parent) => {
+    const result = HANDLERS.pre(state, node, parent);
+    const inner = node.children.find(
+      (child): child is Element => child.type === 'element' && child.tagName === 'code'
+    );
+    const index = inner?.properties?.[prop];
+    const spec = typeof index === 'string' ? specs[Number(index)] : undefined;
+    if (spec === undefined || !result || Array.isArray(result) || result.type !== 'code') {
+      return result;
     }
-    i = closeIdx + 1;
-  }
-  flush();
-  return segments;
+    const opts = resolvePlaygroundOpts(parsePlaygroundSpec(spec), KNOWN_PROVIDERS);
+    if (opts) (result as PlaygroundCode).data = { ...result.data, setuPlayground: opts };
+    return result;
+  };
+}
+
+/** Parents whose children are flow content, where a `<Playground>` may stand. */
+const FLOW_PARENTS = new Set([
+  'root',
+  'blockquote',
+  'listItem',
+  'footnoteDefinition',
+  'mdxJsxFlowElement',
+]);
+
+/**
+ * Wrap each code node {@link playgroundPre} configured in a `<Playground>` —
+ * when it stands in flow content (the root, a list item, a blockquote, a
+ * `<details>` or callout, …). Under a phrasing-only parent (a table cell, a
+ * heading, a link, emphasis — reachable through raw HTML) a flow element would
+ * break the page's MDX, so the code stays a plain highlighted block there.
+ */
+function wrapPlaygrounds(nodes: RootContent[], flow: boolean): RootContent[] {
+  return nodes.map((node) => {
+    if (node.type === 'code') {
+      const code = node as PlaygroundCode;
+      const opts = code.data?.setuPlayground;
+      if (!opts) return node;
+      delete code.data!.setuPlayground;
+      if (Object.keys(code.data!).length === 0) delete code.data;
+      return flow ? playground(opts, code) : code;
+    }
+    const parent = node as MaybeParent;
+    if (Array.isArray(parent.children)) {
+      parent.children = wrapPlaygrounds(parent.children, FLOW_PARENTS.has(node.type));
+    }
+    return node;
+  });
 }
 
 /**
- * Plain-Markdown converter with the playground-fence pre-scan layered on. A
+ * Plain-Markdown converter with playground fences lowered in place: a
  * ```` ```js playground … ```` fence becomes a `<Playground>`-wrapped `code`
- * node (bare prose configs default to ALL providers); every other run goes
- * through {@link convertMarkdownSegment}'s HTML round-trip. With no playground
- * fence the whole string takes the fast path, byte-identical to before.
+ * node wherever flow content may stand — top level, list item, blockquote,
+ * `<details>` (see {@link markPlaygroundFences}, {@link wrapPlaygrounds}). With
+ * no playground fence this is exactly {@link convertMarkdownSegment}.
  */
 function markdownBlocksPlain(md: string): RootContent[] {
-  const segments = splitPlaygroundFences(md);
-  if (segments.length === 1 && segments[0].kind === 'plain') return convertMarkdownSegment(md);
-
-  const out: RootContent[] = [];
-  for (const seg of segments) {
-    if (seg.kind === 'plain') {
-      if (seg.raw.trim().length > 0) out.push(...convertMarkdownSegment(seg.raw));
-    } else {
-      const opts = resolvePlaygroundOpts(seg.spec, KNOWN_PROVIDERS);
-      const codeNode = code(seg.lang || null, seg.body);
-      out.push(opts ? playground(opts, codeNode) : codeNode);
-    }
-  }
-  return out;
+  const tree = parseMarkdown(md);
+  const { specs, prop } = markPlaygroundFences(tree, md);
+  if (specs.length === 0) return lowerMarkdownTree(tree);
+  return wrapPlaygrounds(
+    lowerMarkdownTree(tree, { ...HANDLERS, pre: playgroundPre(specs, prop) }),
+    true
+  );
 }
 
 /**
@@ -655,7 +703,7 @@ export function htmlToMdastInline(html: string | null | undefined): PhrasingCont
  * takes the HTML normalization every other prose surface gets (see
  * {@link convertMarkdownSegment}) — MDX rejects much of what Markdown accepts
  * (`<?php … ?>`, `<![CDATA[…]]>`, a void `<br>`); as in descriptions, inline
- * HTML with no mdast equivalent (`<sup>`, `<sub>`) is flattened to its text.
+ * HTML with no mdast equivalent (`<sup>`, `<sub>`) is kept as lowercase JSX.
  */
 export function markdownToMdastInline(md: string | null | undefined): PhrasingContent[] {
   if (!md) return [];
@@ -689,6 +737,8 @@ const PHRASING_TYPES = new Set<string>([
   'break',
   'html',
   'footnoteReference',
+  // Inline HTML with no Markdown form, kept as JSX (`./passthrough-html`).
+  'mdxJsxTextElement',
 ]);
 
 /**
@@ -696,12 +746,20 @@ const PHRASING_TYPES = new Set<string>([
  * phrasing node that the conversion left at the top level. A short HTML/text
  * fragment (e.g. a bare `@deprecated` reason like `use foo instead`) lowers to
  * a root-level `text` node rather than a paragraph — without this it would be
- * silently dropped. Genuine block nodes (tables, lists) are still skipped.
+ * silently dropped. Genuine block nodes (tables, lists) are still skipped; a
+ * `<details>` gives up its summary and body, as it did before it was kept.
  */
 function blocksToInline(blocks: RootContent[]): PhrasingContent[] {
   const out: PhrasingContent[] = [];
   for (const block of blocks) {
     if (block.type === 'paragraph') {
+      out.push(...block.children);
+    } else if (
+      block.type === 'mdxJsxFlowElement' &&
+      (block.name === 'details' || block.name === 'summary')
+    ) {
+      out.push(...blocksToInline(block.children as RootContent[]));
+    } else if (block.type === 'mdxJsxTextElement' && block.name === 'summary') {
       out.push(...block.children);
     } else if (PHRASING_TYPES.has(block.type)) {
       out.push(block as PhrasingContent);

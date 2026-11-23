@@ -23,6 +23,7 @@ import type {
   SiteManifest,
   SiteName,
 } from '@clean-jsdoc-theme/utils';
+import { frontmatterLength } from './frontmatter';
 import { mdPathFor } from './html';
 import { prefixRootRelativeUrls } from './md-base-path';
 import { pageUrl } from './sitemap';
@@ -86,10 +87,13 @@ export function navSections(nav: readonly NavNode[]): Array<{ label: string; slu
   return order.map((label) => ({ label, slugs: bySection.get(label) as string[] }));
 }
 
-/** Strip a leading `---\n…\n---` YAML block (page bodies carry frontmatter). */
+/**
+ * Strip the leading YAML frontmatter block (page bodies carry it), as
+ * {@link frontmatterLength} delimits it, and any whitespace after it.
+ */
 export function stripFrontmatter(body: string): string {
-  const match = /^---\r?\n[\s\S]*?\r?\n---[ \t]*(?:\r?\n|$)/.exec(body);
-  return match ? body.slice(match[0].length).replace(/^\s+/, '') : body;
+  const length = frontmatterLength(body);
+  return length ? body.slice(length).replace(/^\s+/, '') : body;
 }
 
 /** Strip a leading `# Heading` line (the title is already the section header). */
@@ -255,7 +259,9 @@ export function buildLlmsTxt(input: LlmsTxtInput): LlmsTxtOutput | null {
       `Source: ${pageUrl(origin, basePath, page.slug)}`,
       '',
       // Same base-prefixing as the companion .md (the bodies are base-free).
-      prefixRootRelativeUrls(stripLeadingHeading(stripFrontmatter(page.body)), basePath).trimEnd(),
+      // Prefix the whole body first: it skips the real frontmatter, which a
+      // stripped body would no longer have (a leading `---` rule is not one).
+      stripLeadingHeading(stripFrontmatter(prefixRootRelativeUrls(page.body, basePath))).trimEnd(),
       ''
     );
   }

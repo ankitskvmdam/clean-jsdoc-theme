@@ -30,13 +30,13 @@ companion (`migration-map.json` at the repo root, plus the fenced JSON block in
 
 ## 2. Compatibility matrix
 
-| Requirement      | v4 (`4.3.2`)                                          | v5 (`5.0.0`)                                  |
-| ---------------- | ----------------------------------------------------- | --------------------------------------------- |
-| JSDoc (peer dep) | `>=3.x <=4.x`                                         | `>=4.x`                                       |
-| Node             | not pinned                                            | `>=22` (packages' `engines.node`)             |
-| Package manager  | npm/yarn                                              | any (theme is published to npm)               |
-| Markdown plugin  | `plugins/markdown` recommended (`idInHeadings: true`) | required — the build fails without it         |
-| Custom CSS/JS    | supported (injection options)                         | not supported (see [§6](#6-removed-features)) |
+| Requirement      | v4 (`4.3.2`)                                          | v5 (`5.0.0`)                                                                            |
+| ---------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| JSDoc (peer dep) | `>=3.x <=4.x`                                         | `>=4.x`                                                                                 |
+| Node             | not pinned                                            | `>=22` (packages' `engines.node`)                                                       |
+| Package manager  | npm/yarn                                              | any (theme is published to npm)                                                         |
+| Markdown plugin  | `plugins/markdown` recommended (`idInHeadings: true`) | required — the build fails without it                                                   |
+| Custom CSS/JS    | supported (injection options)                         | supported under new names (`customCss` / `customCssFile` / `customJs` / `customJsFile`) |
 
 Source: v4 peer dep from `git show v4.3.2:package.json`
 (`"jsdoc": ">=3.x <=4.x"`); v5 peer dep from

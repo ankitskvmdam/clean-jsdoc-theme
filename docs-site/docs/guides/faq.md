@@ -335,6 +335,8 @@ dependency in the theme's internal packages, so under **Yarn Berry / Plug'n'Play
 the server renderer and the components could bind to two different Preact
 instances — which made every page fail to render and left `dist` empty. 5.0.8
 declares `preact` as a peer dependency so a single instance is always shared.
+A build where every page fails like this now exits non-zero with one error and
+leaves the previous output untouched, instead of passing with an empty site.
 
 If you can't upgrade yet, switch that project off PnP by adding to `.yarnrc.yml`:
 

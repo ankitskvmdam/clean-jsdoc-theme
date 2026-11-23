@@ -127,11 +127,7 @@ export function preprocessJsdocInlineTags(source: string): string {
 }
 
 /** Leading YAML frontmatter (setu prepends it); every pre-pass keeps it verbatim. */
-const FRONTMATTER = /^---\n[\s\S]*?\n---\n/;
-function frontmatterLength(source: string): number {
-  const fm = FRONTMATTER.exec(source);
-  return fm ? fm[0].length : 0;
-}
+import { frontmatterLength } from './frontmatter';
 
 /**
  * Backslash-escape stray `{` / `}` so MDX doesn't treat them as JS expression

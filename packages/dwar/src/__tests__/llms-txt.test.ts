@@ -140,6 +140,11 @@ describe('stripFrontmatter / stripLeadingHeading', () => {
     expect(stripFrontmatter('# X\n')).toBe('# X\n');
     expect(stripLeadingHeading('Body only.\n')).toBe('Body only.\n');
   });
+
+  it('ends the YAML block at a fence on its own line (#393)', () => {
+    expect(stripFrontmatter('---\ntitle: a --- b\n---\nBody\n')).toBe('Body\n');
+    expect(stripFrontmatter('---\n---\n# X\n')).toBe('# X\n');
+  });
 });
 
 describe('buildLlmsTxt', () => {
@@ -226,6 +231,20 @@ describe('buildLlmsTxt', () => {
 
     // At the root base the body text is unchanged.
     expect(build('/').full).toContain('See [a](/guide/intro) and ![d](/_assets/d.png).');
+  });
+
+  it('prefixes a body whose content opens with a thematic break (#370 review)', () => {
+    const manifest = manifestWithApi();
+    const widget = manifest.pages.find((p) => p.slug === 'Widget')!;
+    widget.body = '---\ntitle: Widget\n---\n\n# T\n\n---\n\nSee [a](/x).\n\n---\n\nEnd [b](/y).\n';
+    const out = buildLlmsTxt({
+      manifest,
+      siteUrl: 'https://x.com',
+      basePath: '/base',
+      config: FULL,
+    })!;
+    expect(out.full).toContain('See [a](/base/x).');
+    expect(out.full).toContain('End [b](/base/y).');
   });
 
   it('api: "index" drops API descriptions and API bodies from llms-full.txt', () => {

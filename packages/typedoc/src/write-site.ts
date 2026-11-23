@@ -15,7 +15,7 @@
  */
 import { gzipSync } from 'node:zlib';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
-import { dirname, extname, resolve as resolvePath } from 'node:path';
+import { basename, dirname, extname, resolve as resolvePath } from 'node:path';
 import salty from '@jsdoc/salty';
 import { generateSite } from '@clean-jsdoc-theme/setu';
 import type {
@@ -46,6 +46,7 @@ import {
   normalizeBasePath,
   normalizeCollapsibleSidebarSections,
   normalizeScrollbar,
+  renderFailureMessage,
   toExtractManifest,
   topLevelSectionLabels,
   unmatchedCollapsibleSections,
@@ -58,6 +59,7 @@ import { httpsFetch } from './https-fetch';
 import { markdownToHtml, partsToMarkdown } from './comment';
 import {
   collectDocs,
+  contentHash,
   createImageCollector,
   resolveDocImages,
   resolveDocletImages,
@@ -66,6 +68,7 @@ import {
 } from './docs';
 import type { LocatedDoc } from './docs';
 import { writeOutputFiles } from './write-output-files';
+import { normalizeColors, resolveCustomAssets } from './custom-assets';
 import {
   JSDOC_ONLY_KEYS,
   jsdocOnlyKeyMessage,
@@ -78,8 +81,8 @@ import type { CleanJsdocThemeBlock } from './options';
 
 /**
  * Default theme — copied from the JSDoc bridge (`publish.ts`). OKLCH light/dark
- * palettes + Google-Font heading/body and a CSS mono stack. v1 defaults; the
- * full option block (siteName/fonts overrides) lands in phase 4.
+ * palettes + Google-Font heading/body and a CSS mono stack; `resolveTheme`
+ * layers the `cleanJsdocTheme` overrides (colors, fonts, siteName, …) on top.
  */
 const defaultTheme: ThemeConfig = {
   tokens: {
@@ -147,6 +150,10 @@ function resolveTheme(
   const copyPage = normalizeCopyPage(block.copyPage);
   const pageNav = normalizePageNav(block.pageNav);
   const playground = normalizePlayground(block.playground);
+  // Color overrides merge per key over the default palettes, so supplying only
+  // `colors.bg` keeps every other default color (#352).
+  const colors = normalizeColors(block.colors);
+  const darkColors = normalizeColors(block.darkColors);
 
   return {
     ...defaultTheme,
@@ -157,6 +164,8 @@ function resolveTheme(
     ...(playground ? { playground: playground.theme } : {}),
     tokens: {
       ...defaultTheme.tokens,
+      colors: { ...defaultTheme.tokens.colors, ...(colors ?? {}) },
+      darkColors: { ...defaultTheme.tokens.darkColors, ...(darkColors ?? {}) },
       fonts: resolveFontSet(fonts, locale),
       ...(siteName ? { siteName } : {}),
     },
@@ -340,12 +349,16 @@ async function resolveFooter(raw: unknown, logger: OptionWarnSink): Promise<stri
  * to write, so dwar emits the `<link rel="icon">` and `render()` stays pure. The
  * source extension is preserved (dwar derives the link `type` from it). A
  * missing/unreadable file is warned about and dropped. Mirrors the JSDoc bridge's
- * `resolveFavicon` (TypeDoc assets aren't content-hashed, matching its logos).
+ * `resolveFavicon`: the file is content-hashed as `_assets/<name>.<sha8><ext>` so
+ * a changed icon busts caches. `hash` is the hook for `hashCustomAssets` once the
+ * TypeDoc bridge supports it (#352). The OutputFile `path` stays relative; only
+ * the href gets `basePath` (via `hrefForServed`), so it's applied exactly once.
  */
 async function resolveFavicon(
   raw: unknown,
   logger: OptionWarnSink,
-  hrefForServed: (servedPath: string) => string
+  hrefForServed: (servedPath: string) => string,
+  hash = true
 ): Promise<{ href: string; files: OutputFile[] } | undefined> {
   if (typeof raw !== 'string' || raw.trim().length === 0) return undefined;
   const file = raw.trim();
@@ -356,7 +369,10 @@ async function resolveFavicon(
     logger.warn(`[clean-jsdoc-theme] could not read favicon ('${file}'); omitting it.`);
     return undefined;
   }
-  const servedPath = `_assets/favicon${extname(file) || '.ico'}`;
+  const ext = extname(file) || '.ico';
+  const base = basename(file, extname(file)) || 'favicon';
+  const name = hash ? `${base}.${contentHash(bytes)}${ext}` : `${base}${ext}`;
+  const servedPath = `_assets/${name}`;
   return { href: hrefForServed(servedPath), files: [{ path: servedPath, contents: bytes }] };
 }
 
@@ -466,7 +482,9 @@ function renderReadme(project: ProjectReflection): string | undefined {
  * identical docs pipeline — no new renderer. Each `DocumentReflection` (surfaced
  * as `ReflectionKind.Document` on the project tree) becomes one `DocInput`:
  * `path` is the document's `name` (TypeDoc derives it from the source file's
- * basename, extension-stripped — matching `collectDocs`'s own slugs), `content`
+ * basename, extension-stripped — or, when `projectDocuments` span directories,
+ * its path relative to their common directory, POSIX-normalised here (#397) —
+ * matching `collectDocs`'s own slugs), `content`
  * is its `content: CommentDisplayPart[]` rendered to markdown via the SAME
  * `partsToMarkdown` helper the README/comment prose use, and `type` is
  * `'markdown'` (TypeDoc documents are always Markdown-sourced). A reflection
@@ -480,9 +498,12 @@ export function collectProjectDocuments(project: ProjectReflection): DocInput[] 
  * {@link collectProjectDocuments}, with where each document's local image srcs
  * resolve from (#378): the directory of the document's own source file. TypeDoc
  * doesn't keep that file for a package-level document under
- * `entryPointStrategy: "packages"`, so there the doc instead carries the
+ * `entryPointStrategy: "packages"`, so there the doc carries only the
  * absolute path TypeDoc resolved for each `relative-link` part (keyed by the
- * src text `partsToMarkdown` kept verbatim).
+ * src text `partsToMarkdown` kept verbatim). With a source file, those paths
+ * are the fallback for a src that isn't a file read literally (TypeDoc decodes
+ * `%20` and drops a `#anchor`), and `missing` lists the srcs TypeDoc found no
+ * file for (#397).
  */
 export function locateProjectDocuments(project: ProjectReflection): LocatedDoc[] {
   const located: LocatedDoc[] = [];
@@ -490,19 +511,27 @@ export function locateProjectDocuments(project: ProjectReflection): LocatedDoc[]
     const doc = reflection as DocumentReflection;
     const md = partsToMarkdown(doc.content ?? []);
     if (!md.trim()) continue;
-    const input: DocInput = { path: doc.name, content: md, type: 'markdown' };
-    const file = project.files.getReflectionPath(doc);
-    if (file) {
-      located.push({ doc: input, baseDir: dirname(resolvePath(file)) });
-      continue;
-    }
+    // TypeDoc names a document from projectDocuments spanning directories by
+    // its OS-native relative path (`pdocs\intro` on Windows); slugs are POSIX (#397).
+    const input: DocInput = { path: doc.name.replace(/\\/g, '/'), content: md, type: 'markdown' };
     const files = new Map<string, string>();
+    // A relative link TypeDoc found no file for: it already warned, so we don't (#397).
+    const missing = new Set<string>();
     for (const part of doc.content ?? []) {
-      if (part.kind !== 'relative-link' || part.target === undefined) continue;
+      if (part.kind !== 'relative-link') continue;
+      if (part.target === undefined) {
+        missing.add(part.text);
+        continue;
+      }
       const target = project.files.resolve(part.target, project);
       if (typeof target === 'string') files.set(part.text, resolvePath(target));
     }
-    located.push({ doc: input, files });
+    const file = project.files.getReflectionPath(doc);
+    located.push(
+      file
+        ? { doc: input, baseDir: dirname(resolvePath(file)), files, missing }
+        : { doc: input, files }
+    );
   }
   return located;
 }
@@ -743,13 +772,13 @@ async function buildSite(
     knownNonThemeKeys: new Set([...KNOWN_NON_THEME_KEYS, ...JSDOC_ONLY_KEYS.keys()]),
     strict,
   });
-  // Options the JSDoc bridge reads but this writer doesn't (yet). They're
+  // Options the JSDoc bridge reads but this writer doesn't. They're
   // documented for both tools, so they're not typos: warn that they're ignored,
   // added after validation so strict never escalates them — a shared
   // JSDoc+TypeDoc config shouldn't fail its TypeDoc build over them.
   for (const [key, info] of JSDOC_ONLY_KEYS) {
     if (!Object.hasOwn(block, key)) continue;
-    diagnostics.warning(UNSUPPORTED_IN_TYPEDOC_CODE, jsdocOnlyKeyMessage(key, info), {
+    diagnostics.warning(UNSUPPORTED_IN_TYPEDOC_CODE, jsdocOnlyKeyMessage(key), {
       hint: info.hint,
       path: key,
     });
@@ -957,12 +986,16 @@ async function buildSite(
   // emits the `<link rel="icon">`, so render() stays pure. Unset → none.
   const favicon = await resolveFavicon(block.favicon, optionLog, hrefForServed);
   const meta = normalizeMeta(block.meta, optionLog);
+  // Custom CSS/JS (#352): inline strings pass through; files are copied to
+  // `_assets/` here and linked by dwar, so render() stays pure.
+  const customAssets = await resolveCustomAssets(block, hrefForServed, optionLog);
   // Every option has been resolved by now; under strict, stop before rendering
   // or writing anything if any of them had a problem.
   failOnStrictOptionErrors();
   const result = await render(manifest, {
     theme: {
       ...resolveTheme(block, siteName, fonts, basePath),
+      ...customAssets.theme,
       ...(footer ? { footer } : {}),
       ...(favicon ? { favicon: favicon.href } : {}),
       ...(meta ? { meta } : {}),
@@ -983,8 +1016,15 @@ async function buildSite(
     ...(value.llmsTxt ? { llmsTxt: value.llmsTxt } : {}),
   });
 
+  // #401: no content page rendered (e.g. a systemic MDX/Preact failure). Throw
+  // before the destination is cleaned or written, so the previous build
+  // survives; TypeDoc logs the error and exits with its output-error code.
+  const renderFailure = renderFailureMessage(result);
+  if (renderFailure) throw new Error(`[clean-jsdoc-theme] ${renderFailure}`);
+
   const outputFiles = [
     ...result.files,
+    ...customAssets.files,
     ...logoFiles,
     ...(favicon?.files ?? []),
     ...imageFiles,
@@ -1014,7 +1054,8 @@ async function buildSite(
 
   report.optionProblems();
 
-  // Render failures are reported, never thrown — the rest of the site is intact.
+  // Render failures are reported, not thrown — the rest of the site is intact
+  // (the case where no content page rendered already threw above).
   if (result.errors && result.errors.length > 0) {
     logger.warn(
       `[clean-jsdoc-theme] ${result.errors.length} page(s) failed to render and were skipped:`

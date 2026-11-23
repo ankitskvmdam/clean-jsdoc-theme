@@ -29,6 +29,7 @@ import { neutralizeUnterminatedComments } from './mdast/from-html';
 import { escapeLiteralTags } from './mdast/literal-tags';
 import { resolveSlotText } from './slots';
 import { toMdx } from './mdx';
+import { FOOTNOTE_REF_URL } from './doc-description';
 
 /** JSDoc separator characters that delimit name parts in a longname. */
 const LONGNAME_SEPARATORS = /[.#~:]+/g;
@@ -158,16 +159,33 @@ export function makePlaygroundResolver(
  * children (`**Bold** title` → `Bold title`, `[link](x)` → `link`). `text` and
  * `inlineCode` contribute their value and a `break` contributes a space (setu
  * serialises it as a line break, which dwar's `hastText` reads as whitespace);
- * images, raw HTML and MDX expressions add nothing. A footnote reference
- * reaches this tree as a link to `#user-content-fn-…` whose text is the
- * footnote number, so `## Intro[^1]` reads `Intro1` — the same text dwar's
- * `hastText` sees in the rendered heading and the id GitHub generates. Both
- * feed `slugifyHeading`, so the TOC id equals the rendered id.
+ * images, raw HTML and MDX expressions add nothing.
+ *
+ * A footnote reference reaches this tree as a link to `#user-content-fn-…`
+ * whose text is the footnote number. By default it is read like any link, so
+ * `## Intro[^1]` reads `Intro1` — the text dwar's `hastText` sees in the
+ * rendered heading and the one GitHub slugs, so this is the id text and the
+ * TOC id equals the rendered id. With `skipFootnoteRefs` the reference adds
+ * nothing (`Intro`): that is the TOC label, which should not show the
+ * number (#357).
  */
-function headingText(node: MdastHeading): string {
-  const visit = (n: { type: string; value?: unknown; children?: unknown[] }): string => {
+function headingText(node: MdastHeading, opts: { skipFootnoteRefs?: boolean } = {}): string {
+  const visit = (n: {
+    type: string;
+    value?: unknown;
+    url?: unknown;
+    children?: unknown[];
+  }): string => {
     if (n.type === 'text' || n.type === 'inlineCode') return String(n.value ?? '');
     if (n.type === 'break') return ' '; // serialised as a line break; dwar reads the newline as whitespace
+    if (
+      opts.skipFootnoteRefs &&
+      n.type === 'link' &&
+      typeof n.url === 'string' &&
+      FOOTNOTE_REF_URL.test(n.url)
+    ) {
+      return '';
+    }
     if (!Array.isArray(n.children)) return '';
     return n.children.map((c) => visit(c as Parameters<typeof visit>[0])).join('');
   };
@@ -223,12 +241,17 @@ export function extractHeadings(tree: Root): Heading[] {
     }
     if (node.type !== 'heading') continue;
     if (node.depth < minDepth || node.depth > 6) continue;
-    const t = headingText(node).trim();
-    if (!t) continue;
+    // The id comes from the rendered text (footnote numbers included) so it
+    // matches dwar's; the label leaves footnote numbers out (#357). A heading
+    // that is only a footnote reference keeps its number as the label.
+    const idText = headingText(node).trim();
+    if (!idText) continue;
+    const label =
+      headingText(node, { skipFootnoteRefs: true }).trim().replace(/ {2,}/g, ' ') || idText;
     out.push({
       depth: node.depth as 1 | 2 | 3 | 4 | 5 | 6,
-      text: t,
-      id: slugifyHeading(t, registry),
+      text: label,
+      id: slugifyHeading(idText, registry),
     });
   }
   return out;

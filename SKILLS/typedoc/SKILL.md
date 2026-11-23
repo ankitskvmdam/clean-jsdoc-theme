@@ -15,7 +15,7 @@ description: >-
 
 # @clean-jsdoc-theme/typedoc — working skill
 
-<!-- skill-revision: 2026-07-02 -->
+<!-- skill-revision: 2026-11-23 -->
 
 This skill makes you an expert at using **`clean-jsdoc-theme` v5 with TypeDoc**,
 via the `@clean-jsdoc-theme/typedoc` plugin. Everything here is verified against
@@ -139,6 +139,7 @@ this is the skill's whole value.
 - Sidebar: `menu`, `sectionOrder`, `clubSidebarItems` (accepted/validated — but the module hierarchy owns the API sidebar; see the deep dive for what these actually affect), `collapsibleSidebarSections` (this one **does** apply — collapsible top-level section headers; both flavors)
 - LLM/pager: `copyPage`, `pageNav`, `aiPrompt`, `playground`
 - Chrome/meta: `footer` (string or `{ file }`), `meta`
+- Appearance/assets: `colors` / `darkColors` (merged per key over the OKLCH default palettes), `customCss` / `customJs` (inline), `customCssFile` / `customJsFile` (path or array, relative to the build's working dir; copied to `_assets/` and linked under `basePath`), `hashCustomAssets`
 - Deploy: `basePath` (sub-directory hosting — every asset href is prefixed), `siteUrl` (emits `sitemap.xml`; TypeDoc's own `hostedBaseUrl` is used as a fallback, and `cleanJsdocTheme.siteUrl` wins if both are set), `llmsTxt` (emits `llms.txt` + `llms-full.txt`; needs a site URL)
 - Build: `strict`
 
@@ -147,9 +148,6 @@ in `cleanJsdocTheme` is ignored with an `opts/unsupported-in-typedoc` warning,
 which `strict` does not escalate — except `locales` / `defaultLocale`, which the
 `clean-jsdoc` CLI reads:
 
-- **`colors` / `darkColors`** — the palette is the built-in OKLCH default. Only
-  `fonts` and `siteName` affect appearance; custom colors are a known gap.
-- **`customCss` / `customJs` / `customCssFile` / `customJsFile` / `hashCustomAssets`** — not threaded.
 - **`locales` / `defaultLocale`** — the localized *build* is JSDoc-only (see §4).
 - **`tutorials`** — a JSDoc `--tutorials` concept; use `docs` or `projectDocuments` for prose.
 - **`progress`** — TypeDoc prints its own progress. (`readme` is TypeDoc's own
@@ -211,7 +209,7 @@ workflow runs through the `clean-jsdoc` CLI (umbrella skill's
 | --- | --- |
 | Build runs but **nothing is written** / default HTML appears | You loaded the plugin but didn't select it. Add `outputs: [{ name: "clean-jsdoc-theme", path: "dist" }]`. **Both** `plugin` and `outputs` are required. |
 | A **re-exported** symbol / `export … from` is missing a page | `Reference`/re-export reflections are deferred in v1 and logged, not rendered. Document the original symbol. |
-| Custom **`colors`/`darkColors` have no effect** | Not wired for TypeDoc yet (§3). The palette is the OKLCH default; only `fonts`/`siteName` change appearance. |
+| Custom **`colors`/`darkColors` have no effect** | Check they're inside `cleanJsdocTheme` (not at the top level), the keys are palette names from the configuration table (`bg`, `accent`, …), and each value is a non-empty string; unknown keys and non-strings are dropped silently. |
 | A `@category`/`@order` doesn't reorder the sidebar | Expected — the module hierarchy owns the TypeDoc API sidebar (§4). Use `docGroups`/`menu` for the levers that do apply. |
 | Types render as plain strings, not linked | Type rendering is v1 (`type.toString()`); documented references still link, but complex type structure is not fully modeled yet. |
 | An option "isn't working" | Confirm it's in the **wired** list (§3), and that it's inside `cleanJsdocTheme`, not at the top level (only `readme`/`plugin`/`outputs`/TypeDoc's own options go there). |
@@ -238,6 +236,6 @@ npm view @clean-jsdoc-theme/typedoc version
 
 If the published skill revision is newer, offer to update the whole `typedoc/`
 skill folder (it has a `reference/` file, not just `SKILL.md`). Don't overwrite
-without asking. As the plugin matures, some §3 gaps (colors, custom CSS/JS,
-localized build) are expected to close — re-verify against the installed version
+without asking. As the plugin matures, some §3 gaps (such as the localized
+build) are expected to close — re-verify against the installed version
 rather than trusting this list blindly.

@@ -467,6 +467,18 @@ cleanJsdocTheme: { sectionOrder: ["Getting Started", "Guides", "Classes", "Modul
 > [`docGroups`](#docgroups) से क्रमित होते हैं, `sectionOrder` से नहीं। देखें
 > [TypeDoc flavor](/guides/structure-your-sidebar#typedoc-flavor)।
 
+Labels ठीक वैसे ही मिलाए जाते हैं जैसे लिखे गए हैं — case-sensitive, और अंग्रेज़ी में
+(section labels का अनुवाद नहीं होता)। **JSDoc** के तहत, ऐसा label जो किसी section
+का नाम नहीं है — न कोई built-in kind label, न इस build का कोई `@category` या doc
+group — report किया जाता है, और कोई नज़दीकी नाम हो तो "did you mean" सुझाव के साथ
+(`Clases` → `Classes`)। इस build में बिना pages वाले built-in labels (जैसे
+`Events` या `Externals`) ठीक हैं, और v4 का `Global` अब भी `Globals` माना जाता है।
+[`strict`](#strict) के साथ यह report build को विफल कर देती है। TypeDoc के तहत कुछ
+भी जाँचा नहीं जाता, क्योंकि वहाँ यह option निष्क्रिय है। localized build में हर doc
+का `group` हर locale में एक जैसा रखें ([अपने docs को localize करें](/guides/localize-your-docs));
+जिस locale का overlay किसी group का नाम बदल देता है, वहाँ सूचीबद्ध label मेल न खाने
+वाला report होता है।
+
 ### `clubSidebarItems`
 
 संबंधित entries (जैसे एक module और उसके members) को एक साझा, collapsible parent के
@@ -702,8 +714,10 @@ opts: {
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-// JSDoc only — the TypeDoc flavor doesn't support `colors` / `darkColors` yet.
-// In `cleanJsdocTheme` they're ignored with an `opts/unsupported-in-typedoc` warning.
+cleanJsdocTheme: {
+  colors: { bg: "oklch(0.99 0.01 95)", accent: "oklch(0.55 0.2 250)" },
+  darkColors: { bg: "oklch(0.18 0.01 250)", accent: "oklch(0.7 0.16 250)" },
+}
 ```
 
 </tab>
@@ -779,8 +793,7 @@ opts: { customCss: ".my-banner { color: rebeccapurple; }" }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-// JSDoc only — the TypeDoc flavor doesn't support `customCss` / `customJs` yet.
-// In `cleanJsdocTheme` they're ignored with an `opts/unsupported-in-typedoc` warning.
+cleanJsdocTheme: { customCss: ".my-banner { color: rebeccapurple; }" }
 ```
 
 </tab>
@@ -793,6 +806,7 @@ opts: { customCss: ".my-banner { color: rebeccapurple; }" }
 content-hashed asset में copy करके link करता है।
 
 **अपेक्षित:** एक path string।
+एक path या paths का array दें; हर path उस directory के सापेक्ष resolve होता है जहाँ से build चलता है।
 
 <tabs group="tool">
 
@@ -807,8 +821,7 @@ opts: { customCssFile: "./extra.css", customJsFile: "./extra.js" }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-// JSDoc only — the TypeDoc flavor doesn't support `customCssFile` / `customJsFile` yet.
-// In `cleanJsdocTheme` they're ignored with an `opts/unsupported-in-typedoc` warning.
+cleanJsdocTheme: { customCssFile: "./extra.css", customJsFile: "./extra.js" }
 ```
 
 </tab>
@@ -835,8 +848,7 @@ opts: { hashCustomAssets: false }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-// JSDoc only — the TypeDoc flavor doesn't support custom asset files (`hashCustomAssets`) yet.
-// In `cleanJsdocTheme` it's ignored with an `opts/unsupported-in-typedoc` warning.
+cleanJsdocTheme: { hashCustomAssets: false }
 ```
 
 </tab>
@@ -1049,15 +1061,17 @@ warning या error build को कुछ भी लिखने से पह
   इस्तेमाल हुए `hostedBaseUrl` पर भी लागू होता है, जिसमें अक्सर sub-path होता है;
 - न पढ़ी जा सकने वाली `footer` / `favicon` / logo / custom CSS या JS file, या
   ऐसी `meta` / `customCssFile` / `customJsFile` entry जिसे छोड़ना पड़े;
+- `sectionOrder` का ऐसा label जो किसी sidebar section से मेल नहीं खाता (JSDoc);
 - बचा हुआ v4 `theme_opts` block।
 
 इन पर असर नहीं — ये `strict` में भी चेतावनी या सूचना ही रहते हैं:
 
 - content चेतावनियाँ (जैसे किसी comment में बिना जोड़ी का backtick) और render न
-  हो पाने वाले pages;
+  हो पाने वाले pages (जिस build में हर page fail हो, वह `strict` हो या न हो, हमेशा
+  fail होता है);
 - JSDoc में `opts.title` या `opts.search` जैसा top-level v4 option नाम, क्योंकि
   वह किसी दूसरे JSDoc plugin का हो सकता है;
-- TypeDoc में `colors` जैसा JSDoc-only option (एक `opts/unsupported-in-typedoc`
+- TypeDoc में `readme` जैसा JSDoc-only option (एक `opts/unsupported-in-typedoc`
   चेतावनी के साथ अनदेखा), और `cleanJsdocTheme.siteUrl` व `hostedBaseUrl` को
   अलग-अलग मान देना — यह documented override है; build बस बताता है कि कौन-सा
   लागू हुआ।
