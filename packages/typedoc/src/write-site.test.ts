@@ -182,8 +182,8 @@ describe('writeSite — strict mode', () => {
         withBlock(
           {
             strict: true,
-            colors: { accent: 'red' },
-            customCss: 'body{}',
+            readme: './README.md',
+            progress: false,
             siteUrl: 'https://docs.example.com',
           },
           { hostedBaseUrl: 'https://example.com' }
@@ -191,7 +191,7 @@ describe('writeSite — strict mode', () => {
       );
       expect(readdirSync(out).length).toBeGreaterThan(0);
       const said = [...warn.mock.calls, ...info.mock.calls].map((c) => String(c[0])).join('\n');
-      expect(said).toContain(`"colors" isn't supported by the TypeDoc flavor yet; it's ignored.`);
+      expect(said).toContain(`"readme" isn't used by the TypeDoc flavor; it's ignored.`);
       expect(said).toContain('[opts/unsupported-in-typedoc]');
       expect(said).toContain('using `cleanJsdocTheme.siteUrl`');
     } finally {
@@ -205,22 +205,54 @@ describe('writeSite — strict mode', () => {
     const warn = vi.spyOn(app.logger, 'warn').mockImplementation(() => {});
     const info = vi.spyOn(app.logger, 'info').mockImplementation(() => {});
     try {
-      await writeSite(out, project, withBlock({ readme: './README.md', colors: {} }));
+      await writeSite(out, project, withBlock({ readme: './README.md', tutorials: './t' }));
       const warned = warn.mock.calls.map((c) => String(c[0]));
       const informed = info.mock.calls.map((c) => String(c[0]));
       // Each option diagnostic is printed exactly once, at warn level.
       const prints = warned.filter((m) => m.includes('opts/unsupported-in-typedoc'));
       expect(prints).toHaveLength(1);
       expect(prints[0]).toContain(`"readme" isn't used by the TypeDoc flavor; it's ignored.`);
-      expect(prints[0]).toContain(
-        `"colors" isn't supported by the TypeDoc flavor yet; it's ignored.`
-      );
-      expect(prints[0]).toContain('issues/352');
+      expect(prints[0]).toContain(`"tutorials" isn't used by the TypeDoc flavor; it's ignored.`);
+      expect(prints[0]).not.toContain('yet');
       expect(prints[0].match(/"readme" isn't used/g)).toHaveLength(1);
       expect(informed.some((m) => m.includes('opts/unsupported-in-typedoc'))).toBe(false);
     } finally {
       warn.mockRestore();
       info.mockRestore();
+    }
+  }, 60_000);
+
+  it('fails on an unreadable customCssFile before writing anything (#352)', async () => {
+    const out = join(tmp, 'out-strict-custom-css');
+    const error = vi.spyOn(app.logger, 'error').mockImplementation(() => {});
+    try {
+      await expect(
+        writeSite(out, project, withBlock({ strict: true, customCssFile: './no/such.css' }))
+      ).rejects.toThrow(/1 option problem\(s\) in strict mode/);
+      expect(error).toHaveBeenCalledWith(expect.stringContaining('could not read customCssFile'));
+      expect(existsSync(out)).toBe(false);
+    } finally {
+      error.mockRestore();
+    }
+  });
+
+  it('builds with colors and customCss under strict, with no option warning (#352)', async () => {
+    const out = join(tmp, 'out-strict-appearance');
+    const warn = vi.spyOn(app.logger, 'warn').mockImplementation(() => {});
+    const error = vi.spyOn(app.logger, 'error').mockImplementation(() => {});
+    try {
+      await writeSite(
+        out,
+        project,
+        withBlock({ strict: true, colors: { accent: 'red' }, customCss: 'body{}' })
+      );
+      expect(readdirSync(out).length).toBeGreaterThan(0);
+      const said = [...warn.mock.calls, ...error.mock.calls].map((c) => String(c[0])).join('\n');
+      expect(said).not.toContain('opts/unsupported-in-typedoc');
+      expect(said).not.toContain('opts/unknown-key');
+    } finally {
+      warn.mockRestore();
+      error.mockRestore();
     }
   }, 60_000);
 

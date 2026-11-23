@@ -702,8 +702,10 @@ opts: {
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-// JSDoc only — the TypeDoc flavor doesn't support `colors` / `darkColors` yet.
-// In `cleanJsdocTheme` they're ignored with an `opts/unsupported-in-typedoc` warning.
+cleanJsdocTheme: {
+  colors: { bg: "oklch(0.99 0.01 95)", accent: "oklch(0.55 0.2 250)" },
+  darkColors: { bg: "oklch(0.18 0.01 250)", accent: "oklch(0.7 0.16 250)" },
+}
 ```
 
 </tab>
@@ -779,8 +781,7 @@ opts: { customCss: ".my-banner { color: rebeccapurple; }" }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-// JSDoc only — the TypeDoc flavor doesn't support `customCss` / `customJs` yet.
-// In `cleanJsdocTheme` they're ignored with an `opts/unsupported-in-typedoc` warning.
+cleanJsdocTheme: { customCss: ".my-banner { color: rebeccapurple; }" }
 ```
 
 </tab>
@@ -793,6 +794,7 @@ opts: { customCss: ".my-banner { color: rebeccapurple; }" }
 content-hashed asset में copy करके link करता है।
 
 **अपेक्षित:** एक path string।
+एक path या paths का array दें; हर path उस directory के सापेक्ष resolve होता है जहाँ से build चलता है।
 
 <tabs group="tool">
 
@@ -807,8 +809,7 @@ opts: { customCssFile: "./extra.css", customJsFile: "./extra.js" }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-// JSDoc only — the TypeDoc flavor doesn't support `customCssFile` / `customJsFile` yet.
-// In `cleanJsdocTheme` they're ignored with an `opts/unsupported-in-typedoc` warning.
+cleanJsdocTheme: { customCssFile: "./extra.css", customJsFile: "./extra.js" }
 ```
 
 </tab>
@@ -835,8 +836,7 @@ opts: { hashCustomAssets: false }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-// JSDoc only — the TypeDoc flavor doesn't support custom asset files (`hashCustomAssets`) yet.
-// In `cleanJsdocTheme` it's ignored with an `opts/unsupported-in-typedoc` warning.
+cleanJsdocTheme: { hashCustomAssets: false }
 ```
 
 </tab>
@@ -1057,7 +1057,7 @@ warning या error build को कुछ भी लिखने से पह
   हो पाने वाले pages;
 - JSDoc में `opts.title` या `opts.search` जैसा top-level v4 option नाम, क्योंकि
   वह किसी दूसरे JSDoc plugin का हो सकता है;
-- TypeDoc में `colors` जैसा JSDoc-only option (एक `opts/unsupported-in-typedoc`
+- TypeDoc में `readme` जैसा JSDoc-only option (एक `opts/unsupported-in-typedoc`
   चेतावनी के साथ अनदेखा), और `cleanJsdocTheme.siteUrl` व `hostedBaseUrl` को
   अलग-अलग मान देना — यह documented override है; build बस बताता है कि कौन-सा
   लागू हुआ।

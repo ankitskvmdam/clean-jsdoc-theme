@@ -74,6 +74,20 @@ export interface CleanJsdocThemeBlock {
   favicon?: unknown;
   /** Site-wide custom `<meta>` tags — an array of attribute maps. */
   meta?: unknown;
+  /** Light palette overrides (`bg`, `accent`, …), merged per key over the defaults. */
+  colors?: unknown;
+  /** Dark palette overrides, merged per key over the default dark palette. */
+  darkColors?: unknown;
+  /** Inline CSS emitted as a `<style>` after the theme stylesheet. */
+  customCss?: unknown;
+  /** Local CSS file path(s) copied to `_assets/` and linked after the theme stylesheet. */
+  customCssFile?: unknown;
+  /** Inline JS emitted as a `<script>` at the end of `<body>`. */
+  customJs?: unknown;
+  /** Local JS file path(s) copied to `_assets/` and loaded at the end of `<body>`. */
+  customJsFile?: unknown;
+  /** Content-hash the copied custom CSS/JS file names (default `true`). */
+  hashCustomAssets?: unknown;
   /**
    * Site root path the renderer prefixes onto every emitted URL, so the output
    * can be served from a sub-directory (e.g. `"/my-lib/api"`). A bare path or a
@@ -112,7 +126,8 @@ export function declareThemeOption(app: Application): void {
     help:
       'clean-jsdoc-theme options (siteName, fonts, sectionOrder, docs, docGroups, ' +
       'defaultDocGroup, menu, clubSidebarItems, collapsibleSidebarSections, copyPage, ' +
-      'pageNav, scrollbar, playground, aiPrompt, footer, favicon, meta, basePath, siteUrl, ' +
+      'pageNav, scrollbar, playground, aiPrompt, footer, favicon, meta, colors, darkColors, ' +
+      'customCss, customCssFile, customJs, customJsFile, hashCustomAssets, basePath, siteUrl, ' +
       'llmsTxt, strict).',
     type: ParameterType.Object,
     defaultValue: {},
@@ -184,44 +199,23 @@ export const UNSUPPORTED_IN_TYPEDOC_CODE = 'opts/unsupported-in-typedoc';
 
 /** How the TypeDoc writer treats a JSDoc-only option — see {@link JSDOC_ONLY_KEYS}. */
 export interface JsdocOnlyKey {
-  /**
-   * `true` when TypeDoc has its own way to do this, so the key will never be
-   * wired here (`readme`, `tutorials`, `progress`); `false` when it's a gap
-   * that may be closed later.
-   */
-  replaced: boolean;
   /** What the TypeDoc user should do instead. */
   hint: string;
 }
 
-/** Hint for the not-yet-wired appearance/asset options. */
-const NOT_YET =
-  "there's no TypeDoc equivalent yet — tracked in https://github.com/ankitskvmdam/clean-jsdoc-theme/issues/352.";
-
 /**
- * Theme options the JSDoc bridge reads but the TypeDoc writer doesn't. Without
- * this list they'd either be flagged as unknown keys (and fail a strict build)
- * or, for the ones in utils' `THEME_OPT_KEYS`, be ignored without a word.
+ * Theme options the JSDoc bridge reads but the TypeDoc writer never will,
+ * because TypeDoc has its own way to do the same thing. Without this list
+ * they'd either be flagged as unknown keys (and fail a strict build) or, for
+ * the ones in utils' `THEME_OPT_KEYS`, be ignored without a word.
  */
 export const JSDOC_ONLY_KEYS: ReadonlyMap<string, JsdocOnlyKey> = new Map([
-  ['colors', { replaced: false, hint: NOT_YET }],
-  ['darkColors', { replaced: false, hint: NOT_YET }],
-  ['customCss', { replaced: false, hint: NOT_YET }],
-  ['customCssFile', { replaced: false, hint: NOT_YET }],
-  ['customJs', { replaced: false, hint: NOT_YET }],
-  ['customJsFile', { replaced: false, hint: NOT_YET }],
-  ['hashCustomAssets', { replaced: false, hint: NOT_YET }],
-  ['progress', { replaced: true, hint: 'TypeDoc prints its own progress output.' }],
-  ['readme', { replaced: true, hint: "use TypeDoc's own top-level `readme` option instead." }],
-  [
-    'tutorials',
-    { replaced: true, hint: "use TypeDoc's `projectDocuments` or `cleanJsdocTheme.docs` instead." },
-  ],
+  ['progress', { hint: 'TypeDoc prints its own progress output.' }],
+  ['readme', { hint: "use TypeDoc's own top-level `readme` option instead." }],
+  ['tutorials', { hint: "use TypeDoc's `projectDocuments` or `cleanJsdocTheme.docs` instead." }],
 ]);
 
 /** The warning text for a JSDoc-only `key` found in `cleanJsdocTheme`. */
-export function jsdocOnlyKeyMessage(key: string, { replaced }: JsdocOnlyKey): string {
-  return replaced
-    ? `"${key}" isn't used by the TypeDoc flavor; it's ignored.`
-    : `"${key}" isn't supported by the TypeDoc flavor yet; it's ignored.`;
+export function jsdocOnlyKeyMessage(key: string): string {
+  return `"${key}" isn't used by the TypeDoc flavor; it's ignored.`;
 }

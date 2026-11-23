@@ -705,8 +705,10 @@ opts: {
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-// JSDoc 専用です — TypeDoc flavor はまだ `colors` / `darkColors` に対応していません。
-// `cleanJsdocTheme` 内では `opts/unsupported-in-typedoc` の警告とともに無視されます。
+cleanJsdocTheme: {
+  colors: { bg: "oklch(0.99 0.01 95)", accent: "oklch(0.55 0.2 250)" },
+  darkColors: { bg: "oklch(0.18 0.01 250)", accent: "oklch(0.7 0.16 250)" },
+}
 ```
 
 </tab>
@@ -782,8 +784,7 @@ opts: { customCss: ".my-banner { color: rebeccapurple; }" }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-// JSDoc 専用です — TypeDoc flavor はまだ `customCss` / `customJs` に対応していません。
-// `cleanJsdocTheme` 内では `opts/unsupported-in-typedoc` の警告とともに無視されます。
+cleanJsdocTheme: { customCss: ".my-banner { color: rebeccapurple; }" }
 ```
 
 </tab>
@@ -796,6 +797,7 @@ opts: { customCss: ".my-banner { color: rebeccapurple; }" }
 content-hashed な asset に copy して link します。
 
 **期待される値:** path の string。
+1 つの path でも path の配列でも渡せ、各 path は build を実行する directory からの相対 path として解決されます。
 
 <tabs group="tool">
 
@@ -810,8 +812,7 @@ opts: { customCssFile: "./extra.css", customJsFile: "./extra.js" }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-// JSDoc 専用です — TypeDoc flavor はまだ `customCssFile` / `customJsFile` に対応していません。
-// `cleanJsdocTheme` 内では `opts/unsupported-in-typedoc` の警告とともに無視されます。
+cleanJsdocTheme: { customCssFile: "./extra.css", customJsFile: "./extra.js" }
 ```
 
 </tab>
@@ -838,9 +839,7 @@ opts: { hashCustomAssets: false }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-// JSDoc 専用です — TypeDoc flavor はまだ custom asset files（`hashCustomAssets`）に
-// 対応していません。`cleanJsdocTheme` 内では `opts/unsupported-in-typedoc` の警告
-// とともに無視されます。
+cleanJsdocTheme: { hashCustomAssets: false }
 ```
 
 </tab>
@@ -1061,7 +1060,7 @@ option なしで続行します。`strict: true` では、option の warning や
   した pages;
 - JSDoc では、`opts.title` や `opts.search` のような top-level の v4 option 名
   （別の JSDoc plugin のものかもしれないため）;
-- TypeDoc では、`colors` のような JSDoc 専用の option（`opts/unsupported-in-typedoc`
+- TypeDoc では、`readme` のような JSDoc 専用の option（`opts/unsupported-in-typedoc`
   の警告とともに無視されます）と、`cleanJsdocTheme.siteUrl` と `hostedBaseUrl` に
   異なる値を設定すること — これは文書化された override で、build はどちらが使われる
   かを知らせるだけです。
