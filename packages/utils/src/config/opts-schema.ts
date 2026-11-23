@@ -222,6 +222,8 @@ export const THEME_OPT_KEYS = [
   'meta',
   'locales',
   'defaultLocale',
+  'colors',
+  'darkColors',
   'customCss',
   'customCssFile',
   'customJs',

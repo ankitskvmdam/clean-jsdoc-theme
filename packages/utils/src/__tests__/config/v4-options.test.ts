@@ -99,6 +99,13 @@ describe('validateThemeOpts — leftover v4 options', () => {
     expect(diagnostics.hasErrors()).toBe(false);
   });
 
+  it('tells a theme_opts.colors user to move it up to opts.colors (#352)', async () => {
+    const { diagnostics } = await jsdocValidate({ theme_opts: { colors: { bg: 'red' } } });
+    expect(byPath(diagnostics.list, 'theme_opts.colors')?.hint).toBe(
+      'move it up to `opts.colors`.'
+    );
+  });
+
   it('warns on top-level v4 option names that are not v5 keys', async () => {
     const { diagnostics } = await jsdocValidate({ homepageTitle: 'y', base_url: '/docs/' });
     expect(byPath(diagnostics.list, 'homepageTitle')).toMatchObject({

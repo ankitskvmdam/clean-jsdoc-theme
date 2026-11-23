@@ -66,6 +66,7 @@ import {
 } from './docs';
 import type { LocatedDoc } from './docs';
 import { writeOutputFiles } from './write-output-files';
+import { normalizeColors, resolveCustomAssets } from './custom-assets';
 import {
   JSDOC_ONLY_KEYS,
   jsdocOnlyKeyMessage,
@@ -78,8 +79,8 @@ import type { CleanJsdocThemeBlock } from './options';
 
 /**
  * Default theme — copied from the JSDoc bridge (`publish.ts`). OKLCH light/dark
- * palettes + Google-Font heading/body and a CSS mono stack. v1 defaults; the
- * full option block (siteName/fonts overrides) lands in phase 4.
+ * palettes + Google-Font heading/body and a CSS mono stack; `resolveTheme`
+ * layers the `cleanJsdocTheme` overrides (colors, fonts, siteName, …) on top.
  */
 const defaultTheme: ThemeConfig = {
   tokens: {
@@ -147,6 +148,10 @@ function resolveTheme(
   const copyPage = normalizeCopyPage(block.copyPage);
   const pageNav = normalizePageNav(block.pageNav);
   const playground = normalizePlayground(block.playground);
+  // Color overrides merge per key over the default palettes, so supplying only
+  // `colors.bg` keeps every other default color (#352).
+  const colors = normalizeColors(block.colors);
+  const darkColors = normalizeColors(block.darkColors);
 
   return {
     ...defaultTheme,
@@ -157,6 +162,8 @@ function resolveTheme(
     ...(playground ? { playground: playground.theme } : {}),
     tokens: {
       ...defaultTheme.tokens,
+      colors: { ...defaultTheme.tokens.colors, ...(colors ?? {}) },
+      darkColors: { ...defaultTheme.tokens.darkColors, ...(darkColors ?? {}) },
       fonts: resolveFontSet(fonts, locale),
       ...(siteName ? { siteName } : {}),
     },
@@ -756,13 +763,13 @@ async function buildSite(
     knownNonThemeKeys: new Set([...KNOWN_NON_THEME_KEYS, ...JSDOC_ONLY_KEYS.keys()]),
     strict,
   });
-  // Options the JSDoc bridge reads but this writer doesn't (yet). They're
+  // Options the JSDoc bridge reads but this writer doesn't. They're
   // documented for both tools, so they're not typos: warn that they're ignored,
   // added after validation so strict never escalates them — a shared
   // JSDoc+TypeDoc config shouldn't fail its TypeDoc build over them.
   for (const [key, info] of JSDOC_ONLY_KEYS) {
     if (!Object.hasOwn(block, key)) continue;
-    diagnostics.warning(UNSUPPORTED_IN_TYPEDOC_CODE, jsdocOnlyKeyMessage(key, info), {
+    diagnostics.warning(UNSUPPORTED_IN_TYPEDOC_CODE, jsdocOnlyKeyMessage(key), {
       hint: info.hint,
       path: key,
     });
@@ -970,12 +977,16 @@ async function buildSite(
   // emits the `<link rel="icon">`, so render() stays pure. Unset → none.
   const favicon = await resolveFavicon(block.favicon, optionLog, hrefForServed);
   const meta = normalizeMeta(block.meta, optionLog);
+  // Custom CSS/JS (#352): inline strings pass through; files are copied to
+  // `_assets/` here and linked by dwar, so render() stays pure.
+  const customAssets = await resolveCustomAssets(block, hrefForServed, optionLog);
   // Every option has been resolved by now; under strict, stop before rendering
   // or writing anything if any of them had a problem.
   failOnStrictOptionErrors();
   const result = await render(manifest, {
     theme: {
       ...resolveTheme(block, siteName, fonts, basePath),
+      ...customAssets.theme,
       ...(footer ? { footer } : {}),
       ...(favicon ? { favicon: favicon.href } : {}),
       ...(meta ? { meta } : {}),
@@ -998,6 +1009,7 @@ async function buildSite(
 
   const outputFiles = [
     ...result.files,
+    ...customAssets.files,
     ...logoFiles,
     ...(favicon?.files ?? []),
     ...imageFiles,

@@ -684,8 +684,10 @@ opts: {
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-// JSDoc only — the TypeDoc flavor doesn't support `colors` / `darkColors` yet.
-// In `cleanJsdocTheme` they're ignored with an `opts/unsupported-in-typedoc` warning.
+cleanJsdocTheme: {
+  colors: { bg: "oklch(0.99 0.01 95)", accent: "oklch(0.55 0.2 250)" },
+  darkColors: { bg: "oklch(0.18 0.01 250)", accent: "oklch(0.7 0.16 250)" },
+}
 ```
 
 </tab>
@@ -757,8 +759,7 @@ opts: { customCss: ".my-banner { color: rebeccapurple; }" }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-// JSDoc only — the TypeDoc flavor doesn't support `customCss` / `customJs` yet.
-// In `cleanJsdocTheme` they're ignored with an `opts/unsupported-in-typedoc` warning.
+cleanJsdocTheme: { customCss: ".my-banner { color: rebeccapurple; }" }
 ```
 
 </tab>
@@ -771,6 +772,7 @@ opts: { customCss: ".my-banner { color: rebeccapurple; }" }
 带内容哈希的资源并链接它。
 
 **预期值：** 一个路径字符串。
+可以传入一个路径或路径数组；每个路径都相对于运行构建的目录解析。
 
 <tabs group="tool">
 
@@ -785,8 +787,7 @@ opts: { customCssFile: "./extra.css", customJsFile: "./extra.js" }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-// JSDoc only — the TypeDoc flavor doesn't support `customCssFile` / `customJsFile` yet.
-// In `cleanJsdocTheme` they're ignored with an `opts/unsupported-in-typedoc` warning.
+cleanJsdocTheme: { customCssFile: "./extra.css", customJsFile: "./extra.js" }
 ```
 
 </tab>
@@ -813,8 +814,7 @@ opts: { hashCustomAssets: false }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-// JSDoc only — the TypeDoc flavor doesn't support custom asset files (`hashCustomAssets`) yet.
-// In `cleanJsdocTheme` it's ignored with an `opts/unsupported-in-typedoc` warning.
+cleanJsdocTheme: { hashCustomAssets: false }
 ```
 
 </tab>
@@ -1031,7 +1031,7 @@ cleanJsdocTheme: { defaultLocale: "en" }
 - 内容警告（例如注释中不成对的反引号）以及渲染失败的页面；
 - 在 JSDoc 中，像 `opts.title` 或 `opts.search` 这样的顶层 v4 选项名，因为它们可能
   属于其他 JSDoc 插件；
-- 在 TypeDoc 中，像 `colors` 这样仅限 JSDoc 的选项（会被忽略，并给出
+- 在 TypeDoc 中，像 `readme` 这样仅限 JSDoc 的选项（会被忽略，并给出
   `opts/unsupported-in-typedoc` 警告），以及把 `cleanJsdocTheme.siteUrl` 和
   `hostedBaseUrl` 设为不同的值——这是文档中说明的覆盖方式，构建只会提示最终采用哪一个。
 

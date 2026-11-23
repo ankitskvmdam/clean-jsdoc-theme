@@ -697,8 +697,10 @@ opts: {
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-// JSDoc only — the TypeDoc flavor doesn't support `colors` / `darkColors` yet.
-// In `cleanJsdocTheme` they're ignored with an `opts/unsupported-in-typedoc` warning.
+cleanJsdocTheme: {
+  colors: { bg: "oklch(0.99 0.01 95)", accent: "oklch(0.55 0.2 250)" },
+  darkColors: { bg: "oklch(0.18 0.01 250)", accent: "oklch(0.7 0.16 250)" },
+}
 ```
 
 </tab>
@@ -772,8 +774,7 @@ opts: { customCss: ".my-banner { color: rebeccapurple; }" }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-// JSDoc only — the TypeDoc flavor doesn't support `customCss` / `customJs` yet.
-// In `cleanJsdocTheme` they're ignored with an `opts/unsupported-in-typedoc` warning.
+cleanJsdocTheme: { customCss: ".my-banner { color: rebeccapurple; }" }
 ```
 
 </tab>
@@ -786,6 +787,7 @@ Like the above, but read from a file on disk. The bridge copies each to a
 content-hashed asset and links it.
 
 **Expected:** a path string.
+Pass one path or an array of them; each resolves relative to the directory the build runs from.
 
 <tabs group="tool">
 
@@ -800,8 +802,7 @@ opts: { customCssFile: "./extra.css", customJsFile: "./extra.js" }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-// JSDoc only — the TypeDoc flavor doesn't support `customCssFile` / `customJsFile` yet.
-// In `cleanJsdocTheme` they're ignored with an `opts/unsupported-in-typedoc` warning.
+cleanJsdocTheme: { customCssFile: "./extra.css", customJsFile: "./extra.js" }
 ```
 
 </tab>
@@ -828,8 +829,7 @@ opts: { hashCustomAssets: false }
 <tab label="TypeDoc (typedoc.json)">
 
 ```json5
-// JSDoc only — the TypeDoc flavor doesn't support custom asset files (`hashCustomAssets`) yet.
-// In `cleanJsdocTheme` it's ignored with an `opts/unsupported-in-typedoc` warning.
+cleanJsdocTheme: { hashCustomAssets: false }
 ```
 
 </tab>
@@ -1144,7 +1144,7 @@ Not affected — these stay warnings or notes even under `strict`:
   fail to render;
 - under JSDoc, a top-level v4 option name such as `opts.title` or
   `opts.search`, since another JSDoc plugin may own it;
-- under TypeDoc, a JSDoc-only option such as `colors` (ignored with an
+- under TypeDoc, a JSDoc-only option such as `readme` (ignored with an
   `opts/unsupported-in-typedoc` warning), and setting both
   `cleanJsdocTheme.siteUrl` and `hostedBaseUrl` to different values — the
   documented override; the build just notes which one wins.
