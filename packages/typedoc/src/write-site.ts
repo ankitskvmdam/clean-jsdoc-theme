@@ -15,7 +15,7 @@
  */
 import { gzipSync } from 'node:zlib';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
-import { dirname, extname, resolve as resolvePath } from 'node:path';
+import { basename, dirname, extname, resolve as resolvePath } from 'node:path';
 import salty from '@jsdoc/salty';
 import { generateSite } from '@clean-jsdoc-theme/setu';
 import type {
@@ -59,6 +59,7 @@ import { httpsFetch } from './https-fetch';
 import { markdownToHtml, partsToMarkdown } from './comment';
 import {
   collectDocs,
+  contentHash,
   createImageCollector,
   resolveDocImages,
   resolveDocletImages,
@@ -348,12 +349,16 @@ async function resolveFooter(raw: unknown, logger: OptionWarnSink): Promise<stri
  * to write, so dwar emits the `<link rel="icon">` and `render()` stays pure. The
  * source extension is preserved (dwar derives the link `type` from it). A
  * missing/unreadable file is warned about and dropped. Mirrors the JSDoc bridge's
- * `resolveFavicon` (TypeDoc assets aren't content-hashed, matching its logos).
+ * `resolveFavicon`: the file is content-hashed as `_assets/<name>.<sha8><ext>` so
+ * a changed icon busts caches. `hash` is the hook for `hashCustomAssets` once the
+ * TypeDoc bridge supports it (#352). The OutputFile `path` stays relative; only
+ * the href gets `basePath` (via `hrefForServed`), so it's applied exactly once.
  */
 async function resolveFavicon(
   raw: unknown,
   logger: OptionWarnSink,
-  hrefForServed: (servedPath: string) => string
+  hrefForServed: (servedPath: string) => string,
+  hash = true
 ): Promise<{ href: string; files: OutputFile[] } | undefined> {
   if (typeof raw !== 'string' || raw.trim().length === 0) return undefined;
   const file = raw.trim();
@@ -364,7 +369,10 @@ async function resolveFavicon(
     logger.warn(`[clean-jsdoc-theme] could not read favicon ('${file}'); omitting it.`);
     return undefined;
   }
-  const servedPath = `_assets/favicon${extname(file) || '.ico'}`;
+  const ext = extname(file) || '.ico';
+  const base = basename(file, extname(file)) || 'favicon';
+  const name = hash ? `${base}.${contentHash(bytes)}${ext}` : `${base}${ext}`;
+  const servedPath = `_assets/${name}`;
   return { href: hrefForServed(servedPath), files: [{ path: servedPath, contents: bytes }] };
 }
 
