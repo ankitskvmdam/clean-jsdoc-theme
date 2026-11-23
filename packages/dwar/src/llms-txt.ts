@@ -87,7 +87,10 @@ export function navSections(nav: readonly NavNode[]): Array<{ label: string; slu
   return order.map((label) => ({ label, slugs: bySection.get(label) as string[] }));
 }
 
-/** Strip a leading `---\n…\n---` YAML block (page bodies carry frontmatter). */
+/**
+ * Strip the leading YAML frontmatter block (page bodies carry it), as
+ * {@link frontmatterLength} delimits it, and any whitespace after it.
+ */
 export function stripFrontmatter(body: string): string {
   const length = frontmatterLength(body);
   return length ? body.slice(length).replace(/^\s+/, '') : body;
