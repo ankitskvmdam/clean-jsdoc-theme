@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import type { MdxJsxFlowElement } from 'mdast-util-mdx-jsx';
 import { buildDocPages, type DocInput } from '../guide-view';
 import { htmlToMdastBlocks, markdownToMdastBlocks } from '../mdast/from-html';
+import { toMdx } from '../mdx';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -172,5 +173,154 @@ describe('buildDocPages — playground fence end-to-end', () => {
     const { pages } = buildDocPages(docs);
     expect(pages[0].body).not.toContain('<Playground');
     expect(pages[0].body).toContain('const x = 1;');
+  });
+});
+
+describe('playground fence inside containers (#362)', () => {
+  const mdx = (md: string): string => toMdx({ type: 'root', children: markdownToMdastBlocks(md) });
+  type Node = {
+    type: string;
+    name?: string;
+    children?: Node[];
+    value?: string;
+    lang?: string | null;
+  };
+  /** Every node under `nodes`, depth first. */
+  const walk = (nodes: readonly Node[]): Node[] =>
+    nodes.flatMap((n) => [n, ...walk(n.children ?? [])]);
+  const blocks = (md: string): Node[] => markdownToMdastBlocks(md) as unknown as Node[];
+
+  it('keeps the top-level output unchanged', () => {
+    expect(mdx('```js playground codepen filename=a.js\nrun();\n```\n')).toBe(
+      '<Playground providers="codepen" filename="a.js">\n  ```js\n  run();\n  ```\n</Playground>\n'
+    );
+  });
+
+  it('lowers a fence in a list item in place, keeping the list whole', () => {
+    const md = '- first item\n\n  ```js playground codepen\n  run();\n  ```\n\n- second item\n';
+    const nodes = blocks(md);
+    expect(nodes).toHaveLength(1);
+    expect(nodes[0].type).toBe('list');
+    const items = nodes[0].children!;
+    expect(items).toHaveLength(2);
+    expect(items[0].children!.some(isPlayground)).toBe(true);
+    expect(items[1].children!.some(isPlayground)).toBe(false);
+    expect(mdx(md)).toBe(
+      '- first item\n\n' +
+        '  <Playground providers="codepen">\n    ```js\n    run();\n    ```\n  </Playground>\n\n' +
+        '- second item\n'
+    );
+  });
+
+  it('lowers a fence in a nested list item, keeping the parent list intact', () => {
+    const md =
+      '- outer\n\n  - inner\n\n    ```js playground codepen\n    run();\n    ```\n\n- outer two\n';
+    const nodes = blocks(md);
+    expect(nodes).toHaveLength(1);
+    expect(nodes[0].children).toHaveLength(2);
+    const inner = nodes[0].children![0].children!.find((n) => n.type === 'list')!;
+    expect(walk(inner.children!).some(isPlayground)).toBe(true);
+    expect(mdx(md)).toContain('\n    <Playground providers="codepen">\n');
+  });
+
+  it('lowers a fence directly after the text of a tight ordered item', () => {
+    const md = '1. text\n   ```js playground codepen\n   run();\n   ```\n2. next\n';
+    const nodes = blocks(md);
+    expect(nodes).toHaveLength(1);
+    expect(nodes[0].children).toHaveLength(2);
+    expect(walk(nodes[0].children![0].children!).some(isPlayground)).toBe(true);
+  });
+
+  it('lowers a fence in a blockquote', () => {
+    const md = '> quote\n>\n> ```js playground codepen\n> run();\n> ```\n';
+    const nodes = blocks(md);
+    expect(nodes).toHaveLength(1);
+    expect(nodes[0].type).toBe('blockquote');
+    expect(nodes[0].children!.some(isPlayground)).toBe(true);
+    const out = mdx(md);
+    expect(out).toContain('> <Playground providers="codepen">\n');
+    expect(out).toContain('>   ```js\n');
+  });
+
+  it('lowers a fence in a blockquote inside a list item', () => {
+    const md = '- item\n\n  > ```js playground codepen\n  > run();\n  > ```\n\n- next\n';
+    const nodes = blocks(md);
+    expect(nodes).toHaveLength(1);
+    const quote = nodes[0].children![0].children!.find((n) => n.type === 'blockquote')!;
+    expect(quote.children!.some(isPlayground)).toBe(true);
+  });
+
+  it('lowers a fence in a list inside a blockquote', () => {
+    const md = '> - item\n>\n>   ```js playground codepen\n>   run();\n>   ```\n>\n> - next\n';
+    const nodes = blocks(md);
+    expect(nodes).toHaveLength(1);
+    const list = nodes[0].children!.find((n) => n.type === 'list')!;
+    expect(list.children).toHaveLength(2);
+    expect(list.children![0].children!.some(isPlayground)).toBe(true);
+  });
+
+  it('lowers a fence inside an alert callout', () => {
+    const md = '> [!TIP]\n> Try it:\n>\n> ```js playground codepen\n> run();\n> ```\n';
+    const nodes = blocks(md);
+    expect(nodes).toHaveLength(1);
+    expect(nodes[0].name).toBe('Callout');
+    expect(nodes[0].children!.some(isPlayground)).toBe(true);
+    expect(mdx(md)).toContain('<Callout type="tip">');
+  });
+
+  it('lowers a fence inside <details>', () => {
+    const md =
+      '<details>\n<summary>More</summary>\n\n```js playground codepen\nrun();\n```\n\n</details>\n';
+    const nodes = blocks(md);
+    const details = walk(nodes).find((n) => n.name === 'details')!;
+    expect(details).toBeTruthy();
+    expect(details.children!.some(isPlayground)).toBe(true);
+  });
+
+  it('keeps a `js playground off` fence in its list item as bare code', () => {
+    const md = '- item\n\n  ```js playground off\n  run();\n  ```\n\n- next\n';
+    const nodes = blocks(md);
+    expect(nodes).toHaveLength(1);
+    expect(walk(nodes).some(isPlayground)).toBe(false);
+    const code = nodes[0].children![0].children!.find((n) => n.type === 'code')!;
+    expect(code.lang).toBe('js');
+    expect(code.value).toBe('run();');
+  });
+
+  it('keeps inner indentation and blank lines of the code in a list item', () => {
+    const md =
+      '- item\n\n  ```js playground codepen\n  if (x) {\n    run();\n\n    again();\n  }\n  ```\n';
+    const pg = walk(blocks(md)).find(isPlayground)!;
+    expect(pg.children![0].value).toBe('if (x) {\n  run();\n\n  again();\n}');
+  });
+
+  it('lowers every fence of the issue repro in place (buildDocPages)', () => {
+    const content =
+      'Top level:\n\n```js playground\nconsole.log(1);\n```\n\n' +
+      '- In a list item:\n\n  ```js playground\n  console.log(2);\n  ```\n\n' +
+      '> In a quote:\n>\n> ```js playground\n> console.log(3);\n> ```\n';
+    const { pages } = buildDocPages([{ path: 'pg', type: 'markdown', content }]);
+    const body = pages[0].body;
+    expect(body.match(/<Playground\b/g)).toHaveLength(3);
+    expect(body).toContain('\n  <Playground');
+    expect(body).toContain('\n> <Playground');
+    expect(body).not.toMatch(/^<Playground[^\n]*>\n {2}```js\n {2}console\.log\(2\)/m);
+  });
+
+  it('does not let a raw data-setu-playground attribute spoof a playground', () => {
+    const md =
+      '<pre><code data-setu-playground="0">spoof();</code></pre>\n\n```js playground codepen\nrun();\n```\n';
+    const out = mdx(md);
+    expect(out.match(/<Playground\b/g)).toHaveLength(1);
+    expect(out).toContain('spoof();');
+    const pg = walk(blocks(md)).find(isPlayground)!;
+    expect(pg.children![0].value).toBe('run();');
+  });
+
+  it('never makes a playground from the HTML path', () => {
+    const nodes = htmlToMdastBlocks(
+      '<pre><code class="language-js" data-setu-playground="0">run();</code></pre>'
+    ) as unknown as Node[];
+    expect(walk(nodes).some(isPlayground)).toBe(false);
   });
 });

@@ -348,8 +348,10 @@ setu/src/
                           #   normalization shared by README + tutorials; HTML
                           #   comments are dropped from the hast, an unterminated
                           #   `<!--` is escaped so it can't hide the rest of the
-                          #   fragment, and the container / playground-fence
-                          #   splitters skip commented-out text)
+                          #   fragment, and the container splitter skips
+                          #   commented-out text; a ```js playground fence is
+                          #   marked in the parsed tree, so it lowers in place
+                          #   inside lists / blockquotes)
 docs/                     # architecture.md, how-jsdoc-works.md, …
 ```
 
