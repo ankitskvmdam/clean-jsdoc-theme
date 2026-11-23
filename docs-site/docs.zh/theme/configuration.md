@@ -461,7 +461,9 @@ cleanJsdocTheme: { sectionOrder: ["Getting Started", "Guides", "Classes", "Modul
 `@category` 或 doc 分组——会被报告；若有相近的名称，还会附带 "did you mean" 提示
 （`Clases` → `Classes`）。本次构建中没有页面的内置标签（如 `Events` 或 `Externals`）
 没有问题，v4 的 `Global` 仍会被当作 `Globals`。开启 [`strict`](#strict) 时，该报告会
-导致构建失败。在 TypeDoc 下不做任何检查，因为该选项在那里不起作用。
+导致构建失败。在 TypeDoc 下不做任何检查，因为该选项在那里不起作用。在本地化构建中，
+请让每个文档的 `group` 在所有 locale 中保持一致（见[本地化你的文档](/guides/localize-your-docs)）；
+若某个 locale 的 overlay 改了分组名，列出的标签会在该 locale 中被报告为不匹配。
 
 ### `clubSidebarItems`
 

@@ -2521,7 +2521,11 @@ async function runPublish(
       warnOption(
         `clean-jsdoc-theme: sectionOrder — no sidebar section matches ` +
           unknown
-            .map((u) => `'${u.label}'` + (u.suggestion ? ` (did you mean '${u.suggestion}'?)` : ''))
+            .map(
+              (u) =>
+                `'${u.label}'` +
+                (u.hint ? ` (${u.hint})` : u.suggestion ? ` (did you mean '${u.suggestion}'?)` : '')
+            )
             .join(', ') +
           `. Known sections: ${known.join(', ')}.`
       );

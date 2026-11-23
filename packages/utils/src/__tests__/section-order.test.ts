@@ -39,6 +39,28 @@ describe('unknownSectionOrderLabels', () => {
     ]);
   });
 
+  it('needs a closer match to suggest for a short label', () => {
+    // `Hone` → `Core` is distance 2: too far for a 4-letter label.
+    expect(unknownSectionOrderLabels(['Hone'], ['Core'])).toEqual([{ label: 'Hone' }]);
+    expect(unknownSectionOrderLabels(['Gides'], ['Guides'])).toEqual([
+      { label: 'Gides', suggestion: 'Guides' },
+    ]);
+    expect(unknownSectionOrderLabels(['Clases'], ['Classes'])).toEqual([
+      { label: 'Clases', suggestion: 'Classes' },
+    ]);
+  });
+
+  it('gives Home and Source Files a placement hint instead of a suggestion', () => {
+    expect(unknownSectionOrderLabels(['Home', 'Source Files'], [...KNOWN, 'Core'])).toEqual([
+      { label: 'Home', hint: 'always first; place it with `menu`, not sectionOrder' },
+      { label: 'Source Files', hint: 'always last; place it with `menu`, not sectionOrder' },
+    ]);
+  });
+
+  it('accepts Home when it is a real group in this build', () => {
+    expect(unknownSectionOrderLabels(['Home'], [...KNOWN, 'Home'])).toEqual([]);
+  });
+
   it('reports a repeated unknown label once', () => {
     expect(unknownSectionOrderLabels(['Clases', 'Clases'], KNOWN)).toEqual([
       { label: 'Clases', suggestion: 'Classes' },

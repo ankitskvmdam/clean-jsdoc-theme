@@ -476,7 +476,9 @@ label — built-in の kind label でも、この build の `@category` や doc 
 （`Clases` → `Classes`）。この build に pages がない built-in labels（`Events` や
 `Externals` など）は問題なく、v4 の `Global` も引き続き `Globals` として読まれます。
 [`strict`](#strict) ではこの報告で build が失敗します。TypeDoc ではこの option が
-効果を持たないため、何も検査されません。
+効果を持たないため、何も検査されません。localized build では、各 doc の `group` を
+すべての locale で同じに保ってください（[docs を localize する](/guides/localize-your-docs)）。
+overlay で group 名を変えた locale では、指定した label が一致しないものとして報告されます。
 
 ### `clubSidebarItems`
 

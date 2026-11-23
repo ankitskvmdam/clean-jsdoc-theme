@@ -474,7 +474,10 @@ group — report किया जाता है, और कोई नज़द
 (`Clases` → `Classes`)। इस build में बिना pages वाले built-in labels (जैसे
 `Events` या `Externals`) ठीक हैं, और v4 का `Global` अब भी `Globals` माना जाता है।
 [`strict`](#strict) के साथ यह report build को विफल कर देती है। TypeDoc के तहत कुछ
-भी जाँचा नहीं जाता, क्योंकि वहाँ यह option निष्क्रिय है।
+भी जाँचा नहीं जाता, क्योंकि वहाँ यह option निष्क्रिय है। localized build में हर doc
+का `group` हर locale में एक जैसा रखें ([अपने docs को localize करें](/guides/localize-your-docs));
+जिस locale का overlay किसी group का नाम बदल देता है, वहाँ सूचीबद्ध label मेल न खाने
+वाला report होता है।
 
 ### `clubSidebarItems`
 

@@ -471,7 +471,9 @@ with a "did you mean" hint when one is close (`Clases` → `Classes`). Built-in
 labels with no pages in this build (such as `Events` or `Externals`) are fine,
 and v4's `Global` is still read as `Globals`. With [`strict`](#strict) the
 report fails the build. Under TypeDoc nothing is checked, since the option is
-inert there.
+inert there. In a localized build, keep each doc's `group` the same in every
+locale ([Localize your docs](/guides/localize-your-docs)); a locale whose overlay
+renames a group reports the listed label as unmatched.
 
 ### `clubSidebarItems`
 

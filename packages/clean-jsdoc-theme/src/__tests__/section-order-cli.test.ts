@@ -108,6 +108,25 @@ describe('JSDoc CLI end to end: sectionOrder labels (#352)', () => {
   );
 
   it(
+    'gives Home a placement hint, not a far-fetched did-you-mean',
+    async () => {
+      const run = await runJsdoc(
+        { 'src/a.js': '/**\n * A thing.\n * @category Core\n */\nexport class Thing {}\n' },
+        { sectionOrder: ['Home', 'Core'] }
+      );
+      expect(run.status, run.output).toBe(0);
+      const line = run.output.split('\n').find((l) => l.includes(WARNING));
+      expect(line, run.output).toContain(
+        "'Home' (always first; place it with `menu`, not sectionOrder)"
+      );
+      expect(line).not.toContain('did you mean');
+      // `Core` is the class's @category: matched, and listed as known.
+      expect(line).toContain('. Known sections: Core,');
+    },
+    SPAWN_TEST_TIMEOUT
+  );
+
+  it(
     "accepts v4's Global and built-in labels without a warning",
     async () => {
       const run = await runJsdoc(MIN, { sectionOrder: ['Global', 'Classes', 'Tutorials'] });
