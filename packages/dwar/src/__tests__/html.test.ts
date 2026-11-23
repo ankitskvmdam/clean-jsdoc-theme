@@ -319,6 +319,10 @@ describe('search text — tag strip', () => {
   // slower than its size. The window is pinned at 512K -> 4M characters, so the
   // large input crosses 2M, and the limit is tighter than the default: the old
   // code measured ratios of about 21-22 here, the fixed code about 2-6.
+  // `floorMs` is raised to 25: the fixed code runs the 512K input in a few ms,
+  // under the default 10 ms floor, so the check became "t(4M) under 120 ms",
+  // which a busy CI runner broke (178 ms). The old code takes 35-50 ms at 512K,
+  // above this floor, so its real ratio (~20) still fails the limit.
   it.each<[string, (n: number) => string]>([
     ['stray < characters (#383)', (n) => 'a < b '.repeat(n / 6)],
     ['long whitespace runs (#383)', (n) => ('word' + ' \t\n'.repeat(4)).repeat(n / 16)],
@@ -328,7 +332,7 @@ describe('search text — tag strip', () => {
       expectLinearScaling(
         (src: string) => [extractSearchText(src), extractExcerpt(src)],
         makeInput,
-        { startSize: 524_288, maxSize: 524_288, maxRatio: 12 }
+        { startSize: 524_288, maxSize: 524_288, maxRatio: 12, floorMs: 25 }
       );
     },
     PERF_TEST_TIMEOUT
