@@ -464,6 +464,17 @@ cleanJsdocTheme: { sectionOrder: ["Getting Started", "Guides", "Classes", "Modul
 > ordered by [`docGroups`](#docgroups), not `sectionOrder`. See
 > [TypeDoc flavor](/guides/structure-your-sidebar#typedoc-flavor).
 
+Labels match exactly as written — case-sensitive, and in English (section labels
+aren't translated). Under **JSDoc**, a label that names no section — not a
+built-in kind label, nor a `@category` or doc group in this build — is reported
+with a "did you mean" hint when one is close (`Clases` → `Classes`). Built-in
+labels with no pages in this build (such as `Events` or `Externals`) are fine,
+and v4's `Global` is still read as `Globals`. With [`strict`](#strict) the
+report fails the build. Under TypeDoc nothing is checked, since the option is
+inert there. In a localized build, keep each doc's `group` the same in every
+locale ([Localize your docs](/guides/localize-your-docs)); a locale whose overlay
+renames a group reports the listed label as unmatched.
+
 ### `clubSidebarItems`
 
 Collapse related entries (e.g. a module and its members) under a shared,
@@ -1136,6 +1147,7 @@ error stops the build before it writes anything, and the process exits non-zero
   `hostedBaseUrl` used as the site URL, which often carries a sub-path;
 - an unreadable `footer` / `favicon` / logo / custom CSS or JS file, or a
   `meta` / `customCssFile` / `customJsFile` entry that has to be skipped;
+- a `sectionOrder` label that matches no sidebar section (JSDoc);
 - a leftover v4 `theme_opts` block.
 
 Not affected — these stay warnings or notes even under `strict`:

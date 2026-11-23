@@ -467,6 +467,18 @@ cleanJsdocTheme: { sectionOrder: ["Getting Started", "Guides", "Classes", "Modul
 > [`docGroups`](#docgroups) से क्रमित होते हैं, `sectionOrder` से नहीं। देखें
 > [TypeDoc flavor](/guides/structure-your-sidebar#typedoc-flavor)।
 
+Labels ठीक वैसे ही मिलाए जाते हैं जैसे लिखे गए हैं — case-sensitive, और अंग्रेज़ी में
+(section labels का अनुवाद नहीं होता)। **JSDoc** के तहत, ऐसा label जो किसी section
+का नाम नहीं है — न कोई built-in kind label, न इस build का कोई `@category` या doc
+group — report किया जाता है, और कोई नज़दीकी नाम हो तो "did you mean" सुझाव के साथ
+(`Clases` → `Classes`)। इस build में बिना pages वाले built-in labels (जैसे
+`Events` या `Externals`) ठीक हैं, और v4 का `Global` अब भी `Globals` माना जाता है।
+[`strict`](#strict) के साथ यह report build को विफल कर देती है। TypeDoc के तहत कुछ
+भी जाँचा नहीं जाता, क्योंकि वहाँ यह option निष्क्रिय है। localized build में हर doc
+का `group` हर locale में एक जैसा रखें ([अपने docs को localize करें](/guides/localize-your-docs));
+जिस locale का overlay किसी group का नाम बदल देता है, वहाँ सूचीबद्ध label मेल न खाने
+वाला report होता है।
+
 ### `clubSidebarItems`
 
 संबंधित entries (जैसे एक module और उसके members) को एक साझा, collapsible parent के
@@ -1049,6 +1061,7 @@ warning या error build को कुछ भी लिखने से पह
   इस्तेमाल हुए `hostedBaseUrl` पर भी लागू होता है, जिसमें अक्सर sub-path होता है;
 - न पढ़ी जा सकने वाली `footer` / `favicon` / logo / custom CSS या JS file, या
   ऐसी `meta` / `customCssFile` / `customJsFile` entry जिसे छोड़ना पड़े;
+- `sectionOrder` का ऐसा label जो किसी sidebar section से मेल नहीं खाता (JSDoc);
 - बचा हुआ v4 `theme_opts` block।
 
 इन पर असर नहीं — ये `strict` में भी चेतावनी या सूचना ही रहते हैं:

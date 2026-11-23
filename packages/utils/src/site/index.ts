@@ -12,6 +12,7 @@ export * from './islands';
 export * from './slug-rules';
 export * from './base-path';
 export * from './collapsible';
+export * from './section-order';
 export * from './llms';
 export * from './markdown-scan';
 export * from './whitespace';

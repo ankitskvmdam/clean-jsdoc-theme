@@ -469,6 +469,17 @@ cleanJsdocTheme: { sectionOrder: ["Getting Started", "Guides", "Classes", "Modul
 > は `sectionOrder` ではなく [`docGroups`](#docgroups) で順序付けられます。
 > [TypeDoc flavor](/guides/structure-your-sidebar#typedoc-flavor) を参照してください。
 
+labels は書かれたとおりに完全一致で照合されます — 大文字と小文字を区別し、英語の
+ままです（section labels は翻訳されません）。**JSDoc** では、どの section も指さない
+label — built-in の kind label でも、この build の `@category` や doc group でもない
+もの — が報告され、近い名前があれば "did you mean" のヒントが付きます
+（`Clases` → `Classes`）。この build に pages がない built-in labels（`Events` や
+`Externals` など）は問題なく、v4 の `Global` も引き続き `Globals` として読まれます。
+[`strict`](#strict) ではこの報告で build が失敗します。TypeDoc ではこの option が
+効果を持たないため、何も検査されません。localized build では、各 doc の `group` を
+すべての locale で同じに保ってください（[docs を localize する](/guides/localize-your-docs)）。
+overlay で group 名を変えた locale では、指定した label が一致しないものとして報告されます。
+
 ### `clubSidebarItems`
 
 関連する entries（たとえば module とその members）を、共有の collapsible parent の
@@ -1052,6 +1063,7 @@ option なしで続行します。`strict: true` では、option の warning や
   使われる `hostedBaseUrl` も対象で、これはよく sub-path を含みます;
 - 読み込めない `footer` / `favicon` / logo / custom CSS や JS file、または skip
   せざるを得ない `meta` / `customCssFile` / `customJsFile` の entry;
+- どの sidebar section にも一致しない `sectionOrder` の label（JSDoc）;
 - 残っている v4 の `theme_opts` block。
 
 影響しないもの — `strict` でも警告や通知のままです:
