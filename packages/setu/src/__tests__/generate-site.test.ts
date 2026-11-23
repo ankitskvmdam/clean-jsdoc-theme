@@ -705,6 +705,22 @@ describe('generateSite', () => {
         'Tracks the JobState via the AbstractJob#execute hook; see type definitions and getting-started.'
       );
     });
+
+    it('reduces a tag holding an autolinked URL (markdown plugin) to the URL', () => {
+      const page = generateSite(
+        makeCollection([
+          {
+            kind: 'namespace',
+            name: 'Widget',
+            longname: 'Widget',
+            scope: 'global',
+            comment: '/** ns */',
+            description: '<p>See {@link <a href="https://x.y">https://x.y</a>}.</p>',
+          },
+        ])
+      ).pages.find((p) => p.slug === 'widget');
+      expect(page?.frontmatter.description).toBe('See https://x.y.');
+    });
   });
 
   it('headings on at least one page are non-empty with slug-cased ids', () => {
