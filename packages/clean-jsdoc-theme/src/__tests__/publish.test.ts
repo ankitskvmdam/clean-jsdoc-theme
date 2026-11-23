@@ -903,6 +903,81 @@ describe('resolveDocletImages', () => {
   });
 });
 
+describe('image file names that need URL encoding (#396)', () => {
+  let dir: string;
+
+  beforeAll(async () => {
+    dir = await mkdtemp(join(tmpdir(), 'cjt-image-names-'));
+    await mkdir(join(dir, 'src'), { recursive: true });
+    await mkdir(join(dir, 'img'), { recursive: true });
+    await writeFile(join(dir, 'my pic.png'), 'SPACED', 'utf8');
+    await writeFile(join(dir, "it's (1).svg"), '<svg/>', 'utf8');
+    await writeFile(join(dir, 'a%20b.png'), 'LITERAL', 'utf8');
+    await writeFile(join(dir, '100%.png'), 'PERCENT', 'utf8');
+    await writeFile(join(dir, 'img', 'my pic.png'), 'DOCLET', 'utf8');
+  });
+
+  afterAll(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it('percent-encodes a spaced name in the src, keeps the real name on disk, and decodes a %20 reference', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const collector = createImageCollector();
+    const docs = [
+      {
+        path: 'page',
+        type: 'markdown' as const,
+        content: '<img src="./my pic.png" alt="a">\n\n![b](./my%20pic.png)\n',
+      },
+    ];
+    const { docs: out, files } = await resolveDocImages(docs, dir, collector);
+    const srcs = out[0].content.match(/\/_assets\/[^"')\s]+/g) ?? [];
+    expect(srcs).toHaveLength(2);
+    for (const src of srcs) expect(src).toMatch(/^\/_assets\/my%20pic\.[0-9a-f]{8}\.png$/);
+    expect(srcs[0]).toBe(srcs[1]);
+    expect(files).toHaveLength(1);
+    expect(files[0].path).toMatch(/^_assets\/my pic\.[0-9a-f]{8}\.png$/);
+    expect(collector.consumed.has(join(dir, 'my pic.png'))).toBe(true);
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it("encodes quotes and parens, and keys the inline SVG by the encoded src", async () => {
+    const collector = createImageCollector();
+    const href = await collector.resolve("./it's (1).svg", dir);
+    expect(href).toMatch(/^\/_assets\/it%27s%20%281%29\.[0-9a-f]{8}\.svg$/);
+    expect(collector.inlineSvgs[href!]).toContain('<svg style=');
+    expect(collector.inlineSvgs['/' + collector.files[0].path]).toBeUndefined();
+  });
+
+  it('prefers a file literally named with %20 over the decoded name', async () => {
+    const collector = createImageCollector();
+    const href = await collector.resolve('./a%20b.png', dir);
+    expect(collector.files).toHaveLength(1);
+    expect(collector.files[0].path).toMatch(/^_assets\/a%20b\.[0-9a-f]{8}\.png$/);
+    expect(href).toMatch(/^\/_assets\/a%2520b\.[0-9a-f]{8}\.png$/);
+  });
+
+  it('resolves a name with a stray % without throwing', async () => {
+    const collector = createImageCollector();
+    const href = await collector.resolve('./100%.png', dir);
+    expect(href).toMatch(/^\/_assets\/100%25\.[0-9a-f]{8}\.png$/);
+  });
+
+  it('rewrites a doclet <img> with a %20 src to the encoded href', async () => {
+    const doclet = {
+      longname: 'Foo',
+      description: '<img src="../img/my%20pic.png" alt="d">',
+      meta: { path: join(dir, 'src'), filename: 'foo.js' },
+    };
+    const collector = createImageCollector();
+    await resolveDocletImages((() => ({ get: () => [doclet] })) as unknown, collector);
+    expect(doclet.description).toMatch(/src="\/_assets\/my%20pic\.[0-9a-f]{8}\.png"/);
+    expect(collector.files[0].path).toMatch(/^_assets\/my pic\.[0-9a-f]{8}\.png$/);
+  });
+});
+
 describe('llmsTxt opts (JSDoc bridge surface)', () => {
   it('resolves llmsTxt when siteUrl is present', async () => {
     const { validateThemeOpts } = await import('@clean-jsdoc-theme/utils');

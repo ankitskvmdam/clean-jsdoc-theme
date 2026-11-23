@@ -1444,11 +1444,24 @@ const DOC_IMAGE_RE = /(!\[[^\]]*\]\()([^)\s]+)((?:\s+"[^"]*")?\))/g;
 const HTML_IMAGE_RE = /(<img\b[^>]*?\bsrc\s*=\s*(["']))([^"']*)(\2)/gi;
 
 /**
+ * Percent-encode an asset file name for use in a URL: `encodeURIComponent`,
+ * plus the `'`, `(` and `)` it leaves alone (they'd end a single-quoted
+ * attribute or a Markdown image destination). Twin of `typedoc/src/docs.ts`.
+ */
+function encodeAssetName(name: string): string {
+  return encodeURIComponent(name).replace(
+    /['()]/g,
+    (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase()
+  );
+}
+
+/**
  * A reusable local-image asset pipeline shared by every prose source (docs,
  * tutorials, README, doclet comments). `resolve(src, baseDir)` copies a local
  * image to `_assets/<base>.<hash><ext>` (content-hashed → cache-busted, deduped
- * across all sources via the shared caches) and returns the root-relative
- * `/_assets/…` href — deliberately WITHOUT `basePath`: rang's `MdxImg` adds it
+ * across all sources via the shared caches; the file keeps its real name on
+ * disk) and returns the root-relative `/_assets/…` href with the file name
+ * percent-encoded (#396) — deliberately WITHOUT `basePath`: rang's `MdxImg` adds it
  * for HTML and dwar's `prefixRootRelativeUrls` for the companion `.md` /
  * `llms-full.txt`, once each; `hrefForServed` is only for theme assets (logos,
  * favicon, custom CSS/JS). The TypeDoc twin (`typedoc/src/docs.ts`) follows the
@@ -1462,7 +1475,8 @@ const HTML_IMAGE_RE = /(<img\b[^>]*?\bsrc\s*=\s*(["']))([^"']*)(\2)/gi;
  * `/`-rooted src), then — for the JSDoc `staticFiles` convention — each
  * `staticDirs` root joined with the reference's output-relative name. So a bare
  * `![x](classes-io.png)` whose file lives in a declared `staticFiles` dir still
- * resolves and is hashed. External (`http(s):`, `data:`), `#`-anchor, and
+ * resolves and is hashed. A percent-encoded src (`![x](./my%20pic.png)`) is
+ * tried as written first, then decoded (`my pic.png`). External (`http(s):`, `data:`), `#`-anchor, and
  * fully-unresolvable srcs yield `null` (the last warned once) so callers leave
  * them untouched.
  */
@@ -1488,12 +1502,25 @@ export function createImageCollector(staticDirs: readonly string[] = []): ImageC
     // Candidate absolute paths in priority order: the doc-relative / project-root
     // location first, then each staticFiles dir joined with the output-relative
     // name (leading slash stripped) as a fallback.
-    const primary = src.startsWith('/') ? resolvePath(src.slice(1)) : resolvePath(baseDir, src);
-    const candidates = [primary];
-    if (staticDirs.length > 0) {
-      const outName = src.replace(/^\/+/, '');
-      if (outName) for (const dir of staticDirs) candidates.push(resolvePath(dir, outName));
+    const candidatesFor = (s: string): string[] => {
+      const out = [s.startsWith('/') ? resolvePath(s.slice(1)) : resolvePath(baseDir, s)];
+      if (staticDirs.length > 0) {
+        const outName = s.replace(/^\/+/, '');
+        if (outName) for (const dir of staticDirs) out.push(resolvePath(dir, outName));
+      }
+      return out;
+    };
+    const candidates = candidatesFor(src);
+    // A percent-encoded src (`my%20pic.png`, the only Markdown spelling of a
+    // spaced name) is also tried decoded — after the literal, so a file really
+    // named `a%20b.png` still wins. A malformed `%` simply has no decoded form.
+    let decoded = src;
+    try {
+      decoded = decodeURIComponent(src);
+    } catch {
+      // keep `decoded === src`
     }
+    if (decoded !== src) candidates.push(...candidatesFor(decoded));
 
     for (const abs of candidates) {
       const cached = cache.get(abs);
@@ -1509,12 +1536,14 @@ export function createImageCollector(staticDirs: readonly string[] = []): ImageC
         continue;
       }
       const ext = extname(abs);
-      const served = `_assets/${basename(abs, ext) || 'asset'}.${contentHash(bytes)}${ext}`;
+      const name = `${basename(abs, ext) || 'asset'}.${contentHash(bytes)}${ext}`;
+      const served = `_assets/${name}`; // the real name on disk
       if (!seenServed.has(served)) {
         seenServed.add(served);
         files.push({ path: served, contents: bytes });
       }
-      const href = '/' + served; // base-free by design — see the doc comment above (#377)
+      // Base-free by design — see the doc comment above (#377); percent-encoded (#396).
+      const href = '/_assets/' + encodeAssetName(name);
       // SVGs are ALSO inlined: the renderer drops the markup into the page so its
       // `[data-theme="dark"]` styles track the theme toggle (an `<img>`-loaded SVG
       // only sees the OS color scheme). A responsive sizing style is injected onto
