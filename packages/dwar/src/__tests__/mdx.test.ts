@@ -9,6 +9,7 @@ import {
   signatureParamRanges,
   stripHtmlComments,
 } from '../mdx';
+import { expectLinearScaling, PERF_TEST_TIMEOUT } from './linear-scaling';
 
 describe('signatureParamRanges', () => {
   /** Slice each returned range out of the source — easier to assert on. */
@@ -68,6 +69,59 @@ describe('collectUsedLangs', () => {
     const langs = collectUsedLangs(['```not-a-real-lang\nx\n```']);
     expect(langs).not.toContain('not-a-real-lang');
   });
+
+  // #420: every fence form MDX parses must reach the grammar set, or the fence
+  // renders as plain text unless another fence on the site uses the language.
+  it.each<[string, string, string]>([
+    ['a blockquote', '> ```ruby\n> x\n> ```', 'ruby'],
+    ['four backticks', '````ruby\nx\n````', 'ruby'],
+    ['a space before the language', '``` swift\nx\n```', 'swift'],
+    ['a `-` list item', '- ```rust\n  x\n  ```', 'rust'],
+    ['a `*` list item', '* ```rust\n  x\n  ```', 'rust'],
+    ['a `+` list item', '+ ```rust\n  x\n  ```', 'rust'],
+    ['an ordered list item with `.`', '1. ```c\n   x\n   ```', 'c'],
+    ['an ordered list item with `)`', '12) ```c\n    x\n    ```', 'c'],
+    ['a tab after the list marker', '-\t```java\n  x\n  ```', 'java'],
+    ['a list item in a blockquote', '> - ```cpp\n>   x\n>   ```', 'cpp'],
+    ['a blockquote with no space', '>```cpp\n>x\n>```', 'cpp'],
+    ['a tilde fence', '~~~perl\nx\n~~~', 'perl'],
+    ['four tildes and a space', '~~~~ lua\nx\n~~~~', 'lua'],
+    ['a fence indented four spaces', '    ```dart\n    x\n    ```', 'dart'],
+    ['a footnote definition', '[^1]: ```nix\n    x\n    ```', 'nix'],
+    ['CRLF line endings', '> ```ruby\r\n> x\r\n> ```\r\n', 'ruby'],
+    ['meta after the language', '``` js title="a.js"\nx\n```', 'js'],
+    ['a backtick in a tilde info string', '~~~haskell `x`\nx\n~~~', 'haskell'],
+    ['an uppercase language', '```PHP\nx\n```', 'php'],
+  ])('reads the language of a fence in %s', (_name, body, lang) => {
+    expect(collectUsedLangs([body])).toContain(lang);
+  });
+
+  it.each<[string, string, string]>([
+    ['inline code mid-line', 'text ```elixir x``` more', 'elixir'],
+    ['inline code at the line start', '```elixir x``` more', 'elixir'],
+    ['a backtick in a backtick info string', '```scala `x`\nx\n```', 'scala'],
+    ['two backticks', '``ruby\nx\n``', 'ruby'],
+    ['tildes mid-line', 'text ~~~ruby here', 'ruby'],
+    ['a list marker with no space', '-```ruby\nx\n```', 'ruby'],
+    ['digits with no list delimiter', '123```ruby\nx\n```', 'ruby'],
+  ])('does not read a language from %s', (_name, body, lang) => {
+    expect(collectUsedLangs([body])).not.toContain(lang);
+  });
+
+  it.each<[string, (n: number) => string]>([
+    ['nested container lines', (n) => '> - ```ruby\n'.repeat(n / 12)],
+    ['a long run of list markers', (n) => '- '.repeat(n / 2) + '```ruby'],
+    ['a long run of footnote labels', (n) => '[^a]:'.repeat(n / 5) + '```ruby'],
+    ['repeated fence openers on one line', (n) => '``` '.repeat(n / 4)],
+    ['backtick info strings', (n) => '```a `\n'.repeat(n / 7)],
+    ['a long info string', (n) => '```ruby ' + 'x'.repeat(n)],
+  ])(
+    'scales linearly on %s',
+    (_name, makeInput) => {
+      expectLinearScaling((s: string) => collectUsedLangs([s]), makeInput);
+    },
+    PERF_TEST_TIMEOUT
+  );
 });
 
 describe('escapeStrayBraces', () => {
