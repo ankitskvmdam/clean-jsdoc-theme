@@ -186,6 +186,64 @@ const PROJECT: Record<string, string | Buffer> = {
   'custom.js': 'window.__fixtureCustom = true;\n',
 };
 
+describe('JSDoc CLI end to end: CRLF sources (#369)', () => {
+  let run: Run;
+
+  // JSDoc's unwrap() turns each `\r\n * ` of a CRLF comment into a lone `\r`.
+  beforeAll(async () => {
+    const src = [
+      '/**',
+      ' * Adds two numbers,',
+      ' * written on two lines.',
+      ' * @param {number} a The first number.',
+      ' * @example',
+      ' * const a = 1;',
+      ' * const b = 2;',
+      ' * @example',
+      ' * ```ts',
+      ' * const c = 3;',
+      ' * const d = 4;',
+      ' * ```',
+      ' */',
+      'export function add(a) {',
+      '  return a;',
+      '}',
+      '',
+    ].join('\r\n');
+    run = await runJsdoc(
+      { 'src/crlf.js': src },
+      {
+        plugins: ['plugins/markdown'],
+        opts: { siteUrl: 'https://example.com', llmsTxt: true },
+      }
+    );
+  }, SPAWN_TEST_TIMEOUT);
+
+  it('builds with exit 0', () => {
+    expect(run.status, run.output).toBe(0);
+  });
+
+  it('keeps the example lines in the .md page and llms-full.txt', () => {
+    const md = run.read('global/index.md');
+    expect(md).toContain('const a = 1;\nconst b = 2;');
+    expect(md).toContain('const c = 3;\nconst d = 4;');
+    expect(md).not.toContain('\r');
+    expect(md).not.toContain('````');
+    expect(run.read('llms-full.txt')).not.toContain('\r');
+  });
+
+  it('highlights the example as two lines in the HTML page', () => {
+    const html = run.read('global/index.html');
+    expect(html).not.toContain('\r');
+    // Shiki splits the code into token spans; match on the text with tags stripped.
+    const pre = (html.match(/<pre[\s>].*?<\/pre>/gsu) ?? []).find((p) =>
+      p.replace(/<[^>]+>/g, '').includes('const a = 1;')
+    );
+    expect(pre, 'no <pre> holding the example').toBeDefined();
+    expect(pre!.match(/class="line"/g)).toHaveLength(2);
+  });
+});
+
 describe('JSDoc CLI end to end: reported bugs stay fixed', () => {
   let run: Run;
 
