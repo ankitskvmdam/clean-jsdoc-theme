@@ -105,6 +105,28 @@ describe('normalizeDocletLineEndings', () => {
     expect((d.meta as { code: { value: string } }).code.value).toBe('x\r\ny');
   });
 
+  it('leaves the raw comment alone and does not copy a doclet for it', () => {
+    const input = makeCollection([fn({ comment: '/**\r\n * Does a thing.\r\n */' })]);
+    expect(normalizeDocletLineEndings(input)).toBe(input);
+    const d = normalizeDocletLineEndings(
+      makeCollection([fn({ comment: '/**\r\n * a\r\n */', description: 'a\rb' })])
+    )().get()[0];
+    expect(d.comment).toBe('/**\r\n * a\r\n */');
+    expect(d.description).toBe('a\nb');
+  });
+
+  it('gives doclets sharing one params array the same single normalised copy', () => {
+    const params = [{ name: 'x', description: 'p\r\nq' }];
+    const before = JSON.stringify(params);
+    const [a, b] = normalizeDocletLineEndings(
+      makeCollection([fn({ params }), fn({ name: 'other', longname: 'other', params })])
+    )().get() as unknown as { params: { description: string }[] }[];
+    expect(a.params).not.toBe(params);
+    expect(a.params).toBe(b.params);
+    expect(a.params[0].description).toBe('p\nq');
+    expect(JSON.stringify(params)).toBe(before);
+  });
+
   it('handles a self-referencing value', () => {
     const loop: Record<string, unknown> = { text: 'a\rb' };
     loop.self = loop;
