@@ -28,6 +28,7 @@ import { resolveLinkTags } from './mdast/link-tags';
 import { neutralizeUnterminatedComments } from './mdast/from-html';
 import { escapeLiteralTags } from './mdast/literal-tags';
 import { resolveSlotText } from './slots';
+import { inlineTagsToText } from './inline-tag-text';
 import { toMdx } from './mdx';
 import { FOOTNOTE_REF_URL } from './doc-description';
 
@@ -387,7 +388,9 @@ export function renderContainerPage(
   // The frontmatter description (page <meta> + search excerpt) is derived from
   // the same source as the body description, so it tracks the same `…#description`
   // slot — a stamped locale localizes the excerpt too, not just the visible prose.
-  // Identity by default → byte-identical (stripHtml of the unchanged source). Key
+  // Identity by default. Inline tags in it (`{@link}`, `{@tutorial}`, …) are
+  // reduced to the text the body shows for them (#366), after the HTML strip
+  // since the markdown plugin may have autolinked a URL inside a tag. Key
   // off `view.doclet.longname` (NOT the `longname` param fallback) so the
   // frontmatter and the body's `descriptionBlocks` always resolve the SAME key —
   // otherwise a doclet without a longname could localize the excerpt but not the
@@ -398,7 +401,10 @@ export function renderContainerPage(
     'description',
     view.doclet.classdesc ?? view.doclet.description
   );
-  const description = descriptionSource ? stripHtml(descriptionSource) : undefined;
+  const description = descriptionSource
+    ? inlineTagsToText(stripHtml(descriptionSource), (n) => resolveTutorial?.(n)?.title) ||
+      undefined
+    : undefined;
 
   // `@category` (if any) becomes the sidebar group — possibly a `/`-path that
   // nests the page (`Core/Parsing` → Core ▸ Parsing) — and its `order=` option

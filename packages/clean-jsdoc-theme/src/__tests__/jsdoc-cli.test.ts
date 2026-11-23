@@ -448,3 +448,65 @@ describe('JSDoc CLI end to end: configuration problems (PR #356)', () => {
     SPAWN_TEST_TIMEOUT
   );
 });
+
+describe('JSDoc CLI end to end: inline tags in descriptions (#366)', () => {
+  let run: Run;
+
+  beforeAll(async () => {
+    run = await runJsdoc(
+      {
+        'src/jobs.js': lines(
+          '/**',
+          ' * Runs {@link Other}, {@link Other#run}, {@link Other|the other}, [lbl]{@link Other},',
+          ' * {@linkcode Other} and {@tutorial intro}.',
+          ' * @module jobs',
+          ' */',
+          '',
+          '/** Another class. */',
+          'export class Other {',
+          '  /** Runs it. */',
+          '  run() {}',
+          '}'
+        ),
+        'tutorials/intro.md': lines('# Intro', '', 'Hello.'),
+        'tutorials/intro.json': JSON.stringify({ title: 'Introduction' }),
+      },
+      {
+        plugins: ['plugins/markdown'],
+        opts: { tutorials: 'tutorials', siteUrl: 'https://example.com', llmsTxt: true },
+      }
+    );
+  }, SPAWN_TEST_TIMEOUT);
+
+  it('builds with exit 0', () => {
+    expect(run.status, run.output).toBe(0);
+  });
+
+  it('writes the text the body shows into the .md description', () => {
+    const description = /^description: (.*)$/m.exec(run.read('module/jobs/index.md'))?.[1];
+    expect(description).toBeDefined();
+    expect(description).not.toContain('{@');
+    expect(description).toContain('Runs Other, Other#run, the other, lbl, Other and Introduction.');
+  });
+
+  it('keeps inline tags out of every search description and excerpt, and llms.txt', () => {
+    const searchIndex = run.list('_assets').find((f) => f.startsWith('search-index.'))!;
+    const fields: Record<'description' | 'excerpt', string[]> = { description: [], excerpt: [] };
+    const walk = (v: unknown): void => {
+      if (Array.isArray(v)) v.forEach(walk);
+      else if (v && typeof v === 'object') {
+        for (const [k, x] of Object.entries(v)) {
+          if ((k === 'description' || k === 'excerpt') && typeof x === 'string') fields[k].push(x);
+          else walk(x);
+        }
+      }
+    };
+    walk(JSON.parse(run.read(`_assets/${searchIndex}`)));
+    expect(fields.description.some((f) => f.includes('Introduction'))).toBe(true);
+    for (const f of fields.description) expect(f).not.toContain('{@');
+    // The excerpt comes from the body, which still shows a raw `{@tutorial}`
+    // (a separate gap in the body's tag resolution); the link family is resolved.
+    for (const f of fields.excerpt) expect(f).not.toMatch(/\{@link/);
+    expect(run.read('llms.txt')).not.toContain('{@');
+  });
+});

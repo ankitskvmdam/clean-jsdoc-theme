@@ -12,32 +12,13 @@
 
 import type { Nodes, Root } from 'mdast';
 import { collapseWhitespace } from '@clean-jsdoc-theme/utils';
+import { inlineTagsToText } from './inline-tag-text';
 
 /** Longest derived description, `…` included. An explicit one is not capped. */
 export const DOC_DESCRIPTION_MAX = 300;
 
 /** A clip point earlier than this is too early: hard-cut at the cap instead. */
 const MIN_CUT = Math.floor(DOC_DESCRIPTION_MAX * 0.6);
-
-// Inline tags left as raw text (no resolver, or `{@tutorial}`), reduced to their
-// label the way dwar's llms-txt `plainText` does. They run on the paragraph's
-// joined text, since autolinks and inline markup split a tag across nodes. The
-// bodies exclude `{`/`}` and the labels exclude `[`/`]`, so every match attempt
-// stops at the next brace or bracket and the scan stays linear. (The #366 fix
-// may later share these.)
-const LABELLED_TAG = /\[([^[\]]*)\]\{@(?:link|linkcode|linkplain|tutorial)\s[^{}]*\}/g;
-const INLINE_TAG = /\{@(?:link|linkcode|linkplain|tutorial)\s([^{}]*)\}/g;
-
-/** `[label]{@link x}` → `label`; `{@link x|label}` / `{@link x label}` → `label`, else `x`. */
-function stripInlineTags(text: string): string {
-  if (!text.includes('{@')) return text;
-  return text
-    .replace(LABELLED_TAG, (_all, label: string) => label)
-    .replace(INLINE_TAG, (_all, body: string) => {
-      const [target, ...rest] = body.trim().split(/[|\s]+/);
-      return rest.length > 0 ? rest.join(' ') : target;
-    });
-}
 
 /** A footnote marker: the footnote ref arrives as a link to its definition. */
 export const FOOTNOTE_REF_URL = /^#user-content-fn-/;
@@ -131,7 +112,7 @@ export function deriveDocDescription(tree: Root): string | undefined {
     // A row of links (`Docs | API | GitHub`) is navigation, not a summary.
     if (flat.links > 1 && !flat.proseOutsideLinks) continue;
     // One past the cap is enough to know whether to clip.
-    const text = collapseWhitespace(stripInlineTags(flat.parts.join('')), DOC_DESCRIPTION_MAX + 1);
+    const text = collapseWhitespace(inlineTagsToText(flat.parts.join('')), DOC_DESCRIPTION_MAX + 1);
     if (text !== '') return clip(text);
   }
   return undefined;

@@ -57,6 +57,8 @@ describe('deriveDocDescription (#370)', () => {
     );
     expect(d).toBe('See Foo, bar, baz qux, label and t.');
     expect(d).not.toContain('{@');
+    // An empty label falls back to the target (#366).
+    expect(deriveDocDescription(md('See []{@link Foo}.'))).toBe('See Foo.');
   });
 
   it('clips long text to the cap on a word boundary with an ellipsis', () => {
