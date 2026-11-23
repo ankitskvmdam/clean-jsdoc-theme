@@ -46,6 +46,7 @@ import {
   normalizeBasePath,
   normalizeCollapsibleSidebarSections,
   normalizeScrollbar,
+  renderFailureMessage,
   toExtractManifest,
   topLevelSectionLabels,
   unmatchedCollapsibleSections,
@@ -1007,6 +1008,12 @@ async function buildSite(
     ...(value.llmsTxt ? { llmsTxt: value.llmsTxt } : {}),
   });
 
+  // #401: no content page rendered (e.g. a systemic MDX/Preact failure). Throw
+  // before the destination is cleaned or written, so the previous build
+  // survives; TypeDoc logs the error and exits with its output-error code.
+  const renderFailure = renderFailureMessage(result);
+  if (renderFailure) throw new Error(`[clean-jsdoc-theme] ${renderFailure}`);
+
   const outputFiles = [
     ...result.files,
     ...customAssets.files,
@@ -1039,7 +1046,8 @@ async function buildSite(
 
   report.optionProblems();
 
-  // Render failures are reported, never thrown — the rest of the site is intact.
+  // Render failures are reported, not thrown — the rest of the site is intact
+  // (the case where no content page rendered already threw above).
   if (result.errors && result.errors.length > 0) {
     logger.warn(
       `[clean-jsdoc-theme] ${result.errors.length} page(s) failed to render and were skipped:`

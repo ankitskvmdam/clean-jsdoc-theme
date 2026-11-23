@@ -1054,7 +1054,8 @@ warning या error build को कुछ भी लिखने से पह
 इन पर असर नहीं — ये `strict` में भी चेतावनी या सूचना ही रहते हैं:
 
 - content चेतावनियाँ (जैसे किसी comment में बिना जोड़ी का backtick) और render न
-  हो पाने वाले pages;
+  हो पाने वाले pages (जिस build में हर page fail हो, वह `strict` हो या न हो, हमेशा
+  fail होता है);
 - JSDoc में `opts.title` या `opts.search` जैसा top-level v4 option नाम, क्योंकि
   वह किसी दूसरे JSDoc plugin का हो सकता है;
 - TypeDoc में `readme` जैसा JSDoc-only option (एक `opts/unsupported-in-typedoc`

@@ -1432,3 +1432,64 @@ describe('render() — locale links to a page whose slug is index (#333)', () =>
     expect(switcher.locales.map((l) => l.href)).toEqual(['/index/', '/fr/index/']);
   });
 });
+
+describe('render() — every page fails (#401)', () => {
+  // An angle-bracket autolink is MDX-hostile (see the #333 describe above), so a
+  // page with this body always fails to compile.
+  const BAD_BODY = `# Bad\n\nSee <https://example.com> for more.\n`;
+
+  function allBad(): SiteManifest {
+    const m = makeManifest();
+    for (const page of m.pages) page.body = BAD_BODY;
+    return m;
+  }
+
+  it('resolves (never throws) and flags that no content page rendered', async () => {
+    const result = await render(allBad(), { theme: minimalTheme });
+    expect(result.stats.pageCount).toBe(0);
+    expect(result.errors).toHaveLength(2);
+    expect(result.noContentRendered).toBeDefined();
+    expect(result.noContentRendered!.failed).toBe(2);
+    expect(result.noContentRendered!.sameMessage).toBe(2);
+    // The first failure in page order: the home page.
+    expect(result.noContentRendered!.first).toMatchObject({ slug: '' });
+    expect(result.noContentRendered!.first.snippet).toContain('See <https://example.com>');
+  });
+
+  it('leaves the flag unset when at least one content page rendered', async () => {
+    const m = makeManifest();
+    m.pages[1].body = BAD_BODY;
+    const result = await render(m, { theme: minimalTheme });
+    expect(result.stats.pageCount).toBe(1);
+    expect(result.errors).toHaveLength(1);
+    expect(result.noContentRendered).toBeUndefined();
+  });
+
+  it('still flags it when only source-viewer pages rendered', async () => {
+    const m = allBad();
+    m.pages.push({
+      slug: 'source/lib/queue-js',
+      frontmatter: { title: 'queue.js', kind: 'source', hidden: true },
+      body: '',
+      source: { code: 'export const x = 1;\n', language: 'js', filename: 'queue.js' },
+    });
+    const result = await render(m, { theme: minimalTheme });
+    expect(result.stats.pageCount).toBe(1); // the source viewer
+    // The rendered source viewer doesn't count; the two content failures do.
+    expect(result.noContentRendered).toMatchObject({
+      failed: 2,
+      sameMessage: 2,
+      first: { slug: '' },
+    });
+  });
+
+  it('does not flag an empty manifest', async () => {
+    const m = makeManifest();
+    m.pages = [];
+    m.nav = [];
+    const result = await render(m, { theme: minimalTheme });
+    expect(result.stats.pageCount).toBe(0);
+    expect(result.errors).toBeUndefined();
+    expect(result.noContentRendered).toBeUndefined();
+  });
+});

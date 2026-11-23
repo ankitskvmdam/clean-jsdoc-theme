@@ -83,7 +83,9 @@ export interface RenderResult {
   /**
    * Pages that failed to render and were skipped. A single bad page (e.g. MDX
    * that won't compile) must not abort the whole build — render() collects the
-   * failures here so the caller can surface them. Empty when all pages render.
+   * failures here so the caller can surface them. Absent when all pages render.
+   * When no content page rendered at all, {@link RenderResult.noContentRendered}
+   * is also set and the bridges fail the build instead (#401).
    */
   errors?: RenderError[];
   /**
@@ -92,6 +94,16 @@ export interface RenderResult {
    * clean up the source. Empty/absent when nothing was flagged.
    */
   warnings?: RenderWarning[];
+  /**
+   * Set only when no content page rendered and at least one page failed (#401).
+   * A content page is any page whose `frontmatter.kind` is not `'source'`.
+   * `failed` counts the failed content pages (or every failure, when the
+   * manifest had no content pages); `first` is the first such failure in page
+   * order; `sameMessage` is how many of those `failed` share `first`'s message
+   * (`first` included). render() still never throws — the bridges turn this
+   * into a failed build, via {@link renderFailureMessage}, before writing the site.
+   */
+  noContentRendered?: { failed: number; first: RenderError; sameMessage: number };
   stats: {
     /** Pages successfully rendered (excludes any in `errors`). */
     pageCount: number;
@@ -100,6 +112,36 @@ export interface RenderResult {
     jsBytes: number;
     durationMs: number;
   };
+}
+
+/**
+ * The build-failure message for a render where no content page rendered (#401),
+ * or `undefined` when {@link RenderResult.noContentRendered} is unset. Shared by
+ * both bridges so they fail identically; each adds its own prefix. One error,
+ * not the full list: the count, the first failure (with its code frame), and
+ * whether the other counted failures share its message. Every number refers to
+ * the same set of failures (`failed`). The install/renderer hint is shown only
+ * when several pages failed with one message — a single failing page is more
+ * likely a genuine content error.
+ */
+export function renderFailureMessage(result: RenderResult): string | undefined {
+  const flag = result.noContentRendered;
+  if (!flag) return undefined;
+  const { failed, first, sameMessage } = flag;
+  const lines = [
+    `no page could be rendered: all ${failed} content page(s) failed, so this site was not written.`,
+    'First failure:',
+    formatRenderError(first),
+  ];
+  if (failed > 1 && sameMessage === failed) {
+    lines.push(
+      `All ${failed} failures share this message.`,
+      'This usually points at the install or the renderer, not at your docs.'
+    );
+  } else if (failed > 1) {
+    lines.push(`${failed - 1} more page(s) failed, not all with this message.`);
+  }
+  return lines.join('\n');
 }
 
 /**

@@ -1141,7 +1141,8 @@ error stops the build before it writes anything, and the process exits non-zero
 Not affected — these stay warnings or notes even under `strict`:
 
 - content warnings (such as an unbalanced backtick in a comment) and pages that
-  fail to render;
+  fail to render (a build where every page fails always fails, with or without
+  `strict`);
 - under JSDoc, a top-level v4 option name such as `opts.title` or
   `opts.search`, since another JSDoc plugin may own it;
 - under TypeDoc, a JSDoc-only option such as `readme` (ignored with an

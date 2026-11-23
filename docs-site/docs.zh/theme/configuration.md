@@ -1028,7 +1028,8 @@ cleanJsdocTheme: { defaultLocale: "en" }
 
 不受影响——即使在 `strict` 下，这些仍然只是警告或提示：
 
-- 内容警告（例如注释中不成对的反引号）以及渲染失败的页面；
+- 内容警告（例如注释中不成对的反引号）以及渲染失败的页面（所有页面都渲染失败的构建
+  总会失败，无论是否启用 `strict`）；
 - 在 JSDoc 中，像 `opts.title` 或 `opts.search` 这样的顶层 v4 选项名，因为它们可能
   属于其他 JSDoc 插件；
 - 在 TypeDoc 中，像 `readme` 这样仅限 JSDoc 的选项（会被忽略，并给出

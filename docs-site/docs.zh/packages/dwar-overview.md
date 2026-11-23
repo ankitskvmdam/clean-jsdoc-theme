@@ -107,6 +107,10 @@ build。每个页面都在一个 `try/catch` 内部渲染：失败时该页面�
 [`publish.ts`](https://github.com/ankitskvmdam/clean-jsdoc-theme/blob/master/packages/clean-jsdoc-theme/src/publish.ts)
 将它们呈现出来）。
 
+唯一的例外是**没有任何**内容页面渲染成功的 build（所有页面都失败了，例如安装损坏时）。
+`render()` 仍然不会抛出，但会设置 `result.noContentRendered`，两个 bridge 都会在写入
+任何内容之前让 build 失败，因此之前的输出保持不变。
+
 ## `render()` 生成什么
 
 一切都在 `result.files` 中返回（一个 `OutputFile[]`，每一项为
