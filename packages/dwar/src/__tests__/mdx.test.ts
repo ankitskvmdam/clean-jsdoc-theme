@@ -68,6 +68,29 @@ describe('collectUsedLangs', () => {
     const langs = collectUsedLangs(['```not-a-real-lang\nx\n```']);
     expect(langs).not.toContain('not-a-real-lang');
   });
+
+  const grammar = { name: 'mylang', scopeName: 'source.mylang', aliases: ['ml'], patterns: [] };
+  const shiki = { light: 'github-light', dark: 'github-dark', langs: [grammar] };
+
+  it('adds a user grammar once, by name or alias', () => {
+    const langs = collectUsedLangs(['```mylang\nx\n```', '```ML\ny\n```'], shiki);
+    expect(langs.filter((l) => l === grammar)).toHaveLength(1);
+    expect(langs).not.toContain('mylang');
+  });
+
+  it('leaves out a user grammar no fence uses', () => {
+    expect(collectUsedLangs(['```js\nx\n```'], shiki)).not.toContain(grammar);
+  });
+
+  it('resolves langAlias to a bundled language or a user grammar', () => {
+    const langs = collectUsedLangs(['```other\nx\n```', '```basic\ny\n```'], {
+      ...shiki,
+      langAlias: { other: 'mylang', basic: 'vb', broken: 'not-a-real-lang' },
+    });
+    expect(langs).toContain(grammar);
+    expect(langs).toContain('vb');
+    expect(langs).not.toContain('not-a-real-lang');
+  });
 });
 
 describe('escapeStrayBraces', () => {

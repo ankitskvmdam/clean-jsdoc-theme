@@ -16,6 +16,7 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { basename, extname, resolve as resolvePath } from 'node:path';
 import type { OutputFile, ThemeColors } from '@clean-jsdoc-theme/dwar';
+import type { ShikiGrammar, ThemeTokens } from '@clean-jsdoc-theme/utils';
 import type { CleanJsdocThemeBlock } from './options';
 
 /** Where an option problem is reported (the writer's strict-aware `optionLog`). */
@@ -182,4 +183,60 @@ export async function resolveCustomAssets(
     },
     files: [...cssAssets.files, ...jsAssets.files],
   };
+}
+
+/** The user grammar/alias half of `ThemeTokens.shiki`. */
+export type ShikiLangOptions = Pick<ThemeTokens['shiki'], 'langs' | 'langAlias'>;
+
+/**
+ * Validate `cleanJsdocTheme.shiki`. Copied from the JSDoc bridge's `resolveShikiLangs`: read each `langs` grammar file (a
+ * `.tmLanguage.json` path) and keep the string entries of `langAlias`, keys
+ * lowercased to match fence lookup. Unreadable or invalid grammars are warned
+ * about and skipped. Returns `undefined` when nothing usable is configured.
+ */
+export async function resolveShikiLangs(
+  raw: unknown,
+  logger: WarnSink
+): Promise<ShikiLangOptions | undefined> {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const src = raw as Record<string, unknown>;
+  const out: ShikiLangOptions = {};
+
+  const files = Array.isArray(src.langs) ? src.langs : src.langs === undefined ? [] : [src.langs];
+  const langs: ShikiGrammar[] = [];
+  for (const file of files) {
+    const path = nonEmptyString(file)?.trim();
+    if (!path) {
+      logger.warn(
+        '[clean-jsdoc-theme] shiki.langs entries must be grammar file paths; skipping one.'
+      );
+      continue;
+    }
+    let grammar: unknown;
+    try {
+      grammar = JSON.parse(await readFile(resolvePath(path), 'utf8'));
+    } catch {
+      logger.warn(`[clean-jsdoc-theme] could not read shiki grammar ('${path}'); skipping it.`);
+      continue;
+    }
+    const g = grammar as Partial<ShikiGrammar> | null;
+    if (!g || typeof g.scopeName !== 'string' || typeof g.name !== 'string' || !g.name) {
+      logger.warn(
+        `[clean-jsdoc-theme] shiki grammar '${path}' needs a "name" and "scopeName"; skipping it.`
+      );
+      continue;
+    }
+    langs.push(g as ShikiGrammar);
+  }
+  if (langs.length > 0) out.langs = langs;
+
+  if (src.langAlias && typeof src.langAlias === 'object' && !Array.isArray(src.langAlias)) {
+    const alias: Record<string, string> = {};
+    for (const [key, value] of Object.entries(src.langAlias as Record<string, unknown>)) {
+      const target = nonEmptyString(value)?.trim();
+      if (key.trim() && target) alias[key.trim().toLowerCase()] = target;
+    }
+    if (Object.keys(alias).length > 0) out.langAlias = alias;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
 }

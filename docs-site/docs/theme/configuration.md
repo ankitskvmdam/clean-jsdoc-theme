@@ -721,6 +721,52 @@ cleanJsdocTheme: {
 Unknown keys and non-string values are ignored. If you omit `darkColors`
 entirely, dark mode falls back to a sensible bg/fg swap of `colors`.
 
+### `shiki`
+
+Highlight code fences in languages shiki doesn't bundle. `langs` lists
+[TextMate grammar](https://shiki.style/guide/load-lang) files
+(`.tmLanguage.json`); a fence matching a grammar's `name` or one of its
+`aliases` is highlighted with it. `langAlias` maps extra fence names to a
+language id, either bundled or from `langs`.
+
+**Expected:** an object with optional `langs` (a path or an array of paths,
+each relative to the directory the build runs from) and `langAlias` (an object
+of `fence name → language id`).
+
+<tabs group="tool">
+
+<tab label="JSDoc (jsdoc.json)">
+
+```json5
+opts: {
+  shiki: {
+    langs: ["./grammars/brightscript.tmLanguage.json"],
+    langAlias: { brighterscript: "brightscript" },
+  },
+}
+```
+
+</tab>
+
+<tab label="TypeDoc (typedoc.json)">
+
+```json5
+cleanJsdocTheme: {
+  shiki: {
+    langs: ["./grammars/brightscript.tmLanguage.json"],
+    langAlias: { brighterscript: "brightscript" },
+  },
+}
+```
+
+</tab>
+
+</tabs>
+
+A grammar file that can't be read, or has no `name`/`scopeName`, is skipped
+with a warning. An alias that points at an unknown language is ignored, and
+the fence renders as plain text.
+
 ### `scrollbar`
 
 Controls how the scrollbar (page and any scrollable panel, e.g. the sidebar or

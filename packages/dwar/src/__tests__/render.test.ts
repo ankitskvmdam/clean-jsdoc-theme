@@ -1579,3 +1579,58 @@ describe('render() — every page fails (#401)', () => {
     expect(result.noContentRendered).toBeUndefined();
   });
 });
+
+describe('render() — user grammars and aliases (shiki.langs / langAlias)', () => {
+  const grammar = {
+    name: 'mylang',
+    scopeName: 'source.mylang',
+    aliases: ['ml'],
+    patterns: [{ match: '\\bkw\\b', name: 'keyword.control.mylang' }],
+  };
+  const theme = {
+    ...minimalTheme,
+    tokens: {
+      ...minimalTheme.tokens,
+      shiki: {
+        ...minimalTheme.tokens.shiki,
+        langs: [grammar],
+        langAlias: { other: 'mylang', basic: 'vb' },
+      },
+    },
+  };
+  const TOKEN = /<span style="[^"]*--shiki-dark/;
+
+  async function renderFence(slug: string, lang: string, code: string) {
+    const m = makeManifest();
+    m.pages.push({
+      slug,
+      frontmatter: { title: slug, kind: 'guide', description: 'A page.' },
+      body: `# Page\n\n\`\`\`${lang}\n${code}\n\`\`\`\n`,
+      headings: [],
+    });
+    m.nav.push({ label: slug, slug });
+    const result = await render(m, { theme });
+    const err = result.errors?.find((e) => e.slug === slug);
+    const file = result.files.find((f) => f.path === `${slug}/index.html`);
+    return {
+      err,
+      pre: file ? asString(file).match(/<pre[^>]*\bshiki\b[\s\S]*?<\/pre>/)?.[0] : undefined,
+    };
+  }
+
+  it.each([
+    ['its name', 'mylang'],
+    ['an alias, any case', 'ML'],
+    ['a langAlias key', 'other'],
+  ])('highlights a user grammar fence by %s', async (_label, lang) => {
+    const { err, pre } = await renderFence(`user-${lang.toLowerCase()}`, lang, 'kw thing');
+    expect(err, err?.message).toBeUndefined();
+    expect(pre).toMatch(TOKEN);
+  });
+
+  it('highlights a langAlias key that points at a bundled language', async () => {
+    const { err, pre } = await renderFence('alias-vb', 'basic', 'Function Foo()\nEnd Function');
+    expect(err, err?.message).toBeUndefined();
+    expect(pre).toMatch(TOKEN);
+  });
+});

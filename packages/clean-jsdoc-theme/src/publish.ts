@@ -35,7 +35,7 @@ import type {
   SourceFileInput,
   TutorialInput,
 } from '@clean-jsdoc-theme/setu';
-import type { PlaygroundProvider } from '@clean-jsdoc-theme/utils';
+import type { PlaygroundProvider, ShikiGrammar, ThemeTokens } from '@clean-jsdoc-theme/utils';
 import { writeOutputFiles } from './write-output-files';
 import { httpsFetch } from './https-fetch';
 
@@ -237,6 +237,13 @@ interface JSDocOpts {
    * keep the default dark palette.
    */
   darkColors?: unknown;
+  /**
+   * Extra syntax highlighting (`"opts": { "shiki": { ... } }`). `langs` lists
+   * TextMate grammar files (`.tmLanguage.json`, relative to the working
+   * directory) for languages shiki doesn't bundle; `langAlias` maps extra fence
+   * names to a language id, e.g. `{ "brighterscript": "brightscript" }`.
+   */
+  shiki?: unknown;
   /**
    * Project README as HTML. JSDoc renders the Markdown README (`-R`/`opts.readme`
    * or one found in the source paths) and replaces this with the resulting HTML
@@ -524,7 +531,8 @@ function resolveTheme(
   siteName: SiteName | undefined,
   fonts: ValidatedFonts,
   basePath: string,
-  locale?: string
+  locale?: string,
+  shiki?: ShikiLangOptions
 ): ThemeConfig {
   const aiPrompt =
     typeof opts.aiPrompt === 'string' && opts.aiPrompt.trim() ? opts.aiPrompt.trim() : undefined;
@@ -552,6 +560,7 @@ function resolveTheme(
       colors: { ...defaultTheme.tokens.colors, ...(colors ?? {}) },
       darkColors: { ...defaultTheme.tokens.darkColors, ...(darkColors ?? {}) },
       fonts: resolveFontSet(fonts, locale),
+      shiki: { ...defaultTheme.tokens.shiki, ...(shiki ?? {}) },
       ...(siteName ? { siteName } : {}),
     },
   };
@@ -1250,6 +1259,60 @@ export function normalizeColors(raw: unknown): Partial<ThemeColors> | undefined 
   for (const key of COLOR_KEYS) {
     const v = src[key];
     if (typeof v === 'string' && v.trim().length > 0) out[key] = v.trim();
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+/** The user grammar/alias half of `ThemeTokens.shiki`. */
+export type ShikiLangOptions = Pick<ThemeTokens['shiki'], 'langs' | 'langAlias'>;
+
+/**
+ * Validate `opts.shiki` from `jsdoc.json`: read each `langs` grammar file (a
+ * `.tmLanguage.json` path) and keep the string entries of `langAlias`, keys
+ * lowercased to match fence lookup. Unreadable or invalid grammars are warned
+ * about and skipped. Returns `undefined` when nothing usable is configured.
+ */
+export async function resolveShikiLangs(
+  raw: unknown,
+  warn: WarnSink = consoleWarn
+): Promise<ShikiLangOptions | undefined> {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const src = raw as Record<string, unknown>;
+  const out: ShikiLangOptions = {};
+
+  const files = Array.isArray(src.langs) ? src.langs : src.langs === undefined ? [] : [src.langs];
+  const langs: ShikiGrammar[] = [];
+  for (const file of files) {
+    const path = nonEmptyString(file)?.trim();
+    if (!path) {
+      warn('clean-jsdoc-theme: shiki.langs entries must be grammar file paths; skipping one.');
+      continue;
+    }
+    let grammar: unknown;
+    try {
+      grammar = JSON.parse(await readFile(resolvePath(path), 'utf8'));
+    } catch {
+      warn(`clean-jsdoc-theme: could not read shiki grammar ('${path}'); skipping it.`);
+      continue;
+    }
+    const g = grammar as Partial<ShikiGrammar> | null;
+    if (!g || typeof g.scopeName !== 'string' || typeof g.name !== 'string' || !g.name) {
+      warn(
+        `clean-jsdoc-theme: shiki grammar '${path}' needs a "name" and "scopeName"; skipping it.`
+      );
+      continue;
+    }
+    langs.push(g as ShikiGrammar);
+  }
+  if (langs.length > 0) out.langs = langs;
+
+  if (src.langAlias && typeof src.langAlias === 'object' && !Array.isArray(src.langAlias)) {
+    const alias: Record<string, string> = {};
+    for (const [key, value] of Object.entries(src.langAlias as Record<string, unknown>)) {
+      const target = nonEmptyString(value)?.trim();
+      if (key.trim() && target) alias[key.trim().toLowerCase()] = target;
+    }
+    if (Object.keys(alias).length > 0) out.langAlias = alias;
   }
   return Object.keys(out).length > 0 ? out : undefined;
 }
@@ -2608,6 +2671,8 @@ async function runPublish(
   // Site-wide custom <meta> tags. Validated/normalized here (junk dropped +
   // warned); dwar does the escaping + de-dupe against its head defaults.
   const meta = normalizeMeta(opts.meta, warnOption);
+  // User grammar files are read here (the I/O layer) so render() stays pure.
+  const shikiLangs = await resolveShikiLangs(opts.shiki, warnOption);
   // Every option has been resolved by now; under strict, stop before rendering
   // or writing anything if any of them had a problem.
   failOnStrictOptionErrors();
@@ -2619,7 +2684,7 @@ async function runPublish(
   const result = await progress.stage('Rendering site', () =>
     render(manifest, {
       theme: {
-        ...resolveTheme(opts, siteName, fonts, basePath, buildSpec?.locale),
+        ...resolveTheme(opts, siteName, fonts, basePath, buildSpec?.locale, shikiLangs),
         ...customAssets.theme,
         ...(footer ? { footer } : {}),
         ...(favicon ? { favicon: favicon.href } : {}),

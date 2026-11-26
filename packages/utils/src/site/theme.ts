@@ -27,6 +27,17 @@ export interface ThemeColors {
 }
 
 /** Visual design tokens consumed by both Tailwind generation and runtime themes. */
+/**
+ * A TextMate grammar as shiki's `LanguageRegistration` expects it. Only the
+ * fields the theme reads are typed; the rest passes through to shiki.
+ */
+export interface ShikiGrammar {
+  name: string;
+  scopeName: string;
+  aliases?: string[];
+  [key: string]: unknown;
+}
+
 export interface ThemeTokens {
   /** The light-mode palette (also the `:root` default). */
   colors: ThemeColors;
@@ -47,6 +58,14 @@ export interface ThemeTokens {
   shiki: {
     light: string;
     dark: string;
+    /**
+     * Extra TextMate grammars (parsed `.tmLanguage.json`) for languages shiki
+     * doesn't bundle. A fence matching a grammar's `name` or one of its
+     * `aliases` is highlighted with it.
+     */
+    langs?: ShikiGrammar[];
+    /** Extra fence-language aliases, `{ alias: languageId }`. */
+    langAlias?: Record<string, string>;
   };
   /** Path or URL to a logo image. */
   logo?: string;

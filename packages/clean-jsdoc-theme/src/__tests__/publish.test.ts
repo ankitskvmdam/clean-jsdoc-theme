@@ -25,6 +25,7 @@ import {
   reportBuildFailure,
   resolveCustomAssets,
   resolveFooter,
+  resolveShikiLangs,
 } from '../publish';
 
 describe('overlayDocs (per-locale docs overlay)', () => {
@@ -54,6 +55,40 @@ describe('overlayDocs (per-locale docs overlay)', () => {
     const merged = overlayDocs(base, locale);
     expect(merged.files.map((f) => f.path).sort()).toEqual(['_assets/a.111.png', '_assets/b.222.png']);
     expect(merged.inlineSvgs).toEqual({ '/a': '<svg/>', '/b': '<svg/>' });
+  });
+});
+
+describe('resolveShikiLangs', () => {
+  let dir: string;
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), 'cjt-shiki-'));
+  });
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it('reads grammar files and lowercases langAlias keys', async () => {
+    const grammar = { name: 'mylang', scopeName: 'source.mylang', patterns: [] };
+    const fp = join(dir, 'mylang.tmLanguage.json');
+    await writeFile(fp, JSON.stringify(grammar), 'utf8');
+    expect(
+      await resolveShikiLangs({ langs: [fp], langAlias: { BrighterScript: 'mylang' } })
+    ).toEqual({ langs: [grammar], langAlias: { brighterscript: 'mylang' } });
+  });
+
+  it('warns about and skips unreadable or invalid grammars', async () => {
+    const bad = join(dir, 'bad.json');
+    await writeFile(bad, JSON.stringify({ name: 'nope' }), 'utf8');
+    const warn = vi.fn();
+    expect(await resolveShikiLangs({ langs: [bad, join(dir, 'missing.json'), 42] }, warn)).toBe(
+      undefined
+    );
+    expect(warn).toHaveBeenCalledTimes(3);
+  });
+
+  it('returns undefined when nothing is configured', async () => {
+    expect(await resolveShikiLangs(undefined)).toBeUndefined();
+    expect(await resolveShikiLangs({ langAlias: { x: '' } })).toBeUndefined();
   });
 });
 

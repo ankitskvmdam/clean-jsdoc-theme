@@ -224,6 +224,7 @@ export const THEME_OPT_KEYS = [
   'defaultLocale',
   'colors',
   'darkColors',
+  'shiki',
   'customCss',
   'customCssFile',
   'customJs',

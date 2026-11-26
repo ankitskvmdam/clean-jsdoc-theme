@@ -78,6 +78,8 @@ export interface CleanJsdocThemeBlock {
   colors?: unknown;
   /** Dark palette overrides, merged per key over the default dark palette. */
   darkColors?: unknown;
+  /** Extra highlighting: `langs` grammar file paths and `langAlias` fence aliases. */
+  shiki?: unknown;
   /** Inline CSS emitted as a `<style>` after the theme stylesheet. */
   customCss?: unknown;
   /** Local CSS file path(s) copied to `_assets/` and linked after the theme stylesheet. */
@@ -126,7 +128,7 @@ export function declareThemeOption(app: Application): void {
     help:
       'clean-jsdoc-theme options (siteName, fonts, sectionOrder, docs, docGroups, ' +
       'defaultDocGroup, menu, clubSidebarItems, collapsibleSidebarSections, copyPage, ' +
-      'pageNav, scrollbar, playground, aiPrompt, footer, favicon, meta, colors, darkColors, ' +
+      'pageNav, scrollbar, playground, aiPrompt, footer, favicon, meta, colors, darkColors, shiki, ' +
       'customCss, customCssFile, customJs, customJsFile, hashCustomAssets, basePath, siteUrl, ' +
       'llmsTxt, strict).',
     type: ParameterType.Object,
