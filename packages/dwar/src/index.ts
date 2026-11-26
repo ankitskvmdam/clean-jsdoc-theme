@@ -50,6 +50,7 @@ import {
   findStrayBackticks,
   pageCommentRanges,
   type MdxComponentMap,
+  type ShikiLang,
   type ShikiThemes,
 } from './mdx';
 import { SsrLayout, renderIsland, type IslandRecord } from './layout';
@@ -290,7 +291,7 @@ async function renderPage(
   copyPageActions: CopyPageAction[] | undefined,
   fonts: { heading: string; body: string; mono: string },
   shiki: ShikiThemes,
-  langs: readonly string[],
+  langs: readonly ShikiLang[],
   highlightSignature: SignatureHighlighter | null,
   custom: {
     cssLinks?: string[];
@@ -600,7 +601,10 @@ export async function render(manifest: SiteManifest, opts: RenderOptions): Promi
   // Curate the shiki language set from the languages pages actually use, so
   // rehype-shiki loads only those grammars instead of all 235 bundled langs
   // (the dominant cost of the render stage — see mdx.ts collectUsedLangs).
-  const usedLangs = collectUsedLangs(manifest.pages.map((p) => p.body ?? ''));
+  const usedLangs = collectUsedLangs(
+    manifest.pages.map((p) => p.body ?? ''),
+    theme.tokens.shiki
+  );
 
   // Inline highlighter for member/function signatures (rang reads it via context
   // to colour the heading <code>). Cosmetic, so a failure falls back to plain

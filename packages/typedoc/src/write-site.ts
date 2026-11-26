@@ -68,7 +68,12 @@ import {
 } from './docs';
 import type { LocatedDoc } from './docs';
 import { writeOutputFiles } from './write-output-files';
-import { normalizeColors, resolveCustomAssets } from './custom-assets';
+import {
+  normalizeColors,
+  resolveCustomAssets,
+  resolveShikiLangs,
+  type ShikiLangOptions,
+} from './custom-assets';
 import {
   JSDOC_ONLY_KEYS,
   jsdocOnlyKeyMessage,
@@ -143,7 +148,8 @@ function resolveTheme(
   siteName: SiteName | undefined,
   fonts: ValidatedFonts,
   basePath: string,
-  locale?: string
+  locale?: string,
+  shiki?: ShikiLangOptions
 ): ThemeConfig {
   const aiPrompt =
     typeof block.aiPrompt === 'string' && block.aiPrompt.trim() ? block.aiPrompt.trim() : undefined;
@@ -167,6 +173,7 @@ function resolveTheme(
       colors: { ...defaultTheme.tokens.colors, ...(colors ?? {}) },
       darkColors: { ...defaultTheme.tokens.darkColors, ...(darkColors ?? {}) },
       fonts: resolveFontSet(fonts, locale),
+      shiki: { ...defaultTheme.tokens.shiki, ...(shiki ?? {}) },
       ...(siteName ? { siteName } : {}),
     },
   };
@@ -989,12 +996,14 @@ async function buildSite(
   // Custom CSS/JS (#352): inline strings pass through; files are copied to
   // `_assets/` here and linked by dwar, so render() stays pure.
   const customAssets = await resolveCustomAssets(block, hrefForServed, optionLog);
+  // User grammar files are read here (the I/O layer) so render() stays pure.
+  const shikiLangs = await resolveShikiLangs(block.shiki, optionLog);
   // Every option has been resolved by now; under strict, stop before rendering
   // or writing anything if any of them had a problem.
   failOnStrictOptionErrors();
   const result = await render(manifest, {
     theme: {
-      ...resolveTheme(block, siteName, fonts, basePath),
+      ...resolveTheme(block, siteName, fonts, basePath, undefined, shikiLangs),
       ...customAssets.theme,
       ...(footer ? { footer } : {}),
       ...(favicon ? { favicon: favicon.href } : {}),

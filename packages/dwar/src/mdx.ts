@@ -20,6 +20,7 @@ import {
   maskHtmlComments,
   slugifyHeading,
   type HtmlCommentRange,
+  type ShikiGrammar,
 } from '@clean-jsdoc-theme/utils';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -29,11 +30,19 @@ export interface MdxComponentMap {
   [key: string]: AnyComponent;
 }
 
-/** Light/dark Shiki theme names, sourced from `ThemeTokens.shiki`. */
+/**
+ * Light/dark Shiki theme names plus any user grammars/aliases, sourced from
+ * `ThemeTokens.shiki`.
+ */
 export interface ShikiThemes {
   light: string;
   dark: string;
+  langs?: ShikiGrammar[];
+  langAlias?: Record<string, string>;
 }
+
+/** A language for rehype-shiki to load: a bundled id, or a user grammar. */
+export type ShikiLang = string | ShikiGrammar;
 
 export interface CompiledMdx {
   Component: AnyComponent;
@@ -79,20 +88,56 @@ const COMMON_LANGS: readonly string[] = [
 ];
 
 /**
+ * Map every fence name the user's config adds (grammar names/aliases and
+ * `langAlias` keys) to what rehype-shiki must load for it: the user grammar, or
+ * the bundled id an alias points at. Lowercased. Empty without user config.
+ */
+function userLangs(shiki?: ShikiThemes): Map<string, ShikiLang> {
+  const out = new Map<string, ShikiLang>();
+  for (const grammar of shiki?.langs ?? []) {
+    for (const n of [grammar.name, ...(grammar.aliases ?? [])]) out.set(n.toLowerCase(), grammar);
+  }
+  for (const [alias, target] of Object.entries(shiki?.langAlias ?? {})) {
+    const resolved = out.get(target.toLowerCase()) ?? target.toLowerCase();
+    if (typeof resolved !== 'string' || KNOWN_SHIKI_LANGS.has(resolved)) {
+      out.set(alias.toLowerCase(), resolved);
+    }
+  }
+  return out;
+}
+
+/**
+ * The fence names the user's config adds, mapped to the language id shiki
+ * should highlight them as (a grammar's `name`, or an alias's bundled target).
+ * `undefined` without user config, so the common path stays a plain set lookup.
+ */
+function userLangIds(shiki?: ShikiThemes): Map<string, string> | undefined {
+  const user = userLangs(shiki);
+  if (user.size === 0) return undefined;
+  const out = new Map<string, string>();
+  for (const [fence, lang] of user) out.set(fence, typeof lang === 'string' ? lang : lang.name);
+  return out;
+}
+
+/**
  * The shiki language set for a build: the {@link COMMON_LANGS} baseline plus any
  * additional languages found by scanning the page bodies' fenced code blocks.
  * This loads only this curated set (~a dozen-plus grammars) instead of eagerly
  * loading all 235 bundled languages (~4.3s) on the first highlight, while still
  * guaranteeing the common languages always work. Unknown/`text` fences are
- * dropped and fall back to plain text at highlight time.
+ * dropped and fall back to plain text at highlight time. Fences matching a
+ * user grammar (`shiki.langs`) or alias (`shiki.langAlias`) add that grammar,
+ * or the bundled language the alias points at.
  */
-export function collectUsedLangs(bodies: readonly string[]): string[] {
-  const seen = new Set<string>();
-  const out: string[] = [];
+export function collectUsedLangs(bodies: readonly string[], shiki?: ShikiThemes): ShikiLang[] {
+  const user = userLangs(shiki);
+  const seen = new Set<ShikiLang>();
+  const out: ShikiLang[] = [];
   const add = (lang: string): void => {
-    if (seen.has(lang) || !KNOWN_SHIKI_LANGS.has(lang)) return;
-    seen.add(lang);
-    out.push(lang);
+    const target = user.get(lang) ?? (KNOWN_SHIKI_LANGS.has(lang) ? lang : undefined);
+    if (target === undefined || seen.has(target)) return;
+    seen.add(target);
+    out.push(target);
   };
 
   // Always include the common documentation languages.
@@ -556,10 +601,14 @@ function rehypeSlugHeadings() {
  * rehype-shiki matches the class against the loaded languages case-sensitively,
  * so ```JS / ~~~TS / ```C# would fall back to plain text even though
  * `collectUsedLangs` loaded `js` / `ts` / `c#`. Aliases need no mapping — shiki
- * resolves `c#` → csharp itself. Unknown languages are left as written (plain
- * text, as before). Only the hast is touched; the `.md` info string is not.
+ * resolves `c#` → csharp itself. User fence names (`shiki.langs` aliases,
+ * `shiki.langAlias` keys) are rewritten to their language id here instead of
+ * passing `langAlias` to shiki: rehype-shiki shares one process-wide
+ * highlighter, which only takes aliases when it's first created. Unknown
+ * languages are left as written (plain text, as before). Only the hast is
+ * touched; the `.md` info string is not.
  */
-function rehypeNormalizeCodeLang() {
+function rehypeNormalizeCodeLang(user?: Map<string, string>) {
   const prefix = 'language-';
   const walk = (node: HastNode): void => {
     if (node.type === 'element' && node.tagName === 'pre') {
@@ -569,7 +618,9 @@ function rehypeNormalizeCodeLang() {
         code.properties.className = classes.map((c: unknown) => {
           if (typeof c !== 'string' || !c.startsWith(prefix)) return c;
           const lower = c.slice(prefix.length).toLowerCase();
-          return KNOWN_SHIKI_LANGS.has(lower) ? prefix + lower : c;
+          // user names first: aliases are rewritten to the id shiki knows
+          const id = user?.get(lower) ?? (KNOWN_SHIKI_LANGS.has(lower) ? lower : undefined);
+          return id ? prefix + id : c;
         });
       }
       return;
@@ -583,7 +634,7 @@ export async function compileMdxToComponent(
   source: string,
   components: MdxComponentMap,
   shiki: ShikiThemes,
-  langs: readonly string[],
+  langs: readonly ShikiLang[],
   comments?: readonly HtmlCommentRange[]
 ): Promise<CompiledMdx> {
   // `comments`: the page's HTML-comment ranges when the caller already has them
@@ -636,7 +687,7 @@ export async function compileMdxToComponent(
       // (headings carry no code, but order keeps the pass independent).
       rehypeSlugHeadings,
       // Before Shiki: its language lookup is case-sensitive (#415).
-      rehypeNormalizeCodeLang,
+      [rehypeNormalizeCodeLang, userLangIds(shiki)],
       [
         rehypeShiki,
         {
@@ -644,7 +695,8 @@ export async function compileMdxToComponent(
           defaultColor: 'light',
           defaultLanguage: 'text',
           fallbackLanguage: 'text',
-          langs: [...langs],
+          // User grammars are plain objects; shiki validates them on load.
+          langs: [...langs] as never[],
         },
       ],
     ],
